@@ -37,9 +37,12 @@ LABKEY.WebSocket = new function ()
     var _modalShowing = false;
     var _shouldAddFocusListener = true;
 
+    // Identifies this page load; @labkey/api sends it with requests the server may cancel when this socket asks or closes
+    LABKEY.tabId = LABKEY.tabId || LABKEY.Utils.generateUUID();
+
     function openWebsocket() {
         if (_websocket !== null || !('WebSocket' in window)) return;
-        _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
+        _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications?tabId=" + encodeURIComponent(LABKEY.tabId));
         _websocket.onmessage = websocketOnMessage;
         _websocket.onclose = websocketOnClose;
         _websocket.onerror = websocketConnectionFailure;
@@ -244,8 +247,16 @@ LABKEY.WebSocket = new function ()
         openWebsocket();
     };
 
+    /** Sends a JSON message to the server. Returns false, dropping the message, if the socket isn't open. */
+    var send = function(message) {
+        if (_websocket === null || _websocket.readyState !== WebSocket.OPEN) return false;
+        _websocket.send(JSON.stringify(message));
+        return true;
+    };
+
     return {
         initWebSocket: initWebSocket,
+        send: send,
         addServerEventListener: addServerEventListener,
         checkForExpiredSession: checkForExpiredSession
     };
