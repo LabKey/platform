@@ -541,7 +541,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      */
     private static final CacheLoader<String,Date> MODIFIED_DATES_LOADER = (key, argument) -> {
         StudySchema ss = StudySchema.getInstance();
-        SQLFragment sql = SQLFragment.unsafe("SELECT Modified FROM ").append(ss.getTableInfoDataset()).unsafeAppend(" WHERE EntityId = ?").addAll(key);
+        SQLFragment sql = SQLFragment.unsafe("SELECT Modified FROM ").append(ss.getTableInfoDataset()).unsafeAppend(" WHERE EntityId = ?").add(key);
 
         return new SqlSelector(ss.getScope(),sql).getObject(Date.class);
     };

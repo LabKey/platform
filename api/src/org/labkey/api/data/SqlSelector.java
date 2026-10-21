@@ -42,8 +42,6 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
     public SqlSelector(DbScope scope, @Nullable Connection conn, CharSequence sql)
     {
         this(scope, conn, new SQLFragment(sql));
-        if (sql instanceof SQLFragment)
-            throw new IllegalStateException();
     }
 
     public SqlSelector(DbScope scope, SQLFragment sql, @NotNull QueryLogging queryLogging)

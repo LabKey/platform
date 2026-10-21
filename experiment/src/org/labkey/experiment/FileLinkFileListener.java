@@ -298,8 +298,6 @@ public class FileLinkFileListener implements FileListener
         frag.unsafeAppend("WHERE\n");
         if (StringUtils.isEmpty(filePath))
             frag.unsafeAppend("  op.StringValue IS NOT NULL AND\n");
-        else if (filePath instanceof SQLFragment)
-            frag.unsafeAppend("  op.StringValue = ").append(filePath).unsafeAppend(" AND\n");
         else
             frag.unsafeAppend("  op.StringValue = ").appendStringLiteral(filePath, OntologyManager.getTinfoObject().getSqlDialect()).unsafeAppend(" AND\n");
 

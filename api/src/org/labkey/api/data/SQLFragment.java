@@ -500,13 +500,6 @@ public class SQLFragment
     {
         if (null == charseq)
             return this;
-        if (charseq instanceof SQLFragment sqlf)
-        {
-            if (0 != sqlf.getParamsArray().length)
-                throw new IllegalStateException("Unexpected SQL in appendIdentifier()");
-            charseq = sqlf.getRawSQL();
-        }
-
         String identifier = charseq.toString().strip();
 
         if (STR_TABLE_ALIAS.equals(identifier))

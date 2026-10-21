@@ -417,8 +417,6 @@ public class TableUpdaterFileListener implements FileListener
 
         if (StringUtils.isEmpty(filePath))
             selectFrag.unsafeAppend(" IS NOT NULL\n");
-        else if (filePath instanceof SQLFragment)
-            selectFrag.unsafeAppend(" = ").append(filePath).unsafeAppend("\n");
         else
             selectFrag.unsafeAppend(" = ").appendStringLiteral(filePath, _table.getSchema().getSqlDialect()).unsafeAppend("\n");
 

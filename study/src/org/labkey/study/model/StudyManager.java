@@ -3046,7 +3046,7 @@ public class StudyManager
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         SQLFragment sql = SQLFragment.unsafe("SELECT ParticipantId FROM ").append(SCHEMA.getTableInfoParticipant())
-                .unsafeAppend(" WHERE Container = ? AND CurrentCohortId IS NULL").addAll(study.getContainer().getId());
+                .unsafeAppend(" WHERE Container = ? AND CurrentCohortId IS NULL").add(study.getContainer().getId());
 
         return new SqlSelector(schema, sql).getArray(String.class);
     }
@@ -4025,7 +4025,7 @@ public class StudyManager
             return null;
 
         TableInfo table = StudySchema.getInstance().getTableInfoParticipant();
-        ArrayList<String> containers = new SqlSelector(table.getSchema(), SQLFragment.unsafe("SELECT container FROM study.participant WHERE participantid=?").addAll(ptid))
+        ArrayList<String> containers = new SqlSelector(table.getSchema(), SQLFragment.unsafe("SELECT container FROM study.participant WHERE participantid=?").add(ptid))
                 .getArrayList(String.class);
         if (containers.isEmpty())
             return null;
@@ -4489,7 +4489,7 @@ public class StudyManager
     // Return collection of current snapshots that are configured to refresh specimens
     public Collection<StudySnapshot> getRefreshStudySnapshots()
     {
-        return getStudySnapshots(SQLFragment.unsafe(" AND Refresh = ?").addAll(Boolean.TRUE));
+        return getStudySnapshots(SQLFragment.unsafe(" AND Refresh = ?").add(Boolean.TRUE));
     }
 
     // Return collection of all current snapshots
@@ -4689,7 +4689,7 @@ public class StudyManager
             String iso = DateUtil.toISO(d.getTime(), true);
             DbSchema core = CoreSchema.getInstance().getSchema();
             SQLFragment select = SQLFragment.unsafe("SELECT ");
-            select.append(core.getSqlDialect().getISOFormat(SQLFragment.unsafe("?").addAll(d)));
+            select.append(core.getSqlDialect().getISOFormat(SQLFragment.unsafe("?").add(d)));
             String db = new SqlSelector(core, select).getObject(String.class);
             // SQL SERVER doesn't quite store millisecond precision
             assertEquals(23,iso.length());
