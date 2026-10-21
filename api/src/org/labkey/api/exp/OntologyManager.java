@@ -1091,50 +1091,41 @@ public class OntologyManager
             throw new UnsupportedOperationException("can only use with same DbScope");
 
         SqlDialect dialect = getExpSchema().getSqlDialect();
-        String tempTableName = dialect.getTempTablePrefix() + "deleteObjects" + GUID.makeHash();
-        SQLFragment targetIdSql = new SQLFragment("SELECT ObjectId FROM ").append(tempTableName);
         List<PropertyMapKey> deletedKeys = new ArrayList<>();
         Set<GUID> untrackedContainers = new HashSet<>();
-        // The transaction pins one connection for the session temp table, and its rollback undoes the CREATE, so a
-        // failure never issues a DROP in an already-aborted transaction
-        try (Transaction tx = getExpSchema().getScope().ensureTransaction())
-        {
-            // Run the caller's SQL once, since it can be an expensive union; INSERT matches its id column by position, not name
-            SqlExecutor executor = new SqlExecutor(getExpSchema());
-            executor.execute(new SQLFragment("CREATE ").append(dialect.getTempTableKeyword()).append(" TABLE ").append(tempTableName).append(" (ObjectId BIGINT)"));
-            executor.execute(new SQLFragment("INSERT INTO ").append(tempTableName).append(" (ObjectId) ").append(objectIdSql));
-            // Without statistics the planner can't tell a handful of ids from millions, and may scan exp.Object instead of using its indexes
-            executor.execute(new SQLFragment("ANALYZE ").append(tempTableName));
 
-            executor.execute(new SQLFragment("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (").append(targetIdSql).append(")"));
+        // One statement: a CTE referenced twice is materialized, so the caller's SQL (possibly an expensive union) runs
+        // once, and the FK from ObjectProperty is checked only after both deletes. The column alias matches by position.
+        SQLFragment deleteSql = new SQLFragment();
+        String ids = deleteSql.addCommonTableExpression(dialect, "ids", "ids",
+                new SQLFragment("SELECT ObjectId FROM (").append(objectIdSql).append(") x (ObjectId)"));
+        deleteSql.addCommonTableExpression(dialect, "deletedProps", "deletedProps",
+                new SQLFragment("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).append(")"));
+        String deleted = deleteSql.addCommonTableExpression(dialect, "deleted", "deleted",
+                new SQLFragment("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).append(") RETURNING ObjectURI, Container"));
+        // Keys come from the DELETE itself so they match exactly what was removed. Counting first means a delete past
+        // the limit never aggregates its URIs, which could otherwise reach millions.
+        String counted = deleteSql.addCommonTableExpression(dialect, "counted", "counted",
+                new SQLFragment("SELECT ObjectURI, Container, COUNT(*) OVER () AS TotalCount FROM ").append(deleted));
+        deleteSql.append("SELECT Container, COUNT(*) AS DeletedCount, array_agg(CAST(ObjectURI AS VARCHAR)) FILTER (WHERE TotalCount <= ?) AS URIs").add(MAX_TARGETED_CACHE_REMOVALS)
+                .append("\nFROM ").append(counted).append(" GROUP BY Container");
 
-            // Keys come from the DELETE itself so they match exactly what was removed. Counting first means a container
-            // past the limit never aggregates its URIs, which could otherwise reach millions.
-            SQLFragment deleteSql = new SQLFragment("WITH deleted AS (DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (").append(targetIdSql)
-                    .append(") RETURNING ObjectURI, Container),\n")
-                    .append("counted AS (SELECT ObjectURI, Container, COUNT(*) OVER (PARTITION BY Container) AS ContainerCount FROM deleted)\n")
-                    .append("SELECT Container, COUNT(*) AS DeletedCount, array_agg(CAST(ObjectURI AS VARCHAR)) FILTER (WHERE ContainerCount <= ?) AS URIs").add(MAX_TARGETED_CACHE_REMOVALS)
-                    .append("\nFROM counted GROUP BY Container");
-            int deletedCount = executor.executeWithResults(deleteSql, (rs, _) -> {
-                int total = 0;
-                while (rs.next())
-                {
-                    GUID containerId = new GUID(rs.getString("Container"));
-                    total += rs.getInt("DeletedCount");
-                    Array uris = rs.getArray("URIs");
-                    if (uris == null)
-                        untrackedContainers.add(containerId);
-                    else
-                        Arrays.stream((String[]) uris.getArray()).forEach(uri -> deletedKeys.add(new PropertyMapKey(containerId, uri)));
-                }
-                return total;
-            });
-            uncacheDeletedObjects(deletedKeys, untrackedContainers);
-
-            executor.execute(new SQLFragment("DROP TABLE ").append(tempTableName));
-            tx.commit();
-            return deletedCount;
-        }
+        int deletedCount = new SqlExecutor(getExpSchema()).executeWithResults(deleteSql, (rs, _) -> {
+            int total = 0;
+            while (rs.next())
+            {
+                GUID containerId = new GUID(rs.getString("Container"));
+                total += rs.getInt("DeletedCount");
+                Array uris = rs.getArray("URIs");
+                if (uris == null)
+                    untrackedContainers.add(containerId);
+                else
+                    Arrays.stream((String[]) uris.getArray()).forEach(uri -> deletedKeys.add(new PropertyMapKey(containerId, uri)));
+            }
+            return total;
+        });
+        uncacheDeletedObjects(deletedKeys, untrackedContainers);
+        return deletedCount;
     }
 
 
@@ -3437,6 +3428,64 @@ public class OntologyManager
             {
                 deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql);
                 ContainerManager.delete(c2, user);
+                PropertyDescriptor pd = getPropertyDescriptor(intProp, c1);
+                if (pd != null)
+                    deletePropertyDescriptor(pd);
+            }
+        }
+
+        @Test
+        public void testDeleteByObjectIdSqlOverLimitAcrossContainers() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c1 = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
+            Container c2 = ContainerManager.ensureContainer("/_ontologyManagerTest/overLimitSplit", user);
+            Container c3 = ContainerManager.ensureContainer("/_ontologyManagerTest/overLimitSplitKept", user);
+            String uriPrefix = new Lsid("Junit", "OntologyManager", "overLimitSplit") + "-";
+            String tracked1 = uriPrefix + "tracked1";
+            String tracked2 = uriPrefix + "tracked2";
+            String keptLsid = new Lsid("Junit", "OntologyManager", "overLimitSplitKept").toString();
+            String intProp = new Lsid("Junit", "OntologyManager", "overLimitSplitIntProp").toString();
+            SQLFragment bulkIdSql = new SQLFragment("SELECT ObjectId FROM ").append(getTinfoObject())
+                .append(" WHERE ObjectURI LIKE ?").add(uriPrefix + "%");
+
+            try
+            {
+                insertProperties(c1, user, null, new ObjectProperty(tracked1, c1, intProp, 1));
+                insertProperties(c2, user, null, new ObjectProperty(tracked2, c2, intProp, 2));
+                insertProperties(c3, user, null, new ObjectProperty(keptLsid, c3, intProp, 3));
+                // Each container stays under the limit; only the delete as a whole exceeds it
+                for (Container c : List.of(c1, c2))
+                {
+                    new SqlExecutor(getExpSchema()).execute(new SQLFragment("INSERT INTO ").append(getTinfoObject())
+                        .append(" (Container, ObjectURI) SELECT ?, ? || g FROM generate_series(1, ?) g")
+                        .add(c.getId()).add(uriPrefix + c.getRowId() + "-").add(MAX_TARGETED_CACHE_REMOVALS / 2));
+                }
+                long trackedId1 = ensureObject(c1, tracked1);
+                ensureObject(c2, tracked2);
+                ensureObject(c3, keptLsid);
+                assertEquals(1, getProperties(c1, tracked1).get(intProp));
+                assertEquals(2, getProperties(c2, tracked2).get(intProp));
+                assertEquals(3, getProperties(c3, keptLsid).get(intProp));
+                assertTrue(isObjectIdCached(keptLsid));
+
+                assertEquals(2 * (MAX_TARGETED_CACHE_REMOVALS / 2) + 2, deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql));
+
+                assertFalse(isObjectIdCached(tracked1));
+                assertFalse(isObjectIdCached(tracked2));
+                assertFalse(isPropertyMapCached(c1, tracked1));
+                assertFalse(isPropertyMapCached(c2, tracked2));
+                // Past the total limit, the ObjectId cache is cleared rather than removed key by key
+                assertFalse(isObjectIdCached(keptLsid));
+                assertEquals(3, getProperties(c3, keptLsid).get(intProp));
+
+                assertNotEquals(trackedId1, ensureObject(c1, tracked1));
+            }
+            finally
+            {
+                deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql);
+                ContainerManager.delete(c2, user);
+                ContainerManager.delete(c3, user);
                 PropertyDescriptor pd = getPropertyDescriptor(intProp, c1);
                 if (pd != null)
                     deletePropertyDescriptor(pd);
