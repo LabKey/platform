@@ -1061,7 +1061,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             return;
         }
 
-        ViewContext rootContext = new ViewContext(request, response, url);
+        ViewContext rootContext;
+        try
+        {
+            rootContext = new ViewContext(request, response, url);
+        }
+        // First parameter read; unparseable parameters would otherwise escape to Tomcat's own error handling
+        catch (IllegalStateException x)
+        {
+            ExceptionUtil.handleException(request, response, x, null, false);
+            return;
+        }
 
         Container container = rootContext.getContainer();
         if (container != null && !isAvailable(container))

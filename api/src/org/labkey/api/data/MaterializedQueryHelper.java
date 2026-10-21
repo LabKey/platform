@@ -219,7 +219,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             for (String index : indexes)
             {
-                String sql = StringUtils.replace(index, "${NAME}", _tableName);
+                String sql = Strings.CS.replace(index, "${NAME}", _tableName);
                 try
                 {
                     new SqlExecutor(_mqh._scope).execute(sql);
@@ -380,6 +380,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         public boolean peekValid(long createdTime)
         {
             return peekValid();
+        }
+
+        /** Supplier value as of the last {@link #stillValid} or {@link #markValidAs}; null before either. */
+        public @Nullable String snapshot()
+        {
+            return _result.get();
         }
 
         /**
@@ -1089,6 +1095,26 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 assertNotEquals("A reset table must be rebuilt into a new table", before, after);
                 assertEquals(Integer.valueOf(1), new SqlSelector(temp, new SQLFragment("SELECT COUNT(*) FROM ").append(after)).getObject(Integer.class));
             }
+        }
+
+        @Test
+        public void testUnloggedMarkerDropped()
+        {
+            DbSchema temp = DbSchema.getTemp();
+            Assume.assumeTrue("UNLOGGED is only supported on PostgreSQL", temp.getSqlDialect().isPostgreSQL());
+
+            UnloggedTableGeneration.checkForTest();
+            String before = UnloggedTableGeneration.markerNameForTest();
+            assertNotNull("The initial check must create a marker", before);
+            long generation = Long.parseLong(UnloggedTableGeneration.current());
+
+            new SqlExecutor(temp).execute(new SQLFragment("DROP TABLE temp.").appendIdentifier(before));
+            UnloggedTableGeneration.checkForTest();
+
+            assertTrue("A dropped marker must bump the generation", Long.parseLong(UnloggedTableGeneration.current()) > generation);
+            String after = UnloggedTableGeneration.markerNameForTest();
+            assertNotEquals("A dropped marker must be replaced under a new name", before, after);
+            assertEquals(Integer.valueOf(1), new SqlSelector(temp, new SQLFragment("SELECT COUNT(*) FROM temp.").appendIdentifier(after)).getObject(Integer.class));
         }
     }
 }

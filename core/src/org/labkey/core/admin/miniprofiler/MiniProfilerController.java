@@ -35,13 +35,11 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -69,18 +67,12 @@ public class MiniProfilerController extends SpringActionController
         @Override
         public void validateCommand(MiniProfilerSettingsForm form, Errors errors)
         {
-            MiniProfiler.Settings settings = form.getBean();
-            if (settings.getTrivialMillis() <= 0)
-                errors.rejectValue("trivialMillis", ERROR_MSG, "Trivial milliseconds must be greater than 0.");
         }
 
         @Override
         public ModelAndView getView(MiniProfilerSettingsForm form, boolean reshow, BindException errors)
         {
-            MiniProfiler.Settings settings = reshow ? form.getBean() : MiniProfiler.getSettings(getUser());
-
-            setHelpTopic(MiniProfiler.getHelpTopic());
-
+            MiniProfiler.Settings settings = reshow ? form.getBean() : MiniProfiler.getSettings();
             return new JspView<>("/org/labkey/core/admin/miniprofiler/manage.jsp", settings, errors);
         }
 
@@ -88,7 +80,7 @@ public class MiniProfilerController extends SpringActionController
         public boolean handlePost(MiniProfilerSettingsForm form, BindException errors)
         {
             MiniProfiler.Settings settings = form.getBean();
-            MiniProfiler.saveSettings(settings, getUser());
+            MiniProfiler.saveSettings(settings);
 
             return true;
         }
@@ -103,87 +95,6 @@ public class MiniProfilerController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             urlProvider(AdminUrls.class).addAdminNavTrail(root, "Profiling Settings", getClass(), getContainer());
-        }
-    }
-
-    @JsonIgnoreProperties("apiVersion")
-    public static class MinimizeForm
-    {
-        private boolean _minimized;
-
-        public boolean isMinimized()
-        {
-            return _minimized;
-        }
-
-        @SuppressWarnings("unused")
-        public void setMinimized(boolean minimized)
-        {
-            _minimized = minimized;
-        }
-    }
-
-    @IgnoresAllocationTracking
-    @RequiresPermission(TroubleshooterPermission.class)
-    public static class MinimizeAction extends MutatingApiAction<MinimizeForm>
-    {
-        @Override
-        public Object execute(MinimizeForm form, BindException errors) throws Exception
-        {
-            MiniProfiler.Settings settings = MiniProfiler.getSettings(getUser());
-            settings.setStartMinimized(form.isMinimized());
-            MiniProfiler.saveSettings(settings, getUser());
-            boolean minimized = settings.isStartMinimized();
-            return success(Collections.singletonMap("minimize", minimized));
-        }
-    }
-
-    @RequiresPermission(TroubleshooterPermission.class)
-    public static class ResetAction extends FormHandlerAction<Object>
-    {
-        @Override
-        public void validateCommand(Object o, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            MiniProfiler.resetSettings(getUser());
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return urlProvider(AdminUrls.class).getAdminConsoleURL();
-        }
-    }
-
-    // Invoked by test framework
-    @RequiresPermission(TroubleshooterPermission.class)
-    public static class IsEnabledAction extends ReadOnlyApiAction
-    {
-        @Override
-        public Object execute(Object o, BindException errors)
-        {
-            boolean enabled = MiniProfiler.isEnabled(getViewContext());
-            return success(Collections.singletonMap("enabled", enabled));
-        }
-    }
-
-    // Invoked by test framework
-    @RequiresPermission(TroubleshooterPermission.class)
-    public static class EnableAction extends MutatingApiAction<EnableForm>
-    {
-        @Override
-        public Object execute(EnableForm form, BindException errors)
-        {
-            MiniProfiler.Settings settings = MiniProfiler.getSettings(getUser());
-            settings.setEnabled(form.isEnabled());
-            MiniProfiler.saveSettings(settings, getUser());
-            boolean enabled = settings.isEnabled();
-            return success(Collections.singletonMap("enabled", enabled));
         }
     }
 
@@ -229,32 +140,6 @@ public class MiniProfilerController extends SpringActionController
         public void setId(long id)
         {
             _id = id;
-        }
-    }
-
-    @RequiresNoPermission // permissions will be checked in the action
-    @IgnoresAllocationTracking
-    public static class ReportAction extends MutatingApiAction<RequestForm>
-    {
-        @Override
-        public Object execute(RequestForm form, BindException errors)
-        {
-            if (!MiniProfiler.isEnabled(getViewContext()))
-                throw new UnauthorizedException();
-
-            RequestInfo req = MemTracker.getInstance().getRequest(form.getId());
-            if (req != null && !getUser().equals(req.getUser()) && !getUser().hasApplicationAdminPermission())
-            {
-                throw new UnauthorizedException();
-            }
-
-            MemTracker.get().setViewed(getUser(), form.getId());
-
-            // Reset the X-MiniProfiler-Ids header to only include remaining unviewed (without the id we are returning)
-            LinkedHashSet<Long> ids = new LinkedHashSet<>(MemTracker.get().getUnviewed(getUser()));
-            getViewContext().getResponse().setHeader("X-MiniProfiler-Ids", ids.toString());
-
-            return req;
         }
     }
 

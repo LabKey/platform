@@ -1390,6 +1390,7 @@ public abstract class Method
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
                 SQLFragment ret = new SQLFragment();
+                // Inline the IDs: appendInClause() may create a temp table in the LabKey DB, but this SQL can run against an external data source
                 ret.append("(").append(groupArg).append(") IN (").append(
                         user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
                 ).append(")");
@@ -1603,17 +1604,19 @@ public abstract class Method
     }
 
 
+    // GH Issue 1718: the query's own schema, not the thread-local, is authoritative for which query is being compiled.
+    // A lookup to a query in another folder compiles against that folder's schema, and reading the environment first
+    // made folder() report whichever query the thread compiled last.
     static Container getCompileTimeContainer(Query query)
     {
-        Container cCompile = (Container) QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
-        if (null == cCompile && null != query)
+        if (null != query)
         {
             // Issue 53355: A column may be erroneously constructed (e.g. invalid calculated column) which can result in the schema being null
             QuerySchema querySchema = query.getSchema();
             if (querySchema != null)
-                cCompile = querySchema.getContainer();
+                return querySchema.getContainer();
         }
-        return cCompile;
+        return (Container) QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
     }
 
 

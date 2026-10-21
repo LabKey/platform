@@ -16,7 +16,7 @@
 
 package org.labkey.api.data.dialect;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -2960,7 +2960,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         {
             return null;
         }
-        return StringUtils.replace(str, "'", "''");
+        return Strings.CS.replace(str, "'", "''");
     }
 
 

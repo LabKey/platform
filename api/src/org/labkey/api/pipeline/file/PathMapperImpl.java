@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline.file;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -232,7 +233,7 @@ public class PathMapperImpl implements PathMapper
         if (lenPath < lenPrefix)
             return false;
 
-        boolean ret = ignoreCase ? StringUtils.startsWithIgnoreCase(path, prefix) : path.startsWith(prefix);
+        boolean ret = ignoreCase ? Strings.CI.startsWith(path, prefix) : path.startsWith(prefix);
 
         // Accept either a slash or a colon from a Windows drive letter
         return ret &&

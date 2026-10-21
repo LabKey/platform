@@ -37,10 +37,10 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SystemUpgradeAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.ContainerKeySimpleCache;
 import org.labkey.api.cache.SimpleKeyMappingCache;
 import org.labkey.api.cache.UserKeySimpleCache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -52,11 +52,13 @@ import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AtomicDatabaseInteger;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
+import org.labkey.api.data.CacheReplayCommitTask;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -77,6 +79,7 @@ import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RecordFactory;
+import org.labkey.api.data.RepeatedCommitTaskMonitor;
 import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
@@ -114,6 +117,7 @@ import org.labkey.api.mbean.OperationsMXBean;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
+import org.labkey.api.module.ModuleArchiveTestCase;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
@@ -404,6 +408,7 @@ public class ApiModule extends CodeOnlyModule
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CacheManager.TestCase.class,
+            CacheReplayCommitTask.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,
             CaseInsensitiveHashMap.TestCase.class,
             CaseInsensitiveHashSet.TestCase.class,
@@ -452,6 +457,7 @@ public class ApiModule extends CodeOnlyModule
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,
+            ModuleArchiveTestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             ModuleHtmlViewDefinition.TestCase.class,
@@ -465,6 +471,7 @@ public class ApiModule extends CodeOnlyModule
             Path.TestCase.class,
             RReport.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
+            RepeatedCommitTaskMonitor.TestCase.class,
             ReplacedRunFilter.TestCase.class,
             SQLFragment.UnitTestCase.class,
             Sampler.TestCase.class,
@@ -517,6 +524,7 @@ public class ApiModule extends CodeOnlyModule
             AbstractAuditDomainKind.TestCase.class,
             AbstractForeignKey.TestCase.class,
             AbstractQueryUpdateService.TestCase.class,
+            AccumulatingCommitTask.TestCase.class,
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
@@ -567,6 +575,7 @@ public class ApiModule extends CodeOnlyModule
             QueryDataIteratorBuilder.TestCase.class,
             QueryView.TestCase.class,
             RecordFactory.TestCase.class,
+            RepeatedCommitTaskMonitor.IntegrationTestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
@@ -575,6 +584,7 @@ public class ApiModule extends CodeOnlyModule
             SecurityManager.TestCase.class,
             SimpleQueryUpdateService.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
+            SQLFragment.InClauseTestCase.class,
             SqlSelectorTestCase.class,
             StandardDialectStringHandler.TestCase.class,
             StatementDataIterator.TestCase.class,

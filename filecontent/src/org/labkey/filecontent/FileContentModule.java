@@ -18,12 +18,14 @@ package org.labkey.filecontent;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -38,10 +40,13 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.filecontent.message.FileContentDigestProvider;
@@ -62,10 +67,34 @@ import java.util.stream.Stream;
 
 public class FileContentModule extends DefaultModule
 {
+    public static final String NAME = "FileContent";
+
     @Override
     public String getName()
     {
-        return "FileContent";
+        return NAME;
+    }
+
+    static void incrementNamedFileSetMetric(String metricName)
+    {
+        SimpleMetricsService.get().increment(NAME, "namedFileSets", metricName);
+    }
+
+    private static boolean usesNamedFileSet(@Nullable String webPartProperties)
+    {
+        if (webPartProperties == null)
+            return false;
+
+        String fileSet = null;
+        String fileRoot = null;
+        for (Pair<String, String> prop : PageFlowUtil.fromQueryString(webPartProperties))
+        {
+            if (FilesWebPart.FILESET_PROPERTY_NAME.equals(prop.getKey()))
+                fileSet = StringUtils.trimToNull(prop.getValue());
+            else if (FilesWebPart.FILE_ROOT_PROPERTY_NAME.equals(prop.getKey()))
+                fileRoot = StringUtils.trimToNull(prop.getValue());
+        }
+        return FilesWebPart.usesNamedFileSet(fileSet, fileRoot);
     }
 
     @Override
@@ -204,6 +233,19 @@ public class FileContentModule extends DefaultModule
                 .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting()));
             results.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true));
             results.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false));
+
+            TableInfo mappedDirectories = CoreSchema.getInstance().getMappedDirectories();
+            Map<String, Object> fileSets = new SqlSelector(mappedDirectories.getSchema(),
+                    new SQLFragment("SELECT COUNT(*) AS NamedFileSets, COUNT(DISTINCT Container) AS NamedFileSetContainers FROM ").append(mappedDirectories, "md"))
+                .getMap();
+            results.put("namedFileSets", fileSets.get("NamedFileSets"));
+            results.put("namedFileSetContainers", fileSets.get("NamedFileSetContainers"));
+
+            try (Stream<String> webPartProperties = new TableSelector(Portal.getTableInfoPortalWebParts(), PageFlowUtil.set("Properties"), new SimpleFilter(FieldKey.fromParts("Name"), FilesWebPart.PART_NAME), null)
+                .uncachedStream(String.class))
+            {
+                results.put("filesWebPartsUsingFileSet", webPartProperties.filter(FileContentModule::usesNamedFileSet).count());
+            }
 
             return results;
         });

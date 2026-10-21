@@ -608,8 +608,6 @@ public class Query
             if (!_parseErrors.isEmpty())
                 return null;
 
-            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getSchema().getContainer());
-
             TableInfo tinfo = _queryRoot.getTableInfo();
 
             if (!_parseErrors.isEmpty())

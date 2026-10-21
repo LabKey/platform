@@ -18,7 +18,7 @@ package org.labkey.core.admin;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -300,7 +300,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                     Path destChild = destDir.resolve(FileUtil.getFileName(sourceChild));
                     if (Files.isDirectory(sourceChild))
                     {
-                        if (FileUtil.hasCloudScheme(destDir) && StringUtils.contains(pathString, "%"))
+                        if (FileUtil.hasCloudScheme(destDir) && Strings.CS.contains(pathString, "%"))
                         {
                             getLogger().warn("Cannot copy directory '{}' to cloud, because its name contains '%'.", pathString);
                             status = TaskStatus.error;

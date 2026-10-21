@@ -172,7 +172,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
     {
-        super(name, ExperimentService.get().getTinfoData(), schema, cf);
+        super(name, ExperimentService.get().getTinfoData(), schema, ExpDataClassDataTable.Column.class, cf);
         _dataClass = dataClass;
         _dataClassDataTableSupplier = new CachingSupplier<>(_dataClass::getTinfo);
         addAllowablePermission(InsertPermission.class);
@@ -494,7 +494,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         ColumnInfo colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
-        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _dataClass, false);
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo(this, _rootTable.getColumn("rowid"), _dataClass, false);
         addColumn(lineageLookup);
 
         ActionURL gridUrl = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());

@@ -18,6 +18,7 @@ package org.labkey.api.admin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.LabKeyCollectors;
@@ -190,7 +191,7 @@ public class AdminBean
     private static HtmlString formatValue(String key, String value)
     {
         // Format GUID properties with monospace font
-        return StringUtils.endsWithIgnoreCase(key, "GUID") ? HtmlStringBuilder.of(HtmlString.unsafe("<span style=\"font-family:monospace\">"))
+        return Strings.CI.endsWith(key, "GUID") ? HtmlStringBuilder.of(HtmlString.unsafe("<span style=\"font-family:monospace\">"))
             .append(value).unsafeAppend("</span>").getHtmlString() : HtmlString.of(value);
     }
 }

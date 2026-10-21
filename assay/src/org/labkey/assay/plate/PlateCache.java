@@ -236,7 +236,12 @@ public class PlateCache
 
     public static void uncache(Container c, PlateSet plateSet)
     {
-        getPlateIDs(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSet.getRowId()))
+        uncachePlateSetPlates(c, plateSet.getRowId());
+    }
+
+    public static void uncachePlateSetPlates(Container c, long plateSetRowId)
+    {
+        getPlateIDs(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSetRowId))
                 .forEach(plateId -> uncache(c, plateId));
     }
 

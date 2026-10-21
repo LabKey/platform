@@ -16,6 +16,7 @@
 package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -171,7 +172,7 @@ public class PropertyValidator implements Serializable, Cloneable
         parts.add(getExpression());
         parts.add(getPropertyAuditStr());
         parts.add(getErrorMessage());
-        parts.add(StringUtils.replace(PropertyService.get().getValidatorKind(getTypeURI()).getName(), " Property Validator", ""));
+        parts.add(Strings.CS.replace(PropertyService.get().getValidatorKind(getTypeURI()).getName(), " Property Validator", ""));
         return parts.stream().filter(StringUtils::isNotBlank).collect(Collectors.joining(", "));
     }
 }
