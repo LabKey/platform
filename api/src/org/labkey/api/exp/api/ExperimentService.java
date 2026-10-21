@@ -1272,7 +1272,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerNameExpressionType(String dataType, String schemaName, String queryname, String nameExpressionCol);
 
-    void addDomainMetrics(UsageMetrics metrics);
+    UsageMetrics addDomainMetrics(UsageMetrics metrics);
 
     void clearAncestors(ExpRunItem runItem);
     void clearDataAncestors(Collection<Long> dataRowIds);

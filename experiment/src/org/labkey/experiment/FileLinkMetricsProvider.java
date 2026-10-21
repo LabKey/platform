@@ -35,10 +35,11 @@ public class FileLinkMetricsProvider implements DescribedUsageMetricsProvider
     }
 
     @Override
-    public void addUsageMetrics(UsageMetrics metrics)
+    public UsageMetrics addUsageMetrics(UsageMetrics metrics)
     {
         metrics.group(FileLinkMetricsMaintenanceTask.NAME, "File field files as of the last system maintenance run since startup: run time, missing files, and valid files by schema (assay batch and run files under exp)")
             .putAll(_metrics);
+        return metrics;
     }
 
     public void updateMetrics(Map<String, Object> metrics)

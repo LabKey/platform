@@ -21,7 +21,7 @@ import java.util.Map;
 @FunctionalInterface
 public interface DescribedUsageMetricsProvider extends UsageMetricsProvider
 {
-    void addUsageMetrics(UsageMetrics metrics);
+    UsageMetrics addUsageMetrics(UsageMetrics metrics);
 
     @Override
     default Map<String, Object> getUsageMetrics()
@@ -32,7 +32,6 @@ public interface DescribedUsageMetricsProvider extends UsageMetricsProvider
     default UsageMetrics collectUsageMetrics()
     {
         UsageMetrics metrics = new UsageMetrics();
-        addUsageMetrics(metrics);
-        return metrics;
+        return addUsageMetrics(metrics);
     }
 }

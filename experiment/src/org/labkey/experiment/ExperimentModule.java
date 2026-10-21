@@ -93,7 +93,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricGroup;
 import org.labkey.api.usageMetrics.UsageMetrics;
@@ -767,16 +766,16 @@ public class ExperimentModule extends SpringModule
                 sampleColorMetrics.put("colorCount", colorCount, "Sample colors defined, archived included");
                 if (colorCount > 0)
                 {
-                    Long archivedColorCount = new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class);
+                    Long archivedColorCount = new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = ?", true)).getObject(Long.class);
                     sampleColorMetrics.put("archivedColorCount", archivedColorCount, "Archived sample colors");
                     sampleColorMetrics.put("samplesWithColorCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE expmaterialcolor IS NOT NULL").getObject(Long.class), "Samples with a color assigned");
-                    sampleColorMetrics.put("samplesWithArchivedColorCount", new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class), "Samples assigned a color that is now archived");
+                    sampleColorMetrics.put("samplesWithArchivedColorCount", new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = ?", true)).getObject(Long.class), "Samples assigned a color that is now archived");
 
                     sampleColorMetrics.put("sampleTypesWithColorsEnabledCount", new SqlSelector(schema, new SQLFragment(
                             "SELECT COUNT(*) FROM exp.materialsource ms WHERE EXISTS (" +
-                                    "SELECT 1 FROM exp.datacolors dc WHERE dc.container = ms.container AND dc.archived = " + schema.getSqlDialect().getBooleanFALSE() + " AND NOT EXISTS (" +
-                                    "SELECT 1 FROM exp.datatypecolorexclusion e WHERE e.datatype = ? AND e.datatyperowid = ms.rowid AND e.colorrowid = dc.rowid))")
-                            .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types whose folder has at least one active color not excluded for the type");
+                                    "SELECT 1 FROM exp.datacolors dc WHERE dc.container = ms.container AND dc.archived = ? AND NOT EXISTS (" +
+                                    "SELECT 1 FROM exp.datatypecolorexclusion e WHERE e.datatype = ? AND e.datatyperowid = ms.rowid AND e.colorrowid = dc.rowid))",
+                            false, ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types whose folder has at least one active color not excluded for the type");
                     sampleColorMetrics.put("sampleTypesWithColorsDisabledCount", new SqlSelector(schema, new SQLFragment(
                             "SELECT COUNT(DISTINCT datatyperowid) FROM exp.datatypecolorexclusion WHERE datatype = ?")
                             .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types with at least one color excluded, not necessarily all");
@@ -927,7 +926,7 @@ public class ExperimentModule extends SpringModule
 
                 metrics.put("domainFieldsWithContainerAlias", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE LOWER(importaliases) = 'container' OR importaliases ILIKE '%, container' OR importaliases ILIKE 'container, %' OR importaliases ILIKE '%, container, %'").getObject(Long.class), "Fields with 'container' as an import alias");
 
-                ExperimentService.get().addDomainMetrics(metrics);
+                return ExperimentService.get().addDomainMetrics(metrics);
             });
         }
     }

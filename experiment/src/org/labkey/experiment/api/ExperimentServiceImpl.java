@@ -9566,7 +9566,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void addDomainMetrics(UsageMetrics metrics)
+    public UsageMetrics addDomainMetrics(UsageMetrics metrics)
     {
         metrics.group("nameexpression", "Naming patterns by data type, counting patterns that use each substitution, format, grandparent input, or withCounter; zero counts omitted")
             .putAll(getNameExpressionMetrics());
@@ -9576,6 +9576,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .putAll(getImportTemplatesMetrics());
         metrics.group("auditLevelOverride", "Query metadata overrides that set audit logging to none or summary, by sample types, data classes, and Standard assays")
             .putAll(getAuditLevelOverrideMetrics());
+        return metrics;
     }
 
     private Map<String, Object> getAuditLevelOverrideMetrics()

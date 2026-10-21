@@ -695,7 +695,7 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
     }
 
     @Override
-    public void addUsageMetrics(UsageMetrics metrics)
+    public UsageMetrics addUsageMetrics(UsageMetrics metrics)
     {
         DbSchema schema = ExperimentService.get().getSchema();
         String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
@@ -734,6 +734,7 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
                 .put("user", savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + ".Folder-%"));
         metrics.put("conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class), "Fields with conditional formatting");
         metrics.put("storageColumnNameMismatches", storageColumnNameMismatches, "Fields in provisioned domains whose database column name differs from the field name");
+        return metrics;
     }
 
     /**
