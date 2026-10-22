@@ -346,6 +346,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
+    public boolean isTransformBeforeRunSupported(ExpProtocol protocol)
+    {
+        // Parsing plate data deletes hit selections of the run being replaced
+        return !isPlateMetadataEnabled(protocol);
+    }
+
+    @Override
     public PipelineProvider getPipelineProvider()
     {
         return new AssayPipelineProvider(assayModuleClass,

@@ -86,7 +86,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
     protected void applyContainerFilter(ContainerFilter filter)
     {
         super.applyContainerFilter(filter);
-        applyUserFilter(filter, new SQLFragment("Container"));
+        applyUserFilter(filter, SQLFragment.unsafe("Container"));
     }
 
     @Override

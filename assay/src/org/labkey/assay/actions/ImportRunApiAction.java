@@ -21,9 +21,11 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.HasBindParameters;
@@ -36,6 +38,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.DbScope;
@@ -281,6 +284,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setAllowCrossRunFileInputs(allowCrossRunFileInputs)
                 .setAllowLookupByAlternateKey(allowLookupByAlternateKey);
 
+        boolean importInBackground = DefaultAssayRunCreator.isBackgroundImport(provider, protocol, forceAsync);
+
         if (file != null)
         {
             factory.setRawData(null);
@@ -288,7 +293,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
         else if (rawData != null && !rawData.isEmpty())
         {
-            boolean saveDataAsFile = form.isSaveDataAsFile();
+            // Background imports load their data from a file when the job runs
+            if (importInBackground && Boolean.FALSE.equals(form.getSaveDataAsFile()))
+                throw new ApiUsageException(AssayJSONConverter.DATA_ROWS + " can't be imported in the background with saveDataAsFile=false. Omit saveDataAsFile or set it to true.");
+            boolean saveDataAsFile = importInBackground || Boolean.TRUE.equals(form.getSaveDataAsFile());
             boolean saveMatchingColumnDataOnly = form.isSaveMatchingColumnDataOnly();
 
             if (saveDataAsFile)
@@ -310,6 +318,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 }
                 catch (Exception e)
                 {
+                    if (importInBackground)
+                        throw new ExperimentException("Unable to create temporary file for raw data", e);
                     logger.warn("Unable to create temporary file for raw data. Creating result data using the data map.", e);
                     saveDataAsFile = false;
                 }
@@ -327,62 +337,66 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         boolean success = false;
         AssayFilePropertyWriter<? extends AssayProvider> filePropertyWriter = new AssayFilePropertyWriter<>();
-        boolean importInBackground = DefaultAssayRunCreator.isBackgroundImport(provider, protocol, forceAsync);
 
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(DefaultAssayRunCreator.protocolImportLocks(importInBackground)))
+        try
         {
-            Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
-            if (!StringUtils.isEmpty(auditDetailsJsonStr))
-                TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetailsJsonStr);
-            TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, transactionDetails);
-            AbstractQueryUpdateService.addTransactionAuditEvent(transaction, getUser(), auditEvent);
-            var auditTransactionEvent = transaction.getAuditEvent();
-            Long auditTransactionId = auditTransactionEvent == null ? null : auditTransactionEvent.getRowId();
-
-            // Bind file property values and persist files to the file system.
-            {
-                Map<String, MultipartFile> fileMap = getFileMap();
-                bindAndPersistFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, filePropertyWriter, auditTransactionEvent, "Assay batch property file uploaded.");
-                bindAndPersistFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, filePropertyWriter, auditTransactionEvent, "Assay run property file uploaded.");
-            }
+            // Bind file property values and write the files, so transform scripts can read them
+            Map<String, MultipartFile> fileMap = getFileMap();
+            bindAndWriteFilePropertyValues(AssayJSONConverter.BATCH_PROPERTIES, batchProperties, fileMap, filePropertyWriter, "Assay batch property file uploaded.");
+            bindAndWriteFilePropertyValues(AssayJSONConverter.RUN_PROPERTIES, runProperties, fileMap, filePropertyWriter, "Assay run property file uploaded.");
 
             AssayRunUploadContext<? extends AssayProvider> uploadContext = factory.setOutputDatas(outputData)
                     .setRunProperties(runProperties)
                     .setBatchProperties(batchProperties)
-                    .setTransactionAuditId(auditTransactionId)
                     .setUploadedFiles(filePropertyWriter.getUploadedFiles())
                     .create();
 
-            Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, forceAsync, getTransactionAuditDetails());
-            ExpRun run = result.second;
-            if (workflowTaskId != null)
+            // GH Issue 1707: run transform scripts before the transaction so their callbacks into the server can't deadlock with it
+            try (PreparedTransform ignored = provider.getRunCreator().prepareTransform(uploadContext, forceAsync);
+                 DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(DefaultAssayRunCreator.protocolImportLocks(importInBackground)))
             {
-                WorkflowService workService = WorkflowService.get();
-                if (workService != null)
-                    workService.onActionComplete(getContainer(), getUser(), workflowTaskId, WorkflowService.ActionType.AssayImport);
+                Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
+                if (!StringUtils.isEmpty(auditDetailsJsonStr))
+                    TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetailsJsonStr);
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), reRunId == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, transactionDetails);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, getUser(), auditEvent);
+                var auditTransactionEvent = transaction.getAuditEvent();
+                Long auditTransactionId = auditTransactionEvent == null ? null : auditTransactionEvent.getRowId();
+
+                filePropertyWriter.recordPostedFiles(getContainer(), getUser(), auditTransactionEvent);
+                uploadContext.setTransactionAuditId(auditTransactionId);
+
+                Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, forceAsync, getTransactionAuditDetails());
+                ExpRun run = result.second;
+                if (workflowTaskId != null)
+                {
+                    WorkflowService workService = WorkflowService.get();
+                    if (workService != null)
+                        workService.onActionComplete(getContainer(), getUser(), workflowTaskId, WorkflowService.ActionType.AssayImport);
+                }
+
+                transaction.commit();
+                success = true;
+
+                ApiSimpleResponse resp = new ApiSimpleResponse();
+                resp.put("success", true);
+                resp.put("successurl", getUploadWizardCompleteURL(protocol, run));
+                resp.put("assayId", protocol.getRowId());
+                resp.put("batchId", result.first.getRowId());
+                resp.put("auditTransactionId", auditTransactionId);
+                // Run id may be null if the import is performed in a background job
+                if (run != null)
+                    resp.put("runId", run.getRowId());
+
+                String asyncJobGUID = uploadContext.getPipelineJobGUID();
+                if (!StringUtils.isEmpty(asyncJobGUID))
+                {
+                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportOptions, "backgroundImport");
+                    resp.put("jobId", PipelineService.get().getJobId(getUser(), getContainer(), asyncJobGUID));
+                }
+
+                return resp;
             }
-
-            transaction.commit();
-            success = true;
-
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            resp.put("success", true);
-            resp.put("successurl", getUploadWizardCompleteURL(protocol, run));
-            resp.put("assayId", protocol.getRowId());
-            resp.put("batchId", result.first.getRowId());
-            resp.put("auditTransactionId", auditTransactionId);
-            // Run id may be null if the import is performed in a background job
-            if (run != null)
-                resp.put("runId", run.getRowId());
-
-            String asyncJobGUID = uploadContext.getPipelineJobGUID();
-            if (!StringUtils.isEmpty(asyncJobGUID))
-            {
-                auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.ImportOptions, "backgroundImport");
-                resp.put("jobId", PipelineService.get().getJobId(getUser(), getContainer(), asyncJobGUID));
-            }
-
-            return resp;
         }
         catch (ExperimentException e)
         {
@@ -397,12 +411,11 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         return null;
     }
 
-    private void bindAndPersistFilePropertyValues(
+    private void bindAndWriteFilePropertyValues(
         String propertyName,
         CaseInsensitiveHashMap<Object> properties,
         Map<String, MultipartFile> fileMap,
         AssayFilePropertyWriter<? extends AssayProvider> fileWriter,
-        TransactionAuditProvider.TransactionAuditEvent auditTransactionEvent,
         String auditComment
     ) throws ExperimentException, ValidationException
     {
@@ -413,7 +426,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         if (filePropertyMap.isEmpty())
             return;
 
-        var fileProperties = fileWriter.savePostedFiles(getContainer(), getUser(), filePropertyMap, auditTransactionEvent, auditComment);
+        var fileProperties = fileWriter.writePostedFiles(getContainer(), filePropertyMap, auditComment);
         for (var entry : fileProperties.entrySet())
             properties.put(entry.getKey(), entry.getValue().toNioPathForRead().toString());
     }
@@ -474,7 +487,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private JSONArray _dataRows;
         private String _runFilePath;
         private String _module;
-        private boolean _saveDataAsFile;
+        private Boolean _saveDataAsFile;
         private boolean _saveMatchingColumnDataOnly = true;
 
         private String _jobDescription;
@@ -625,12 +638,12 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             _module = module;
         }
 
-        public boolean isSaveDataAsFile()
+        public @Nullable Boolean getSaveDataAsFile()
         {
             return _saveDataAsFile;
         }
 
-        public void setSaveDataAsFile(boolean saveDataAsFile)
+        public void setSaveDataAsFile(@Nullable Boolean saveDataAsFile)
         {
             _saveDataAsFile = saveDataAsFile;
         }

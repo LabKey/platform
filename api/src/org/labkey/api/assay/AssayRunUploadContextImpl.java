@@ -32,6 +32,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.assay.transform.DefaultTransformResult;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URIUtil;
@@ -93,6 +94,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
     // Mutable fields
     private TransformResult _transformResult;
+    private @Nullable PreparedTransform _preparedTransform;
 
     // async fields
     protected String _jobDescription;
@@ -431,6 +433,24 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public void setTransformResult(TransformResult result)
     {
         _transformResult = result;
+    }
+
+    @Override
+    public boolean supportsPreparedTransform()
+    {
+        return true;
+    }
+
+    @Override
+    public @Nullable PreparedTransform getPreparedTransform()
+    {
+        return _preparedTransform;
+    }
+
+    @Override
+    public void setPreparedTransform(@Nullable PreparedTransform prepared)
+    {
+        _preparedTransform = prepared;
     }
 
     @Override
