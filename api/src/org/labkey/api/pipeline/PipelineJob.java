@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import datadog.trace.api.CorrelationIdentifier;
-import datadog.trace.api.Trace;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -57,6 +56,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.QuietCloser;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -1070,18 +1070,51 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         return false;
     }
 
+    /** Traces here rather than in run(), which many subclasses override without calling super */
+    @Override
+    public final void runJob()
+    {
+        assert ThreadContext.isEmpty();  // Prevent/detect leaks
+        String jobType = StringUtils.substringAfterLast(getClass().getName(), ".");
+        Container c = getContainer();
+        try
+        {
+            TracedOperation.builder("labkey.pipelineJob")
+                    .resource(jobType)
+                    .describedAs(jobType + " \"" + getDescription() + "\"" + (null == c ? "" : " in " + c.getPath()))
+                    .container(c)
+                    .tag("labkey.job_id", getJobGUID())
+                    .run(op -> {
+                        // Connect log messages with the active trace and span, including the summary logged after run() returns
+                        ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+                        ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
+                        try
+                        {
+                            run();
+                        }
+                        finally
+                        {
+                            // run() catches its own failures, so the summary would otherwise read as success
+                            TaskStatus status = getActiveTaskStatus();
+                            if (null != status)
+                                op.tag("labkey.job_status", status).outcome(status.toString());
+                        }
+                    });
+        }
+        finally
+        {
+            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
+        }
+    }
+
     /**
      * Subclasses that override this method instead of defining a task pipeline are responsible for setting the job's
      * status at the end of their execution to either COMPLETE or ERROR
      */
-    @Override @Trace
+    @Override
     public void run()
     {
-        assert ThreadContext.isEmpty();  // Prevent/detect leaks
-        // Connect log messages with the active trace and span
-        ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
-        ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
-
         try
         {
             // The act of queueing the job runs the state machine for the first time.
@@ -1117,9 +1150,6 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         finally
         {
             PipelineService.get().getPipelineQueue().almostDone(this);
-
-            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
-            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
         }
     }
 
