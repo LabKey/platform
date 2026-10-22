@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.72.3-fb-cross-datasource-lookup-438.0"
+    "@labkey/components": "7.72.3-fb-cross-datasource-lookup-438.1"
   },
   "devDependencies": {
     "@labkey/build": "10.1.3",
