@@ -1257,6 +1257,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 var backgroundRecalcKeys = useBackgroundRecalc && !skipRecalc ? parentKeys : null;
                 var change = new SampleChange(_sampleType, getUser(), container, reason, changedSince, backgroundRecalcKeys);
+                SampleChangeNotify.recordSampleDataChange(scope, getContainer(), _sampleType == null ? null : Set.of(_sampleType.getRowId()));
                 new SamplesChangedTask(getContainer()).register(scope, List.of(change), DbScope.CommitTaskOption.POSTCOMMIT);
             }
             else
@@ -1265,7 +1266,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         else
         {
             fireSamplesChanged(reason, changedSince);
-            SampleChangeNotify.fireSampleDataChanged(getContainer());
+            new SampleChangeNotify.SampleDataChangedTask(getContainer()).register(scope, _sampleType == null ? null : Set.of(_sampleType.getRowId()));
         }
     }
 
@@ -1325,7 +1326,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .collect(Collectors.groupingBy(change -> change.sampleType().getLSID(), LinkedHashMap::new, Collectors.toList()))
                 .values()
                 .forEach(SamplesChangedTask::processSampleType);
-            SampleChangeNotify.fireSampleDataChanged(container);
+            SampleChangeNotify.fireSampleDataChanged(container, changes.stream()
+                .filter(change -> change.sampleType() != null)
+                .map(change -> change.sampleType().getRowId())
+                .collect(Collectors.toSet()));
         }
 
         private static void processSampleType(List<SampleChange> changes)

@@ -81,6 +81,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
+import org.labkey.api.exp.api.SampleChangeNotify;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
@@ -149,6 +150,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -2113,6 +2115,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
 
             updateCounts.putAll(moveDerivationRuns(samples, targetContainer, user));
+
+            // Counts change in every folder the samples left as well as in the target
+            Set<Long> movedSampleTypeIds = sampleTypesMap.keySet().stream().filter(Objects::nonNull).map(ExpSampleType::getRowId).collect(Collectors.toSet());
+            Set<Container> changedContainers = samples.stream().map(ExpMaterial::getContainer).collect(Collectors.toCollection(HashSet::new));
+            changedContainers.add(targetContainer);
+            changedContainers.forEach(changed -> new SampleChangeNotify.SampleDataChangedTask(changed).register(getExpSchema().getScope(), movedSampleTypeIds));
 
             transaction.addCommitTask(() -> {
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
