@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.labkey.api.security.SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID;
@@ -64,6 +65,8 @@ public class DataTransformService
 {
     private static final DataTransformService _instance = new DataTransformService();
     private static final Logger LOG = LogHelper.getLogger(DataTransformService.class, "Assay transform scripts");
+
+    private final Set<Long> _protocolsLoggedInTransaction = ConcurrentHashMap.newKeySet();
 
     private DataTransformService() {}
 
@@ -299,12 +302,12 @@ public class DataTransformService
 
     private void logIfInTransaction(AssayRunUploadContext<?> context, TransformOperation operation)
     {
-        if (LOG.isDebugEnabled()
-                && operation == TransformOperation.INSERT
+        if (operation == TransformOperation.INSERT
                 && context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
-                && ExperimentService.get().getSchema().getScope().isTransactionActive())
+                && ExperimentService.get().getSchema().getScope().isTransactionActive()
+                && _protocolsLoggedInTransaction.add(context.getProtocol().getRowId()))
         {
-            LOG.debug("Transform script for assay '{}' is running inside a database transaction; callbacks from the script into the server can deadlock", context.getProtocol().getName(), new Throwable());
+            LOG.warn("Transform script for assay '{}' is running inside a database transaction; callbacks from the script into the server can deadlock. Logged once per assay.", context.getProtocol().getName(), new Throwable());
         }
     }
 
