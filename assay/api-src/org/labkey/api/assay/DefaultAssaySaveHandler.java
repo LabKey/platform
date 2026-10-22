@@ -25,7 +25,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ExperimentException;
@@ -50,6 +49,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -329,15 +329,21 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     @Deprecated // Use new JSONObject variant above
     public ExpData handleData(ViewContext context, JSONObject dataObject) throws ValidationException
     {
+        ExpData data = super.handleData(context, dataObject);
+
+        handleProperties(context, data, Collections.emptyList(), dataObject);
+        return data;
+    }
+
+    @Override
+    protected @NotNull Collection<AssayDataType> getKnownDataTypes()
+    {
         List<AssayDataType> knownTypes = new ArrayList<>();
         if (getProvider().getDataType() != null)
         {
             knownTypes.add(getProvider().getDataType());
         }
         knownTypes.addAll(getProvider().getRelatedDataTypes());
-        ExpData data = ExpDataFileConverter.resolveExpData(dataObject, context.getContainer(), context.getUser(), knownTypes);
-
-        handleProperties(context, data, Collections.emptyList(), dataObject);
-        return data;
+        return knownTypes;
     }
 }

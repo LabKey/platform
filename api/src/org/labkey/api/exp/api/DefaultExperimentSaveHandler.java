@@ -25,6 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
@@ -555,9 +556,57 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpMaterial handleMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
     {
+        MaterialLookup lookup = lookupMaterial(context, materialObject);
+        if (lookup == null)
+            return null;
+
+        ExpSampleType sampleType = lookup.sampleType();
+        ExpMaterial material = lookup.material();
+        boolean createdHere = material == null;
+        if (createdHere)
+        {
+            material = createMaterial(context, sampleType, lookup.name());
+            createdMaterialLsids.add(material.getLSID());
+        }
+
+        if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
+        {
+            JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
+            // Treat an empty properties collection as if there were no property map at all.
+            // To delete a property, include a property map with that property and set its value to null.
+            if (!materialProperties.isEmpty())
+            {
+                List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
+
+                if (propertiesWouldChange(context, material, dps, materialProperties))
+                {
+                    // A sample created by this request needs only insert rights; an existing one needs edit rights.
+                    // The status check below applies either way.
+                    Class<? extends Permission> editPerm = createdHere
+                            ? InsertPermission.class
+                            : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
+                    if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
+                        throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
+                    if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
+                        throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                                List.of(material), SampleTypeService.SampleOperations.EditMetadata));
+                }
+
+                handleProperties(context, material, dps, materialProperties);
+            }
+        }
+
+        return material;
+    }
+
+    /** An existing material, or, when material is null, the sample type and name of the one handleMaterial would create. */
+    protected record MaterialLookup(@Nullable ExpMaterial material, @Nullable ExpSampleType sampleType, @NotNull String name) {}
+
+    /** Resolves the material handleMaterial would use, without writing anything. Returns null when there's nothing to resolve. */
+    protected @Nullable MaterialLookup lookupMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
+    {
         ExpSampleType sampleType = null;
         ExpMaterial material = null;
-        boolean createdHere = false;
         if (materialObject.has(ExperimentJSONConverter.ID))
         {
             int materialRowId = materialObject.getInt(ExperimentJSONConverter.ID);
@@ -640,46 +689,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 if (material != null && !material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
                     throw new NotFoundException("Could not find material '" + materialName + "'");
 
-                if (material == null)
-                {
-                    material = createMaterial(context, sampleType, materialName);
-                    createdHere = true;
-                    createdMaterialLsids.add(material.getLSID());
-                }
+                return new MaterialLookup(material, sampleType, materialName);
             }
         }
 
-        if (material == null)
-            return null;
-
-        if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
-        {
-            JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
-            // Treat an empty properties collection as if there were no property map at all.
-            // To delete a property, include a property map with that property and set its value to null.
-            if (!materialProperties.isEmpty())
-            {
-                List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
-
-                if (propertiesWouldChange(context, material, dps, materialProperties))
-                {
-                    // A sample created by this request needs only insert rights; an existing one needs edit rights.
-                    // The status check below applies either way.
-                    Class<? extends Permission> editPerm = createdHere
-                            ? InsertPermission.class
-                            : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
-                    if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
-                        throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
-                    if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
-                        throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
-                                List.of(material), SampleTypeService.SampleOperations.EditMetadata));
-                }
-
-                handleProperties(context, material, dps, materialProperties);
-            }
-        }
-
-        return material;
+        return material == null ? null : new MaterialLookup(material, sampleType, material.getName());
     }
 
     private boolean propertiesWouldChange(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject submitted) throws ValidationException
@@ -752,7 +766,19 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpData handleData(ViewContext context, JSONObject dataObject) throws ValidationException
     {
-        return ExpDataFileConverter.resolveExpData(dataObject, context.getContainer(), context.getUser(), Collections.emptyList());
+        return ExpDataFileConverter.resolveExpData(dataObject, context.getContainer(), context.getUser(), getKnownDataTypes());
+    }
+
+    /** Resolves the data handleData would use, without writing anything. Data that doesn't exist yet comes back unsaved. */
+    protected ExpData lookupData(ViewContext context, JSONObject dataObject)
+    {
+        return ExpDataFileConverter.resolveExpDataWithoutSaving(dataObject, context.getContainer(), context.getUser(), getKnownDataTypes());
+    }
+
+    /** Data types used to pick the type of data created for a new file. */
+    protected @NotNull Collection<AssayDataType> getKnownDataTypes()
+    {
+        return Collections.emptyList();
     }
 
     // XXX: doesn't handle SampleType parent property magic
