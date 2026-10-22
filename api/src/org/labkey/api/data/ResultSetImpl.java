@@ -21,6 +21,8 @@ import java.lang.ref.Cleaner;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -229,8 +231,15 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public void close() throws SQLException
     {
-        super.close();
-        close(true);
+        // super.close() can throw from a canceled request's banned thread, so use try/finally
+        try
+        {
+            super.close();
+        }
+        finally
+        {
+            close(true);
+        }
     }
 
     protected void close(boolean closeUnderlying)
@@ -271,5 +280,44 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     public @Nullable Connection getConnection()
     {
         return _state._connection;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testCloseReleasesConnectionWhenCloseThrows() throws SQLException
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            Connection conn = scope.getPooledConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet throwsOnFirstClose = new ResultSetWrapper(stmt.executeQuery("SELECT 1"))
+            {
+                private boolean _thrown = false;
+
+                @Override
+                public void close() throws SQLException
+                {
+                    super.close();
+                    if (!_thrown)
+                    {
+                        _thrown = true;
+                        throw new SQLException("Simulated close failure");
+                    }
+                }
+            };
+
+            ResultSetImpl rs = new ResultSetImpl(conn, scope, throwsOnFirstClose, Table.ALL_ROWS, QueryLogging.emptyQueryLogging());
+            try
+            {
+                rs.close();
+                fail("close() didn't throw");
+            }
+            catch (SQLException e)
+            {
+                assertEquals("Simulated close failure", e.getMessage());
+            }
+            assertTrue("Statement wasn't closed", stmt.isClosed());
+            assertTrue("Connection wasn't released", conn.isClosed());
+        }
     }
 }

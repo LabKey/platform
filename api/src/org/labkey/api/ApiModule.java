@@ -82,6 +82,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RecordFactory;
 import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RepeatedCommitTaskMonitor;
+import org.labkey.api.data.ResultSetImpl;
 import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
@@ -582,6 +583,7 @@ public class ApiModule extends CodeOnlyModule
             RequestCancellation.TestCase.class,
             RepeatedCommitTaskMonitor.IntegrationTestCase.class,
             ResultSetDataIterator.TestCase.class,
+            ResultSetImpl.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
