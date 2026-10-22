@@ -48,6 +48,7 @@ public class Query
     private final boolean _isRequestThread;
     private Boolean _validSql = null;
     private @Nullable String _normalizationReason = null;
+    private @Nullable String _transformedSql = null;
 
     Query(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed, StackTraceElement[] stackTrace, boolean isRequestThread)
     {
@@ -72,8 +73,10 @@ public class Query
 
     public String getSql()
     {
-        // Do any transformations on the SQL on the way out, in the background thread
-        return transform(_sql);
+        // Transformed once, on the request thread for slow queries or else the profiler thread; the queue hands it between them
+        if (null == _transformedSql)
+            _transformedSql = transform(_sql);
+        return _transformedSql;
     }
 
     public boolean isValidSql()
@@ -193,7 +196,8 @@ public class Query
 
     // Removes the last 32 digits of each run of 32+ hex digits (a GUID.makeHash() name suffix, possibly after a prefix
     // ending in a hex digit) and any '$' before them, skipping string literals and comments. A hand-written scan because
-    // java.util.regex costs ~10x more per character, which matters on the request thread for large SQL.
+    // java.util.regex costs ~10x more per character, which matters on the request thread for large SQL. Knows only
+    // standard '...' strings, not dollar-quoted or E'...' ones, so SQL using those can group imperfectly in the profiler.
     private String removeGeneratedHashes(String in)
     {
         StringBuilder out = null;

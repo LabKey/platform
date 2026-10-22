@@ -2180,7 +2180,8 @@ public abstract class SqlDialect
                 if (Table.isSelect(sql))
                     return null;
 
-                String firstWord = new SqlScanner(sql).stripComments().toString().strip().split("\\s+", 2)[0].toUpperCase();
+                // Skip the ( that opens a parenthesized UNION
+                String firstWord = new SqlScanner(sql).stripComments().toString().replaceFirst("^[(\\s]+", "").split("\\s+", 2)[0].toUpperCase();
                 // isSelect() also rejects a SELECT or WITH it can't parse, e.g. an unbalanced CTE
                 if (firstWord.equals("SELECT") || firstWord.equals("WITH"))
                     return "It starts with " + firstWord + ", but it couldn't be confirmed to be a read-only SELECT, so it isn't re-run to measure actual timing. The estimated plan doesn't run it.";
@@ -2699,6 +2700,10 @@ public abstract class SqlDialect
             reason = ExecutionPlanType.Actual.getUnavailableReason("WITH c AS (SELECT 1 AS x SELECT * FROM c");
             assertNotNull(reason);
             assertTrue(reason, reason.startsWith("It starts with WITH, but it couldn't be confirmed"));
+
+            reason = ExecutionPlanType.Actual.getUnavailableReason(" ( SELECT * FROM core.containers) UNION (SELECT * FROM core.containers)");
+            assertNotNull(reason);
+            assertTrue(reason, reason.startsWith("It starts with SELECT, but it couldn't be confirmed"));
         }
     }
 
