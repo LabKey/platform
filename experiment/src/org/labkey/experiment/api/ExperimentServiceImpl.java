@@ -230,6 +230,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -9565,13 +9566,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Map<String, Object>> getDomainMetrics()
+    public UsageMetrics addDomainMetrics(UsageMetrics metrics)
     {
-        Map<String, Map<String, Object>> metrics = new HashMap<>();
-        metrics.put("nameexpression", getNameExpressionMetrics());
-        metrics.put("parentalias", getParentAliasMetrics());
-        metrics.put("importTemplates", getImportTemplatesMetrics());
-        metrics.put("auditLevelOverride", getAuditLevelOverrideMetrics());
+        metrics.group("nameexpression", "Naming patterns by data type, counting patterns that use each substitution, format, grandparent input, or withCounter; zero counts omitted")
+            .putAll(getNameExpressionMetrics());
+        metrics.group("parentalias", "Required parent import aliases on sample types and data classes, by parent kind; counts aliases, not types. Source parents are any data class parent")
+            .putAll(getParentAliasMetrics());
+        metrics.group("importTemplates", "Query metadata overrides that define import templates, by sample types, data classes, and Standard assays; counts overrides, not templates")
+            .putAll(getImportTemplatesMetrics());
+        metrics.group("auditLevelOverride", "Query metadata overrides that set audit logging to none or summary, by sample types, data classes, and Standard assays")
+            .putAll(getAuditLevelOverrideMetrics());
         return metrics;
     }
 
