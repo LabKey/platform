@@ -20,22 +20,22 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.72.2",
-    "@labkey/themes": "1.9.7"
+    "@labkey/components": "7.72.3",
+    "@labkey/themes": "1.9.8"
   },
   "devDependencies": {
-    "@labkey/build": "10.1.3",
-    "@labkey/eslint-config": "1.2.4",
+    "@labkey/build": "10.1.4",
+    "@labkey/eslint-config": "1.2.5",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
-    "execa": "10.0.1",
-    "fs-extra": "11.3.5",
+    "execa": "10.2.0",
+    "fs-extra": "11.4.1",
     "jest": "30.5.2",
     "jest-cli": "30.5.2",
     "jest-environment-jsdom": "30.5.2",
     "jest-teamcity-reporter": "0.9.0",
-    "ts-jest": "29.4.14"
+    "ts-jest": "29.4.15"
   },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
