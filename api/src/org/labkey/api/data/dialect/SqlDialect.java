@@ -101,7 +101,9 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -357,6 +359,12 @@ public abstract class SqlDialect
         return _sqlTypeIntMap.get(type.sqlType);
     }
 
+    public final @Nullable SQLFragment getSqlTypeNameAsSql(JdbcType type)
+    {
+        String sql = getSqlTypeName(type);
+        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+    }
+
     // Override for alternative behavior
     @Nullable
     public String getSqlCastTypeName(JdbcType type)
@@ -364,7 +372,18 @@ public abstract class SqlDialect
         return getSqlTypeName(type);
     }
 
+    public final @Nullable SQLFragment getSqlCastTypeNameAsSql(JdbcType type)
+    {
+        String sql = getSqlCastTypeName(type);
+        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+    }
+
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
+
+    public final SQLFragment getSqlTypeNameAsSql(PropertyStorageSpec prop)
+    {
+        return new SQLFragment().setSqlUnsafe(getSqlTypeName(prop));
+    }
 
     protected @Nullable SQLFragment getDatabaseMaintenanceSql()
     {
@@ -394,7 +413,7 @@ public abstract class SqlDialect
         if (null == sqlState)
             return false;
         return sqlState.equals("57014") || // Postgres
-               sqlState.equalsIgnoreCase("HY000") || sqlState.equalsIgnoreCase("HY008"); // SQLServer
+               sqlState.equalsIgnoreCase("HY008"); // SQLServer
     }
 
     /** Connection failures (class 08) and Postgres shutdown, crash, or failover (57P*) */
@@ -599,9 +618,9 @@ public abstract class SqlDialect
         String suffix = wildcardSuffix != null ? wildcardSuffix : "";
         String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
         String escapeToken = " ESCAPE '" + escapeChar + "'";
-        sql.append(" ")
+        sql.unsafeAppend(" ")
             .append(getCaseInsensitiveLikeOperator())
-            .append(" ")
+            .unsafeAppend(" ")
             .appendValue(prefixLike)
             .append(escapeToken);
         return sql;
@@ -821,11 +840,31 @@ public abstract class SqlDialect
 
     public abstract String getDefaultDateTimeDataType();
 
+    public final SQLFragment getDefaultDateTimeDataTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getDefaultDateTimeDataType());
+    }
+
     public abstract String getUniqueIdentType();
+
+    public final SQLFragment getUniqueIdentTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getUniqueIdentType());
+    }
 
     public abstract String getGuidType();
 
+    public final SQLFragment getGuidTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getGuidType());
+    }
+
     public abstract String getLsidType();
+
+    public final SQLFragment getLsidTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getLsidType());
+    }
 
     public abstract String getTempTableKeyword();
 
@@ -853,6 +892,11 @@ public abstract class SqlDialect
 
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDatePart(int part, String value);
+
+    public final SQLFragment getDatePartAsSql(int part, String value)
+    {
+        return new SQLFragment().setSqlUnsafe(getDatePart(part, value));
+    }
 
     public SQLFragment getDatePart(int part, SQLFragment value)
     {
@@ -1530,7 +1574,12 @@ public abstract class SqlDialect
         }
     }
 
-    public abstract SQLFragment getAnalyzeCommandForTable(String tableName);
+    public SQLFragment getAnalyzeCommandForTable(String tableName)
+    {
+        return getAnalyzeCommandForTable(new SQLFragment().appendIdentifier(tableName));
+    }
+
+    public abstract SQLFragment getAnalyzeCommandForTable(SQLFragment tableName);
 
     protected abstract String getSIDQuery();
 
@@ -1554,12 +1603,37 @@ public abstract class SqlDialect
      */
     public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
     {
+        return cancelQueries(scope, connections, terminate, Runnable::run);
+    }
+
+    /**
+     * Like {@link #cancelQueries(DbScope, Collection, boolean)}, but only the signalling runs through {@code signaller},
+     * so a caller can hold a lock for that without also holding it while the dialect connects
+     */
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate, Consumer<Runnable> signaller)
+    {
         return false;
+    }
+
+    /**
+     * Like a {@link #cancelQueries} cancel, but signals each session without opening a database connection.
+     * @return the connections it signalled; the caller should fall back to {@link #cancelQueries} for the rest
+     */
+    public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
+    {
+        return connections.stream()
+            .filter(c -> c.isAllocated() && c.cancelOpenStatements())
+            .collect(Collectors.toSet());
+    }
+
+    /** Add driver settings this dialect wants by default; leave any the data source already sets */
+    public void addDefaultConnectionProperties(Properties props)
+    {
     }
 
     public boolean updateStatistics(TableInfo table)
     {
-        SQLFragment sql = getAnalyzeCommandForTable(table.getSelectName());
+        SQLFragment sql = getAnalyzeCommandForTable(table.getSQLName());
         if (sql != null)
         {
             new SqlExecutor(table.getSchema()).execute(sql);
@@ -1571,6 +1645,11 @@ public abstract class SqlDialect
 
 
     public abstract String getBooleanDataType();
+
+    public final SQLFragment getBooleanDataTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getBooleanDataType());
+    }
 
     public String getBooleanTRUE()
     {
@@ -1588,6 +1667,11 @@ public abstract class SqlDialect
     }
 
     public abstract String getBinaryDataType();
+
+    public final SQLFragment getBinaryDataTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getBinaryDataType());
+    }
 
     // We need to determine the database name from a data source, so we've implemented a helper that parses the JDBC connection
     // string for each driver we support. This is necessary because, unfortunately, there appears to be no standard, reliable
@@ -1985,9 +2069,9 @@ public abstract class SqlDialect
         if (from == JdbcType.GUID)
         {
             SQLFragment ret = new SQLFragment();
-            ret.append("CAST(");
-            ret.append(sql).append(" AS ");
-            ret.append(getSqlTypeName(from)).append("(36))");
+            ret.unsafeAppend("CAST(");
+            ret.append(sql).unsafeAppend(" AS ");
+            ret.append(getSqlTypeName(from)).unsafeAppend("(36))");
             return ret;
         }
         // let server do default conversion
@@ -2037,6 +2121,12 @@ public abstract class SqlDialect
             return null;
 
         return _sqlTypeIntMap.get(jdbcType.sqlType);
+    }
+
+    public final @Nullable SQLFragment getSqlTypeNameFromObjectAsSql(Object o)
+    {
+        String sql = getSqlTypeNameFromObject(o);
+        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
     }
 
     /**
@@ -2352,7 +2442,7 @@ public abstract class SqlDialect
     public SQLFragment formatFunction(SQLFragment target, String fn, SQLFragment... arguments)
     {
         target.append(fn);
-        target.append("(");
+        target.unsafeAppend("(");
         String comma = "";
         for (SQLFragment argument : arguments)
         {
@@ -2360,16 +2450,16 @@ public abstract class SqlDialect
             comma = ",";
             target.append(argument);
         }
-        target.append(")");
+        target.unsafeAppend(")");
         return target;
     }
 
     public SQLFragment formatJdbcFunction(String fn, SQLFragment... arguments)
     {
         SQLFragment ret = new SQLFragment();
-        ret.append("{fn ");
+        ret.unsafeAppend("{fn ");
         formatFunction(ret, fn, arguments);
-        ret.append("}");
+        ret.unsafeAppend("}");
         return ret;
     }
 

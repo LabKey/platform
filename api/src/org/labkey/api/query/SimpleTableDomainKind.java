@@ -173,7 +173,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
             if (objectUriColumn != null)
             {
                 SQLFragment sql = new SQLFragment();
-                sql.append("SELECT o.ObjectId FROM ").append(table.getFromSQL("me")).append(", exp.object o WHERE ").append(objectUriColumn.getValueSql("me")).append(" = o.ObjectURI AND me.Container = ?");
+                sql.unsafeAppend("SELECT o.ObjectId FROM ").append(table.getFromSQL("me")).unsafeAppend(", exp.object o WHERE ").append(objectUriColumn.getValueSql("me")).unsafeAppend(" = o.ObjectURI AND me.Container = ?");
                 sql.add(domain.getContainer().getId());
                 return sql;
             }

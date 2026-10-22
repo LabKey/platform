@@ -77,7 +77,7 @@ public class GroupTableInfo extends VirtualTable
         {
             sql.append(sep);
             sql.append(ALIAS_SOURCE);
-            sql.append(".");
+            sql.unsafeAppend(".");
             sql.appendIdentifier(col.getAlias());
             sep = ",\n";
         }
@@ -87,26 +87,26 @@ public class GroupTableInfo extends VirtualTable
         {
             sql.append(sep);
             sql.append(measure.getSqlExpression(ALIAS_SOURCE));
-            sql.append(" AS ");
+            sql.unsafeAppend(" AS ");
             sql.append(AggregateColumnInfo.getColumnName(null, measure));
         }
 
         //from the source table select
-        sql.append("\nFROM (\n");
+        sql.unsafeAppend("\nFROM (\n");
         TableInfo source = getSourceTable();
 
         sql.append(QueryService.get().getSelectBuilder(source).columns(getDistinctColumns()).filter(_sourceFilter).buildSqlFragment());
-        sql.append("\n) AS ");
+        sql.unsafeAppend("\n) AS ");
         sql.append(ALIAS_SOURCE);
 
         //group by
-        sql.append("\nGROUP BY ");
+        sql.unsafeAppend("\nGROUP BY ");
         sep = "";
         for(ColumnInfo col : getGroupByColumns())
         {
             sql.append(sep);
             sql.append(ALIAS_SOURCE);
-            sql.append(".");
+            sql.unsafeAppend(".");
             sql.appendIdentifier(col.getAlias());
             sep = ",\n";
         }

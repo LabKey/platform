@@ -58,7 +58,7 @@ public interface AttachmentParentType
     default void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
         SQLFragment selectSql = getSelectParentEntityIdsSql();
-        sql.append(parentColumn).append(" IN (").append(selectSql).append(")");
+        sql.append(parentColumn).unsafeAppend(" IN (").append(selectSql).unsafeAppend(")");
     }
 
     /**
@@ -70,7 +70,7 @@ public interface AttachmentParentType
         SQLFragment selectSql = getSelectEntityIdAndDescriptionSql();
 
         // The returned SQL is always used inside a subselect, so the alias doesn't have to be unique
-        return new SQLFragment("SELECT EntityId FROM (").append(selectSql).append(") x");
+        return new SQLFragment("SELECT EntityId FROM (").append(selectSql).unsafeAppend(") x");
     }
 
     /**

@@ -1370,7 +1370,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                         markAllSelected(_query);
                         _sqlAllColumns = getSql();
                     }
-                    f.append("(").append(_sqlAllColumns).append(") ").appendIdentifier(alias);
+                    f.unsafeAppend("(").append(_sqlAllColumns).unsafeAppend(") ").appendIdentifier(alias);
                     return f;
                 }
             }
@@ -1405,7 +1405,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 if (!getParseErrors().isEmpty())
                     throw getParseErrors().getFirst();
                 SQLFragment f = new SQLFragment();
-                f.append("(").append(s).append(") ").appendIdentifier(alias);
+                f.unsafeAppend("(").append(s).unsafeAppend(") ").appendIdentifier(alias);
 
                 return f;
             }
@@ -1664,7 +1664,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         }
         if (_parsedJoins.isEmpty() && dialect.isOracle())
         {
-            fromSql.append(" sys.dual ");
+            fromSql.unsafeAppend(" sys.dual ");
         }
         fromSql.popPrefix();
 
@@ -1689,7 +1689,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 return null;
             }
             sql.append(col.getInternalSql());
-            sql.append(" AS ");
+            sql.unsafeAppend(" AS ");
             String sqlAlias = dialect.makeLegalIdentifier(colAlias);
             sql.append(sqlAlias);
             aliasMap.put(colAlias,sqlAlias);
@@ -1707,10 +1707,10 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.pushPrefix("\nWHERE ");
             for (QNode expr : _where.children())
             {
-                sql.append("(");
+                sql.unsafeAppend("(");
                 QExpr term = resolveFields((QExpr)expr, null, _where);
                 term.appendSql(sql, _query);
-                sql.append(")");
+                sql.unsafeAppend(")");
                 sql.nextPrefix(" AND ");
             }
             sql.popPrefix();
@@ -1748,7 +1748,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.pushPrefix("\nGROUP BY ");
             for (QNode expr : _groupBy.children())
             {
-                sql.append("(");
+                sql.unsafeAppend("(");
                 QExpr gbExpr = resolveFields((QExpr)expr, _groupBy, _groupBy);
                 // check here again for constants, after resolveFields()
                 if (gbExpr.isConstant())
@@ -1768,7 +1768,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 {
                     gbExpr.appendSql(sql, _query);
                 }
-                sql.append(")");
+                sql.unsafeAppend(")");
                 sql.nextPrefix(",");
             }
             sql.popPrefix();
@@ -1781,10 +1781,10 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.pushPrefix("\nHAVING ");
             for (QNode expr : _having.children())
             {
-                sql.append("(");
+                sql.unsafeAppend("(");
                 QExpr term = resolveFields((QExpr)expr, null, _having);
                 term.appendSql(sql, _query);
-                sql.append(")");
+                sql.unsafeAppend(")");
                 sql.nextPrefix(" AND ");
             }
             sql.popPrefix();
@@ -1812,7 +1812,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                         r.appendSql(sql, _query);
                     }
                     if (!entry.direction())
-                        sql.append(" DESC");
+                        sql.unsafeAppend(" DESC");
                     sql.nextPrefix(",");
                 }
                 sql.popPrefix();
@@ -1831,7 +1831,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         {
             // NOTE inserting the "(" earlier blows up limitRows()
             sql.insert(0,"(");
-            sql.append(") ").appendIdentifier(getAlias());
+            sql.unsafeAppend(") ").appendIdentifier(getAlias());
         }
 
         if (!AppProps.getInstance().isDevMode() || _inFromClause)
@@ -2268,9 +2268,9 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (expr instanceof QMethodCall mc && mc.getJdbcType() == JdbcType.BOOLEAN && b.getDialect().isSqlServer()
                 && !(mc.getMethod(b.getDialect()) instanceof Method.ConvertInfo))
             {
-                b.append("CASE WHEN (");
+                b.unsafeAppend("CASE WHEN (");
                 expr.appendSql(b, _query);
-                b.append(") THEN 1 ELSE 0 END");
+                b.unsafeAppend(") THEN 1 ELSE 0 END");
                 return b;
             }
 
@@ -2278,12 +2278,12 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (expr instanceof QString && b.getDialect().isPostgreSQL())
             {
                 int len = ((QString)expr).getValue().length();
-                b.append("CAST(");
+                b.unsafeAppend("CAST(");
                 expr.appendSql(b, _query);
-                b.append(" AS VARCHAR");
+                b.unsafeAppend(" AS VARCHAR");
                 if (len > 0)
-                    b.append("(").appendValue(len).append(")");
-                b.append(")");
+                    b.unsafeAppend("(").appendValue(len).unsafeAppend(")");
+                b.unsafeAppend(")");
                 return b;
             }
 
@@ -2477,7 +2477,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             _field.appendSource(builder);
             if (_explicitAliasForColumnName != null)
             {
-                builder.append(" AS ");
+                builder.unsafeAppend(" AS ");
                 _explicitAliasForColumnName.appendSource(builder);
             }
         }

@@ -212,12 +212,12 @@ public class AssayTableMetadata
 
             SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ");
             sqlf.append(targetStudyFieldKey.getName());
-            sqlf.append(" FROM\n");
-            sqlf.append(" __TARGET_STUDY_TABLE\n");
-            sqlf.append("WHERE RowId IN (\n");
-            sqlf.append("  SELECT DISTINCT X.").append(targetStudyFieldKey.getTable().toSQLString());
-            sqlf.append("  FROM __DATA X\n");
-            sqlf.append(")\n");
+            sqlf.unsafeAppend(" FROM\n");
+            sqlf.unsafeAppend(" __TARGET_STUDY_TABLE\n");
+            sqlf.unsafeAppend("WHERE RowId IN (\n");
+            sqlf.unsafeAppend("  SELECT DISTINCT X.").append(targetStudyFieldKey.getTable().toSQLString());
+            sqlf.unsafeAppend("  FROM __DATA X\n");
+            sqlf.unsafeAppend(")\n");
 
             Map<String, TableInfo> tableMap = new HashMap<>();
             tableMap.put("__TARGET_STUDY_TABLE", targetStudyTable);
@@ -240,7 +240,7 @@ public class AssayTableMetadata
             // TargetStudy on results
             SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ");
             sqlf.append(targetStudyCol.getValueSql("x"));
-            sqlf.append("\nFROM ");
+            sqlf.unsafeAppend("\nFROM ");
             sqlf.append(assayDataTable.getFromSQL("x"));
             Map<String,SQLFragment> joins = new LinkedHashMap<>();
             targetStudyCol.declareJoins("x",joins);

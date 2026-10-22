@@ -213,29 +213,29 @@ public class PropertyColumn extends LookupColumn
         SQLFragment sql = new SQLFragment("(SELECT ");
         if (isMvIndicatorColumn())
         {
-            sql.append("MvIndicator");
+            sql.unsafeAppend("MvIndicator");
         }
         else if (_pd.getPropertyType() == PropertyType.BOOLEAN)
         {
-            sql.append("CASE WHEN FloatValue IS NULL THEN NULL WHEN FloatValue=1.0 THEN 1 ELSE 0 END");
+            sql.unsafeAppend("CASE WHEN FloatValue IS NULL THEN NULL WHEN FloatValue=1.0 THEN 1 ELSE 0 END");
         }
         else
         {
             sql.append(getPropertyCol(_pd));
         }
-        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").append(String.valueOf(_pd.getPropertyId()));
-        sql.append(" AND exp.ObjectProperty.ObjectId = ");
+        sql.unsafeAppend(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").append(String.valueOf(_pd.getPropertyId()));
+        sql.unsafeAppend(" AND exp.ObjectProperty.ObjectId = ");
         if (_parentIsObjectId)
             sql.append(_foreignKey.getValueSql(tableAlias));
         else
-            sql.append(getTableAlias(tableAlias)).append(".ObjectId");
-        sql.append(")");
+            sql.append(getTableAlias(tableAlias)).unsafeAppend(".ObjectId");
+        sql.unsafeAppend(")");
 
         String cast = getPropertySqlCastType();
         if (null != cast)
         {
             sql.insert(0, "CAST(");
-            sql.append(" AS ").append(cast).append(")");
+            sql.unsafeAppend(" AS ").append(cast).unsafeAppend(")");
         }
 
         return sql;
@@ -305,7 +305,7 @@ public class PropertyColumn extends LookupColumn
             return strJoinNoContainer;
         }
 
-        strJoinNoContainer.append(" AND ");
+        strJoinNoContainer.unsafeAppend(" AND ");
         strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container")));
 
         return strJoinNoContainer;

@@ -816,7 +816,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             SQLFragment innerSql = super.getSql();
 
             SQLFragment aggregateSql = new SQLFragment();
-            aggregateSql.append("SELECT ");
+            aggregateSql.unsafeAppend("SELECT ");
             int validAggregates = 0;
 
             for (Aggregate agg : _aggregates)
@@ -827,7 +827,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                     if (sql != null)
                     {
                         if (validAggregates > 0)
-                            aggregateSql.append(",\n");
+                            aggregateSql.unsafeAppend(",\n");
 
                         aggregateSql.append(sql);
                         validAggregates++;
@@ -839,7 +839,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             if (validAggregates == 0)
                 return null;
 
-            return aggregateSql.append(" FROM (").append(innerSql).append(") S");
+            return aggregateSql.unsafeAppend(" FROM (").append(innerSql).unsafeAppend(") S");
         }
     }
 }

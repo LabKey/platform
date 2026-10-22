@@ -86,7 +86,7 @@ public class RolapTestSchema extends UserSchema
             {
                 sql.append(union);
                 union = "\nUNION\n";
-                sql.append("SELECT ");
+                sql.unsafeAppend("SELECT ");
                 String comma = "";
                 for (int i=0 ; i<columns.length ; i++)
                 {
@@ -102,7 +102,7 @@ public class RolapTestSchema extends UserSchema
                     sql.append(" AS \"" + c.getName() + "\"");
                 }
             }
-            sql.append("\n");
+            sql.unsafeAppend("\n");
             this.sql = sql;
         }
 

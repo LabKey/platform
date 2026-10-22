@@ -142,8 +142,8 @@ public class Lsid
         // colon to the end of the string (or to the fifth colon, if present).
         SQLFragment expression = new SQLFragment("SUBSTRING(")
             .append(lsidExpression)
-            .append(" FROM '%urn:lsid:%:%:#\"[0-9a-f\\-]{36}#\":?%' FOR '#')");
-        SQLFragment where = new SQLFragment(lsidExpression).append(" SIMILAR TO '%urn:lsid:%:%:[0-9a-f\\-]{36}:?%'");
+            .unsafeAppend(" FROM '%urn:lsid:%:%:#\"[0-9a-f\\-]{36}#\":?%' FOR '#')");
+        SQLFragment where = new SQLFragment(lsidExpression).unsafeAppend(" SIMILAR TO '%urn:lsid:%:%:[0-9a-f\\-]{36}:?%'");
 
         return new Pair<>(expression, where);
     }
@@ -288,7 +288,7 @@ public class Lsid
 
     static public SQLFragment namespaceFilter(Enum<?> column, String namespace)
     {
-        return new SQLFragment().appendIdentifier(column.name()).append(" LIKE ?").add(namespaceLikeString(namespace));
+        return new SQLFragment().appendIdentifier(column.name()).unsafeAppend(" LIKE ?").add(namespaceLikeString(namespace));
     }
 
     /**

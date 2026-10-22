@@ -124,7 +124,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
     public @NotNull SQLFragment getFromSQL()
     {
         SQLFragment result = new SQLFragment();
-        result.append("""
+        result.unsafeAppend("""
                 SELECT
                   *,
                   CAST(pg_blocking_pids(pid) AS VARCHAR) AS blocked_by,

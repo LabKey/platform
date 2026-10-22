@@ -219,7 +219,7 @@ public class ListController extends SpringActionController
 
             SQLFragment sql = new SQLFragment("Category IS NULL OR Category = ")
                 .appendValue(ListDefinition.Category.PublicPicklist)
-                .append(" OR CreatedBy = ").appendValue(getUser().getUserId());
+                .unsafeAppend(" OR CreatedBy = ").appendValue(getUser().getUserId());
             filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
             settings.setBaseFilter(filter);
 

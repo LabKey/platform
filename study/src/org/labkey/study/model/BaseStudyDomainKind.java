@@ -59,11 +59,11 @@ public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
         Container container = domain.getContainer();
 
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT o.ObjectId FROM ");
+        sql.unsafeAppend("SELECT o.ObjectId FROM ");
         sql.append(getTableInfo(), "c");
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(OntologyManager.getTinfoObject(), "o");
-        sql.append(" WHERE c.LSID = o.ObjectURI AND c.container = ?");
+        sql.unsafeAppend(" WHERE c.LSID = o.ObjectURI AND c.container = ?");
         sql.add(container.getId());
         return sql;
     }

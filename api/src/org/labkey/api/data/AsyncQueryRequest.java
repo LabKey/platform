@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
@@ -40,16 +41,24 @@ import org.labkey.api.util.TagRecordingSpan;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class AsyncQueryRequest<T>
 {
@@ -57,6 +66,7 @@ public class AsyncQueryRequest<T>
     private static final String CANCELLED_TAG = "labkey.async_query.cancelled";
     private static final String CLIENT_DISCONNECTED_TAG = "labkey.client_disconnected";
     private static final String ELAPSED_TAG = "labkey.async_query.ms";
+    private static final long WORKER_EXIT_TIMEOUT_MS = 10_000;
 
     private static class CancelledException extends RuntimeException
     {
@@ -73,6 +83,7 @@ public class AsyncQueryRequest<T>
     private final @Nullable MutableSpan _rootSpan;
 
     boolean _cancelled;
+    boolean _finished;
     @Nullable Statement _statement;
     @Nullable Span _span;
 
@@ -168,8 +179,9 @@ public class AsyncQueryRequest<T>
             }
             catch (Throwable t)
             {
-                // Cancellation arrives here as a CancelledException or the driver's "statement cancelled" error; tagging that as an APM error makes every client disconnect look like a failure
-                if (!isCancelled())
+                // Cancellation arrives here as a CancelledException or the driver's "statement cancelled" error; tagging that as an APM error makes every client disconnect look like a failure.
+                // A timeout cancels the statement in the database before it interrupts the request thread, so the error can beat cancel().
+                if (!isCancelled() && !isCancelException(t))
                 {
                     Tags.ERROR.set(span, true);
                     span.log(Map.of(Fields.ERROR_OBJECT, t));
@@ -219,7 +231,10 @@ public class AsyncQueryRequest<T>
                     }
                     catch (InterruptedException ie)
                     {
-                        cancel();
+                        T uncollected = _result;
+                        cancel(RequestCancellation.getSource(Thread.currentThread()));
+                        awaitWorkerAfterInterrupt(thread);
+                        closeResult(uncollected);
                         throw new AbortedRequestException("Interrupted before DB query completed");
                     }
                 }
@@ -235,8 +250,7 @@ public class AsyncQueryRequest<T>
                     // The client may have left since the last ping; catch it here rather than as a Broken pipe while rendering
                     if (pinged && null != (clientDisconnectException = pingClient()))
                     {
-                        if (_result instanceof AutoCloseable ac)
-                            closeQuietly(ac);
+                        closeResult(_result);
                         throw clientDisconnectException;
                     }
                     return _result;
@@ -279,30 +293,75 @@ public class AsyncQueryRequest<T>
         }
     }
 
-    synchronized public void setResult(T result)
+    /**
+     * Keeps sharing connections until the worker releases the one it borrowed. Otherwise its release can't find the
+     * request thread's holder, which then stays referenced on an aborted connection that the thread's next request reuses.
+     */
+    synchronized private void awaitWorkerAfterInterrupt(Thread worker)
     {
-        if (_cancelled && result instanceof AutoCloseable ac)
-            closeQuietly(ac);
-        _result = result;
-        notify();
+        long deadline = System.currentTimeMillis() + WORKER_EXIT_TIMEOUT_MS;
+        while (!_finished)
+        {
+            long remaining = deadline - System.currentTimeMillis();
+            if (remaining <= 0)
+            {
+                _log.warn("Async query thread '{}' still running {} ms after its request was interrupted", worker.getName(), WORKER_EXIT_TIMEOUT_MS);
+                // The worker still holds this thread's connection. Detaching keeps the thread's next request off it; marking
+                // discards it even if this request's cleanup releases it while the worker is still using it.
+                ConnectionWrapper.getConnectionsByScopeForEffectiveThread(Thread.currentThread()).values().forEach(c -> c.forEach(ConnectionWrapper::markCancelled));
+                DbScope.detachConnectionHolders(Thread.currentThread());
+                return;
+            }
+            try
+            {
+                wait(remaining);
+            }
+            catch (InterruptedException ignored)
+            {
+                // Already cancelling
+            }
+        }
     }
 
-    private static void closeQuietly(AutoCloseable ac)
+    synchronized public void setResult(T result)
     {
-        try
-        {
-            ac.close();
-        }
-        catch (Exception e)
-        {
-            _log.warn("Failed to close abandoned result", e);
-        }
+        if (_cancelled)
+            closeResult(result);
+        _result = result;
+        _finished = true;
+        notify();
     }
     
     synchronized public void setException(Throwable exception)
     {
         _exception = exception;
+        _finished = true;
         notify();
+    }
+
+    private void closeResult(@Nullable T result)
+    {
+        if (result instanceof AutoCloseable ac)
+        {
+            try
+            {
+                ac.close();
+            }
+            catch (Exception e)
+            {
+                _log.warn("Failed to close result after cancellation", e);
+            }
+        }
+    }
+
+    private static boolean isCancelException(Throwable t)
+    {
+        for (; t != null; t = t.getCause())
+        {
+            if (t instanceof SQLException e && SqlDialect.isCancelException(e))
+                return true;
+        }
+        return false;
     }
 
     synchronized private boolean isCancelled()
@@ -310,16 +369,23 @@ public class AsyncQueryRequest<T>
         return _cancelled;
     }
 
-    synchronized private void cancel()
+    synchronized private void cancel(@Nullable RequestCancellation.Source source)
     {
         _cancelled = true;
         if (_span != null)
+        {
             _span.setTag(CANCELLED_TAG, true);
+            if (source != null)
+                _span.setTag("labkey.cancel.source", source.toString());
+        }
+        RequestCancellation.statementCancelled(source, _statement != null);
         if (_statement != null)
         {
             try
             {
                 _log.debug("Aborting async statement on connection {}", _statement.getConnection());
+                if (_statement.getConnection() instanceof ConnectionWrapper connection)
+                    connection.markCancelled();
                 _statement.cancel();
             }
             catch (SQLException e)
@@ -334,7 +400,10 @@ public class AsyncQueryRequest<T>
     {
         IOException ioe = pingClient();
         if (null != ioe)
-            cancel();
+        {
+            RequestCancellation.requestCancelled(Thread.currentThread(), TransactionFilter.getRequestSummary(Thread.currentThread()), RequestCancellation.Source.CLIENT_DISCONNECT);
+            cancel(RequestCancellation.Source.CLIENT_DISCONNECT);
+        }
         return ioe;
     }
 
@@ -387,6 +456,155 @@ public class AsyncQueryRequest<T>
             // A slower query with no schema must not inherit the faster one's
             tagRootSpan(root, 900, queryTags("D", null), true);
             assertEquals(Map.of(ELAPSED_TAG, 900L, "labkey.query", "D", CANCELLED_TAG, true), tags);
+        }
+
+        /** An interrupt must leave the request thread's connection holder released and its next query working */
+        @Test
+        public void testInterruptReleasesConnection() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+
+            for (int i = 0; i < 5; i++)
+            {
+                AtomicReference<Throwable> failure = new AtomicReference<>();
+                AtomicBoolean holderReleased = new AtomicBoolean();
+                AtomicReference<Throwable> nextQueryFailure = new AtomicReference<>();
+                Set<Integer> spids = ConcurrentHashMap.newKeySet();
+
+                Thread requestThread = new Thread(() -> {
+                    try
+                    {
+                        AsyncQueryRequest<Object> request = new AsyncQueryRequest<>(new MockHttpServletResponse(), "testInterruptReleasesConnection", Map.of());
+                        SqlSelector selector = new SqlSelector(scope, "SELECT pg_sleep(30)");
+                        selector.setAsyncRequest(request);
+                        request.waitForResult(() -> selector.getObject(Object.class));
+                    }
+                    catch (Throwable t)
+                    {
+                        failure.set(t);
+                    }
+
+                    try
+                    {
+                        // Checked before finishedWithThread(), whose cleanup would hide a leak
+                        holderReleased.set(!scope.isThreadConnectionActive());
+                        new SqlSelector(scope, "SELECT 1").getObject(Integer.class);
+                    }
+                    catch (Throwable t)
+                    {
+                        nextQueryFailure.set(t);
+                    }
+                    finally
+                    {
+                        DbScope.finishedWithThread();
+                    }
+                }, "AsyncQueryRequest interrupt test " + i);
+
+                long start = System.currentTimeMillis();
+                requestThread.start();
+                while (ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).isEmpty() && System.currentTimeMillis() - start < 10_000)
+                {
+                    //noinspection BusyWait
+                    Thread.sleep(50);
+                }
+                // Let the statement reach the server
+                Thread.sleep(300);
+                ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).values().forEach(c -> c.forEach(w -> spids.add(w.getSPID())));
+
+                requestThread.interrupt();
+                requestThread.join(30_000);
+
+                assertFalse("Request thread didn't exit", requestThread.isAlive());
+                assertTrue("Expected an aborted request, got " + failure.get(), failure.get() instanceof AbortedRequestException);
+                assertTrue("Request thread's connection holder is still referenced", holderReleased.get());
+                assertNull("Next query on the request thread failed", nextQueryFailure.get());
+                assertFalse("Interrupted query had no connections", spids.isEmpty());
+                assertEquals("Cancelled session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, spids));
+            }
+        }
+
+        /** A worker that outlives the interrupt wait mustn't leave its connection for the request thread's next request */
+        @Test
+        public void testStuckWorkerDetached() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            CountDownLatch holding = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            CountDownLatch workerDone = new CountDownLatch(1);
+            AtomicReference<Integer> workerSpid = new AtomicReference<>();
+            AtomicReference<Throwable> workerFailure = new AtomicReference<>();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            AtomicBoolean holderReleased = new AtomicBoolean();
+            AtomicReference<Integer> nextSpid = new AtomicReference<>();
+            AtomicReference<Throwable> nextQueryFailure = new AtomicReference<>();
+
+            Thread requestThread = new Thread(() -> {
+                try
+                {
+                    AsyncQueryRequest<Object> request = new AsyncQueryRequest<>(new MockHttpServletResponse(), "testStuckWorkerDetached", Map.of());
+                    request.waitForResult(() -> {
+                        try (Connection conn = scope.getConnection())
+                        {
+                            workerSpid.set(((ConnectionWrapper) conn).getSPID());
+                            holding.countDown();
+                            // No statement for the interrupt to cancel, like a worker busy outside JDBC
+                            release.await();
+                        }
+                        catch (Throwable t)
+                        {
+                            workerFailure.set(t);
+                        }
+                        finally
+                        {
+                            workerDone.countDown();
+                        }
+                        return null;
+                    });
+                }
+                catch (Throwable t)
+                {
+                    failure.set(t);
+                }
+
+                try
+                {
+                    holderReleased.set(!scope.isThreadConnectionActive());
+                    try (Connection conn = scope.getConnection())
+                    {
+                        nextSpid.set(((ConnectionWrapper) conn).getSPID());
+                    }
+                }
+                catch (Throwable t)
+                {
+                    nextQueryFailure.set(t);
+                }
+                finally
+                {
+                    DbScope.finishedWithThread();
+                }
+            }, "AsyncQueryRequest stuck worker test");
+
+            try
+            {
+                requestThread.start();
+                assertTrue("Worker never got a connection", holding.await(10, TimeUnit.SECONDS));
+                requestThread.interrupt();
+                requestThread.join(WORKER_EXIT_TIMEOUT_MS + 10_000);
+
+                assertFalse("Request thread didn't exit", requestThread.isAlive());
+                assertTrue("Expected an aborted request, got " + failure.get(), failure.get() instanceof AbortedRequestException);
+                assertTrue("Request thread's connection holder still references the worker's connection", holderReleased.get());
+                assertNull("Next query on the request thread failed", nextQueryFailure.get());
+                assertNotEquals("Next request reused the stuck worker's connection", workerSpid.get(), nextSpid.get());
+            }
+            finally
+            {
+                release.countDown();
+            }
+
+            assertTrue("Worker didn't finish", workerDone.await(10, TimeUnit.SECONDS));
+            assertNull("Worker's connection release failed", workerFailure.get());
+            assertEquals("Stuck worker's session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, Set.of(workerSpid.get())));
         }
     }
 }

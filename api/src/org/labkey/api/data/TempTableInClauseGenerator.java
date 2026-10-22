@@ -76,7 +76,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         TempTableInfo tempTableInfo = getOrCreateTempTable(params, jdbcType);
         if (null == tempTableInfo)
             return null;
-        sql.append(" IN (SELECT Id FROM ").append(tempTableInfo).append(")");
+        sql.unsafeAppend(" IN (SELECT Id FROM ").append(tempTableInfo).unsafeAppend(")");
         sql.addTempToken(tempTableInfo);
         return sql;
     }
@@ -140,10 +140,10 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             tempTableInfo = new TempTableInfo(tempSchema, "InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
             SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
             sqlCreate.append(tempTableInfo)
-                .append("\n(Id ")
+                .unsafeAppend("\n(Id ")
                 .append(tempSchema.getSqlDialect().getSqlTypeName(jdbcType))
                 .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
-                .append(")");
+                .unsafeAppend(")");
 
             // When the in clause receives more parameters than it is set to handle, a temporary table is created to handle the overflow.
             // While the associated mutating operations are necessary, they are not a viable CSRF attack vector.
