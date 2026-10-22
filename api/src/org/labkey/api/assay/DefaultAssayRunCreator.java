@@ -134,9 +134,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     @Override
-    public @Nullable PreparedTransform prepareTransform(AssayRunUploadContext<ProviderType> context, boolean forceAsync) throws ExperimentException, ValidationException
+    public @Nullable PreparedTransform prepareTransform(AssayRunUploadContext<ProviderType> context) throws ExperimentException, ValidationException
     {
-        if (isBackgroundImport(context.getProvider(), context.getProtocol(), forceAsync) || !hasTransformBeforeRun(context))
+        if (!hasTransformBeforeRun(context))
             return null;
 
         context.init();

@@ -321,7 +321,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         AssayRunUploadContext<?> uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
                 inputData, outputData, Collections.emptyMap(), Collections.emptyMap());
         AssayRunCreator runCreator = getProvider().getRunCreator();
-        PreparedTransform prepared = runCreator.prepareTransform(uploadContext, false);
+        PreparedTransform prepared = runCreator.prepareTransform(uploadContext);
         if (prepared != null && prepared.getRunDataInputs() != null)
         {
             // saveExperimentRun adds the saved inputs back; keep only those the participant visit resolver added
