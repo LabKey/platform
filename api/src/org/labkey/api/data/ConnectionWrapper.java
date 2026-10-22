@@ -436,11 +436,6 @@ public class ConnectionWrapper implements java.sql.Connection
         _cancelled = true;
     }
 
-    boolean isCancelled()
-    {
-        return _cancelled;
-    }
-
     /**
      * The JDBC-standard cancel, for drivers without a connection-level one; the running statement's execute call throws
      * @return false if no open statement was signalled
