@@ -885,7 +885,7 @@ public class AnnouncementManager
 
         if (null != threadId)
         {
-            sql.unsafeAppend(" AND  EntityId = ?", threadId);
+            sql.unsafeAppend(" AND EntityId = ?", threadId);
         }
         else
         {

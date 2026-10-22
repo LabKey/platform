@@ -879,7 +879,7 @@ public class SQLFragment
         return append(fragments, sep("", separator, null));
     }
 
-    /** Appends sep.next() before each fragment, then sep.last() */
+    /** Appends sep.next() before each fragment, then sep.last(). sep is stateful, so pass a fresh one per call. */
     public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @NotNull SqlSeparator sep)
     {
         for (SQLFragment fragment : fragments)
