@@ -255,6 +255,8 @@ public class ApiModule extends CodeOnlyModule
     protected void init()
     {
         ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/vfs", this);
+        // In init() so module upgrade code also sees configured sizes
+        BatchSize.populate();
         AttachmentService.get().registerAttachmentParentType(ReportType.get());
         AttachmentService.get().registerAttachmentParentType(LookAndFeelResourceType.get());
         AttachmentService.get().registerAttachmentParentType(AuthenticationLogoType.get());

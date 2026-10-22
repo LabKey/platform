@@ -18,36 +18,49 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
- * Standard sizes for splitting multi-row edits into batches. Set {@code -Dlabkey.batchSize.<kind>=N} at startup to run
- * with other sizes, e.g. tiny ones to shake out batch-boundary bugs; tests use {@link #override}.
+ * Standard sizes for splitting multi-row edits into batches. Set startup property {@code BatchSize.<kind>;startup=N}
+ * to run with other sizes, e.g. tiny ones to shake out batch-boundary bugs; tests use {@link #override}.
  */
 public final class BatchSize
 {
     private static final Logger LOG = LogHelper.getLogger(BatchSize.class, "Batch sizes for multi-row edits");
+    private static final String SCOPE = "BatchSize";
 
-    public enum Kind
+    public enum Kind implements StartupProperty
     {
-        /** Key-partitioned selects, updates, and deletes, and flush-every-N loops over rows */
-        ROWS(1000),
-        /** Bounds both the JDBC batch and the audit events held in memory while a batch accumulates */
-        AUDIT(2500);
+        ROWS(1000, "Rows per batch for key-partitioned selects, updates, and deletes, and for flush-every-N loops over rows"),
+        AUDIT(2500, "Audit events per batch; bounds both the JDBC batch and the events held in memory while a batch accumulates");
 
         private final int _defaultSize;
+        private final String _description;
 
-        Kind(int defaultSize)
+        Kind(int defaultSize, String description)
         {
             _defaultSize = defaultSize;
+            _description = description;
         }
 
-        private String getSystemProperty()
+        @Override
+        public String getPropertyName()
         {
-            return "labkey.batchSize." + name().toLowerCase();
+            return name().toLowerCase();
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description + ". Default " + _defaultSize + ".";
         }
     }
 
@@ -58,7 +71,7 @@ public final class BatchSize
     {
         for (Kind kind : Kind.values())
         {
-            SIZES.set(kind.ordinal(), parseSize(kind, System.getProperty(kind.getSystemProperty())));
+            SIZES.set(kind.ordinal(), kind._defaultSize);
         }
     }
 
@@ -66,7 +79,19 @@ public final class BatchSize
     {
     }
 
-    // Log and fall back rather than throw, since a static initializer failure surfaces only as NoClassDefFoundError
+    public static void populate()
+    {
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE, Kind.class)
+        {
+            @Override
+            public void handle(Map<Kind, StartupPropertyEntry> properties)
+            {
+                properties.forEach((kind, entry) -> SIZES.set(kind.ordinal(), parseSize(kind, entry.getValue())));
+            }
+        });
+    }
+
+    // Log and fall back rather than throw, so a bad value can't block startup
     private static int parseSize(Kind kind, String value)
     {
         if (null == value)
@@ -86,7 +111,7 @@ public final class BatchSize
         {
         }
 
-        LOG.error("Ignoring {}={}: must be an integer of at least 1; using default {}", kind.getSystemProperty(), value, kind._defaultSize);
+        LOG.error("Ignoring {}.{}={}: must be an integer of at least 1; using default {}", SCOPE, kind.getPropertyName(), value, kind._defaultSize);
         return kind._defaultSize;
     }
 
@@ -160,6 +185,13 @@ public final class BatchSize
             assertEquals(Kind.ROWS._defaultSize, parseSize(Kind.ROWS, "0"));
             assertEquals(Kind.ROWS._defaultSize, parseSize(Kind.ROWS, "10k"));
             assertEquals(7, parseSize(Kind.ROWS, "7"));
+        }
+
+        @Test
+        public void documentedPropertyNames()
+        {
+            assertEquals("rows", Kind.ROWS.getPropertyName());
+            assertEquals("audit", Kind.AUDIT.getPropertyName());
         }
 
         @Test
