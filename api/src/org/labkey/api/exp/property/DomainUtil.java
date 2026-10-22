@@ -31,6 +31,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.CompareType;
@@ -123,6 +124,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.exp.PropertyType.CALCULATED_CONCEPT_URI;
@@ -1424,8 +1426,6 @@ public class DomainUtil
         return Pair.of(valueUpdates, deletedValues);
     }
 
-    private static final int TEXT_CHOICE_UPDATE_BATCH_SIZE = 1000;
-
     private static void updateTextChoiceValueRows(Domain domain, User user, DomainProperty prop, Map<String, Object> valueUpdates, ValidationException errors)
     {
         if (domain != null && domain.getDomainKind() != null)
@@ -1461,7 +1461,8 @@ public class DomainUtil
                 try (DbScope.Transaction transaction = domainTable.getSchema().getScope().ensureTransaction();
                      Stream<Map<String, Object>> stream = new TableSelector(domainTable, columns, filter, null).uncachedMapStream())
                 {
-                    List<Map<String, Object>> batch = new ArrayList<>(TEXT_CHOICE_UPDATE_BATCH_SIZE);
+                    int batchSize = BatchSize.get(ROWS);
+                    List<Map<String, Object>> batch = new ArrayList<>(batchSize);
                     Iterator<Map<String, Object>> iter = stream.iterator();
                     while (iter.hasNext())
                     {
@@ -1472,12 +1473,12 @@ public class DomainUtil
                         valueRow.put(propCol.getName(), valueUpdates.get((String) propCol.getValue(rsRow)));
                         batch.add(valueRow);
 
-                        if (batch.size() == TEXT_CHOICE_UPDATE_BATCH_SIZE || !iter.hasNext())
+                        if (batch.size() == batchSize || !iter.hasNext())
                         {
                             updateTextChoiceValueBatch(domain, user, domainTable, containerCol, containerTables, batch, batchErrors);
                             if (batchErrors.hasErrors())
                                 throw batchErrors;
-                            batch = new ArrayList<>(TEXT_CHOICE_UPDATE_BATCH_SIZE);
+                            batch = new ArrayList<>(batchSize);
                         }
                     }
                     transaction.commit();

@@ -320,6 +320,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" name="<%=scriptExecutionTimeout%>" id="<%=scriptExecutionTimeout%>" size="4" value="<%=appProps.getScriptExecutionTimeout()%>"></td>
 </tr>
 <tr>
+    <td class="labkey-form-label"><label for="<%=assayTransformScriptTimeout%>">Timeout for assay transform scripts, in minutes<%=helpPopup("Assay transform script timeout",
+        "Maximum time (in minutes) an assay transform or validation script may run before it is killed and the import fails. Set to 0 to disable the timeout.")%></label></td>
+    <td><input type="text" name="<%=assayTransformScriptTimeout%>" id="<%=assayTransformScriptTimeout%>" size="4" value="<%=appProps.getAssayTransformScriptTimeout()%>"></td>
+</tr>
+<tr>
     <td class="labkey-form-label"><label for="<%=maxBLOBSize%>">Maximum file size, in bytes, to allow in database BLOBs</label></td>
     <td><input type="text" name="<%=maxBLOBSize%>" id="<%=maxBLOBSize%>" size="10" value="<%=appProps.getMaxBLOBSize()%>"></td>
 </tr>

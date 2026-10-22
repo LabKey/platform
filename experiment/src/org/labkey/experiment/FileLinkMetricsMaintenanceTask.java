@@ -54,8 +54,6 @@ public class FileLinkMetricsMaintenanceTask implements MaintenanceTask
             Map<String, Map<String, MissingFilesCheckInfo>> results = ExperimentServiceImpl.get().doMissingFilesCheck(getTaskUser(), ContainerManager.getRoot(), false);
             Map<String, Object> missingFilesMetrics = new HashMap<>();
             missingFilesMetrics.put("Run time", new Date());
-            Map<String, Object> metrics = new HashMap<>();
-            metrics.put(NAME, missingFilesMetrics);
             long missingFilesCount = 0;
             Map<String, Long> validFilesCount = new HashMap<>();
             if (null != results)
@@ -78,7 +76,7 @@ public class FileLinkMetricsMaintenanceTask implements MaintenanceTask
             }
             missingFilesMetrics.put("Missing files count", missingFilesCount);
             missingFilesMetrics.put("Valid files count", validFilesCount);
-            FileLinkMetricsProvider.getInstance().updateMetrics(metrics);
+            FileLinkMetricsProvider.getInstance().updateMetrics(missingFilesMetrics);
         }
         catch (Exception e)
         {

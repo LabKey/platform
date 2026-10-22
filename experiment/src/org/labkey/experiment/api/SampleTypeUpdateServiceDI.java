@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -29,6 +30,7 @@ import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -138,6 +140,7 @@ import static java.util.Collections.emptyMap;
 import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.USER_PROVIDED_DATA_PREFIX;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
@@ -155,7 +158,6 @@ import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 /**
@@ -903,11 +905,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return null;
     }
 
-    private Map<String, Object> getMaterialMap(Map<String, Object> keys) throws QueryUpdateServiceException
-    {
-        return getMaterialMap(keys, false);
-    }
-
     private Map<String, Object> getMaterialMap(Map<String, Object> keys, boolean useSampleType) throws QueryUpdateServiceException
     {
         Filter filter = getMaterialFilter(keys, useSampleType);
@@ -917,7 +914,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new TableSelector(getQueryTable(), filter, null).getMap();
     }
 
-    /** Batched {@link #getMaterialMap(Map)}: one result per key, in key order, null where no sample matched. */
+    /** Batched {@link #getMaterialMap(Map, boolean)} without useSampleType: one result per key, in key order, null where no sample matched. */
     private List<Map<String, Object>> getMaterialMaps(List<Map<String, Object>> keys) throws QueryUpdateServiceException
     {
         Set<Long> rowIds = new LongHashSet();
@@ -944,15 +941,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<SampleNameKey, Map<String, Object>> byName = new HashMap<>();
         // Names are unique only per container, so a name can match a row in each container in scope
         Set<SampleNameKey> ambiguousNames = new HashSet<>();
-        if (!rowIds.isEmpty())
-            selectMaterialMaps(new SimpleFilter(RowId.fieldKey(), rowIds, CompareType.IN), row -> byRowId.put(getMaterialRowId(row), row));
-        if (!lsids.isEmpty())
-            selectMaterialMaps(new SimpleFilter(LSID.fieldKey(), lsids, CompareType.IN), row -> byLsid.put(getMaterialLsid(row), row));
+        selectMaterialMaps(RowId.fieldKey(), rowIds, null, row -> byRowId.put(getMaterialRowId(row), row));
+        selectMaterialMaps(LSID.fieldKey(), lsids, null, row -> byLsid.put(getMaterialLsid(row), row));
         for (Map.Entry<Long, Set<String>> e : namesBySource.entrySet())
         {
-            SimpleFilter filter = new SimpleFilter(Name.fieldKey(), e.getValue(), CompareType.IN);
-            filter.addCondition(MaterialSourceId.fieldKey(), e.getKey());
-            selectMaterialMaps(filter, row -> {
+            selectMaterialMaps(Name.fieldKey(), e.getValue(), e.getKey(), row -> {
                 SampleNameKey key = new SampleNameKey(getMaterialSourceId(row), getMaterialName(row));
                 if (null != byName.put(key, row))
                     ambiguousNames.add(key);
@@ -979,10 +972,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return result;
     }
 
-    private void selectMaterialMaps(SimpleFilter filter, Consumer<Map<String, Object>> consumer)
+    private <T> void selectMaterialMaps(FieldKey fieldKey, Collection<T> values, @Nullable Long materialSourceId, Consumer<Map<String, Object>> consumer)
     {
-        for (Map<String, Object> row : new TableSelector(getQueryTable(), filter, null).getMapArray())
-            consumer.accept(row);
+        for (List<T> batch : ListUtils.partition(new ArrayList<>(values), BatchSize.get(ROWS)))
+        {
+            SimpleFilter filter = new SimpleFilter(fieldKey, batch, CompareType.IN);
+            if (materialSourceId != null)
+                filter.addCondition(MaterialSourceId.fieldKey(), materialSourceId);
+            new TableSelector(getQueryTable(), filter, null).forEachMap(consumer::accept);
+        }
     }
 
     private record SampleNameKey(Long materialSourceId, String name) {}
@@ -1196,14 +1194,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
-        List<Map<String, Object>> result = new ArrayList<>(keys.size());
-        for (Map<String, Object> k : keys)
-        {
-            Map<String, Object> materialMap = getMaterialMap(k);
-            if (materialMap != null)
-                result.add(materialMap);
-        }
-        return result;
+        return getMaterialMaps(keys).stream().filter(Objects::nonNull).toList();
     }
 
     @Override
@@ -1251,22 +1242,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             handleRecalc(parentKeys.first, parentKeys.second, false, container);
 
         // Sample data change notifications flag clients' cached "insights" counts as stale; deletes notify from ExperimentServiceImpl
-        if (tx != null)
+        if (tx != null && tx.isAborted())
         {
-            if (!tx.isAborted())
-            {
-                var backgroundRecalcKeys = useBackgroundRecalc && !skipRecalc ? parentKeys : null;
-                var change = new SampleChange(_sampleType, getUser(), container, reason, changedSince, backgroundRecalcKeys);
-                new SamplesChangedTask(getContainer()).register(scope, List.of(change), DbScope.CommitTaskOption.POSTCOMMIT);
-            }
-            else
-                LOG.info("Skipping onSamplesChanged callback; transaction aborted");
+            LOG.info("Skipping onSamplesChanged callback; transaction aborted");
+            return;
         }
-        else
-        {
-            fireSamplesChanged(reason, changedSince);
-            SampleChangeNotify.fireSampleDataChanged(getContainer());
-        }
+
+        var backgroundRecalcKeys = useBackgroundRecalc && !skipRecalc ? parentKeys : null;
+        var change = new SampleChange(_sampleType, getUser(), container, reason, changedSince, backgroundRecalcKeys);
+        new SamplesChangedTask(getContainer()).register(scope, List.of(change), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     private void handleRecalc(Set<Long> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
@@ -1281,9 +1265,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 if (sampleType != null)
                 {
-                    var count = SampleTypeService.get().recomputeSampleTypeRollup(sampleType, rootRowIds, parentNames, container);
-                    if (count > 0)
-                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, rollup);
+                    var roots = SampleTypeServiceImpl.get().recomputeSampleTypeRollupRoots(sampleType, rootRowIds, parentNames, container);
+                    if (!roots.isEmpty())
+                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterRollup(sampleType, roots);
                 }
             }
             catch (SQLException e)
@@ -1354,12 +1338,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             List<Timestamp> watermarks = changes.stream().filter(change -> change.reason() == reason).map(SampleChange::changedSince).toList();
             return watermarks.stream().anyMatch(Objects::isNull) ? null : Collections.min(watermarks);
         }
-    }
-
-    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
-    {
-        if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null, reason, changedSince);
     }
 
     static @Nullable Timestamp captureChangedSince()
