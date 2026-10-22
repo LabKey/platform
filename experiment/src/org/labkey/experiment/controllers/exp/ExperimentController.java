@@ -1434,6 +1434,7 @@ public class ExperimentController extends SpringActionController
                                 .getObjectReferencers()
                                 .stream()
                                 .map(referencer -> referencer.getObjectReferenceDescription(ExpData.class))
+                                .filter(Objects::nonNull)
                                 .collect(Collectors.joining(" or "));
 
                         button.setScript("LABKEY.dataregion.confirmDelete(" +
