@@ -1818,11 +1818,14 @@ public class SecurityController extends SpringActionController
         public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
             User affectedUser = form.getUser(true);
-            createMessage(form); // permission check
+            SecurityMessage message = createMessage(form); // permission check
             if (!getUser().hasSiteAdminPermission())
                 throw new UnauthorizedException();
             if (!LoginManager.isVerified(affectedUser))
+            {
                 _verification = LoginManager.createVerification(affectedUser, getLinkTimeout());
+                UserManager.addToUserHistory(affectedUser, getUser().getEmail() + " generated a new link for the " + message.getType().toLowerCase() + ".");
+            }
             return true;
         }
 

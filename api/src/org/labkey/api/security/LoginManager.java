@@ -17,7 +17,6 @@ package org.labkey.api.security;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -32,7 +31,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.view.ActionURL;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -286,39 +284,6 @@ public class LoginManager
 
             if (adminUser != null)
                 UserManager.addToUserHistory(userToChange, adminUser.getEmail() + " deleted the password.");
-        }
-    }
-
-    public static class VerificationMaintenanceTask implements MaintenanceTask
-    {
-        @Override
-        public String getDescription()
-        {
-            return "Purge expired verification tokens";
-        }
-
-        @Override
-        public String getName()
-        {
-            return "PurgeExpiredVerificationTokens";
-        }
-
-        @Override
-        public void run(Logger log)
-        {
-            new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoLogins() + " SET Verification = NULL, VerificationTimeout = NULL WHERE VerificationTimeout < ?", new Date());
-        }
-
-        @Override
-        public boolean canDisable()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean hideFromAdminPage()
-        {
-            return true;
         }
     }
 }

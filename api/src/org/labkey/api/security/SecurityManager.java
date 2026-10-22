@@ -3287,11 +3287,8 @@ public class SecurityManager
 
                 String expired = LoginManager.createVerification(user, Duration.ofSeconds(-1));
                 assertNull("Expired verification token still valid", LoginManager.verify(expired));
+                assertFalse("User with only an expired token reported as verified", LoginManager.isVerified(user));
 
-                new LoginManager.VerificationMaintenanceTask().run(LOG);
-                assertTrue("Maintenance task didn't purge expired verification token", LoginManager.isVerified(user));
-
-                LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
                 LoginManager.clearVerification(user);
                 assertTrue(LoginManager.isVerified(user));
 
