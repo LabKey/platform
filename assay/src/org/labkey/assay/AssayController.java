@@ -1385,6 +1385,9 @@ public class AssayController extends SpringActionController
         }
     }
 
+    // Runs are the ones QCStateAction already resolved and permission-checked in their own containers
+    public record QCStateBean(UpdateQCStateForm form, List<ExpRun> runs) {}
+
     public static class UpdateQCStateForm extends ReturnUrlForm
     {
         private Long _state;
@@ -1456,7 +1459,7 @@ public class AssayController extends SpringActionController
 
                 if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
                 {
-                    JspView<UpdateQCStateForm> jspView = new JspView<>("/org/labkey/assay/view/updateQCState.jsp", form, errors);
+                    JspView<QCStateBean> jspView = new JspView<>("/org/labkey/assay/view/updateQCState.jsp", new QCStateBean(form, runs), errors);
                     jspView.setFrame(WebPartView.FrameType.PORTAL);
                     view.addView(jspView);
                 }
