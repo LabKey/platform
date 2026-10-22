@@ -78,7 +78,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(getTableAlias(tableAliasName)).append(".").appendIdentifier(_display.getAlias());
+        return new SQLFragment(getTableAlias(tableAliasName)).unsafeAppend(".").appendIdentifier(_display.getAlias());
     }
 
     /**
@@ -126,8 +126,8 @@ public class MultiValuedLookupColumn extends LookupColumn
 
         SQLFragment strJoin = new SQLFragment();
         strJoin.appendComment("<MultiValuedForeignKey target=" + lookupTable.getName() + ">", dialect );
-        strJoin.append("\n\t(\n\t\t");
-        strJoin.append("SELECT ");
+        strJoin.unsafeAppend("\n\t(\n\t\t");
+        strJoin.unsafeAppend("SELECT ");
         strJoin.append(_lookupKey.getValueSql(fromAlias));
 
         String joinAlias = groupConcat ? fromAlias : nestedAlias;
@@ -147,12 +147,12 @@ public class MultiValuedLookupColumn extends LookupColumn
                 continue;
 
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
-            strJoin.append(", \n\t\t\t");
+            strJoin.unsafeAppend(", \n\t\t\t");
             SQLFragment valueSql = new SQLFragment();
             boolean needsCast = "entityid".equalsIgnoreCase(lc.getSqlTypeName()) || "lsidtype".equalsIgnoreCase(lc.getSqlTypeName()) || "userid".equalsIgnoreCase(lc.getSqlTypeName());
             if (needsCast)
             {
-                valueSql.append("CAST((");
+                valueSql.unsafeAppend("CAST((");
             }
             valueSql.append(lc.getValueSql(joinAlias));
             if (needsCast)
@@ -166,7 +166,7 @@ public class MultiValuedLookupColumn extends LookupColumn
                     sqlType = dialect.getLsidType();
                 else
                     throw new IllegalStateException("Unexpected sql type '" + lc.getSqlTypeName() + "' for column '" + lc.getName() + "'");
-                valueSql.append(") AS ").append(sqlType).append(")");
+                valueSql.unsafeAppend(") AS ").append(sqlType).unsafeAppend(")");
             }
 
             col.declareJoins(baseJoinTarget, joins);
@@ -178,7 +178,7 @@ public class MultiValuedLookupColumn extends LookupColumn
             {
                 SQLFragment select = new SQLFragment("SELECT ");
                 select.append(valueSql);
-                select.append(" FROM ");
+                select.unsafeAppend(" FROM ");
                 select.append(_lookupKey.getParentTable().getFromSQL(nestedAlias));
 
                 for (SQLFragment fragment : joins.values())
@@ -190,9 +190,9 @@ public class MultiValuedLookupColumn extends LookupColumn
                     select.addTempTokens(fragment);
                 }
 
-                select.append(" WHERE ");
+                select.unsafeAppend(" WHERE ");
                 select.append(_lookupKey.getValueSql(fromAlias));
-                select.append(" = ");
+                select.unsafeAppend(" = ");
                 select.append(_lookupKey.getValueSql(nestedAlias));
 
                 // TODO: Always order by value
@@ -200,11 +200,11 @@ public class MultiValuedLookupColumn extends LookupColumn
                 strJoin.append(dialect.getSelectConcat(select, MultiValuedRenderContext.VALUE_DELIMITER));
             }
 
-            strJoin.append(" AS ");
+            strJoin.unsafeAppend(" AS ");
             strJoin.appendIdentifier(lc.getAlias());
         }
 
-        strJoin.append("\n\t\tFROM ");
+        strJoin.unsafeAppend("\n\t\tFROM ");
         strJoin.append(_lookupKey.getParentTable().getFromSQL(fromAlias));
 
         if (groupConcat)
@@ -218,15 +218,15 @@ public class MultiValuedLookupColumn extends LookupColumn
 
         if (correlatedBaseAlias != null)
         {
-            strJoin.append("\n\t\tWHERE ");
+            strJoin.unsafeAppend("\n\t\tWHERE ");
             strJoin.append(getJoinCondition(correlatedBaseAlias, _foreignKey, fromAlias, _lookupKey, false));
         }
 
         // TODO: Add ORDER BY?
 
-        strJoin.append("\n\t\tGROUP BY ");
+        strJoin.unsafeAppend("\n\t\tGROUP BY ");
         strJoin.append(_lookupKey.getValueSql(fromAlias));
-        strJoin.append("\n\t) ").appendIdentifier(alias);
+        strJoin.unsafeAppend("\n\t) ").appendIdentifier(alias);
         strJoin.appendComment("</MultiValuedForeignKey target=" + lookupTable.getName() + ">", dialect );
         return strJoin;
     }

@@ -123,17 +123,17 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         SQLFragment sql = new SQLFragment("SELECT pd.rangeuri AS rangeuri");
         for (String ck : CHAR_KEYS)
         {
-            sql.append(", SUM(CASE WHEN (");
+            sql.unsafeAppend(", SUM(CASE WHEN (");
             appendBoolExpr(sql, ck, new SQLFragment("pv.expression"));
-            sql.append(") THEN 1 ELSE 0 END) AS ").append(ck.toLowerCase());
+            sql.unsafeAppend(") THEN 1 ELSE 0 END) AS ").append(ck.toLowerCase());
         }
-        sql.append(" FROM exp.propertyvalidator pv");
-        sql.append(" JOIN exp.propertydescriptor pd ON pv.propertyid = pd.propertyid");
-        sql.append(" WHERE pv.typeuri = ?").add(TEXT_CHOICE_TYPE_URI);
-        sql.append(" AND EXISTS (SELECT 1 FROM exp.propertydomain pdm");
-        sql.append(" JOIN exp.domaindescriptor dd ON pdm.domainid = dd.domainid");
-        sql.append(" WHERE pdm.propertyid = pd.propertyid AND dd.storagetablename IS NOT NULL)");
-        sql.append(" GROUP BY pd.rangeuri");
+        sql.unsafeAppend(" FROM exp.propertyvalidator pv");
+        sql.unsafeAppend(" JOIN exp.propertydescriptor pd ON pv.propertyid = pd.propertyid");
+        sql.unsafeAppend(" WHERE pv.typeuri = ?").add(TEXT_CHOICE_TYPE_URI);
+        sql.unsafeAppend(" AND EXISTS (SELECT 1 FROM exp.propertydomain pdm");
+        sql.unsafeAppend(" JOIN exp.domaindescriptor dd ON pdm.domainid = dd.domainid");
+        sql.unsafeAppend(" WHERE pdm.propertyid = pd.propertyid AND dd.storagetablename IS NOT NULL)");
+        sql.unsafeAppend(" GROUP BY pd.rangeuri");
 
         new SqlSelector(scope, sql).forEach(rs -> {
             String rangeUri = rs.getString("rangeuri");
@@ -160,11 +160,11 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         {
             sql.append(first ? " " : ", ");
             first = false;
-            sql.append("COUNT(DISTINCT CASE WHEN (");
+            sql.unsafeAppend("COUNT(DISTINCT CASE WHEN (");
             appendBoolExpr(sql, ck, new SQLFragment("stringvalue"));
-            sql.append(") THEN propertyid END) AS ").append(ck.toLowerCase());
+            sql.unsafeAppend(") THEN propertyid END) AS ").append(ck.toLowerCase());
         }
-        sql.append(" FROM exp.objectproperty WHERE stringvalue IS NOT NULL");
+        sql.unsafeAppend(" FROM exp.objectproperty WHERE stringvalue IS NOT NULL");
 
         Map<String, Object> row = new SqlSelector(scope, sql).getMap();
         if (row != null)
@@ -189,8 +189,8 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
             "WHERE dd.storagetablename IS NOT NULL\n" +
             "AND pd.storagecolumnname IS NOT NULL\n" +
             "AND pd.rangeuri IN (?, ?)\n").add(PropertyType.STRING.getTypeUri()).add(PropertyType.MULTI_LINE.getTypeUri());
-        enumSql.append("AND NOT EXISTS (SELECT 1 FROM exp.propertyvalidator pv WHERE pv.propertyid = pd.propertyid AND pv.typeuri = ?)").add(TEXT_CHOICE_TYPE_URI);
-        enumSql.append(" AND lower(dd.storageschemaname) <> ?").add(AUDIT_SCHEMA_NAME);
+        enumSql.unsafeAppend("AND NOT EXISTS (SELECT 1 FROM exp.propertyvalidator pv WHERE pv.propertyid = pd.propertyid AND pv.typeuri = ?)").add(TEXT_CHOICE_TYPE_URI);
+        enumSql.unsafeAppend(" AND lower(dd.storageschemaname) <> ?").add(AUDIT_SCHEMA_NAME);
 
         // Group columns by provisioned table so each table is scanned once.
         Map<TableKey, List<Col>> byTable = new LinkedHashMap<>();
@@ -241,15 +241,15 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
             {
                 String alias = "c" + i + "_" + ck.toLowerCase();
                 if (!first)
-                    sql.append(", ");
+                    sql.unsafeAppend(", ");
                 first = false;
-                sql.append("bool_or(");
+                sql.unsafeAppend("bool_or(");
                 appendBoolExpr(sql, ck, colRef);
-                sql.append(") AS ").append(alias);
+                sql.unsafeAppend(") AS ").append(alias);
                 aliasMeta.put(alias, new String[]{cols.get(i).fieldType(), ck});
             }
         }
-        sql.append(" FROM ").appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, table.schema())).append(".").appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, table.table()));
+        sql.unsafeAppend(" FROM ").appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, table.schema())).unsafeAppend(".").appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, table.table()));
 
         try
         {
@@ -279,11 +279,11 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
     {
         switch (key)
         {
-            case "semicolon" -> sql.append(colRef).append(" LIKE ?").add("%;%");
-            case "comma" -> sql.append(colRef).append(" LIKE ?").add("%,%");
-            case "newline" -> sql.append(colRef).append(" LIKE ? OR ").append(colRef).append(" LIKE ?").add("%\n%").add("%\r%");
-            case "doubleQuote" -> sql.append(colRef).append(" LIKE ?").add("%\"%");
-            default -> sql.append("FALSE");
+            case "semicolon" -> sql.append(colRef).unsafeAppend(" LIKE ?").add("%;%");
+            case "comma" -> sql.append(colRef).unsafeAppend(" LIKE ?").add("%,%");
+            case "newline" -> sql.append(colRef).unsafeAppend(" LIKE ? OR ").append(colRef).unsafeAppend(" LIKE ?").add("%\n%").add("%\r%");
+            case "doubleQuote" -> sql.append(colRef).unsafeAppend(" LIKE ?").add("%\"%");
+            default -> sql.unsafeAppend("FALSE");
         }
     }
 

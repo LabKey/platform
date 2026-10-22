@@ -145,7 +145,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         sql.append(sep);
         s = StringUtils.trimToNull(s);
         if (null == s)
-            sql.append("NULL");
+            sql.unsafeAppend("NULL");
         else
             sql.append(h.quoteStringLiteral(s));
     }
@@ -167,8 +167,8 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
         // select in-memory modules
         SQLFragment cte = new SQLFragment();
-        cte.append("SELECT * FROM (\n");
-        cte.append("VALUES ");
+        cte.unsafeAppend("SELECT * FROM (\n");
+        cte.unsafeAppend("VALUES ");
         String sep = "";
 
         for (Module module : ModuleLoader.getInstance().getModules())
@@ -191,38 +191,38 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             appendStringLiteral(h, cte,",",module.getVcsUrl());
             appendStringLiteral(h, cte,",",module.getSourcePath());
             appendStringLiteral(h, cte,",",StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
-            cte.append(")");
+            cte.unsafeAppend(")");
         }
-        cte.append(") AS T (");
-        cte.append("ModuleName");
-        cte.append(",ReleaseVersion");
-        cte.append(",Label");
-        cte.append(",Description");
-        cte.append(",Url");
-        cte.append(",Author");
-        cte.append(",Maintainer");
-        cte.append(",ManageVersion");
-        cte.append(",Organization, OrganizationURL");
-        cte.append(",License, LicenseURL");
-        cte.append(",VcsRevision, VcsURL");
-        cte.append(",SourcePath");
-        cte.append(",Dependencies");
-        cte.append(")\n");
+        cte.unsafeAppend(") AS T (");
+        cte.unsafeAppend("ModuleName");
+        cte.unsafeAppend(",ReleaseVersion");
+        cte.unsafeAppend(",Label");
+        cte.unsafeAppend(",Description");
+        cte.unsafeAppend(",Url");
+        cte.unsafeAppend(",Author");
+        cte.unsafeAppend(",Maintainer");
+        cte.unsafeAppend(",ManageVersion");
+        cte.unsafeAppend(",Organization, OrganizationURL");
+        cte.unsafeAppend(",License, LicenseURL");
+        cte.unsafeAppend(",VcsRevision, VcsURL");
+        cte.unsafeAppend(",SourcePath");
+        cte.unsafeAppend(",Dependencies");
+        cte.unsafeAppend(")\n");
 
         String tableName = getSqlDialect().truncate(alias + "$m", 0);
         String token = ret.addCommonTableExpression(getSqlDialect(), "modulestableconstants", tableName, cte);
 
         // join with core.modules
-        ret.append("(SELECT m.name, m.schemaversion, m.classname, m.schemas");
-        ret.append(",").append(tableName).append(".*");
-        ret.append("\n");
-        ret.append("FROM ").append(getFromTable().getFromSQL("m")).append("\n");
-        ret.append("INNER JOIN ").append(token).append(" ").append(tableName).append(" ON m.name = ").append(tableName).append(".ModuleName\n");
+        ret.unsafeAppend("(SELECT m.name, m.schemaversion, m.classname, m.schemas");
+        ret.unsafeAppend(",").append(tableName).unsafeAppend(".*");
+        ret.unsafeAppend("\n");
+        ret.unsafeAppend("FROM ").append(getFromTable().getFromSQL("m")).unsafeAppend("\n");
+        ret.unsafeAppend("INNER JOIN ").append(token).unsafeAppend(" ").append(tableName).unsafeAppend(" ON m.name = ").append(tableName).unsafeAppend(".ModuleName\n");
         // CONSIDER: LEFT OUTER JOIN to include rows from core.modules for modules not currently installed
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(getFromTable(), null);
-        ret.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        ret.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
 
         return ret;
     }

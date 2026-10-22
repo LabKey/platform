@@ -144,7 +144,7 @@ public class QueryLineage extends AbstractQueryRelation
         sql.appendComment("<QueryLineage>", d);
         // CONSIDER: use CTE for sourceSelect.getSql()
         SQLFragment lineageSql = ExperimentService.get().generateExperimentTreeSQL(sourceSelect.getSql(), options);
-        sql.append("(\n").append(lineageSql).append("\n) AS ").appendIdentifier(getAlias());
+        sql.unsafeAppend("(\n").append(lineageSql).unsafeAppend("\n) AS ").appendIdentifier(getAlias());
         sql.appendComment("</QueryLineage>", d);
         return sql;
     }

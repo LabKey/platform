@@ -26,6 +26,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -105,10 +106,9 @@ public class StudyPropertiesTable extends BaseStudyTable
 
         descriptionColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS, ctx -> "StudyProperties"));
 
-        String bTRUE = getSchema().getSqlDialect().getBooleanTRUE();
-        String bFALSE = getSchema().getSqlDialect().getBooleanFALSE();
+        SqlDialect dialect = getSchema().getSqlDialect();
 
-        var dateBasedColumn = new ExprColumn(this, "DateBased", new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".timepointType != 'VISIT' THEN " + bTRUE + " ELSE " + bFALSE + " END)"), JdbcType.BOOLEAN, timepointTypeColumn);
+        var dateBasedColumn = new ExprColumn(this, "DateBased", SQLFragment.unsafe("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".timepointType != 'VISIT' THEN ").appendValue(true, dialect).unsafeAppend(" ELSE ").appendValue(false, dialect).unsafeAppend(" END)"), JdbcType.BOOLEAN, timepointTypeColumn);
         dateBasedColumn.setUserEditable(false);
         dateBasedColumn.setHidden(true);
         dateBasedColumn.setDescription("Deprecated. Use 'timepointType' column instead.");

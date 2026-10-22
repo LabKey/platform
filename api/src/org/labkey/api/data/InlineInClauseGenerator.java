@@ -62,7 +62,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
     private SQLFragment createInlineInClause(SQLFragment sql, Collection<?> params)
     {
         String separator = "";
-        sql.append(" IN (");
+        sql.unsafeAppend(" IN (");
 
         for (Object param : params)
         {
@@ -83,11 +83,11 @@ public class InlineInClauseGenerator implements InClauseGenerator
             }
             else
             {
-                sql.append("?");
+                sql.unsafeAppend("?");
                 sql.add(param);
             }
         }
-        return sql.append(")");
+        return sql.unsafeAppend(")");
     }
 
     public static class TestCase
@@ -126,7 +126,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
         {
             GUID g = new GUID();
             Assert.assertEquals(
-                    new SQLFragment(" IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, ").appendValue(g).append(")"),
+                    new SQLFragment(" IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, ").appendValue(g).unsafeAppend(")"),
                     new InlineInClauseGenerator(_dialect).appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, g)));
         }
 

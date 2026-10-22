@@ -42,7 +42,7 @@ public class PropertyQueryChangeListener implements QueryChangeListener
     private int updateLookupQuery(String newValue, SchemaKey schema, String oldQuery, Container container)
     {
         SQLFragment where = new SQLFragment("lookupschema = ? AND lookupquery = ? AND ")
-                .append("(lookupcontainer = ? OR (lookupcontainer IS NULL AND container = ?))")
+                .unsafeAppend("(lookupcontainer = ? OR (lookupcontainer IS NULL AND container = ?))")
                 .add(schema.toString())
                 .add(oldQuery)
                 .add(container)
@@ -54,7 +54,7 @@ public class PropertyQueryChangeListener implements QueryChangeListener
     private int updateLookupSchema(String newValue, String oldSchema, Container container)
     {
         SQLFragment where = new SQLFragment("lookupschema = ? AND ")
-                .append("(lookupcontainer = ? OR (lookupcontainer IS NULL AND container = ?))")
+                .unsafeAppend("(lookupcontainer = ? OR (lookupcontainer IS NULL AND container = ?))")
                 .add(oldSchema)
                 .add(container)
                 .add(container);
@@ -65,12 +65,12 @@ public class PropertyQueryChangeListener implements QueryChangeListener
     private int updateLookups(String fieldName, String newValue, SQLFragment where)
     {
         TableInfo pdTable = OntologyManager.getTinfoPropertyDescriptor();
-        List<String> propertyURIs = new SqlSelector(pdTable.getSchema(), new SQLFragment("SELECT PropertyURI FROM ").append(pdTable).append(" WHERE ").append(where)).getArrayList(String.class);
+        List<String> propertyURIs = new SqlSelector(pdTable.getSchema(), new SQLFragment("SELECT PropertyURI FROM ").append(pdTable).unsafeAppend(" WHERE ").append(where)).getArrayList(String.class);
         if (propertyURIs.isEmpty())
             return 0;
 
         SQLFragment updateSql = new SQLFragment("UPDATE ").append(pdTable)
-                .append(" SET ").append(fieldName).append(" = ? WHERE ")
+                .unsafeAppend(" SET ").append(fieldName).unsafeAppend(" = ? WHERE ")
                 .add(newValue)
                 .append(where);
 

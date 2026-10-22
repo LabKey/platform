@@ -115,12 +115,12 @@ public class QQuery extends QExpr
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("(");
+        builder.unsafeAppend("(");
         for (QNode node : children())
         {
             node.appendSource(builder);
         }
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override
@@ -137,12 +137,12 @@ public class QQuery extends QExpr
                 return;
             String message = "Unexpected error parsing subselect: " + getSourceText();
             _select.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
-            builder.append("#ERROR:").append(message).append("#");
+            builder.unsafeAppend("#ERROR:").append(message).unsafeAppend("#");
             return;
         }
-        builder.append("(");
+        builder.unsafeAppend("(");
         builder.append(f);
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
 

@@ -144,14 +144,14 @@ public class QueryDataset extends VirtualTable<UserSchema>
             // SequenceNum
             if (getColumn(DatasetDomainKind.SEQUENCENUM) == null)
             {
-                ExprColumn sequenceNumCol = new ExprColumn(this, DatasetDomainKind.SEQUENCENUM, new SQLFragment(StudyUtils.sequenceNumFromDateSQL(DatasetDomainKind.DATE)), JdbcType.DECIMAL);
+                ExprColumn sequenceNumCol = new ExprColumn(this, DatasetDomainKind.SEQUENCENUM, StudyUtils.sequenceNumFromDateSQL(DatasetDomainKind.DATE), JdbcType.DECIMAL);
                 addColumn(sequenceNumCol);
             }
 
             // SourceLSID
             if (getColumn(DatasetDomainKind.SOURCELSID) == null)
             {
-                addColumn(new ExprColumn(this, DatasetDomainKind.SOURCELSID, new SQLFragment("NULL"), JdbcType.VARCHAR));
+                addColumn(new ExprColumn(this, DatasetDomainKind.SOURCELSID, SQLFragment.unsafe("NULL"), JdbcType.VARCHAR));
             }
         }
 
@@ -191,7 +191,7 @@ public class QueryDataset extends VirtualTable<UserSchema>
         public @NotNull SQLFragment getFromSQL()
         {
             SQLFragment sql;
-            sql = new SQLFragment("(SELECT ").append(queryAlias).append(".* FROM ").append(_sql).append(")");
+            sql = SQLFragment.unsafe("(SELECT ").appendIdentifier(queryAlias).unsafeAppend(".* FROM ").append(_sql).unsafeAppend(")");
             return sql;
         }
 

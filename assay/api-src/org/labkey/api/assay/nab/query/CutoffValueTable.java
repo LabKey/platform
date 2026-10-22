@@ -63,7 +63,7 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
 
         SQLFragment protocolSQL = new SQLFragment("NAbSpecimenID IN (SELECT RowId FROM ");
         protocolSQL.append(DilutionManager.getTableInfoNAbSpecimen(), "s");
-        protocolSQL.append(" WHERE ProtocolId = ?)");
+        protocolSQL.unsafeAppend(" WHERE ProtocolId = ?)");
         protocolSQL.add(_userSchema.getProtocol().getRowId());
         addCondition(protocolSQL, FieldKey.fromParts(PROTOCOL_FIELD_KEY));
     }
@@ -73,32 +73,32 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
         String suffix = oorIndicator ? "OORIndicator" : "";
         SQLFragment defaultICSQL = new SQLFragment("CASE (SELECT op.StringValue FROM ");
         defaultICSQL.append(OntologyManager.getTinfoObject(), "o");
-        defaultICSQL.append(", ");
+        defaultICSQL.unsafeAppend(", ");
         defaultICSQL.append(OntologyManager.getTinfoObjectProperty(), "op");
-        defaultICSQL.append(", ");
+        defaultICSQL.unsafeAppend(", ");
         defaultICSQL.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-        defaultICSQL.append(", ");
+        defaultICSQL.unsafeAppend(", ");
         defaultICSQL.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");
-        defaultICSQL.append(", ");
+        defaultICSQL.unsafeAppend(", ");
         defaultICSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");
-        defaultICSQL.append(" WHERE op.PropertyId = pd.PropertyId AND pd.Name = ? ");
+        defaultICSQL.unsafeAppend(" WHERE op.PropertyId = pd.PropertyId AND pd.Name = ? ");
         defaultICSQL.add(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
-        defaultICSQL.append("AND ns.RowId = ");
+        defaultICSQL.unsafeAppend("AND ns.RowId = ");
         defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS);
-        defaultICSQL.append(".NAbSpecimenID AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = ns.RunId)");
-        defaultICSQL.append("\nWHEN 'Polynomial' THEN ");
+        defaultICSQL.unsafeAppend(".NAbSpecimenID AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = ns.RunId)");
+        defaultICSQL.unsafeAppend("\nWHEN 'Polynomial' THEN ");
         defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        defaultICSQL.append("IC_Poly");
+        defaultICSQL.unsafeAppend("IC_Poly");
         defaultICSQL.append(suffix);
-        defaultICSQL.append("\nWHEN 'Five Parameter' THEN ");
+        defaultICSQL.unsafeAppend("\nWHEN 'Five Parameter' THEN ");
         defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        defaultICSQL.append("IC_5pl");
+        defaultICSQL.unsafeAppend("IC_5pl");
         defaultICSQL.append(suffix);
-        defaultICSQL.append("\nWHEN 'Four Parameter' THEN ");
+        defaultICSQL.unsafeAppend("\nWHEN 'Four Parameter' THEN ");
         defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        defaultICSQL.append("IC_4pl");
+        defaultICSQL.unsafeAppend("IC_4pl");
         defaultICSQL.append(suffix);
-        defaultICSQL.append("\nEND\n");
+        defaultICSQL.unsafeAppend("\nEND\n");
         return defaultICSQL;
     }
 
@@ -113,11 +113,11 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
             clearConditions(CONTAINER_FIELD_KEY);
             SQLFragment sql = new SQLFragment("NabSpecimenID IN (SELECT ns.RowId FROM ");
             sql.append(ExperimentService.get().getTinfoExperimentRun(), "r");
-            sql.append(", ");
+            sql.unsafeAppend(", ");
             sql.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");
-            sql.append(" WHERE r.RowId = ns.RunId AND ");
+            sql.unsafeAppend(" WHERE r.RowId = ns.RunId AND ");
             sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container")));
-            sql.append(")");
+            sql.unsafeAppend(")");
             addCondition(sql, CONTAINER_FIELD_KEY);
         }
     }

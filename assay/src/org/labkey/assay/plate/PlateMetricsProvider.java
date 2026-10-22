@@ -46,10 +46,10 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         return new SQLFragment("SELECT ps.rowId, COUNT(p.rowId) AS plateCount FROM ")
                 .append(plateSetTable, "ps")
-                .append(" LEFT OUTER JOIN ").append(plateTable, "p")
-                .append(" ON ps.rowId = p.plateSet")
-                .append(" WHERE ps.template = ? AND ps.archived = ?")
-                .append(" GROUP BY ps.rowId")
+                .unsafeAppend(" LEFT OUTER JOIN ").append(plateTable, "p")
+                .unsafeAppend(" ON ps.rowId = p.plateSet")
+                .unsafeAppend(" WHERE ps.template = ? AND ps.archived = ?")
+                .unsafeAppend(" GROUP BY ps.rowId")
                 .add(false)
                 .add(false);
     }
@@ -57,8 +57,8 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     private SQLFragment plateSetsPlateCountBetweenSQL(TableInfo plateSetTable, TableInfo plateTable, int above, int below)
     {
         SQLFragment sql = plateSetPlatesSQL(plateSetTable, plateTable);
-        SQLFragment inner = sql.append(" HAVING COUNT(p.rowId) > ? AND COUNT(p.rowId) < ?").add(above).add(below);
-        return new SQLFragment("SELECT COUNT(*) FROM (").append(inner).append(") as pc");
+        SQLFragment inner = sql.unsafeAppend(" HAVING COUNT(p.rowId) > ? AND COUNT(p.rowId) < ?").add(above).add(below);
+        return new SQLFragment("SELECT COUNT(*) FROM (").append(inner).unsafeAppend(") as pc");
     }
 
     private Long plateSetPlatesCountBetween(DbSchema schema, TableInfo plateSetTable, TableInfo plateTable, int above, int below)
@@ -69,9 +69,9 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     private Long plateSetPlatesCount(DbSchema schema, TableInfo plateSetTable, TableInfo plateTable, int count)
     {
         SQLFragment platesSQL = plateSetPlatesSQL(plateSetTable, plateTable)
-                .append(" HAVING COUNT(p.rowId) = ?")
+                .unsafeAppend(" HAVING COUNT(p.rowId) = ?")
                 .add(count);
-        SQLFragment outer = new SQLFragment("SELECT COUNT(*) FROM (").append(platesSQL).append(") as pc");
+        SQLFragment outer = new SQLFragment("SELECT COUNT(*) FROM (").append(platesSQL).unsafeAppend(") as pc");
         return new SqlSelector(schema, outer).getObject(Long.class);
     }
 
@@ -79,7 +79,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
                 .append(plateTable, "p")
-                .append(" WHERE p.template = ? AND p.archived = ?")
+                .unsafeAppend(" WHERE p.template = ? AND p.archived = ?")
                 .add(template)
                 .add(archived);
         return new SqlSelector(schema, sql).getObject(Long.class);
@@ -89,7 +89,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
                 .append(plateSetTable, "ps")
-                .append(" WHERE archived = ? AND template = ?")
+                .unsafeAppend(" WHERE archived = ? AND template = ?")
                 .add(archived)
                 .add(false);
         return new SqlSelector(schema, sql).getObject(Long.class);
@@ -99,9 +99,9 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
                 .append(plateTable, "p")
-                .append(" JOIN ").append(plateTypeTable, "pt")
-                .append(" ON p.plateType = pt.rowId")
-                .append(" WHERE p.archived = ? AND p.template = ? AND pt.columns = ? AND pt.rows = ?")
+                .unsafeAppend(" JOIN ").append(plateTypeTable, "pt")
+                .unsafeAppend(" ON p.plateType = pt.rowId")
+                .unsafeAppend(" WHERE p.archived = ? AND p.template = ? AND pt.columns = ? AND pt.rows = ?")
                 .add(false)
                 .add(template)
                 .add(cols)
@@ -113,8 +113,8 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT wg.plateId) FROM ")
                 .append(wellGroupTable, "wg")
-                .append(" INNER JOIN ").append(plateTable, "p").append(" ON p.rowId = wg.plateId ")
-                .append(" WHERE p.archived = ? AND p.template = ? AND wg.typename = ?")
+                .unsafeAppend(" INNER JOIN ").append(plateTable, "p").unsafeAppend(" ON p.rowId = wg.plateId ")
+                .unsafeAppend(" WHERE p.archived = ? AND p.template = ? AND wg.typename = ?")
                 .add(false)
                 .add(template)
                 .add(wellGroupType);
@@ -219,12 +219,12 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             Map<String, Long> plateSets = new HashMap<>();
             plateSets.put("archivedPlateSetCount", plateSetCount(dbSchema, plateSetTable, true));
             plateSets.put("plateSetCount", plateSetCount(dbSchema, plateSetTable, false));
-            plateSets.put("primaryPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type = ?").add(PlateSetType.primary)).getObject(Long.class));
-            plateSets.put("assayPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type = ?").add(PlateSetType.assay)).getObject(Long.class));
-            plateSets.put("standAloneAssayPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type = ?").add(PlateSetType.assay).append(" AND rootPlateSetId IS NULL")).getObject(Long.class));
+            plateSets.put("primaryPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").unsafeAppend(" WHERE type = ?").add(PlateSetType.primary)).getObject(Long.class));
+            plateSets.put("assayPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").unsafeAppend(" WHERE type = ?").add(PlateSetType.assay)).getObject(Long.class));
+            plateSets.put("standAloneAssayPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").unsafeAppend(" WHERE type = ?").add(PlateSetType.assay).unsafeAppend(" AND rootPlateSetId IS NULL")).getObject(Long.class));
             plateSets.put("plateSetsWithNoPlatesCount", plateSetPlatesCount(dbSchema, plateSetTable, plateTable, 0));
             plateSets.put("plateSetsWithOnePlateCount", plateSetPlatesCount(dbSchema, plateSetTable, plateTable, 1));
-            plateSets.put("maximumPlatesInPlateSet", new SqlSelector(dbSchema, new SQLFragment("SELECT MAX(plateCount) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(") x")).getObject(Long.class));
+            plateSets.put("maximumPlatesInPlateSet", new SqlSelector(dbSchema, new SQLFragment("SELECT MAX(plateCount) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).unsafeAppend(") x")).getObject(Long.class));
             plateSets.put("plateSetsWith1To10PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 0, 11));
             plateSets.put("plateSetsWith11to30PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 10, 31));
             plateSets.put("plateSetsWith31to60PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 30, 61));
@@ -237,7 +237,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             Map<String, Long> plates = new HashMap<>();
             plates.put("platesCount", plateCount(dbSchema, plateTable, false, false));
             plates.put("archivedPlatesCount", plateCount(dbSchema, plateTable, false, true));
-            plates.put("distinctPlatedSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM (SELECT DISTINCT sampleId FROM ").append(wellTable, "w").append(" WHERE sampleId IS NOT NULL) as ds")).getObject(Long.class));
+            plates.put("distinctPlatedSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM (SELECT DISTINCT sampleId FROM ").append(wellTable, "w").unsafeAppend(" WHERE sampleId IS NOT NULL) as ds")).getObject(Long.class));
             plates.put("12WellCount", plateTypeCount(dbSchema, plateTable, plateTypeTable, 4, 3, false));
             plates.put("24WellCount", plateTypeCount(dbSchema, plateTable, plateTypeTable, 6, 4, false));
             plates.put("48WellCount", plateTypeCount(dbSchema, plateTable, plateTypeTable, 8, 6, false));
@@ -286,7 +286,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             TableInfo wellTable = schema.getTableInfoWell();
             Map<String, Long> wells = new HashMap<>();
             wells.put("wellCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(wellTable, "w")).getObject(Long.class));
-            wells.put("wellsWithSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(wellTable, "w").append(" WHERE sampleId IS NOT NULL")).getObject(Long.class));
+            wells.put("wellsWithSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(wellTable, "w").unsafeAppend(" WHERE sampleId IS NOT NULL")).getObject(Long.class));
             plateMetrics.put("wells", wells);
         }
 

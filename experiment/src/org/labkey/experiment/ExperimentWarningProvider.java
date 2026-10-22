@@ -65,7 +65,7 @@ public class ExperimentWarningProvider implements WarningProvider
             if (timelineTable == null)
                 return;
             SQLFragment sql = new SQLFragment("SELECT COUNT(*) from ").append(timelineTable)
-                    .append(" WHERE transactionId = ?").add(Long.valueOf(transactionIdStr));
+                    .unsafeAppend(" WHERE transactionId = ?").add(Long.valueOf(transactionIdStr));
             SqlSelector selector = new SqlSelector(auditLogSchema.getDbSchema().getScope(), sql);
             _actualRecordCount = selector.getObject(Long.class);
         }

@@ -36,7 +36,7 @@ public class QOrder extends QNode
                 default:
                     if (fComma)
                     {
-                        builder.append(",");
+                        builder.unsafeAppend(",");
                     }
                     fComma = true;
                     node.appendSource(builder);
@@ -44,7 +44,7 @@ public class QOrder extends QNode
                 case SqlBaseParser.ASCENDING:
                     break;
                 case SqlBaseParser.DESCENDING:
-                    builder.append(" DESC");
+                    builder.unsafeAppend(" DESC");
                     break;
             }
         }

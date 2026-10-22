@@ -323,9 +323,9 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
         Collection<String> getAliases(String lsid)
         {
             SQLFragment sql = new SQLFragment("SELECT AL.name FROM ").append(ExperimentService.get().getTinfoAlias(), "AL")
-                    .append(" JOIN ").append(ExperimentService.get().getTinfoDataAliasMap(), "DM")
-                    .append(" ON AL.rowId = DM.alias")
-                    .append(" WHERE DM.lsid = ?")
+                    .unsafeAppend(" JOIN ").append(ExperimentService.get().getTinfoDataAliasMap(), "DM")
+                    .unsafeAppend(" ON AL.rowId = DM.alias")
+                    .unsafeAppend(" WHERE DM.lsid = ?")
                     .add(lsid);
 
             return new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(String.class);

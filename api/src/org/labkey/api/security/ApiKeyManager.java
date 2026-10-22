@@ -211,7 +211,7 @@ public class ApiKeyManager
         {
             SQLFragment sql = new SQLFragment("UPDATE ")
                 .append(CoreSchema.getInstance().getTableAPIKeys())
-                .append(" SET LastUsed = ? WHERE Crypt = ?")
+                .unsafeAppend(" SET LastUsed = ? WHERE Crypt = ?")
                 .add(new Date())
                 .add(crypt(apikey));
             new SqlExecutor(scope).execute(sql);

@@ -122,6 +122,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -643,11 +644,11 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     {
         // join to the study.participant table to get the participant's alternateId
         SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT p.AlternateId FROM ");
+        sql.unsafeAppend("(SELECT p.AlternateId FROM ");
         sql.append(StudySchema.getInstance().getTableInfoParticipant(), "p");
-        sql.append(" WHERE p.participantid = ");
+        sql.unsafeAppend(" WHERE p.participantid = ");
         sql.append(column.getValueSql(ExprColumn.STR_TABLE_ALIAS));
-        sql.append(" AND p.container = ?)");
+        sql.unsafeAppend(" AND p.container = ?)");
         sql.add(c);
 
         return new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column);
@@ -979,7 +980,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     private SQLFragment getUnionSql(Collection<BaseStudyTable> terms, Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, SqlDialect dialect, Map<String, BaseColumnInfo> unionColumns)
     {
         SQLFragment sqlf = new SQLFragment();
-        String union = "";
+        var union = SQLFragment.sep("", "\nUNION ALL\n");
         int counter = 1;
         for (TableInfo t : terms)
         {
@@ -988,27 +989,28 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
 
             LinkedHashMap<String,SQLFragment> joins = new LinkedHashMap<>();
             String tableAlias = "_" + (counter++);
-            sqlf.append(union);
-            sqlf.append("SELECT ");
-            String comma = "";
+            sqlf.append(union.next());
+            sqlf.unsafeAppend("SELECT ");
+            var comma = SQLFragment.sep("", ", ");
             Set<FieldKey> selectedColumns = new HashSet<>();
             for (ColumnInfo colUnion : unionColumns.values())
             {
                 // NOTE: getColumn() can be _really_ slow if there are lots of misses, use resolveIfNeeded=false
                 ColumnInfo col = ((AbstractTableInfo)t).getColumn(colUnion.getName(), false);
-                sqlf.append(comma);
+                sqlf.append(comma.next());
                 if (null == col && colUnion.getName().equalsIgnoreCase("ParticipantId"))
                     col = t.getColumn(((StudyQuerySchema)userSchema).getSubjectColumnName());
                 if (null != col)
                     selectedColumns.add(col.getFieldKey());
                 if (null == col)
                 {
-                    sqlf.append("CAST(NULL AS ").append(dialect.getSqlCastTypeName(colUnion.getJdbcType())).append(")");
+                    var type = Objects.requireNonNull(dialect.getSqlCastTypeNameAsSql(colUnion.getJdbcType()));
+                    sqlf.unsafeAppend("CAST(NULL AS ").append(type).unsafeAppend(")");
                 }
                 else if (col.getJdbcType() != colUnion.getJdbcType())
                 {
-                    sqlf.append("CAST(").append(col.getValueSql(tableAlias));
-                    sqlf.append(" AS ").append(dialect.getSqlTypeName(colUnion.getJdbcType())).append(")");
+                    var type = Objects.requireNonNull(dialect.getSqlCastTypeNameAsSql(colUnion.getJdbcType()));
+                    sqlf.unsafeAppend("CAST(").append(col.getValueSql(tableAlias)).unsafeAppend(" AS ").append(type).unsafeAppend(")");
                     col.declareJoins(tableAlias,joins);
                 }
                 else
@@ -1017,17 +1019,14 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                     col.declareJoins(tableAlias,joins);
                 }
                 if (!dontAliasColumns || "container".equalsIgnoreCase(colUnion.getAlias().getId()))
-                    sqlf.append(" AS ").appendIdentifier(colUnion.getAlias());
-                comma = ", ";
+                    sqlf.unsafeAppend(" AS ").appendIdentifier(colUnion.getAlias());
             }
-            sqlf.append("\nFROM ");
+            sqlf.unsafeAppend("\nFROM ");
             sqlf.append(t.getFromSQL(tableAlias, selectedColumns));
             for (SQLFragment j : joins.values())
-                sqlf.append(" ").append(j);
+                sqlf.unsafeAppend(" ").append(j);
             if (filterFragmentMap.containsKey(t))
-                sqlf.append(" WHERE ").append(filterFragmentMap.get(t));
-
-            union = "\nUNION ALL\n";
+                sqlf.unsafeAppend(" WHERE ").append(filterFragmentMap.get(t));
         }
         return sqlf;
     }
@@ -1090,25 +1089,25 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     }
 
     @Override
-    public void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists)
+    public void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, SQLFragment exists)
     {
         sql
             .append(exists)
             .append(StudySchema.getInstance().getTableInfoParticipant(), "p")
-            .append(" WHERE (")
-            .append(locationTableAlias)
-            .append(".RowId = p.EnrollmentSiteId OR ")
-            .append(locationTableAlias)
-            .append(".RowId = p.CurrentSiteId) AND ")
-            .append(locationTableAlias)
-            .append(".Container = p.Container) OR\n")
+            .unsafeAppend(" WHERE (")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".RowId = p.EnrollmentSiteId OR ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".RowId = p.CurrentSiteId) AND ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".Container = p.Container) OR\n")
             .append(exists)
             .append(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), "a")
-            .append(" WHERE ")
-            .append(locationTableAlias)
-            .append(".RowId = a.LocationId AND ")
-            .append(locationTableAlias)
-            .append(".Container = a.Container)");
+            .unsafeAppend(" WHERE ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".RowId = a.LocationId AND ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".Container = a.Container)");
     }
 
     private static final List<StudyTabProvider> TAB_PROVIDERS = new CopyOnWriteArrayList<>();

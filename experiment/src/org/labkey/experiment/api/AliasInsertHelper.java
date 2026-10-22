@@ -168,9 +168,9 @@ public class AliasInsertHelper
     public static Collection<String> getAliases(String lsid)
     {
         SQLFragment sql = new SQLFragment("SELECT AL.name FROM ").append(ExperimentService.get().getTinfoAlias(), "AL")
-            .append(" JOIN ").append(ExperimentService.get().getTinfoMaterialAliasMap(), "MM")
-            .append(" ON AL.rowId = MM.alias")
-            .append(" WHERE MM.lsid = ?")
+            .unsafeAppend(" JOIN ").append(ExperimentService.get().getTinfoMaterialAliasMap(), "MM")
+            .unsafeAppend(" ON AL.rowId = MM.alias")
+            .unsafeAppend(" WHERE MM.lsid = ?")
             .add(lsid);
 
         return new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(String.class);

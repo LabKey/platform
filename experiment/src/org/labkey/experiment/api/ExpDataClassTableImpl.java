@@ -183,10 +183,10 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
     private ExprColumn createDataCountColumn(@NotNull ContainerFilter dataCountContainerFilter)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoData(), "d")
-                .append(" WHERE d.classId = ").append(ExprColumn.STR_TABLE_ALIAS + ".rowid")
-                .append(" AND ")
+                .unsafeAppend(" WHERE d.classId = ").append(ExprColumn.STR_TABLE_ALIAS + ".rowid")
+                .unsafeAppend(" AND ")
                 .append(dataCountContainerFilter.getSQLFragment(getSchema(), new SQLFragment("d.container")))
-                .append(")");
+                .unsafeAppend(")");
         ExprColumn column = new ExprColumn(this, "DataCount", sql, JdbcType.INTEGER);
         column.setDescription("Contains the number of data currently stored in this data class");
         column.setFormat("#,##0");

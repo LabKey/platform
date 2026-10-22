@@ -24,21 +24,21 @@ public class QWhen extends QExpr
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("\nWHEN(");
+        builder.unsafeAppend("\nWHEN(");
         ((QExpr)getFirstChild()).appendSql(builder, query);
-        builder.append(")THEN(");
+        builder.unsafeAppend(")THEN(");
         ((QExpr)getLastChild()).appendSql(builder, query);
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("\nWHEN(");
+        builder.unsafeAppend("\nWHEN(");
         getFirstChild().appendSource(builder);
-        builder.append(")THEN(");
+        builder.unsafeAppend(")THEN(");
         getLastChild().appendSource(builder);
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override @NotNull

@@ -41,7 +41,7 @@ public class PostgresTableSizesTable extends AbstractPostgresAdminOnlyTable
     public @NotNull SQLFragment getFromSQL()
     {
         SQLFragment result = new SQLFragment();
-        result.append("""
+        result.unsafeAppend("""
                 SELECT
                     table_schema,
                     table_name,

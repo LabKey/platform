@@ -30,13 +30,13 @@ public class QNull extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("NULL");
+        builder.unsafeAppend("NULL");
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("NULL");
+        builder.unsafeAppend("NULL");
     }
 
     @Override

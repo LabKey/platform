@@ -725,7 +725,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         if (!toRemove.isEmpty())
         {
             var sql = new SQLFragment("DELETE FROM ").append(table)
-                    .append(" WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
+                    .unsafeAppend(" WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
             new SqlExecutor(table.getSchema()).execute(sql);
         }
 

@@ -117,10 +117,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // (rather than the actual number), because a specimennumber isn't sufficient to identify a row in the specimen
         // summary table; derivative and additive types are required as well. We use this number so we know if additional
         // (more expensive) queries are required to check for actual comments in the DB for each row.
-        SQLFragment sqlFragComments = new SQLFragment("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM " +
-                SpecimenSchema.get().getTableInfoSpecimenComment() +
-                " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
-                " AND Container = ?)");
+        SQLFragment sqlFragComments = SQLFragment.unsafe("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM ")
+                .append(SpecimenSchema.get().getTableInfoSpecimenComment())
+                .unsafeAppend(" WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash AND Container = ?)");
         sqlFragComments.add(getContainer().getId());
         //  Set this column type to string so that exports to excel correctly set the column type as string.
         // (We're using a custom display column to output the text of the comment in this col, even though
@@ -138,11 +137,10 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addSpecimenCommentColumns(_userSchema, false);
 
         // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:
-        SQLFragment sqlFragConflicts = new SQLFragment("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
-                "SUM(CAST(QualityControlFlag AS INT)) = 0 THEN ? ELSE ? END FROM " +
-                SpecimenSchema.get().getTableInfoSpecimenComment() +
-                " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
-                " AND Container = ?)");
+        SQLFragment sqlFragConflicts = SQLFragment.unsafe("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
+                "SUM(CAST(QualityControlFlag AS INT)) = 0 THEN ? ELSE ? END FROM ")
+                .append(SpecimenSchema.get().getTableInfoSpecimenComment())
+                .unsafeAppend(" WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash AND Container = ?)");
         sqlFragConflicts.add(Boolean.FALSE);
         sqlFragConflicts.add(Boolean.TRUE);
         sqlFragConflicts.add(getContainer().getId());

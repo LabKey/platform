@@ -7290,12 +7290,12 @@ public class ExperimentController extends SpringActionController
             {
                 if (id.startsWith(SAMPLE_ID_PREFIX))
                 {
-                    sampleIdValuesSql.append(sampleIdComma).append("\t(").appendValue(index);
-                    sampleIdValuesSql.append(", ");
+                    sampleIdValuesSql.append(sampleIdComma).unsafeAppend("\t(").appendValue(index);
+                    sampleIdValuesSql.unsafeAppend(", ");
                     sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
-                    sampleIdValuesSql.append(", ");
+                    sampleIdValuesSql.unsafeAppend(", ");
                     sampleIdValuesSql.append(LabKeySql.quoteString("null"));
-                    sampleIdValuesSql.append(")");
+                    sampleIdValuesSql.unsafeAppend(")");
                     sampleIdComma = "\n,";
                 }
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
@@ -7307,12 +7307,12 @@ public class ExperimentController extends SpringActionController
                     {
                         for (String lsid : lsids)
                         {
-                            uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
-                            uniqueIdValuesSql.append(", ");
+                            uniqueIdValuesSql.append(uniqueIdComma).unsafeAppend("\t(").appendValue(index);
+                            uniqueIdValuesSql.unsafeAppend(", ");
                             uniqueIdValuesSql.append(LabKeySql.quoteString(idClean));
-                            uniqueIdValuesSql.append(", ");
+                            uniqueIdValuesSql.unsafeAppend(", ");
                             uniqueIdValuesSql.append(LabKeySql.quoteString(lsid));
-                            uniqueIdValuesSql.append(")");
+                            uniqueIdValuesSql.unsafeAppend(")");
                             uniqueIdComma = "\n,";
                         }
                     }
@@ -7324,42 +7324,42 @@ public class ExperimentController extends SpringActionController
             SQLFragment sql = new SQLFragment();
             if (!sampleIdValuesSql.isEmpty())
             {
-                sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES\n");
+                sql.unsafeAppend("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES\n");
                 sql.append(sampleIdValuesSql);
-                sql.append("\n) AS _values_ )\n"); // name of the alias here doesn't matter
+                sql.unsafeAppend("\n) AS _values_ )\n"); // name of the alias here doesn't matter
             }
             if (!uniqueIdValuesSql.isEmpty())
             {
                 if (!sampleIdValuesSql.isEmpty())
-                    sql.append(",\n");
+                    sql.unsafeAppend(",\n");
                 else
-                    sql.append("WITH ");
+                    sql.unsafeAppend("WITH ");
 
-                sql.append("_ordered_unique_ids_ AS (\nSELECT * FROM (VALUES\n");
+                sql.unsafeAppend("_ordered_unique_ids_ AS (\nSELECT * FROM (VALUES\n");
                 sql.append(uniqueIdValuesSql);
-                sql.append("\n) AS _values_ )\n"); // name of the alias here doesn't matter
+                sql.unsafeAppend("\n) AS _values_ )\n"); // name of the alias here doesn't matter
             }
 
-            sql.append("SELECT ");
-            sql.append("\n\tOID.").append(StringUtils.join(orderedIdCols, ",\n\tOID."));
-            sql.append(",\n\t").append(StringUtils.join( sampleColumns, ",\n\t"));
-            sql.append("\nFROM\n(");
+            sql.unsafeAppend("SELECT ");
+            sql.unsafeAppend("\n\tOID.").append(StringUtils.join(orderedIdCols, ",\n\tOID."));
+            sql.unsafeAppend(",\n\t").append(StringUtils.join( sampleColumns, ",\n\t"));
+            sql.unsafeAppend("\nFROM\n(");
             if (!sampleIdValuesSql.isEmpty())
             {
-                sql.append("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id,\n\t_ordered_ids_.column2 as lsid");
-                sql.append("\nFROM _ordered_ids_\n");
-                sql.append("INNER JOIN exp.materials M ON _ordered_ids_.column2 = M.Name");
-                sql.append("\n");
+                sql.unsafeAppend("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id,\n\t_ordered_ids_.column2 as lsid");
+                sql.unsafeAppend("\nFROM _ordered_ids_\n");
+                sql.unsafeAppend("INNER JOIN exp.materials M ON _ordered_ids_.column2 = M.Name");
+                sql.unsafeAppend("\n");
             }
             if (!uniqueIdValuesSql.isEmpty())
             {
                 if (!sampleIdValuesSql.isEmpty())
-                    sql.append("\nUNION ALL\n\n");
+                    sql.unsafeAppend("\nUNION ALL\n\n");
 
-                sql.append("SELECT\n\tM.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t_ordered_unique_ids_.column2 as Id,\n\t_ordered_unique_ids_.column3 as lsid");
-                sql.append("\nFROM _ordered_unique_ids_\n");
-                sql.append("INNER JOIN exp.materials M ON _ordered_unique_ids_.column3 = M.lsid");
-                sql.append("\n");
+                sql.unsafeAppend("SELECT\n\tM.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t_ordered_unique_ids_.column2 as Id,\n\t_ordered_unique_ids_.column3 as lsid");
+                sql.unsafeAppend("\nFROM _ordered_unique_ids_\n");
+                sql.unsafeAppend("INNER JOIN exp.materials M ON _ordered_unique_ids_.column3 = M.lsid");
+                sql.unsafeAppend("\n");
             }
             if (!haveData) // no data to return but return data in the expected shape.
             {
@@ -7373,18 +7373,18 @@ public class ExperimentController extends SpringActionController
                                 return "NULL AS " + col;
                         })
                         .collect(Collectors.joining(",\t\n")));
-                sql.append(",\t\n").append(StringUtils.join(sampleColumns, ",\t\n"));
-                sql.append("\nFROM ").append(samplesTable).append(" S WHERE 1 = 2");
+                sql.unsafeAppend(",\t\n").append(StringUtils.join(sampleColumns, ",\t\n"));
+                sql.unsafeAppend("\nFROM ").append(samplesTable).unsafeAppend(" S WHERE 1 = 2");
                 return sql;
             }
             else
             {
-                sql.append(") OID");
+                sql.unsafeAppend(") OID");
                 if (isFMEnabled)
-                    sql.append("\nLEFT JOIN inventory.SampleItems S on S.RowId = OID.RowId");
+                    sql.unsafeAppend("\nLEFT JOIN inventory.SampleItems S on S.RowId = OID.RowId");
                 else
-                    sql.append("\nINNER JOIN exp.materials S on S.RowId = OID.RowId");
-                sql.append("\n\nORDER BY Ordinal");
+                    sql.unsafeAppend("\nINNER JOIN exp.materials S on S.RowId = OID.RowId");
+                sql.unsafeAppend("\n\nORDER BY Ordinal");
                 return sql;
             }
         }

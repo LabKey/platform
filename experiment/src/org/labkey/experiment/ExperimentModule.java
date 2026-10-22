@@ -599,8 +599,8 @@ public class ExperimentModule extends SpringModule
                 if (AssayService.get() != null)
                 {
                     UsageMetricGroup assayMetrics = metrics.group("assay", "Assay usage. Each assay provider name maps to protocolCount (designs, archived included), runCount, resultRowCount (null if the provider doesn't count), and implementingClass");
-                    SQLFragment baseRunSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").append(" WHERE lsid LIKE ?");
-                    SQLFragment baseProtocolSQL = new SQLFragment("SELECT * FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").append(" WHERE lsid LIKE ? AND ApplicationType = ?");
+                    SQLFragment baseRunSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").unsafeAppend(" WHERE lsid LIKE ?");
+                    SQLFragment baseProtocolSQL = new SQLFragment("SELECT * FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").unsafeAppend(" WHERE lsid LIKE ? AND ApplicationType = ?");
                     for (AssayProvider assayProvider : AssayService.get().getAssayProviders())
                     {
                         UsageMetricGroup protocolMetrics = assayMetrics.group(assayProvider.getName());
