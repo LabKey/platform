@@ -58,6 +58,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.io.EOFException;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -573,39 +574,41 @@ public class Table
     // Standard SQLException catch block: log exception, query SQL, and params
     static void logException(@Nullable SQLFragment sql, @Nullable Connection conn, SQLException e, Level logLevel)
     {
-        if (SqlDialect.isCancelException(e) || ExceptionUtil.isIgnorable(e))
-        {
+        Level level = getExceptionLogLevel(sql, e, logLevel);
+        if (null == level)
             return;
-        }
 
-        if (sql == null)
-        {
+        if (SqlDialect.isConnectionLostException(e))
+            _log.error("Database connection lost during query, SQLState: {}", e.getSQLState(), e);
+        else if (sql == null)
             _log.error("SQL Exception, no SQL query text available", e);
-        }
         else
+            _log.log(level, "SQL Exception{}", e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState()), e);
+
+        _logQuery(level, sql, conn);
+    }
+
+    /** Level at which logException() logs e and its SQL, or null if it shouldn't be logged */
+    static @Nullable Level getExceptionLogLevel(@Nullable SQLFragment sql, SQLException e, Level logLevel)
+    {
+        if (SqlDialect.isCancelException(e))
+            return null;
+
+        // A killed backend surfaces as an I/O error wrapping EOFException, which isIgnorable() mistakes for a client abort
+        boolean connectionLost = SqlDialect.isConnectionLostException(e);
+        if (!connectionLost && ExceptionUtil.isIgnorable(e))
+            return null;
+
+        // Treat a ConstraintException during INSERT/UPDATE as a WARNING. Treat all other SQLExceptions as an ERROR.
+        Level level = Level.ERROR;
+        if (!connectionLost && sql != null && RuntimeSQLException.isConstraintException(e))
         {
             String trim = sql.getSQL().trim();
-
-            // Treat a ConstraintException during INSERT/UPDATE as a WARNING. Treat all other SQLExceptions as an ERROR.
-            if (RuntimeSQLException.isConstraintException(e) && (Strings.CI.startsWith(trim, "INSERT") || Strings.CI.startsWith(trim, "UPDATE")))
-            {
-                // Log this ConstraintException if log Level is WARN (the default) or lower. Skip logging for callers that request just ERRORs.
-                if (Level.WARN.isMoreSpecificThan(logLevel))
-                {
-                    _log.warn("SQL Exception{}", e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState()), e);
-                    _logQuery(Level.WARN, sql, conn);
-                }
-            }
-            else
-            {
-                // Log this SQLException if log level is ERROR or lower.
-                if (Level.ERROR.isMoreSpecificThan(logLevel))
-                {
-                    _log.error("SQL Exception{}", e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState()), e);
-                    _logQuery(Level.ERROR, sql, conn);
-                }
-            }
+            if (Strings.CI.startsWith(trim, "INSERT") || Strings.CI.startsWith(trim, "UPDATE"))
+                level = Level.WARN;
         }
+
+        return level.isMoreSpecificThan(logLevel) ? level : null;
     }
 
     static void debugException(SQLFragment sql, @Nullable Connection conn, SQLException e)
@@ -867,7 +870,7 @@ public class Table
             columnSQL.appendIdentifier(column.getSelectIdentifier());
             valueSQL.append(comma);
             if (null == value || value instanceof String s && s.isEmpty())
-                valueSQL.append("NULL");
+                valueSQL.unsafeAppend("NULL");
             else if (value instanceof NowTimestamp ts)
                 valueSQL.appendValue(ts);
             else
@@ -881,7 +884,7 @@ public class Table
                         throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
                 }
 
-                valueSQL.append('?');
+                valueSQL.append("?");
                 if (value instanceof Parameter.JdbcParameterValue)
                     valueSQL.add(value);
                 else
@@ -896,14 +899,14 @@ public class Table
             throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + fieldsIn);
         }
 
-        insertSQL.append("INSERT INTO ");
+        insertSQL.unsafeAppend("INSERT INTO ");
         insertSQL.append(table.getSelectName());
-        insertSQL.append("\n\t(");
+        insertSQL.unsafeAppend("\n\t(");
         insertSQL.append(columnSQL);
-        insertSQL.append(")\n\t");
-        insertSQL.append("VALUES (");
+        insertSQL.unsafeAppend(")\n\t");
+        insertSQL.unsafeAppend("VALUES (");
         insertSQL.append(valueSQL);
-        insertSQL.append(')');
+        insertSQL.append(")");
 
         // CONSIDER reselect version column
         if (null != autoIncColumn)
@@ -1024,7 +1027,7 @@ public class Table
         {
             whereSQL.append(whereAND);
             whereSQL.appendIdentifier(col.getSelectIdentifier());
-            whereSQL.append("=?");
+            whereSQL.unsafeAppend("=?");
             whereSQL.add(keys.get(col.getName()), col.getJdbcType());
             whereAND = " AND ";
         }
@@ -1049,7 +1052,7 @@ public class Table
                 {
                     setSQL.append(comma);
                     setSQL.appendIdentifier(column.getSelectIdentifier());
-                    setSQL.append("=");
+                    setSQL.unsafeAppend("=");
                     setSQL.append(expr);
                     comma = ", ";
                     hasFieldsToSet = true;
@@ -1064,7 +1067,7 @@ public class Table
                 {
                     setSQL.append(comma);
                     setSQL.appendIdentifier(column.getSelectIdentifier());
-                    setSQL.append("=NULL");
+                    setSQL.unsafeAppend("=NULL");
                     comma = ", ";
                 }
                 continue;
@@ -1073,10 +1076,10 @@ public class Table
             Object value = fields.get(column.getName());
             setSQL.append(comma);
             setSQL.appendIdentifier(column.getSelectIdentifier());
-            setSQL.append("=");
+            setSQL.unsafeAppend("=");
 
             if (null == value || value instanceof String s && s.isEmpty())
-                setSQL.append("NULL");
+                setSQL.unsafeAppend("NULL");
             else if (value instanceof NowTimestamp ts)
                 setSQL.appendValue(ts);
             else
@@ -1090,7 +1093,7 @@ public class Table
                         throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
                 }
 
-                setSQL.append("?");
+                setSQL.unsafeAppend("?");
                 if (value instanceof Parameter.JdbcParameterValue)
                     setSQL.add(value);
                 else
@@ -1105,8 +1108,8 @@ public class Table
         {
             // UNDONE: reselect
             SQLFragment updateSQL = new SQLFragment()
-                    .append("UPDATE ").append(table.getSQLName()).append("\n\t")
-                    .append("SET ").append(setSQL).append("\n\t")
+                    .unsafeAppend("UPDATE ").append(table.getSQLName()).unsafeAppend("\n\t")
+                    .unsafeAppend("SET ").append(setSQL).unsafeAppend("\n\t")
                     .append(whereSQL);
 
             try
@@ -1169,8 +1172,8 @@ public class Table
             throw new IllegalArgumentException("Table " + fullTableName(table) + " has no column named '" + SpecialColumn.Container.name() + "'.");
 
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(table)
-                .append(" SET  ").appendIdentifier(containerColumn.getSelectIdentifier())
-                .append(" = ")
+                .unsafeAppend(" SET  ").appendIdentifier(containerColumn.getSelectIdentifier())
+                .unsafeAppend(" = ")
                 .appendValue(targetContainer);
 
         if (withModified)
@@ -1179,22 +1182,22 @@ public class Table
             ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
             if (null != colModified)
             {
-                dataUpdate.append(", ").appendIdentifier(colModified.getSelectIdentifier())
-                        .append(" = ")
+                dataUpdate.unsafeAppend(", ").appendIdentifier(colModified.getSelectIdentifier())
+                        .unsafeAppend(" = ")
                         .appendNowTimestamp();
             }
 
             ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
             if (null != colModifiedBy)
             {
-                dataUpdate.append(", ").appendIdentifier(colModifiedBy.getSelectIdentifier())
-                        .append(" = ")
+                dataUpdate.unsafeAppend(", ").appendIdentifier(colModifiedBy.getSelectIdentifier())
+                        .unsafeAppend(" = ")
                         .appendValue(user.getUserId());
             }
         }
 
         SQLFragment whereClause = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
-        dataUpdate.append("\n").append(whereClause);
+        dataUpdate.unsafeAppend("\n").append(whereClause);
 
         return new SqlExecutor(table.getSchema()).execute(dataUpdate);
     }
@@ -1234,7 +1237,7 @@ public class Table
     {
         assert assertInDb(table);
         SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
-        SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).append("\n\t").append(where);
+        SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).unsafeAppend("\n\t").append(where);
 
         return new SqlExecutor(table.getSchema()).execute(deleteSQL);
     }
@@ -1290,9 +1293,9 @@ public class Table
     {
         SQLFragment sqlSelect = getSelectSQL(tinfo, null, null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
-        sqlSelectInto.append("SELECT * INTO ").append(tableName).append(" FROM (");
+        sqlSelectInto.unsafeAppend("SELECT * INTO ").append(tableName).unsafeAppend(" FROM (");
         sqlSelectInto.append(sqlSelect);
-        sqlSelectInto.append(") _from_");
+        sqlSelectInto.unsafeAppend(") _from_");
 
         new SqlExecutor(tinfo.getSchema()).execute(sqlSelectInto);
     }
@@ -1336,14 +1339,14 @@ public class Table
             for (; i < ste.length; i++)
             {
                 String line = ste[i].toString();
-                if (!line.startsWith("org.labkey.api.data.Table."))
+                if (!line.startsWith(Table.class.getName() + "."))
                     break;
             }
             int last = Math.min(ste.length, i + count);
             for (; i < last; i++)
             {
                 String line = ste[i].toString();
-                if (line.startsWith("javax.servelet.http.HttpServlet.service("))
+                if (line.startsWith(ExceptionUtil.SERVLET_SERVICE_FRAME_PREFIX))
                     break;
                 sb.append("\n\t").append(line);
             }
@@ -1723,20 +1726,20 @@ public class Table
         Parameter paramContainer = new Parameter("container", null, JdbcType.VARCHAR);
 
         SQLFragment sqlfWhere = new SQLFragment();
-        sqlfWhere.append("\nWHERE " );
+        sqlfWhere.unsafeAppend("\nWHERE " );
         String and = "";
         for (int i=0 ; i<columnPK.size() ; i++)
         {
             ColumnInfo pk = columnPK.get(i);
             Parameter p = paramPK.get(i);
             sqlfWhere.append(and); and = " AND ";
-            sqlfWhere.appendIdentifier(pk.getSelectIdentifier()).append("=?");
+            sqlfWhere.appendIdentifier(pk.getSelectIdentifier()).unsafeAppend("=?");
             sqlfWhere.add(p);
         }
         if (null != table.getColumn("container"))
         {
             sqlfWhere.append(and);
-            sqlfWhere.append("container=?");
+            sqlfWhere.unsafeAppend("container=?");
             sqlfWhere.add(paramContainer);
         }
 
@@ -1766,8 +1769,8 @@ public class Table
             {
                 String keyName = Objects.toString(objectIdColumnName, objectURIColumnName);
                 ColumnInfo keyCol = table.getColumn(keyName);
-                sqlfSelectKey.append("SELECT ").appendIdentifier(keyCol.getSelectIdentifier());
-                sqlfSelectKey.append("FROM ").append(table.getFromSQL("X"));
+                sqlfSelectKey.unsafeAppend("SELECT ").appendIdentifier(keyCol.getSelectIdentifier());
+                sqlfSelectKey.unsafeAppend("FROM ").append(table.getFromSQL("X"));
                 sqlfSelectKey.append(sqlfWhere);
             }
 
@@ -1788,7 +1791,7 @@ public class Table
         if (null != sqlfDeleteObject)
         {
             sqlfDelete.append(sqlfDeleteObject);
-            sqlfDelete.append(";\n");
+            sqlfDelete.appendEOS();
         }
         sqlfDelete.append(sqlfDeleteTable);
 
@@ -1896,6 +1899,62 @@ public class Table
             assertFalse(dic.getErrors().hasErrors());
 
             new SqlExecutor(testTable.getSchema()).execute("DELETE FROM test.testtable WHERE EntityId = '" + extract.guid + "'");
+        }
+    }
+
+
+    public static class LogExceptionTestCase extends Assert
+    {
+        private static final SQLFragment SELECT = new SQLFragment("SELECT 1");
+
+        // How PgJDBC reports a backend killed mid-query
+        private static SQLException backendTerminated()
+        {
+            return new SQLException("An I/O error occurred while sending to the backend.", "08006", new EOFException());
+        }
+
+        @Test
+        public void testBackendTerminated()
+        {
+            assertTrue(SqlDialect.isConnectionLostException(backendTerminated()));
+            assertEquals(Level.ERROR, getExceptionLogLevel(SELECT, backendTerminated(), Level.WARN));
+            assertEquals(Level.ERROR, getExceptionLogLevel(null, backendTerminated(), Level.WARN));
+        }
+
+        @Test
+        public void testCallerLogLevel()
+        {
+            assertNull(getExceptionLogLevel(SELECT, backendTerminated(), Level.OFF));
+            assertNull(getExceptionLogLevel(SELECT, new SQLException("relation does not exist", "42P01"), Level.OFF));
+
+            SQLFragment insert = new SQLFragment("INSERT INTO t VALUES (1)");
+            SQLException duplicate = new SQLException("duplicate key value violates unique constraint", "23505");
+            assertEquals(Level.WARN, getExceptionLogLevel(insert, duplicate, Level.WARN));
+            assertNull(getExceptionLogLevel(insert, duplicate, Level.ERROR));
+            assertEquals(Level.ERROR, getExceptionLogLevel(SELECT, duplicate, Level.ERROR));
+        }
+
+        @Test
+        public void testSkipped()
+        {
+            assertNull(getExceptionLogLevel(SELECT, new SQLException("canceling statement due to user request", "57014"), Level.WARN));
+            // EOFException without a connection-loss SQLState is still a client abort
+            assertNull(getExceptionLogLevel(SELECT, new SQLException("read failed", "XX000", new EOFException()), Level.WARN));
+        }
+
+        @Test
+        public void testShutdown()
+        {
+            assertTrue(SqlDialect.isConnectionLostException(new SQLException("terminating connection due to administrator command", "57P01")));
+            assertTrue(SqlDialect.isConnectionLostException(new SQLException("terminating connection because of crash of another server process", "57P02")));
+        }
+
+        @Test
+        public void testOtherErrors()
+        {
+            assertFalse(SqlDialect.isConnectionLostException(new SQLException("canceling statement due to user request", "57014")));
+            assertFalse(SqlDialect.isConnectionLostException(new SQLException("relation does not exist", "42P01")));
+            assertFalse(SqlDialect.isConnectionLostException(new SQLException("no state")));
         }
     }
 }

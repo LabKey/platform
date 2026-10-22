@@ -42,8 +42,9 @@ import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -111,6 +112,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -174,6 +176,10 @@ public class SecurityManager
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
+    /** GH Issue 1489: gates acceptance of the deprecated TRANSFORM_SESSION_ID cookie; default off */
+    public static final String FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID = "AllowTransformSessionIdAuth";
+    public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER = "AllowApiKeyParameter";
+    public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION = "Allow authentication via 'apikey' URL parameter";
     public static final String API_KEY = "apikey";
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
@@ -417,11 +423,19 @@ public class SecurityManager
         }
     }
 
-    private static @Nullable Pair<String, String> getBasicCredentials(HttpServletRequest request)
+    private record Credentials(String username, String password, boolean shouldSetSessionCookie)
+    {
+        Credentials(String username, String password)
+        {
+            this(username, password, true);
+        }
+    }
+
+    private static @Nullable Credentials getBasicCredentials(HttpServletRequest request)
     {
         // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
         String authorization = request.getHeader("Authorization");
-        Pair<String, String> ret = null;
+        Credentials ret = null;
 
         if (null != authorization && authorization.startsWith("Basic"))
         {
@@ -434,19 +448,19 @@ public class SecurityManager
             String username = auth.substring(0, colon);
             String password = auth.substring(colon+1);
 
-            ret = new Pair<>(username, password);
+            ret = new Credentials(username, password);
         }
 
         return ret;
     }
 
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-    private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Pair<String, String> basicCredentials)
+    private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Credentials basicCredentials)
     {
         try
         {
-            String rawEmail = basicCredentials.getKey();
-            String password = basicCredentials.getValue();
+            String rawEmail = basicCredentials.username();
+            String password = basicCredentials.password();
             if (rawEmail.equalsIgnoreCase("guest"))
                 return AuthFilter.getGuestUser();
 
@@ -531,29 +545,31 @@ public class SecurityManager
         return sessionUser;
     }
 
-    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
+    public record AuthenticationAttempt(User user, HttpServletRequest request) {}
+
+    public static @Nullable AuthenticationAttempt attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
     {
         AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"{}\"", request.getRequestURI());
 
         // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
         // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
-        @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
-        AUTH_LOG.debug("   {}", null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character password");
+        @Nullable Credentials basicCredentials = getBasicCredentials(request);
+        AUTH_LOG.debug("   {}", null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.username() + " and " + basicCredentials.password().length() + " character password");
 
         if (null == basicCredentials)
         {
             basicCredentials = getApiKey(request);
-            AUTH_LOG.debug("   {}", null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character key");
+            AUTH_LOG.debug("   {}", null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.username() + " and " + basicCredentials.password().length() + " character key");
         }
 
         // Handle session API key early, if present and valid
         if (basicCredentials != null)
         {
-            String username = basicCredentials.first;
+            String username = basicCredentials.username();
 
             if (API_KEY.equals(username))
             {
-                String apiKey = basicCredentials.second;
+                String apiKey = basicCredentials.password();
                 HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
 
                 if (null != session)
@@ -562,12 +578,16 @@ public class SecurityManager
                     String sessionId = PageFlowUtil.getCookieValue(request.getCookies(), JSESSIONID, null);
                     if (!session.getId().equals(sessionId))
                     {
-                        Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
-                        sessionCookie.setPath("/");
-                        sessionCookie.setHttpOnly(true);
-                        if (AppProps.getInstance().isSSLRequired() || request.isSecure())
-                            sessionCookie.setSecure(true);
-                        response.addCookie(sessionCookie);
+                        // A URL can be planted in a victim's browser, so a URL parameter key must not set the session cookie
+                        if (basicCredentials.shouldSetSessionCookie())
+                        {
+                            Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
+                            sessionCookie.setPath("/");
+                            sessionCookie.setHttpOnly(true);
+                            if (AppProps.getInstance().isSSLRequired() || request.isSecure())
+                                sessionCookie.setSecure(true);
+                            response.addCookie(sessionCookie);
+                        }
                         request = new SessionReplacingRequest(request, session);
                     }
                 }
@@ -639,7 +659,7 @@ public class SecurityManager
                     AUTH_LOG.debug("   Basic authentication succeeded: {}", u);
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
                     // accept Guest as valid credentials from authenticateBasic()
-                    return new Pair<>(u, request);
+                    return new AuthenticationAttempt(u, request);
                 }
                 else
                 {
@@ -653,7 +673,7 @@ public class SecurityManager
 //            u = AuthenticationManager.attemptRequestAuthentication(request);
 //        }
 
-            return null == u || u.isGuest() ? null : new Pair<>(u, request);
+            return null == u || u.isGuest() ? null : new AuthenticationAttempt(u, request);
         }
         finally
         {
@@ -662,17 +682,20 @@ public class SecurityManager
     }
 
     /**
-     * Determine if an API key is present, checking "apikey" header first and then the special "transform" cookie and
-     * parameters. Return a pair with the API key if it's present; otherwise return null.
+     * Determine if an API key is present, checking the "apikey" header first, then the deprecated
+     * "LabKeyTransformSessionId" cookie (gated behind {@link #FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID}), and finally
+     * the "apikey" GET parameter (supported since SSRS can't be made to use a header, but only if the optional feature
+     * flag is enabled). Return the credentials if an API key is present via any of these; otherwise return null.
      * @param request Current request
      * @return First API key found or null if an apikey is not present.
      */
-    private static @Nullable Pair<String, String> getApiKey(HttpServletRequest request) throws UnsupportedEncodingException
+    private static @Nullable Credentials getApiKey(HttpServletRequest request) throws UnsupportedEncodingException
     {
-        // Passing via the "apikey" HTTP header is our preferred approach and used by most
-        // LabKey client API implementations
+        // Passing via the "apikey" HTTP header is our preferred approach and used by most LabKey client API
+        // implementations
         String apiKey = request.getHeader(API_KEY);
-        
+        boolean shouldSetSessionCookie = true;
+
         if (null == apiKey)
         {
             String authorization = request.getHeader("Authorization");
@@ -682,32 +705,73 @@ public class SecurityManager
 
         if (null == apiKey)
         {
-            // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
-            // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-            apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-            if (null != apiKey)
+            // Issue 40482 / GH Issue 1489: Deprecate using 'LabKeyTransformSessionId' cookie in preference for 'apikey'
+            // header authentication.
+            String transformSessionId = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
+
+            if (null != transformSessionId)
             {
-                AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+                if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+                {
+                    apiKey = transformSessionId;
+                    AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' header instead");
+                }
+                else
+                {
+                    AUTH_LOG.warn("Rejected deprecated \"" + TRANSFORM_SESSION_ID + "\" cookie authentication attempt; " +
+                        "enable the \"Allow script authentication via legacy substitution parameters\" feature flag temporarily, " +
+                        "or switch the script to 'apikey' header authentication.");
+                }
             }
             else
             {
-                // Support as a GET parameter as well, not just as a cookie, to support authentication
-                // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
-                // Do not use request.getParameter() since that will consume the POST body, #32711.
+                // Continue to support "apikey" as a GET parameter only if the optional feature flag is enabled. This
+                // supports authentication through SSRS, which can't be made to use BasicAuth, pass cookies, or use HTTP
+                // headers.
+                Map<String, String> params;
                 try
                 {
-                    Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
-                    apiKey = params.get(TRANSFORM_SESSION_ID);
+                    // Do not use request.getParameter() since that will consume the POST body, #32711.
+                    params = PageFlowUtil.mapFromQueryString(request.getQueryString());
                 }
                 catch (IllegalArgumentException e)
                 {
+                    // URLDecoder throws on malformed escapes; AuthFilter maps this to a 400
                     throw new UnsupportedEncodingException(e.getMessage());
+                }
+
+                String apiKeyParameter = params.get(API_KEY);
+
+                if (apiKeyParameter != null)
+                {
+                    if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
+                    {
+                        apiKey = apiKeyParameter;
+                        shouldSetSessionCookie = false;
+                    }
+                    else
+                    {
+                        API_KEY_PARAMETER_WARNING_THROTTLE.execute("Rejected \"" + API_KEY + "\" parameter; " +
+                            "enable the \"" + FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional feature " +
+                            "flag or authenticate via a different approach.");
+                    }
+                }
+                else if (params.get(TRANSFORM_SESSION_ID) != null)
+                {
+                    String message = "Rejected \"" + TRANSFORM_SESSION_ID + "\" parameter because it's no longer " +
+                        "supported. Enable the \"" + FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional " +
+                        "feature flag and use the \"" + API_KEY + "\" parameter instead.";
+                    API_KEY_PARAMETER_WARNING_THROTTLE.execute(message);
+                    throw new BadRequestException(message);
                 }
             }
         }
 
-        return null != apiKey ? Pair.of(API_KEY, apiKey) : null;
+        return null != apiKey ? new Credentials(API_KEY, apiKey, shouldSetSessionCookie) : null;
     }
+
+    // Unauthenticated callers can trigger these warnings on every request
+    private static final Throttle<String> API_KEY_PARAMETER_WARNING_THROTTLE = new Throttle<>(String.class, "API key parameter warnings", 10, CacheManager.HOUR, AUTH_LOG::warn);
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
@@ -1127,7 +1191,7 @@ public class SecurityManager
         displayName = StringUtils.trimToEmpty(displayName);
 
         SQLFragment select = new SQLFragment("SELECT UserId FROM ").append(core.getTableInfoUsersData());
-        select.append(" WHERE DisplayName = ? AND UserId != ?");
+        select.unsafeAppend(" WHERE DisplayName = ? AND UserId != ?");
         select.add(displayName);
         select.add(userId);
         Integer existingUserId = new SqlSelector(core.getSchema(), select).getObject(Integer.class);
@@ -2008,11 +2072,11 @@ public class SecurityManager
 
         if (c == null || c.isRoot())
         {
-            sql.append("IS NULL");
+            sql.unsafeAppend("IS NULL");
         }
         else
         {
-            sql.append("= ?");
+            sql.unsafeAppend("= ?");
             sql.add(c.getId());
             if (ownerId == null)
                 ownerId = c.isRoot() ? null : c.getId();
@@ -2020,11 +2084,11 @@ public class SecurityManager
 
         if (ownerId == null)
         {
-            sql.append(" AND OwnerId IS NULL");
+            sql.unsafeAppend(" AND OwnerId IS NULL");
         }
         else
         {
-            sql.append(" AND OwnerId = ?");
+            sql.unsafeAppend(" AND OwnerId = ?");
             sql.add(ownerId);
         }
 
@@ -2578,15 +2642,6 @@ public class SecurityManager
         return c.hasPermission(user, SeeUserDetailsPermission.class) || user.hasRootPermission(SeeUserDetailsPermission.class);
     }
 
-    public static boolean canSeeAuditLog(User user)
-    {
-        //
-        // Only returns true if the user has the site permission. If the user is an admin, then the permission
-        // check on the current container filter will return true
-        //
-        return user.hasRootPermission(CanSeeAuditLogPermission.class);
-    }
-
     public static boolean canSeeFilePaths(Container c, User user)
     {
         return (null!=c && c.hasPermission(user, SeeFilePathsPermission.class)) || user.hasRootPermission(SeeFilePathsPermission.class);
@@ -2922,7 +2977,9 @@ public class SecurityManager
 
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ALL);
+        // Short circuit for no permissions required -- always true.
+        // Optimize for one permission required (use ANY, which is more efficient than ALL).
+        return perms.isEmpty() || hasPermissions(logMsg, resource, principal, perms, contextualRoles, perms.size() == 1 ? HasPermissionOption.ANY : HasPermissionOption.ALL);
     }
 
     public static boolean hasAnyPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
@@ -2937,6 +2994,7 @@ public class SecurityManager
             SecurityLogger.indent(logMsg);
             permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
 
+            // Note: Must be a sequential stream (NOT parallel)
             var granted = getPermissions(resource, principal, contextualRoles);
             boolean ret = opt.accept(granted, permissions);
             SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, resource, ret);
@@ -2953,28 +3011,30 @@ public class SecurityManager
      * This is a choke point for computing permissions. It handles SecurityPolicy permissions, impersonation (via User
      * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
      * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
+     * Note: The returned stream may contain duplicate permissions; if a distinct stream of permissions is required,
+     * callers should invoke {@code distinct()} or collect to a set.
      */
-    public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
+    public static Stream<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, @NotNull Set<Role> contextualRoles)
     {
         if (null == resource || null == principal || !principal.isActive())
-            return Set.of();
+            return Stream.empty();
 
         if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user, contextualRoles))
-            return Set.of();
+            return Stream.empty();
 
         return getPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles);
     }
 
     /**
      * This method exists to allow isForbiddenProject() to check permissions on the project without reentrancy loops.
-     * Do not call this method unless you're isForbiddenProject().
+     * isForbiddenProject() and getPermissions() are the only methods that should be calling this.
      */
-    public static Set<Class<? extends Permission>> getPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, Set<Role> contextualRoles)
+    public static Stream<Class<? extends Permission>> getPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, @NotNull Set<Role> contextualRoles)
     {
         Stream<Role> roles = principal.getAssignedRoles(resource)
             .filter(Objects::nonNull);
 
-        if (null != contextualRoles && !contextualRoles.isEmpty())
+        if (!contextualRoles.isEmpty())
             roles = Stream.concat(roles, contextualRoles.stream());
 
         Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
@@ -2982,21 +3042,17 @@ public class SecurityManager
         if (principal instanceof User user)
             permissions = user.getPermissionsContext().filterPermissions(permissions);
 
-        return permissions.collect(Collectors.toSet());
+        return permissions;
     }
 
     @NotNull
-    public static List<String> getPermissionNames(SecurableResource resource, @NotNull UserPrincipal principal)
+    public static Set<String> getPermissionNames(SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        Set<Class<? extends Permission>> perms = getPermissions(resource, principal, null);
-        List<String> names = new ArrayList<>(perms.size());
-        for (Class<? extends Permission> perm : perms)
-        {
-            Permission permInst = RoleManager.getPermission(perm);
-            if (null != permInst)
-                names.add(permInst.getUniqueName());
-        }
-        return names;
+        return getPermissions(resource, principal, Set.of())
+            .map(RoleManager::getPermission)
+            .filter(Objects::nonNull)
+            .map(Permission::getUniqueName)
+            .collect(Collectors.toSet());
     }
 
     /**
@@ -3006,7 +3062,7 @@ public class SecurityManager
      * appropriate only for generating reports about role assignments for administrators.
      * Returns the roles the principal is playing in this securable resource, either due to direct assignment or due
      * to membership in a group that is assigned the role.
-     * Note: The returned stream may duplicate some roles; if a distinct stream of roles is required, callers should
+     * Note: The returned stream may contain duplicate roles; if a distinct stream of roles is required, callers should
      * invoke {@code distinct()} or collect to a set.
      * @param principal The principal
      * @return The roles this principal is playing in the securable resource
@@ -3018,24 +3074,33 @@ public class SecurityManager
 
     private enum HasPermissionOption
     {
-        ANY()
+        ANY
         {
             @Override
-            boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            boolean accept(Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> desired)
             {
-                return required.stream().anyMatch(granted::contains);
+                // Short-circuits as soon as any desired permission is seen
+                return granted.anyMatch(desired::contains);
             }
         },
         ALL
         {
             @Override
-            boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            boolean accept(/* Must be a sequential stream (NOT parallel) */ Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
             {
-                return granted.containsAll(required);
+                // Create a mutable copy to track missing elements
+                Set<Class<? extends Permission>> remainder = new HashSet<>(required.size());
+                remainder.addAll(required);
+
+                // Short-circuits as soon as remainder.isEmpty() becomes true
+                return granted.anyMatch(perm -> {
+                    remainder.remove(perm);
+                    return remainder.isEmpty();
+                });
             }
         };
 
-        abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
+        abstract boolean accept(Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> desired);
     }
 
     public static class TestCase extends Assert
@@ -3380,6 +3445,64 @@ public class SecurityManager
                 assertTrue("read permission", hasAllPermissions(null, testFolder, User.guest, Set.of(ReadPermission.class), Set.of()));
                 assertFalse("no insert permission", hasAllPermissions(null, testFolder, User.guest, Set.of(InsertPermission.class), Set.of()));
                 assertFalse("no update permission", hasAllPermissions(null, testFolder, User.guest, Set.of(UpdatePermission.class), Set.of()));
+            }
+            finally
+            {
+                ContainerManager.delete(testFolder, testUser);
+                UserManager.deleteUser(user.getUserId());
+            }
+        }
+
+        @Test
+        public void testHasAllPermissionsEmptySet()
+        {
+            Container parentFolder = JunitUtil.getTestContainer();
+            User testUser = TestContext.get().getUser();
+            Container testFolder = null;
+
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "hasAllPermissions_empty", testUser);
+
+                // hasAllPermissions() of an empty required-permission set must always be true, regardless of grants
+                assertTrue("empty set, guest", hasAllPermissions(null, testFolder, User.guest, Set.of(), Set.of()));
+                assertTrue("empty set, admin user", hasAllPermissions(null, testFolder, testUser, Set.of(), Set.of()));
+            }
+            finally
+            {
+                if (null != testFolder)
+                    ContainerManager.delete(testFolder, testUser);
+            }
+        }
+
+        @Test
+        public void testHasAllPermissionsMultiplePermissions() throws InvalidEmailException, UserManagementException
+        {
+            Container parentFolder = JunitUtil.getTestContainer();
+            User testUser = TestContext.get().getUser();
+            User user = addUser(new ValidEmail("hasallperms@test.net"), null, false).getUser();
+            Container testFolder = null;
+
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "hasAllPermissions_multi", testUser);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, user, ReaderRole.class, testUser);
+
+                // Reader grants Read but not Insert -- requiring both should fail
+                assertFalse("Reader role should not satisfy {Read, Insert}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class), Set.of()));
+
+                addRoleAssignment(policy, user, EditorRole.class, testUser);
+
+                // Editor grants Read, Insert, Update, Delete -- multi-permission requirements should now succeed
+                assertTrue("Editor role should satisfy {Read, Insert}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class), Set.of()));
+                assertTrue("Editor role should satisfy {Read, Insert, Update}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class, UpdatePermission.class), Set.of()));
+                // ... but Editor does not grant AdminPermission, so a set requiring it should still fail
+                assertFalse("Editor role should not satisfy {Read, Admin}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, AdminPermission.class), Set.of()));
             }
             finally
             {

@@ -870,6 +870,9 @@ public class DomainPropertyImpl implements DomainProperty
 
             OntologyManager.validatePropertyDescriptor(_pd);
             Table.update(user, OntologyManager.getTinfoPropertyDescriptor(), _pd, _pdOld.getPropertyId());
+            // The raw update above bypasses the cache; a changed URI leaves a stale entry under the old key that invalidateDomain() can't find
+            if (!_pdOld.getPropertyURI().equals(_pd.getPropertyURI()))
+                OntologyManager.clearPropertyDescriptorCache(_pdOld);
             OntologyManager.ensurePropertyDomain(_pd, dd, sortOrder);
 
             boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName() && dd.getStorageTableName() != null;
@@ -899,7 +902,7 @@ public class DomainPropertyImpl implements DomainProperty
                     if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
                     {
                         updateBooleanValue(
-                                new SQLFragment().appendIdentifier(domainKind.getStorageSchemaName()).append(".").appendIdentifier(_domain.getStorageTableName()),
+                                new SQLFragment().appendIdentifier(domainKind.getStorageSchemaName()).unsafeAppend(".").appendIdentifier(_domain.getStorageTableName()),
                                 _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null); // GitHub Issue #647
                     }
 
@@ -920,7 +923,7 @@ public class DomainPropertyImpl implements DomainProperty
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(
                             new SQLFragment("UPDATE ").
                                     append(OntologyManager.getTinfoObjectProperty()).
-                                    append(" SET StringValue = DateTimeValue, DateTimeValue = NULL WHERE PropertyId = ?").
+                                    unsafeAppend(" SET StringValue = DateTimeValue, DateTimeValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
                 else if (!oldType.getJdbcType().isText() && newType.getJdbcType().isText())
@@ -928,7 +931,7 @@ public class DomainPropertyImpl implements DomainProperty
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(
                             new SQLFragment("UPDATE ").
                                     append(OntologyManager.getTinfoObjectProperty()).
-                                    append(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
+                                    unsafeAppend(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
                 else if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isDateOrTime())
@@ -939,9 +942,9 @@ public class DomainPropertyImpl implements DomainProperty
                         update = dialect.getDateTimeToTimeCast("DateTimeValue");
                     SQLFragment sqlFragment = new SQLFragment("UPDATE ")
                             .append(OntologyManager.getTinfoObjectProperty())
-                            .append(" SET DateTimeValue = ")
+                            .unsafeAppend(" SET DateTimeValue = ")
                             .append(update)
-                            .append(" WHERE PropertyId = ?")
+                            .unsafeAppend(" WHERE PropertyId = ?")
                             .add(_pdOld.getPropertyId());
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(sqlFragment);
                 }
@@ -992,16 +995,16 @@ public class DomainPropertyImpl implements DomainProperty
         String trueValue = StringUtils.trimToNull(f.format(true));
         String falseValue = StringUtils.trimToNull(f.format(false));
         String nullValue = StringUtils.trimToNull(f.format(null));
-        SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).append(" SET ").
-                appendIdentifier(column).append(" = CASE WHEN ").
-                appendIdentifier(column).append(" IN ('1', 'true') THEN ? WHEN ").
-                appendIdentifier(column).append(" IN ('0', 'false') THEN ? ELSE ? END");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).unsafeAppend(" SET ").
+                appendIdentifier(column).unsafeAppend(" = CASE WHEN ").
+                appendIdentifier(column).unsafeAppend(" IN ('1', 'true') THEN ? WHEN ").
+                appendIdentifier(column).unsafeAppend(" IN ('0', 'false') THEN ? ELSE ? END");
         sql.add(trueValue);
         sql.add(falseValue);
         sql.add(nullValue);
         if (whereClause != null)
         {
-            sql.append(" WHERE ");
+            sql.unsafeAppend(" WHERE ");
             sql.append(whereClause);
         }
         new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);

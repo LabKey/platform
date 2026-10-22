@@ -219,7 +219,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
     protected void addCrosstabQuery(SQLFragment sql)
     {
-        sql.append("SELECT ");
+        sql.unsafeAppend("SELECT ");
 
         SQLFragment instanceCountExpr = new SQLFragment("(");
         SQLFragment sortPatternExpr = new SQLFragment("(");
@@ -241,18 +241,18 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
             //append to the instance count and sort pattern expressions
             instanceCountExpr.append(plus);
-            instanceCountExpr.append("MAX(");
+            instanceCountExpr.unsafeAppend("MAX(");
             instanceCountExpr.append(PIVOT_ALIAS);
-            instanceCountExpr.append(".");
+            instanceCountExpr.unsafeAppend(".");
             instanceCountExpr.append(getMemberInstanceCountAlias(member));
-            instanceCountExpr.append(")");
+            instanceCountExpr.unsafeAppend(")");
 
             sortPatternExpr.append(plus);
-            sortPatternExpr.append("MAX(");
+            sortPatternExpr.unsafeAppend("MAX(");
             sortPatternExpr.append(PIVOT_ALIAS);
-            sortPatternExpr.append(".");
+            sortPatternExpr.unsafeAppend(".");
             sortPatternExpr.append(getMemberSortPatternAlias(member));
-            sortPatternExpr.append(")");
+            sortPatternExpr.unsafeAppend(")");
 
             plus = " + ";
 
@@ -260,57 +260,57 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             {
                 //wrap the pivoted aggregate value in a max since we'll be grouping by the row dimensions
                 sql.append(sep);
-                sql.append("MAX(");
+                sql.unsafeAppend("MAX(");
                 sql.append(PIVOT_ALIAS);
-                sql.append(".");
+                sql.unsafeAppend(".");
                 sql.append(AggregateColumnInfo.getColumnName(member, measure));
-                sql.append(") AS ");
+                sql.unsafeAppend(") AS ");
                 sql.append(AggregateColumnInfo.getColumnName(member, measure));
             } //for each measure
         } //for each member
 
         if (getColMembers().isEmpty())
         {
-            instanceCountExpr.append("0");
-            sortPatternExpr.append("0");
+            instanceCountExpr.unsafeAppend("0");
+            sortPatternExpr.unsafeAppend("0");
 
             for(CrosstabMeasure measure : getSettings().getMeasures())
             {
                 //wrap the pivoted aggregate value in a max since we'll be grouping by the row dimensions
                 sql.append(sep);
-                sql.append("MAX(");
+                sql.unsafeAppend("MAX(");
                 sql.append(PIVOT_ALIAS);
-                sql.append(".");
+                sql.unsafeAppend(".");
                 sql.append(AggregateColumnInfo.getColumnName(null, measure));
-                sql.append(") AS ");
+                sql.unsafeAppend(") AS ");
                 sql.append(AggregateColumnInfo.getColumnName(null, measure));
             } //for each measure
         }
         //end the instance count/sort pattern expressions
-        instanceCountExpr.append(")");
-        sortPatternExpr.append(")");
+        instanceCountExpr.unsafeAppend(")");
+        sortPatternExpr.unsafeAppend(")");
 
         //add the instance count and sort expressions to the select list
         sql.append(sep);
         sql.append(instanceCountExpr);
-        sql.append(" AS ");
+        sql.unsafeAppend(" AS ");
         sql.append(COL_INSTANCE_COUNT);
 
         sql.append(sep);
         sql.append(sortPatternExpr);
-        sql.append(" AS ");
+        sql.unsafeAppend(" AS ");
         sql.append(COL_SORT_PATTERN);
 
-        sql.append("\nFROM (\n");
+        sql.unsafeAppend("\nFROM (\n");
 
         addPivotQuery(sql);
 
         //alias the pivot query
-        sql.append("\n) AS ");
+        sql.unsafeAppend("\n) AS ");
         sql.append(PIVOT_ALIAS);
 
         //finally group by the row dimensions
-        sql.append("\nGROUP BY ");
+        sql.unsafeAppend("\nGROUP BY ");
         sep = "";
         for (CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
@@ -324,7 +324,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
     protected void addPivotQuery(SQLFragment sql)
     {
-        sql.append("SELECT ");
+        sql.unsafeAppend("SELECT ");
 
         //row dimensions
         String sep = "";
@@ -342,16 +342,16 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         for(CrosstabMember member : getColMembers())
         {
             //instance count and sort pattern
-            sql.append(",\n");
+            sql.unsafeAppend(",\n");
             addMemberCase(sql, member, AGG_FILTERED_ALIAS, "1", "0", getMemberInstanceCountAlias(member));
-            sql.append(",\n");
+            sql.unsafeAppend(",\n");
             addMemberCase(sql, member, AGG_FILTERED_ALIAS,
                     (getColMembers().size() - memberIndex - 1) > 31 ? "0" : String.valueOf(1 << (getColMembers().size() - memberIndex - 1)),
                     "0", getMemberSortPatternAlias(member));
 
             for(CrosstabMeasure measure : getSettings().getMeasures())
             {
-                sql.append(",\n");
+                sql.unsafeAppend(",\n");
                 addMemberCase(sql, member, AGG_FILTERED_ALIAS, AGG_FILTERED_ALIAS + "." + AggregateColumnInfo.getColumnName(null, measure),
                         "NULL", AggregateColumnInfo.getColumnName(member, measure));
            } //for each measure
@@ -363,20 +363,20 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         {
             for(CrosstabMeasure measure : getSettings().getMeasures())
             {
-                sql.append(",\n");
+                sql.unsafeAppend(",\n");
                 sql.append(AggregateColumnInfo.getColumnName(null, measure));
            } //for each measure
         }
 
         //add the aggregation query
-        sql.append("\nFROM (\n");
+        sql.unsafeAppend("\nFROM (\n");
         Map<FieldKey,ColumnInfo> filterColMap = addAggQuery(sql);
-        sql.append("\n) AS ");
+        sql.unsafeAppend("\n) AS ");
         sql.append(AGG_FILTERED_ALIAS);
 
         if(null != getAggregateFilter())
         {
-            sql.append("\n");
+            sql.unsafeAppend("\n");
             if (getOrAggFilters())
                 addOrAggFilterJoin(sql, filterColMap, AGG_FILTERED_ALIAS);
             else
@@ -395,9 +395,9 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         Collection<ColumnInfo> reqCols = new ArrayList<>(groupTable.getColumns());    // Make a copy
         reqCols = QueryService.get().ensureRequiredColumns(groupTable, reqCols, aggFilter, null, null);
 
-        sql.append("SELECT * FROM (\n");
+        sql.unsafeAppend("SELECT * FROM (\n");
         sql.append(Table.getSelectSQL(groupTable, reqCols, null, null));
-        sql.append("\n) AS ");
+        sql.unsafeAppend("\n) AS ");
         sql.append(AGG_ALIAS);
 
         return getAggregateFilterColMap(reqCols);
@@ -419,16 +419,16 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     {
         CrosstabDimension colDimension = getSettings().getColumnAxis().getDimensions().getFirst();
 
-        sql.append("(CASE WHEN ");
+        sql.unsafeAppend("(CASE WHEN ");
         sql.appendDottedIdentifiers(queryAlias, colDimension.getSourceColumn().getAlias());
-        sql.append("=");
+        sql.unsafeAppend("=");
         String value = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
         sql.append(value);
-        sql.append(" THEN ");
+        sql.unsafeAppend(" THEN ");
         sql.append(ifSql);
-        sql.append(" ELSE ");
+        sql.unsafeAppend(" ELSE ");
         sql.append(elseSql);
-        sql.append(" END) AS ");
+        sql.unsafeAppend(" END) AS ");
         sql.appendIdentifier(alias);
     }
 
@@ -455,32 +455,32 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         //a filter of NumFeatures > 1 should display all features where at least
         //one run had more than one feature for the given peptide
         String sep = "";
-        sql.append("\nINNER JOIN (SELECT ");
+        sql.unsafeAppend("\nINNER JOIN (SELECT ");
         for(CrosstabDimension dim : getSettings().getRowAxis().getDimensions())
         {
             sql.append(sep);
             sql.append(AGG_OR_ALIAS);
-            sql.append(".");
+            sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sep = ",";
         }
 
         //add an aggregation inner-select
-        sql.append("\nFROM (");
+        sql.unsafeAppend("\nFROM (");
         addAggQuery(sql);
 
-        sql.append("\n) AS ");
+        sql.unsafeAppend("\n) AS ");
         sql.append(AGG_OR_ALIAS);
 
         //now add the agg filters
-        sql.append("\n");
+        sql.unsafeAppend("\n");
         sql.append(getAggregateFilter().getSQLFragment(getSqlDialect(), AGG_OR_ALIAS, filterColMap));
 
         //end the inner-join table
         //aliased as ROWMEMS_ALIAS
-        sql.append(") AS ");
+        sql.unsafeAppend(") AS ");
         sql.append(ROWMEMS_ALIAS);
-        sql.append(" ON (");
+        sql.unsafeAppend(" ON (");
 
         //joined on the row dimensions
         sep = "";
@@ -488,17 +488,17 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         {
             sql.append(sep);
             sql.append(ROWMEMS_ALIAS);
-            sql.append(".");
+            sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
-            sql.append("=");
+            sql.unsafeAppend("=");
             sql.append(joinAlias);
-            sql.append(".");
+            sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sep = " AND ";
         }
         
         //end the ON clause
-        sql.append(")");
+        sql.unsafeAppend(")");
     }
 
     /**

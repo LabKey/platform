@@ -23,8 +23,10 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.query.QueryDefinitionImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +40,7 @@ import java.util.Map;
  */
 public class QueryDefCache
 {
-    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (c, argument) -> new QueryDefCollections(c));
+    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (c, argument) -> new QueryDefCollections(c));
 
     private static class QueryDefCollections
     {
@@ -165,8 +167,20 @@ public class QueryDefCache
         return QUERY_DEF_DB_CACHE.get(container)._queryDefIdMap.get(queryDefId);
     }
 
+    // GH Issue 1736: a thread outside the transaction can reload pre-commit rows after the immediate remove, so remove again after commit
     public static void uncache(Container c)
     {
-        QUERY_DEF_DB_CACHE.remove(c);
+        QueryManager.get().getDbSchema().getScope().addCommitTask(new UncacheTask(c), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+    }
+
+    // record equality lets the transaction dedupe repeated uncaches of the same container
+    private record UncacheTask(Container c) implements Runnable
+    {
+        @Override
+        public void run()
+        {
+            QUERY_DEF_DB_CACHE.remove(c);
+            QueryDefinitionImpl.clearHasPkColumnCache();
+        }
     }
 }

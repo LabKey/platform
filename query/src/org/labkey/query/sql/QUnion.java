@@ -45,7 +45,7 @@ public class QUnion extends QExpr
 			builder.popPrefix();
             builder.pushPrefix(") " + SqlParser.tokenName(getTokenType()) + " (");
         }
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override
@@ -55,9 +55,9 @@ public class QUnion extends QExpr
         {
             throw new IllegalStateException("Fields should have been resolved");
         }
-        builder.append("(");
+        builder.unsafeAppend("(");
         builder.append(_union.getSql());
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override

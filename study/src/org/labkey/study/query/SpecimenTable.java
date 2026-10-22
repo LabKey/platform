@@ -90,24 +90,24 @@ public class SpecimenTable extends AbstractSpecimenTable
         if (null != _studySpecimenTables)
         {
             for (SpecimenTable table : _studySpecimenTables)
-                sql.append("(").append(table.getFromSQL("")).append(" UNION ");
+                sql.unsafeAppend("(").append(table.getFromSQL("")).unsafeAppend(" UNION ");
         }
 
-        sql.append("\n    SELECT participantsequencenum, additivetypeid, firstprocessedbyinitials, \n")
-            .append("       volumeunits, visitdescription, specimenhash, expectedavailablecount, \n")
-            .append("       visitvalue, derivativetypeid, rowid, totalvolume, derivativetypeid2, \n")
-            .append("       drawtimestamp, vialcount, availablevolume, ptid, primarytypeid, \n")
-            .append("       originatinglocationid, atrepositorycount, processinglocation, \n")
-            .append("       lockedinrequestcount, subadditivederivative, salreceiptdate, \n")
-            .append("       availablecount, classid, protocolnumber,\n")
-            .append("       ").append("CAST ('").append(getContainer().getId()).append("' AS ")
-            .append(getSchema().getSqlDialect().getGuidType()).append(") AS Container");
+        sql.unsafeAppend("\n    SELECT participantsequencenum, additivetypeid, firstprocessedbyinitials, \n")
+            .unsafeAppend("       volumeunits, visitdescription, specimenhash, expectedavailablecount, \n")
+            .unsafeAppend("       visitvalue, derivativetypeid, rowid, totalvolume, derivativetypeid2, \n")
+            .unsafeAppend("       drawtimestamp, vialcount, availablevolume, ptid, primarytypeid, \n")
+            .unsafeAppend("       originatinglocationid, atrepositorycount, processinglocation, \n")
+            .unsafeAppend("       lockedinrequestcount, subadditivederivative, salreceiptdate, \n")
+            .unsafeAppend("       availablecount, classid, protocolnumber,\n")
+            .unsafeAppend("       ").unsafeAppend("CAST (").appendValue(getContainer()).unsafeAppend(" AS ")
+            .append(getSchema().getSqlDialect().getGuidTypeAsSql()).unsafeAppend(") AS Container");
 
-        sql.append("\n  FROM ").append(getRealTable());
+        sql.unsafeAppend("\n  FROM ").append(getRealTable());
         if (null != _studySpecimenTables)
         {
             for (SpecimenTable table : _studySpecimenTables)
-                sql.append(") ");
+                sql.unsafeAppend(") ");
         }
         sql.appendIdentifier(alias);
         return sql;

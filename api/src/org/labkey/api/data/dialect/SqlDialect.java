@@ -42,6 +42,7 @@ import org.labkey.api.data.DbScope.LabKeyDataSource;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -99,7 +100,9 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -355,6 +358,12 @@ public abstract class SqlDialect
         return _sqlTypeIntMap.get(type.sqlType);
     }
 
+    public final @Nullable SQLFragment getSqlTypeNameAsSql(JdbcType type)
+    {
+        String sql = getSqlTypeName(type);
+        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+    }
+
     // Override for alternative behavior
     @Nullable
     public String getSqlCastTypeName(JdbcType type)
@@ -362,7 +371,18 @@ public abstract class SqlDialect
         return getSqlTypeName(type);
     }
 
+    public final @Nullable SQLFragment getSqlCastTypeNameAsSql(JdbcType type)
+    {
+        String sql = getSqlCastTypeName(type);
+        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+    }
+
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
+
+    public final SQLFragment getSqlTypeNameAsSql(PropertyStorageSpec prop)
+    {
+        return new SQLFragment().setSqlUnsafe(getSqlTypeName(prop));
+    }
 
     protected @Nullable SQLFragment getDatabaseMaintenanceSql()
     {
@@ -392,7 +412,14 @@ public abstract class SqlDialect
         if (null == sqlState)
             return false;
         return sqlState.equals("57014") || // Postgres
-               sqlState.equalsIgnoreCase("HY000") || sqlState.equalsIgnoreCase("HY008"); // SQLServer
+               sqlState.equalsIgnoreCase("HY008"); // SQLServer
+    }
+
+    /** Connection failures (class 08) and Postgres shutdown, crash, or failover (57P*) */
+    public static boolean isConnectionLostException(SQLException x)
+    {
+        String sqlState = x.getSQLState();
+        return null != sqlState && (sqlState.startsWith("08") || sqlState.startsWith("57P"));
     }
 
 
@@ -556,15 +583,25 @@ public abstract class SqlDialect
         return null;
     }
 
-    // Most callers should use this method
+    /**
+     * Prefer {@link SQLFragment#appendInClause(SQLFragment, Collection, SqlDialect)}, which yields FALSE for an empty collection and negates correctly.
+     * To negate, use {@link SQLFragment#appendNotInClause(SQLFragment, Collection, SqlDialect)}; don't append after NOT.
+     */
     public final SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         return appendInClauseSqlWithCustomInClauseGenerator(sql, params, getTempTableInClauseGenerator());
     }
 
-    // Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source
+    private static final Pattern NOT_SUFFIX = Pattern.compile("(?i)\\bNOT\\s*$");
+
+    /**
+     * Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source.
+     * To negate, use {@link SQLFragment#appendNotInClause(SQLFragment, Collection, SqlDialect)}; don't append after NOT.
+     */
     public final SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, @Nullable InClauseGenerator largeInClauseGenerator)
     {
+        // Postgres renders 2+ values as "= ANY (?)" and an empty list as "IN (NULL)", so "x NOT" + IN clause is invalid or never matches
+        assert !NOT_SUFFIX.matcher(sql.getSqlCharSequence()).find() : "Don't append an IN clause after NOT; use SQLFragment.appendNotInClause() instead";
         if (params.size() >= TEMP_TABLE_GENERATOR_MIN_SIZE && largeInClauseGenerator != null)
         {
             SQLFragment ret = largeInClauseGenerator.appendInClauseSql(sql, params);
@@ -580,9 +617,9 @@ public abstract class SqlDialect
         String suffix = wildcardSuffix != null ? wildcardSuffix : "";
         String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
         String escapeToken = " ESCAPE '" + escapeChar + "'";
-        sql.append(" ")
+        sql.unsafeAppend(" ")
             .append(getCaseInsensitiveLikeOperator())
-            .append(" ")
+            .unsafeAppend(" ")
             .appendValue(prefixLike)
             .append(escapeToken);
         return sql;
@@ -762,6 +799,18 @@ public abstract class SqlDialect
         return true;
     }
 
+    /** Whether the dialect supports {@link #appendLateralJoin} */
+    public boolean supportsLateralJoin()
+    {
+        return false;
+    }
+
+    /** Append a join to an aliased subquery that references earlier FROM items; the correlation lives in the subquery, so there's no join condition */
+    public void appendLateralJoin(SQLFragment sql, LookupColumn.JoinType joinType, SQLFragment aliasedSubquery)
+    {
+        throw new UnsupportedOperationException("Lateral joins are not supported by " + getProductName());
+    }
+
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
     // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter);
@@ -790,11 +839,31 @@ public abstract class SqlDialect
 
     public abstract String getDefaultDateTimeDataType();
 
+    public final SQLFragment getDefaultDateTimeDataTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getDefaultDateTimeDataType());
+    }
+
     public abstract String getUniqueIdentType();
+
+    public final SQLFragment getUniqueIdentTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getUniqueIdentType());
+    }
 
     public abstract String getGuidType();
 
+    public final SQLFragment getGuidTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getGuidType());
+    }
+
     public abstract String getLsidType();
+
+    public final SQLFragment getLsidTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getLsidType());
+    }
 
     public abstract String getTempTableKeyword();
 
@@ -822,6 +891,11 @@ public abstract class SqlDialect
 
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDatePart(int part, String value);
+
+    public final SQLFragment getDatePartAsSql(int part, String value)
+    {
+        return new SQLFragment().setSqlUnsafe(getDatePart(part, value));
+    }
 
     public SQLFragment getDatePart(int part, SQLFragment value)
     {
@@ -1335,9 +1409,11 @@ public abstract class SqlDialect
         String keyword = getTempTableKeyword();
         String name = getTempTablePrefix() + candidate;
 
-        return SQLFragment.unsafe("SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
-               "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
-               "DROP TABLE " + name + ";");
+        // Candidates must stay unquoted, and appendIdentifier() rejects some of them (e.g., end-exec)
+        return new SQLFragment()
+            .unsafeAppend("SELECT ").append(candidate).unsafeAppend(" FROM (SELECT 1 AS ").append(candidate).unsafeAppend(") x ORDER BY ").append(candidate).appendEOS()
+            .unsafeAppend("CREATE ").append(keyword).unsafeAppend(" TABLE ").append(name).unsafeAppend(" (").append(candidate).unsafeAppend(" VARCHAR(50))").appendEOS()
+            .unsafeAppend("DROP TABLE ").append(name).appendEOS();
     }
 
     public final void checkSqlScript(String sql) throws SQLSyntaxException
@@ -1497,7 +1573,12 @@ public abstract class SqlDialect
         }
     }
 
-    public abstract SQLFragment getAnalyzeCommandForTable(String tableName);
+    public SQLFragment getAnalyzeCommandForTable(String tableName)
+    {
+        return getAnalyzeCommandForTable(new SQLFragment().appendIdentifier(tableName));
+    }
+
+    public abstract SQLFragment getAnalyzeCommandForTable(SQLFragment tableName);
 
     protected abstract String getSIDQuery();
 
@@ -1521,12 +1602,37 @@ public abstract class SqlDialect
      */
     public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
     {
+        return cancelQueries(scope, connections, terminate, Runnable::run);
+    }
+
+    /**
+     * Like {@link #cancelQueries(DbScope, Collection, boolean)}, but only the signalling runs through {@code signaller},
+     * so a caller can hold a lock for that without also holding it while the dialect connects
+     */
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate, Consumer<Runnable> signaller)
+    {
         return false;
+    }
+
+    /**
+     * Like a {@link #cancelQueries} cancel, but signals each session without opening a database connection.
+     * @return the connections it signalled; the caller should fall back to {@link #cancelQueries} for the rest
+     */
+    public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
+    {
+        return connections.stream()
+            .filter(c -> c.isAllocated() && c.cancelOpenStatements())
+            .collect(Collectors.toSet());
+    }
+
+    /** Add driver settings this dialect wants by default; leave any the data source already sets */
+    public void addDefaultConnectionProperties(Properties props)
+    {
     }
 
     public boolean updateStatistics(TableInfo table)
     {
-        SQLFragment sql = getAnalyzeCommandForTable(table.getSelectName());
+        SQLFragment sql = getAnalyzeCommandForTable(table.getSQLName());
         if (sql != null)
         {
             new SqlExecutor(table.getSchema()).execute(sql);
@@ -1538,6 +1644,11 @@ public abstract class SqlDialect
 
 
     public abstract String getBooleanDataType();
+
+    public final SQLFragment getBooleanDataTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getBooleanDataType());
+    }
 
     public String getBooleanTRUE()
     {
@@ -1555,6 +1666,11 @@ public abstract class SqlDialect
     }
 
     public abstract String getBinaryDataType();
+
+    public final SQLFragment getBinaryDataTypeAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getBinaryDataType());
+    }
 
     // We need to determine the database name from a data source, so we've implemented a helper that parses the JDBC connection
     // string for each driver we support. This is necessary because, unfortunately, there appears to be no standard, reliable
@@ -1713,6 +1829,19 @@ public abstract class SqlDialect
             }
         }
 
+        public Integer getMaxIdle()
+        {
+            try
+            {
+                return callGetter("getMaxIdle");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection pool max idle from data source \"{}\"", _dsName);
+                return null;
+            }
+        }
+
         public Integer getNumActive()
         {
             try
@@ -1749,6 +1878,62 @@ public abstract class SqlDialect
                 LOG.error("Could not extract connection pool max wait (ms) from data source \"{}\"", _dsName);
                 return null;
             }
+        }
+
+        /**
+         * Statistics tracked by the commons-pool2 GenericObjectPool that BasicDataSource wraps. They're reachable only
+         * through the pool itself; BasicDataSource doesn't republish them the way it does numActive/numIdle.
+         */
+        public record PoolStatistics(
+            // Total connections opened
+            long createdCount,
+            // Tocal connections closed, for any reason
+            long destroyedCount,
+            // Total connections closed by the idle evictor, either for exceeding the idle timeout or failing idle validation
+            long destroyedByEvictorCount,
+            // Total connections closed because they failed validation when a caller tried to borrow them
+            long destroyedByBorrowValidationCount,
+            // Total connections handed out
+            long borrowedCount,
+            // Threads currently blocked waiting for a connection
+            long numWaiters,
+            // Mean wait time to borrow a connection, over the most recent 100 borrows
+            long meanBorrowWaitMillis,
+            // Longest a caller has ever waited to borrow a connection
+            long maxBorrowWaitMillis
+        ) {}
+
+        public @Nullable PoolStatistics getPoolStatistics()
+        {
+            try
+            {
+                Object pool = _ds.getClass().getMethod("getConnectionPool").invoke(_ds);
+
+                // BasicDataSource creates the pool lazily, on the first connection request
+                if (null == pool)
+                    return null;
+
+                return new PoolStatistics(
+                    getPoolStatistic(pool, "getCreatedCount"),
+                    getPoolStatistic(pool, "getDestroyedCount"),
+                    getPoolStatistic(pool, "getDestroyedByEvictorCount"),
+                    getPoolStatistic(pool, "getDestroyedByBorrowValidationCount"),
+                    getPoolStatistic(pool, "getBorrowedCount"),
+                    getPoolStatistic(pool, "getNumWaiters"),
+                    getPoolStatistic(pool, "getMeanBorrowWaitTimeMillis"),
+                    getPoolStatistic(pool, "getMaxBorrowWaitTimeMillis")
+                );
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Could not extract connection pool statistics from data source \"{}\"", _dsName, e);
+                return null;
+            }
+        }
+
+        private static long getPoolStatistic(Object pool, String methodName) throws ReflectiveOperationException
+        {
+            return ((Number)pool.getClass().getMethod(methodName).invoke(pool)).longValue();
         }
 
         public @Nullable Properties getConnectionProperties()
@@ -1883,9 +2068,9 @@ public abstract class SqlDialect
         if (from == JdbcType.GUID)
         {
             SQLFragment ret = new SQLFragment();
-            ret.append("CAST(");
-            ret.append(sql).append(" AS ");
-            ret.append(getSqlTypeName(from)).append("(36))");
+            ret.unsafeAppend("CAST(");
+            ret.append(sql).unsafeAppend(" AS ");
+            ret.append(getSqlTypeName(from)).unsafeAppend("(36))");
             return ret;
         }
         // let server do default conversion
@@ -1935,6 +2120,12 @@ public abstract class SqlDialect
             return null;
 
         return _sqlTypeIntMap.get(jdbcType.sqlType);
+    }
+
+    public final @Nullable SQLFragment getSqlTypeNameFromObjectAsSql(Object o)
+    {
+        String sql = getSqlTypeNameFromObject(o);
+        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
     }
 
     /**
@@ -2242,7 +2433,7 @@ public abstract class SqlDialect
     public SQLFragment formatFunction(SQLFragment target, String fn, SQLFragment... arguments)
     {
         target.append(fn);
-        target.append("(");
+        target.unsafeAppend("(");
         String comma = "";
         for (SQLFragment argument : arguments)
         {
@@ -2250,16 +2441,16 @@ public abstract class SqlDialect
             comma = ",";
             target.append(argument);
         }
-        target.append(")");
+        target.unsafeAppend(")");
         return target;
     }
 
     public SQLFragment formatJdbcFunction(String fn, SQLFragment... arguments)
     {
         SQLFragment ret = new SQLFragment();
-        ret.append("{fn ");
+        ret.unsafeAppend("{fn ");
         formatFunction(ret, fn, arguments);
-        ret.append("}");
+        ret.unsafeAppend("}");
         return ret;
     }
 

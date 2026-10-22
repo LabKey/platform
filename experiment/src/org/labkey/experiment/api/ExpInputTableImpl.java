@@ -55,20 +55,20 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
 
         SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM ");
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
-        sqlFragment.append(", ");
+        sqlFragment.unsafeAppend(", ");
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
-        sqlFragment.append(" WHERE er.RowId = pa.RunId AND pa.RowId = TargetApplicationId");
+        sqlFragment.unsafeAppend(" WHERE er.RowId = pa.RunId AND pa.RowId = TargetApplicationId");
         if (_run != null)
         {
-            sqlFragment.append(" AND er.RowId = ?");
+            sqlFragment.unsafeAppend(" AND er.RowId = ?");
             sqlFragment.add(_run.getRowId());
         }
         if (_type != null)
         {
-            sqlFragment.append(" AND pa.CpasType = ?");
+            sqlFragment.unsafeAppend(" AND pa.CpasType = ?");
             sqlFragment.add(_type.toString());
         }
-        sqlFragment.append(")");
+        sqlFragment.unsafeAppend(")");
 
         if (_run == null)
         {
@@ -83,13 +83,13 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
             if (_run.getContainer().hasPermission(_userSchema.getUser(), ReadPermission.class))
             {
                 // All we care is that the run exists and matches the TargetApplicationId
-                sqlFragment.append(" IS NOT NULL ");
+                sqlFragment.unsafeAppend(" IS NOT NULL ");
             }
             else
             {
                 // Don't match anything, the user doesn't have permission. Shouldn't get this far anyway, but just
                 // to play it safe.
-                sqlFragment.append(" = NULL ");
+                sqlFragment.unsafeAppend(" = NULL ");
             }
             addCondition(sqlFragment, FieldKey.fromParts("FolderRunType"));
         }

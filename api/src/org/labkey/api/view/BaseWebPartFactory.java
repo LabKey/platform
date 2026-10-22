@@ -152,8 +152,9 @@ public abstract class BaseWebPartFactory implements WebPartFactory
                 catch (Exception e)
                 {
                     // Unfortunately, we have to catch Exception here, since BeanUtils throws RuntimeExceptions
-                    // for various failures.
-                    LOG.warn("Couldn't set property {} on {} to value {}", entry.getKey(), view.getClass(), entry.getValue(), e);
+                    // for various failures. Log current URL, if we have one, to help track down culprits and issues.
+                    String url = HttpView.hasCurrentView() ? HttpView.getContextURLHelper().toString() + ": " : "";
+                    LOG.warn("{}Couldn't set property {} on {} to value {}", url, entry.getKey(), view.getClass(), entry.getValue(), e);
                 }
             }
             else

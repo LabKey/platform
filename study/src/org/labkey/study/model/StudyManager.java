@@ -247,7 +247,7 @@ public class StudyManager
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<Integer, CohortImpl, StudyCacheCollections<Integer, CohortImpl>> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
-    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
+    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(Container.class, StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableMap(
             new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), filter, new Sort("ParticipantId"))
@@ -270,7 +270,7 @@ public class StudyManager
 
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
         // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
-        _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "Study shared properties",
+        _sharedProperties = CacheManager.getBlockingCache(Container.class, 1000, CacheManager.UNLIMITED, "Study shared properties",
             (key, argument) ->
             {
                 Container sharedContainer = ContainerManager.getSharedContainer();
@@ -784,7 +784,7 @@ public class StudyManager
                 // Set the _key column to be the value of the selected column
                 // Change how we build up tableName
                 String tableName = storageTableInfo.toString();
-                SQLFragment updateKeySQL = new SQLFragment("UPDATE " + tableName + " SET _key = ");
+                SQLFragment updateKeySQL = SQLFragment.unsafe("UPDATE ").append(storageTableInfo).unsafeAppend(" SET _key = ");
                 if (datasetDefinition.getUseTimeKeyField())
                 {
                     ColumnInfo col = storageTableInfo.getColumn("Date");
@@ -798,7 +798,7 @@ public class StudyManager
                 else if (datasetDefinition.getKeyPropertyName() == null)
                 {
                     // No column selected, so set it to be null
-                    updateKeySQL.append("NULL");
+                    updateKeySQL.unsafeAppend("NULL");
                 }
                 else
                 {
@@ -818,7 +818,7 @@ public class StudyManager
                     new SqlExecutor(StudySchema.getInstance().getSchema()).setLogLevel(Level.OFF).execute(updateKeySQL);
 
                     // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
-                    SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
+                    SQLFragment updateLSIDSQL = SQLFragment.unsafe("UPDATE ").append(storageTableInfo).unsafeAppend(" SET lsid = ");
                     updateLSIDSQL.append(datasetDefinition.generateLSIDSQL());
                     new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateLSIDSQL);
                 }
@@ -1034,7 +1034,7 @@ public class StudyManager
         // don't use dataset.getTableInfo() since this method is called during updateDatasetDefinition`() and may be in an inconsistent state
         TableInfo t = dataset.getStorageTableInfo(false);
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT MAX(n) FROM (SELECT COUNT(*) AS n FROM ").append(t.getFromSQL("DS")).append(" GROUP BY ParticipantId) x");
+        sql.unsafeAppend("SELECT MAX(n) FROM (SELECT COUNT(*) AS n FROM ").append(t.getFromSQL("DS")).unsafeAppend(" GROUP BY ParticipantId) x");
         Integer maxCount = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Integer.class);
         return maxCount == null || maxCount <= 1;
     }
@@ -1642,15 +1642,15 @@ public class StudyManager
                         continue;
 
                     SQLFragment sqlf = new SQLFragment();
-                    sqlf.append("DELETE FROM ");
+                    sqlf.unsafeAppend("DELETE FROM ");
                     sqlf.append(t);
-                    sqlf.append(" WHERE LSID IN (SELECT LSID FROM ");
+                    sqlf.unsafeAppend(" WHERE LSID IN (SELECT LSID FROM ");
                     sqlf.append(t);
-                    sqlf.append(" d, ");
+                    sqlf.unsafeAppend(" d, ");
                     sqlf.append(StudySchema.getInstance().getTableInfoParticipantVisit(), "pv");
-                    sqlf.append(" WHERE d.ParticipantId = pv.ParticipantId AND d.SequenceNum = pv.SequenceNum AND pv.Container = ?");
+                    sqlf.unsafeAppend(" WHERE d.ParticipantId = pv.ParticipantId AND d.SequenceNum = pv.SequenceNum AND pv.Container = ?");
                     sqlf.add(study.getContainer());
-                    sqlf.append(" AND pv.VisitRowId ").append(visitInClause).append(')');
+                    sqlf.unsafeAppend(" AND pv.VisitRowId ").append(visitInClause).unsafeAppend(")");
 
                     int count = new SqlExecutor(schema.getSchema()).execute(sqlf);
                     if (count > 0)
@@ -1670,14 +1670,12 @@ public class StudyManager
                 }
             }
 
-            SQLFragment sqlFragParticipantVisit = new SQLFragment("DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
-                    "WHERE Container = ?").add(study.getContainer());
-            sqlFragParticipantVisit.append(" AND VisitRowId ").append(visitInClause);
+            SQLFragment sqlFragParticipantVisit = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoParticipantVisit()).unsafeAppend("\nWHERE Container = ?").add(study.getContainer());
+            sqlFragParticipantVisit.unsafeAppend(" AND VisitRowId ").append(visitInClause);
             new SqlExecutor(schema.getSchema()).execute(sqlFragParticipantVisit);
 
-            SQLFragment sqlFragVisitMap = new SQLFragment("DELETE FROM " + schema.getTableInfoVisitMap() + "\n" +
-                    "WHERE Container = ?").add(study.getContainer());
-            sqlFragVisitMap.append(" AND VisitRowId ").append(visitInClause);
+            SQLFragment sqlFragVisitMap = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoVisitMap()).unsafeAppend("\nWHERE Container = ?").add(study.getContainer());
+            sqlFragVisitMap.unsafeAppend(" AND VisitRowId ").append(visitInClause);
             new SqlExecutor(schema.getSchema()).execute(sqlFragVisitMap);
 
             // UNDONE broken _visitHelper.delete(visit);
@@ -1824,7 +1822,7 @@ public class StudyManager
         TableInfo ds = def.getDatasetSchemaTableInfo(user, false);
 
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT sd.LSID AS LSID, v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).append("\n" +
+        sql.unsafeAppend("SELECT sd.LSID AS LSID, v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).unsafeAppend("\n" +
                 "JOIN study.ParticipantVisit pv ON \n" +
                 "\tsd.SequenceNum = pv.SequenceNum AND\n" +
                 "\tsd.ParticipantId = pv.ParticipantId\n" +
@@ -1858,7 +1856,7 @@ public class StudyManager
         final Study visitStudy = getStudyForVisits(study);
 
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT DISTINCT v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).append("\n" +
+        sql.unsafeAppend("SELECT DISTINCT v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).unsafeAppend("\n" +
                 "JOIN study.ParticipantVisit pv ON \n" +
                 "\tsd.SequenceNum = pv.SequenceNum AND\n" +
                 "\tsd.ParticipantId = pv.ParticipantId\n" +
@@ -1932,14 +1930,14 @@ public class StudyManager
         try (Transaction transaction = scope.ensureTransaction())
         {
             // TODO fix updating across study data
-            SQLFragment sql = new SQLFragment("UPDATE " ).append(def.getStorageTableInfo(false));
-            sql.append(" SET QCState = ");
+            SQLFragment sql = SQLFragment.unsafe("UPDATE " ).append(def.getStorageTableInfo(false));
+            sql.unsafeAppend(" SET QCState = ");
             // do string concatenation, rather that using a parameter, for the new state id because Postgres null
             // parameters are typed which causes a cast exception trying to set the value back to null (bug 6370)
             sql.appendValue(newState != null ? newState.getRowId() : null);
-            sql.append(", modified = ?");
+            sql.unsafeAppend(", modified = ?");
             sql.add(new Date());
-            sql.append("\nWHERE lsid ");
+            sql.unsafeAppend("\nWHERE lsid ");
             StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, updateLsids);
 
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
@@ -2337,11 +2335,11 @@ public class StudyManager
 
 
     // domainURI -> <Container,DatasetId>
-    private static final Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(5000, CacheManager.DAY, "Domain->Dataset map");
+    private static final Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(String.class, 5000, CacheManager.DAY, "Domain->Dataset map");
 
     private static final CacheLoader<String, Pair<String, Integer>> loader = (domainURI, argument) -> {
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT Container, DatasetId FROM study.Dataset WHERE TypeURI=?");
+        sql.unsafeAppend("SELECT Container, DatasetId FROM study.Dataset WHERE TypeURI=?");
         sql.add(domainURI);
 
         Map<String, Object> map = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getMap();
@@ -2814,13 +2812,13 @@ public class StudyManager
     private SQLFragment getStudySnapshotUpdateSql(Container c, String columnName)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ");
+        sql.unsafeAppend("UPDATE ");
         sql.append(StudySchema.getInstance().getTableInfoStudySnapshot());
-        sql.append(" SET ");
-        sql.append(columnName);
-        sql.append(" = NULL WHERE ");
-        sql.append(columnName);
-        sql.append(" = ?");
+        sql.unsafeAppend(" SET ");
+        sql.appendIdentifier(columnName);
+        sql.unsafeAppend(" = NULL WHERE ");
+        sql.appendIdentifier(columnName);
+        sql.unsafeAppend(" = ?");
         sql.add(c);
 
         return sql;
@@ -2930,9 +2928,9 @@ public class StudyManager
     /** study container only (not dataspace!) */
     public long getParticipantCount(Study study)
     {
-        SQLFragment sql = new SQLFragment("SELECT COUNT(ParticipantId) FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(ParticipantId) FROM ");
         sql.append(SCHEMA.getTableInfoParticipant(), "p");
-        sql.append(" WHERE Container = ?");
+        sql.unsafeAppend(" WHERE Container = ?");
         sql.add(study.getContainer());
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Long.class);
     }
@@ -2963,7 +2961,7 @@ public class StudyManager
     private Collection<String> getParticipantIds(Study study, User user, ContainerFilter cf, int participantGroupId, int rowLimit)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = getSQLFragmentForParticipantIds(study, user, cf, participantGroupId, rowLimit, schema, "ParticipantId");
+        SQLFragment sql = getSQLFragmentForParticipantIds(study, user, cf, participantGroupId, rowLimit, schema, List.of(PTID_COLUMN_NAME));
         return new SqlSelector(schema, sql).getCollection(String.class);
     }
 
@@ -2976,7 +2974,7 @@ public class StudyManager
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         SQLFragment sql = getSQLFragmentForParticipantIds(study, user, null, -1, -1, schema,
-                CONTAINER_COLUMN_NAME + ", " + PTID_COLUMN_NAME + ", " + ALTERNATEID_COLUMN_NAME + ", " + DATEOFFSET_COLUMN_NAME);
+                List.of(CONTAINER_COLUMN_NAME, PTID_COLUMN_NAME, ALTERNATEID_COLUMN_NAME, DATEOFFSET_COLUMN_NAME));
         final Map<String, ParticipantInfo> alternateIdMap = new HashMap<>();
 
         new SqlSelector(schema, sql).forEach(rs -> {
@@ -2991,19 +2989,21 @@ public class StudyManager
     }
 
 
-    private SQLFragment getSQLFragmentForParticipantIds(Study study, User user, @Nullable ContainerFilter cf, int participantGroupId, int rowLimit, DbSchema schema, String columns)
+    private SQLFragment getSQLFragmentForParticipantIds(Study study, User user, @Nullable ContainerFilter cf, int participantGroupId, int rowLimit, DbSchema schema, List<String> columns)
     {
         SQLFragment filter = getParticipantFilter(study, user, cf);
 
-        SQLFragment sql;
+        SQLFragment sql = SQLFragment.unsafe("SELECT ")
+                .append(columns.stream().map(column -> new SQLFragment().appendIdentifier(column)).toList(), ", ")
+                .unsafeAppend(" FROM ");
         if (participantGroupId == -1)
         {
-            sql = new SQLFragment("SELECT " + columns + " FROM " + SCHEMA.getTableInfoParticipant()).append(" WHERE ").append(filter).append(" ORDER BY ParticipantId");
+            sql.append(SCHEMA.getTableInfoParticipant()).unsafeAppend(" WHERE ").append(filter).unsafeAppend(" ORDER BY ParticipantId");
         }
         else
         {
             TableInfo table = StudySchema.getInstance().getTableInfoParticipantGroupMap();
-            sql = new SQLFragment("SELECT " + columns + " FROM " + table + " WHERE ").append(filter).append(" AND GroupId = ? ORDER BY ParticipantId").add(participantGroupId);
+            sql.append(table).unsafeAppend(" WHERE ").append(filter).unsafeAppend(" AND GroupId = ? ORDER BY ParticipantId").add(participantGroupId);
         }
         if (rowLimit > 0)
             sql = schema.getSqlDialect().limitRows(sql, rowLimit);
@@ -3016,7 +3016,7 @@ public class StudyManager
         SQLFragment filter = new SQLFragment();
         if (!study.getShareDatasetDefinitions())
         {
-            filter.append("Container=").appendValue(study.getContainer());
+            filter.unsafeAppend("Container=").appendValue(study.getContainer());
         }
         else
         {
@@ -3024,7 +3024,7 @@ public class StudyManager
                 throw new IllegalStateException("provide a user to query the participants table");
             if (null == cf)
                 cf = new DataspaceContainerFilter(user, study);
-            filter = cf.getSQLFragment(SCHEMA.getSchema(), new SQLFragment("Container"));
+            filter = cf.getSQLFragment(SCHEMA.getSchema(), SQLFragment.unsafe("Container"));
         }
         return filter;
     }
@@ -3033,7 +3033,8 @@ public class StudyManager
     public String[] getParticipantIdsForCohort(Study study, int currentCohortId, int rowLimit)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + SCHEMA.getTableInfoParticipant() + " WHERE Container = ? AND CurrentCohortId = ? ORDER BY ParticipantId", study.getContainer().getId(), currentCohortId);
+        SQLFragment sql = SQLFragment.unsafe("SELECT ParticipantId FROM ").append(SCHEMA.getTableInfoParticipant())
+                .unsafeAppend(" WHERE Container = ? AND CurrentCohortId = ? ORDER BY ParticipantId").addAll(study.getContainer().getId(), currentCohortId);
 
         if (rowLimit > 0)
             sql = schema.getSqlDialect().limitRows(sql, rowLimit);
@@ -3044,8 +3045,8 @@ public class StudyManager
     public String[] getParticipantIdsNotInCohorts(Study study)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + SCHEMA.getTableInfoParticipant() + " WHERE Container = ? AND CurrentCohortId IS NULL",
-                study.getContainer().getId());
+        SQLFragment sql = SQLFragment.unsafe("SELECT ParticipantId FROM ").append(SCHEMA.getTableInfoParticipant())
+                .unsafeAppend(" WHERE Container = ? AND CurrentCohortId IS NULL").add(study.getContainer().getId());
 
         return new SqlSelector(schema, sql).getArray(String.class);
     }
@@ -3063,10 +3064,10 @@ public class StudyManager
 
         SQLFragment filter = getParticipantFilter(study,user,cf);
 
-        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM ").append(SCHEMA.getTableInfoParticipant().getFromSQL("P"))
-                .append(" WHERE ").append(filter)
-                .append(" AND ParticipantId NOT IN (SELECT DISTINCT ParticipantId FROM ").append(groupMapTable.getFromSQL("PGM"))
-                .append(" WHERE GroupId IN (SELECT PG.RowId FROM ").append(tableInfoParticipantGroup.getFromSQL("PG")).append(" WHERE Container = ? AND CategoryId = ?))")
+        SQLFragment sql = SQLFragment.unsafe("SELECT ParticipantId FROM ").append(SCHEMA.getTableInfoParticipant().getFromSQL("P"))
+                .unsafeAppend(" WHERE ").append(filter)
+                .unsafeAppend(" AND ParticipantId NOT IN (SELECT DISTINCT ParticipantId FROM ").append(groupMapTable.getFromSQL("PGM"))
+                .unsafeAppend(" WHERE GroupId IN (SELECT PG.RowId FROM ").append(tableInfoParticipantGroup.getFromSQL("PG")).unsafeAppend(" WHERE Container = ? AND CategoryId = ?))")
                 .add(study.getContainer().getId())
                 .add(categoryId);
 
@@ -3280,7 +3281,7 @@ public class StudyManager
     private void setAlternateId(Study study, String containerId, String participantId, @Nullable String alternateId)
     {
         // Set alternateId even if null, because that's how we clear it
-        SQLFragment sql = new SQLFragment("UPDATE ").append(SCHEMA.getTableInfoParticipant()).append(" SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?")
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(SCHEMA.getTableInfoParticipant()).unsafeAppend(" SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?")
                 .addAll(alternateId, containerId, participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         StudyManager.getInstance().clearParticipantCache(study.getContainer());
@@ -3292,20 +3293,20 @@ public class StudyManager
         assert null != participantId;
         if (null != alternateId || null != dateOffset)
         {
-            SQLFragment sql = new SQLFragment("UPDATE ").append(SCHEMA.getTableInfoParticipant()).append(" SET ");
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(SCHEMA.getTableInfoParticipant()).unsafeAppend(" SET ");
             boolean needComma = false;
             if (null != alternateId)
             {
-                sql.append("AlternateId = ?").add(alternateId);
+                sql.unsafeAppend("AlternateId = ?").add(alternateId);
                 needComma = true;
             }
             if (null != dateOffset)
             {
                 if (needComma)
-                    sql.append(", ");
-                sql.append("DateOffset = ?").add(dateOffset);
+                    sql.unsafeAppend(", ");
+                sql.unsafeAppend("DateOffset = ?").add(dateOffset);
             }
-            sql.append(" WHERE Container = ? AND ParticipantId = ?");
+            sql.unsafeAppend(" WHERE Container = ? AND ParticipantId = ?");
             sql.add(study.getContainer());
             sql.add(participantId);
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
@@ -3975,7 +3976,7 @@ public class StudyManager
 
     public static SQLFragment timePortionFromDateSQL(String dateColumnName)
     {
-        return new SQLFragment("to_char(").append(dateColumnName).append(", 'HH24MISS')");
+        return SQLFragment.unsafe("to_char(").appendIdentifier(dateColumnName).unsafeAppend(", 'HH24MISS')");
     }
 
     private String getParticipantCacheKey(Container container)
@@ -4024,7 +4025,7 @@ public class StudyManager
             return null;
 
         TableInfo table = StudySchema.getInstance().getTableInfoParticipant();
-        ArrayList<String> containers = new SqlSelector(table.getSchema(), new SQLFragment("SELECT container FROM study.participant WHERE participantid=?",ptid))
+        ArrayList<String> containers = new SqlSelector(table.getSchema(), SQLFragment.unsafe("SELECT container FROM study.participant WHERE participantid=?").add(ptid))
                 .getArrayList(String.class);
         if (containers.isEmpty())
             return null;
@@ -4224,7 +4225,7 @@ public class StudyManager
         SimpleFilter filter = (null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter());
         if (null != modifiedSince)
             filter.addCondition(FieldKey.fromParts("Modified"), modifiedSince, CompareType.DATE_GT);
-        SQLFragment f = new SQLFragment("SELECT Container, DatasetId FROM " + StudySchema.getInstance().getTableInfoDataset() + " ")
+        SQLFragment f = SQLFragment.unsafe("SELECT Container, DatasetId FROM ").append(StudySchema.getInstance().getTableInfoDataset()).unsafeAppend(" ")
             .append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
         new SqlSelector(StudySchema.getInstance().getSchema(), f).forEach(rs ->
@@ -4307,7 +4308,7 @@ public class StudyManager
 
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
         SQLFragment baseFragment = new SQLFragment();
-        baseFragment.append("SELECT Container, ParticipantId FROM ");
+        baseFragment.unsafeAppend("SELECT Container, ParticipantId FROM ");
         baseFragment.append(participantTable, "p");
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -4319,9 +4320,9 @@ public class StudyManager
             if (null != aliasTable)
             {
                 // Also reindex participants whose aliases have changed
-                SQLFragment aliasFragment = new SQLFragment().append("ParticipantId IN (\nSELECT ParticipantId FROM\n")
+                SQLFragment aliasFragment = new SQLFragment().unsafeAppend("ParticipantId IN (\nSELECT ParticipantId FROM\n")
                     .append(aliasTable.getFromSQL("aliases"))
-                    .append("WHERE aliases.Modified > p.LastIndexed)");
+                    .unsafeAppend("WHERE aliases.Modified > p.LastIndexed)");
                 filter.addClause(new OrClause(lastIndexedClause, new SQLClause(aliasFragment)));
             }
             else
@@ -4331,7 +4332,7 @@ public class StudyManager
         }
 
         baseFragment
-            .append(" ")
+            .unsafeAppend(" ")
             .append(filter.getSQLFragment(participantTable, "p"));
 
         final ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
@@ -4347,7 +4348,7 @@ public class StudyManager
                 if (null != batch)
                 {
                     sql = new SQLFragment(baseFragment); // Clone the base fragment before modifying
-                    sql.append(" AND ParticipantId ");
+                    sql.unsafeAppend(" AND ParticipantId ");
                     StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, batch);
                 }
                 else
@@ -4395,7 +4396,7 @@ public class StudyManager
                         public void setLastIndexed(long ms, long modified)
                         {
                             StudySchema ss = StudySchema.getInstance();
-                            SQLFragment update = new SQLFragment("UPDATE ").append(ss.getTableInfoParticipant()).append(" SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?");
+                            SQLFragment update = SQLFragment.unsafe("UPDATE ").append(ss.getTableInfoParticipant()).unsafeAppend(" SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?");
                             update.addAll(new Timestamp(ms), c, ptid);
                             new SqlExecutor(ss.getSchema()).execute(update);
                         }
@@ -4488,17 +4489,17 @@ public class StudyManager
     // Return collection of current snapshots that are configured to refresh specimens
     public Collection<StudySnapshot> getRefreshStudySnapshots()
     {
-        return getStudySnapshots(new SQLFragment(" AND Refresh = ?", Boolean.TRUE));
+        return getStudySnapshots(SQLFragment.unsafe(" AND Refresh = ?").add(Boolean.TRUE));
     }
 
     // Return collection of all current snapshots
     private Collection<StudySnapshot> getStudySnapshots(@Nullable SQLFragment filter)
     {
-        SQLFragment sql = new SQLFragment("SELECT ss.* FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT ss.* FROM ");
         sql.append(StudySchema.getInstance().getTableInfoStudy(), "s");
-        sql.append(" JOIN ");
+        sql.unsafeAppend(" JOIN ");
         sql.append(StudySchema.getInstance().getTableInfoStudySnapshot(), "ss");
-        sql.append(" ON s.StudySnapshot = ss.RowId AND Source IS NOT NULL AND Destination IS NOT NULL");
+        sql.unsafeAppend(" ON s.StudySnapshot = ss.RowId AND Source IS NOT NULL AND Destination IS NOT NULL");
 
         if (null != filter)
             sql.append(filter);
@@ -4687,8 +4688,8 @@ public class StudyManager
             Date d = new Date();
             String iso = DateUtil.toISO(d.getTime(), true);
             DbSchema core = CoreSchema.getInstance().getSchema();
-            SQLFragment select = new SQLFragment("SELECT ");
-            select.append(core.getSqlDialect().getISOFormat(new SQLFragment("?",d)));
+            SQLFragment select = SQLFragment.unsafe("SELECT ");
+            select.append(core.getSqlDialect().getISOFormat(SQLFragment.unsafe("?").add(d)));
             String db = new SqlSelector(core, select).getObject(String.class);
             // SQL SERVER doesn't quite store millisecond precision
             assertEquals(23,iso.length());

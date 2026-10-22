@@ -46,6 +46,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchema.HasContextualRoles;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
 import org.labkey.api.security.UserPrincipal;
@@ -310,10 +311,8 @@ abstract public class ExpTableImpl<C extends Enum>
     {
         if (perm == ReadPermission.class || getUpdateService() != null)
         {
-            Set<Role> roles = null;
-            if (_userSchema instanceof UserSchema.HasContextualRoles contextualRolesSchema)
-                roles = contextualRolesSchema.getContextualRoles();
-            return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm, roles);
+            Set<Role> contextualRoles = _userSchema instanceof HasContextualRoles hasRoles ? hasRoles.getContextualRoles() : Set.of();
+            return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm, contextualRoles);
         }
         return false;
     }
@@ -439,7 +438,7 @@ abstract public class ExpTableImpl<C extends Enum>
         if (patterns != null)
         {
             SQLFragment condition = new SQLFragment();
-            condition.append("(");
+            condition.unsafeAppend("(");
             String separator = "";
             for (String pattern : patterns)
             {
@@ -450,16 +449,16 @@ abstract public class ExpTableImpl<C extends Enum>
                 // and in other cases we're passed a pattern that matches against all protocols of a given type
                 if (pattern.contains("%"))
                 {
-                    condition.append(" LIKE ?");
+                    condition.unsafeAppend(" LIKE ?");
                 }
                 else
                 {
-                    condition.append(" = ?");
+                    condition.unsafeAppend(" = ?");
                 }
                 condition.add(pattern);
                 separator = " OR ";
             }
-            condition.append(")");
+            condition.unsafeAppend(")");
             addCondition(condition);
         }
     }

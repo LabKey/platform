@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -43,7 +44,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
-import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -408,6 +408,9 @@ public class DbScope
                     throw new ConfigurationException("Database name \"" + name + "\" in DataSource \"" + dsName + "\" exceeds the maximum identifier length");
             }
 
+            if (_connectionProperties != null)
+                _dialect.addDefaultConnectionProperties(_connectionProperties);
+
             // Validate that the data source is using a supported connection pool
             validateConnectionPool();
 
@@ -559,16 +562,6 @@ public class DbScope
             if (null == primaryDS)
                 throw new ConfigurationException("You must have a DataSource named \"" + LABKEY_DATA_SOURCE + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
 
-            // When running in devMode, allow either database. When running in production mode, throw if the
-            // distribution doesn't support the primary database type.
-            if (!AppProps.getInstance().isDevMode())
-            {
-                SqlDialect primaryDialect = primaryDS.getDialect();
-                SupportedDatabase primaryDatabaseType = SupportedDatabase.get(primaryDialect);
-                if (!AppProps.getInstance().getDistributionSupportedDatabases().contains(primaryDatabaseType))
-                    throw new ConfigurationException("This distribution (" + AppProps.getInstance().getDistributionFilename() + ") does not support " + primaryDialect.getProductName());
-            }
-
             primaryDS.setPrimary();
 
             if (primaryDS.isLogQueries())
@@ -647,7 +640,9 @@ public class DbScope
         if (start != -1)
         {
             start = start + 9;
-            int end = Math.max(url.length(), url.indexOf('&', start));
+            int end = url.indexOf('&', start);
+            if (end == -1)
+                end = url.length();
             url = url.substring(0, start) + StringUtils.repeat('?', end - start) + url.substring(end);
         }
         return url;
@@ -1169,7 +1164,9 @@ public class DbScope
                     @Override
                     void close(DbScope scope, Connection conn, Closer closer) throws SQLException
                     {
-                        if (scope.getConnectionHolder().release(conn))
+                        // Looking the holder up by effective thread is wrong once an AsyncQueryRequest worker outlives its share
+                        ConnectionHolder holder = conn instanceof ConnectionWrapper w && w.getThreadConnectionHolder() != null ? w.getThreadConnectionHolder() : scope.getConnectionHolder();
+                        if (holder.release(conn))
                         {
                             closer.close();
                         }
@@ -1187,7 +1184,7 @@ public class DbScope
         abstract void close(DbScope scope, Connection conn, Closer closer) throws SQLException;
     }
 
-    private class ConnectionHolder
+    class ConnectionHolder
     {
         private int _refCount = 0;
         private Connection _conn;
@@ -1200,7 +1197,9 @@ public class DbScope
         {
             if (0 == _refCount)
             {
-                _conn = getPooledConnection(ConnectionType.Thread, log);
+                ConnectionWrapper conn = getPooledConnection(ConnectionType.Thread, log);
+                conn.setThreadConnectionHolder(this);
+                _conn = conn;
             }
 
             _refCount++;
@@ -1252,11 +1251,7 @@ public class DbScope
         }
     }
 
-    /**
-     * Special case for when the connection that we expected to close has already been closed and another connection is
-     * in use instead. Expected rather than a bug because TransactionFilter's read-only request timeout closes a
-     * thread's connections from a different thread.
-     */
+    /** Special case for when the connection that we expected to close has already been closed and another connection is in use instead */
     public static class DifferentConnectionException extends IllegalStateException implements SkipMothershipLogging
     {
         public DifferentConnectionException(String s)
@@ -1323,9 +1318,16 @@ public class DbScope
     @JsonIgnore
     public Connection getUnpooledConnection() throws SQLException
     {
+        return getUnpooledConnection(null);
+    }
+
+    /** @param overrides driver properties that replace the data source's for this connection */
+    public Connection getUnpooledConnection(@Nullable Properties overrides) throws SQLException
+    {
         try
         {
-            Connection raw = getRawConnection(getDbScopeLoader().getLabKeyDataSource());
+            LabKeyDataSource dataSource = getDbScopeLoader().getLabKeyDataSource();
+            Connection raw = getRawConnection(dataSource.getUrl(), dataSource, overrides);
             return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
@@ -1418,11 +1420,26 @@ public class DbScope
     {
         synchronized (_transaction)
         {
+            DataSourcePropertyReader props = getDbScopeLoader().getDsProps();
+
             log.info("Data source " + this +
-                    ". Max connections: " + getDbScopeLoader().getDsProps().getMaxTotal() +
-                    ", active: " + getDbScopeLoader().getDsProps().getNumActive() +
-                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle() +
-                    ", maxWaitMillis: " + getDbScopeLoader().getDsProps().getMaxWaitMillis());
+                    ". Max connections: " + props.getMaxTotal() +
+                    ", active: " + props.getNumActive() +
+                    ", idle: " + props.getNumIdle() +
+                    ", maxWaitMillis: " + props.getMaxWaitMillis());
+
+            DataSourcePropertyReader.PoolStatistics pool = props.getPoolStatistics();
+
+            if (null != pool)
+                log.info("Connection pool for data source " + this +
+                        ". Opened: " + pool.createdCount() +
+                        ", closed: " + pool.destroyedCount() +
+                        " (evictor: " + pool.destroyedByEvictorCount() +
+                        ", failed validation: " + pool.destroyedByBorrowValidationCount() +
+                        "), borrowed: " + pool.borrowedCount() +
+                        ", waiting threads: " + pool.numWaiters() +
+                        ", meanBorrowWaitMillis (last 100): " + pool.meanBorrowWaitMillis() +
+                        ", maxBorrowWaitMillis: " + pool.maxBorrowWaitMillis());
 
             if (_transaction.isEmpty())
             {
@@ -1468,6 +1485,8 @@ public class DbScope
         }
 
         Connection conn;
+        boolean trackUsage = ConnectionUsage.isEnabled();
+        long acquireStart = trackUsage ? System.nanoTime() : 0;
 
         try
         {
@@ -1478,29 +1497,44 @@ public class DbScope
             throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
 
-        if (!conn.getAutoCommit())
-            throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
+        long poolDone = trackUsage ? System.nanoTime() : 0;
 
-        //
-        // Handle one time per-connection setup
-        // relies on pool implementation reusing same connection/wrapper instances
-        //
-
-        Connection delegate = getDelegate(conn);
-        Integer spid = _initializedConnections.get(delegate);
-
-        if (null == spid)
+        try
         {
-            if (null != _dialect)
+            if (!conn.getAutoCommit())
+                throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
+
+            //
+            // Handle one time per-connection setup
+            // relies on pool implementation reusing same connection/wrapper instances
+            //
+
+            Connection delegate = getDelegate(conn);
+            Integer spid = _initializedConnections.get(delegate);
+
+            if (null == spid)
             {
-                _dialect.prepareConnection(conn);
-                spid = _dialect.getSPID(delegate);
+                if (null != _dialect)
+                {
+                    _dialect.prepareConnection(conn);
+                    spid = _dialect.getSPID(delegate);
+                }
+
+                _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
+            long setupDone = trackUsage ? System.nanoTime() : 0;
+            ConnectionWrapper wrapper = new ConnectionWrapper(conn, this, spid, type, log);
+            if (trackUsage)
+                wrapper.trackUsage(acquireStart, poolDone, setupDone);
+            return wrapper;
         }
-
-        return new ConnectionWrapper(conn, this, spid, type, log);
+        catch (Throwable t)
+        {
+            // If the ConnectionWrapper didn't get created and returned, nothing else can close the connection
+            closeQuietly(conn, t);
+            throw t;
+        }
     }
 
     /**
@@ -1515,6 +1549,22 @@ public class DbScope
         catch (SQLException e)
         {
             LOG.warn("Error releasing connection", e);
+        }
+    }
+
+    /**
+     * Release a connection while an exception is already propagating. Pool implementations can throw unchecked from
+     * close(), which would otherwise replace the failure we're unwinding from.
+     **/
+    public void closeQuietly(Connection conn, Throwable propagating)
+    {
+        try
+        {
+            releaseConnection(conn);
+        }
+        catch (Throwable t)
+        {
+            propagating.addSuppressed(t);
         }
     }
 
@@ -1817,6 +1867,17 @@ public class DbScope
         }
     }
 
+    @TestOnly
+    public static void removeScope(String dsName)
+    {
+        synchronized (_scopeLoaders)
+        {
+            _scopeLoaders.remove(dsName);
+        }
+
+        _dataSourceFailures.remove(dsName);
+    }
+
     public boolean isRds()
     {
         return _rds;
@@ -2019,6 +2080,11 @@ public class DbScope
     // This bypasses the connection pool.
     private static Connection getRawConnection(String url, LabKeyDataSource dataSource) throws ServletException, SQLException
     {
+        return getRawConnection(url, dataSource, null);
+    }
+
+    private static Connection getRawConnection(String url, LabKeyDataSource dataSource, @Nullable Properties overrides) throws ServletException, SQLException
+    {
         DataSourcePropertyReader reader = dataSource.getDataSourcePropertyReader();
         Driver driver;
         Properties props;
@@ -2034,6 +2100,10 @@ public class DbScope
             if (reader.getPassword() != null)
             {
                 props.put("password", reader.getPassword());
+            }
+            if (overrides != null)
+            {
+                props.putAll(overrides);
             }
         }
         catch (Exception e)
@@ -2176,6 +2246,17 @@ public class DbScope
     }
 
     /**
+     * Returns the names of data sources whose connection attempt failed, which {@link #getDbScopes()} omits
+     */
+    public static @NotNull Set<String> getFailedDataSourceNames()
+    {
+        return getLoaders().stream()
+            .filter(DbScopeLoader::isFailed)
+            .map(DbScopeLoader::getDsName)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
      * Clear out the DbScopeLoaders that previously failed to connect to their data source. Next call to getDbScopes()
      * will attempt to retry those failed connections.
      */
@@ -2188,17 +2269,21 @@ public class DbScope
 
 
 
-    /**
-     * Close connections without releasing their locks. Useful when a third-party thread wants to interrupt another
-     * thread. If no connections were found, we'll also prevent that thread from getting a new connection.
-     */
-    public static void closeConnectionsForCurrentThreadWithoutReleasingLocks()
+    /** The thread's next attempt to get a new connection throws an AbortedRequestException; cleared when it finishes with the thread */
+    static void banNewConnections(Thread thread)
     {
-        boolean closed = ConnectionWrapper.closeConnections(false);
-        if (!closed)
+        BANNED_THREADS.add(thread);
+    }
+
+    /** Next connection request from the thread gets a new holder; wrappers already handed out still release through their own */
+    static void detachConnectionHolders(Thread thread)
+    {
+        for (DbScope scope : getInitializedDbScopes())
         {
-            // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
-            BANNED_THREADS.add(getEffectiveThread());
+            synchronized (scope._threadConnections)
+            {
+                scope._threadConnections.remove(thread);
+            }
         }
     }
 
@@ -2241,7 +2326,7 @@ public class DbScope
         }
 
         // Also close down connections that might not have been connected with a Transaction object
-        ConnectionWrapper.closeConnections(true);
+        ConnectionWrapper.closeConnections();
     }
 
     /**
@@ -2396,34 +2481,34 @@ public class DbScope
         PRECOMMIT
         {
             @Override
-            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
+            CommitTaskQueue getQueue(TransactionImpl transaction)
             {
-                return transaction._preCommitTasks;
+                return transaction._preCommitQueue;
             }
         },
         /** Run after the main transaction has been committed, separate from the transaction itself */
         POSTCOMMIT
         {
             @Override
-            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
+            CommitTaskQueue getQueue(TransactionImpl transaction)
             {
-                return transaction._postCommitTasks;
+                return transaction._postCommitQueue;
             }
         },
         /** Run after the transaction has been completely rolled back and abandoned, but not if it was committed */
         POSTROLLBACK
         {
             @Override
-            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
+            CommitTaskQueue getQueue(TransactionImpl transaction)
             {
-                return transaction._postRollbackTasks;
+                return transaction._postRollbackQueue;
             }
         },
         /** Run immediately. Useful for cache-clearing tasks, which often want to fire right away, as well as after the commit */
         IMMEDIATE
         {
             @Override
-            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
+            CommitTaskQueue getQueue(TransactionImpl transaction)
             {
                 throw new UnsupportedOperationException();
             }
@@ -2436,19 +2521,13 @@ public class DbScope
             }
         };
 
-        protected abstract Map<Runnable, Runnable> getRunnables(TransactionImpl transaction);
+        abstract CommitTaskQueue getQueue(TransactionImpl transaction);
 
         public void run(TransactionImpl transaction)
         {
-            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashMap
-            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction).keySet());
-
             try
             {
-                for (Runnable task : tasks)
-                {
-                    task.run();
-                }
+                getQueue(transaction).run(this);
             }
             finally
             {
@@ -2458,14 +2537,56 @@ public class DbScope
 
         public <T extends Runnable> T add(TransactionImpl transaction, T task)
         {
-            Map<Runnable, Runnable> runnables = getRunnables(transaction);
+            return getQueue(transaction).add(task);
+        }
+    }
+
+    /** The tasks queued for one {@link CommitTaskOption} of a transaction, and the monitor watching them for repeats */
+    static class CommitTaskQueue
+    {
+        // Map so that we can coalesce identical tasks and avoid duplicating the effort, and efficiently find the
+        // originally added task
+        private final Map<Runnable, Runnable> _tasks = new LinkedHashMap<>();
+        private final RepeatedCommitTaskMonitor _monitor = new RepeatedCommitTaskMonitor();
+
+        <T extends Runnable> T add(T task)
+        {
             @SuppressWarnings("unchecked")
-            T existing = (T)runnables.putIfAbsent(task, task);
+            T existing = (T)_tasks.putIfAbsent(task, task);
             if (existing != null)
             {
                 LOG.debug("Skipping duplicate runnable: {}", task.toString());
+                return existing;
             }
-            return existing == null ? task : existing;
+            _monitor.added(task);
+            return task;
+        }
+
+        void run(CommitTaskOption option)
+        {
+            // Copy to avoid ConcurrentModificationExceptions, retaining original order from LinkedHashMap
+            List<Runnable> tasks = new ArrayList<>(_tasks.keySet());
+            for (Runnable task : tasks)
+            {
+                _monitor.run(task);
+            }
+            _monitor.warnOfRepeats(option, tasks.size());
+        }
+
+        int size()
+        {
+            return _tasks.size();
+        }
+
+        RepeatedCommitTaskMonitor getMonitor()
+        {
+            return _monitor;
+        }
+
+        void clear()
+        {
+            _tasks.clear();
+            _monitor.clear();
         }
     }
 
@@ -2620,11 +2741,9 @@ public class DbScope
         private final ConnectionWrapper _conn;
         private final Map<DatabaseCache<?, ?>, Cache<?, ?>> _caches = new HashMap<>(20);
 
-        // Maps so that we can coalesce identical tasks and avoid duplicating the effort, and efficiently find the
-        // originally added task
-        private final Map<Runnable, Runnable> _preCommitTasks = new LinkedHashMap<>();
-        private final Map<Runnable, Runnable> _postCommitTasks = new LinkedHashMap<>();
-        private final Map<Runnable, Runnable> _postRollbackTasks = new LinkedHashMap<>();
+        private final CommitTaskQueue _preCommitQueue = new CommitTaskQueue();
+        private final CommitTaskQueue _postCommitQueue = new CommitTaskQueue();
+        private final CommitTaskQueue _postRollbackQueue = new CommitTaskQueue();
 
         private final List<List<Lock>> _locks = new ArrayList<>();
         private final Throwable _creation = new Throwable();
@@ -2701,9 +2820,9 @@ public class DbScope
 
         private void clearCommitTasks()
         {
-            _preCommitTasks.clear();
-            _postCommitTasks.clear();
-            _postRollbackTasks.clear();
+            _preCommitQueue.clear();
+            _postCommitQueue.clear();
+            _postRollbackQueue.clear();
             closeCaches();
         }
 
@@ -3053,7 +3172,7 @@ public class DbScope
         {
             SQLFragment sql = new SQLFragment("SELECT (");
             sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
-            sql.append(") AS Diff");
+            sql.unsafeAppend(") AS Diff");
 
             int actual = new SqlSelector(scope, sql).getObject(Integer.class);
             assertEquals(expected, actual);
@@ -3095,16 +3214,16 @@ public class DbScope
             String delimiter = " ";
 
             SQLFragment query = new SQLFragment("SELECT\n");
-            query.append("  COUNT(*) AS NumRows,\n");
-            query.append("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).append(" AS StrVals\n");
-            query.append("FROM (\n");
-            query.append("  VALUES\n");
-            query.append("  (1, 'x'),\n");
-            query.append("  (2, 'Y'),\n");
-            query.append("  (3, 'z'),\n");
-            query.append("  (4, 'z'),\n");
-            query.append("  (5, 'y')\n");
-            query.append(") AS t (IntVal, StrVal)\n");
+            query.unsafeAppend("  COUNT(*) AS NumRows,\n");
+            query.unsafeAppend("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).unsafeAppend(" AS StrVals\n");
+            query.unsafeAppend("FROM (\n");
+            query.unsafeAppend("  VALUES\n");
+            query.unsafeAppend("  (1, 'x'),\n");
+            query.unsafeAppend("  (2, 'Y'),\n");
+            query.unsafeAppend("  (3, 'z'),\n");
+            query.unsafeAppend("  (4, 'z'),\n");
+            query.unsafeAppend("  (5, 'y')\n");
+            query.unsafeAppend(") AS t (IntVal, StrVal)\n");
 
             Map<String, Object> map = new SqlSelector(scope, query).getMap();
             Number numRows = (Number)map.get("NumRows");
@@ -3302,10 +3421,9 @@ public class DbScope
         public void testCommitAndKeepConnection()
         {
             DbScope scope = getLabKeyScope();
-            // TempDatabaseCache's shared cache is temporary, so it stays out of KNOWN_CACHES; close() it below
-            DatabaseCache<String, String> cache = new DatabaseCache.TestCase.TempDatabaseCache<>(scope, 10, "commitAndKeepConnection test");
 
-            try
+            // TempDatabaseCache's shared cache is temporary, so it stays out of KNOWN_CACHES; close() it below
+            try (DatabaseCache<String, String> cache = new DatabaseCache.TestCase.TempDatabaseCache<>(scope, 10, "commitAndKeepConnection test"))
             {
                 cache.put("key_1", "value_1");
                 cache.put("key_2", "value_2");
@@ -3318,15 +3436,15 @@ public class DbScope
                     cache.remove("key_1");
 
                     // DatabaseCache defers removals to the commit, so the shared cache still serves the old value
-                    assertTrue("Shared cache should still hold key_1 before the commit", cache.getKeys().contains("key_1"));
+                    assertTrue("Shared cache should still hold key_1 before the commit", cache.getKeys().anyMatch("key_1"::equals));
 
                     t.commitAndKeepConnection();
 
                     // The deferred removal must land on the shared cache. If this transaction is still on the thread
                     // while the POSTCOMMIT tasks run, the removal builds a fresh TransactionCache and clears that
                     // throwaway private cache instead, leaving key_1 in the shared cache until it expires.
-                    assertFalse("commitAndKeepConnection() must invalidate the shared cache", cache.getKeys().contains("key_1"));
-                    assertTrue("commitAndKeepConnection() should leave unrelated keys alone", cache.getKeys().contains("key_2"));
+                    assertFalse("commitAndKeepConnection() must invalidate the shared cache", cache.getKeys().anyMatch("key_1"::equals));
+                    assertTrue("commitAndKeepConnection() should leave unrelated keys alone", cache.getKeys().anyMatch("key_2"::equals));
 
                     // POSTCOMMIT tasks must run detached from the transaction, exactly as they do under commit()
                     assertEquals("POSTCOMMIT task should have run exactly once", 1, transactionsSeenByPostCommitTask.size());
@@ -3337,17 +3455,13 @@ public class DbScope
                     assertSame("commitAndKeepConnection() must leave the transaction on the thread", t, scope.getCurrentTransaction());
 
                     cache.remove("key_2");
-                    assertTrue("Removal after commitAndKeepConnection() should be deferred again", cache.getKeys().contains("key_2"));
+                    assertTrue("Removal after commitAndKeepConnection() should be deferred again", cache.getKeys().anyMatch("key_2"::equals));
 
                     t.commit();
                 }
 
-                assertFalse("commit() must invalidate the shared cache", cache.getKeys().contains("key_2"));
+                assertFalse("commit() must invalidate the shared cache", cache.getKeys().anyMatch("key_2"::equals));
                 assertFalse(scope.isTransactionActive());
-            }
-            finally
-            {
-                cache.close();
             }
         }
 
@@ -3756,6 +3870,32 @@ public class DbScope
             catch (IllegalArgumentException x)
             {
                 // expected!
+            }
+        }
+    }
+
+    public static class PoolStatisticsTestCase extends Assert
+    {
+        @Test
+        public void testPoolStatistics() throws SQLException
+        {
+            DataSourcePropertyReader props = getLabKeyScope().getDataSourceProperties();
+            DataSourcePropertyReader.PoolStatistics before = props.getPoolStatistics();
+            assertNotNull("Could not read connection pool statistics; see log for the reflection failure", before);
+
+            assertTrue(before.createdCount() >= 1);
+            assertTrue(before.destroyedCount() <= before.createdCount());
+            assertTrue(before.destroyedByEvictorCount() <= before.destroyedCount());
+            assertTrue(before.destroyedByBorrowValidationCount() <= before.destroyedCount());
+            assertTrue(before.numWaiters() >= 0);
+            assertTrue(before.meanBorrowWaitMillis() >= 0);
+            assertTrue(before.maxBorrowWaitMillis() >= before.meanBorrowWaitMillis());
+
+            try (Connection ignored = getLabKeyScope().getPooledConnection())
+            {
+                DataSourcePropertyReader.PoolStatistics after = props.getPoolStatistics();
+                assertNotNull(after);
+                assertTrue(after.borrowedCount() > before.borrowedCount());
             }
         }
     }

@@ -17,7 +17,7 @@ package org.labkey.api.action;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.security.AdminConsoleAction;
@@ -97,7 +97,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         try
         {
             boolean isSendBasic = (unauthorizedType == UnauthorizedException.Type.sendBasicAuth || unauthorizedType == UnauthorizedException.Type.sendUnauthorized);
-            checkPermissionsAndTermsOfUse(getContextualRoles(), isSendBasic);
+            checkPermissionsAndTermsOfUse(isSendBasic);
         }
         catch (UnauthorizedException e)
         {
@@ -106,12 +106,12 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         }
     }
 
-    private void checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
+    private void checkActionPermissions() throws UnauthorizedException
     {
         try
         {
             SecurityLogger.indent("BaseViewAction.checkActionPermissions(" + getClass().getName() + ")");
-            _checkActionPermissions(contextualRoles);
+            _checkActionPermissions();
         }
         finally
         {
@@ -144,7 +144,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         return getViewContext().getMethod() == Method.PATCH;
     }
 
-    private void _checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
+    private void _checkActionPermissions() throws UnauthorizedException
     {
         ViewContext context = getViewContext();
 
@@ -214,6 +214,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
                 permissionsRequired.add(TroubleshooterPermission.class);
         }
 
+        @NotNull Set<Role> contextualRoles = Set.of();
         ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
         if (rolesAnnotation != null)
         {
@@ -258,9 +259,9 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             throw new DeprecatedActionException(actionClass);
     }
 
-    private void checkPermissionsAndTermsOfUse(Set<Role> contextualRoles, boolean isSendBasic) throws UnauthorizedException
+    private void checkPermissionsAndTermsOfUse(boolean isSendBasic) throws UnauthorizedException
     {
-        checkActionPermissions(contextualRoles);
+        checkActionPermissions();
 
         if (!getClass().isAnnotationPresent(IgnoresTermsOfUse.class))
             verifyTermsOfUse(isSendBasic);
@@ -285,15 +286,5 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
         for (SecurityManager.TermsOfUseProvider provider : SecurityManager.getTermsOfUseProviders())
             provider.verifyTermsOfUse(context, isBasicAuth);
-    }
-
-    /**
-     * Actions may provide a set of {@link Role}s used during permission checking
-     * or null if no contextual roles apply.
-     */
-    @Nullable
-    protected Set<Role> getContextualRoles()
-    {
-        return null;
     }
 }

@@ -564,8 +564,8 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             return;
 
         DbSchema expSchema = ExperimentService.get().getSchema();
-        SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
-                .append(" AND ObjectURI ").appendInClause(inputLsids, expSchema.getSqlDialect());
+        SQLFragment lsidsSql = new SQLFragment().unsafeAppend("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
+                .unsafeAppend(" AND ObjectURI ").appendInClause(inputLsids, expSchema.getSqlDialect());
         OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer());
 
         SimpleFilter filter = new SimpleFilter();
@@ -642,22 +642,22 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
-    public void addProvenanceInput(Set<String> lsids)
+    public void addProvenanceInput(User user, Set<String> lsids)
     {
         ProvenanceService pvs = ProvenanceService.get();
         if (!lsids.isEmpty())
         {
-            pvs.addProvenanceInputs(this.getContainer(), this, lsids);
+            pvs.addProvenanceInputs(user, this.getContainer(), this, lsids);
         }
     }
 
     @Override
-    public void addProvenanceMapping(Set<Pair<String, String>> lsidPairs)
+    public void addProvenanceMapping(User user, Set<Pair<String, String>> lsidPairs)
     {
         ProvenanceService pvs = ProvenanceService.get();
         if (!lsidPairs.isEmpty())
         {
-            pvs.addProvenance(this.getContainer(), this, lsidPairs);
+            pvs.addProvenance(user, this.getContainer(), this, lsidPairs);
         }
     }
 

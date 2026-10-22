@@ -17,6 +17,7 @@ package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -105,6 +106,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     public static void doSetup()
     {
         StudyProtocolDesignerTest initTest = getCurrentTest();
+
+        Assume.assumeTrue("Test requires specimen module", initTest._studyHelper.isSpecimenModulePresent());
 
         initTest._containerHelper.createProject(initTest.getProjectName(), null);
         initTest.importFolderFromZip(FOLDER_ARCHIVE);

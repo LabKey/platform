@@ -42,6 +42,7 @@ public class ImpersonatingTroubleshooterRole extends AbstractRootContainerRole
         return true;
     }
 
+    // Ensures this role gets all permissions (troubleshooter, read, user detail, audit read, impersonate) in the root ONLY
     @Override
     public boolean isApplicableOutsideRoot()
     {

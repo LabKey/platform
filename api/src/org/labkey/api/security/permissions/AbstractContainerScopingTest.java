@@ -19,6 +19,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.rules.TestRule;
+import org.junit.runners.model.Statement;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
@@ -43,6 +46,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base class for "container scoping" (a.k.a. broken-object-level-authorization / BOLA / IDOR) integration tests. These
@@ -51,9 +55,11 @@ import java.util.Set;
  *
  * <p>The repeated scaffolding lives here so each subclass keeps only its data fixture and the action under test:
  * <ul>
- *   <li>{@link #createContainer(String)} — make a throwaway child of the junit container (auto-cleaned).</li>
+ *   <li>{@link #createContainer(String, Module...)} — make a throwaway child of the junit container (auto-cleaned).</li>
+ *   <li>{@link #getSharedContainer(String, Module...)} — the same, but reused across the class's tests, which must
+ *       then assert only on data they create.</li>
  *   <li>{@link #createUserInRole(Container, Class)} — make a user with a role assigned in <em>one</em> folder only
- *       (auto-cleaned). Use this to obtain a caller who is, say, admin in folder A but has no rights in folder B.</li>
+ *       (auto-cleaned). Use this to obtain a caller who is, say, admin in folder A, but has no rights in folder B.</li>
  *   <li>{@link #grantRootRole(User, Class)} — grant a site-wide role such as Platform Developer (auto-cleaned).</li>
  *   <li>{@link #get(ActionURL, User)} / {@link #post(ActionURL, User)} — dispatch an in-JVM request as a given user
  *       and inspect the {@link MockHttpServletResponse} status. Parameters travel on the {@link ActionURL}.</li>
@@ -66,6 +72,28 @@ public abstract class AbstractContainerScopingTest extends Assert
 {
     private static final Map<String, Object> FORM_HEADERS = Map.of("Content-Type", "application/x-www-form-urlencoded");
     private static final Map<String, Object> JSON_HEADERS = Map.of("Content-Type", "application/json");
+
+    // Keyed by test class so one class's cleanup never deletes another's
+    private static final Map<Class<?>, Map<String, Container>> SHARED_CONTAINERS = new ConcurrentHashMap<>();
+
+    @ClassRule
+    public static final TestRule SHARED_CONTAINER_CLEANUP = (base, description) -> new Statement()
+    {
+        @Override
+        public void evaluate() throws Throwable
+        {
+            try
+            {
+                base.evaluate();
+            }
+            finally
+            {
+                Map<String, Container> shared = SHARED_CONTAINERS.remove(description.getTestClass());
+                if (shared != null)
+                    shared.values().forEach(AbstractContainerScopingTest::deleteQuietly);
+            }
+        }
+    };
 
     private final List<Container> _containers = new ArrayList<>();
     private final List<User> _users = new ArrayList<>();
@@ -84,6 +112,24 @@ public abstract class AbstractContainerScopingTest extends Assert
      */
     protected Container createContainer(String name, org.labkey.api.module.Module... enabledModules)
     {
+        Container c = activateModules(createFreshContainer(name), enabledModules);
+        _containers.add(c);
+        return c;
+    }
+
+    /**
+     * Like {@link #createContainer(String, Module...)}, but created once and reused by every test in the class, then
+     * deleted after the last one. Container deletes are slow, so prefer this whenever a test only asserts on data it
+     * creates itself. Users and role grants are still per test.
+     */
+    protected Container getSharedContainer(String name, Module... enabledModules)
+    {
+        return SHARED_CONTAINERS.computeIfAbsent(getClass(), k -> new ConcurrentHashMap<>())
+            .computeIfAbsent(name, n -> activateModules(createFreshContainer("shared-" + n), enabledModules));
+    }
+
+    private Container createFreshContainer(String name)
+    {
         Container junit = JunitUtil.getTestContainer();
         // Use the fully-qualified class name, not getSimpleName(): the nested test class is named
         // "ContainerScopingTestCase" in nearly every controller, so getSimpleName() would give them all the SAME
@@ -95,10 +141,7 @@ public abstract class AbstractContainerScopingTest extends Assert
         Container existing = ContainerManager.getForPath(path);
         if (existing != null)
             ContainerManager.deleteAll(existing, getAdmin());
-        Container c = ContainerManager.ensureContainer(path, getAdmin());
-        activateModules(c, enabledModules);
-        _containers.add(c);
-        return c;
+        return ContainerManager.ensureContainer(path, getAdmin());
     }
 
     protected Container activateModules(Container c, Module... enabledModules)
@@ -212,16 +255,18 @@ public abstract class AbstractContainerScopingTest extends Assert
         }
         _users.clear();
 
-        for (Container c : _containers)
-        {
-            try
-            {
-                ContainerManager.deleteAll(c, admin);
-            }
-            catch (Exception ignored)
-            {
-            }
-        }
+        _containers.forEach(AbstractContainerScopingTest::deleteQuietly);
         _containers.clear();
+    }
+
+    private static void deleteQuietly(Container c)
+    {
+        try
+        {
+            ContainerManager.deleteAll(c, TestContext.get().getUser());
+        }
+        catch (Exception ignored)
+        {
+        }
     }
 }

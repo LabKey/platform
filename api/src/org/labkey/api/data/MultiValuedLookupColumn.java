@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 
@@ -36,6 +37,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     private final ColumnInfo _display;
     private final ForeignKey _rightFk;
     private final ColumnInfo _junctionKey;
+    private boolean _lateralJoin = false;
 
     public MultiValuedLookupColumn(ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display)
     {
@@ -76,7 +78,28 @@ public class MultiValuedLookupColumn extends LookupColumn
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(getTableAlias(tableAliasName)).append(".").appendIdentifier(_display.getAlias());
+        return new SQLFragment(getTableAlias(tableAliasName)).unsafeAppend(".").appendIdentifier(_display.getAlias());
+    }
+
+    /**
+     * Aggregate only the junction rows for each parent row via a LATERAL join instead of aggregating the whole junction
+     * table and joining the result, which Postgres can't restrict to the parent rows. Pays off when the junction key is indexed.
+     */
+    public void setLateralJoin(boolean lateralJoin)
+    {
+        _lateralJoin = lateralJoin;
+    }
+
+    @Override
+    protected boolean isLateralJoin()
+    {
+        return _lateralJoin && getSqlDialect().supportsLateralJoin() && getSqlDialect().supportsGroupConcat();
+    }
+
+    @Override
+    protected SQLFragment getLateralLookupSql(TableInfo lookupTable, String alias, String baseAlias)
+    {
+        return getLookupSql(lookupTable, alias, baseAlias);
     }
 
     @Override
@@ -86,6 +109,12 @@ public class MultiValuedLookupColumn extends LookupColumn
     }
 
     protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
+    {
+        return getLookupSql(lookupTable, alias, null);
+    }
+
+    /** @param correlatedBaseAlias when non-null, restrict the junction rows to the parent row with this alias */
+    protected SQLFragment getLookupSql(TableInfo lookupTable, String alias, @Nullable String correlatedBaseAlias)
     {
         SqlDialect dialect = lookupTable.getSqlDialect();
         boolean groupConcat = dialect.supportsGroupConcat();
@@ -97,8 +126,8 @@ public class MultiValuedLookupColumn extends LookupColumn
 
         SQLFragment strJoin = new SQLFragment();
         strJoin.appendComment("<MultiValuedForeignKey target=" + lookupTable.getName() + ">", dialect );
-        strJoin.append("\n\t(\n\t\t");
-        strJoin.append("SELECT ");
+        strJoin.unsafeAppend("\n\t(\n\t\t");
+        strJoin.unsafeAppend("SELECT ");
         strJoin.append(_lookupKey.getValueSql(fromAlias));
 
         String joinAlias = groupConcat ? fromAlias : nestedAlias;
@@ -118,12 +147,12 @@ public class MultiValuedLookupColumn extends LookupColumn
                 continue;
 
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
-            strJoin.append(", \n\t\t\t");
+            strJoin.unsafeAppend(", \n\t\t\t");
             SQLFragment valueSql = new SQLFragment();
             boolean needsCast = "entityid".equalsIgnoreCase(lc.getSqlTypeName()) || "lsidtype".equalsIgnoreCase(lc.getSqlTypeName()) || "userid".equalsIgnoreCase(lc.getSqlTypeName());
             if (needsCast)
             {
-                valueSql.append("CAST((");
+                valueSql.unsafeAppend("CAST((");
             }
             valueSql.append(lc.getValueSql(joinAlias));
             if (needsCast)
@@ -137,7 +166,7 @@ public class MultiValuedLookupColumn extends LookupColumn
                     sqlType = dialect.getLsidType();
                 else
                     throw new IllegalStateException("Unexpected sql type '" + lc.getSqlTypeName() + "' for column '" + lc.getName() + "'");
-                valueSql.append(") AS ").append(sqlType).append(")");
+                valueSql.unsafeAppend(") AS ").append(sqlType).unsafeAppend(")");
             }
 
             col.declareJoins(baseJoinTarget, joins);
@@ -149,21 +178,21 @@ public class MultiValuedLookupColumn extends LookupColumn
             {
                 SQLFragment select = new SQLFragment("SELECT ");
                 select.append(valueSql);
-                select.append(" FROM ");
+                select.unsafeAppend(" FROM ");
                 select.append(_lookupKey.getParentTable().getFromSQL(nestedAlias));
 
                 for (SQLFragment fragment : joins.values())
                 {
-                    String join = StringUtils.replace(fragment.getSQL(), "\n\t", "\n\t\t\t\t");
+                    String join = Strings.CS.replace(fragment.getSQL(), "\n\t", "\n\t\t\t\t");
                     join = join.replace("LEFT OUTER", "INNER");
                     select.append(join);
                     select.addAll(fragment.getParams());
                     select.addTempTokens(fragment);
                 }
 
-                select.append(" WHERE ");
+                select.unsafeAppend(" WHERE ");
                 select.append(_lookupKey.getValueSql(fromAlias));
-                select.append(" = ");
+                select.unsafeAppend(" = ");
                 select.append(_lookupKey.getValueSql(nestedAlias));
 
                 // TODO: Always order by value
@@ -171,27 +200,33 @@ public class MultiValuedLookupColumn extends LookupColumn
                 strJoin.append(dialect.getSelectConcat(select, MultiValuedRenderContext.VALUE_DELIMITER));
             }
 
-            strJoin.append(" AS ");
+            strJoin.unsafeAppend(" AS ");
             strJoin.appendIdentifier(lc.getAlias());
         }
 
-        strJoin.append("\n\t\tFROM ");
+        strJoin.unsafeAppend("\n\t\tFROM ");
         strJoin.append(_lookupKey.getParentTable().getFromSQL(fromAlias));
 
         if (groupConcat)
         {
             for (SQLFragment fragment : joins.values())
             {
-//                strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t"));
+//                strJoin.append(Strings.CS.replace(fragment.toString(), "\n\t", "\n\t\t"));
                 strJoin.append(fragment);
             }
         }
 
+        if (correlatedBaseAlias != null)
+        {
+            strJoin.unsafeAppend("\n\t\tWHERE ");
+            strJoin.append(getJoinCondition(correlatedBaseAlias, _foreignKey, fromAlias, _lookupKey, false));
+        }
+
         // TODO: Add ORDER BY?
 
-        strJoin.append("\n\t\tGROUP BY ");
+        strJoin.unsafeAppend("\n\t\tGROUP BY ");
         strJoin.append(_lookupKey.getValueSql(fromAlias));
-        strJoin.append("\n\t) ").appendIdentifier(alias);
+        strJoin.unsafeAppend("\n\t) ").appendIdentifier(alias);
         strJoin.appendComment("</MultiValuedForeignKey target=" + lookupTable.getName() + ">", dialect );
         return strJoin;
     }

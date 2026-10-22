@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -952,7 +953,7 @@ public abstract class CompareType
             }
 
             for (int i = 0; i < params.length; i++)
-                fragments[i] = SQLFragment.unsafe(escapeLabKeySqlValue(params[i], type));
+                fragments[i] = new SQLFragment().setSqlUnsafe(escapeLabKeySqlValue(params[i], type));
 
             return fragments;
         }
@@ -1017,7 +1018,7 @@ public abstract class CompareType
             SQLFragment sql = dialect.array_is_empty(columnFragment);
             if (!_negated)
                 return sql;
-            return new SQLFragment(" NOT (").append(sql).append(")");
+            return new SQLFragment(" NOT (").append(sql).unsafeAppend(")");
         }
 
         @Override
@@ -1121,7 +1122,7 @@ public abstract class CompareType
             SQLFragment sql = dialect.array_some_in_array(valueFieldSql.first, valueFieldSql.second);
             if (!_negated)
                 return sql;
-            return new SQLFragment(" NOT (").append(sql).append(")");
+            return new SQLFragment(" NOT (").append(sql).unsafeAppend(")");
         }
 
         @Override
@@ -1182,7 +1183,7 @@ public abstract class CompareType
             SQLFragment sql = dialect.array_same_array(valueFieldSql.first, valueFieldSql.second);
             if (!_negated)
                 return sql;
-            return new SQLFragment(" NOT (").append(sql).append(")");
+            return new SQLFragment(" NOT (").append(sql).unsafeAppend(")");
         }
 
         @Override
@@ -1329,7 +1330,7 @@ public abstract class CompareType
                     sql.append(sep);
                     sep = " OR ";
                     sql.appendIdentifier(column.getAlias());
-                    sql.append(" = ");
+                    sql.unsafeAppend(" = ");
                     sql.appendValue(paramNum);
                     continue;
                 }
@@ -1359,7 +1360,7 @@ public abstract class CompareType
                 {
                     columnSql = new SQLFragment();
                     columnSql.appendIdentifier(mappedColumn.getAlias());
-                    columnSql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
+                    columnSql.unsafeAppend(" ").append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ");
                     columnSql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(param));
                     columnSql.append(LikeClause.sqlEscape());
                 }
@@ -2142,9 +2143,9 @@ public abstract class CompareType
         {
             String q = dialect.isSqlServer() ? SS_CAST : "?";
             return new SQLFragment()
-                .appendIdentifier(alias).append(" >= ").append(q)
-                .append(" AND ")
-                .appendIdentifier(alias).append(" < ").append(q);
+                .appendIdentifier(alias).unsafeAppend(" >= ").append(q)
+                .unsafeAppend(" AND ")
+                .appendIdentifier(alias).unsafeAppend(" < ").append(q);
         }
 
         @Override
@@ -2185,9 +2186,9 @@ public abstract class CompareType
         {
             String q = dialect.isSqlServer() ? SS_CAST : "?";
             return new SQLFragment()
-                .appendIdentifier(alias).append(" < ").append(q)
-                .append(" OR ")
-                .appendIdentifier(alias).append(" >= ").append(q);
+                .appendIdentifier(alias).unsafeAppend(" < ").append(q)
+                .unsafeAppend(" OR ")
+                .appendIdentifier(alias).unsafeAppend(" >= ").append(q);
         }
 
         @Override
@@ -2353,13 +2354,13 @@ public abstract class CompareType
     public static String escapeLikePattern(String value, char escapeChar)
     {
         String strEscape = new String(new char[] { escapeChar } );
-        value = StringUtils.replace(value, strEscape, strEscape + strEscape);
+        value = Strings.CS.replace(value, strEscape, strEscape + strEscape);
         for (char ch : charsToBeEscaped)
         {
             if (ch == escapeChar)
                 continue;
             String strCh = new String(new char[] { ch});
-            value = StringUtils.replace(value, strCh, strEscape + strCh);
+            value = Strings.CS.replace(value, strCh, strEscape + strCh);
         }
         return value;
     }
@@ -2424,8 +2425,8 @@ public abstract class CompareType
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             return new SQLFragment()
-                .appendIdentifier(alias).append(" ")
-                .append(dialect.getCaseInsensitiveLikeOperator()).append(" ")
+                .appendIdentifier(alias).unsafeAppend(" ")
+                .append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ")
                 .append(dialect.concatenate("?", "'%'")).append(sqlEscape());
         }
 
@@ -2457,9 +2458,9 @@ public abstract class CompareType
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             return new SQLFragment("(")
-                .appendIdentifier(alias).append(" IS NULL OR ")
-                .appendIdentifier(alias).append(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ").append(dialect.concatenate("?", "'%'")).append(sqlEscape())
-                .append(")");
+                .appendIdentifier(alias).unsafeAppend(" IS NULL OR ")
+                .appendIdentifier(alias).unsafeAppend(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ").append(dialect.concatenate("?", "'%'")).append(sqlEscape())
+                .unsafeAppend(")");
         }
 
         @Override
@@ -2539,8 +2540,8 @@ public abstract class CompareType
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             return new SQLFragment()
-                .appendIdentifier(alias).append(" ")
-                .append(dialect.getCaseInsensitiveLikeOperator()).append(" ")
+                .appendIdentifier(alias).unsafeAppend(" ")
+                .append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ")
                 .append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape());
         }
 
@@ -2572,9 +2573,9 @@ public abstract class CompareType
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             return new SQLFragment("(")
-                .appendIdentifier(alias).append(" IS NULL OR ")
-                .appendIdentifier(alias).append(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ").append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape())
-                .append(")");
+                .appendIdentifier(alias).unsafeAppend(" IS NULL OR ")
+                .appendIdentifier(alias).unsafeAppend(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ").append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape())
+                .unsafeAppend(")");
         }
 
         @Override
@@ -2608,9 +2609,9 @@ public abstract class CompareType
             String isNull = CompareType.ISBLANK.getSql();
             return new SQLFragment("(")
                 .appendIdentifier(alias).append(neq)
-                .append(" OR ")
+                .unsafeAppend(" OR ")
                 .appendIdentifier(alias).append(isNull)
-                .append(")");
+                .unsafeAppend(")");
         }
     }
 
@@ -2728,13 +2729,13 @@ public abstract class CompareType
     public static SQLFragment getMemberOfSQL(SqlDialect dialect, SQLFragment userIdSQL, SQLFragment groupIdSQL)
     {
         SQLFragment ret = new SQLFragment();
-        ret.append("(").append(groupIdSQL).append(") IN (");
+        ret.unsafeAppend("(").append(groupIdSQL).unsafeAppend(") IN (");
 
         if (dialect.isPostgreSQL())
         {
-            ret.append(
+            ret.unsafeAppend(
                 "WITH RECURSIVE allmembers(userid, groupid) AS (\n" +
-                "   SELECT userid, groupid FROM core.members WHERE userid = ").append(userIdSQL).append(
+                "   SELECT userid, groupid FROM core.members WHERE userid = ").append(userIdSQL).unsafeAppend(
                 "\nUNION\n" +
                 "   SELECT a.groupid as userid, m.groupid as groupid FROM allmembers a, core.members m WHERE a.groupid=m.userid\n" +
                 ")\n" +
@@ -2746,16 +2747,16 @@ public abstract class CompareType
             // nested WITH doesn't seem to work on SQL Server
             // ONLY WORKS 3 LEVELS DEEP!
             SQLFragment onelevel = new SQLFragment(), twolevel = new SQLFragment(), threelevel = new SQLFragment();
-            onelevel.append("SELECT groupid FROM core.members _M1_ where _M1_.userid=(").append(userIdSQL).append(")");
-            twolevel.append("SELECT groupid FROM core.members _M2_ WHERE _M2_.userid IN (").append(onelevel).append(")");
-            threelevel.append("SELECT groupid FROM core.members _M3_ WHERE _M3_.userid IN (").append(twolevel).append(")");
-            ret.append(onelevel).append(" UNION ").append(twolevel).append(" UNION ").append(threelevel);
+            onelevel.unsafeAppend("SELECT groupid FROM core.members _M1_ where _M1_.userid=(").append(userIdSQL).unsafeAppend(")");
+            twolevel.unsafeAppend("SELECT groupid FROM core.members _M2_ WHERE _M2_.userid IN (").append(onelevel).unsafeAppend(")");
+            threelevel.unsafeAppend("SELECT groupid FROM core.members _M3_ WHERE _M3_.userid IN (").append(twolevel).unsafeAppend(")");
+            ret.append(onelevel).unsafeAppend(" UNION ").append(twolevel).unsafeAppend(" UNION ").append(threelevel);
         }
 
-        ret.append(" UNION SELECT (").append(userIdSQL).append(")");
-        ret.append(" UNION SELECT ").appendValue(Group.groupGuests);
-        ret.append(" UNION SELECT ").appendValue(Group.groupUsers).append(" WHERE 0 < (").append(userIdSQL).append(")");
-        ret.append(")");
+        ret.unsafeAppend(" UNION SELECT (").append(userIdSQL).unsafeAppend(")");
+        ret.unsafeAppend(" UNION SELECT ").appendValue(Group.groupGuests);
+        ret.unsafeAppend(" UNION SELECT ").appendValue(Group.groupUsers).unsafeAppend(" WHERE 0 < (").append(userIdSQL).unsafeAppend(")");
+        ret.unsafeAppend(")");
         return ret;
     }
 

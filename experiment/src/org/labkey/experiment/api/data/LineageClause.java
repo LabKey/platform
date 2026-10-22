@@ -102,10 +102,10 @@ public class LineageClause extends CompareType.CompareClause
             return new SQLFragment("(1 = 2)");
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(").appendIdentifier(alias).append(") IN (");
-        sql.append("SELECT ").append(getLsidColumn()).append(" FROM (");
+        sql.unsafeAppend("(").appendIdentifier(alias).unsafeAppend(") IN (");
+        sql.unsafeAppend("SELECT ").append(getLsidColumn()).unsafeAppend(" FROM (");
         sql.append(tree);
-        sql.append(") AS X)");
+        sql.unsafeAppend(") AS X)");
 
         return sql;
     }

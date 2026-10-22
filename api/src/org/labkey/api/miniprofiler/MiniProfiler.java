@@ -18,27 +18,10 @@ package org.labkey.api.miniprofiler;
 import jakarta.servlet.ServletContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.WritablePropertyMap;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.User;
-import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.SafeToRender;
-import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
-
-import java.security.Principal;
-import java.util.Map;
-import java.util.Set;
-
-import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * Does some lightweight data capture about database queries and other potentially expensive work performed in the
@@ -48,132 +31,25 @@ public class MiniProfiler
 {
     /** Message that points the user to turn on stack trace collection if desired */
     public static final String NO_STACK_TRACE_AVAILABLE = "No stack trace available. Enable capturing stack traces via the Admin Console's Profiler link.";
-    private static final String CATEGORY = "miniprofiler";
-
-    private static final BeanObjectFactory<Settings> SETTINGS_FACTORY = new BeanObjectFactory<>(Settings.class);
-
     static boolean _collectTroubleshootingStackTraces = false;
-
-    private static final Cache<User, Settings> SETTINGS_CACHE = CacheManager.getBlockingCache(1000, CacheManager.DEFAULT_TIMEOUT, "Mini profiler settings", (user, argument) -> {
-        // site-wide settings keyed by guest user, otherwise per-user settings
-        RequestInfo current = MemTracker.get().current();
-        boolean ignored = current != null && current.isIgnored();
-        try
-        {
-            // suspend profiler while we load the settings
-            if (current != null)
-                current.setIgnored(true);
-            Map<String, String> properties = PropertyManager.getProperties(user, ContainerManager.getRoot(), CATEGORY);
-            return SETTINGS_FACTORY.fromMap(properties);
-        }
-        finally
-        {
-            // resume profiling
-            if (current != null)
-                current.setIgnored(ignored);
-        }
-    });
 
     private MiniProfiler() { }
 
-    public static String getHelpTopic()
-    {
-        return "profiler#mini";
-    }
-
-    public static boolean isEnabled(ViewContext context)
-    {
-        return context.getContainer() != null && isEnabled(context.getUser());
-    }
-
-    private static boolean isEnabled(Principal user)
-    {
-        if (!(user instanceof User))
-            return false;
-
-        return isEnabled((User)user);
-    }
-
-    public static boolean isEnabled(User user)
-    {
-        if (!ModuleLoader.getInstance().isStartupComplete())
-            return false;
-
-        // CONSIDER: Add CanSeeProfilingPermission?
-        if (user != null && (user.isPlatformDeveloper() || user.isTroubleshooter()))
-        {
-            Settings settings = getSettings(user);
-            if (settings != null)
-                return settings.isEnabled();
-        }
-
-        return false;
-    }
-
     /** Get per-user settings */
-    public static @Nullable Settings getSettings(@NotNull Principal user)
+    public static @Nullable Settings getSettings()
     {
-        if (user instanceof User)
-            return getSettings((User)user);
+        Settings settings = new Settings();
+        settings.setCollectTroubleshootingStackTraces(_collectTroubleshootingStackTraces);
+        settings.setTrackConnectionUsage(ConnectionUsage.isEnabled());
 
-        return null;
-    }
-
-    /** Get per-user settings */
-    public static @Nullable Settings getSettings(@Nullable User user)
-    {
-        Settings settings = null;
-        if (user != null)
-        {
-            settings = SETTINGS_CACHE.get(user);
-
-            // Stacktrace setting isn't really cached, it just piggybacks on the MiniProfiler settings bean/form
-            settings.setCollectTroubleshootingStackTraces(_collectTroubleshootingStackTraces);
-        }
         return settings;
     }
 
-    /** Save per-user settings. */
-    public static void saveSettings(@NotNull Settings settings, @NotNull User user)
+    public static void saveSettings(@NotNull Settings settings)
     {
-        // Troubleshooting stacktraces are site-wide only
+        // Troubleshooting stacktraces and connection usage are site-wide only
         setCollectTroubleshootingStackTraces(settings._collectTroubleshootingStackTraces);
-
-        WritablePropertyMap map = PropertyManager.getWritableProperties(user, ContainerManager.getRoot(), CATEGORY, true);
-        SETTINGS_FACTORY.toStringMap(settings, map);
-        map.save();
-        SETTINGS_CACHE.remove(user);
-    }
-
-    /** Reset per-user settings. */
-    public static void resetSettings(@NotNull User user)
-    {
-        PropertyManager.getNormalStore().deletePropertySet(CATEGORY);
-        SETTINGS_CACHE.remove(user);
-    }
-
-    public static SafeToRender renderInitScript(@NotNull User user, long currentId, Set<Long> ids, String version)
-    {
-        Settings settings = getSettings(user);
-
-        JavaScriptFragment initFragment = JavaScriptFragment.unsafe(
-            "LABKEY.internal.MiniProfiler.init({\n" +
-            "  currentId:" + currentId + ",\n" +
-            "  ids:" + ids + ",\n" +
-            "  version:" + Integer.valueOf(version) + ",\n" +
-            "  renderPosition:" + jsString(settings.getRenderPosition().getStyle()) + ",\n" +
-            "  showTrivial:" + settings.isShowTrivial() + ",\n" +
-            "  trivialMilliseconds:" + settings.getTrivialMillis() + ",\n" +
-            "  showChildrenTime:" + settings.isShowChildrenTime() + ",\n" +
-            "  maxTracesToShow:" + 20 + ",\n" +
-            "  showControls:" + settings.isShowControls() + ",\n" +
-            "  authorized:true,\n" +
-            "  toggleShortcut:" + jsString(settings.getToggleShortcut() != null ? settings.getToggleShortcut() : "") + ",\n" +
-            "  startHidden:" + settings.isStartHidden() + ",\n" +
-            "  startMinimized:" + settings.isStartMinimized() + "\n" +
-            "});"
-        );
-        return HttpView.currentPageConfig().buildScriptTagBlock(initFragment);
+        ConnectionUsage.setEnabled(settings._trackConnectionUsage);
     }
 
     public static void addObject(Object object)
@@ -187,23 +63,6 @@ public class MiniProfiler
 //            return;
 
         requestInfo.addObject(object);
-    }
-
-    /**
-     * Returns a {@link Timing} that will time the code between its creation and disposal.
-     * @param name descriptive name for the code that is encapsulated by the resulting AutoCloseable's lifetime.
-     */
-    @Nullable
-    public static Timing step(String name)
-    {
-        RequestInfo requestInfo = MemTracker.getInstance().current();
-        if (requestInfo == null || requestInfo.isIgnored())
-            return null;
-
-        if (!isEnabled(requestInfo.getUser()))
-            return null;
-
-        return requestInfo.step(name);
     }
 
     /**
@@ -295,120 +154,10 @@ public class MiniProfiler
         _collectTroubleshootingStackTraces = enabled;
     }
 
-    public enum RenderPosition implements SafeToRenderEnum
-    {
-        TopLeft("left"),
-        TopRight("right"),
-        BottomLeft("bottomleft"),
-        BottomRight("bottomright");
-
-        // Part of the css style used to render the value, e.g.: profiler-left or profiler-bottomright
-        private final String _style;
-
-        RenderPosition(String style)
-        {
-            _style = style;
-        }
-
-        public String getStyle()
-        {
-            return _style;
-        }
-    }
-
     public static class Settings
     {
-        private boolean _enabled = false;
-        private boolean _showChildrenTime = false;
-        private boolean _showTrivial = false;
-        private int _trivialMillis = 3;
-
-        private boolean _startMinimized = true;
-        private boolean _startHidden = false;
-        private boolean _showControls = true;
-        private RenderPosition _renderPosition = RenderPosition.BottomRight;
         private boolean _collectTroubleshootingStackTraces;
-        private String _toggleShortcut = "alt+p";
-
-        public boolean isEnabled()
-        {
-            return _enabled;
-        }
-
-        public void setEnabled(boolean enabled)
-        {
-            _enabled = enabled;
-        }
-
-        public boolean isShowTrivial()
-        {
-            return _showTrivial;
-        }
-
-        public void setShowTrivial(boolean showTrivial)
-        {
-            _showTrivial = showTrivial;
-        }
-
-        public int getTrivialMillis()
-        {
-            return _trivialMillis;
-        }
-
-        public void setTrivialMillis(int trivialMillis)
-        {
-            _trivialMillis = trivialMillis;
-        }
-
-        public boolean isShowChildrenTime()
-        {
-            return _showChildrenTime;
-        }
-
-        public void setShowChildrenTime(boolean showChildrenTime)
-        {
-            _showChildrenTime = showChildrenTime;
-        }
-
-        public boolean isStartMinimized()
-        {
-            return _startMinimized;
-        }
-
-        public void setStartMinimized(boolean startMinimized)
-        {
-            _startMinimized = startMinimized;
-        }
-
-        public boolean isStartHidden()
-        {
-            return _startHidden;
-        }
-
-        public void setStartHidden(boolean startHidden)
-        {
-            _startHidden = startHidden;
-        }
-
-        public boolean isShowControls()
-        {
-            return _showControls;
-        }
-
-        public void setShowControls(boolean showControls)
-        {
-            _showControls = showControls;
-        }
-
-        public RenderPosition getRenderPosition()
-        {
-            return _renderPosition;
-        }
-
-        public void setRenderPosition(RenderPosition renderPosition)
-        {
-            _renderPosition = renderPosition;
-        }
+        private boolean _trackConnectionUsage;
 
         public boolean isCollectTroubleshootingStackTraces()
         {
@@ -420,14 +169,14 @@ public class MiniProfiler
             _collectTroubleshootingStackTraces = collect;
         }
 
-        public String getToggleShortcut()
+        public boolean isTrackConnectionUsage()
         {
-            return _toggleShortcut;
+            return _trackConnectionUsage;
         }
 
-        public void setToggleShortcut(String toggleShortcut)
+        public void setTrackConnectionUsage(boolean track)
         {
-            _toggleShortcut = toggleShortcut;
+            _trackConnectionUsage = track;
         }
     }
 }

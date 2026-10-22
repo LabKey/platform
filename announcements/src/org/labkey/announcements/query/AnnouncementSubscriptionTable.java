@@ -39,6 +39,8 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,13 +83,18 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         // We need to filter on the announcement's container, since we don't have a container column directly on userlist
         getFilter().deleteConditions(FieldKey.fromParts("Container"));
 
-        SQLFragment sql = new SQLFragment("MessageId IN (SELECT RowId FROM ");
+        SQLFragment sql = SQLFragment.unsafe("MessageId IN (SELECT RowId FROM ");
         sql.append(CommSchema.getInstance().getTableInfoAnnouncements(), "a");
-        sql.append(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("a.Container")));
-        sql.append(")");
+        sql.unsafeAppend(" WHERE ");
+        sql.append(filter.getSQLFragment(getSchema(), SQLFragment.unsafe("a.Container")));
+        sql.unsafeAppend(")");
 
         addCondition(sql, FieldKey.fromParts("Container"));
+
+        SQLFragment containerSql = SQLFragment.unsafe("(SELECT a.Container FROM ");
+        containerSql.append(CommSchema.getInstance().getTableInfoAnnouncements(), "a");
+        containerSql.unsafeAppend(" WHERE a.RowId = MessageId)");
+        applyUserFilter(filter, containerSql);
     }
 
     @Override
@@ -120,7 +127,16 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
                     throw new InvalidKeyException("No such Announcement: " + announcementId);
                 }
 
-                ensurePermission(user, targetUser, announcement.lookupContainer());
+                Container c = announcement.lookupContainer();
+                ensurePermission(user, targetUser, c);
+
+                // On a secure board these rows are the thread's member list, which grants read, so require read of the
+                // thread itself. Rows live on the latest post, so resolve a response to its thread.
+                AnnouncementModel thread = announcement.getParent() == null ? announcement : AnnouncementManager.getAnnouncement(null, announcement.getParent());
+                if (thread == null || !AnnouncementManager.getPermissions(c, user, AnnouncementManager.getMessageBoardSettings(c)).allowRead(thread))
+                {
+                    throw new UnauthorizedException();
+                }
 
                 return new Pair<>(targetUser, announcement);
             }
@@ -182,17 +198,16 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException
         {
-            Map<String, Object> existingRow = getRow(user, container, oldRow);
-            if (existingRow != null)
-            {
-                Pair<User, AnnouncementModel> oldTargets = getTargets(oldRow, user);
-                Pair<User, AnnouncementModel> newTargets = getTargets(row, user);
-                Map<String, Object> pks = new CaseInsensitiveHashMap<>();
-                pks.put("UserId", oldTargets.getKey().getUserId());
-                pks.put("MessageId", oldTargets.getValue().getRowId());
-                checkDuplicateUpdate(pks);
-                Table.update(user, getRealTable(), createDatabaseMap(newTargets), pks);
-            }
+            if (getRow(user, container, oldRow) == null)
+                throw new NotFoundException("The existing row was not found.");
+
+            Pair<User, AnnouncementModel> oldTargets = getTargets(oldRow, user);
+            Pair<User, AnnouncementModel> newTargets = getTargets(row, user);
+            Map<String, Object> pks = new CaseInsensitiveHashMap<>();
+            pks.put("UserId", oldTargets.getKey().getUserId());
+            pks.put("MessageId", oldTargets.getValue().getRowId());
+            checkDuplicateUpdate(pks);
+            Table.update(user, getRealTable(), createDatabaseMap(newTargets), pks);
 
             return getRow(user, container, row);
         }

@@ -32,7 +32,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -44,6 +43,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -267,6 +267,11 @@ public class SpecimenForeignKey extends LookupForeignKey
     @Override
     public StringExpression getURL(ColumnInfo parent)
     {
+        if (SpecimenService.get() == null)
+        {
+            return super.getURL(parent);
+        }
+
         FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();
         Container targetStudy;
 
@@ -358,7 +363,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
             SQLFragment sql = new SQLFragment();
             sql.appendComment("<" + this.getClass().getName() + ".declareJoins(" + parentAlias + ")" + ">", dialect);
-            sql.append(" LEFT OUTER JOIN (");
+            sql.unsafeAppend(" LEFT OUTER JOIN (");
 
             // Select all the assay-side specimen columns that we'll need to do the comparison
 // TODO ContainerFilter make sure all callers of new SpecimenForeignKey() pass in appropriately constructed _assayDataTable
@@ -406,12 +411,12 @@ public class SpecimenForeignKey extends LookupForeignKey
                     throw new IllegalStateException("Could not find column needed for SpecimenForeignKey: " + pk.getName());
                 sql.append(sep);
                 sql.append(fkCol.getValueSql(parentAlias));
-                sql.append("=");
+                sql.unsafeAppend("=");
                 sql.append(pkCol.getValueSql(assaySubqueryAlias));
                 sep = " AND ";
             }
 
-            sql.append("\n\tLEFT OUTER JOIN ");
+            sql.unsafeAppend("\n\tLEFT OUTER JOIN ");
             sql.append(vialTableInfo.getFromSQL(vialSubqueryAlias));
             sql.append(" ON " + vialSubqueryAlias + ".GlobalUniqueId = ");
 
@@ -419,18 +424,18 @@ public class SpecimenForeignKey extends LookupForeignKey
             if (_assaySpecimenIdCol.getJdbcType() == JdbcType.VARCHAR)
             {
                 sql.append(assaySubqueryAlias);
-                sql.append(".");
+                sql.unsafeAppend(".");
                 sql.appendIdentifier(_assaySpecimenIdCol.getAlias());
             }
             else
             {
-                sql.append("CAST(");
+                sql.unsafeAppend("CAST(");
                 sql.append(assaySubqueryAlias);
-                sql.append(".");
+                sql.unsafeAppend(".");
                 sql.appendIdentifier(_assaySpecimenIdCol.getAlias());
-                sql.append(" AS ");
+                sql.unsafeAppend(" AS ");
                 sql.append(dialect.getSqlTypeName(JdbcType.VARCHAR));
-                sql.append(")");
+                sql.unsafeAppend(")");
             }
 
             if (targetStudy != null)
@@ -448,7 +453,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             else
             {
                 // Match based on the target study associated with the assay data
-                sql.append(" AND ").appendDottedIdentifiers(assaySubqueryAlias,_assayTargetStudyCol.getAlias()).append(" = ").appendDottedIdentifiers(vialSubqueryAlias,"Container");
+                sql.unsafeAppend(" AND ").appendDottedIdentifiers(assaySubqueryAlias,_assayTargetStudyCol.getAlias()).unsafeAppend(" = ").appendDottedIdentifiers(vialSubqueryAlias,"Container");
             }
 
             sql.appendComment("</" + this.getClass().getName() + ".declareJoins()" + ">", dialect);
@@ -579,13 +584,13 @@ public class SpecimenForeignKey extends LookupForeignKey
 //                }
 //                sql.append("\n\t) AS " + specimenSubqueryAlias + " ON ").append(specimenTableInfo.getColumn("rowid").getValueSql(specimenSubqueryAlias)).append("= " + vialSubqueryAlias + ".SpecimenID");
 
-                sql.append("\n\tLEFT OUTER JOIN ");
+                sql.unsafeAppend("\n\tLEFT OUTER JOIN ");
                 sql.append(specimenTableInfo.getFromSQL(specimenSubqueryAlias));
-                sql.append(" ON ").append(specimenTableInfo.getColumn("rowid").getValueSql(specimenSubqueryAlias)).append(" = " + vialSubqueryAlias + ".Specimen");
-                sql.append(" AND ").append(specimenTableInfo.getColumn("container").getValueSql(specimenSubqueryAlias)).append(" = " + vialSubqueryAlias + ".Container");
+                sql.unsafeAppend(" ON ").append(specimenTableInfo.getColumn("rowid").getValueSql(specimenSubqueryAlias)).append(" = " + vialSubqueryAlias + ".Specimen");
+                sql.unsafeAppend(" AND ").append(specimenTableInfo.getColumn("container").getValueSql(specimenSubqueryAlias)).append(" = " + vialSubqueryAlias + ".Container");
                 if (_specimenFilter != null)
                 {
-                    sql.append(" AND ");
+                    sql.unsafeAppend(" AND ");
                     sql.append(_specimenFilter.getSQLFragment(dialect));
                 }
 
@@ -626,16 +631,16 @@ public class SpecimenForeignKey extends LookupForeignKey
                     {
                         sql.append(targetStudyAlias + "." + _assayParticipantIdCol.getAlias().getId());
                     }
-                    sql.append(" OR ");
+                    sql.unsafeAppend(" OR ");
                     sql.append("(" + specimenAlias + ".ParticipantId IS NULL AND " + targetStudyAlias + "." + _assayParticipantIdCol.getAlias().getId() + " IS NULL))");
                 }
                 if (_assayVisitIdCol != null || _assayDateCol != null)
                 {
                     if (_assayParticipantIdCol != null)
                     {
-                        sql.append(" AND ");
+                        sql.unsafeAppend(" AND ");
                     }
-                    sql.append("(");
+                    sql.unsafeAppend("(");
                     if (_assayVisitIdCol != null)
                     {
                         // If we're in a visit-based study, check that both the visits match or are null. Also,
@@ -645,12 +650,12 @@ public class SpecimenForeignKey extends LookupForeignKey
                         if (_assayDateCol != null)
                         {
                             sql.append(" AND (" + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL OR " + dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " + dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias().getId()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL))");
-                            sql.append(")");
-                            sql.append(" OR ");
+                            sql.unsafeAppend(")");
+                            sql.unsafeAppend(" OR ");
                         }
                         else
                         {
-                            sql.append(")");
+                            sql.unsafeAppend(")");
                         }
                     }
                     if (_assayDateCol != null)
@@ -660,9 +665,9 @@ public class SpecimenForeignKey extends LookupForeignKey
                                 dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " +
                                 dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias().getId()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL)))");
                     }
-                    sql.append(")");
+                    sql.unsafeAppend(")");
                 }
-                sql.append(") THEN ? ELSE ? END) END");
+                sql.unsafeAppend(") THEN ? ELSE ? END) END");
                 sql.add(Boolean.TRUE);
                 sql.add(Boolean.FALSE);
             }

@@ -20,12 +20,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -34,6 +36,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.AppProps;
@@ -235,6 +238,8 @@ public class QuerySelectView extends AbstractQueryRelation
             appendDefaultSort(sort, selectColumns);
         }
 
+        sort = trimSortAfterPk(table, sort);
+
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
         List<ColumnInfo> allColumns = new ArrayList<>(selectColumns);
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();
@@ -268,7 +273,7 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if (allColumns.isEmpty())
         {
-            selectFrag.append("* ");
+            selectFrag.unsafeAppend("* ");
         }
         else
         {
@@ -290,7 +295,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 column.declareJoins(tableAlias, joins);
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
-                selectFrag.append(" AS ");
+                selectFrag.unsafeAppend(" AS ");
                 selectFrag.appendIdentifier(column.getAlias());
                 strComma = ",\n";
             }
@@ -342,6 +347,25 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
 
+        // GH Issue 1595: with ORDER BY + LIMIT, the planner satisfies a "PK IN (...)" semi-join by scanning the base table's
+        // index rather than driving from the bounded value set, so let a clause trade itself for a driving join; on the
+        // outer wrapper the planner still backward-scans. Moving a predicate inward assumes the inner select is a plain
+        // projection; it would change the value of any window function computed there.
+        Map<String, SQLFragment> drivingJoins = new LinkedHashMap<>();
+        Filter effectiveFilter = filter;
+        // Rebuilding the filter below drops any subclass behavior, so apply this only to a plain SimpleFilter
+        if (null != filter && filter.getClass() == SimpleFilter.class && null != sort && maxRows > 0)
+        {
+            SimpleFilter reduced = new SimpleFilter();
+            for (SimpleFilter.FilterClause c : ((SimpleFilter) filter).getClauses())
+            {
+                if (!c.replaceWithJoin(table, tableAlias, columnMap, drivingJoins))
+                    reduced.addClause(c);
+            }
+            if (!drivingJoins.isEmpty())
+                effectiveFilter = reduced;
+        }
+
         SQLFragment fromFrag = new SQLFragment("FROM ");
         Set<FieldKey> fieldKeySet = new TreeSet<>();
         allColumns.stream()
@@ -354,18 +378,21 @@ public class QuerySelectView extends AbstractQueryRelation
             });
         SQLFragment getFromSql = table.getFromSQL(tableAlias, fieldKeySet);
         fromFrag.append(getFromSql);
-        fromFrag.append(" ");
+        fromFrag.unsafeAppend(" ");
+
+        for (SQLFragment drivingJoin : drivingJoins.values())
+            fromFrag.unsafeAppend("\n").append(drivingJoin);
 
         for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
         {
-            fromFrag.append("\n").append(entry.getValue());
+            fromFrag.unsafeAppend("\n").append(entry.getValue());
         }
 
         SQLFragment filterFrag = null;
 
-        if (filter != null)
+        if (effectiveFilter != null)
         {
-            if (filter instanceof SimpleFilter simpleFilter)
+            if (effectiveFilter instanceof SimpleFilter simpleFilter)
             {
                 for (var c : simpleFilter.getClauses())
                 {
@@ -373,7 +400,7 @@ public class QuerySelectView extends AbstractQueryRelation
                         qcc.setQuery(_query);
                 }
             }
-            filterFrag = filter.getSQLFragment(dialect, "x", columnMap);
+            filterFrag = effectiveFilter.getSQLFragment(dialect, "x", columnMap);
         }
 
         SQLFragment orderBy = null;
@@ -385,12 +412,12 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if ((filterFrag == null || filterFrag.getSQL().isEmpty()) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct)
         {
-            selectFrag.append("\n").append(fromFrag);
+            selectFrag.unsafeAppend("\n").append(fromFrag);
             return selectFrag;
         }
 
         SQLFragment nestedFrom = new SQLFragment();
-        nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x");
+        nestedFrom.unsafeAppend("FROM (\n").append(selectFrag).unsafeAppend("\n").append(fromFrag).unsafeAppend(") x");
         SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, null, maxRows, offset);
 
         if (AppProps.getInstance().isDevMode())
@@ -499,6 +526,52 @@ public class QuerySelectView extends AbstractQueryRelation
         return sort;
     }
 
+
+    /* Sort fields after the PK can't change the order, but they stop Postgres from reading in PK index order under a LIMIT */
+    private static @Nullable Sort trimSortAfterPk(TableInfo table, @Nullable Sort sort)
+    {
+        if (sort == null)
+            return sort;
+
+        List<ColumnInfo> pkColumns = table.getPkColumns();
+        if (pkColumns.isEmpty() || !hasDatabasePk(table) || !pkColumns.stream().allMatch(QuerySelectView::sortsByOwnValue))
+            return sort;
+
+        Set<FieldKey> unsortedPks = pkColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toCollection(HashSet::new));
+        List<Sort.SortField> sortFields = sort.getSortList();
+        for (int i = 0; i < sortFields.size() - 1; i++)
+        {
+            unsortedPks.remove(sortFields.get(i).getFieldKey());
+            if (unsortedPks.isEmpty())
+            {
+                // Copy so the caller's Sort is untouched
+                Sort trimmed = new Sort();
+                sortFields.subList(0, i + 1).forEach(trimmed::appendSortColumn);
+                return trimmed;
+            }
+        }
+        return sort;
+    }
+
+    /* Declared keys (LabKey SQL, schema XML on views, metadata overrides) aren't guaranteed unique, so require the database's PK constraint */
+    private static boolean hasDatabasePk(TableInfo table)
+    {
+        TableInfo real = table;
+        while (real instanceof FilteredTable<?> ft)
+            real = ft.getRealTable();
+        if (!(real instanceof SchemaTableInfo schemaTable) || null == schemaTable.getPrimaryKeyName())
+            return false;
+
+        Set<String> realPks = new CaseInsensitiveHashSet(schemaTable.getPkColumnNames());
+        return realPks.size() == table.getPkColumnNames().size() && realPks.containsAll(table.getPkColumnNames());
+    }
+
+    /* A lookup's sort field keys can point at its display value, which isn't unique */
+    private static boolean sortsByOwnValue(ColumnInfo col)
+    {
+        List<FieldKey> sortFieldKeys = col.getSortFieldKeys();
+        return col.isSortable() && (sortFieldKeys == null || sortFieldKeys.isEmpty() || sortFieldKeys.equals(List.of(col.getFieldKey())));
+    }
 
     /* see if columns in column.getSortFieldKeys() are resolvable, so we avoid proposing a default sort that won't work */
     private static List<ColumnInfo> resolveSortFieldKeys(ColumnInfo col, Map<FieldKey, ColumnInfo> selectColumns)

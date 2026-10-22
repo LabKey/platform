@@ -142,9 +142,9 @@ public abstract class AbstractQueryRelation implements QueryRelation
         if (null == sql)
             return null;
         SQLFragment ret = new SQLFragment();
-        ret.append("(");
+        ret.unsafeAppend("(");
         ret.append(sql);
-        ret.append(") ");
+        ret.unsafeAppend(") ");
         ret.appendIdentifier(getAlias());
         return ret;
     }
@@ -262,7 +262,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
             assert ref.count() > 0;
             String tableName = getTable().getAlias();
             String columnName = getDialect(this).makeLegalIdentifier(getAlias());
-            return new SQLFragment().appendIdentifier(tableName).append(".").appendIdentifier(columnName);
+            return new SQLFragment().appendIdentifier(tableName).unsafeAppend(".").appendIdentifier(columnName);
         }
 
         abstract void copyColumnAttributesTo(@NotNull BaseColumnInfo to);

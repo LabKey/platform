@@ -269,9 +269,9 @@ public class AssayDatasetTable extends LinkedDatasetTable
         // Check if assay design has been deleted
         if (assayResultTable != null)
         {
-            sqlf.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
-            sqlf.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().getFirst()).append(" = ");
-            sqlf.appendDottedIdentifiers(alias, getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+            sqlf.unsafeAppend(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).unsafeAppend("\n");
+            sqlf.unsafeAppend(" ON ").appendIdentifier(assayResultAlias).unsafeAppend(".").append(getSqlDialect().getColumnSelectName(assayResultTable.getPkColumnNames().getFirst())).unsafeAppend(" = ");
+            sqlf.appendIdentifier(alias).unsafeAppend(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
         }
 
         return getTransformedFromSQL(sqlf);

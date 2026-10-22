@@ -112,7 +112,7 @@ public class QMethodCall extends QExpr
     public void appendSource(SourceBuilder builder)
     {
         getFirstChild().appendSource(builder);
-        builder.append("(");
+        builder.unsafeAppend("(");
         builder.pushPrefix("");
 
         for (QNode n : getLastChild().children())
@@ -122,7 +122,7 @@ public class QMethodCall extends QExpr
             builder.nextPrefix(",");
         }
         builder.popPrefix();
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     public QField getField()

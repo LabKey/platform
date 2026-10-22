@@ -42,7 +42,7 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         clearConditions(containerFK);
         SQLFragment sqlFragment = new SQLFragment("(SELECT p.Container FROM ");
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoProtocol(), "p");
-        sqlFragment.append(" WHERE p.RowId = ProtocolId)");
+        sqlFragment.unsafeAppend(" WHERE p.RowId = ProtocolId)");
 
         addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, false), containerFK);
     }

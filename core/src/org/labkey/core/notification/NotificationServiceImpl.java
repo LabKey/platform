@@ -15,6 +15,9 @@
  */
 package org.labkey.core.notification;
 
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMultipart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -49,13 +52,9 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMultipart;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,6 +64,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class NotificationServiceImpl implements ContainerManager.ContainerListener, NotificationService
 {
@@ -84,14 +85,16 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     }
 
     /** Cache the number of unread notifications per user (key is User ID/Container RowId paid) to avoid a DB query on every page load */
-    private final Cache<Pair<Integer, Integer>, Long> _unreadCountCache = new BlockingCache<>(
-            CacheManager.getCache(CacheManager.UNLIMITED,
+    private record UnreadCountKey(int userId, @Nullable Integer containerRowId) {}
+
+    private final Cache<UnreadCountKey, Long> _unreadCountCache = new BlockingCache<>(
+            CacheManager.getCache(UnreadCountKey.class, CacheManager.UNLIMITED,
                     TimeUnit.HOURS.toMillis(1),
                     "Unread notification counts"),
             (k, a) -> {
                 // The container may be null
-                Container c = k.second == null ? null : ContainerManager.getForRowId(k.second);
-                return createSelectorByUserOrType(c, null, k.first, true, null).getRowCount();
+                Container c = k.containerRowId() == null ? null : ContainerManager.getForRowId(k.containerRowId());
+                return createSelectorByUserOrType(c, null, k.userId(), true, null).getRowCount();
             });
 
     /* for compatibility with code that uses/used MailHelper directly */
@@ -192,7 +195,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     {
         // Remove notifications for user in all containers
         getTable().getSchema().getScope().addCommitTask(
-                () -> _unreadCountCache.removeUsingFilter((p) -> p.first.intValue() == userId),
+                () -> _unreadCountCache.removeUsingFilter(key -> key.userId() == userId),
                 DbScope.CommitTaskOption.IMMEDIATE,
                 DbScope.CommitTaskOption.POSTCOMMIT);
     }
@@ -203,29 +206,35 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     }
 
     @Override
-    public List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
+    public void forEachNotification(@Nullable Container container, int notifyUserId, @Nullable List<String> typeLabels, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer)
     {
-        return getNotificationsByUserOrType(container, null, notifyUserId, unreadOnly, containerFilter);
+        List<String> types = null;
+        if (typeLabels != null && !typeLabels.isEmpty())
+        {
+            types = new ArrayList<>();
+            for (String label : typeLabels)
+                types.addAll(_labelTypesMap.get(label));
+        }
+
+        try (Stream<Notification> stream = createSelectorByUserOrType(container, types, notifyUserId, unreadOnly, containerFilter).uncachedStream(Notification.class))
+        {
+            stream.forEach(consumer);
+        }
     }
 
     @Override
     public long getUnreadNotificationCountByUser(@Nullable Container container, int notifyUserId)
     {
-        return _unreadCountCache.get(new Pair<>(notifyUserId, container == null ? null : container.getRowId()));
+        return _unreadCountCache.get(new UnreadCountKey(notifyUserId, container == null ? null : container.getRowId()));
     }
 
     @Override
-    public List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly)
+    public boolean hasReadNotificationsByUser(@Nullable Container container, int notifyUserId)
     {
-        return getNotificationsByUserOrType(container, Collections.singletonList(type), notifyUserId, unreadOnly, null);
-    }
-
-    @Override
-    public List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
-    {
-        List<String> types = new ArrayList<>();
-        typeLabels.forEach(label -> types.addAll(_labelTypesMap.get(label)));
-        return getNotificationsByUserOrType(container, types, notifyUserId, unreadOnly, containerFilter);
+        SimpleFilter filter = null == container ? new SimpleFilter() : SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
+        filter.addCondition(FieldKey.fromParts("ReadOn"), null, CompareType.NONBLANK);
+        return new TableSelector(getTable(), filter, null).exists();
     }
 
     private TableSelector createSelectorByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
@@ -245,11 +254,6 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
         sort.appendSortColumn(FieldKey.fromParts("Created"), Sort.SortDirection.DESC, false);
 
         return new TableSelector(getTable(), filter, sort);
-    }
-
-    private List<Notification> getNotificationsByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
-    {
-        return createSelectorByUserOrType(container, types, notifyUserId, unreadOnly, containerFilter).getArrayList(Notification.class);
     }
 
     @Override
@@ -491,10 +495,12 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             verifyNotificationDetails(_notif1, _service.getNotification(_container, _notif1));
             verifyNotificationDetails(_notif2, _service.getNotification(_container, "objectId2", "type2", _user.getUserId()));
 
-            // verify notification query by type
-            assertEquals("Unexpected number of notifications for type 'type1'", 1, _service.getNotificationsByType(_container, "type1", _user.getUserId(), false).size());
-            assertEquals("Unexpected number of notifications for type 'type2'", 1, _service.getNotificationsByType(_container, "type2", _user.getUserId(), false).size());
-            assertEquals("Unexpected number of notifications for type 'type3'", 0, _service.getNotificationsByType(_container, "type3", _user.getUserId(), false).size());
+            assertNull("Unexpected notification for type 'type3'", _service.getNotification(_container, "objectId1", "type3", _user.getUserId()));
+
+            // verify streaming notification query by user
+            List<Notification> streamed = new ArrayList<>();
+            _service.forEachNotification(_container, _user.getUserId(), null, false, null, streamed::add);
+            assertEquals("Unexpected number of streamed notifications", 2, streamed.size());
         }
 
         @Test
@@ -503,11 +509,13 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             // no records updated when we give it a mis-matching objectId
             int count = _service.markAsRead(_container, _user, "objectId0", Collections.singletonList("type1"), _user.getUserId());
             assertEquals("Unexpected number of notifications updated", 0, count);
+            assertFalse("Unexpected read notification", _service.hasReadNotificationsByUser(_container, _user.getUserId()));
 
             // mark one record as read and verify that it isn't deleted or changed in any other way
             count = _service.markAsRead(_container, _user, "objectId1", Collections.singletonList("type1"), _user.getUserId());
             assertEquals("Unexpected number of notifications updated", 1, count);
-            assertEquals("Unexpected number of unread notifications", 0, _service.getNotificationsByType(_container, "type1", _user.getUserId(), true).size());
+            assertNotNull("Expected notification to be marked as read", _service.getNotification(_container, _notif1).getReadOn());
+            assertTrue("Expected a read notification", _service.hasReadNotificationsByUser(_container, _user.getUserId()));
             verifyNotificationDetails(_notif1, _service.getNotification(_container, _notif1));
         }
 
@@ -518,10 +526,10 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             int count = _service.removeNotifications(_container, "objectId0", Collections.singletonList("type2"), _user.getUserId());
             assertEquals("Unexpected number of notifications removed", 0, count);
 
-            // remove a record and verify it has been deleted using the type query
+            // remove a record and verify it has been deleted
             count = _service.removeNotifications(_container, "objectId2", Collections.singletonList("type2"), _user.getUserId());
             assertEquals("Unexpected number of notifications removed", 1, count);
-            assertEquals("Unexpected number of notifications for type 'type2'", 0, _service.getNotificationsByType(_container, "type2", _user.getUserId(), false).size());
+            assertNull("Unexpected notification for type 'type2'", _service.getNotification(_container, "objectId2", "type2", _user.getUserId()));
         }
 
         private void addNotification(Container container, User user, Notification notification, String expectedErrorPrefix) throws ValidationException

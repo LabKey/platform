@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
@@ -33,6 +33,7 @@ import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.formSchema.CheckboxField;
 import org.labkey.api.formSchema.Field;
 import org.labkey.api.formSchema.FormSchema;
@@ -63,6 +64,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.reports.report.r.RReport;
@@ -297,29 +299,26 @@ public class PipelineJobServiceImpl implements PipelineJobService
         // unwinds and releases its own connections on its own thread.
         Map<DbScope, Set<ConnectionWrapper>> connectionsByScope = ConnectionWrapper.getConnectionsByScopeForThread(jobThread);
 
-        connectionsByScope.forEach((scope, connections) -> cancelQueries(scope, connections, false, jobGuid));
+        RequestCancellation.cancelQueries(connectionsByScope, RequestCancellation.Source.PIPELINE, false).forEach((scope, connections) ->
+            LOG.warn("Couldn't cancel queries on {}; job {} may run until its current query returns", scope.getDisplayName(), jobGuid));
 
         // Escalate for anything that ignored the cancel, such as a task that swallows the exception and retries
         waitForConnectionsToClose(jobThread, connectionsByScope).forEach((scope, connections) -> {
             LOG.warn("Job thread {} still holds SPIDs {} after cancel; terminating those sessions", jobThread.getName(), getSPIDs(connections));
-            cancelQueries(scope, connections, true, jobGuid);
+            terminateQueries(scope, connections, jobGuid);
         });
     }
 
-    /** Isolated per scope so that one failure, such as waiting out maxWaitMillis for a connection, doesn't skip the remaining scopes or the escalation */
-    private static void cancelQueries(DbScope scope, Set<ConnectionWrapper> connections, boolean terminate, String jobGuid)
+    /** Isolated per scope so that one failure, such as failing to connect, doesn't skip the remaining scopes */
+    private static void terminateQueries(DbScope scope, Set<ConnectionWrapper> connections, String jobGuid)
     {
         try
         {
-            // A dialect that can't do this on the cancel pass can't do it on the terminate pass either, so only warn once
-            if (!scope.getSqlDialect().cancelQueries(scope, connections, terminate) && !terminate)
-            {
-                LOG.warn("{} can't cancel queries out of band; job {} may run until its current query returns", scope.getSqlDialect(), jobGuid);
-            }
+            scope.getSqlDialect().cancelQueries(scope, connections, true);
         }
         catch (RuntimeException e)
         {
-            LOG.error("Failed to {} queries on {} for job {}", terminate ? "terminate" : "cancel", scope.getDisplayName(), jobGuid, e);
+            LOG.error("Failed to terminate queries on {} for job {}", scope.getDisplayName(), jobGuid, e);
         }
     }
 
@@ -672,7 +671,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         String prefix = pipelineId.getName() + LOCAL_TASK_PREFIX;
         for (TaskFactory<?> factory : getTaskFactories((Container)null))
         {
-            if (StringUtils.startsWith(factory.getId().getName(), prefix))
+            if (Strings.CS.startsWith(factory.getId().getName(), prefix))
                 removeTaskFactory(factory.getId());
         }
     }
@@ -734,6 +733,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             taskOptions.add(new Option<>(task.getId().toString(), task.getDescription()));
 
         List<Option<String>> userOptions = new ArrayList<>(SecurityManager.getUsersWithPermissions(container, Set.of(InsertPermission.class)).stream()
+                .filter(u -> PipelineTriggerConfig.canRunAs(container, user, u))
                 .map(u -> new Option<>(u.getDisplayName(user), u.getDisplayName(user)))
                 .toList());
 

@@ -26,11 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * User: adam
- * Date: May 29, 2010
- * Time: 2:03:25 PM
- */
 public class MultiPhaseCPUTimer<K extends Enum<K>>
 {
     private final Map<K, MutableLong> _accumulationMap;
@@ -38,6 +33,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
     private final K[] _values;
 
     private long _count = 0;
+    private boolean _clearedFirstInvocation = false;
 
     public MultiPhaseCPUTimer(Class<K> clazz, K[] values)
     {
@@ -85,6 +81,27 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
         }
 
         return map;
+    }
+
+    public void clearTimes()
+    {
+        synchronized (_accumulationMap)
+        {
+            _accumulationMap.values().forEach(v -> v.setValue(0));
+            _count = 0;
+        }
+    }
+
+    public void clearTimesIfFirstInvocation()
+    {
+        synchronized (_accumulationMap)
+        {
+            if (!_clearedFirstInvocation)
+            {
+                _clearedFirstInvocation = true;
+                clearTimes();
+            }
+        }
     }
 
     // Create an enum map and populate it with MutableLongs for each value

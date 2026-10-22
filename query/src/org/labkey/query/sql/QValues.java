@@ -33,7 +33,7 @@ public class QValues extends QExprList
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" VALUES ");
+        builder.unsafeAppend(" VALUES ");
         super.appendSource(builder, false);
     }
 }

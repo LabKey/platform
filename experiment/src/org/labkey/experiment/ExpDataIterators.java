@@ -31,6 +31,7 @@ import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -149,12 +150,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.dataiterator.ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
@@ -2100,9 +2102,9 @@ public class ExpDataIterators
     public static class SearchIndexIteratorBuilder implements DataIteratorBuilder
     {
         final DataIteratorBuilder _pre;
-        final Function<SearchIndexDataKeys, Runnable> _indexFunction;
+        final Consumer<SearchIndexDataKeys> _indexFunction;
 
-        public SearchIndexIteratorBuilder(DataIteratorBuilder pre, Function<SearchIndexDataKeys, Runnable> indexFunction)
+        public SearchIndexIteratorBuilder(DataIteratorBuilder pre, Consumer<SearchIndexDataKeys> indexFunction)
         {
             _pre = pre;
             _indexFunction = indexFunction;
@@ -2125,10 +2127,10 @@ public class ExpDataIterators
         final Integer _rowIdCol;
         final ArrayList<String> _lsids;
         final ArrayList<Long> _rowIds;
-        final Function<SearchIndexDataKeys, Runnable> _indexFunction;
+        final Consumer<SearchIndexDataKeys> _indexFunction;
         final boolean _isInsert;
 
-        protected SearchIndexIterator(DataIterator di, DataIteratorContext context, Function<SearchIndexDataKeys, Runnable> indexFunction)
+        protected SearchIndexIterator(DataIterator di, DataIteratorContext context, Consumer<SearchIndexDataKeys> indexFunction)
         {
             super(di);
             _context = context;
@@ -2193,12 +2195,7 @@ public class ExpDataIterators
                 final ArrayList<String> lsids = new ArrayList<>(_lsids);
                 final ArrayList<Long> rowIds = new LongArrayList(_rowIds);
                 Collections.sort(rowIds);
-                final Runnable indexTask = _indexFunction.apply(new SearchIndexDataKeys(rowIds, lsids));
-
-                if (null != DbScope.getLabKeyScope())
-                    DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
-                else
-                    indexTask.run();
+                _indexFunction.accept(new SearchIndexDataKeys(rowIds, lsids));
             }
             return hasNext;
         }
@@ -2319,7 +2316,7 @@ public class ExpDataIterators
         private final Set<String> _excludedColumns = CaseInsensitiveHashSet.of("generated", RunId.name(), SourceApplicationId.name()); // generated has database DEFAULT 0
 
         private String _fileLinkDirectory = null;
-        Function<SearchIndexDataKeys, Runnable> _indexFunction;
+        Consumer<SearchIndexDataKeys> _indexFunction;
         final Map<String, String> _importAliases;
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
@@ -2334,7 +2331,8 @@ public class ExpDataIterators
             _importAliases = importAliases != null ? new CaseInsensitiveHashMap<>(importAliases) : Collections.emptyMap();
         }
 
-        public PersistDataIteratorBuilder setIndexFunction(Function<SearchIndexDataKeys, Runnable> indexFunction)
+        /** The function queues its own post-commit index task, so it runs once with or without a transaction */
+        public PersistDataIteratorBuilder setIndexFunction(Consumer<SearchIndexDataKeys> indexFunction)
         {
             _indexFunction = indexFunction;
             return this;
@@ -2623,7 +2621,6 @@ public class ExpDataIterators
     {
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
-        private static final int BATCH_SIZE = 1000;
         record TypeData(
                 Container container,
                 ExpObject dataType,
@@ -3107,7 +3104,7 @@ public class ExpDataIterators
 
         private void addDataRow(TypeData typeData)
         {
-            if (typeData.dataRows.size() == BATCH_SIZE)
+            if (typeData.dataRows.size() >= BatchSize.get(ROWS))
                 writeRowsToFile(typeData);
 
             List<Object> dataRow = new ArrayList<>();

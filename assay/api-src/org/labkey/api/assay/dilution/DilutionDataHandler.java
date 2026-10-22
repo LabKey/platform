@@ -329,7 +329,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             excluded[wellDataRow.getRow()][wellDataRow.getColumn()] = wellDataRow.isExcluded();
         }
 
-        Plate plate = PlateService.get().createPlate(template, cellValues, excluded, recalcStats ? PlateService.NO_RUNID : run.getRowId(), 1);
+        Plate plate = recalcStats
+                ? PlateService.get().createPlate(template, cellValues, excluded, PlateService.NO_RUNID, 1)
+                : PlateService.get().createPlate(template, cellValues, excluded, run, 1);
         return Collections.singletonList(plate);
     }
 
@@ -353,16 +355,22 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
         // Attempt to populate the well data for dataFileUrls that may have been fixed since the new
         // WellData and DilutionData tables were added.
+        boolean wellDataPopulated = false;
         synchronized (WELL_DATA_LOCK_OBJECT)
         {
-            if (useRunForPlates && !isWellDataPopulated(run) && getDataFile(run) != null)
+            if (useRunForPlates)
             {
-                populateWellData(protocol, run, user);
+                wellDataPopulated = isWellDataPopulated(run);
+                if (!wellDataPopulated && getDataFile(run) != null)
+                {
+                    populateWellData(protocol, run, user);
+                    wellDataPopulated = isWellDataPopulated(run);
+                }
             }
         }
 
         List<Plate> plates;
-        if (useRunForPlates && isWellDataPopulated(run))
+        if (wellDataPopulated)
         {
             plates = createPlates(run, nabTemplate, recalcStats);
         }

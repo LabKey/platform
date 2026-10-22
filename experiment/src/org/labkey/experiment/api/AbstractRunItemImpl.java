@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -38,12 +37,15 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -55,11 +57,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.util.IntegerUtils.isIntegral;
@@ -305,13 +305,13 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
     {
         SQLFragment sql = new SQLFragment("SELECT r.* FROM ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "r");
-        sql.append("\nWHERE r.RowId IN (SELECT pa.RunId \nFROM ");
+        sql.unsafeAppend("\nWHERE r.RowId IN (SELECT pa.RunId \nFROM ");
         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
-        sql.append("\nINNER JOIN ");
+        sql.unsafeAppend("\nINNER JOIN ");
         sql.append(inputTable, "i");
-        sql.append(" ON pa.RowId = i.TargetApplicationId AND i.");
+        sql.unsafeAppend(" ON pa.RowId = i.TargetApplicationId AND i.");
         sql.append(rowIdColumnName);
-        sql.append(" = ?)");
+        sql.unsafeAppend(" = ?)");
         sql.add(getRowId());
         return ExpRunImpl.fromRuns(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ExperimentRun.class));
     }
@@ -362,10 +362,42 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         return new TableSelector(table, new SimpleFilter(FieldKey.fromParts("lsid"), getLSID()), null);
     }
 
+    /** The sample type or data class whose query table supplies this item's indexed custom properties */
+    protected abstract @Nullable ExpObject getSearchTableType();
+
+    protected abstract @NotNull SchemaKey getSearchSchemaKey();
+
+    protected @Nullable TableInfo getSearchTable(@NotNull Container container, @NotNull ExpObject type)
+    {
+        return QueryService.get().getUserSchema(User.getSearchUser(), container, getSearchSchemaKey()).getTable(type.getName());
+    }
+
+    record TableCacheKey(int containerRowId, long expObjectRowId)
+    {
+        TableCacheKey(Container c, ExpObject o)
+        {
+            this(c.getRowId(), o.getRowId());
+        }
+    }
+
+    /**
+     * Index using a table shared with other items of the same container and type, since building one per item
+     * dominates indexing cost. The table caching should always be scoped to a indexing batch to avoid holding
+     * stale TableInfos after domain changes, etc.
+     */
+    void indexWithTableCache(@NotNull SearchService.TaskIndexingQueue queue, @NotNull Map<TableCacheKey, TableInfo> tableCache)
+    {
+        Container container = getContainer();
+        ExpObject type = getSearchTableType();
+        TableInfo table = null;
+        if (container != null && type != null)
+            table = tableCache.computeIfAbsent(new TableCacheKey(container, type), k -> getSearchTable(container, type));
+        index(queue, table);
+    }
+
     protected void processIndexValues(
             Map<String, Object> props,
             @NotNull ExpRunItemTableImpl<?> table,
-            CaseInsensitiveHashSet skipColumns,
             Set<String> identifiersHi,
             Set<String> identifiersMed,
             Set<String> identifiersLo,
@@ -375,28 +407,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
             JSONObject jsonData
     )
     {
-        skipColumns.add("genId");
-        skipColumns.add("rowId");
-        // collect the set of columns to index
-        Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
-            // skip the base-columns - they will be added to the index separately and/or we don't want to index them (Issue 52467)
-            if (skipColumns.contains(col.getName()))
-                return false;
-
-            // skip non-text and non-int columns or columns that aren't lookups; allow ARRAY (multi-value text choice / MVTC) columns (Issue 929)
-            if (!(col.getJdbcType().isText() || col.getJdbcType().isInteger() || col.getJdbcType() == JdbcType.ARRAY || col.getFk() != null))
-                return false;
-
-            // Issue 52467: Skip indexing both the raw columns like LSID and the wrapped versions of those columns that are lookups to other data
-            if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || "entityid".equalsIgnoreCase(col.getSqlTypeName()))
-                return false;
-
-            // Issue 51862: Skip indexing calculated columns
-            if (col.isValueExpressionColumn())
-                return false;
-
-            return true;
-        }).collect(Collectors.toCollection(LinkedHashSet::new));
+        List<ColumnInfo> columns = table.getSearchIndexColumns();
 
         if (columns.isEmpty())
             return;

@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.mcp.DocumentationService;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresNoPermission;
@@ -46,10 +47,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CoreMcp implements McpService.McpImpl
 {
+    @Tool(description = "Search the LabKey documentation for chunks of text semantically similar to a natural language query. " +
+            "Each result is an excerpt from a larger document, not the full document -- multiple results may come from the same " +
+            "source document. Returns each chunk's content, metadata (title, source URL, content type), a similarity score, and " +
+            "an id identifying the source document; pass that id to retrieveDocument to fetch the entire document.")
+    @RequiresNoPermission
+    String searchDocumentation(ToolContext context,
+            @ToolParam(description = "Natural language search query describing what you're looking for") String query,
+            @ToolParam(required = false, description = "Maximum number of results to return, defaults to 5") Integer topK)
+    {
+        return DocumentationService.get(context).searchDocumentation(query, topK);
+    }
+
+    @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`.")
+    @RequiresNoPermission
+    String retrieveDocument(ToolContext context,
+            @ToolParam(description = "Id of the document to return") String id)
+    {
+        return DocumentationService.get(context).retrieveDocument(id);
+    }
+
     @Tool(description = "This tool provides useful context information about the current user (name, userid), webserver " +
         "(name, url, description), and current container/folder (name, path, url, description) once the container is set via setContainer.")
     @RequiresPermission(ReadPermission.class)
@@ -217,6 +239,24 @@ public class CoreMcp implements McpService.McpImpl
         return new ReadResourceResult(List.of(
                 new McpSchema.TextResourceContents(
                         "resource://org/labkey/core/DataAnalysis_R.md",
+                        "application/markdown",
+                        markdown
+                )
+        ));
+    }
+
+    @McpResource(
+            uri = "resource://org/labkey/core/AssayTransformScripts.md",
+            mimeType = "application/markdown",
+            name = "Assay Transform Script Development Guide",
+            description = "Required reading before writing an assay transform or validation script in Python or R. Covers the runProperties.tsv contract, substitution tokens, transformed data and properties, error and warning reporting, and local testing.")
+    public ReadResourceResult getAssayTransformScriptsGuide() throws IOException
+    {
+        incrementResourceRequestCount("Assay Transform Scripts");
+        String markdown = IOUtils.resourceToString("org/labkey/core/AssayTransformScripts.md", null, CoreModule.class.getClassLoader());
+        return new ReadResourceResult(List.of(
+                new McpSchema.TextResourceContents(
+                        "resource://org/labkey/core/AssayTransformScripts.md",
                         "application/markdown",
                         markdown
                 )

@@ -37,6 +37,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchema.HasContextualRoles;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AssayReadPermission;
@@ -274,10 +275,8 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     {
         if (perm == ReadPermission.class)
         {
-            Set<Role> roles = null;
-            if (userSchema instanceof UserSchema.HasContextualRoles schemaWithRoles)
-                roles = schemaWithRoles.getContextualRoles();
-            return userSchema.getContainer().hasPermission(user, AssayReadPermission.class, roles);
+            Set<Role> contextualRoles = userSchema instanceof HasContextualRoles hasRoles ? hasRoles.getContextualRoles() : Set.of();
+            return userSchema.getContainer().hasPermission(user, AssayReadPermission.class, contextualRoles);
         }
 
         return super.hasPermission(user, perm, userSchema);

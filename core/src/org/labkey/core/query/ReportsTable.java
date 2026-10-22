@@ -94,15 +94,15 @@ public class ReportsTable extends FilteredTable<CoreQuerySchema>
         ColumnInfo flagsCol = getRealTable().getColumn("Flags");
         var hiddenCol = new ExprColumn(this, "Hidden",
                 new SQLFragment("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + ReportDescriptor.FLAG_HIDDEN + ") != 0")
-                        .append(" THEN ").append(getSqlDialect().getBooleanTRUE())
-                        .append(" ELSE ").append(getSqlDialect().getBooleanFALSE()).append(" END)"),
+                        .unsafeAppend(" THEN ").append(getSqlDialect().getBooleanTRUE())
+                        .unsafeAppend(" ELSE ").append(getSqlDialect().getBooleanFALSE()).unsafeAppend(" END)"),
                 JdbcType.BOOLEAN, flagsCol);
         addColumn(hiddenCol);
 
         var inheritableCol = new ExprColumn(this, "Inheritable",
                 new SQLFragment("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + ReportDescriptor.FLAG_INHERITABLE + ") != 0")
-                        .append(" THEN ").append(getSqlDialect().getBooleanTRUE())
-                        .append(" ELSE ").append(getSqlDialect().getBooleanFALSE()).append(" END)"),
+                        .unsafeAppend(" THEN ").append(getSqlDialect().getBooleanTRUE())
+                        .unsafeAppend(" ELSE ").append(getSqlDialect().getBooleanFALSE()).unsafeAppend(" END)"),
                 JdbcType.BOOLEAN, flagsCol);
         addColumn(inheritableCol);
 
@@ -128,7 +128,7 @@ public class ReportsTable extends FilteredTable<CoreQuerySchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class);
     }
 
     @Override

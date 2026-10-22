@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -330,7 +330,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
 
-    public final static String filterNameAlias = "'' !" + FilteredTable.class.getName() + "! ''";
+    public final static String filterNameAlias = "'' !org.labkey.api.query.FilteredTable! ''";
     private final static String filterNameAliasDot = filterNameAlias + ".";
 
     private SQLFragment filterName(ColumnInfo c)
@@ -338,7 +338,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // This is kinda messed up because getFromSQL() doesn't use a known alias in the from clause
         // CONSIDER: always use "_x" and track down and fix usages that assume known table name
         SQLFragment name = c.getValueSql(filterNameAlias);
-        name.setSqlUnsafe(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
+        name.setSqlUnsafe(Strings.CS.replace(name.getRawSQL(),filterNameAliasDot,""));
         return name;
     }
 
@@ -348,7 +348,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         if (condition.isEmpty())
             return;
         SQLFragment tmp = new SQLFragment();
-        tmp.append("(").append(condition.getSQL()).append(")");
+        tmp.unsafeAppend("(").append(condition.getSQL()).unsafeAppend(")");
         _filter.addWhereClause(condition, fieldKeys);
     }
 
@@ -418,9 +418,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
-        frag.append(" = CAST(");
+        frag.unsafeAppend(" = CAST(");
         frag.appendValue(container.getId());
-        frag.append(" AS UniqueIdentifier)");
+        frag.unsafeAppend(" AS UniqueIdentifier)");
         addCondition(frag, col.getFieldKey());
     }
 
@@ -430,7 +430,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
-        frag.append(" = ");
+        frag.unsafeAppend(" = ");
         frag.appendValue(value);
         addCondition(frag, col.getFieldKey());
     }
@@ -447,7 +447,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
-        frag.append(" = ");
+        frag.unsafeAppend(" = ");
         frag.append(Integer.toString(value));
         addCondition(frag);
     }
@@ -458,7 +458,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
-        frag.append(" = ");
+        frag.unsafeAppend(" = ");
         frag.append(Float.toString(value));
         addCondition(frag);
     }
@@ -470,7 +470,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         assertCorrectParentTable(col1);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col1));
-        frag.append(" = ");
+        frag.unsafeAppend(" = ");
         frag.append(filterName(col2));
         addCondition(frag);
     }
@@ -525,7 +525,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             return getFromTable().getFromSQL(alias);
 
         // SELECT
-        SQLFragment ret = new SQLFragment("(SELECT ").append(getInnerFromColumns()).append(" FROM ");
+        SQLFragment ret = new SQLFragment("(SELECT ").append(getInnerFromColumns()).unsafeAppend(" FROM ");
 
         // FROM
         //   NOTE some filters depend on knowing the name of this table in the simple case, so don't alias it
@@ -534,7 +534,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), "x", columnMap);
-        ret.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        ret.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
         return skipTransform ? ret : getTransformedFromSQL(ret);
     }
 
@@ -872,10 +872,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         {
             // Not sure the historical reason why this code did not just call AbstractTable.hasPermission()
             // however this is a useful place to handle UserSchema.HasContextualRoles()
-            Set<Role> roles = null;
-            if (_userSchema instanceof UserSchema.HasContextualRoles)
-                roles = ((UserSchema.HasContextualRoles) _userSchema).getContextualRoles();
-            if (_userSchema.getContainer().hasPermission(user, perm, roles))
+            Set<Role> contextualRoles = _userSchema instanceof UserSchema.HasContextualRoles hasRoles ? hasRoles.getContextualRoles() : Set.of();
+            if (_userSchema.getContainer().hasPermission(user, perm, contextualRoles))
                 return true;
         }
         return super.hasPermission(user, perm);

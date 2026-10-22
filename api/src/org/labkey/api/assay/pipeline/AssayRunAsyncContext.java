@@ -34,6 +34,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.assay.transform.DefaultTransformResult;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -88,6 +89,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private transient Map<DomainProperty, String> _batchProperties;
     private transient Set<Domain> _domains;
     private transient TransformResult _transformResult;
+    private transient @Nullable PreparedTransform _preparedTransform;
     private transient Logger _logger;
 
     // async fields
@@ -382,6 +384,24 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public void setTransformResult(TransformResult result)
     {
         _transformResult = result;
+    }
+
+    @Override
+    public boolean supportsPreparedTransform()
+    {
+        return true;
+    }
+
+    @Override
+    public @Nullable PreparedTransform getPreparedTransform()
+    {
+        return _preparedTransform;
+    }
+
+    @Override
+    public void setPreparedTransform(@Nullable PreparedTransform prepared)
+    {
+        _preparedTransform = prepared;
     }
 
     @Override

@@ -439,7 +439,7 @@ public class CoreQuerySchema extends UserSchema
 
             SQLFragment groupIdSql = new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoPrincipals() + " WHERE ");
             groupIdSql.append(getRootPlusProjectCondition());
-            groupIdSql.append(")");
+            groupIdSql.unsafeAppend(")");
 
             members.addCondition(groupIdSql);
         }
@@ -462,7 +462,7 @@ public class CoreQuerySchema extends UserSchema
         // Include this condition outside the root
         if (null != project)
         {
-            sql.append(" OR Container = ?");
+            sql.unsafeAppend(" OR Container = ?");
             sql.add(project);
         }
 

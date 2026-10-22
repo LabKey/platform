@@ -19,8 +19,14 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -34,22 +40,36 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * API response class for a {@link QueryView}.
@@ -75,6 +95,7 @@ public class ApiQueryResponse implements ApiResponse
     private RenderContext _ctx = null;
     private boolean _schemaEditable = false;
     private boolean _metaDataOnly;
+    private boolean _countOnly = false;
     private DataRegion _dataRegion;
     private TableInfo _tinfo = null;
     private List<DisplayColumn> _displayColumns = null;
@@ -86,6 +107,7 @@ public class ApiQueryResponse implements ApiResponse
     private boolean _includeDisplayValues;
     private List<FieldKey> _columnFilter;
     private boolean _includeMetaData;
+    private List<DisplayColumn> _rowColumns;
 
     // TODO: This is silly... switch to builder pattern, or at least a constructor that takes reasonable strategies
     public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
@@ -147,6 +169,16 @@ public class ApiQueryResponse implements ApiResponse
                 if (_metaDataOnlyIncludesEmptyRowset)
                     writeEmptyRowset(writer);
             }
+            else if (_countOnly)
+            {
+                loadTotalRowsOnly();
+                if (_dataRegion.getTotalRows() != null)
+                    _rowCount = _dataRegion.getTotalRows();
+
+                if (_includeMetaData)
+                    writeMetaData(writer);
+                writeEmptyRowset(writer);
+            }
             else
             {
                 // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
@@ -170,9 +202,15 @@ public class ApiQueryResponse implements ApiResponse
                         _rowCount = _dataRegion.getTotalRows();
                     }
                 }
+            }
 
-                long rowCount = _rowCount > 0 ? _rowCount : _offset + _numRespRows;
+            if (!_metaDataOnly)
+            {
+                long rowCount = _rowCount > 0 || _countOnly ? _rowCount : _offset + _numRespRows;
                 writer.writeProperty("rowCount", rowCount);
+
+                if (_dataRegion.isTotalRowsCapped())
+                    writer.writeProperty("rowCountCapped", true);
 
                 if (_includeMetaData)
                 {
@@ -268,9 +306,7 @@ public class ApiQueryResponse implements ApiResponse
 
     protected Results getResults() throws Exception
     {
-        // If we're going to be writing JSON back, which is tolerant of extra spaces, allow async so we
-        // can monitor if the client has stopped listening. XML doesn't take kindly to leading spaces
-        _dataRegion.setAllowAsync(ApiResponseWriter.getResponseFormat(_viewContext.getRequest(), ApiResponseWriter.Format.JSON).isJson());
+        _dataRegion.setAllowAsync(isAllowAsync());
         try
         {
             return _dataRegion.getResults(_ctx);
@@ -279,6 +315,26 @@ public class ApiQueryResponse implements ApiResponse
         {
             throw new ApiUsageException(e);
         }
+    }
+
+    protected void loadTotalRowsOnly()
+    {
+        _dataRegion.setAllowAsync(isAllowAsync());
+        try
+        {
+            _dataRegion.loadTotalRowsOnly(_ctx);
+        }
+        catch (ConversionException e)
+        {
+            throw new ApiUsageException(e);
+        }
+    }
+
+    // If we're going to be writing JSON back, which is tolerant of extra spaces, allow async so we
+    // can monitor if the client has stopped listening. XML doesn't take kindly to leading spaces
+    private boolean isAllowAsync()
+    {
+        return ApiResponseWriter.getResponseFormat(_viewContext.getRequest(), ApiResponseWriter.Format.JSON).isJson();
     }
 
     public List<FieldKey> getFieldKeys()
@@ -326,6 +382,12 @@ public class ApiQueryResponse implements ApiResponse
     public void includeStyle(boolean withStyle)
     {
         _doItWithStyle = withStyle;
+    }
+
+    /** Return only rowCount (and metadata, if requested) via a COUNT(*) query, skipping the rows query. */
+    public void countOnly(boolean countOnly)
+    {
+        _countOnly = countOnly;
     }
 
     protected double getFormatVersion()
@@ -556,13 +618,62 @@ public class ApiQueryResponse implements ApiResponse
             while (results.next())
             {
                 _ctx.setRow(factory.getRowMap(results));
-                writer.writeListEntry(getRow());
+                writeRow(writer);
                 ++_numRespRows;
             }
             complete = results.isComplete();
         }
         writer.endList();
         return complete;
+    }
+
+    /** Streams JSON rows directly instead of building a map per row */
+    protected void writeRow(ApiResponseWriter writer) throws IOException
+    {
+        if (writer instanceof ApiJsonWriter jsonWriter)
+        {
+            jsonWriter.startObject();
+            try
+            {
+                for (DisplayColumn dc : getRowColumns())
+                    writeValue(jsonWriter, dc);
+            }
+            finally
+            {
+                jsonWriter.endObject();
+            }
+        }
+        else
+        {
+            writer.writeListEntry(getRow());
+        }
+    }
+
+    /** Included columns, deduplicated by name so streamed rows keep the last-one-wins semantics of {@link #getRow()} */
+    private List<DisplayColumn> getRowColumns()
+    {
+        if (null == _rowColumns)
+        {
+            Map<String, DisplayColumn> byName = new LinkedHashMap<>();
+            for (DisplayColumn dc : _displayColumns)
+            {
+                if (includeColumnInResponse(dc))
+                    byName.put(getColumnName(dc), dc);
+            }
+            _rowColumns = new ArrayList<>(byName.values());
+        }
+        return _rowColumns;
+    }
+
+    /** Streaming equivalent of {@link #putValue(Map, DisplayColumn)} */
+    protected void writeValue(ApiJsonWriter writer, DisplayColumn dc) throws IOException
+    {
+        String colName = String.valueOf(getColumnName(dc));
+        writer.writeProperty(colName, getColumnValue(dc));
+
+        //Issue 23773: even for null urls include it so as not to cause ordering to change.
+        if (dc.includeURL())
+            writer.writeProperty(URL_COL_PREFIX + colName, dc.renderURL(_ctx));
     }
 
     protected Map<String,Object> getRow()
@@ -684,5 +795,107 @@ public class ApiQueryResponse implements ApiResponse
     public void setColumnFilter(List<FieldKey> columnFilter)
     {
         _columnFilter = columnFilter;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final String FOLDER_NAME = "ApiQueryResponseTest";
+
+        private User _user;
+        private Container _folder;
+
+        @Before
+        public void setUp() throws Exception
+        {
+            _user = TestContext.get().getUser();
+            Container testContainer = JunitUtil.getTestContainer();
+            Container existing = testContainer.getChild(FOLDER_NAME);
+            if (null != existing)
+                ContainerManager.deleteAll(existing, _user);
+            _folder = ContainerManager.createContainer(testContainer, FOLDER_NAME, _user);
+            ContainerManager.createContainer(_folder, "child1", _user);
+            ContainerManager.createContainer(_folder, "child2", _user);
+        }
+
+        @After
+        public void tearDown() throws Exception
+        {
+            if (null != _folder)
+                ContainerManager.deleteAll(_folder, _user);
+        }
+
+        @Test
+        public void testStreamedRowsMatchMap() throws Exception
+        {
+            assertRowsMatch(view -> new ApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true, true),
+                    view -> new ApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true, true)
+                    {
+                        @Override
+                        protected void writeRow(ApiResponseWriter writer) throws IOException
+                        {
+                            writer.writeListEntry(getRow());
+                        }
+                    });
+        }
+
+        @Test
+        public void testStreamedExtendedRowsMatchMap() throws Exception
+        {
+            assertRowsMatch(view -> configure(new ExtendedApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true)),
+                    view -> configure(new ExtendedApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true)
+                    {
+                        @Override
+                        protected void writeRow(ApiResponseWriter writer) throws IOException
+                        {
+                            writer.writeListEntry(getRow());
+                        }
+                    }));
+        }
+
+        private static ApiQueryResponse configure(ExtendedApiQueryResponse response)
+        {
+            response.includeFormattedValue(true);
+            response.includeStyle(true);
+            return response;
+        }
+
+        private void assertRowsMatch(Function<QueryView, ApiQueryResponse> streamed, Function<QueryView, ApiQueryResponse> mapped) throws Exception
+        {
+            JSONArray expected = render(mapped);
+            assertEquals("Expected the folder and its two children", 3, expected.length());
+            assertEquals(expected.toList(), render(streamed).toList());
+        }
+
+        private JSONArray render(Function<QueryView, ApiQueryResponse> factory) throws Exception
+        {
+            UserSchema schema = QueryService.get().getUserSchema(_user, _folder, "core");
+            MutablePropertyValues mpv = new MutablePropertyValues();
+            mpv.addPropertyValue("query.queryName", "Containers");
+            mpv.addPropertyValue("query" + DataRegion.CONTAINER_FILTER_NAME, "CurrentAndSubfolders");
+            mpv.addPropertyValue("query.sort", "RowId");
+            QuerySettings settings = schema.getSettings(mpv, "query");
+
+            // Mock response so async-query keepalive spaces don't reach the real output
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            ViewContext vc = new ViewContext();
+            vc.setActionURL(new ActionURL("fake", "fake", _folder));
+            vc.setResponse(response);
+            QueryView view = new QueryView(schema, settings, new NullSafeBindException(new Object(), "command"))
+            {
+                @Override
+                public DataView createDataView()
+                {
+                    DataView dataView = super.createDataView();
+                    dataView.getViewContext().setResponse(response);
+                    dataView.getRenderContext().getViewContext().setResponse(response);
+                    return dataView;
+                }
+            };
+            view.setViewContext(vc);
+
+            Writer out = new StringWriter();
+            factory.apply(view).render(new ApiJsonWriter(out));
+            return new JSONObject(out.toString()).getJSONArray("rows");
+        }
     }
 }

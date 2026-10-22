@@ -1237,20 +1237,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     Runnable indexRunnable = () ->
     {
-        int consecutiveCommitFailures = 0;
+        int consecutiveLoopFailures = 0;
         while (!_shuttingDown)
         {
             try
             {
                 _indexLoop();
-                consecutiveCommitFailures = 0;
+                consecutiveLoopFailures = 0;
             }
             catch (Throwable e)
             {
                 if (!_shuttingDown)
                 {
-                    // Postincrement so that we don't start backing off until the second error
-                    postFailureDelay(e, "Error in indexer", _log, consecutiveCommitFailures++, INDEX_EVENT);
+                    // Don't start backing off until the second error
+                    postFailureDelay(e, "Error in indexer", _log, ++consecutiveLoopFailures, 1, INDEX_EVENT);
                 }
             }
         }
@@ -1266,7 +1266,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public static void postFailureDelay(Throwable e, String logPrefix, Logger log, int consecutiveFailures, final Object syncObject)
     {
-        long delayMs = TimeUnit.SECONDS.toMillis(30L * Math.min(10, consecutiveFailures));
+        postFailureDelay(e, logPrefix, log, consecutiveFailures, 0, syncObject);
+    }
+
+    /** @param failuresBeforeBackoff number of initial failures that retry immediately */
+    private static void postFailureDelay(Throwable e, String logPrefix, Logger log, int consecutiveFailures, int failuresBeforeBackoff, final Object syncObject)
+    {
+        long delayMs = TimeUnit.SECONDS.toMillis(30L * Math.min(10, Math.max(0, consecutiveFailures - failuresBeforeBackoff)));
         log.error("{}, delaying next attempt by {}s ({} consecutive failures)",
                 logPrefix,
                 TimeUnit.MILLISECONDS.toSeconds(delayMs),

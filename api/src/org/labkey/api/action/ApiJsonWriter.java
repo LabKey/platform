@@ -33,6 +33,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +45,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Writer that knows how to generate a JSON version of the content back to the client.
@@ -185,7 +188,8 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
         else if (value instanceof Number || value instanceof Boolean || value == null)
         {
-            jg.writeObject(value);
+            if (!writeScalarDirectly(value))
+                jg.writeObject(value);
         }
         else if (value instanceof Map<?, ?> map) // This also covers the org.json.old.JSONObject case as that subclasses HashMap. TODO: replace the creation of JSONObjects with Jackson methods
         {
@@ -253,6 +257,31 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
     }
 
+    /**
+     * jg.writeObject() hands every value to the ObjectMapper codec, a costly round trip per cell. The default mapper
+     * serializes these types exactly as the generator does, but a custom mapper may not, so it keeps the codec path.
+     */
+    private boolean writeScalarDirectly(Object value) throws IOException
+    {
+        if (getObjectMapper() != JsonUtil.DEFAULT_MAPPER)
+            return false;
+
+        switch (value)
+        {
+            case null -> jg.writeNull();
+            case Integer i -> jg.writeNumber(i);
+            case Long l -> jg.writeNumber(l);
+            case Double d -> jg.writeNumber(d);
+            case Float f -> jg.writeNumber(f);
+            case BigDecimal bd -> jg.writeNumber(bd);
+            case BigInteger bi -> jg.writeNumber(bi);
+            case Short s -> jg.writeNumber(s);
+            case Boolean b -> jg.writeBoolean(b);
+            default -> { return false; }
+        }
+        return true;
+    }
+
     private void writeMap(Map<?, ?> map) throws IOException
     {
         boolean badContext = jg.getOutputContext().getCurrentName() == null && jg.getOutputContext().inObject();
@@ -303,6 +332,12 @@ public class ApiJsonWriter extends ApiResponseWriter
     public void startObject(String name) throws IOException
     {
         jg.writeObjectFieldStart(name);
+    }
+
+    /** Start an unnamed object, such as a list entry */
+    public void startObject() throws IOException
+    {
+        jg.writeStartObject();
     }
 
     public void endObject() throws IOException
@@ -459,6 +494,23 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testScalarsMatchMapper() throws IOException
+        {
+            List<Object> values = Arrays.asList(1, 2L, 1.5d, Double.NaN, Double.NEGATIVE_INFINITY, 2.5f, new BigDecimal("1.10"),
+                    new BigDecimal("1E+3"), BigInteger.TEN.pow(30), (short) 3, true, false, null, new AtomicInteger(7));
+            var response = new MockHttpServletResponse();
+            var writer = new ApiJsonWriter(response, null, null, false);
+            writer.startResponse();
+            writer.writeProperty("v", values);
+            writer.endResponse();
+            writer.close();
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("v", values);
+            assertEquals(JsonUtil.DEFAULT_MAPPER.writeValueAsString(expected), response.getContentAsString());
+        }
+
         @Test
         public void testExceptionNotCommitted() throws IOException
         {

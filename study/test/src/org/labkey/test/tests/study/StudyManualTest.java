@@ -39,6 +39,7 @@ public abstract class StudyManualTest extends StudyTest
     {
         createStudyManually();
         startSpecimenImport(2);
+        waitForSpecimenImport();
 
         afterManualCreate();
     }

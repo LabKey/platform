@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.xerces.parsers.DOMParser;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
@@ -257,6 +258,20 @@ public class XmlBeansUtil
         // Stored as the ENTITY_RESOLVER property, which that copy does carry across, so this is what actually blocks XXE under Xerces
         validator.setResourceResolver(REFUSE_ALL_RESOLVER);
         return validator;
+    }
+
+    /**
+     * Hardens a parser constructed directly against {@code org.apache.xerces.parsers}, for the call sites that can't use
+     * the JAXP factories above because they need an {@code LSParserFilter},
+     */
+    public static DOMParser hardenXercesParser(DOMParser parser)
+    {
+        require(() -> parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false));
+        require(() -> parser.setFeature("http://xml.org/sax/features/external-general-entities", false));
+        require(() -> parser.setFeature("http://xml.org/sax/features/external-parameter-entities", false));
+        // Xerces has no FEATURE_SECURE_PROCESSING of its own; the security manager is what imposes the entity expansion limit
+        require(() -> parser.setProperty("http://apache.org/xml/properties/security-manager", new org.apache.xerces.util.SecurityManager()));
+        return parser;
     }
 
     /** Resolves to nothing, so a refused reference expands to the empty string instead of being fetched. */

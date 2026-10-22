@@ -15,7 +15,7 @@
  */
 package org.labkey.study.visualization;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
@@ -152,7 +152,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                     sql.append(".");
                     sql.append(col.getSQLAlias());
                     if (forSelect && null != col.getLabel())
-                        sql.append(" @title='").append(StringUtils.replace(col.getLabel(), "'", "''")).append("'");
+                        sql.append(" @title='").append(Strings.CS.replace(col.getLabel(), "'", "''")).append("'");
                 }
             }
         }
@@ -355,9 +355,9 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                 {
                     for (String name : getSchema().getTableAndQueryNames(true))
                     {
-                        if (!StringUtils.startsWithIgnoreCase(name, "Primary Type Vial Counts") &&
-                            !StringUtils.startsWithIgnoreCase(name, "Primary/Derivative Type Vial Counts") &&
-                            !StringUtils.startsWithIgnoreCase(name, "Vial Counts by Requesting Location"))
+                        if (!Strings.CI.startsWith(name, "Primary Type Vial Counts") &&
+                            !Strings.CI.startsWith(name, "Primary/Derivative Type Vial Counts") &&
+                            !Strings.CI.startsWith(name, "Vial Counts by Requesting Location"))
                             continue;
                         Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(name, ColumnMatchType.All_VISIBLE, false);
                         if (entry != null)

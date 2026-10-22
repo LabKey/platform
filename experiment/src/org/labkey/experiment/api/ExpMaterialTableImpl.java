@@ -34,6 +34,7 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.ColumnHeaderType;
@@ -57,9 +58,11 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.UnloggedTableGeneration;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -73,10 +76,10 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
@@ -99,13 +102,13 @@ import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
@@ -152,15 +155,25 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.NON_NEGATIVE_NUMBER_CONCEPT_URI;
@@ -169,7 +182,52 @@ import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.CpasType;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Created;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.CreatedBy;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Description;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.ExpMaterialColor;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Flag;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Folder;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Inputs;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.IsAliquot;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.IsPlated;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.LastIndexed;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.MaterialExpDate;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.MaterialSourceId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Modified;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.ModifiedBy;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.ObjectId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Outputs;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Properties;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Property;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.QueryableInputs;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAliquotUnit;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Run;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RunApplication;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RunApplicationOutput;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleSet;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SourceApplicationInput;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SourceProtocolApplication;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SourceProtocolLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
@@ -199,7 +257,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public ExpMaterialTableImpl(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
-        super(ExpSchema.TableType.Materials.name(), ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
+        super(ExpSchema.TableType.Materials.name(), ExperimentServiceImpl.get().getTinfoMaterial(), schema, ExpMaterialTable.Column.class, cf);
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId"), NullResult));
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
         addAllowablePermission(InsertPermission.class);
@@ -339,8 +397,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + RowId.name();
                 ExprColumn columnInfo = new ExprColumn(this, IsAliquot.fieldKey(), new SQLFragment(
                         "(CASE WHEN (" + rootMaterialRowIdField + " = " + rowIdField + ") THEN ").append(getSqlDialect().getBooleanFALSE())
-                        .append(" WHEN ").append(rowIdField).append(" IS NOT NULL THEN ").append(getSqlDialect().getBooleanTRUE()) // Issue 52745
-                        .append(" ELSE NULL END)"), JdbcType.BOOLEAN);
+                        .unsafeAppend(" WHEN ").append(rowIdField).unsafeAppend(" IS NOT NULL THEN ").append(getSqlDialect().getBooleanTRUE()) // Issue 52745
+                        .unsafeAppend(" ELSE NULL END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
@@ -518,9 +576,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
-                        .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
-                        .append(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
-                        .append(")");
+                        .unsafeAppend(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".runId")
+                        .unsafeAppend(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
+                        .unsafeAppend(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
                 col.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
@@ -745,7 +803,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var sql = new SQLFragment("(SELECT LastIndexed FROM ")
                         .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
-                        .append(" WHERE mi.MaterialId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+                        .unsafeAppend(" WHERE mi.MaterialId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
                 var ret = new ExprColumn(this, LastIndexed.name(), sql, JdbcType.TIMESTAMP);
                 ret.setDescription("Date when the material was last full-text search indexed in the system");
                 ret.setHidden(true);
@@ -947,16 +1005,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + RowId.name();
             SQLFragment existsSubquery = new SQLFragment()
-                    .append("SELECT 1 FROM ")
+                    .unsafeAppend("SELECT 1 FROM ")
                     .append(plateUserSchema.getTable("Well"), "well")
-                    .append(" WHERE well.sampleid = ").append(rowIdField);
+                    .unsafeAppend(" WHERE well.sampleid = ").append(rowIdField);
 
             sql = new SQLFragment()
-                    .append("CASE WHEN EXISTS (")
+                    .unsafeAppend("CASE WHEN EXISTS (")
                     .append(existsSubquery)
-                    .append(") THEN 'Plated' ")
-                    .append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId").append(" IS NOT NULL THEN 'Not Plated' ")// Issue 52745
-                    .append("ELSE NULL END");
+                    .unsafeAppend(") THEN 'Plated' ")
+                    .unsafeAppend("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId").unsafeAppend(" IS NOT NULL THEN 'Not Plated' ")// Issue 52745
+                    .unsafeAppend("ELSE NULL END");
         }
         else
         {
@@ -1010,7 +1068,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         setDefaultVisibleColumns(defaultCols);
 
-        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn(RowId.name()), _ss, true);
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo(this, _rootTable.getColumn(RowId.name()), _ss, true);
         addColumn(lineageLookup);
     }
 
@@ -1229,16 +1287,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
-        sql.append("\n").append(filterFrag);
+        sql.unsafeAppend("\n").append(filterFrag);
         if (_ss != null && !usedMaterialized)
         {
             if (!filterFrag.isEmpty())
-                sql.append(" AND ");
+                sql.unsafeAppend(" AND ");
             else
-                sql.append(" WHERE ");
-            sql.append("CpasType = ").appendValue(_ss.getLSID());
+                sql.unsafeAppend(" WHERE ");
+            sql.unsafeAppend("CpasType = ").appendValue(_ss.getLSID());
         }
-        sql.append(") ").appendIdentifier(alias);
+        sql.unsafeAppend(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }
@@ -1264,10 +1322,77 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser(), getUserSchema().getContainer());
     }
 
+    /**
+     * RowIds keyed by the counter value their commit produced. A reader whose snapshot is older than untrackedThrough
+     * may have missed unlogged rowIds, so it must reconcile the whole table.
+     */
+    static class RowIdLog
+    {
+        private final AtomicLong _counter;
+        private final int _max;
+        private final NavigableMap<Long, long[]> _log = new TreeMap<>();
+        private long _size;
+        private long _untrackedThrough;
+
+        RowIdLog(AtomicLong counter, int max)
+        {
+            _counter = counter;
+            _max = max;
+            _untrackedThrough = counter.get();
+        }
+
+        /** Bump the counter, logging the rowIds; null means they're unknown. */
+        synchronized void record(@Nullable Collection<Long> rowIds)
+        {
+            long seq = _counter.incrementAndGet();
+            if (rowIds == null)
+            {
+                forgetThrough(seq);
+                return;
+            }
+            _log.put(seq, rowIds.stream().mapToLong(Long::longValue).toArray());
+            _size += rowIds.size();
+            while (_size > _max)
+                forgetThrough(_log.firstKey());
+        }
+
+        /** Drop entries a reader has already applied; any reader still behind {@code seq} falls back to a full pass. */
+        synchronized void forgetThrough(long seq)
+        {
+            NavigableMap<Long, long[]> head = _log.headMap(seq, true);
+            head.values().forEach(ids -> _size -= ids.length);
+            head.clear();
+            _untrackedThrough = Math.max(_untrackedThrough, seq);
+        }
+
+        /** @return rowIds logged after counter value {@code after} through {@code through}, or null if any weren't logged */
+        synchronized @Nullable Set<Long> getRowIds(long after, long through)
+        {
+            if (after < _untrackedThrough)
+                return null;
+            Set<Long> ret = new LongHashSet();
+            for (long[] ids : _log.subMap(after, false, through, true).values())
+                for (long id : ids)
+                    ret.add(id);
+            return ret;
+        }
+
+        void forgetAll()
+        {
+            forgetThrough(_counter.get());
+        }
+    }
+
     static class InvalidationCounters
     {
+        static final int MAX_LOGGED_DELETES = 250_000;
+        static final int MAX_LOGGED_ROLLUPS = 250_000;
+
         public final AtomicLong update, insert, delete, rollup;
         public final AtomicReference<Timestamp> pendingUpdateSince = new AtomicReference<>();
+
+        private final RowIdLog deleteLog;
+        private final RowIdLog rollupLog;
 
         InvalidationCounters()
         {
@@ -1276,6 +1401,48 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             insert = new AtomicLong(l);
             delete = new AtomicLong(l);
             rollup = new AtomicLong(l);
+            deleteLog = new RowIdLog(delete, MAX_LOGGED_DELETES);
+            rollupLog = new RowIdLog(rollup, MAX_LOGGED_ROLLUPS);
+        }
+
+        /** Bump the delete counter, logging the deleted rowIds; null means they're unknown. */
+        void recordDelete(@Nullable Collection<Long> rowIds)
+        {
+            deleteLog.record(rowIds);
+        }
+
+        void forgetDeletesThrough(long seq)
+        {
+            deleteLog.forgetThrough(seq);
+        }
+
+        /** @return rowIds deleted after counter value {@code after} through {@code through}, or null if any weren't logged */
+        @Nullable Set<Long> getDeletedRowIds(long after, long through)
+        {
+            return deleteLog.getRowIds(after, through);
+        }
+
+        /** Bump the rollup counter, logging the roots whose rollup columns were recomputed; null means they're unknown. */
+        void recordRollup(@Nullable Collection<Long> rootRowIds)
+        {
+            rollupLog.record(rootRowIds);
+        }
+
+        void forgetRollupsThrough(long seq)
+        {
+            rollupLog.forgetThrough(seq);
+        }
+
+        /** @return roots recomputed after counter value {@code after} through {@code through}, or null if any weren't logged */
+        @Nullable Set<Long> getRolledUpRowIds(long after, long through)
+        {
+            return rollupLog.getRowIds(after, through);
+        }
+
+        void forgetAll()
+        {
+            deleteLog.forgetAll();
+            rollupLog.forgetAll();
         }
 
         void recordPendingUpdate(@NotNull Timestamp changedSince)
@@ -1289,7 +1456,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 8 * CacheManager.DAY, "materialized sample types", null);
+    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, 8 * CacheManager.DAY, "materialized sample types", null);
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
@@ -1305,9 +1472,110 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      */
     public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
+        switch (reason)
+        {
+            case delete -> refreshMaterializedViewAfterDelete(lsid, null);
+            case rollup -> refreshMaterializedViewAfterRollup(lsid, null);
+            default -> addRefreshCommitTask(new RefreshMaterializedViewRunnable(lsid, reason, changedSince));
+        }
+    }
+
+    /** @param deletedRowIds rowIds the delete removed, letting the next read delete just those; null forces a full pass */
+    public static void refreshMaterializedViewAfterDelete(final String lsid, @Nullable Collection<Long> deletedRowIds)
+    {
+        addRowIdRefreshCommitTask(lsid, SampleTypeServiceImpl.SampleChangeType.delete, deletedRowIds);
+    }
+
+    /** @param rootRowIds roots whose rollup columns were recomputed, letting the next read refresh just those; null forces a full pass */
+    public static void refreshMaterializedViewAfterRollup(final String lsid, @Nullable Collection<Long> rootRowIds)
+    {
+        addRowIdRefreshCommitTask(lsid, SampleTypeServiceImpl.SampleChangeType.rollup, rootRowIds);
+    }
+
+    private static void addRowIdRefreshCommitTask(String lsid, SampleTypeServiceImpl.SampleChangeType kind, @Nullable Collection<Long> rowIds)
+    {
+        var task = new RowIdRefreshRunnable(lsid, kind, rowIds);
+        var queued = addRefreshCommitTask(task);
+        if (queued != task)
+            queued.merge(rowIds);
+    }
+
+    private static <T extends Runnable> T addRefreshCommitTask(T runnable)
+    {
         var scope = ExperimentServiceImpl.getExpSchema().getScope();
-        var runnable = new RefreshMaterializedViewRunnable(lsid, reason, changedSince);
-        scope.addCommitTask(runnable, DbScope.CommitTaskOption.POSTCOMMIT);
+        return scope.addCommitTask(runnable, DbScope.CommitTaskOption.POSTCOMMIT);
+    }
+
+    /**
+     * POSTCOMMIT delete or rollup signal carrying the affected rowIds, equal per LSID and kind so a transaction's signals
+     * of one kind for one sample type merge into a single task.
+     */
+    private static final class RowIdRefreshRunnable implements Runnable
+    {
+        private final String _lsid;
+        private final SampleTypeServiceImpl.SampleChangeType _kind;
+        private @Nullable Collection<Long> _rowIds;
+        private boolean _ownsRowIds;
+
+        RowIdRefreshRunnable(String lsid, SampleTypeServiceImpl.SampleChangeType kind, @Nullable Collection<Long> rowIds)
+        {
+            assert kind == SampleTypeServiceImpl.SampleChangeType.delete || kind == SampleTypeServiceImpl.SampleChangeType.rollup;
+            _lsid = lsid;
+            _kind = kind;
+            _rowIds = rowIds;
+        }
+
+        private int maxLogged()
+        {
+            return _kind == SampleTypeServiceImpl.SampleChangeType.delete ? InvalidationCounters.MAX_LOGGED_DELETES : InvalidationCounters.MAX_LOGGED_ROLLUPS;
+        }
+
+        synchronized void merge(@Nullable Collection<Long> rowIds)
+        {
+            if (_rowIds == null)
+                return;
+            if (rowIds == null || _rowIds.size() + rowIds.size() > maxLogged())
+            {
+                _rowIds = null;
+                return;
+            }
+            if (!_ownsRowIds)
+            {
+                _rowIds = new LongHashSet(_rowIds);
+                _ownsRowIds = true;
+            }
+            _rowIds.addAll(rowIds);
+        }
+
+        @Override
+        public synchronized void run()
+        {
+            // Without a cached view there's no reader to consume the log, so don't retain the ids
+            var rowIds = isMaterialized(_lsid) ? _rowIds : null;
+            var counters = getInvalidateCounters(_lsid);
+            if (_kind == SampleTypeServiceImpl.SampleChangeType.delete)
+                counters.recordDelete(rowIds);
+            else
+                counters.recordRollup(rowIds);
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            return o instanceof RowIdRefreshRunnable other && _lsid.equals(other._lsid) && _kind == other._kind;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(_lsid, _kind);
+        }
+
+        @Override
+        public @NotNull String toString()
+        {
+            return "RowIdRefreshRunnable{lsid=" + _lsid + ", kind=" + _kind + ", rowIds=" + (_rowIds == null ? null : _rowIds.size()) + "}";
+        }
     }
 
     /**
@@ -1331,7 +1599,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                  * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
                  * MQH from the cache to force the SQL to be regenerated.
                  */
-                _materializedQueries.remove(lsid);
+                removeMaterializedView(lsid);
                 return;
             }
 
@@ -1339,8 +1607,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             switch (reason)
             {
                 case insert -> counters.insert.incrementAndGet();
-                case rollup -> counters.rollup.incrementAndGet();
-                case delete -> counters.delete.incrementAndGet();
                 case update, merge -> {
                     // An update or merge did not capture a watermark, so it cannot be targeted incrementally; drop the
                     // cached MQH so the next read rebuilds the whole view. Clear any pending watermark since the
@@ -1348,7 +1614,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     if (changedSince == null)
                     {
                         counters.pendingUpdateSince.set(null);
-                        _materializedQueries.remove(lsid);
+                        removeMaterializedView(lsid);
                         return;
                     }
 
@@ -1361,12 +1627,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 default -> throw new IllegalStateException("Unexpected value: " + reason);
             }
         }
+    }
 
-        @Override
-        public @NotNull String toString()
-        {
-            return "RefreshMaterializedViewRunnable{lsid=" + lsid + ", reason=" + reason + ", changedSince=" + changedSince + "}";
-        }
+    /** Drop the cached view along with the rowId logs that only it could consume. */
+    static void removeMaterializedView(String lsid)
+    {
+        _materializedQueries.remove(lsid);
+        InvalidationCounters counters = _invalidationCounters.get(lsid);
+        if (counters != null)
+            counters.forgetAll();
+    }
+
+    /** @return true if a materialized view is cached, or being built, for this sample type */
+    static boolean isMaterialized(String lsid)
+    {
+        return _materializedQueries.getKeys().anyMatch(lsid::equals);
     }
 
     private static InvalidationCounters getInvalidateCounters(String lsid)
@@ -1380,7 +1655,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /** Look up (or build and cache) the {@link _MaterializedQueryHelper} for this table's sample type. Caller must ensure {@code _ss != null}. */
     private _MaterializedQueryHelper getOrCreateMQH()
     {
-        return _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
+        return _materializedQueries.get(_ss.getLSID(), null, (_, _) ->
         {
             /* NOTE: MaterializedQueryHelper does have a pattern to help with detecting schema changes.
              * Previously it has been used on non-provisioned tables.  It might be helpful to have a pattern,
@@ -1389,9 +1664,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              * Maybe have a callback to generate the SQL dynamically and verify that the SQL is unchanged.
              */
             List<ColumnInfo> updateColumns = new ArrayList<>();
-            SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
+            SQLFragment viewSql = getJoinSQL(null, updateColumns).unsafeAppend(" WHERE CpasType = ").appendValue(_ss.getLSID());
             MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
+                .traceLabel(new MaterializedQueryHelper.TraceLabel(SamplesSchema.SCHEMA_NAME, SamplesSchema.SCHEMA_NAME + "." + _ss.getName(), _ss.getContainer()))
                 .unlogged(true)
                 // RowId and Container are used in many places so ensure they're created before use. Other indices can
                 // be added as a followup step
@@ -1551,7 +1827,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Override
             public _MaterializedQueryHelper build()
             {
-                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged);
+                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged, _traceLabel);
             }
         }
 
@@ -1567,10 +1843,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Nullable Collection<String> deferredIndexes,
             long maxTimeToCache,
             boolean isSelectIntoSql,
-            boolean unlogged
+            boolean unlogged,
+            @Nullable TraceLabel traceLabel
         )
         {
-            super(prefix, scope, select, uptodate, supplier, indexes, deferredIndexes, maxTimeToCache, isSelectIntoSql, unlogged);
+            super(prefix, scope, select, uptodate, supplier, indexes, deferredIndexes, maxTimeToCache, isSelectIntoSql, unlogged, traceLabel);
             this._lsid = lsid;
             this._updateColumns = updateColumns;
         }
@@ -1580,7 +1857,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             DbSchema temp = DbSchema.getTemp();
             String name = _prefix + "_" + GUID.makeHash();
-            _Materialized materialized = new _Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), "\"" + temp.getName() + "\".\"" + name + "\"");
+            _Materialized materialized = new _Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), new SQLFragment().appendDottedIdentifiers("\"" + temp.getName() + "\"", "\"" + name + "\""));
             initMaterialized(materialized);
             return materialized;
         }
@@ -1605,10 +1882,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     return;
                 }
 
-                runIncremental("delete", materialized.incrementalDeleteCheck, this::executeIncrementalDelete);
-                runIncremental("update", materialized.incrementalUpdateCheck, this::executeIncrementalUpdate);
-                runIncremental("rollup", materialized.incrementalRollupCheck, this::executeIncrementalRollup);
-                runIncremental("insert", materialized.incrementalInsertCheck, this::executeIncrementalInsert);
+                String deletedAfter = materialized.incrementalDeleteCheck.snapshot();
+                runIncremental("delete", materialized.incrementalDeleteCheck, token -> executeIncrementalDelete(materialized.counters, deletedAfter, token));
+                runIncremental("update", materialized.incrementalUpdateCheck, _ -> executeIncrementalUpdate(materialized.counters));
+                String rolledUpAfter = materialized.incrementalRollupCheck.snapshot();
+                runIncremental("rollup", materialized.incrementalRollupCheck, token -> executeIncrementalRollup(materialized.counters, rolledUpAfter, token));
+                runIncremental("insert", materialized.incrementalInsertCheck, _ -> executeIncrementalInsert());
             }
             catch (RuntimeException|InterruptedException ex)
             {
@@ -1617,7 +1896,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // The only time I'd expect an error is due to a schema change race-condition, but that can happen in any code path.
 
                 // Ensure that next refresh starts clean
-                _materializedQueries.remove(_lsid);
+                removeMaterializedView(_lsid);
                 getInvalidateCounters(_lsid).update.incrementAndGet();
                 throw rex;
             }
@@ -1636,12 +1915,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          * reflects the change, instead of briefly serving a stale materialized view. Must be called while holding the
          * materialized's loading lock so only one updater runs at a time.
          */
-        private void runIncremental(String kind, MaterializedQueryHelper.SupplierInvalidator check, Runnable work)
+        private void runIncremental(String kind, MaterializedQueryHelper.SupplierInvalidator check, Consumer<String> work)
         {
             if (check.peekValid())
                 return;
             String token = check.current();
-            traced("incremental." + kind, getMaterializationName(), work);
+            traced("incremental." + kind, () -> work.accept(token));
             check.markValidAs(token);
         }
 
@@ -1657,47 +1936,83 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _scope.executeWithRetryReadOnly((_) -> upsert(sql));
         }
 
+        /** Copy every sample missing from the view, including any committed after a higher rowid was already copied. */
         void executeIncrementalInsert()
         {
-            SQLFragment incremental = new SQLFragment("INSERT INTO temp.${NAME}\n")
-                    .append("SELECT * FROM (")
-                    .append(getViewSourceSql()).append(") viewsource_\n")
-                    .append("WHERE rowid > (SELECT COALESCE(MAX(rowid),0) FROM temp.${NAME})");
+            // CTE is preferred over filtering the view's query directly as it can read from the (cpastype, rowid) index alone
+            var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            SQLFragment incremental = new SQLFragment()
+                    .unsafeAppend("WITH added AS (SELECT rowid FROM exp.material em WHERE em.cpastype = ").appendValue(_lsid, d)
+                    .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM temp.${NAME} t WHERE t.rowid = em.rowid))\n")
+                    .unsafeAppend("INSERT INTO temp.${NAME}\n")
+                    .append(getViewSourceSql()).unsafeAppend(" AND m.rowId IN (SELECT rowid FROM added)");
             upsertWithRetry(incremental);
         }
 
-        void executeIncrementalDelete()
+        /** Delete the rows removed between two delete-counter tokens, falling back to a full pass if they weren't all logged. */
+        void executeIncrementalDelete(InvalidationCounters counters, @Nullable String after, String through)
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            long throughSeq = Long.parseLong(through);
+            Set<Long> deleted = null == after ? null : counters.getDeletedRowIds(Long.parseLong(after), throughSeq);
+            if (null != deleted)
+            {
+                if (!deleted.isEmpty())
+                {
+                    // The default generator binds an array (= ANY), which probes the rowid index; a temp-table IN can seq scan.
+                    SQLFragment targeted = new SQLFragment("DELETE FROM temp.${NAME} WHERE rowid");
+                    d.appendInClauseSqlWithCustomInClauseGenerator(targeted, deleted, null);
+                    upsertWithRetry(targeted);
+                }
+                counters.forgetDeletesThrough(throughSeq);
+                return;
+            }
+
             // POSTGRES bug??? the obvious query is _very_ slow O(n^2)
             // DELETE FROM temp.${NAME} WHERE rowid NOT IN (SELECT rowid FROM exp.material WHERE cpastype = <<_lsid>>)
             SQLFragment incremental = new SQLFragment()
-                    .append("WITH deleted AS (SELECT rowid FROM temp.${NAME} EXCEPT SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid,d).append(")\n")
-                    .append("DELETE FROM temp.${NAME} WHERE rowid IN (SELECT rowid from deleted)\n");
+                    .unsafeAppend("WITH deleted AS (SELECT rowid FROM temp.${NAME} EXCEPT SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid,d).unsafeAppend(")\n")
+                    .unsafeAppend("DELETE FROM temp.${NAME} WHERE rowid IN (SELECT rowid from deleted)\n");
             upsertWithRetry(incremental);
+            counters.forgetDeletesThrough(throughSeq);
         }
 
-        void executeIncrementalRollup()
+        /** Refresh rollup columns for the roots recomputed between two rollup-counter tokens, or every row if they weren't all logged. */
+        void executeIncrementalRollup(InvalidationCounters counters, @Nullable String after, String through)
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            long throughSeq = Long.parseLong(through);
+            Set<Long> roots = null == after ? null : counters.getRolledUpRowIds(Long.parseLong(after), throughSeq);
+            if (null != roots && roots.isEmpty())
+            {
+                counters.forgetRollupsThrough(throughSeq);
+                return;
+            }
+
             SQLFragment incremental = new SQLFragment();
             incremental
-                    .append("UPDATE temp.${NAME} AS st\n")
-                    .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
-                    .append("FROM exp.Material AS expm\n")
-                    .append("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).append(" AND (\n")
-                    .append("    st.aliquotcount IS DISTINCT FROM expm.aliquotcount OR ")
-                    .append("    st.availablealiquotcount IS DISTINCT FROM expm.availablealiquotcount OR ")
-                    .append("    st.aliquotvolume IS DISTINCT FROM expm.aliquotvolume OR ")
-                    .append("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
-                    .append("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
-                    .append(")");
+                    .unsafeAppend("UPDATE temp.${NAME} AS st\n")
+                    .unsafeAppend("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
+                    .unsafeAppend("FROM exp.Material AS expm\n")
+                    .unsafeAppend("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).unsafeAppend(" AND (\n")
+                    .unsafeAppend("    st.aliquotcount IS DISTINCT FROM expm.aliquotcount OR ")
+                    .unsafeAppend("    st.availablealiquotcount IS DISTINCT FROM expm.availablealiquotcount OR ")
+                    .unsafeAppend("    st.aliquotvolume IS DISTINCT FROM expm.aliquotvolume OR ")
+                    .unsafeAppend("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
+                    .unsafeAppend("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
+                    .unsafeAppend(")");
+            if (null != roots)
+            {
+                // The default generator binds an array (= ANY), which probes the rowid index; a temp-table IN can seq scan.
+                incremental.unsafeAppend(" AND st.rowid");
+                d.appendInClauseSqlWithCustomInClauseGenerator(incremental, roots, null);
+            }
             upsertWithRetry(incremental);
+            counters.forgetRollupsThrough(throughSeq);
         }
 
-        void executeIncrementalUpdate()
+        void executeIncrementalUpdate(InvalidationCounters counters)
         {
-            InvalidationCounters counters = getInvalidateCounters(_lsid);
             Timestamp since = counters.drainPendingUpdate();
             if (since == null || isIncrementalUpdateDisabled())
                 return;
@@ -1717,17 +2032,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
             SQLFragment sql = new SQLFragment("WITH wModified AS (\n")
-                    .append("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(changedSince)
-                    .append(")\n");
+                    .unsafeAppend("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(changedSince)
+                    .unsafeAppend(")\n");
 
             SQLFragment src = new SQLFragment()
-                    .append(getViewSourceSql()).append(" AND m.rowId IN (SELECT rowId FROM wModified)\n")
-                    .append("UNION\n")
-                    .append(getViewSourceSql()).append(" AND m.rootmaterialrowid IN (SELECT rowId FROM wModified)\n");
+                    .append(getViewSourceSql()).unsafeAppend(" AND m.rowId IN (SELECT rowId FROM wModified)\n")
+                    .unsafeAppend("UNION\n")
+                    .append(getViewSourceSql()).unsafeAppend(" AND m.rootmaterialrowid IN (SELECT rowId FROM wModified)\n");
 
-            sql.append("UPDATE temp.${NAME} AS st\nSET ");
+            sql.unsafeAppend("UPDATE temp.${NAME} AS st\nSET ");
             appendSetFromSrc(sql);
-            sql.append("\nFROM (").append(src).append("\n) src\n").append("WHERE st.rowid = src.rowid");
+            sql.unsafeAppend("\nFROM (").append(src).unsafeAppend("\n) src\n").unsafeAppend("WHERE st.rowid = src.rowid");
 
             return sql;
         }
@@ -1738,7 +2053,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             for (ColumnInfo col : _updateColumns)
             {
                 DatabaseIdentifier identifier = col.getSelectIdentifier();
-                sql.append(comma).appendIdentifier(identifier).append(" = src.").appendIdentifier(identifier);
+                sql.append(comma).appendIdentifier(identifier).unsafeAppend(" = src.").appendIdentifier(identifier);
                 comma = ", ";
             }
         }
@@ -1746,15 +2061,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     static class _Materialized extends MaterializedQueryHelper.Materialized
     {
+        final InvalidationCounters counters;
         final MaterializedQueryHelper.SupplierInvalidator incrementalInsertCheck;
         final MaterializedQueryHelper.SupplierInvalidator incrementalRollupCheck;
         final MaterializedQueryHelper.SupplierInvalidator incrementalDeleteCheck;
         final MaterializedQueryHelper.SupplierInvalidator incrementalUpdateCheck;
 
-        _Materialized(_MaterializedQueryHelper mqh, String tableName, String cacheKey, long created, String sql)
+        _Materialized(_MaterializedQueryHelper mqh, String tableName, String cacheKey, long created, SQLFragment sql)
         {
             super(mqh, tableName, cacheKey, created, sql);
-            final InvalidationCounters counters = getInvalidateCounters(mqh._lsid);
+            counters = getInvalidateCounters(mqh._lsid);
             incrementalInsertCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.insert.get()));
             incrementalRollupCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.rollup.get()));
             incrementalDeleteCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.delete.get()));
@@ -1817,14 +2133,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
-        sql.append("SELECT ");
+        sql.unsafeAppend("SELECT ");
         String comma = "";
         for (ColumnInfo materialCol : materialCols)
         {
             // don't need to generate SQL for columns that aren't selected
             if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(materialCol.getFieldKey()))
             {
-                sql.append(comma).append("m.").appendIdentifier(materialCol.getSelectIdentifier());
+                sql.append(comma).unsafeAppend("m.").appendIdentifier(materialCol.getSelectIdentifier());
                 comma = ", ";
                 if (null != outUpdateColumns && !IMMUTABLE_UPDATE_COLUMNS.contains(materialCol.getFieldKey()))
                     outUpdateColumns.add(materialCol);
@@ -1866,7 +2182,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         hasAliquotColumns = true;
                     }
 
-                    sql.append(comma).append(propertyColumn.getValueSql(alias)).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
+                    sql.append(comma).append(propertyColumn.getValueSql(alias)).unsafeAppend(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
                     comma = ", ";
 
                     // provisioned columns are never immutable join keys, so always re-derivable on update
@@ -1876,12 +2192,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         }
 
-        sql.append("\nFROM ");
+        sql.unsafeAppend("\nFROM ");
         sql.append(_rootTable, "m");
         if (hasSampleColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
+            sql.unsafeAppend(" INNER JOIN ").append(provisioned, "m_sample").unsafeAppend(" ON m.RootMaterialRowId = m_sample.RowId");
         if (hasAliquotColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
+            sql.unsafeAppend(" INNER JOIN ").append(provisioned, "m_aliquot").unsafeAppend(" ON m.RowId = m_aliquot.RowId");
 
         sql.appendComment("</ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
         return sql;
@@ -1892,13 +2208,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         public SampleTypeAmountDisplayColumn(TableInfo parent, String amountFieldName, String unitFieldName, String label, Set<String> importAliases, Unit typeUnit)
         {
             super(parent, FieldKey.fromParts(amountFieldName), new SQLFragment(
-                            "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
-                            .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" / ? AS ")
-                            .append("DECIMAL")
-                            .append(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" END)")
+                            "(CASE WHEN ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(unitFieldName)
+                            .unsafeAppend(" = ? AND ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(amountFieldName)
+                            .unsafeAppend(" IS NOT NULL THEN CAST(").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(amountFieldName)
+                            .unsafeAppend(" / ? AS ")
+                            .unsafeAppend("DECIMAL")
+                            .unsafeAppend(") ELSE ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(amountFieldName)
+                            .unsafeAppend(" END)")
                             .add(typeUnit.getBase().toString())
                             .add(typeUnit.getValue()),
                     JdbcType.DOUBLE);
@@ -1913,9 +2229,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         public SampleTypeUnitDisplayColumn(TableInfo parent, String unitFieldName, Unit typeUnit)
         {
             super(parent, FieldKey.fromParts(unitFieldName), new SQLFragment(
-                            "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
-                            .append(" = ? THEN ? ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
-                            .append(" END)")
+                            "(CASE WHEN ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(unitFieldName)
+                            .unsafeAppend(" = ? THEN ? ELSE ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(unitFieldName)
+                            .unsafeAppend(" END)")
                             .add(typeUnit.getBase().toString())
                             .add(typeUnit.toString()),
                     JdbcType.VARCHAR);
@@ -2282,6 +2598,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         @Test
+        public void testUnloggedReset() throws Exception
+        {
+            Assume.assumeTrue("Materialized views are only UNLOGGED on PostgreSQL", ExperimentService.get().getSchema().getSqlDialect().isPostgreSQL());
+            ExpSampleType st = createSampleType("IncrUpdUnlogged");
+            insertRoots(st, "R1", "R2", "R3");
+            insertAliquots(st, "R1", 3);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // Empty the view and the marker as a failover or crash recovery would. The next read must rebuild.
+            DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
+            new SqlExecutor(scope).execute(new SQLFragment("TRUNCATE ").append(table.getOrCreateMQH().getFromSql(null)));
+            UnloggedTableGeneration.simulateResetForTest();
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
         public void testModifiedBoundaryNotSkipped() throws Exception
         {
             // The watermark predicate uses >= so a row modified at exactly the watermark is never skipped.
@@ -2338,6 +2672,320 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     CaseInsensitiveHashMap.of("name", "R3", "rootProp", "mergedR3"),
                     CaseInsensitiveHashMap.of("name", "R4", "rootProp", "mergedR4")));
             assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testInsertCommittedOutOfRowIdOrder() throws Exception
+        {
+            // GH Issue 1564: a row committed after a higher rowid has already been copied must still reach the view.
+            ExpSampleType st = createSampleType("IncrInsertRace");
+            insertRoots(st, "R1");
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            CountDownLatch inserted = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            AtomicBoolean releaseTimedOut = new AtomicBoolean();
+            try (ExecutorService executor = Executors.newSingleThreadExecutor())
+            {
+                // Save without needing to take a name-generator lock, so the main thread's insert won't wait on it
+                Future<Long> lateCommit = executor.submit(() -> {
+                    try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+                    {
+                        ExpMaterial m = ExperimentService.get().createExpMaterial(_c, st.generateSampleLSID().setObjectId("Late").toString(), "Late");
+                        m.setCpasType(st.getLSID());
+                        try
+                        {
+                            m.save(_user);
+                        }
+                        finally
+                        {
+                            inserted.countDown();
+                        }
+                        releaseTimedOut.set(!release.await(1, TimeUnit.MINUTES));
+                        tx.commit();
+                        return m.getRowId();
+                    }
+                });
+
+                try
+                {
+                    assertTrue("Open transaction never inserted its sample", inserted.await(1, TimeUnit.MINUTES));
+                    if (lateCommit.isDone())
+                        lateCommit.get(); // surfaces the save's exception
+
+                    long earlyRowId = insertRoots(st, "R2").getFirst();
+                    assertCacheMatchesFreshDerivation(table, st.getLSID());
+                    long insertSignal = counters.insert.get();
+
+                    release.countDown();
+                    long lateRowId = lateCommit.get(1, TimeUnit.MINUTES);
+                    assertFalse("R2's insert waited on the open transaction, so the commits never interleaved", releaseTimedOut.get());
+                    assertTrue("Open transaction's rowid " + lateRowId + " must be below R2's " + earlyRowId, lateRowId < earlyRowId);
+                    assertTrue("Committing the late sample must signal an insert", counters.insert.get() > insertSignal);
+
+                    assertTrue("Late-committing rowid " + lateRowId + " is missing from the materialized view", isCached(table, lateRowId));
+                    assertCacheMatchesFreshDerivation(table, st.getLSID());
+                }
+                finally
+                {
+                    release.countDown();
+                }
+            }
+        }
+
+        @Test
+        public void testTargetedDelete() throws Exception
+        {
+            // Deletes by RowId, LSID and Name must each be logged, so the next read drops just those rows.
+            ExpSampleType st = createSampleType("IncrUpdDelete");
+            List<Integer> roots = insertRoots(st, "R1", "R2", "R3", "R4");
+            insertAliquots(st, "R1", 2);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.delete.get();
+            String lsid = ExperimentService.get().getExpMaterial(roots.get(2)).getLSID();
+            deleteRows(st, List.of(
+                    CaseInsensitiveHashMap.of(RowId.name(), roots.get(1)),
+                    CaseInsensitiveHashMap.of(LSID.name(), lsid),
+                    CaseInsensitiveHashMap.of("name", "R4", MaterialSourceId.name(), st.getRowId())));
+            long after = counters.delete.get();
+            assertEquals(Set.of(roots.get(1).longValue(), roots.get(2).longValue(), roots.get(3).longValue()),
+                    counters.getDeletedRowIds(before, after));
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+            assertNull("Applying the delete must release its log entries", counters.getDeletedRowIds(before, after));
+        }
+
+        @Test
+        public void testDeleteSignalsMergeInTransaction() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteMerge");
+            insertRoots(st, "R1");
+            assertCacheMatchesFreshDerivation(getSamplesTable(st), st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.delete.get();
+            try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+            {
+                refreshMaterializedViewAfterDelete(st.getLSID(), Set.of(1L, 2L));
+                refreshMaterializedViewAfterDelete(st.getLSID(), List.of(3L));
+                tx.commit();
+            }
+            assertEquals("Deletes in one transaction must share one signal", before + 1, counters.delete.get());
+            assertEquals(Set.of(1L, 2L, 3L), counters.getDeletedRowIds(before, counters.delete.get()));
+
+            before = counters.delete.get();
+            try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+            {
+                refreshMaterializedViewAfterDelete(st.getLSID(), List.of(4L));
+                refreshMaterializedViewAfterDelete(st.getLSID(), null);
+                tx.commit();
+            }
+            assertNull("Merging an untracked delete must force a full pass", counters.getDeletedRowIds(before, counters.delete.get()));
+        }
+
+        @Test
+        public void testDeleteWithoutViewNotLogged() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteNoView");
+            List<Integer> roots = insertRoots(st, "R1", "R2", "R3", "R4", "R5", "R6");
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+
+            // Async search indexing reads through the view and can rebuild it mid-attempt. Only this test removes it,
+            // so if it's still absent after the delete, it was absent during the delete too.
+            for (Integer root : roots)
+            {
+                _materializedQueries.remove(st.getLSID());
+                long before = counters.delete.get();
+                ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(root.longValue()), true, st, false, false);
+                if (!isMaterialized(st.getLSID()))
+                {
+                    assertNull("Deletes with no cached view must not be logged", counters.getDeletedRowIds(before, counters.delete.get()));
+                    return;
+                }
+            }
+            fail("View was rebuilt during every delete attempt");
+        }
+
+        @Test
+        public void testUntrackedDeleteFullPass() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteFull");
+            List<Integer> roots = insertRoots(st, "R1", "R2", "R3");
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // An unlogged delete after the logged one forces the next read onto the full reconcile pass.
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.getFirst().longValue()), true, st, false, false);
+            getInvalidateCounters(st.getLSID()).recordDelete(null);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testDeleteLog()
+        {
+            InvalidationCounters counters = new InvalidationCounters();
+            long start = counters.delete.get();
+            counters.recordDelete(List.of(1L, 2L));
+            assertEquals(Set.of(1L, 2L), counters.getDeletedRowIds(start, counters.delete.get()));
+
+            counters.recordDelete(null);
+            counters.recordDelete(List.of(3L));
+            long end = counters.delete.get();
+            assertNull("A snapshot older than an unlogged delete must reconcile fully", counters.getDeletedRowIds(start, end));
+            assertEquals(Set.of(3L), counters.getDeletedRowIds(end - 1, end));
+
+            counters.recordDelete(LongStream.rangeClosed(1, InvalidationCounters.MAX_LOGGED_DELETES + 1).boxed().toList());
+            assertNull("Overflowing the log must force a full pass", counters.getDeletedRowIds(end, counters.delete.get()));
+
+            long beforePrune = counters.delete.get();
+            counters.recordDelete(List.of(4L));
+            counters.recordDelete(List.of(5L));
+            long pruned = beforePrune + 1;
+            counters.forgetDeletesThrough(pruned);
+            assertNull("A reader behind a pruned entry must reconcile fully", counters.getDeletedRowIds(beforePrune, counters.delete.get()));
+            assertEquals(Set.of(5L), counters.getDeletedRowIds(pruned, counters.delete.get()));
+        }
+
+        @Test
+        public void testRemoveViewReleasesDeleteLog() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteRemove");
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.delete.get();
+            counters.recordDelete(List.of(1L, 2L));
+            removeMaterializedView(st.getLSID());
+            assertNull("Removing the view must release its unconsumed delete log", counters.getDeletedRowIds(before, counters.delete.get()));
+            assertEquals(Set.of(), counters.getDeletedRowIds(counters.delete.get(), counters.delete.get()));
+        }
+
+        @Test
+        public void testTargetedRollup() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdRollup");
+            List<Integer> roots = insertRoots(st, "R1", "R2");
+            insertAliquots(st, "R1", 1);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // A stale count on a root the rollup didn't list shows the update left it alone
+            setCachedAliquotCount(table, roots.get(1), -1);
+            try
+            {
+                insert(st, List.of(CaseInsensitiveHashMap.of("name", "R1-extra", "AliquotedFrom", "R1")));
+                assertEquals(Integer.valueOf(2), getCachedAliquotCount(table, roots.get(0)));
+                assertEquals("A targeted rollup must not touch unlisted roots", Integer.valueOf(-1), getCachedAliquotCount(table, roots.get(1)));
+            }
+            finally
+            {
+                removeMaterializedView(st.getLSID());
+            }
+        }
+
+        @Test
+        public void testBackgroundRollupTargeted() throws Exception
+        {
+            // More than 20 parents moves the recalc to a background thread, outside any transaction
+            ExpSampleType st = createSampleType("IncrUpdRollupBg");
+            String[] names = IntStream.rangeClosed(1, 22).mapToObj(i -> "R" + i).toArray(String[]::new);
+            List<Integer> roots = insertRoots(st, names);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            int unlisted = roots.getLast();
+            setCachedAliquotCount(table, unlisted, -1);
+            try
+            {
+                InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+                long before = counters.rollup.get();
+                List<Map<String, Object>> aliquots = new ArrayList<>();
+                for (int i = 0; i < names.length - 1; i++)
+                    aliquots.add(CaseInsensitiveHashMap.of("name", names[i] + "-0", "AliquotedFrom", names[i]));
+                insert(st, aliquots);
+
+                long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
+                while (counters.rollup.get() == before && System.currentTimeMillis() < deadline)
+                    Thread.sleep(100);
+                assertNotEquals("Background recalc never signaled a rollup", before, counters.rollup.get());
+
+                assertEquals(Integer.valueOf(1), getCachedAliquotCount(table, roots.getFirst()));
+                assertEquals("A targeted rollup must not touch unlisted roots", Integer.valueOf(-1), getCachedAliquotCount(table, unlisted));
+            }
+            finally
+            {
+                removeMaterializedView(st.getLSID());
+            }
+        }
+
+        @Test
+        public void testUntrackedRollupFullPass() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdRollupFull");
+            List<Integer> roots = insertRoots(st, "R1", "R2");
+            insertAliquots(st, "R1", 2);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            setCachedAliquotCount(table, roots.get(1), -1);
+            refreshMaterializedViewAfterRollup(st.getLSID(), null);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.rollup.get();
+            setCachedAliquotCount(table, roots.get(1), -1);
+            counters.recordRollup(LongStream.rangeClosed(1, InvalidationCounters.MAX_LOGGED_ROLLUPS + 1).boxed().toList());
+            assertNull("Overflowing the log must force a full pass", counters.getRolledUpRowIds(before, counters.rollup.get()));
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testRollupSignalsMergeInTransaction() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdRollupMerge");
+            insertRoots(st, "R1");
+            assertCacheMatchesFreshDerivation(getSamplesTable(st), st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.rollup.get();
+            try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+            {
+                refreshMaterializedViewAfterRollup(st.getLSID(), Set.of(1L, 2L));
+                refreshMaterializedViewAfterRollup(st.getLSID(), List.of(3L));
+                refreshMaterializedViewAfterDelete(st.getLSID(), List.of(4L));
+                tx.commit();
+            }
+            assertEquals("Rollups in one transaction must share one signal", before + 1, counters.rollup.get());
+            assertEquals(Set.of(1L, 2L, 3L), counters.getRolledUpRowIds(before, counters.rollup.get()));
+
+            before = counters.rollup.get();
+            try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+            {
+                refreshMaterializedViewAfterRollup(st.getLSID(), List.of(5L));
+                refreshMaterializedViewAfterRollup(st.getLSID(), null);
+                tx.commit();
+            }
+            assertNull("Merging an untracked rollup must force a full pass", counters.getRolledUpRowIds(before, counters.rollup.get()));
+        }
+
+        @Test
+        public void testRollupWithoutViewNotLogged() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdRollupNoView");
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            removeMaterializedView(st.getLSID());
+            long before = counters.rollup.get();
+            refreshMaterializedViewAfterRollup(st.getLSID(), List.of(1L));
+            assertFalse(isMaterialized(st.getLSID()));
+            assertNull("Rollups with no cached view must not be logged", counters.getRolledUpRowIds(before, counters.rollup.get()));
         }
 
         @Test
@@ -2431,6 +3079,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 throw errors;
         }
 
+        private void deleteRows(ExpSampleType st, List<Map<String, Object>> keys) throws Exception
+        {
+            getUpdateService(st).deleteRows(_user, _c, keys, null, null);
+        }
+
         private void mergeRows(ExpSampleType st, List<Map<String, Object>> rows) throws Exception
         {
             BatchValidationException errors = new BatchValidationException();
@@ -2448,15 +3101,36 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _MaterializedQueryHelper mqh = table.getOrCreateMQH();
             assertNotNull("MQH should not be null for a sample type table", mqh);
             SQLFragment cached = new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
-            SQLFragment fresh = table.getJoinSQL(null).append(" WHERE CpasType = ").appendValue(lsid);
+            SQLFragment fresh = table.getJoinSQL(null).unsafeAppend(" WHERE CpasType = ").appendValue(lsid);
             DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
             assertEquals("Cached rows not found in fresh derivation", 0, countDiff(scope, cached, fresh));
             assertEquals("Fresh-derivation rows not found in cache", 0, countDiff(scope, fresh, cached));
         }
 
+        private void setCachedAliquotCount(ExpMaterialTableImpl table, long rowId, int count)
+        {
+            SQLFragment sql = new SQLFragment("UPDATE ").append(table.getOrCreateMQH().getFromSql(null))
+                    .unsafeAppend(" SET aliquotcount = ? WHERE rowid = ?").add(count).add(rowId);
+            new SqlExecutor(ExperimentServiceImpl.getExpSchema().getScope()).execute(sql);
+        }
+
+        private Integer getCachedAliquotCount(ExpMaterialTableImpl table, long rowId)
+        {
+            SQLFragment sql = new SQLFragment("SELECT aliquotcount FROM ").append(table.getOrCreateMQH().getFromSql(null))
+                    .unsafeAppend(" WHERE rowid = ?").add(rowId);
+            return new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(), sql).getObject(Integer.class);
+        }
+
+        /** Applies any pending incremental work, then checks the temp table for the row. */
+        private boolean isCached(ExpMaterialTableImpl table, long rowId)
+        {
+            SQLFragment sql = new SQLFragment("SELECT rowid FROM ").append(table.getOrCreateMQH().getFromSql(null)).append(" WHERE rowid = ?").add(rowId);
+            return new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(), sql).exists();
+        }
+
         private int countDiff(DbScope scope, SQLFragment a, SQLFragment b)
         {
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (\n").append(a).append("\nEXCEPT\n").append(b).append("\n) diff_");
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (\n").append(a).unsafeAppend("\nEXCEPT\n").append(b).unsafeAppend("\n) diff_");
             Integer count = new SqlSelector(scope, sql).getObject(Integer.class);
             return count == null ? 0 : count;
         }

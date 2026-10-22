@@ -26,6 +26,7 @@ import org.labkey.api.data.Aggregate.Result;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.logging.LogHelper;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -405,7 +406,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     /** Query names are user-defined and unbounded, and resource.name is a trace-metric dimension, so the resource stops at the schema and the query goes in a tag. */
     private String getAsyncResourceName(String operation)
     {
-        String schema = getAsyncSchemaName();
+        String schema = TracedOperation.boundedSchemaName(getAsyncSchemaName());
         return null != schema ? operation + " " + schema : operation;
     }
 
@@ -416,6 +417,8 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         tags.put("labkey.query", getAsyncQueryName());
         if (null != _table.getSchema())
             tags.put("labkey.db_schema", _table.getSchema().getName());
+        if (null != _table.getUserSchema())
+            tags.put(TracedOperation.CONTAINER_TAG, _table.getUserSchema().getContainer().getPath());
         return tags;
     }
 
@@ -555,14 +558,31 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     // TODO: Convert to return Map<FieldKey, List<Aggregate.Result>>
     public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates)
     {
+        return getAggregates(aggregates, 0);
+    }
+
+    /**
+     * @param maxCount when > 0 and the only aggregate is COUNT(*), bounds the inner select to maxCount + 1 rows so the database can stop early.
+     */
+    public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates, int maxCount)
+    {
         // If we are only asking for the COUNT(*) aggregate, then we don't need to include all of the table columns in the subselect.
         // This can make a big performance difference for Sample Type and Data Class tables as they can then skip
         // the join between the exp schema base table and the materialized table for the given table.
-        Collection<ColumnInfo> aggColumns = aggregates.size() == 1 && aggregates.getFirst().isCountStar() ? getRowCountingSelectColumns(_table) : _columns;
+        boolean countStarOnly = aggregates.size() == 1 && aggregates.getFirst().isCountStar();
+        Collection<ColumnInfo> aggColumns = countStarOnly ? getRowCountingSelectColumns(_table) : _columns;
 
         final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, aggColumns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
+        // Setting _maxRows threads LIMIT maxCount + 1 through TableSqlFactory.getSql() into the inner select; restore it after.
+        boolean cap = maxCount > 0 && countStarOnly;
+        var maxRows = _maxRows;
+        if (cap)
+            _maxRows = maxCount + 1;
+
+        try
+        {
         return resultSetFactory.handleResultSet((rs, conn) -> {
             Map<String, List<Result>> results = new CaseInsensitiveHashMap<>();
 
@@ -589,9 +609,20 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
             return results;
         });
+        }
+        finally
+        {
+            if (cap)
+                _maxRows = maxRows;
+        }
     }
 
     public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response)
+    {
+        return getAggregatesAsync(aggregates, response, 0);
+    }
+
+    public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response, int maxCount)
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
         AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getAggregates"), getAsyncSpanTags());
@@ -599,7 +630,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         try
         {
-            return asyncRequest.waitForResult(() -> getAggregates(aggregates));
+            return asyncRequest.waitForResult(() -> getAggregates(aggregates, maxCount));
         }
         catch (SQLException e)
         {
@@ -786,7 +817,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             SQLFragment innerSql = super.getSql();
 
             SQLFragment aggregateSql = new SQLFragment();
-            aggregateSql.append("SELECT ");
+            aggregateSql.unsafeAppend("SELECT ");
             int validAggregates = 0;
 
             for (Aggregate agg : _aggregates)
@@ -797,7 +828,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                     if (sql != null)
                     {
                         if (validAggregates > 0)
-                            aggregateSql.append(",\n");
+                            aggregateSql.unsafeAppend(",\n");
 
                         aggregateSql.append(sql);
                         validAggregates++;
@@ -809,7 +840,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             if (validAggregates == 0)
                 return null;
 
-            return aggregateSql.append(" FROM (").append(innerSql).append(") S");
+            return aggregateSql.unsafeAppend(" FROM (").append(innerSql).unsafeAppend(") S");
         }
     }
 }

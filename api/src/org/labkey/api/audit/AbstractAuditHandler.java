@@ -17,6 +17,7 @@ package org.labkey.api.audit;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -31,13 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.BatchSize.Kind.AUDIT;
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 
 public abstract class AbstractAuditHandler implements AuditHandler
 {
-    /** Bounds both the JDBC batch and the events held in memory while a batch accumulates. */
-    public static final int AUDIT_BATCH_SIZE = 2500;
-
     protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents);
 
     @Override
@@ -188,13 +187,13 @@ public abstract class AbstractAuditHandler implements AuditHandler
                             }
                         }
                         batch.add(event);
-                        if (batch.size() >= AUDIT_BATCH_SIZE)
+                        if (batch.size() >= BatchSize.get(AUDIT))
                         {
                             auditLog.addEvents(user, batch, useTransactionAuditCache);
                             batch.clear();
                         }
                         // a row can contribute more than one side effect, so bound these separately from the row batch
-                        if (sideEffectEvents.size() >= AUDIT_BATCH_SIZE)
+                        if (sideEffectEvents.size() >= BatchSize.get(AUDIT))
                         {
                             addSideEffectEvents(auditLog, user, sideEffectEvents, useTransactionAuditCache);
                             sideEffectEvents.clear();

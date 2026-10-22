@@ -14,11 +14,11 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production rspack build --config node_modules/@labkey/build/configs/prod.config.js"
   },
   "dependencies": {
-    "@labkey/components": "7.62.3"
+    "@labkey/components": "7.72.3"
   },
   "devDependencies": {
-    "@labkey/build": "10.1.2",
-    "@labkey/eslint-config": "1.2.3",
+    "@labkey/build": "10.1.4",
+    "@labkey/eslint-config": "1.2.5",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7"
   },

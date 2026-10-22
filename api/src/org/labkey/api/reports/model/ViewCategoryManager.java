@@ -65,24 +65,25 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     public List<ViewCategory> getAllCategories(Container c)
     {
-        return ViewCategoryCache.get().getAllCategories(c.getId());
+        return ViewCategoryCache.get().getAllCategories(c);
     }
 
     public List<ViewCategory> getTopLevelCategories(Container c)
     {
-        return ViewCategoryCache.get().getTopLevelCategories(c.getId());
+        return ViewCategoryCache.get().getTopLevelCategories(c);
     }
 
     @Nullable
     public ViewCategory getCategory(Container c, int rowId)
     {
-        return getCategory(c.getId(), rowId);
+        return ViewCategoryCache.get().getViewCategory(c, rowId);
     }
 
     @Nullable
     public ViewCategory getCategory(String containerId, int rowId)
     {
-        return ViewCategoryCache.get().getViewCategory(containerId, rowId);
+        Container c = ContainerManager.getForId(containerId);
+        return null == c ? null : getCategory(c, rowId);
     }
 
     /**
@@ -96,7 +97,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     @Nullable
     public ViewCategory getCategory(Container c, String... parts)
     {
-        return ViewCategoryCache.get().getViewCategory(c.getId(), parts);
+        return ViewCategoryCache.get().getViewCategory(c, parts);
     }
 
     public void deleteCategory(Container c, User user, ViewCategory category)
@@ -116,8 +117,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         categoriesToDelete.addAll(category.getSubcategories());
 
         // delete the category definition (plus any subcategories) and fire the deleted event
-        SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
-        sql.append(" OR Parent = ?");
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").unsafeAppend(" WHERE RowId = ?");
+        sql.unsafeAppend(" OR Parent = ?");
         sql.addAll(category.getRowId(), category.getRowId());
 
         SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
@@ -211,7 +212,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     public List<ViewCategory> getSubcategories(ViewCategory category)
     {
-        return ViewCategoryCache.get().getSubcategories(category.getContainerId(), category.getRowId());
+        return ViewCategoryCache.get().getSubcategories(ContainerManager.getForId(category.getContainerId()), category.getRowId());
     }
 
     public static void addCategoryListener(ViewCategoryListener listener)

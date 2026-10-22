@@ -64,10 +64,10 @@ public class DomainPropertyManager
         {
             SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
             sql.append(getExpSchema().getTable("ConditionalFormat"), "CF");
-            sql.append(" WHERE CF.PropertyId IN ");
-            sql.append("(SELECT PropertyId FROM ");
+            sql.unsafeAppend(" WHERE CF.PropertyId IN ");
+            sql.unsafeAppend("(SELECT PropertyId FROM ");
             sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-            sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
+            sql.unsafeAppend(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
             sql.add(container);
 
             return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
@@ -75,7 +75,7 @@ public class DomainPropertyManager
     }
 
     private static final ConditionalFormatLoader CONDITIONAL_FORMAT_LOADER = new ConditionalFormatLoader();
-    private static final BlockingCache<Container, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = DatabaseCache.get(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.DAY, "Conditional formats", CONDITIONAL_FORMAT_LOADER);
+    private static final BlockingCache<Container, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.DAY, "Conditional formats", CONDITIONAL_FORMAT_LOADER);
 
     private DomainPropertyManager(){}
 
@@ -184,7 +184,7 @@ public class DomainPropertyManager
         return validators.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(validators);
     };
 
-    private static final Cache<Container, MultiValuedMap<Integer, PropertyValidator>> VALIDATOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Property validators", PV_LOADER);
+    private static final Cache<Container, MultiValuedMap<Integer, PropertyValidator>> VALIDATOR_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Property validators", PV_LOADER);
     private static final Collection<PropertyValidator> EMPTY_COLLECTION = Collections.emptyList();
 
 

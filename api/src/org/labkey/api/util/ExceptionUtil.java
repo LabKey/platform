@@ -22,10 +22,20 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.simple.SimpleLogger;
 import org.apache.logging.log4j.util.PropertiesUtil;
+import org.apache.tomcat.util.http.InvalidParameterException;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.apache.tomcat.util.http.fileupload.InvalidFileNameException;
+import org.apache.tomcat.util.http.fileupload.MultipartStream;
+import org.apache.tomcat.util.http.fileupload.impl.FileCountLimitExceededException;
+import org.apache.tomcat.util.http.fileupload.impl.IOFileUploadException;
+import org.apache.tomcat.util.http.fileupload.impl.InvalidContentTypeException;
+import org.apache.tomcat.util.http.fileupload.impl.SizeException;
+import org.apache.tomcat.util.res.StringManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -33,6 +43,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -62,16 +73,21 @@ import org.labkey.api.webdav.DavException;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.CharConversionException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -83,6 +99,7 @@ import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
+import java.nio.charset.CharacterCodingException;
 import java.security.Principal;
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
@@ -91,6 +108,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -99,11 +117,15 @@ import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class ExceptionUtil
 {
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
     public static final String CALCULATED_COLUMN_SQL_TAG = "/* CALCULATED-EXPRESSION-COLUMN-QUERY */";
+    public static final String REQUEST_TIMEOUT_MESSAGE = "This request took too long and was cancelled";
+    /** Stack frames from here down are container plumbing, not useful in a trace */
+    public static final String SERVLET_SERVICE_FRAME_PREFIX = HttpServlet.class.getName() + ".service(";
 
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
     private static final Logger LOG = LogHelper.getLogger(ExceptionUtil.class, "Handles rendering of errors during requests");
@@ -149,7 +171,7 @@ public class ExceptionUtil
         for (int i = linesToSkip; i < stackTrace.length; i++)
         {
             String line = String.valueOf(stackTrace[i]);
-            if (line.startsWith("javax.servlet.http.HttpServlet.service("))
+            if (line.startsWith(SERVLET_SERVICE_FRAME_PREFIX))
                 break;
             trace.append("\n\tat ");
             trace.append(line);
@@ -690,7 +712,96 @@ public class ExceptionUtil
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
+                isServerCancelledQuery(ex) ||
+                isInvalidParameterException(ex) ||
+                isMaxPostSizeExceeded(ex) ||
                 (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage()));
+    }
+
+    /** The server stopped this request's query itself, on timeout or shutdown */
+    private static boolean isServerCancelledQuery(Throwable ex)
+    {
+        for (Throwable t = ex; t != null; t = getCause(t))
+        {
+            if (t instanceof SQLException sqlEx && SqlDialect.isCancelException(sqlEx))
+                return RequestCancellation.getSource(Thread.currentThread()) != null || ContextListener.isShuttingDown();
+        }
+        return false;
+    }
+
+    /** Unlike a client abort, the client is still waiting for a response */
+    public static boolean isRequestTimeout(Throwable ex)
+    {
+        if (RequestCancellation.getSource(Thread.currentThread()) != RequestCancellation.Source.TIMEOUT)
+            return false;
+
+        for (Throwable t = ex; t != null; t = getCause(t))
+        {
+            if (t instanceof AbortedRequestException)
+                return true;
+        }
+        return isServerCancelledQuery(ex);
+    }
+
+    /**
+     * Tomcat throws InvalidParameterException for an unparseable query string or form body, and rethrows it from every
+     * later parameter read. Returns false when it wraps a server-side failure instead, e.g., a bad upload temp dir.
+     */
+    public static boolean isInvalidParameterException(Throwable ex)
+    {
+        return ex instanceof InvalidParameterException && isClientRequestFailure(ex);
+    }
+
+    // Tomcat and Spring report server-side upload failures (bad temp dir, full disk) with the same exceptions as
+    // malformed requests, so only these causes mark a failure as the client's
+    private static final List<Class<? extends Throwable>> CLIENT_REQUEST_FAILURES = List.of(
+        org.apache.coyote.BadRequestException.class, // Client read failure or disconnect
+        CharacterCodingException.class,
+        CharConversionException.class,
+        MultipartStream.MalformedStreamException.class,
+        MultipartStream.IllegalBoundaryException.class,
+        InvalidContentTypeException.class,
+        InvalidFileNameException.class,
+        SizeException.class,
+        FileCountLimitExceededException.class,
+        MaxUploadSizeExceededException.class
+    );
+
+    /** @return whether a parameter or multipart parsing failure was caused by what the client sent */
+    public static boolean isClientRequestFailure(Throwable ex)
+    {
+        if (ex instanceof InvalidParameterException && ex.getCause() == null)
+            return true;
+
+        return Stream.iterate(ex, Objects::nonNull, Throwable::getCause)
+            .anyMatch(t -> CLIENT_REQUEST_FAILURES.stream().anyMatch(c -> c.isInstance(t)) ||
+                isMaxPostSizeExceeded(t) ||
+                // Tomcat throws a cause-less FileUploadException for a malformed header, e.g., no boundary
+                (t.getClass() == FileUploadException.class && t.getCause() == null));
+    }
+
+    /** Tomcat reports multipart form fields over the connector's maxPostSize as a plain IllegalStateException */
+    public static boolean isMaxPostSizeExceeded(Throwable ex)
+    {
+        return ex != null && ex.getClass() == IllegalStateException.class && ex.getMessage() != null &&
+            ex.getMessage().equals(StringManager.getManager("org.apache.catalina.connector").getString("coyoteRequest.maxPostSizeExceeded"));
+    }
+
+    private static @Nullable IllegalStateException getParameterFailure(Throwable ex, HttpServletRequest request)
+    {
+        if (ex instanceof InvalidParameterException ipe)
+            return ipe;
+
+        try
+        {
+            request.getParameterMap();
+            return null;
+        }
+        // Tomcat throws a plain IllegalStateException for some multipart failures, e.g., fields over maxPostSize
+        catch (IllegalStateException ise)
+        {
+            return ise;
+        }
     }
 
     static class WebPartErrorView extends WebPartView<Object>
@@ -721,7 +832,8 @@ public class ExceptionUtil
             if (className.endsWith("SocketTimeoutException") ||
                 className.endsWith("CancelledException") ||
                 className.endsWith("ClientAbortException") ||
-                className.endsWith("FileUploadException"))
+                // A FileUploadException can also wrap a server-side failure, e.g., a full disk
+                (className.endsWith("FileUploadException") && isClientRequestFailure(ex)))
             {
                 LOG.trace("Client abort exception", ex);
                 return true;
@@ -799,7 +911,8 @@ public class ExceptionUtil
         Throwable unhandledException = ex;
         String responseStatusMessage = null;    // set to use non default status message
 
-        if (isClientAbortException(ex))
+        // A request timeout or malformed upload looks like a client abort, but the client is still waiting for a response
+        if (isClientAbortException(ex) && !isRequestTimeout(ex) && !isInvalidParameterException(ex))
         {
             // The client dropped the connection. We don't care about this case,
             // and don't need to send an error back to the browser either.
@@ -858,6 +971,7 @@ public class ExceptionUtil
         User user = (User) request.getUserPrincipal();
         boolean isGET = "GET".equals(request.getMethod());
         Map<String, String> headers = new TreeMap<>();
+        IllegalStateException parameterFailure = getParameterFailure(ex, request);
 
         if (ContextListener.isShuttingDown())
         {
@@ -870,6 +984,47 @@ public class ExceptionUtil
                 // Do nothing
             }
             return null;
+        }
+        // Any error page reads request parameters, which would rethrow, so respond without one
+        else if (parameterFailure != null)
+        {
+            int status;
+            String statusMessage;
+            if (isInvalidParameterException(parameterFailure))
+            {
+                log.debug("Invalid request parameters", parameterFailure);
+                status = ((InvalidParameterException) parameterFailure).getErrorCode();
+                statusMessage = "Invalid request parameters";
+            }
+            else if (isMaxPostSizeExceeded(parameterFailure))
+            {
+                log.debug("Request parameters too large", parameterFailure);
+                status = HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE;
+                statusMessage = "Request parameters too large";
+            }
+            else
+            {
+                log.error("Unable to read request parameters", parameterFailure);
+                logExceptionToMothership(request, parameterFailure, false);
+                status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+                statusMessage = "Unable to read request parameters";
+            }
+            try
+            {
+                response.sendError(status, statusMessage);
+            }
+            catch (IOException | IllegalStateException e)
+            {
+                // Do nothing; IllegalStateException means the response was already committed
+            }
+            return null;
+        }
+        else if (isRequestTimeout(ex))
+        {
+            responseStatus = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+            message = REQUEST_TIMEOUT_MESSAGE;
+            responseStatusMessage = message;
+            unhandledException = null;
         }
         else if (ex instanceof ApiUsageException)
         {
@@ -1358,6 +1513,11 @@ public class ExceptionUtil
     {
         ExceptionResponse handleIt(final User user, Exception ex)
         {
+            return handleIt(user, ex, null);
+        }
+
+        ExceptionResponse handleIt(final User user, Exception ex, @Nullable IllegalStateException parameterFailure)
+        {
             final MockServletResponse res = new MockServletResponse();
             InvocationHandler h = (_, method, objects) -> {
                 // still calls in 'headers' for validation
@@ -1387,8 +1547,18 @@ public class ExceptionUtil
                 {
                     return "GET";
                 }
+
+                @Override
+                public Map<String, String[]> getParameterMap()
+                {
+                    if (parameterFailure != null)
+                        throw parameterFailure;
+                    return super.getParameterMap();
+                }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
+            if (parameterFailure != null)
+                ExceptionUtil.decorateException(parameterFailure, ExceptionInfo.SkipMothershipLogging, "true", true);
             ActionURL url = ExceptionUtil.handleException(req, res, ex, null, false, dummySearch, dummyLog, null, null);
             ExceptionResponse ret = new ExceptionResponse();
             ret.redirect = url;
@@ -1476,6 +1646,78 @@ public class ExceptionUtil
         }
 
         @Test
+        public void testInvalidParameters()
+        {
+            User guest = UserManager.getGuestUser();
+            InvalidParameterException ipe = new InvalidParameterException("Invalid chunk ignored");
+            ExceptionResponse answer;
+
+            answer = handleIt(guest, ipe, ipe);
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+            // Rendering the 404 page would read the unparseable parameters
+            answer = handleIt(guest, new NotFoundException("Not here"), ipe);
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+            answer = handleIt(guest, new NotFoundException("Not here"), new InvalidParameterException("Too big", HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE));
+            assertEquals(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, answer.response.status);
+
+            assertTrue(isIgnorable(new InvalidParameterException("Character decoding failed")));
+            assertTrue(isIgnorable(new InvalidParameterException("Character decoding failed", new CharConversionException("isHexDigit"))));
+
+            // Tomcat wraps every multipart failure the same way; these causes are the client's
+            answer = handleIt(guest, new NotFoundException("Not here"), new InvalidParameterException(new IOFileUploadException("Processing failed", new MultipartStream.MalformedStreamException("Stream ended unexpectedly"))));
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+            assertTrue(isIgnorable(new InvalidParameterException(new org.apache.coyote.BadRequestException("Connection reset"))));
+
+            // Thrown directly, the upload failure looks like a client abort but still needs a response
+            InvalidParameterException truncated = new InvalidParameterException(new IOFileUploadException("Processing failed", new MultipartStream.MalformedStreamException("Stream ended unexpectedly")));
+            answer = handleIt(guest, truncated, truncated);
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+
+            InvalidParameterException noBoundary = new InvalidParameterException(new FileUploadException("the request was rejected because no multipart boundary was found"));
+            answer = handleIt(guest, noBoundary, noBoundary);
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+            IllegalStateException tooLarge = new IllegalStateException(StringManager.getManager("org.apache.catalina.connector").getString("coyoteRequest.maxPostSizeExceeded"));
+            answer = handleIt(guest, tooLarge, tooLarge);
+            assertEquals(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+            assertTrue(isIgnorable(tooLarge));
+        }
+
+        @Test
+        public void testServerSideParameterFailures()
+        {
+            User guest = UserManager.getGuestUser();
+            ExceptionResponse answer;
+
+            // Tomcat reports a bad upload temp dir or a full disk as an InvalidParameterException too
+            InvalidParameterException badTempDir = new InvalidParameterException(new IOException("The temporary upload location is not valid"));
+            answer = handleIt(guest, new NotFoundException("Not here"), badTempDir);
+            assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
+            assertTrue(answer.response.headers.containsKey("Logger.error"));
+
+            InvalidParameterException diskFull = new InvalidParameterException(new IOFileUploadException("Processing failed", new IOException("No space left on device")));
+            answer = handleIt(guest, diskFull, diskFull);
+            assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
+            assertTrue(answer.response.headers.containsKey("Logger.error"));
+
+            // A plain IllegalStateException, e.g., no multipart config, must not escape the error handler
+            answer = handleIt(guest, new NotFoundException("Not here"), new IllegalStateException("Unable to process parts as no multi-part configuration has been provided"));
+            assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
+            assertTrue(answer.response.headers.containsKey("Logger.error"));
+
+            assertFalse(isIgnorable(new InvalidParameterException(new IOException("No space left on device"))));
+            assertFalse(isClientRequestFailure(new MultipartException("Failed to parse multipart servlet request", new IOException("The temporary upload location is not valid"))));
+            assertTrue(isClientRequestFailure(new MaxUploadSizeExceededException(1024)));
+        }
+
+        @Test
         public void testServerError()
         {
             User me = TestContext.get().getUser();
@@ -1484,6 +1726,73 @@ public class ExceptionUtil
             answer = handleIt(me, new NullPointerException());
             assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
             assertTrue(answer.response.headers.containsKey("Logger.error"));
+        }
+
+        @Test
+        public void testCancelledQuery() throws Exception
+        {
+            User me = TestContext.get().getUser();
+
+            // A statement cancelled by something other than the server is still an error
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(null, () -> {
+                assertFalse(isIgnorable(cancelledQuery()));
+                ExceptionResponse answer = handleIt(me, cancelledQuery());
+                assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
+                assertTrue(answer.response.headers.containsKey("Logger.error"));
+                assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, writeApiError(cancelledQuery()).status());
+            }));
+
+            // The client is still waiting on a timed-out request, so it gets an error, but nothing's logged
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.TIMEOUT, () -> {
+                assertTrue(isIgnorable(cancelledQuery()));
+                assertTrue(isRequestTimeout(cancelledQuery()));
+                assertTrue(isRequestTimeout(new AbortedRequestException("test")));
+                assertTrue(isRequestTimeout(new RuntimeException(new AbortedRequestException("test"))));
+
+                for (Exception ex : List.of(cancelledQuery(), new AbortedRequestException("test")))
+                {
+                    ExceptionResponse answer = handleIt(me, ex);
+                    assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, answer.response.status);
+                    assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+                    // API actions write their own errors
+                    ApiError apiError = writeApiError(ex);
+                    assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, apiError.status());
+                    assertTrue(apiError.body(), apiError.body().contains(REQUEST_TIMEOUT_MESSAGE));
+                }
+            }));
+
+            // Nobody's waiting on a disconnected client
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.CLIENT_DISCONNECT, () -> {
+                assertTrue(isIgnorable(cancelledQuery()));
+                assertFalse(isRequestTimeout(cancelledQuery()));
+                assertFalse(isRequestTimeout(new AbortedRequestException("test")));
+
+                ExceptionResponse answer = handleIt(me, new AbortedRequestException("test"));
+                assertEquals(0, answer.response.status);
+                assertFalse(answer.response.headers.containsKey("Logger.error"));
+            }));
+        }
+
+        private record ApiError(int status, String body) {}
+
+        private static ApiError writeApiError(Exception ex)
+        {
+            try
+            {
+                MockHttpServletResponse response = new MockHttpServletResponse();
+                new ApiJsonWriter(response).writeResponse(ex);
+                return new ApiError(response.getStatus(), response.getContentAsString());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static RuntimeSQLException cancelledQuery()
+        {
+            return new RuntimeSQLException(new SQLException("ERROR: canceling statement due to user request", "57014"));
         }
 
         @Test

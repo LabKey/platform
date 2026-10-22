@@ -1089,7 +1089,7 @@ public class IssuesController extends SpringActionController
         protected boolean hasAdminPermission(User user, IssueObject issue)
         {
             return getContainer().hasPermission(user, AdminPermission.class,
-                    (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
+                    (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : Set.of()));
         }
 
         public CustomColumnConfiguration getColumnConfiguration()

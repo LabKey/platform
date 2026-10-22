@@ -21,15 +21,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.JavaScriptExportScriptFactory;
 import org.labkey.api.query.JavaScriptExportScriptModel;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
 
-import javax.script.ScriptException;
-import java.io.File;
 import java.util.List;
-import java.util.Map;
 
 /**
  * This is a base class for Reports that encapsulate their report executing in a Docker container, for security and/or configuration control.
@@ -43,15 +39,9 @@ import java.util.Map;
  */
 abstract public class DockerScriptReport extends ScriptProcessReport
 {
-    protected DockerScriptReport(String reportType, String defaultDescriptorType)
+    protected DockerScriptReport(String defaultDescriptorType)
     {
-        super(reportType, defaultDescriptorType);
-    }
-
-    @Override
-    public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
-    {
-        return "I'm abstract";
+        super(defaultDescriptorType);
     }
 
     protected JSONObject createReportConfig(ViewContext context, FileLike ipynb)

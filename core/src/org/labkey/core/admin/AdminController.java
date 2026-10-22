@@ -108,6 +108,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
@@ -138,6 +139,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.PostgresSnapshot;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -203,6 +206,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.RequiresLogin;
@@ -256,6 +260,7 @@ import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
@@ -269,6 +274,7 @@ import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.JsonUtil;
@@ -508,6 +514,7 @@ public class AdminController extends SpringActionController
 
         AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
         AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
+        AdminConsole.addLink(Diagnostics, "postgres snapshot", new ActionURL(PostgresSnapshotAction.class, root));
         AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
 
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
@@ -923,6 +930,12 @@ public class AdminController extends SpringActionController
         {
             return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Deprecated.name());
         }
+
+        @Override
+        public ActionURL getOptionalFeaturesURL()
+        {
+            return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Optional.name());
+        }
     }
 
     public static class MaintenanceBean
@@ -1330,11 +1343,13 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // The page saves through UpdateSiteSettingsAction; rejecting POST keeps old form posts from silently saving nothing
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
+    @MethodsAllowed(HttpUtil.Method.GET)
+    public class CustomizeSiteAction extends SimpleViewAction<CustomizeSiteForm>
     {
         @Override
-        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(CustomizeSiteForm form, BindException errors)
         {
             if (form.isUpgradeInProgress())
                 getPageConfig().setTemplate(Template.Dialog);
@@ -1349,158 +1364,35 @@ public class AdminController extends SpringActionController
         {
             addAdminNavTrail(root, "Customize Site", this.getClass());
         }
+    }
 
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class GetSiteSettingsAction extends ReadOnlyApiAction<Object>
+    {
         @Override
-        public void validateCommand(SiteSettingsForm form, Errors errors)
+        public Object execute(Object o, BindException errors)
         {
-            if (form.isShowRibbonMessage() && StringUtils.isEmpty(form.getRibbonMessage()))
-            {
-                errors.reject(ERROR_MSG, "Cannot enable the ribbon message without providing a message to show");
-            }
-            if (form.getMaxBLOBSize() < 0)
-            {
-                errors.reject(ERROR_MSG, "Maximum BLOB size cannot be negative");
-            }
-            int hardCap = Math.max(WriteableAppProps.SOFT_MAX_BLOB_SIZE, AppProps.getInstance().getMaxBLOBSize());
-            if (form.getMaxBLOBSize() > hardCap)
-            {
-                errors.reject(ERROR_MSG, "Maximum BLOB size cannot be set higher than " + hardCap + " bytes");
-            }
-            if (form.getSslPort() < 1 || form.getSslPort() > 65535)
-            {
-                errors.reject(ERROR_MSG, "HTTPS port must be between 1 and 65,535");
-            }
-            if (form.getReadOnlyHttpRequestTimeout() < 0)
-            {
-                errors.reject(ERROR_MSG, "HTTP timeout must be non-negative");
-            }
-            if (form.getMemoryUsageDumpInterval() < 0)
-            {
-                errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
-            }
-            if (form.getScriptExecutionTimeout() == null)
-            {
-                errors.reject(ERROR_MSG, "Script execution timeout is required; set to 0 to disable the timeout");
-            }
-            else if (form.getScriptExecutionTimeout() < 0)
-            {
-                errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
-            }
+            return new ApiSimpleResponse("settings", SiteSettingsUpdater.getSettings());
         }
+    }
 
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class UpdateSiteSettingsAction extends MutatingApiAction<SimpleApiJsonForm>
+    {
         @Override
-        public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
+        public Object execute(SimpleApiJsonForm form, BindException errors)
         {
-            HttpServletRequest request = getViewContext().getRequest();
-
-            // We only need to check that SSL is running if the user isn't already using SSL
-            if (form.isSslRequired() && !(request.isSecure() && (form.getSslPort() == request.getServerPort())))
+            JSONObject settings = form.getJsonObject() == null ? null : form.getJsonObject().optJSONObject("settings");
+            if (settings == null)
             {
-                URL testURL = new URL("https", request.getServerName(), form.getSslPort(), AppProps.getInstance().getContextPath());
-                Pair<String, Integer> sslResponse = HttpsUtil.testHttpsUrl(testURL, "Ensure that the web server is configured for SSL and the port is correct. If SSL is enabled, try saving these settings while connected via SSL.");
-
-                if (sslResponse != null)
-                {
-                    errors.reject(ERROR_MSG, sslResponse.first);
-                    return false;
-                }
+                errors.reject(ERROR_MSG, "Request must include a \"settings\" object");
+                return null;
             }
 
-            if (form.getReadOnlyHttpRequestTimeout() < 0)
-            {
-                errors.reject(ERROR_MSG, "Read only HTTP request timeout must be non-negative");
-            }
+            if (!SiteSettingsUpdater.update(settings.toMap(), getUser(), getViewContext().getRequest(), errors))
+                return null;
 
-            WriteableAppProps props = AppProps.getWriteableInstance();
-
-            props.setPipelineToolsDir(form.getPipelineToolsDirectory());
-            props.setNavAccessOpen(form.isNavAccessOpen());
-            props.setSSLRequired(form.isSslRequired());
-            boolean sslSettingChanged = AppProps.getInstance().isSSLRequired() != form.isSslRequired();
-            props.setSSLPort(form.getSslPort());
-            props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
-            props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
-            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
-            props.setMaxBLOBSize(form.getMaxBLOBSize());
-            props.setSelfReportExceptions(form.isSelfReportExceptions());
-
-            props.setAdminOnlyMessage(form.getAdminOnlyMessage());
-            props.setShowRibbonMessage(form.isShowRibbonMessage());
-            props.setRibbonMessage(form.getRibbonMessage());
-            props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
-
-            props.setAllowApiKeys(form.isAllowApiKeys());
-            props.setApiKeyExpirationSeconds(form.getApiKeyExpirationSeconds());
-            props.setAllowSessionKeys(form.isAllowSessionKeys());
-
-            try
-            {
-                ExceptionReportingLevel level = ExceptionReportingLevel.valueOf(form.getExceptionReportingLevel());
-                props.setExceptionReportingLevel(level);
-            }
-            catch (IllegalArgumentException ignored)
-            {
-            }
-
-            try
-            {
-                if (form.getUsageReportingLevel() != null)
-                {
-                    UsageReportingLevel level = UsageReportingLevel.valueOf(form.getUsageReportingLevel());
-                    props.setUsageReportingLevel(level);
-                }
-            }
-            catch (IllegalArgumentException ignored)
-            {
-            }
-
-            props.setAdministratorContactEmail(form.getAdministratorContactEmail() == null ? null : form.getAdministratorContactEmail().trim());
-
-            if (null != form.getBaseServerURL())
-            {
-                if (form.isSslRequired() && !form.getBaseServerURL().startsWith("https"))
-                {
-                    errors.reject(ERROR_MSG, "Invalid Base Server URL. SSL connection is required. Consider https://.");
-                    return false;
-                }
-
-                try
-                {
-                    props.setBaseServerUrl(form.getBaseServerURL());
-                }
-                catch (URISyntaxException e)
-                {
-                    errors.reject(ERROR_MSG, "Invalid Base Server URL, \"" + e.getMessage() + "\"." +
-                            "Please enter a valid base URL containing the protocol, hostname, and port if required. " +
-                            "The webapp context path should not be included. " +
-                            "For example: \"https://www.example.com\" or \"http://www.labkey.org:8080\" and not \"http://www.example.com/labkey/\"");
-                    return false;
-                }
-            }
-
-            props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
-
-            props.setTermsOfUseFrequencySeconds(form.getTermsOfUseFrequencySeconds());
-
-            props.save(getViewContext().getUser());
-            UsageReportingLevel.reportNow();
-            if (sslSettingChanged)
-                ContentSecurityPolicyFilter.regenerateSubstitutionMap();
-
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(SiteSettingsForm form)
-        {
-            if (form.isUpgradeInProgress())
-            {
-                return AppProps.getInstance().getHomePageActionURL();
-            }
-            else
-            {
-                return new AdminUrlsImpl().getAdminConsoleURL();
-            }
+            return new ApiSimpleResponse("settings", SiteSettingsUpdater.getSettings());
         }
     }
 
@@ -1638,6 +1530,11 @@ public class AdminController extends SpringActionController
         public HtmlString getSiteSettingsHelpLink(String fragment)
         {
             return new HelpTopic("configAdmin", fragment).getSimpleLinkHtml("more info...");
+        }
+
+        public ActionURL getSuccessURL()
+        {
+            return _upgradeInProgress ? AppProps.getInstance().getHomePageActionURL() : new AdminUrlsImpl().getAdminConsoleURL();
         }
     }
 
@@ -2375,136 +2272,9 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @SuppressWarnings("unused")
-    public static class SiteSettingsForm
+    public static class CustomizeSiteForm
     {
         private boolean _upgradeInProgress = false;
-
-        private String _pipelineToolsDirectory;
-        private boolean _sslRequired;
-        private boolean _adminOnlyMode;
-        private boolean _showRibbonMessage;
-        private boolean _selfReportExceptions;
-        private String _adminOnlyMessage;
-        private String _ribbonMessage;
-        private int _sslPort;
-        private int _memoryUsageDumpInterval;
-        private int _readOnlyHttpRequestTimeout;
-        private Integer _scriptExecutionTimeout;
-        private int _maxBLOBSize;
-        private String _exceptionReportingLevel;
-        private String _usageReportingLevel;
-        private String _administratorContactEmail;
-
-        private String _baseServerURL;
-        private String _callbackPassword;
-        private boolean _allowApiKeys;
-        private int _apiKeyExpirationSeconds;
-        private boolean _allowSessionKeys;
-        private boolean _navAccessOpen;
-
-        private boolean _includeServerHttpHeader;
-        private int _termsOfUseFrequencySeconds;
-
-        public String getPipelineToolsDirectory()
-        {
-            return _pipelineToolsDirectory;
-        }
-
-        public void setPipelineToolsDirectory(String pipelineToolsDirectory)
-        {
-            _pipelineToolsDirectory = pipelineToolsDirectory;
-        }
-
-        public boolean isNavAccessOpen()
-        {
-            return _navAccessOpen;
-        }
-
-        public void setNavAccessOpen(boolean navAccessOpen)
-        {
-            _navAccessOpen = navAccessOpen;
-        }
-
-        public boolean isSslRequired()
-        {
-            return _sslRequired;
-        }
-
-        public void setSslRequired(boolean sslRequired)
-        {
-            _sslRequired = sslRequired;
-        }
-
-        public int getSslPort()
-        {
-            return _sslPort;
-        }
-
-        public void setSslPort(int sslPort)
-        {
-            _sslPort = sslPort;
-        }
-
-        public boolean isAdminOnlyMode()
-        {
-            return _adminOnlyMode;
-        }
-
-        public void setAdminOnlyMode(boolean adminOnlyMode)
-        {
-            _adminOnlyMode = adminOnlyMode;
-        }
-
-        public String getAdminOnlyMessage()
-        {
-            return _adminOnlyMessage;
-        }
-
-        public void setAdminOnlyMessage(String adminOnlyMessage)
-        {
-            _adminOnlyMessage = adminOnlyMessage;
-        }
-
-        public boolean isSelfReportExceptions()
-        {
-            return _selfReportExceptions;
-        }
-
-        public void setSelfReportExceptions(boolean selfReportExceptions)
-        {
-            _selfReportExceptions = selfReportExceptions;
-        }
-
-        public String getExceptionReportingLevel()
-        {
-            return _exceptionReportingLevel;
-        }
-
-        public void setExceptionReportingLevel(String exceptionReportingLevel)
-        {
-            _exceptionReportingLevel = exceptionReportingLevel;
-        }
-
-        public String getUsageReportingLevel()
-        {
-            return _usageReportingLevel;
-        }
-
-        public void setUsageReportingLevel(String usageReportingLevel)
-        {
-            _usageReportingLevel = usageReportingLevel;
-        }
-
-        public String getAdministratorContactEmail()
-        {
-            return _administratorContactEmail;
-        }
-
-        public void setAdministratorContactEmail(String administratorContactEmail)
-        {
-            _administratorContactEmail = administratorContactEmail;
-        }
 
         public boolean isUpgradeInProgress()
         {
@@ -2514,138 +2284,6 @@ public class AdminController extends SpringActionController
         public void setUpgradeInProgress(boolean upgradeInProgress)
         {
             _upgradeInProgress = upgradeInProgress;
-        }
-
-        public int getMemoryUsageDumpInterval()
-        {
-            return _memoryUsageDumpInterval;
-        }
-
-        public void setMemoryUsageDumpInterval(int memoryUsageDumpInterval)
-        {
-            _memoryUsageDumpInterval = memoryUsageDumpInterval;
-        }
-
-        public int getReadOnlyHttpRequestTimeout()
-        {
-            return _readOnlyHttpRequestTimeout;
-        }
-
-        /** Null when the request omits or blanks the parameter; rejected in validateCommand so an omitted value can never bind to 0 and silently disable the timeout. */
-        @Nullable
-        public Integer getScriptExecutionTimeout()
-        {
-            return _scriptExecutionTimeout;
-        }
-
-        public void setScriptExecutionTimeout(@Nullable Integer timeout)
-        {
-            _scriptExecutionTimeout = timeout;
-        }
-
-        public void setReadOnlyHttpRequestTimeout(int timeout)
-        {
-            _readOnlyHttpRequestTimeout = timeout;
-        }
-
-        public int getMaxBLOBSize()
-        {
-            return _maxBLOBSize;
-        }
-
-        public void setMaxBLOBSize(int maxBLOBSize)
-        {
-            _maxBLOBSize = maxBLOBSize;
-        }
-
-        public String getBaseServerURL()
-        {
-            return _baseServerURL;
-        }
-
-        public void setBaseServerURL(String baseServerURL)
-        {
-            _baseServerURL = baseServerURL;
-        }
-
-        public String getCallbackPassword()
-        {
-            return _callbackPassword;
-        }
-
-        public void setCallbackPassword(String callbackPassword)
-        {
-            _callbackPassword = callbackPassword;
-        }
-
-        public boolean isShowRibbonMessage()
-        {
-            return _showRibbonMessage;
-        }
-
-        public void setShowRibbonMessage(boolean showRibbonMessage)
-        {
-            _showRibbonMessage = showRibbonMessage;
-        }
-
-        public String getRibbonMessage()
-        {
-            return _ribbonMessage;
-        }
-
-        public void setRibbonMessage(String ribbonMessage)
-        {
-            _ribbonMessage = ribbonMessage;
-        }
-
-        public boolean isAllowApiKeys()
-        {
-            return _allowApiKeys;
-        }
-
-        public void setAllowApiKeys(boolean allowApiKeys)
-        {
-            _allowApiKeys = allowApiKeys;
-        }
-
-        public int getApiKeyExpirationSeconds()
-        {
-            return _apiKeyExpirationSeconds;
-        }
-
-        public void setApiKeyExpirationSeconds(int apiKeyExpirationSeconds)
-        {
-            _apiKeyExpirationSeconds = apiKeyExpirationSeconds;
-        }
-
-        public boolean isAllowSessionKeys()
-        {
-            return _allowSessionKeys;
-        }
-
-        public void setAllowSessionKeys(boolean allowSessionKeys)
-        {
-            _allowSessionKeys = allowSessionKeys;
-        }
-
-        public boolean isIncludeServerHttpHeader()
-        {
-            return _includeServerHttpHeader;
-        }
-
-        public void setIncludeServerHttpHeader(boolean includeServerHttpHeader)
-        {
-            _includeServerHttpHeader = includeServerHttpHeader;
-        }
-
-        public int getTermsOfUseFrequencySeconds()
-        {
-            return _termsOfUseFrequencySeconds;
-        }
-
-        public void setTermsOfUseFrequencySeconds(int termsOfUseFrequencySeconds)
-        {
-            _termsOfUseFrequencySeconds = termsOfUseFrequencySeconds;
         }
     }
 
@@ -2726,6 +2364,57 @@ public class AdminController extends SpringActionController
         public PostgresTableSizesAction()
         {
             super(BasePostgreSqlDialect.POSTGRES_TABLE_SIZES_TABLE_NAME);
+        }
+    }
+
+    private static void validatePostgresSnapshotRequest(Container c)
+    {
+        if (!c.isRoot())
+            throw new NotFoundException("Available only in the root container");
+
+        if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+            throw new NotFoundException("Available only with Postgres as the primary database");
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class PostgresSnapshotAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            validatePostgresSnapshotRequest(getContainer());
+
+            String warning = switch (PostgresSnapshot.getStatementsStatus())
+            {
+                case AVAILABLE -> null;
+                case NOT_INSTALLED -> "Snapshots will omit per-query statistics because the pg_stat_statements extension is not installed in this database. To install it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, restart Postgres, then execute CREATE EXTENSION pg_stat_statements;";
+                case NOT_LOADED -> "Snapshots will omit per-query statistics because the pg_stat_statements extension is installed but its library is not loaded. To load it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, then restart Postgres.";
+            };
+
+            return new HtmlView(DIV(
+                null == warning ? null : DIV(cl("labkey-warning-messages"), warning),
+                P("Captures Postgres configuration and cumulative statistics as a JSON file. Comparing a snapshot taken before a workload against one taken after it shows the work the database actually did and can be useful for evaluating bottlenecks and optimizing resources."),
+                PageFlowUtil.button("Download Snapshot").href(new ActionURL(DownloadPostgresSnapshotAction.class, getContainer())).getHtmlString()
+            ));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Postgres Snapshot", this.getClass(), getContainer());
+        }
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class DownloadPostgresSnapshotAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            validatePostgresSnapshotRequest(getContainer());
+
+            String filename = FileUtil.makeFileNameWithTimestamp("pg-snapshot", "json");
+            PageFlowUtil.streamFileBytes(response, filename, PostgresSnapshot.capture().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
         }
     }
 
@@ -3037,6 +2726,59 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
+    public static class ExportConnectionUsageAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            try (ConnectionUsageTsvWriter writer = new ConnectionUsageTsvWriter())
+            {
+                writer.write(response);
+            }
+        }
+    }
+
+    @AdminConsoleAction
+    public static class GetConnectionPoolStatsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            // Initialized scopes only, so an unreachable external data source isn't probed
+            return Map.of(
+                "connectionUsageTracked", ConnectionUsage.isEnabled(),
+                "dataSources", DbScope.getInitializedDbScopes().stream()
+                    .map(GetConnectionPoolStatsAction::getPoolStats)
+                    .toList());
+        }
+
+        private static Map<String, Object> getPoolStats(DbScope scope)
+        {
+            DataSourcePropertyReader props = scope.getDataSourceProperties();
+            DataSourcePropertyReader.PoolStatistics pool = props.getPoolStatistics();
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("name", scope.getDataSourceName());
+            result.put("isLabKeyScope", scope.isLabKeyScope());
+            result.put("maxTotal", props.getMaxTotal());
+            result.put("maxIdle", props.getMaxIdle());
+            result.put("numActive", props.getNumActive());
+            result.put("numIdle", props.getNumIdle());
+            if (null != pool)
+            {
+                result.put("createdCount", pool.createdCount());
+                result.put("destroyedCount", pool.destroyedCount());
+                result.put("destroyedByEvictorCount", pool.destroyedByEvictorCount());
+                result.put("destroyedByBorrowValidationCount", pool.destroyedByBorrowValidationCount());
+                result.put("borrowedCount", pool.borrowedCount());
+                result.put("numWaiters", pool.numWaiters());
+                result.put("meanBorrowWaitMillis", pool.meanBorrowWaitMillis());
+                result.put("maxBorrowWaitMillis", pool.maxBorrowWaitMillis());
+            }
+            return result;
+        }
+    }
+
     private static ActionURL getQueriesURL(@Nullable String statName)
     {
         ActionURL url = new ActionURL(QueriesAction.class, ContainerManager.getRoot());
@@ -3277,7 +3019,38 @@ public class AdminController extends SpringActionController
             html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Transaction Caches", transactionStats, true);
 
+            html.append(createHtmlFragment(BR(), BR()));
+            appendKeyClasses(html, caches);
+
             return new HtmlView(html);
+        }
+
+        private void appendKeyClasses(HtmlStringBuilder html, List<TrackingCache<?, ?>> caches)
+        {
+            List<Map.Entry<String, Long>> counts = caches.stream()
+                .collect(Collectors.groupingBy(cache -> cache.getKeyClass().getName(), Collectors.counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .toList();
+
+            AtomicInteger rowCount = new AtomicInteger();
+            html.append(createHtmlFragment(
+                P(B("Key Classes (" + counts.size() + ")")),
+                TABLE(cl("labkey-data-region-legacy", "labkey-show-borders", "labkey-data-region-header-lock"),
+                    TR(
+                        TD(cl("labkey-column-header"), "Key Class"),
+                        TD(cl("labkey-column-header"), "Caches")
+                    ),
+                    counts.stream().map(entry -> TR(cl(rowCount.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                        TD(entry.getKey()),
+                        longCells(entry.getValue())
+                    )),
+                    TR(cl("labkey-row"),
+                        TD(B("Total")),
+                        longCells((long) caches.size())
+                    )
+                )
+            ));
         }
 
         private void appendStats(HtmlStringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
@@ -3554,7 +3327,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            addAdminNavTrail(root, "AI Assistant Status", this.getClass());
+            addAdminNavTrail(root, "LabKey Assistant Status", this.getClass());
         }
     }
 
@@ -9216,7 +8989,7 @@ public class AdminController extends SpringActionController
             // Could use %A0 for newline in the middle of the message, however, parameter values get trimmed so translate
             // \n to newlines to allow them at the beginning or end of the message as well.
             StringBuilder message = new StringBuilder();
-            message.append(StringUtils.replace(logForm.getMessage(), "\\n", "\n"));
+            message.append(Strings.CS.replace(logForm.getMessage(), "\\n", "\n"));
 
             Level level = Level.toLevel(logForm.getLevel(), Level.INFO);
             CLIENT_LOG.log(level, message);
@@ -11129,6 +10902,27 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class UsageMetricDescriptionsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            List<Map<String, Object>> metrics = new ArrayList<>();
+            UsageMetricsService.get().getModuleUsageMetricDescriptions().forEach((module, descriptions) ->
+                descriptions.forEach(d -> {
+                    Map<String, Object> metric = new LinkedHashMap<>();
+                    // Matches JsonKey in mothership's JsonMetricMetadata list
+                    metric.put("jsonKey", "modules." + module + "." + d.path());
+                    metric.put("module", module);
+                    metric.put("description", d.description());
+                    metric.put("kind", d.kind() == null ? null : d.kind().name());
+                    metrics.add(metric);
+                }));
+            return new ApiSimpleResponse("metrics", metrics);
+        }
+    }
+
 
     static class MothershipReportSelectionForm
     {
@@ -11280,7 +11074,7 @@ public class AdminController extends SpringActionController
 
             final Map<String,Map<String,Object>> sets = new TreeMap<>();
             var sql = new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n")
-                    .append("WHERE objectid = ").appendValue(ContainerManager.getRoot()).append(" AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'");
+                    .unsafeAppend("WHERE objectid = ").appendValue(ContainerManager.getRoot()).unsafeAppend(" AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'");
             new SqlSelector(CoreSchema.getInstance().getScope(), sql)
                     .forEachMap(m ->
                 {
@@ -12297,7 +12091,7 @@ public class AdminController extends SpringActionController
                 {
                     updating.add(fieldName);
                     if (sql.isEmpty())
-                        sql.append("UPDATE ").append(tInfo, "").append(" SET ");
+                        sql.unsafeAppend("UPDATE ").append(tInfo, "").unsafeAppend(" SET ");
                     sql.append(comma)
                             .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectIdentifier(), delta, col.getSelectIdentifier()));
                     comma = ", ";
@@ -12370,7 +12164,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
         }
 
         @Override
@@ -12686,7 +12480,8 @@ public class AdminController extends SpringActionController
                 new OptionalFeatureAction(),
                 new GetSchemaXmlDocAction(),
                 new RecreateViewsAction(),
-                new DeleteEncryptedContentAction()
+                new DeleteEncryptedContentAction(),
+                new UpdateSiteSettingsAction()
             );
 
             // @AdminConsoleAction
@@ -12710,7 +12505,10 @@ public class AdminController extends SpringActionController
                 controller.new ShowCspReportLogAction(),
                 controller.new ShowThreadsAction(),
                 new ExportActionsAction(),
+                new ExportConnectionUsageAction(),
+                new GetConnectionPoolStatsAction(),
                 new ExportQueriesAction(),
+                new GetSiteSettingsAction(),
                 new MemoryChartAction(),
                 new ShowAdminAction()
             );

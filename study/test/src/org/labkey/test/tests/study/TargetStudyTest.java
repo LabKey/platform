@@ -233,12 +233,15 @@ public class TargetStudyTest extends AbstractAssayTest
         assertEquals(study3OptionText, getSelectedOptionText(table.findCell(5, 0).findElement(AssayConstants.TARGET_STUDY_FIELD_LOCATOR)));
 
         log("** Check ptid/visit matches for rows 0-2 and 4, no match for rows 3 and 5");
-        assertAttributeContains(table.findCell(0, 1).findElement(By.xpath("i")), "class", "fa fa-check");
-        assertAttributeContains(table.findCell(1, 1).findElement(By.xpath("i")), "class", "fa fa-check");
-        assertAttributeContains(table.findCell(2, 1).findElement(By.xpath("i")), "class", "fa fa-check");
-        assertAttributeContains(table.findCell(3, 1).findElement(By.xpath("i")), "class", "fa fa-times");
-        assertAttributeContains(table.findCell(4, 1).findElement(By.xpath("i")), "class", "fa fa-check");
-        assertAttributeContains(table.findCell(5, 1).findElement(By.xpath("i")), "class", "fa fa-times");
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            assertAttributeContains(table.findCell(0, 1).findElement(By.xpath("i")), "class", "fa fa-check");
+            assertAttributeContains(table.findCell(1, 1).findElement(By.xpath("i")), "class", "fa fa-check");
+            assertAttributeContains(table.findCell(2, 1).findElement(By.xpath("i")), "class", "fa fa-check");
+            assertAttributeContains(table.findCell(3, 1).findElement(By.xpath("i")), "class", "fa fa-times");
+            assertAttributeContains(table.findCell(4, 1).findElement(By.xpath("i")), "class", "fa fa-check");
+            assertAttributeContains(table.findCell(5, 1).findElement(By.xpath("i")), "class", "fa fa-times");
+        }
 
         clickButton("Re-Validate");
         assertTextPresent("You must specify a Target Study for all selected rows.");
@@ -252,20 +255,23 @@ public class TargetStudyTest extends AbstractAssayTest
         log("** Link to studies");
         clickButton("Link to Study");
 
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/dataset.view?datasetId=5001");
-        DataRegionTable dataset = new DataRegionTable("Dataset", this);
-        assertEquals(3, dataset.getDataRowCount());
-        dataset.setSort("ParticipantId", SortDirection.ASC);
-        assertEquals(3, dataset.getDataRowCount());
-        assertEquals("999320396", dataset.getDataAsText(0, "Participant ID"));
-        assertEquals("999320396", dataset.getDataAsText(1, "Participant ID"));
-        assertEquals("999320812", dataset.getDataAsText(2, "Participant ID"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/study-dataset.view?datasetId=5001");
+            DataRegionTable dataset = new DataRegionTable("Dataset", this);
+            assertEquals(3, dataset.getDataRowCount());
+            dataset.setSort("ParticipantId", SortDirection.ASC);
+            assertEquals(3, dataset.getDataRowCount());
+            assertEquals("999320396", dataset.getDataAsText(0, "Participant ID"));
+            assertEquals("999320396", dataset.getDataAsText(1, "Participant ID"));
+            assertEquals("999320812", dataset.getDataAsText(2, "Participant ID"));
 
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + "/dataset.view?datasetId=5001");
-        assertEquals(1, dataset.getDataRowCount());
-        assertEquals("999320706", dataset.getDataAsText(0, "Participant ID"));
+            beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + "/study-dataset.view?datasetId=5001");
+            assertEquals(1, dataset.getDataRowCount());
+            assertEquals("999320706", dataset.getDataAsText(0, "Participant ID"));
+        }
 
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + "/dataset.view?datasetId=5001");
+        beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + "/study-dataset.view?datasetId=5001");
         assertEquals(404, getResponseCode());
     }
 

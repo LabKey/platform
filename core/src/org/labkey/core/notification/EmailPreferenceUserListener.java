@@ -15,6 +15,10 @@
  */
 package org.labkey.core.notification;
 
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
@@ -24,6 +28,6 @@ public class EmailPreferenceUserListener implements UserManager.UserListener
     public void userDeletedFromSite(User user)
     {
         //when user is deleted from site, remove any corresponding record from EmailPrefs table.
-        EmailPreferenceConfigManager.deleteUserEmailPref(user, null);
+        Table.delete(CoreSchema.getInstance().getTableInfoEmailPrefs(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
     }
 }

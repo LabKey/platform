@@ -77,7 +77,7 @@ public interface WebPartFactory
 
     void setModule(Module module);
 
-    /** For backwards compatibility, names that this web part might have been previously called and should still match it for existing portal configurations */
+    /** For backwards compatibility, names that this web part might have been previously called and should still match for existing portal configurations */
     List<String> getLegacyNames();
 
     boolean isAvailable(Container c, String scope, String location);

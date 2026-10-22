@@ -265,7 +265,7 @@ public class ListImporter
                                 {
                                     String setVal = src.replace("nextval(", "setval(");
                                     setVal = setVal.replace("::regclass)", "::regclass, ");
-                                    keyupdate = new SQLFragment("SELECT ").append(SQLFragment.unsafe(setVal));
+                                    keyupdate = new SQLFragment("SELECT ").append(new SQLFragment().setSqlUnsafe(setVal));
                                 }
                                 else
                                 {
@@ -285,8 +285,8 @@ public class ListImporter
                                 }
 
                                 String keyStorageColName = def.getDomain().getPropertyByName(def.getKeyName()).getPropertyDescriptor().getStorageColumnName();
-                                keyupdate.append(" coalesce((SELECT MAX(").appendIdentifier(dialect.makeDatabaseIdentifier(keyStorageColName.toLowerCase())).append(")+1 FROM ").append(tableName);
-                                keyupdate.append("), 1), false)");
+                                keyupdate.unsafeAppend(" coalesce((SELECT MAX(").appendIdentifier(dialect.makeDatabaseIdentifier(keyStorageColName.toLowerCase())).unsafeAppend(")+1 FROM ").append(tableName);
+                                keyupdate.unsafeAppend("), 1), false)");
                                 new SqlExecutor(ti.getSchema()).execute(keyupdate);
                             }
                         }

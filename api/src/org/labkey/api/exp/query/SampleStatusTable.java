@@ -21,7 +21,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FilteredTable;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 public class SampleStatusTable extends FilteredTable<ExpSchema>
 {
@@ -31,9 +30,9 @@ public class SampleStatusTable extends FilteredTable<ExpSchema>
         setName(ExpSchema.TableType.SampleStatus.name());
         if (cf != null)
             this.setContainerFilter(cf);
-        SQLFragment sql = new SQLFragment(("(stateType IN ("));
-        sql.append(Arrays.stream(ExpSchema.SampleStateType.values()).map(type -> "'" + type.name() + "'").collect(Collectors.joining(",")));
-        sql.append(") )");
+        SQLFragment sql = new SQLFragment("(stateType");
+        sql.appendInClause(Arrays.stream(ExpSchema.SampleStateType.values()).map(Enum::name).toList(), getSqlDialect());
+        sql.unsafeAppend(")");
         addCondition(sql);
         addWrapColumn(getRealTable().getColumn("RowId"));
         addWrapColumn(getRealTable().getColumn("Label"));

@@ -53,6 +53,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
@@ -68,6 +69,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SQLParameterException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -75,6 +77,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -205,7 +208,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -350,15 +355,15 @@ public class QueryServiceImpl implements QueryService
         SQLFragment fromSql = t.getFromSQL("_");
 
         return new SQLFragment()
-            .append("(").appendIdentifier(col.getAlias())
-            .append(")")
+            .unsafeAppend("(").appendIdentifier(col.getAlias())
+            .unsafeAppend(")")
             .append(negate ? " NOT" : "")
-            .append(" IN (")
-            .append(" SELECT ")
+            .unsafeAppend(" IN (")
+            .unsafeAppend(" SELECT ")
             .append(t.getColumns().getFirst().getValueSql("_"))
-            .append(" FROM ")
+            .unsafeAppend(" FROM ")
             .append(fromSql)
-            .append(")");
+            .unsafeAppend(")");
     }
 
     /**
@@ -588,7 +593,7 @@ public class QueryServiceImpl implements QueryService
     {
         static InLineageOfClause create(boolean parents, FieldKey fk, String value, boolean negate)
         {
-            if (null != fk.getParent() || !StringUtils.startsWithIgnoreCase(value, "SELECT "))
+            if (null != fk.getParent() || !Strings.CI.startsWith(value, "SELECT "))
                 throw new IllegalArgumentException("Bad filter syntax, value should start with 'SELECT '");
             return new InLineageOfClause(parents, value, negate);
         }
@@ -3457,7 +3462,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public boolean isTriggerManagedColumnsEnabled()
     {
-        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
+        return !AppProps.getInstance().isOptionalFeatureEnabled(DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert
@@ -3525,6 +3530,82 @@ public class QueryServiceImpl implements QueryService
                     assertEquals(4, rs.getMetaData().getColumnCount());
                 }
 	        }
+        }
+
+        @Test
+        public void testInClauseInnerJoin()
+        {
+            QueryService qs = QueryService.get();
+            TableInfo users = DbSchema.get("core", DbSchemaType.Module).getTable("users");
+            assertNotNull(users);
+            List<ColumnInfo> cols = List.of(users.getColumn("userid"), users.getColumn("displayname"));
+
+            List<Integer> ids = new ArrayList<>();
+            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
+                ids.add(i);
+            FieldKey pk = FieldKey.fromParts("userid");
+            Supplier<SimpleFilter> pkInFilter = () -> new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids));
+
+            // sorted + paged on a temp-table-backed PK IN: drive from the value set
+            String joinSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("Expected a driving INNER JOIN to the temp table, got:\n" + joinSql, joinSql.contains("INNER JOIN") && joinSql.contains("_drive_"));
+            assertFalse("Driving join should replace the PK IN (SELECT ...) semi-join:\n" + joinSql, joinSql.contains("IN (SELECT Id FROM"));
+
+            // unpaged: nothing for the planner to short-circuit, so leave the semi-join alone
+            String unpagedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).buildSqlFragment().getSQL();
+            assertFalse("Unpaged query should not produce a driving join:\n" + unpagedSql, unpagedSql.contains("_drive_"));
+            assertTrue("Unpaged query should keep the IN (SELECT ...) semi-join:\n" + unpagedSql, unpagedSql.contains("IN (SELECT Id FROM"));
+
+            // paged with no sort of its own: getSelectSQL() supplies a default sort, so the planner still sees ORDER BY + LIMIT
+            String unsortedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("A paged query picks up a default sort, so it should drive from the value set:\n" + unsortedSql, unsortedSql.contains("_drive_"));
+
+            // below the temp-table threshold there is no temp table to drive from
+            SimpleFilter smallFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids.subList(0, 10)));
+            String smallSql = qs.getSelectBuilder(users).columns(cols).filter(smallFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("A value set below the temp table threshold should not produce a driving join:\n" + smallSql, smallSql.contains("_drive_"));
+
+            // NOT IN cannot become a join
+            SimpleFilter negatedFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids, false, true));
+            String negatedSql = qs.getSelectBuilder(users).columns(cols).filter(negatedFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Negated IN should not produce a driving join:\n" + negatedSql, negatedSql.contains("_drive_"));
+
+            // non-PK column
+            SimpleFilter nonPkFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(FieldKey.fromParts("displayname"), ids));
+            String nonPkSql = qs.getSelectBuilder(users).columns(cols).filter(nonPkFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Non-PK IN should not produce a driving join:\n" + nonPkSql, nonPkSql.contains("_drive_"));
+        }
+
+        @Test
+        public void testSortTrimmedAfterPk()
+        {
+            TableInfo principals = CoreSchema.getInstance().getTableInfoPrincipals();
+            assertEquals(List.of("userid"), principals.getPkColumnNames().stream().map(String::toLowerCase).toList());
+
+            assertEquals("order by userid asc", orderBy(principals, "UserId,Name,-Type"));
+            assertEquals("order by name asc, userid desc", orderBy(principals, "Name,-UserId,Type"));
+            assertEquals("order by name asc, type asc, userid asc", orderBy(principals, "Name,Type"));
+
+            Sort sort = new Sort("UserId,Name");
+            orderBy(principals, sort);
+            assertEquals("Caller's sort was modified", 2, sort.getSortList().size());
+
+            // A view's PK is declared in schema XML, not enforced by the database
+            TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
+            assertEquals(List.of("userid"), users.getPkColumnNames().stream().map(String::toLowerCase).toList());
+            assertEquals("order by userid asc, email asc", orderBy(users, "UserId,Email"));
+        }
+
+        private String orderBy(TableInfo table, String sort)
+        {
+            return orderBy(table, new Sort(sort));
+        }
+
+        private String orderBy(TableInfo table, Sort sort)
+        {
+            String sql = QueryService.get().getSelectBuilder(table).sort(sort).maxRows(10).buildSqlFragment().getRawSQL();
+            String orderBy = sql.substring(sql.indexOf("ORDER BY"), sql.indexOf("LIMIT")).trim();
+            return orderBy.replaceAll("\\s+", " ").replace("\"", "").toLowerCase();
         }
 
         @Test
@@ -3799,6 +3880,67 @@ public class QueryServiceImpl implements QueryService
                 assertEquals("isnumeric('abc') on " + dialect, 0, results.getInt("n3"));
                 assertEquals("isnumeric(NULL) on " + dialect, 0, results.getInt("n4"));
             }
+        }
+
+        // GH Issue 1736
+        @Test
+        public void testRenameWithConcurrentCacheReload() throws Exception
+        {
+            DbScope scope = QueryManager.get().getDbSchema().getScope();
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            String oldName = "Users";
+            String newName = "junit" + GUID.makeHash();
+
+            QueryDef def = new QueryDef();
+            def.setSchema("core");
+            def.setName(oldName);
+            def.setContainer(c.getId());
+            def.setMetaData("<tables xmlns=\"http://labkey.org/data/xml\"><table tableName=\"" + oldName + "\" tableDbType=\"NOT_IN_DB\"><columns>" +
+                    "<column columnName=\"junitCalc\"><conceptURI>http://www.labkey.org/exp/xml#calculated</conceptURI><valueExpression>1</valueExpression></column>" +
+                    "</columns></table></tables>");
+            int queryDefId = QueryManager.get().insert(user, def).getQueryDefId();
+
+            GWTPropertyDescriptor calcField = new GWTPropertyDescriptor("junitCalc", PropertyType.INTEGER.getTypeUri());
+            calcField.setValueExpression("1");
+            // reloads the cache from committed data, as search indexing can while the rename is uncommitted
+            Runnable concurrentReload = () -> QueryManager.get().getQueryDef(c, "core", oldName, false);
+
+            try
+            {
+                try (DbScope.Transaction tx = scope.ensureTransaction())
+                {
+                    QueryManager.get().renameQuery(user, c, "core", oldName, newName);
+                    runOnOtherThread(concurrentReload);
+                    assertNull("Expected the cache to hold the pre-rename row", QueryManager.get().getQueryDef(c, "core", newName, false));
+
+                    QueryService.get().saveCalculatedFieldsMetadata("core", oldName, newName, List.of(calcField), true, user, c);
+                    runOnOtherThread(concurrentReload);
+                    tx.commit();
+                }
+
+                QueryDef saved = new TableSelector(QueryManager.get().getTableInfoQueryDef()).getObject(queryDefId, QueryDef.class);
+                assertEquals(newName, saved.getName());
+                assertTrue(saved.getMetaData(), saved.getMetaData().contains("tableName=\"" + newName + "\""));
+                assertTrue(saved.getMetaData(), saved.getMetaData().contains("junitCalc"));
+
+                assertNotNull("Cache should reload after commit", QueryManager.get().getQueryDef(c, "core", newName, false));
+                assertNull(QueryManager.get().getQueryDef(c, "core", oldName, false));
+            }
+            finally
+            {
+                QueryDef toDelete = new TableSelector(QueryManager.get().getTableInfoQueryDef()).getObject(queryDefId, QueryDef.class);
+                if (toDelete != null)
+                    QueryManager.get().delete(toDelete);
+            }
+        }
+
+        private void runOnOtherThread(Runnable r) throws InterruptedException
+        {
+            Thread t = new Thread(r);
+            t.start();
+            t.join(TimeUnit.SECONDS.toMillis(30));
+            assertFalse("Reader thread did not finish", t.isAlive());
         }
     }
 }

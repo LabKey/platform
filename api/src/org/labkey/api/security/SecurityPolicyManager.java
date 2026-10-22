@@ -38,6 +38,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.AddUserPermission;
@@ -76,7 +77,7 @@ public class SecurityPolicyManager
 
     static
     {
-        CACHE = DatabaseCache.get(core.getSchema().getScope(), Constants.getMaxContainers() * 3, "Security policies", (resourceId, argument) -> {
+        CACHE = DatabaseCache.get(String.class, core.getSchema().getScope(), Constants.getMaxContainers() * 3, "Security policies", (resourceId, argument) -> {
             Container c = (Container) argument;
             SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies(), SimpleFilter.createContainerFilter(c), null).getObject(resourceId, SecurityPolicyBean.class);
 
@@ -423,7 +424,7 @@ public class SecurityPolicyManager
 
         SQLFragment sql = new SQLFragment("DELETE FROM ");
         sql.append(core.getTableInfoRoleAssignments());
-        sql.append(" WHERE ResourceId ");
+        sql.unsafeAppend(" WHERE ResourceId ");
 
         List<String> resourceIds = new ArrayList<>(resources.size());
         for (SecurableResource resource : resources)
@@ -432,7 +433,7 @@ public class SecurityPolicyManager
         }
         core.getSqlDialect().appendInClauseSql(sql, resourceIds);
 
-        sql.append(" AND UserId ");
+        sql.unsafeAppend(" AND UserId ");
         List<Integer> userIds = new ArrayList<>(principals.size());
         for (UserPrincipal principal : principals)
         {
@@ -471,23 +472,15 @@ public class SecurityPolicyManager
     public static void removeAllChildren(Container c)
     {
         Set<Container> subtrees = ContainerManager.getAllChildren(c);
-        StringBuilder sb = new StringBuilder();
-        String comma = "";
+        SqlDialect dialect = core.getSqlDialect();
 
-        for (Container sub : subtrees)
-        {
-            sb.append(comma);
-            sb.append("'");
-            sb.append(sub.getId());
-            sb.append("'");
-            comma = ",";
-        }
-
-        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
-                "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container IN (" +
-                sb + "))");
-        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoPolicies() + "\n" +
-                "WHERE Container IN (" + sb + ")");
+        new SqlExecutor(core.getSchema()).execute(new SQLFragment("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
+                "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container")
+                .appendInClause(subtrees, dialect)
+                .append(")"));
+        new SqlExecutor(core.getSchema()).execute(new SQLFragment("DELETE FROM " + core.getTableInfoPolicies() + "\n" +
+                "WHERE Container")
+                .appendInClause(subtrees, dialect));
 
         removeAll();
     }

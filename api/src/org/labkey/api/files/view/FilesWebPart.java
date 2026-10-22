@@ -18,6 +18,7 @@ package org.labkey.api.files.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -120,7 +121,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
         else if (legacyFileRoot != null) // legacy file root
         {
-            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encodeURIComponent(FileContentService.PIPELINE_LINK)))
+            if (isLegacyPipelineRoot(legacyFileRoot))
             {
                 _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
@@ -403,6 +404,19 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             rootPath = rootPath.resolve(relativePath);
 
         return rootPath;
+    }
+
+    private static boolean isLegacyPipelineRoot(String legacyFileRoot)
+    {
+        return legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encodeURIComponent(FileContentService.PIPELINE_LINK));
+    }
+
+    /** Whether a Files web part with these trimmed property values displays a named file set, mirroring the constructor's precedence */
+    public static boolean usesNamedFileSet(@Nullable String legacyFileRoot, @Nullable String fileRoot)
+    {
+        if (fileRoot != null)
+            return StringUtils.stripStart(fileRoot, "/").startsWith(FileContentService.FILE_SETS_LINK);
+        return legacyFileRoot != null && !isLegacyPipelineRoot(legacyFileRoot) && !legacyFileRoot.startsWith(FileContentService.CLOUD_LINK);
     }
 
     /** @param folderFileRoot not-yet-URI-encoded relative path */
@@ -754,17 +768,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean isCloudStoreEnabled(Container container)
         {
             String pathString = _rootPath.toString();
-            int cloudIndex = StringUtils.indexOf(pathString, CLOUD_PATTERN);
+            int cloudIndex = Strings.CS.indexOf(pathString, CLOUD_PATTERN);
             int cloudPatternLength = CLOUD_PATTERN.length();
             if (-1 == cloudIndex)
             {
-                cloudIndex = StringUtils.indexOf(pathString, CLOUD_PATTERN_ENCODED);
+                cloudIndex = Strings.CS.indexOf(pathString, CLOUD_PATTERN_ENCODED);
                 cloudPatternLength = CLOUD_PATTERN_ENCODED.length();
             }
             if (-1 != cloudIndex)
             {
                 String config = StringUtils.substring(pathString, cloudIndex + cloudPatternLength);
-                int slashIndex = StringUtils.indexOf(config, "/");
+                int slashIndex = Strings.CS.indexOf(config, "/");
                 if (-1 != slashIndex)
                     config = StringUtils.substring(config, 0, slashIndex);
 
@@ -786,15 +800,15 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public boolean isCloudRootPath()
         {
             String pathString = _rootPath.toString();
-            return -1 != StringUtils.indexOf(pathString, CLOUD_PATTERN) ||
-                   -1 != StringUtils.indexOf(pathString, CLOUD_PATTERN_ENCODED);
+            return -1 != Strings.CS.indexOf(pathString, CLOUD_PATTERN) ||
+                   -1 != Strings.CS.indexOf(pathString, CLOUD_PATTERN_ENCODED);
         }
 
         public boolean isAtFilesRootPath()
         {
             String pathString = _rootPath.toString();
-            return -1 != StringUtils.indexOf(pathString, "@files/") ||
-                   -1 != StringUtils.indexOf(pathString, "%40files/");
+            return -1 != Strings.CS.indexOf(pathString, "@files/") ||
+                   -1 != Strings.CS.indexOf(pathString, "%40files/");
         }
 
         @Nullable

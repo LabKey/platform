@@ -23,8 +23,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.junit.JunitController" %>
 <%@ page import="org.labkey.core.junit.JunitController.JUnitViewBean" %>
-<%@ page import="org.labkey.core.junit.JunitController.Run2Action" %>
-<%@ page import="org.labkey.core.junit.JunitController.Run3Action" %>
 <%@ page import="org.labkey.core.junit.JunitController.RunAction" %>
 <%@ page import="java.util.stream.Stream" %>
 <%@ page import="static org.labkey.api.util.DOM.*" %>
@@ -96,14 +94,7 @@
                     NBSP,
                     button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")).usePost(),
                     NBSP,
-                    button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")).usePost(),
-
-                    NBSP, "\u22EE", NBSP,
-
-                    LK.FORM(at(style, "display:inline-block;", name, "run2", action, new ActionURL(Run2Action.class, getContainer()), method, "POST"),
-                            button("Run In Background #1 (Experimental)").submit(true)),
-                    NBSP,
-                    button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())).usePost()
+                    button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")).usePost()
                 ),
             HR()).appendTo(out);
 

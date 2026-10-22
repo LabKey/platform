@@ -27,8 +27,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryException;
@@ -38,6 +36,7 @@ import org.labkey.api.reader.StrictBoundedReader;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BadRequestException;
@@ -199,19 +198,12 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             }
             else
             {
-                Object response;
-                try (Timing ignored = MiniProfiler.step("execute"))
-                {
-                    response = execute(form, errors);
-                }
+                Object response = execute(form, errors);
 
-                try (Timing ignored = MiniProfiler.step("render"))
-                {
-                    if (isFailure(errors))
-                        writeResponse((Errors) errors);
-                    else if (null != response)
-                        writeResponse(response);
-                }
+                if (isFailure(errors))
+                    writeResponse((Errors) errors);
+                else if (null != response)
+                    writeResponse(response);
             }
         }
         catch (BindException e)
@@ -274,20 +266,17 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     @NotNull
     private FormAndErrors<FORM> populateForm() throws Exception
     {
-        try (Timing ignored = MiniProfiler.step("bind"))
+        String contentType = getViewContext().getRequest().getContentType();
+        if (null != contentType)
         {
-            String contentType = getViewContext().getRequest().getContentType();
-            if (null != contentType)
+            if (MimeMap.DEFAULT.isJsonContentTypeHeader(contentType))
             {
-                if (MimeMap.DEFAULT.isJsonContentTypeHeader(contentType))
-                {
-                    _reqFormat = ApiResponseWriter.Format.JSON;
-                    return populateJsonForm();
-                }
+                _reqFormat = ApiResponseWriter.Format.JSON;
+                return populateJsonForm();
             }
-
-            return defaultPopulateForm();
         }
+
+        return defaultPopulateForm();
     }
 
     // CONSIDER: Extract ApiRequestReader similar to the ApiResponseWriter
@@ -500,7 +489,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
         try (Reader reader = openRequestReader())
         {
-            JSONTokener tokener = new JSONTokener(reader);
+            JSONTokener tokener = new KeySharingJSONTokener(reader);
             return tokener.more() ? new JSONObject(tokener) : null;
         }
     }
@@ -564,10 +553,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     @Override
     public final void validate(@NotNull Object form, @NotNull Errors errors)
     {
-        try (Timing ignored = MiniProfiler.step("validate"))
-        {
-            validateForm((FORM) form, errors);
-        }
+        validateForm((FORM) form, errors);
     }
 
     /**

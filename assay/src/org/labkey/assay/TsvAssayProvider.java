@@ -346,6 +346,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
+    public boolean isTransformBeforeRunSupported(ExpProtocol protocol)
+    {
+        // Parsing plate data deletes hit selections of the run being replaced
+        return !isPlateMetadataEnabled(protocol);
+    }
+
+    @Override
     public PipelineProvider getPipelineProvider()
     {
         return new AssayPipelineProvider(assayModuleClass,
@@ -725,7 +732,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         if (!toRemove.isEmpty())
         {
             var sql = new SQLFragment("DELETE FROM ").append(table)
-                    .append(" WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
+                    .unsafeAppend(" WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
             new SqlExecutor(table.getSchema()).execute(sql);
         }
 

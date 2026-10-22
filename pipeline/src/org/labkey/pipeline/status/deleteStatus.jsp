@@ -16,13 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineStatusUrls" %>
+<%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.NetworkDrive" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -114,6 +114,9 @@
             sb.append("<ul>");
             for (PipelineStatusFileImpl child : children)
             {
+                Container childContainer = child.lookupContainer();
+                if (childContainer == null || !childContainer.hasPermission(getUser(), DeletePermission.class))
+                    continue;
                 sb.append(renderStatusFile(root, child, allRuns));
             }
             sb.append("</ul>");
@@ -131,10 +134,8 @@
 
     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
 
-    int[] rowIds = form.getRowIds();
-    if (rowIds == null)
-        rowIds = new int[0];
-    List<PipelineStatusFileImpl> files = PipelineStatusManager.getStatusFiles(rowIds);
+    // Already permission-checked by DeleteStatusAction.getView(); don't re-query by the client-supplied rowIds
+    List<PipelineStatusFileImpl> files = form.getStatusFiles();
 
     Set<ExpRun> allRuns = new LinkedHashSet<>();
 %>
@@ -174,12 +175,10 @@
 <p>
     <input type="hidden" name="confirm" value="true">
 <%
-    if (getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)
+    // Post back exactly the jobs listed above, so the delete acts on what was confirmed
+    for (PipelineStatusFileImpl file : files)
     {
-        for (String selectedValue : getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME))
-        {
-    %><input type="hidden" name="<%= h(DataRegion.SELECT_CHECKBOX_NAME) %>" value="<%= h(selectedValue) %>" /><%
-        }
+    %><input type="hidden" name="rowIds" value="<%= file.getRowId() %>" /><%
     }
 %>
 

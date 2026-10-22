@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -27,7 +28,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -103,7 +106,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.GUID;
@@ -130,12 +132,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
+import static org.labkey.api.audit.AuditHandler.USER_PROVIDED_DATA_PREFIX;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
@@ -153,7 +158,6 @@ import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
 /**
@@ -381,14 +385,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<String, Object> result = new HashMap<>();
         String unitsStr = "";
         String prefix;
+        String metadataPrefix;
         if (dataRow.containsKey(DELTA_PROVIDED_DATA_PREFIX + StoredAmount.name()))
+        {
             prefix = DELTA_PROVIDED_DATA_PREFIX;
+            metadataPrefix = DELTA_PROVIDED_DATA_PREFIX;
+        }
         else
         {
             // with no sample type display unit, no conversion will happen
             if (_sampleType == null || _sampleType.getMetricUnit() == null)
                 return null;
             prefix = PROVIDED_DATA_PREFIX;
+            metadataPrefix = USER_PROVIDED_DATA_PREFIX;
         }
         Object amountVal = dataRow.get(prefix + StoredAmount.name());
         if (amountVal == null)
@@ -397,7 +406,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (dataRow.get(prefix + Units.name()) != null)
             unitsStr = " " + dataRow.get(prefix + Units.name()).toString();
 
-        result.put(prefix + StoredAmount.label(), amountVal + unitsStr);
+        result.put(metadataPrefix + StoredAmount.label(), amountVal + unitsStr);
 
         return result;
     }
@@ -800,11 +809,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             List<Long> ids = new LinkedList<>();
 
-            for (Map<String, Object> k : keys)
+            // Issue 40621
+            // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
+            for (Map<String, Object> map : getMaterialMaps(keys))
             {
-                // Issue 40621
-                // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
-                Map<String, Object> map = getMaterialMap(k);
                 if (map == null)
                     throw new QueryUpdateServiceException("No Sample Type Material found for RowID or LSID");
 
@@ -897,11 +905,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return null;
     }
 
-    private Map<String, Object> getMaterialMap(Map<String, Object> keys) throws QueryUpdateServiceException
-    {
-        return getMaterialMap(keys, false);
-    }
-
     private Map<String, Object> getMaterialMap(Map<String, Object> keys, boolean useSampleType) throws QueryUpdateServiceException
     {
         Filter filter = getMaterialFilter(keys, useSampleType);
@@ -910,6 +913,77 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         return new TableSelector(getQueryTable(), filter, null).getMap();
     }
+
+    /** Batched {@link #getMaterialMap(Map, boolean)} without useSampleType: one result per key, in key order, null where no sample matched. */
+    private List<Map<String, Object>> getMaterialMaps(List<Map<String, Object>> keys) throws QueryUpdateServiceException
+    {
+        Set<Long> rowIds = new LongHashSet();
+        Set<String> lsids = new HashSet<>();
+        Map<Long, Set<String>> namesBySource = new HashMap<>();
+        for (Map<String, Object> k : keys)
+        {
+            Long rowId = getMaterialRowId(k);
+            String lsid = getMaterialLsid(k);
+            String name = getMaterialName(k);
+            Long materialSourceId = getMaterialSourceId(k);
+            if (rowId != null)
+                rowIds.add(rowId);
+            else if (lsid != null)
+                lsids.add(lsid);
+            else if (name != null && materialSourceId != null)
+                namesBySource.computeIfAbsent(materialSourceId, (_) -> new HashSet<>()).add(name);
+            else
+                throw new QueryUpdateServiceException("Either RowId, LSID, or Name and MaterialSourceId is required to get sample.");
+        }
+
+        Map<Long, Map<String, Object>> byRowId = new HashMap<>();
+        Map<String, Map<String, Object>> byLsid = new HashMap<>();
+        Map<SampleNameKey, Map<String, Object>> byName = new HashMap<>();
+        // Names are unique only per container, so a name can match a row in each container in scope
+        Set<SampleNameKey> ambiguousNames = new HashSet<>();
+        selectMaterialMaps(RowId.fieldKey(), rowIds, null, row -> byRowId.put(getMaterialRowId(row), row));
+        selectMaterialMaps(LSID.fieldKey(), lsids, null, row -> byLsid.put(getMaterialLsid(row), row));
+        for (Map.Entry<Long, Set<String>> e : namesBySource.entrySet())
+        {
+            selectMaterialMaps(Name.fieldKey(), e.getValue(), e.getKey(), row -> {
+                SampleNameKey key = new SampleNameKey(getMaterialSourceId(row), getMaterialName(row));
+                if (null != byName.put(key, row))
+                    ambiguousNames.add(key);
+            });
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>(keys.size());
+        for (Map<String, Object> k : keys)
+        {
+            Long rowId = getMaterialRowId(k);
+            String lsid = getMaterialLsid(k);
+            if (rowId != null)
+                result.add(byRowId.get(rowId));
+            else if (lsid != null)
+                result.add(byLsid.get(lsid));
+            else
+            {
+                SampleNameKey key = new SampleNameKey(getMaterialSourceId(k), getMaterialName(k));
+                if (ambiguousNames.contains(key))
+                    throw new QueryUpdateServiceException("Multiple samples named '" + key.name() + "' were found; use RowId or LSID to identify the sample.");
+                result.add(byName.get(key));
+            }
+        }
+        return result;
+    }
+
+    private <T> void selectMaterialMaps(FieldKey fieldKey, Collection<T> values, @Nullable Long materialSourceId, Consumer<Map<String, Object>> consumer)
+    {
+        for (List<T> batch : ListUtils.partition(new ArrayList<>(values), BatchSize.get(ROWS)))
+        {
+            SimpleFilter filter = new SimpleFilter(fieldKey, batch, CompareType.IN);
+            if (materialSourceId != null)
+                filter.addCondition(MaterialSourceId.fieldKey(), materialSourceId);
+            new TableSelector(getQueryTable(), filter, null).forEachMap(consumer::accept);
+        }
+    }
+
+    private record SampleNameKey(Long materialSourceId, String name) {}
 
     private record ExistingRowSelect(Set<String> columns, boolean includeParent) {}
 
@@ -1120,14 +1194,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
 
-        List<Map<String, Object>> result = new ArrayList<>(keys.size());
-        for (Map<String, Object> k : keys)
-        {
-            Map<String, Object> materialMap = getMaterialMap(k);
-            if (materialMap != null)
-                result.add(materialMap);
-        }
-        return result;
+        return getMaterialMaps(keys).stream().filter(Objects::nonNull).toList();
     }
 
     @Override
@@ -1157,7 +1224,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
-        var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
+        DbScope scope = getSchema().getDbSchema().getScope();
+        var tx = scope.getCurrentTransaction();
         Pair<Set<Long>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
         boolean useBackgroundRecalc = false;
         if (parentKeys != null)
@@ -1173,37 +1241,33 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!useBackgroundRecalc && parentKeys != null && !skipRecalc)
             handleRecalc(parentKeys.first, parentKeys.second, false, container);
 
-        if (tx != null)
+        // Sample data change notifications flag clients' cached "insights" counts as stale; deletes notify from ExperimentServiceImpl
+        if (tx != null && tx.isAborted())
         {
-            if (!tx.isAborted())
-            {
-                boolean finalUseBackgroundRecalc = useBackgroundRecalc;
-                boolean finalSkipRecalc = skipRecalc;
-                tx.addCommitTask(() -> {
-                    fireSamplesChanged(reason, changedSince);
-                    if (finalUseBackgroundRecalc && !finalSkipRecalc)
-                        handleRecalc(parentKeys.first, parentKeys.second, true, container);
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
-            }
-            else
-                LOG.info("Skipping onSamplesChanged callback; transaction aborted");
+            LOG.info("Skipping onSamplesChanged callback; transaction aborted");
+            return;
         }
-        else
-        {
-            fireSamplesChanged(reason, changedSince);
-        }
+
+        var backgroundRecalcKeys = useBackgroundRecalc && !skipRecalc ? parentKeys : null;
+        var change = new SampleChange(_sampleType, getUser(), container, reason, changedSince, backgroundRecalcKeys);
+        new SamplesChangedTask(getContainer()).register(scope, List.of(change), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     private void handleRecalc(Set<Long> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
     {
+        handleRecalc(_sampleType, rootRowIds, parentNames, useBackgroundThread, container);
+    }
+
+    private static void handleRecalc(@Nullable ExpSampleTypeImpl sampleType, Set<Long> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
+    {
         Runnable runRecalc = () -> {
             try
             {
-                if (_sampleType != null)
+                if (sampleType != null)
                 {
-                    var count = SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, rootRowIds, parentNames, container);
-                    if (count > 0)
-                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, rollup);
+                    var roots = SampleTypeServiceImpl.get().recomputeSampleTypeRollupRoots(sampleType, rootRowIds, parentNames, container);
+                    if (!roots.isEmpty())
+                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterRollup(sampleType, roots);
                 }
             }
             catch (SQLException e)
@@ -1222,14 +1286,58 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
-    {
-        if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null, reason, changedSince);
+    /** One update-service call's post-commit work; backgroundRecalcKeys holds the parent row ids and names to recalc off-thread, if any */
+    private record SampleChange(@Nullable ExpSampleTypeImpl sampleType, User user, Container container, SampleTypeServiceImpl.SampleChangeType reason,
+                                @Nullable Timestamp changedSince, @Nullable Pair<Set<Long>, Set<String>> backgroundRecalcKeys) {}
 
-        // Notify connected clients so cached "insights" counts can be flagged stale (insert/update/merge).
-        // Deletes bypass this path -- see ExperimentServiceImpl.deleteMaterialByRowIds for that notification.
-        SampleChangeNotify.fireSampleDataChanged(getContainer());
+    /**
+     * Refreshes each sample type once per change reason and runs one background recalc per sample type over every call's
+     * parents, then notifies clients once so they never see a pre-refresh count.
+     */
+    private static class SamplesChangedTask extends AccumulatingCommitTask<Container, SampleChange>
+    {
+        SamplesChangedTask(Container container)
+        {
+            super(container);
+        }
+
+        @Override
+        protected void process(@NotNull Container container, @NotNull Set<SampleChange> changes)
+        {
+            changes.stream()
+                .filter(change -> change.sampleType() != null)
+                .collect(Collectors.groupingBy(change -> change.sampleType().getLSID(), LinkedHashMap::new, Collectors.toList()))
+                .values()
+                .forEach(SamplesChangedTask::processSampleType);
+            SampleChangeNotify.fireSampleDataChanged(container);
+        }
+
+        private static void processSampleType(List<SampleChange> changes)
+        {
+            SampleChange first = changes.getFirst();
+            changes.stream().map(SampleChange::reason).distinct().forEach(reason ->
+                first.sampleType().onSamplesChanged(first.user(), null, reason, earliestChangedSince(changes, reason)));
+
+            changes.stream()
+                .filter(change -> change.backgroundRecalcKeys() != null)
+                .collect(Collectors.groupingBy(SampleChange::container, LinkedHashMap::new, Collectors.toList()))
+                .forEach((recalcContainer, recalcs) -> {
+                    Set<Long> rootRowIds = new LongHashSet();
+                    Set<String> parentNames = new HashSet<>();
+                    recalcs.forEach(recalc -> {
+                        rootRowIds.addAll(recalc.backgroundRecalcKeys().first);
+                        parentNames.addAll(recalc.backgroundRecalcKeys().second);
+                    });
+                    handleRecalc(first.sampleType(), rootRowIds, parentNames, true, recalcContainer);
+                });
+        }
+
+        /** A null watermark forces a full re-sync, which covers every other change of that reason */
+        private static @Nullable Timestamp earliestChangedSince(List<SampleChange> changes, SampleTypeServiceImpl.SampleChangeType reason)
+        {
+            List<Timestamp> watermarks = changes.stream().filter(change -> change.reason() == reason).map(SampleChange::changedSince).toList();
+            return watermarks.stream().anyMatch(Objects::isNull) ? null : Collections.min(watermarks);
+        }
     }
 
     static @Nullable Timestamp captureChangedSince()
@@ -1332,9 +1440,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         if (isUpdate)
                             continue;
 
-                        // While accepting RowId during merge is not our preferred behavior, we want to give users a way
-                        // to opt-in to the old behavior where RowId is accepted and ignored.
-                        if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE))
+                        if (isMerge)
                         {
                             context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging samples. Specify only the sample name instead.", RowId.name()));
                             return null;

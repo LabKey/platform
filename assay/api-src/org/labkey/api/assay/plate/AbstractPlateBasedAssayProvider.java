@@ -128,8 +128,8 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     @Override
     public FileLike getSampleMetadataFile(Container container, int runId)
     {
-        ExpRun run = ExperimentService.get().getExpRun(runId);
-        if (!run.getContainer().equals(container))
+        ExpRun run = ExperimentService.get().getExpRun(container, runId);
+        if (run == null)
             return null;
         if (getMetadataInputFormat(run.getProtocol()) == SampleMetadataInputFormat.MANUAL)
             return null;
@@ -407,7 +407,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
                 {
                     sql.append(separator);
                     separator = " UNION ";
-                    sql.append("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
+                    sql.unsafeAppend("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
                     sql.add(_valueGetter.getValue(e));
                     sql.add(_rowIdGetter.getRowId(e));
                     sql.add(e.ordinal());

@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -41,6 +40,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -54,11 +54,12 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
@@ -88,9 +89,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Materials/Samples", false);
     public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory("media", "Media Samples", false){
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+            return MediaReadPermission.class;
         }
     };
 
@@ -132,14 +133,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public @Nullable ExpSampleTypeImpl getSampleType()
     {
-        String type = _object.getCpasType();
-        if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
-        {
-            // try current container first (uses cache)
-            return SampleTypeServiceImpl.get().getSampleTypeByType(type, getContainer());
-        }
-
-        return null;
+        return ExperimentServiceImpl.get().getSampleTypeForCpasType(_object.getCpasType(), getContainer());
     }
 
     @Override
@@ -301,9 +295,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         TableInfo mapTi = ExperimentService.get().getTinfoMaterialAliasMap();
         TableInfo ti = ExperimentService.get().getTinfoAlias();
         SQLFragment sql = new SQLFragment()
-                .append("SELECT a.name FROM ").append(mapTi, "m")
-                .append(" JOIN ").append(ti, "a")
-                .append(" ON m.alias = a.RowId WHERE m.lsid = ? ");
+                .unsafeAppend("SELECT a.name FROM ").append(mapTi, "m")
+                .unsafeAppend(" JOIN ").append(ti, "a")
+                .unsafeAppend(" ON m.alias = a.RowId WHERE m.lsid = ? ");
         sql.add(getLSID());
         ArrayList<String> aliases = new SqlSelector(mapTi.getSchema(), sql).getArrayList(String.class);
         return Collections.unmodifiableList(aliases);
@@ -386,6 +380,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    protected @Nullable ExpObject getSearchTableType()
+    {
+        return getSampleType();
+    }
+
+    @Override
+    protected @NotNull SchemaKey getSearchSchemaKey()
+    {
+        return SCHEMA_SAMPLES;
+    }
+
+    @Override
     public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo tableInfo)
     {
         // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
@@ -435,7 +441,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         if (null != st)
         {
             if (tableInfo == null)
-                tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(st.getName());
+                tableInfo = getSearchTable(container, st);
 
             if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
                 throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", st.getName(), ExpMaterialTableImpl.class.getName()));
@@ -506,11 +512,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             JSONObject jsonData
     )
     {
-        CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet();
-        for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
-            skipColumns.add(column.name());
-
-        processIndexValues(props, table, skipColumns, identifiersHi, new HashSet<>(), new HashSet<>(), keywordsHi, new HashSet<>(), new HashSet<>(), jsonData);
+        processIndexValues(props, table, identifiersHi, new HashSet<>(), new HashSet<>(), keywordsHi, new HashSet<>(), new HashSet<>(), jsonData);
     }
 
     static final List<Pair<Long,Long>> updateLastIndexedList = new ArrayList<>();

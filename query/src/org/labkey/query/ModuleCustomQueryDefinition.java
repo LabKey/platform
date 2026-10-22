@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
@@ -24,6 +25,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.EditModuleResourcesPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.query.persist.QueryDef;
 
@@ -86,6 +88,16 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     public File getSqlFile()
     {
         return _resourceSqlFile;
+    }
+
+    // GH Issue 1512: module queries carry no QueryDef.Modified. Source files (dev mode only) version on
+    // .sql + .query.xml mtimes; otherwise resources are fixed until restart.
+    @Override
+    protected @Nullable String getHasPkCacheVersion()
+    {
+        if (null != _resourceSqlFile)
+            return "module:" + _resourceSqlFile.lastModified() + ":" + _resourceQueryXmlFile.lastModified();
+        return AppProps.getInstance().isDevMode() ? null : "module:" + _moduleName;
     }
 
     public File getModuleXmlFile()

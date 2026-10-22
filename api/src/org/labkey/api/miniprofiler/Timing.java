@@ -187,12 +187,6 @@ public class Timing implements AutoCloseable
     }
 
     @JsonIgnore
-    public boolean isTrivial()
-    {
-        return getDurationExclusive() <= MiniProfiler.getSettings(_req.getUser()).getTrivialMillis();
-    }
-
-    @JsonIgnore
     public boolean isRoot()
     {
         return _req.getRoot() == this;
@@ -260,8 +254,6 @@ public class Timing implements AutoCloseable
 
         for (Timing child : _children)
         {
-            if (child.isTrivial())
-                continue;
             child.dump(sb);
         }
     }

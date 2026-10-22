@@ -21,6 +21,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,11 +29,10 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
@@ -46,7 +46,6 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -73,6 +72,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.ModelAndView;
@@ -92,17 +93,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static org.labkey.api.ApiModule.ALLOW_MUTATING_SQL_VIA_GET;
 import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
@@ -191,7 +191,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public interface ActionResolver
     {
         Controller resolveActionName(Controller actionController, String actionName);
-        void addTime(Controller action, long elapsedTime);
+        void addTime(Controller action, long elapsedTime, @Nullable ConnectionUsage.Snapshot connectionUsage);
         Collection<ActionDescriptor> getActionDescriptors();
     }
 
@@ -203,7 +203,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Class<? extends Controller> getActionClass();
         Controller createController(Controller actionController);
 
-        void addTime(long time);
+        void addTime(long time, @Nullable ConnectionUsage.Snapshot connectionUsage);
         void addException(Exception x);
         ActionStats getStats();
     }
@@ -214,8 +214,34 @@ public abstract class SpringActionController implements Controller, HasViewConte
         long getCount();
         long getElapsedTime();
         long getMaxTime();
+        /** Invocations measured since connection tracking was last turned on; the connection stats cover only these */
+        long getTrackedCount();
+        long getTrackedElapsedTime();
+        long getBorrows();
+        /** Summed over connections, so exceeds wall time when a request holds several at once */
+        long getConnectionHeldTime();
+        /** Time holding at least one connection */
+        long getConnectionWallTime();
+        int getMaxConcurrent();
+        long getAcquireTime();
+        /** Portion of acquire time inside the pool's getConnection() */
+        long getAcquirePoolTime();
+        /** Portion of acquire time in per-connection setup */
+        long getAcquireSetupTime();
+        long getUnreturned();
         boolean hasExceptions();
         List<Exception> getExceptions();
+
+        default double getBorrowsPerInvocation()
+        {
+            return 0 == getTrackedCount() ? 0 : getBorrows() / (double) getTrackedCount();
+        }
+
+        /** Clamped because elapsed time has millisecond resolution and connection time has nanosecond resolution */
+        default double getConnectionWallFraction()
+        {
+            return 0 == getTrackedElapsedTime() ? 0 : Math.min(1.0, getConnectionWallTime() / (double) getTrackedElapsedTime());
+        }
     }
 
     ApplicationContext _applicationContext = null;
@@ -341,6 +367,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, BadRequestException x) throws Exception
+    {
+        return handleBadRequestException(request, response, controller, x, HttpServletResponse.SC_BAD_REQUEST);
+    }
+
+    private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, BadRequestException x, int status) throws Exception
    {
        // TODO: we are assuming that all ApiActions respond with JSON and all !ApiAction respond HTML. Would be better to be explicit.
        boolean jsonResponse = controller instanceof BaseApiAction;
@@ -353,13 +384,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
            {
                // Issue 53120: Set content-type, status when responding with JSON content
                response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
-               response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+               response.setStatus(status);
            }
 
            Writer w = response.getWriter();
            JSONObject json = new JSONObject();
            json.put("success", false);
-           json.put("status", HttpServletResponse.SC_BAD_REQUEST);
+           json.put("status", status);
            json.put("exception", x.getMessage());
            if (htmlWrappedJson)
                w.write("<html><body><textarea>");
@@ -371,7 +402,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
        if (textResponse)
        {
-           response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+           response.setStatus(status);
            response.setContentType("text/plain");
            Writer w = response.getWriter();
            w.write(x.getMessage());
@@ -381,7 +412,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
        // TODO design/text for custom view
        if (x instanceof AntiVirusException)
        {
-           response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+           response.setStatus(status);
            HttpView<?> view = SimpleErrorView.fromMessage(x.getMessage());
 
            PageConfig page = new PageConfig(request);
@@ -390,7 +421,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
            return null;
        }
 
-       response.sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
+       response.sendError(status, x.getMessage());
        return null;
    }
 
@@ -421,6 +452,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
+        ConnectionUsage.Mark connectionMark = ConnectionUsage.mark();
         Controller controller = null;
         PageConfig pageConfig = null;
 
@@ -474,22 +506,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             {
                 MemTracker.get().ignore();
             }
-            else
-            {
-                // Don't send back mini-profiler id if the user won't be able to get the profiler info
-                if (MiniProfiler.isEnabled(context))
-                {
-                    RequestInfo req = MemTracker.get().current();
-                    if (req != null)
-                    {
-                        LinkedHashSet<Long> ids = new LinkedHashSet<>();
-                        ids.add(req.getId());
-                        ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
-
-                        response.setHeader("X-MiniProfiler-Ids", ids.toString());
-                    }
-                }
-            }
 
             // MULTIPART-FORMDATA handling (before permission check because permissionCheck needs CSRF parameter)
             String contentType = request.getContentType();
@@ -511,12 +527,30 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // TODO Better/custom error report page/response
                     if (x.getCause() instanceof BadRequestException)
                         return handleBadRequestException(request, response, controller, (BadRequestException)x.getCause());
+                    if (x instanceof MultipartException && ExceptionUtil.isClientRequestFailure(x))
+                    {
+                        _log.debug("Unable to parse multipart request", x);
+                        int status;
+                        String message;
+                        if (x instanceof MaxUploadSizeExceededException)
+                        {
+                            status = HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE;
+                            message = StringUtils.defaultIfBlank(ExceptionUtils.getRootCause(x).getMessage(), x.getMessage());
+                        }
+                        else
+                        {
+                            status = HttpServletResponse.SC_BAD_REQUEST;
+                            message = "Unable to parse multipart request";
+                        }
+                        return handleBadRequestException(request, response, controller, new BadRequestException(message, x), status);
+                    }
                     throw x;
                 }
             }
 
             checkable.checkPermissions();
 
+            boolean export = ExportAction.class.isAssignableFrom(actionClass);
             // Actions can annotate themselves with an ActionType, which helps custom schemas that want to limit access from generic actions
             if (actionClass.isAnnotationPresent(Action.class))
             {
@@ -526,11 +560,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     actionAnnotation.value().equals(ActionType.SelectData.class) ||
                     actionAnnotation.value().equals(ActionType.SelectMetaData.class))
                 {
-                    // Consider these action types read-only and eligible for killing after a timeout
+                    // Consider these action types read-only and, except for exports, eligible for killing after a timeout
                     request.setAttribute(TransactionFilter.READ_ONLY_ATTRIBUTE_NAME, true);
                 }
+                export |= actionAnnotation.value().equals(ActionType.Export.class);
                 QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
+
+            if (export)
+                request.setAttribute(TransactionFilter.EXPORT_ATTRIBUTE_NAME, true);
 
             // After the permission check so unauthorized requests can't consume @ConcurrencyLimit permits, and held
             // through rendering because the action's memory is live for that whole time.
@@ -556,11 +594,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         finally
         {
-            afterAction(throwable);
-            clearActionForThread(controller);
+            try
+            {
+                afterAction(throwable);
+                clearActionForThread(controller);
+            }
+            finally
+            {
+                // Measure even when no action resolved, else the unclosed mark stays on this pooled thread forever
+                ConnectionUsage.Snapshot connectionUsage = ConnectionUsage.measure(connectionMark);
 
-            if (null != controller)
-                _actionResolver.addTime(controller, System.currentTimeMillis() - startTime);
+                if (null != controller)
+                    _actionResolver.addTime(controller, System.currentTimeMillis() - startTime, connectionUsage);
+            }
         }
 
         return null;
@@ -783,16 +829,60 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private long _count = 0;
         private long _elapsedTime = 0;
         private long _maxTime = 0;
+        private long _borrows = 0;
+        private long _heldNanos = 0;
+        private long _wallNanos = 0;
+        private int _maxConcurrent = 0;
+        private long _acquireNanos = 0;
+        private long _acquirePoolNanos = 0;
+        private long _acquireSetupNanos = 0;
+        private long _unreturned = 0;
+        private long _trackedCount = 0;
+        private long _trackedElapsedTime = 0;
+        private int _connectionGeneration = 0;
         private List<Exception> _exceptions = null;
 
         @Override
-        synchronized public void addTime(long time)
+        synchronized public void addTime(long time, @Nullable ConnectionUsage.Snapshot connectionUsage)
         {
             _count++;
             _elapsedTime += time;
 
             if (time > _maxTime)
                 _maxTime = time;
+
+            if (null == connectionUsage || !connectionUsage.isCurrent())
+                return;
+
+            syncConnectionGeneration(connectionUsage.generation());
+            _trackedCount++;
+            _trackedElapsedTime += time;
+            _borrows += connectionUsage.borrows();
+            _heldNanos += connectionUsage.heldNanos();
+            _wallNanos += connectionUsage.wallNanos();
+            _maxConcurrent = Math.max(_maxConcurrent, connectionUsage.maxConcurrent());
+            _acquireNanos += connectionUsage.acquireNanos();
+            _acquirePoolNanos += connectionUsage.poolNanos();
+            _acquireSetupNanos += connectionUsage.setupNanos();
+            _unreturned += connectionUsage.unreturned();
+        }
+
+        private void syncConnectionGeneration(int generation)
+        {
+            if (generation == _connectionGeneration)
+                return;
+
+            _connectionGeneration = generation;
+            _trackedCount = 0;
+            _trackedElapsedTime = 0;
+            _borrows = 0;
+            _heldNanos = 0;
+            _wallNanos = 0;
+            _maxConcurrent = 0;
+            _acquireNanos = 0;
+            _acquirePoolNanos = 0;
+            _acquireSetupNanos = 0;
+            _unreturned = 0;
         }
 
         @Override
@@ -807,7 +897,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
         @Override
         synchronized public ActionStats getStats()
         {
-            return new BaseActionStats(_count, _elapsedTime, _maxTime, _exceptions);
+            syncConnectionGeneration(ConnectionUsage.getGeneration());
+            return new BaseActionStats(_count, _elapsedTime, _maxTime, _trackedCount, _trackedElapsedTime, _borrows, _heldNanos, _wallNanos, _maxConcurrent, _acquireNanos, _acquirePoolNanos, _acquireSetupNanos, _unreturned, _exceptions);
         }
 
         // Immutable stats holder to eliminate external synchronization needs
@@ -816,13 +907,33 @@ public abstract class SpringActionController implements Controller, HasViewConte
             private final long _count;
             private final long _elapsedTime;
             private final long _maxTime;
+            private final long _trackedCount;
+            private final long _trackedElapsedTime;
+            private final long _borrows;
+            private final long _heldNanos;
+            private final long _wallNanos;
+            private final int _maxConcurrent;
+            private final long _acquireNanos;
+            private final long _acquirePoolNanos;
+            private final long _acquireSetupNanos;
+            private final long _unreturned;
             private final List<Exception> _exceptions;
 
-            private BaseActionStats(long count, long elapsedTime, long maxTime, List<Exception> ex)
+            private BaseActionStats(long count, long elapsedTime, long maxTime, long trackedCount, long trackedElapsedTime, long borrows, long heldNanos, long wallNanos, int maxConcurrent, long acquireNanos, long acquirePoolNanos, long acquireSetupNanos, long unreturned, List<Exception> ex)
             {
                 _count = count;
                 _elapsedTime = elapsedTime;
                 _maxTime = maxTime;
+                _trackedCount = trackedCount;
+                _trackedElapsedTime = trackedElapsedTime;
+                _borrows = borrows;
+                _heldNanos = heldNanos;
+                _wallNanos = wallNanos;
+                _maxConcurrent = maxConcurrent;
+                _acquireNanos = acquireNanos;
+                _acquirePoolNanos = acquirePoolNanos;
+                _acquireSetupNanos = acquireSetupNanos;
+                _unreturned = unreturned;
                 _exceptions = ex;
             }
 
@@ -842,6 +953,66 @@ public abstract class SpringActionController implements Controller, HasViewConte
             public long getMaxTime()
             {
                 return _maxTime;
+            }
+
+            @Override
+            public long getTrackedCount()
+            {
+                return _trackedCount;
+            }
+
+            @Override
+            public long getTrackedElapsedTime()
+            {
+                return _trackedElapsedTime;
+            }
+
+            @Override
+            public long getBorrows()
+            {
+                return _borrows;
+            }
+
+            @Override
+            public long getConnectionHeldTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_heldNanos);
+            }
+
+            @Override
+            public long getConnectionWallTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_wallNanos);
+            }
+
+            @Override
+            public int getMaxConcurrent()
+            {
+                return _maxConcurrent;
+            }
+
+            @Override
+            public long getAcquireTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquireNanos);
+            }
+
+            @Override
+            public long getAcquirePoolTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquirePoolNanos);
+            }
+
+            @Override
+            public long getAcquireSetupTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquireSetupNanos);
+            }
+
+            @Override
+            public long getUnreturned()
+            {
+                return _unreturned;
             }
 
             @Override
@@ -881,7 +1052,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
         @Override
-        public void addTime(Controller action, long elapsedTime)
+        public void addTime(Controller action, long elapsedTime, @Nullable ConnectionUsage.Snapshot connectionUsage)
         {
             /* Never called */
         }        
@@ -1059,11 +1230,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
 
         @Override
-        public void addTime(Controller action, long elapsedTime)
+        public void addTime(Controller action, long elapsedTime, @Nullable ConnectionUsage.Snapshot connectionUsage)
         {
             ActionDescriptor ad = getActionDescriptor(action.getClass());
             if (null != ad)
-                ad.addTime(elapsedTime);
+                ad.addTime(elapsedTime, connectionUsage);
         }
 
 
@@ -1293,11 +1464,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             String mutatingSql = mutatingSqlSupplier.get();
             if (mutatingSql != null)
             {
-                // Checking late in the game to ensure OptionalFeatureService has been initialized and to avoid
-                // reentrancy when querying this optional feature flag's value when it's not already cached.
-                if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
-                    return;
-
                 boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(actionClass.getName());
                 String message = "MUTATING SQL executed as part of handling action: " +
                         (null == vc ? "" : vc.getRequest().getMethod()) + " " +

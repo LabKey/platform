@@ -243,10 +243,9 @@ public class AnnouncementManager
 
     public static @Nullable Integer getLatestPostId(AnnouncementModel parent)
     {
-        SQLFragment sql = new SQLFragment( "SELECT LatestId FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT LatestId FROM ");
         sql.append(_comm.getTableInfoThreads(), "t");
-        sql.append(" WHERE RowId = ?");
-        sql.add(parent.getRowId());
+        sql.unsafeAppend(" WHERE RowId = ?", parent.getRowId());
         return new SqlSelector(_comm.getSchema(), sql).getObject(Integer.class);
     }
 
@@ -653,8 +652,14 @@ public class AnnouncementManager
     // Most recent member list is attached to the most recent approved post
     static List<Integer> getMemberList(AnnouncementModel ann)
     {
-        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?",
-                AnnouncementManager.getLatestPostId(ann) != null ? AnnouncementManager.getLatestPostId(ann) : ann.getRowId());
+        Integer latestPostId = getLatestPostId(ann);
+        return getPostMemberList(latestPostId != null ? latestPostId : ann.getRowId());
+    }
+
+    // The member list saved on this specific post, which is the thread's current list only if it's the latest post
+    public static List<Integer> getPostMemberList(int messageId)
+    {
+        SQLFragment sql = SQLFragment.unsafe("SELECT UserId FROM ").append(_comm.getTableInfoMemberList()).unsafeAppend(" WHERE MessageId = ?", messageId);
 
         return new SqlSelector(_comm.getSchema(), sql).getArrayList(Integer.class);
     }
@@ -763,7 +768,7 @@ public class AnnouncementManager
 
     public static long getMessageCount(Container c)
     {
-        return new TableSelector( _comm.getTableInfoAnnouncements(), SimpleFilter.createContainerFilter(c), null).getRowCount();
+        return new TableSelector(_comm.getTableInfoAnnouncements(), SimpleFilter.createContainerFilter(c), null).getRowCount();
     }
 
     public static Collection<? extends NotificationOption> getEmailOptions()
@@ -805,7 +810,7 @@ public class AnnouncementManager
             return EmailOption.MESSAGES_NONE.getValue();
     }
 
-    private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
+    public static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
     public static void saveMessageBoardSettings(Container c, Settings settings)
     {
@@ -849,12 +854,11 @@ public class AnnouncementManager
         // Note: Attachments are handled by AttachmentServiceImpl
 
         // Delete rows from UserList first because of the FK
-        SQLFragment sql = new SQLFragment("DELETE FROM ")
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
             .append(CommSchema.getInstance().getTableInfoMemberList())
-            .append(" WHERE MessageId IN (SELECT RowId FROM ")
+            .unsafeAppend(" WHERE MessageId IN (SELECT RowId FROM ")
             .append(CommSchema.getInstance().getTableInfoAnnouncements())
-            .append(" WHERE Container = ?)")
-            .add(c);
+            .unsafeAppend(" WHERE Container = ?)", c);
         new SqlExecutor(CommSchema.getInstance().getSchema()).execute(sql);
 
         // Now delete the announcements
@@ -876,21 +880,18 @@ public class AnnouncementManager
         if (null == c || isSecure(c))
             return;
 
-        SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads() + " _t_ ");
-        sql.append(" WHERE Container = ?");
-        sql.add(c);
-        String and = " AND ";
+        SQLFragment sql = SQLFragment.unsafe("SELECT EntityId FROM ").append(_comm.getTableInfoThreads()).unsafeAppend(" _t_ ");
+        sql.unsafeAppend(" WHERE Container = ?", c);
 
         if (null != threadId)
         {
-            sql.append(and).append(" EntityId = ?");
-            sql.add(threadId);
+            sql.unsafeAppend(" AND EntityId = ?", threadId);
         }
         else
         {
             SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, "_t_").toSQLFragment(null, null);
             if (!modified.isEmpty())
-                sql.append(and).append(modified);
+                sql.unsafeAppend(" AND ").append(modified);
         }
 
         // Push a ViewContext onto the stack before translating the bodies; announcements may need this to render embedded webparts.
@@ -943,23 +944,19 @@ public class AnnouncementManager
         // Get the attachments... unfortunately, they're attached to individual announcementModels, not to the thread,
         // so we need a different query.
         // find all messages that have attachments
-        sql = new SQLFragment("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent");
-        sql.append("\nWHERE a.container = ?");
-        sql.add(c);
-        and = " AND ";
+        sql = SQLFragment.unsafe("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM ").append(_comm.getTableInfoAnnouncements()).unsafeAppend(" a INNER JOIN core.Documents d ON a.entityid = d.parent");
+        sql.unsafeAppend("\nWHERE a.container = ?", c);
         if (null != threadId)
         {
-            sql.append(and).append("(a.entityId = ? OR a.parent = ?)");
-            sql.add(threadId);
-            sql.add(threadId);
+            sql.unsafeAppend(" AND (a.entityId = ? OR a.parent = ?)", threadId, threadId);
         }
         else
         {
             SQLFragment modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoDocuments(), modifiedSince, "d").toSQLFragment(null, null);
             if (!modified.isEmpty())
-                sql.append(and).append(modified);
+                sql.unsafeAppend(" AND ").append(modified);
         }
-        sql.append("\nGROUP BY a.EntityId");
+        sql.unsafeAppend("\nGROUP BY a.EntityId");
 
         final Collection<String> annIds = new HashSet<>();
         final Map<String, AnnouncementModel> map = new HashMap<>();

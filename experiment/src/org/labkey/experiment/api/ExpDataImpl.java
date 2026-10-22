@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -39,9 +38,9 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
@@ -50,7 +49,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
@@ -133,16 +132,16 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData", false) {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, DataClassReadPermission.class);
+            return DataClassReadPermission.class;
         }
     };
     public static final SearchService.SearchCategory expMediaDataCategory = new SearchService.SearchCategory("mediaData", "ExpData for media objects", false) {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+            return MediaReadPermission.class;
         }
     };
 
@@ -426,6 +425,18 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     @Override
+    protected @Nullable ExpObject getSearchTableType()
+    {
+        return getDataClass(User.getSearchUser());
+    }
+
+    @Override
+    protected @NotNull SchemaKey getSearchSchemaKey()
+    {
+        return SCHEMA_EXP_DATA;
+    }
+
+    @Override
     @Nullable
     public ExpDataClassImpl getDataClass(@Nullable User user)
     {
@@ -503,13 +514,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         JSONObject jsonData
     )
     {
-        CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet();
-        for (ExpDataClassDataTable.Column column : ExpDataClassDataTable.Column.values())
-            skipColumns.add(column.name());
-        skipColumns.add("Ancestors");
-        skipColumns.add("Container");
-
-        processIndexValues(props, table, skipColumns, identifiersHi, identifiersMed, identifiersLo, keywordHi, keywordMed, keywordsLo, jsonData);
+        processIndexValues(props, table, identifiersHi, identifiersMed, identifiersLo, keywordHi, keywordMed, keywordsLo, jsonData);
     }
 
     @Override
@@ -519,9 +524,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         TableInfo mapTi = ExperimentService.get().getTinfoDataAliasMap();
         TableInfo ti = ExperimentService.get().getTinfoAlias();
         SQLFragment sql = new SQLFragment()
-                .append("SELECT a.name FROM ").append(mapTi, "m")
-                .append(" JOIN ").append(ti, "a")
-                .append(" ON m.alias = a.RowId WHERE m.lsid = ? ");
+                .unsafeAppend("SELECT a.name FROM ").append(mapTi, "m")
+                .unsafeAppend(" JOIN ").append(ti, "a")
+                .unsafeAppend(" ON m.alias = a.RowId WHERE m.lsid = ? ");
         sql.add(getLSID());
         ArrayList<String> aliases = new SqlSelector(mapTi.getSchema(), sql).getArrayList(String.class);
         return Collections.unmodifiableList(aliases);
@@ -747,7 +752,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             body.append(dc.getName());
 
             if (tableInfo == null)
-                tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_EXP_DATA).getTable(dc.getName());
+                tableInfo = getSearchTable(container, dc);
 
             if (!(tableInfo instanceof ExpDataClassDataTableImpl expDataClassDataTable))
                 throw new IllegalArgumentException(String.format("Unable to index data class item in %s. Table must be an instance of %s", dc.getName(), ExpDataClassDataTableImpl.class.getName()));

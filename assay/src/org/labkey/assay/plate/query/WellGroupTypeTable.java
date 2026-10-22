@@ -51,7 +51,7 @@ public class WellGroupTypeTable extends EnumTableInfo<WellGroup.Type>
         {
             sql.append(separator);
             separator = " UNION ";
-            sql.append("SELECT ? AS Value, ? AS RowId, ? AS Label, ? AS Ordinal");
+            sql.unsafeAppend("SELECT ? AS Value, ? AS RowId, ? AS Label, ? AS Ordinal");
             sql.add(_valueGetter.getValue(e));
             sql.add(_rowIdGetter.getRowId(e));
             sql.add(e.getLabel());

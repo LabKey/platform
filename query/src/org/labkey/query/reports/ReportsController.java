@@ -1318,10 +1318,10 @@ public class ReportsController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String sessionKey = (String) getViewContext().get(ImageUtil.FILE_SESSION_PARAM);
-            String deleteFile = (String) getViewContext().get(ImageUtil.DELETE_FILE_PARAM);
-            String attachment = (String) getViewContext().get(ImageUtil.ATTACHMENT_PARAM);
-            String cacheFile = (String) getViewContext().get(ImageUtil.CACHE_FILE_PARAM);
+            String sessionKey = getViewContext().getString(ImageUtil.FILE_SESSION_PARAM);
+            String deleteFile = getViewContext().getString(ImageUtil.DELETE_FILE_PARAM);
+            String attachment = getViewContext().getString(ImageUtil.ATTACHMENT_PARAM);
+            String cacheFile = getViewContext().getString(ImageUtil.CACHE_FILE_PARAM);
             if (sessionKey != null)
             {
                 FileLike file = ImageUtil.getFileFromSession(getViewContext().getRequest(), sessionKey);
@@ -2234,8 +2234,8 @@ public class ReportsController extends SpringActionController
         public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier((String)getViewContext().get(ReportDescriptor.Prop.reportId.name()), getViewContext().getUser(), getViewContext().getContainer());
-            String sections = (String)getViewContext().get(Report.renderParam.showSection.name());
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(getViewContext().getString(ReportDescriptor.Prop.reportId.name()), getViewContext().getUser(), getViewContext().getContainer());
+            String sections = getViewContext().getString(Report.renderParam.showSection.name());
             if (reportId != null)
             {
                 Report report = reportId.getReport(getViewContext());

@@ -16,6 +16,7 @@
 package org.labkey.assay.data.generator;
 
 import org.labkey.api.assay.AssayDomainService;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.generator.DataGenerator;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -48,6 +49,11 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         if (numAssayDesigns <= 0)
         {
             _log.info("No assay designs generated because {}={}", Config.NUM_ASSAY_DESIGNS, numAssayDesigns);
+            return;
+        }
+        if (!getContainer().hasPermission(_job.getUser(), DesignAssayPermission.class))
+        {
+            _log.warn("No assay designs generated because the user lacks the proper permissions in this container.");
             return;
         }
         checkAlive(_job);

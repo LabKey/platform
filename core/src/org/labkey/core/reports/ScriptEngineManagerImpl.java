@@ -54,10 +54,10 @@ import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.report.r.RserveScriptEngineFactory;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.Encryption;
+import org.labkey.api.security.Encryption.AESConfig;
 import org.labkey.api.security.Encryption.Algorithm;
 import org.labkey.api.security.Encryption.DecryptionException;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
-import org.labkey.api.security.Encryption.AESConfig;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -95,7 +95,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     // cache engine definitions by:
     // - "ALL" -> all engines
     // - container+context -> engines scoped to a single container and context enum
-    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "Script engine definitions", (key, _) -> {
+    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingCache(String.class, 100, CacheManager.DAY, "Script engine definitions", (key, _) -> {
         if (ALL_ENGINES.equals(key))
         {
             // fetch all script engine definitions
@@ -111,9 +111,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             // fetch script engine definitions scoped to the container
             SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
-                .append(" WHERE RowId IN (SELECT EngineId FROM ")
+                .unsafeAppend(" WHERE RowId IN (SELECT EngineId FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .append(" WHERE Container = ? AND EngineContext = ?)")
+                .unsafeAppend(" WHERE Container = ? AND EngineContext = ?)")
                 .add(containerId)
                 .add(context);
 
@@ -431,7 +431,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
                 SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                        .append(" WHERE Container = ? AND EngineContext = ?")
+                        .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                         .add(container)
                         .add(context);
 
@@ -439,7 +439,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 {
                     SQLFragment insert = new SQLFragment("INSERT INTO ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                            .append(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
+                            .unsafeAppend(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
                             .add(def.getRowId())
                             .add(container)
                             .add(context);
@@ -450,8 +450,8 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 {
                     SQLFragment update = new SQLFragment("UPDATE ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                            .append(" SET EngineId = ? ")
-                            .append(" WHERE Container = ? AND EngineContext = ?")
+                            .unsafeAppend(" SET EngineId = ? ")
+                            .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                             .add(def.getRowId())
                             .add(container)
                             .add(context);
@@ -473,7 +473,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             SQLFragment sql = new SQLFragment("DELETE FROM ")
                     .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE Container = ? AND EngineContext = ?")
+                    .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                     .add(container)
                     .add(context);
 

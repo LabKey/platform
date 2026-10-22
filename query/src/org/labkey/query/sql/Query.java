@@ -375,12 +375,12 @@ public class Query
 	public void setRootTable(FieldKey key)
 	{
 		SourceBuilder builder = new SourceBuilder();
-		builder.append("SELECT ");
+		builder.unsafeAppend("SELECT ");
 		builder.pushPrefix("");
 		QueryRelation relation = resolveTable(getSchema(), null, key, key.getName(), null);
 		if (relation == null)
 		{
-			builder.append("'Table not found' AS message");
+			builder.unsafeAppend("'Table not found' AS message");
 		}
 		else
 		{
@@ -430,7 +430,7 @@ public class Query
                 List<String> pkNames = null == table ? null : table.getPkColumnNames();
                 if (null == pkNames || pkNames.isEmpty())
                 {
-                    builder.append("'No columns selected' AS message");
+                    builder.unsafeAppend("'No columns selected' AS message");
                 }
                 else
                 {
@@ -447,11 +447,11 @@ public class Query
             }
 		}
 		builder.popPrefix();
-		builder.append("\nFROM ");
+		builder.unsafeAppend("\nFROM ");
 		QFieldKey.of(new FieldKey(key.getParent(), key.getName())).appendSource(builder);
 		if (key.getParent() != null)
 		{
-			builder.append(" AS ");
+			builder.unsafeAppend(" AS ");
 			new QIdentifier(key.getName()).appendSource(builder);
 		}
 		parse(builder.getText());
@@ -607,8 +607,6 @@ public class Query
             assertParsed();
             if (!_parseErrors.isEmpty())
                 return null;
-
-            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getSchema().getContainer());
 
             TableInfo tinfo = _queryRoot.getTableInfo();
 

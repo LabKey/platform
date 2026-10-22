@@ -113,7 +113,6 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CachingSupplier;
@@ -173,7 +172,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
     {
-        super(name, ExperimentService.get().getTinfoData(), schema, cf);
+        super(name, ExperimentService.get().getTinfoData(), schema, ExpDataClassDataTable.Column.class, cf);
         _dataClass = dataClass;
         _dataClassDataTableSupplier = new CachingSupplier<>(_dataClass::getTinfo);
         addAllowablePermission(InsertPermission.class);
@@ -495,7 +494,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         ColumnInfo colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
-        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _dataClass, false);
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo(this, _rootTable.getColumn("rowid"), _dataClass, false);
         addColumn(lineageLookup);
 
         ActionURL gridUrl = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());
@@ -692,13 +691,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT * FROM\n");
-        sql.append("(SELECT ");
+        sql.unsafeAppend("(SELECT * FROM\n");
+        sql.unsafeAppend("(SELECT ");
         String comma = "";
         for (String dataCol : dataCols)
         {
             sql.append(comma);
-            sql.append("d.").append(dataCol);
+            sql.unsafeAppend("d.").append(dataCol);
             comma = ", ";
         }
 
@@ -710,18 +709,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 sql.append(provisioned.getColumn(pCol).getValueSql("p"));
             }
         }
-        sql.append(" FROM ");
+        sql.unsafeAppend(" FROM ");
         sql.append(_rootTable, "d");
         if (hasProvisionedColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.RowId = p.rowId");
+            sql.unsafeAppend(" INNER JOIN ").append(provisioned, "p").unsafeAppend(" ON d.RowId = p.rowId");
         String subAlias = getSqlDialect().truncate(alias + "_dc_sub", 0);
-        sql.append(") ").appendIdentifier(subAlias);
-        sql.append("\n");
+        sql.unsafeAppend(") ").appendIdentifier(subAlias);
+        sql.unsafeAppend("\n");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        sql.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }
@@ -822,7 +821,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass(), null);
+        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass());
     }
 
     private @NotNull Class<? extends Permission> getReadPermissionClass()
@@ -1027,9 +1026,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                         if (isUpdate)
                             continue;
 
-                        // While accepting RowId during merge is not our preferred behavior, we want to give users a way
-                        // to opt-in to the old behavior where RowId is accepted and ignored.
-                        if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE))
+                        if (isMerge)
                         {
                             context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging data. Specify only the data name instead.", Column.RowId.name()));
                             return null;

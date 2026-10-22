@@ -47,7 +47,7 @@ import java.util.Set;
 public class PlateCache
 {
     private static final PlateLoader _loader = new PlateLoader();
-    private static final Cache<String, PlateImpl> PLATE_CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Plate Cache", _loader);
+    private static final Cache<String, PlateImpl> PLATE_CACHE = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "Plate Cache", _loader);
     private static final Logger LOG = LogManager.getLogger(PlateCache.class);
 
     private static class PlateLoader implements CacheLoader<String, PlateImpl>
@@ -205,7 +205,7 @@ public class PlateCache
     {
         // noop if the plate doesn't exist in the cache
         String key = PlateCacheKey.getCacheKey(c, rowId);
-        if (PLATE_CACHE.getKeys().contains(key))
+        if (PLATE_CACHE.getKeys().anyMatch(key::equals))
         {
             Plate plate = getPlate(c, rowId);
             if (plate != null)
@@ -236,7 +236,12 @@ public class PlateCache
 
     public static void uncache(Container c, PlateSet plateSet)
     {
-        getPlateIDs(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSet.getRowId()))
+        uncachePlateSetPlates(c, plateSet.getRowId());
+    }
+
+    public static void uncachePlateSetPlates(Container c, long plateSetRowId)
+    {
+        getPlateIDs(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSetRowId))
                 .forEach(plateId -> uncache(c, plateId));
     }
 

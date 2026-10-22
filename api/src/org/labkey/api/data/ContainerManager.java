@@ -163,9 +163,14 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
-    private static final Cache<Path, Container> CACHE_PATH = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by Path");
-    private static final Cache<GUID, Container> CACHE_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by EntityId");
-    private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
+    private static final Cache<Path, Container> CACHE_PATH = CacheManager.getCache(Path.class, Constants.getMaxContainers(), CacheManager.DAY, "Containers by Path");
+    private static final Cache<GUID, Container> CACHE_ENTITY_ID = CacheManager.getCache(GUID.class, Constants.getMaxContainers(), CacheManager.DAY, "Containers by EntityId");
+    private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(GUID.class, Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
+    // Maps to EntityId rather than Container so the RowId path inherits CACHE_ENTITY_ID's invalidation
+    private static final Cache<Integer, GUID> CACHE_ROW_ID = CacheManager.getCache(Integer.class, Constants.getMaxContainers(), CacheManager.DAY, "Container EntityIds by RowId");
+    // RowIds and EntityIds are never reused, so a lookup miss (typically a deleted container) stays a miss
+    private static final GUID CACHE_MISS_GUID = new GUID("00000000-0000-0000-0000-000000000000");
+    private static final Cache<GUID, Boolean> CACHE_MISSING_ENTITY_ID = CacheManager.getCache(GUID.class, Constants.getMaxContainers(), CacheManager.DAY, "Missing container EntityIds");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -347,6 +352,10 @@ public class ContainerManager
                 else
                     throw new RuntimeException("Container for path '" + path + "' was not created properly.");
             }
+
+            // DATABASE_QUERY_LOCK is released before an outer transaction commits, so another thread can cache a miss for these ids in the meantime
+            int rowId = c.getRowId();
+            CORE.getSchema().getScope().addCommitTask(() -> _removeMissesFromCache(rowId, entityId), DbScope.CommitTaskOption.POSTCOMMIT);
 
             User savePolicyUser = user;
             if (c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
@@ -639,20 +648,42 @@ public class ContainerManager
     }
 
 
-    @NotNull
-    public static Map<String, Integer> getFolderTypeNameContainerCounts(Container root)
+    /** Left-joins each container (alias "c") to its stored folder type name, exposed as pe.Value; null when none is stored */
+    private static SQLFragment getFolderTypeNameJoin()
     {
+        return new SQLFragment(" LEFT OUTER JOIN ").append(PropertySchema.getInstance().getTableInfoPropertyEntries(), "pe")
+            .unsafeAppend(" ON pe.ObjectId = c.EntityId AND pe.Category = ? AND pe.Name = ? AND pe.UserId = ?")
+            .add(FOLDER_TYPE_PROPERTY_SET_NAME).add(FOLDER_TYPE_PROPERTY_NAME).add(PropertyManager.SHARED_USER.getUserId());
+    }
+
+    /** Same resolution as getFolderType(), minus its bad-name logging */
+    private static @NotNull FolderType resolveFolderType(@Nullable String name)
+    {
+        FolderType folderType = null == name ? null : FolderTypeManager.get().getFolderType(name);
+        return null == folderType ? FolderType.NONE : folderType;
+    }
+
+    @NotNull
+    public static Map<String, Integer> getFolderTypeNameContainerCounts()
+    {
+        SQLFragment sql = new SQLFragment("SELECT pe.Value, COUNT(*) FROM ").append(CORE.getTableInfoContainers(), "c")
+            .append(getFolderTypeNameJoin())
+            .unsafeAppend(" GROUP BY pe.Value");
         Map<String, Integer> nameCounts = new TreeMap<>();
-        for (Container c : getAllChildren(root))
-        {
-            Integer count = nameCounts.get(c.getFolderType().getName());
-            if (null == count)
-            {
-                count = Integer.valueOf(0);
-            }
-            nameCounts.put(c.getFolderType().getName(), ++count);
-        }
+        new SqlSelector(CORE.getSchema(), sql).forEach(rs -> nameCounts.merge(resolveFolderType(rs.getString(1)).getName(), rs.getInt(2), Integer::sum));
         return nameCounts;
+    }
+
+    /** Distinct folder types of the parent's workbook children, without loading each workbook's property map */
+    @NotNull
+    public static Set<FolderType> getWorkbookChildFolderTypes(Container parent)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT pe.Value FROM ").append(CORE.getTableInfoContainers(), "c")
+            .append(getFolderTypeNameJoin())
+            .unsafeAppend(" WHERE c.Parent = ? AND c.Type = ?").add(parent.getEntityId()).add(WorkbookContainerType.NAME);
+        return new SqlSelector(CORE.getSchema(), sql).stream(String.class)
+            .map(ContainerManager::resolveFolderType)
+            .collect(Collectors.toSet());
     }
 
     @NotNull
@@ -816,12 +847,12 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Description=? WHERE RowID=?").add(description).add(container.getRowId());
+        sql.unsafeAppend(" SET Description=? WHERE RowID=?").add(description).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
         
         String oldValue = container.getDescription();
         _removeFromCache(container, false);
-        container = getForRowId(container.getRowId());
+        container = selectForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Description, oldValue, description);
         firePropertyChangeEvent(evt);
     }
@@ -832,7 +863,7 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Searchable=? WHERE RowID=?").add(searchable).add(container.getRowId());
+        sql.unsafeAppend(" SET Searchable=? WHERE RowID=?").add(searchable).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
@@ -844,7 +875,7 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?").add(lockState).add(container.getRowId());
+        sql.unsafeAppend(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?").add(lockState).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
@@ -871,7 +902,7 @@ public class ContainerManager
         // First clear all existing "Excluded" states
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?").add(LockState.Excluded);
+        sql.unsafeAppend(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?").add(LockState.Excluded);
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         // Now set the passed-in projects to "Excluded"
@@ -881,7 +912,7 @@ public class ContainerManager
             Filter inClauseFilter = new SimpleFilter(new InClause(entityIdCol.getFieldKey(), ids));
             SQLFragment frag = new SQLFragment("UPDATE ");
             frag.append(CORE.getTableInfoContainers().getSelectName());
-            frag.append(" SET LockState = ?, ExpirationDate = NULL ");
+            frag.unsafeAppend(" SET LockState = ?, ExpirationDate = NULL ");
             frag.add(LockState.Excluded);
             frag.append(inClauseFilter.getSQLFragment(CORE.getSqlDialect(), "c", Map.of(entityIdCol.getFieldKey(), entityIdCol)));
             new SqlExecutor(CORE.getSchema()).execute(frag);
@@ -901,16 +932,16 @@ public class ContainerManager
         sql.append(CORE.getTableInfoContainers().getSelectName());
         if (archive)
         {
-            sql.append(" SET LockState = ? ");
+            sql.unsafeAppend(" SET LockState = ? ");
             sql.add(LockState.Archived);
-            sql.append(" WHERE LockState IS NULL ");
+            sql.unsafeAppend(" WHERE LockState IS NULL ");
         }
         else
         {
-            sql.append(" SET LockState = NULL WHERE LockState = ? ");
+            sql.unsafeAppend(" SET LockState = NULL WHERE LockState = ? ");
             sql.add(LockState.Archived);
         }
-        sql.append("AND EntityId = ? ");
+        sql.unsafeAppend("AND EntityId = ? ");
         sql.add(container.getEntityId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
@@ -943,7 +974,7 @@ public class ContainerManager
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         // Note: jTDS doesn't support LocalDate, so convert to java.sql.Date
-        sql.append(" SET ExpirationDate = ? WHERE RowID = ?").add(java.sql.Date.valueOf(expirationDate)).add(container.getRowId());
+        sql.unsafeAppend(" SET ExpirationDate = ? WHERE RowID = ?").add(java.sql.Date.valueOf(expirationDate)).add(container.getRowId());
 
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
@@ -958,7 +989,7 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Type=? WHERE RowID=?").add(newType).add(container.getRowId());
+        sql.unsafeAppend(" SET Type=? WHERE RowID=?").add(newType).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
@@ -973,19 +1004,19 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Title=? WHERE RowID=?").add(title).add(container.getRowId());
+        sql.unsafeAppend(" SET Title=? WHERE RowID=?").add(title).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
         String oldValue = container.getTitle();
-        container = getForRowId(container.getRowId());
+        container = selectForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Title, oldValue, title);
         firePropertyChangeEvent(evt);
     }
 
     public static void uncache(Container c)
     {
-        _removeFromCache(c, true);
+        _removeFromCache(c, false);
     }
 
     public static final String SHARED_CONTAINER_PATH = "/Shared";
@@ -1005,24 +1036,24 @@ public class ContainerManager
     // Default is to include all types of children, as seems only appropriate
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getChildren(parent, u, perm, null, ContainerTypeRegistry.get().getTypeNames());
+        return getChildren(parent, u, perm, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return getChildren(parent, u, perm, roles, ContainerTypeRegistry.get().getTypeNames());
+        return getChildren(parent, u, perm, contextualRoles, ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, String typeIncluded)
     {
-        return getChildren(parent, u, perm, null, Collections.singleton(typeIncluded));
+        return getChildren(parent, u, perm, Set.of(), Collections.singleton(typeIncluded));
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, Set<String> includedTypes)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles, Set<String> includedTypes)
     {
         List<Container> children = new ArrayList<>();
         for (Container child : getChildrenMap(parent).values())
-            if (includedTypes.contains(child.getContainerType().getName()) && child.hasPermission(u, perm, roles))
+            if (includedTypes.contains(child.getContainerType().getName()) && child.hasPermission(u, perm, contextualRoles))
                 children.add(child);
 
         return children;
@@ -1030,33 +1061,33 @@ public class ContainerManager
 
     public static List<Container> getAllChildren(Container parent, User u)
     {
-        return getAllChildren(parent, u, ReadPermission.class, null, ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, ReadPermission.class, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getAllChildren(parent, u, perm, null,  ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, perm, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
     // Default is to include all types of children
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return getAllChildren(parent, u, perm, roles, ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, perm, contextualRoles, ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm,  String typeIncluded)
     {
-        return getAllChildren(parent, u, perm, null, Collections.singleton(typeIncluded));
+        return getAllChildren(parent, u, perm, Set.of(),Collections.singleton(typeIncluded));
     }
 
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, Set<String> typesIncluded)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles, Set<String> typesIncluded)
     {
         Set<Container> allChildren = getAllChildren(parent);
         List<Container> result = new ArrayList<>(allChildren.size());
 
         for (Container container : allChildren)
         {
-            if (typesIncluded.contains(container.getContainerType().getName()) && container.hasPermission(u, perm, roles))
+            if (typesIncluded.contains(container.getContainerType().getName()) && container.hasPermission(u, perm, contextualRoles))
             {
                 result.add(container);
             }
@@ -1113,9 +1144,11 @@ public class ContainerManager
                 new SqlSelector(CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
                         parent.getId()).forEach(rs -> {
-                    Container c = factory.handle(rs);
-                    ids.add(c.getEntityId());
-                    _addToCache(c);
+                    GUID id = new GUID(rs.getString("EntityId"));
+                    // Reuse the cached instance; a fresh copy would replace it while Container-keyed caches keep pinning the old one
+                    Container c = CACHE_ENTITY_ID.get(id);
+                    _addToCache(null != c ? c : factory.handle(rs));
+                    ids.add(id);
                 });
 
                 childIds = Collections.unmodifiableList(ids);
@@ -1139,15 +1172,35 @@ public class ContainerManager
         return Collections.unmodifiableMap(ret);
     }
 
-    public static Container getForRowId(int id)
+    public static @Nullable Container getForRowId(int id)
     {
-        Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id));
-        return selector.getObject(Container.class);
+        GUID entityId = CACHE_ROW_ID.get(id);
+        if (CACHE_MISS_GUID == entityId)
+            return null;
+        if (null != entityId)
+            return getForId(entityId);
+
+        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id), () -> CACHE_ROW_ID.put(id, CACHE_MISS_GUID));
     }
 
-    public static @Nullable Container getForId(@NotNull GUID guid)
+    /** Bypasses the cache, for rereading a container right after updating its row */
+    private static @Nullable Container selectForRowId(int id)
     {
-        return guid != null ? getForId(guid.toString()) : null;
+        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id)).getObject(Container.class);
+    }
+
+    public static @Nullable Container getForId(@Nullable GUID guid)
+    {
+        if (null == guid)
+            return null;
+
+        Container d = CACHE_ENTITY_ID.get(guid);
+        if (null != d)
+            return d;
+        if (null != CACHE_MISSING_ENTITY_ID.get(guid))
+            return null;
+
+        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?", guid), () -> CACHE_MISSING_ENTITY_ID.put(guid, true));
     }
 
     public static @Nullable Container getForId(@Nullable String id)
@@ -1158,22 +1211,20 @@ public class ContainerManager
         if (!GUID.isGUID(id))
             return null;
 
-        GUID guid = new GUID(id);
+        return getForId(new GUID(id));
+    }
 
-        Container d = CACHE_ENTITY_ID.get(guid);
-        if (null != d)
-            return d;
-
+    private static @Nullable Container selectAndCache(SQLFragment sql, Runnable cacheMiss)
+    {
+        // A miss inside an outer transaction may be an uncommitted delete or a stale REPEATABLE READ snapshot, so don't cache it
+        boolean outerTransaction = CORE.getSchema().getScope().isTransactionActive();
         try (DbScope.Transaction t = ensureTransaction())
         {
-            Container result = new SqlSelector(
-                    CORE.getSchema(),
-                    "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?",
-                    id).getObject(Container.class);
+            Container result = new SqlSelector(CORE.getSchema(), sql).getObject(Container.class);
             if (result != null)
-            {
-                result = _addToCache(result);
-            }
+                _addToCache(result);
+            else if (!outerTransaction)
+                cacheMiss.run();
             // No database changes to commit, but need to decrement the counter
             t.commit();
 
@@ -1307,22 +1358,16 @@ public class ContainerManager
             // Delete all of the aliases for the current container, plus any of the aliases that might be associated
             // with another container right now
             SQLFragment deleteSQL = new SQLFragment();
-            deleteSQL.append("DELETE FROM ");
+            deleteSQL.unsafeAppend("DELETE FROM ");
             deleteSQL.append(CORE.getTableInfoContainerAliases());
-            deleteSQL.append(" WHERE ContainerRowId = ? ");
+            deleteSQL.unsafeAppend(" WHERE ContainerRowId = ? ");
             deleteSQL.add(container.getRowId());
             if (!aliases.isEmpty())
             {
-                deleteSQL.append(" OR Path IN (");
-                String separator = "";
-                for (String alias : aliases)
-                {
-                    deleteSQL.append(separator);
-                    separator = ", ";
-                    deleteSQL.append("LOWER(?)");
-                    deleteSQL.add(alias);
-                }
-                deleteSQL.append(")");
+                // Not appendInClause(): values must go through the DB's LOWER(), matching how the insert below stores paths
+                deleteSQL.unsafeAppend(" OR Path IN (")
+                    .append(SQLFragment.join(aliases.stream().map(alias -> new SQLFragment("LOWER(?)", alias)).toList(), SQLFragment.unsafe(", ")))
+                    .unsafeAppend(")");
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 
@@ -1330,9 +1375,9 @@ public class ContainerManager
             for (String alias : newAliases)
             {
                 SQLFragment insertSQL = new SQLFragment();
-                insertSQL.append("INSERT INTO ");
+                insertSQL.unsafeAppend("INSERT INTO ");
                 insertSQL.append(CORE.getTableInfoContainerAliases());
-                insertSQL.append(" (Path, ContainerRowId) VALUES (LOWER(?), ?)");
+                insertSQL.unsafeAppend(" (Path, ContainerRowId) VALUES (LOWER(?), ?)");
                 insertSQL.add(alias);
                 insertSQL.add(container.getRowId());
                 new SqlExecutor(CORE.getSchema()).execute(insertSQL);
@@ -1721,7 +1766,7 @@ public class ContainerManager
                 new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
 
                 // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
-                c = getForRowId(c.getRowId());
+                c = selectForRowId(c.getRowId());
 
                 // this could be done in the trigger, but I prefer to put it in the transaction
                 if (changedProjects)
@@ -2087,7 +2132,25 @@ public class ContainerManager
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
         CACHE_ENTITY_ID.put(c.getEntityId(), c);
         CACHE_PATH.put(c.getParsedPath(), c);
+        CACHE_ROW_ID.put(c.getRowId(), c.getEntityId());
+        CACHE_MISSING_ENTITY_ID.remove(c.getEntityId());
         return c;
+    }
+
+    /** Drops misses cached by a lookup that ran before the container's creating transaction committed */
+    private static void _removeMissesFromCache(int rowId, GUID entityId)
+    {
+        DATABASE_QUERY_LOCK.lock();
+        try
+        {
+            if (CACHE_MISS_GUID == CACHE_ROW_ID.get(rowId))
+                CACHE_ROW_ID.remove(rowId);
+            CACHE_MISSING_ENTITY_ID.remove(entityId);
+        }
+        finally
+        {
+            DATABASE_QUERY_LOCK.unlock();
+        }
     }
 
     private static void _clearChildrenFromCache(Container c)
@@ -2101,12 +2164,15 @@ public class ContainerManager
     {
         CACHE_ENTITY_ID.remove(c.getEntityId());
         CACHE_PATH.remove(c.getParsedPath());
+        CACHE_ROW_ID.remove(c.getRowId());
 
         if (hierarchyChange)
         {
-            // This is strictly keeping track of the parent/child relationships themselves so it only needs to be
-            // cleared when the tree changes
-            CACHE_CHILDREN.clear();
+            // Creating or deleting c only changes its own and its parent's child lists; moves and renames use clearCache()
+            CACHE_CHILDREN.remove(c.getEntityId());
+            Container parent = c.getParent();
+            if (null != parent)
+                CACHE_CHILDREN.remove(parent.getEntityId());
         }
 
         navTreeManageUncache(c);
@@ -2117,6 +2183,8 @@ public class ContainerManager
         CACHE_PATH.clear();
         CACHE_ENTITY_ID.clear();
         CACHE_CHILDREN.clear();
+        CACHE_ROW_ID.clear();
+        CACHE_MISSING_ENTITY_ID.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
@@ -2293,7 +2361,7 @@ public class ContainerManager
             comma = ",";
             csvList.appendValue(container, d);
         }
-        csvList.append(")");
+        csvList.unsafeAppend(")");
 
         return csvList;
     }
@@ -2521,7 +2589,7 @@ public class ContainerManager
 
     // Compliance module adds a locked project handler that checks permissions; without that, this implementation
     // is used, and projects are never locked
-    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (project, user, contextualRoles, lockState) -> false;
+    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (_, _, _, _) -> false;
 
     // Replaces any previously set LockedProjectHandler
     public static void setLockedProjectHandler(LockedProjectHandler handler)
@@ -2880,6 +2948,93 @@ public class ContainerManager
         }
 
         @Test
+        public void testRowIdCache() throws ValidationException
+        {
+            User user = TestContext.get().getUser();
+            Container parentA = createContainer(_testRoot, "rowIdA", user);
+            Container parentB = createContainer(_testRoot, "rowIdB", user);
+            Container child = createContainer(parentA, "child", user);
+            int rowId = child.getRowId();
+
+            assertSame(getForId(child.getEntityId()), getForRowId(rowId));
+            assertSame(getForRowId(rowId), getForRowId(rowId));
+
+            updateTitle(getForRowId(rowId), "New Title", user);
+            assertEquals("New Title", getForRowId(rowId).getTitle());
+
+            move(getForRowId(rowId), parentB, user);
+            assertEquals(parentB, getForRowId(rowId).getParent());
+
+            rename(getForRowId(rowId), user, "renamed");
+            assertEquals("renamed", getForRowId(rowId).getName());
+
+            assertTrue(delete(getForRowId(rowId), user));
+            assertNull(getForRowId(rowId));
+            assertNull(getForId(child.getEntityId()));
+
+            assertTrue(delete(parentA, user));
+            assertTrue(delete(parentB, user));
+        }
+
+        @Test
+        public void testMissesCached()
+        {
+            User user = TestContext.get().getUser();
+            Container c = createContainer(_testRoot, "misses", user);
+            int rowId = c.getRowId();
+            GUID entityId = c.getEntityId();
+            assertTrue(delete(c, user));
+
+            assertNull(getForRowId(rowId));
+            assertSame(CACHE_MISS_GUID, CACHE_ROW_ID.get(rowId));
+            assertNull(getForRowId(rowId));
+
+            assertNull(getForId(entityId));
+            assertEquals(Boolean.TRUE, CACHE_MISSING_ENTITY_ID.get(entityId));
+            assertNull(getForId(entityId.toString()));
+        }
+
+        @Test
+        public void testMissesNotCachedInTransaction()
+        {
+            User user = TestContext.get().getUser();
+            Container c = createContainer(_testRoot, "missesInTx", user);
+            int rowId = c.getRowId();
+            GUID entityId = c.getEntityId();
+            assertTrue(delete(c, user));
+
+            try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction())
+            {
+                assertNull(getForRowId(rowId));
+                assertNull(getForId(entityId));
+                tx.commit();
+            }
+
+            assertNull(CACHE_ROW_ID.get(rowId));
+            assertNull(CACHE_MISSING_ENTITY_ID.get(entityId));
+        }
+
+        @Test
+        public void testMissesClearedWhenCreateCommits()
+        {
+            User user = TestContext.get().getUser();
+            Container c;
+            try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction())
+            {
+                c = createContainer(_testRoot, "uncommitted", user);
+                // Simulate another thread that looked up the new ids before this transaction committed
+                CACHE_ROW_ID.put(c.getRowId(), CACHE_MISS_GUID);
+                CACHE_ENTITY_ID.remove(c.getEntityId());
+                CACHE_MISSING_ENTITY_ID.put(c.getEntityId(), true);
+                tx.commit();
+            }
+
+            assertEquals(c, getForRowId(c.getRowId()));
+            assertEquals(c, getForId(c.getEntityId()));
+            assertTrue(delete(c, user));
+        }
+
+        @Test
         public void testFolderType()
         {
             // Test all folder types
@@ -2932,6 +3087,32 @@ public class ContainerManager
                 Container child = createContainer(parent, childName, TestContext.get().getUser());
                 createContainers(mm, childName, child);
             }
+        }
+
+        @Test
+        public void testFolderTypeQueries()
+        {
+            User user = TestContext.get().getUser();
+            Container parent = createContainer(_testRoot, "folderTypes", user);
+            Container untyped = createContainer(parent, null, null, null, WorkbookContainerType.NAME, user);
+            Container typed = createContainer(parent, null, null, null, WorkbookContainerType.NAME, user);
+            FolderType collaboration = FolderTypeManager.get().getFolderType("Collaboration");
+            assertNotNull(collaboration);
+
+            Set<Module> collaborationModules = parent.getRequiredModulesForFolderType(collaboration);
+            assertFalse(collaborationModules.isEmpty());
+            assertFalse(parent.getRequiredModules().containsAll(collaborationModules));
+
+            typed.setFolderType(collaboration, user);
+
+            // A workbook's folder type change must uncache its parent's entry
+            assertTrue(parent.getRequiredModules().containsAll(collaborationModules));
+            assertEquals(Set.of(FolderType.NONE, collaboration), getWorkbookChildFolderTypes(parent));
+            assertEquals(FolderType.NONE, untyped.getFolderType());
+
+            Map<String, Integer> expected = new TreeMap<>();
+            getAllChildren(getRoot()).forEach(c -> expected.merge(c.getFolderType().getName(), 1, Integer::sum));
+            assertEquals(expected, getFolderTypeNameContainerCounts());
         }
 
         private static void cleanUpChildren(MultiValuedMap<String, String> mm, String name, Container parent)

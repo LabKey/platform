@@ -17,6 +17,7 @@ package org.labkey.experiment.defaults;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -52,7 +53,6 @@ import java.util.concurrent.locks.Lock;
 
 public class DefaultValueServiceImpl implements DefaultValueService
 {
-    private static final String USER_DEFAULT_VALUE_LSID_PREFIX = "UserDefaultValue";
     private static final String USER_DEFAULT_VALUE_DOMAIN_PARENT = "UserDefaultValueParent";
 
     private final Lock _lock = new ReentrantLockWithName(DefaultValueServiceImpl.class, "_lock");
@@ -64,7 +64,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
         if (kind != null && kind.isUserCreatedType())
         {
             Lsid domainLsid = new Lsid(domain.getTypeURI());
-            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domainLsid.getObjectId())).toString();
+            return (new Lsid(qualifyByDomainKind(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, domainLsid), suffix, domainLsid.getObjectId())).toString();
         }
         else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
             return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
@@ -78,18 +78,26 @@ public class DefaultValueServiceImpl implements DefaultValueService
         if (kind != null && kind.isUserCreatedType())
         {
             Lsid domainLsid = new Lsid(domain.getTypeURI());
-            return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domainLsid.getObjectId())).toString();
+            return (new Lsid(qualifyByDomainKind(USER_DEFAULT_VALUE_DOMAIN_PARENT, domainLsid), suffix, domainLsid.getObjectId())).toString();
         }
         else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
             return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
+    }
+
+    // GitHub Issue #1569: Qualifying LSID by domain kind since multiple data types have distinct domain kinds
+    // Ex: assay designs have AssayDomain-Batch, AssayDomain-Run, AssayDomain-Result
+    private String qualifyByDomainKind(@NotNull String lsidPrefix, @NotNull Lsid domainLsid)
+    {
+        return lsidPrefix + "-" + domainLsid.getNamespacePrefix();
     }
 
     private static final String WILD_CARD_PLACEHOLDER = "WILDCARD";
 
     private String getUserDefaultsWildcardLSID(Container container, Domain domain, boolean parentObject)
     {
-        String suffix = "Folder-" + container.getRowId() + ".User-" + WILD_CARD_PLACEHOLDER + (!parentObject ? "." + WILD_CARD_PLACEHOLDER : "");
-        String objectId = domain.getName();
+        String suffix = "Folder-" + container.getRowId() + ".User-" + WILD_CARD_PLACEHOLDER;
+        // getUserDefaultsLSID() appends the scope to the objectId, not to the namespace, so the wildcard has to match there
+        String objectId = domain.getName() + (!parentObject ? "." + WILD_CARD_PLACEHOLDER : "");
         String lsid = (new Lsid(USER_DEFAULT_VALUE_LSID_PREFIX, suffix, objectId)).toString();
         // this hack is to include '%' characters in an LSID-like string.  The '%' character can't be part of the
         // lsid components passed to the Lsid constructor, or it will be encoded as '%25'.

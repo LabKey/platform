@@ -49,6 +49,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.assay.transform.DefaultTransformResult;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.DefaultSchema;
@@ -106,6 +107,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     protected BindException _errors;
     private List<AssayDataCollector> _collectors;
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
+    private @Nullable PreparedTransform _preparedTransform;
     private ExpRun _reRun;
     private boolean _allowCrossRunFileInputs;
 
@@ -705,6 +707,24 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setTransformResult(TransformResult transformResult)
     {
         _transformResult = transformResult;
+    }
+
+    @Override
+    public boolean supportsPreparedTransform()
+    {
+        return true;
+    }
+
+    @Override
+    public @Nullable PreparedTransform getPreparedTransform()
+    {
+        return _preparedTransform;
+    }
+
+    @Override
+    public void setPreparedTransform(@Nullable PreparedTransform prepared)
+    {
+        _preparedTransform = prepared;
     }
 
     @Override

@@ -741,6 +741,8 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.DECIMAL, 2),
         new MethodSqlTest("SELECT COALESCE(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
+        new MethodSqlTest("SELECT concat('the', 'cat', 'in', 'the', 'hat') FROM R WHERE rowid=1", JdbcType.VARCHAR, "thecatinthehat"),
+        new MethodSqlTest("SELECT concat('hat', NULL) FROM R WHERE rowid=1", JdbcType.VARCHAR, null),
         new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
         new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
         new MethodSqlTest("SELECT CONVERT('+infinity', DOUBLE)", JdbcType.DOUBLE, Double.POSITIVE_INFINITY),
@@ -970,6 +972,11 @@ d,seven,twelve,day,month,date,duration,guid
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc','%(b|d)%')", 1, 1),
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
+
+                // GH Issue 1227: epoch form returns timestamptz, so the instant is independent of the session time zone
+                new MethodSqlTest("SELECT to_timestamp(1284352323)", JdbcType.TIMESTAMP, new Timestamp(1284352323000L)),
+                new MethodSqlTest("SELECT to_timestamp(1284352323.5)", JdbcType.TIMESTAMP, new Timestamp(1284352323500L)),
+                new MethodSqlTest("SELECT to_timestamp('2010-09-13 04:32:03', 'YYYY-MM-DD HH24:MI:SS')", JdbcType.TIMESTAMP, Timestamp.valueOf("2010-09-13 04:32:03")),
 
                 // parse_json, parse_jsonb, and json_op
                 new SqlTest("SELECT parse_jsonb('{\"a\":1, \"b\":null}')", 1, 1),
@@ -1616,6 +1623,98 @@ d,seven,twelve,day,month,date,duration,guid
         assertFalse(debugSql.contains(c.getId()));
         assertTrue(debugSql.contains("CONTAINERFILTER"));
         assertEquals(2, StringUtils.countMatches(debugSql, "CONTAINERFILTER"));
+    }
+
+    // GH Issue 1718: a lookup resolves its target query against the folder the field is defined in, so compiling a query
+    // in a folder other than the request's must not move the environment container there.
+    @Test
+    public void testCompileLeavesEnvironmentContainer() throws Exception
+    {
+        User user = TestContext.get().getUser();
+        Container c = JunitUtil.getTestContainer();
+        Container sub = getSubfolder();
+
+        Object savedContainer = QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
+        try
+        {
+            QueryDefinition q = QueryService.get().createQueryDef(user, c, SchemaKey.fromString("core"), "QEnvContainer");
+            q.setSql("SELECT Name, ID FROM core.Containers");
+            q.save(user, c);
+
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, sub);
+
+            // compile in c, the way a lookup resolves its target in the folder the field is defined in
+            UserSchema coreInC = QueryService.get().getUserSchema(user, c, "core");
+            assertNotNull(coreInC.getTable("QEnvContainer"));
+
+            assertEquals(sub, QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
+        }
+        finally
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, savedContainer);
+            deleteQueryDef(user, c, "QEnvContainer");
+        }
+    }
+
+    // GH Issue 1718: folderPath() reports the folder its own query is compiled in. It used to read the same environment
+    // container that cross-folder compilation moves, so a sub-query from another folder could answer for its parent.
+    @Test
+    public void testFolderPathAcrossContainers() throws Exception
+    {
+        User user = TestContext.get().getUser();
+        Container c = JunitUtil.getTestContainer();
+        Container sub = getSubfolder();
+
+        Object savedContainer = QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
+        try
+        {
+            saveQueryDef(user, c, "QFolderPathInherited", "SELECT folderPath() AS p FROM core.Containers", true);
+            saveQueryDef(user, sub, "QFolderPathInner", "SELECT Name, ID FROM core.Containers", false);
+
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
+
+            // an inherited query answers for the folder it runs in, not the one it is defined in
+            assertEquals(c.getPath(), selectFolderPath(user, c, "SELECT p FROM QFolderPathInherited"));
+            assertEquals(sub.getPath(), selectFolderPath(user, sub, "SELECT p FROM QFolderPathInherited"));
+
+            // compiling a sub-query from another folder must not answer for that folder
+            assertEquals(c.getPath(), selectFolderPath(user, c,
+                    "SELECT folderPath() AS p FROM Folder.qtest.core.QFolderPathInner"));
+
+            assertEquals(c, QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
+        }
+        finally
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, savedContainer);
+            deleteQueryDef(user, c, "QFolderPathInherited");
+            deleteQueryDef(user, sub, "QFolderPathInner");
+        }
+    }
+
+    private void saveQueryDef(User user, Container container, String name, String sql, boolean canInherit)
+    {
+        deleteQueryDef(user, container, name);
+        QueryDefinition q = QueryService.get().createQueryDef(user, container, SchemaKey.fromString("core"), name);
+        q.setSql(sql);
+        q.setCanInherit(canInherit);
+        q.save(user, container);
+    }
+
+    private void deleteQueryDef(User user, Container container, String name)
+    {
+        QueryDefinition q = QueryService.get().getQueryDef(user, container, "core", name);
+        if (null != q)
+            q.delete(user);
+    }
+
+    private String selectFolderPath(User user, Container container, String sql) throws Exception
+    {
+        QuerySchema schema = QueryService.get().getUserSchema(user, container, "core");
+        try (Results rs = QueryService.get().getSelectBuilder(schema, sql, true).select(true))
+        {
+            assertTrue(sql, rs.next());
+            return rs.getString("p");
+        }
     }
 
     @Test

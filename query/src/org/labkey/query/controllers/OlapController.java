@@ -23,10 +23,10 @@ import mondrian.olap.MondrianServer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Test;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiJsonForm;
@@ -56,12 +56,12 @@ import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseExceptionUnresolvedField;
@@ -129,7 +129,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 
 /**
@@ -1222,11 +1222,10 @@ public class OlapController extends SpringActionController
     {
         if (cf instanceof DataspaceContainerFilter dscf)
         {
-            Collection<GUID> guids = dscf.generateIds(getContainer(),ReadPermission.class, null);
-            List<String> ret = guids.stream().map(GUID::toString).collect(Collectors.toList());
-            return Collections.unmodifiableCollection(ret);
+            Collection<GUID> guids = dscf.generateIds(getContainer(),ReadPermission.class, Set.of());
+            return guids.stream().map(GUID::toString).toList();
         }
-        // TODO optimize, this is round-about since cf probabaly implements getIds() internally
+        // TODO optimize, this is round-about since cf probably implements getIds() internally
         DbSchema core = CoreSchema.getInstance().getSchema();
         SQLFragment sqlf = new SQLFragment("SELECT entityid FROM core.containers WHERE ");
         sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), new HashMap<>()));

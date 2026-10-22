@@ -30,6 +30,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
@@ -100,6 +101,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -117,6 +119,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
@@ -124,6 +128,7 @@ import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.util.IntegerUtils.asLong;
 
 /**
@@ -135,16 +140,18 @@ import static org.labkey.api.util.IntegerUtils.asLong;
 public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
-    private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
-    private static final BlockingCache<String, Long> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
-    private static final Cache<Pair<String, GUID>, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
+    private static final Cache<PropertyMapKey, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(PropertyMapKey.class, getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
+    private static final BlockingCache<String, Long> OBJECT_ID_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
+    // Bulk deletes larger than this clear the object caches instead of removing each deleted URI
+    private static final int MAX_TARGETED_CACHE_REMOVALS = 1000;
+    private static final Cache<ProjectUriKey, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(ProjectUriKey.class, getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
     {
         @Override
-        public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
+        public PropertyDescriptor load(@NotNull ProjectUriKey key, @Nullable Object argument)
         {
             PropertyDescriptor ret = null;
-            String propertyURI = key.first;
-            Container c = ContainerManager.getForId(key.second);
+            String propertyURI = key.uri();
+            Container c = ContainerManager.getForId(key.projectId());
             if (null != c)
             {
                 Container proj = c.getProject();
@@ -174,9 +181,9 @@ public class OntologyManager
     });
 
     /** DomainURI, ContainerEntityId -> DomainDescriptor */
-    private static final Cache<Pair<String, GUID>, DomainDescriptor> DOMAIN_DESCRIPTORS_BY_URI_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
-        String domainURI = key.first;
-        Container c = ContainerManager.getForId(key.second);
+    private static final Cache<ProjectUriKey, DomainDescriptor> DOMAIN_DESCRIPTORS_BY_URI_CACHE = DatabaseCache.get(ProjectUriKey.class, getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
+        String domainURI = key.uri();
+        Container c = ContainerManager.getForId(key.projectId());
 
         if (c == null)
         {
@@ -217,14 +224,14 @@ public class OntologyManager
         return ddList.isEmpty() ? null : ddList.getFirst();
     }
 
-    private static final BlockingCache<Integer, DomainDescriptor> DOMAIN_DESC_BY_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());
-    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> DOMAIN_PROPERTIES_CACHE = DatabaseCache.get(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<>()
+    private static final BlockingCache<Integer, DomainDescriptor> DOMAIN_DESC_BY_ID_CACHE = DatabaseCache.get(Integer.class, getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by ID", new DomainDescriptorLoader());
+    private static final BlockingCache<ProjectUriKey, List<Pair<String, Boolean>>> DOMAIN_PROPERTIES_CACHE = DatabaseCache.get(ProjectUriKey.class, getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<>()
     {
         @Override
-        public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
+        public List<Pair<String, Boolean>> load(@NotNull ProjectUriKey key, @Nullable Object argument)
         {
-            String typeURI = key.first;
-            Container c = ContainerManager.getForId(key.second);
+            String typeURI = key.uri();
+            Container c = ContainerManager.getForId(key.projectId());
             if (null == c)
                 return Collections.emptyList();
             SQLFragment sql = new SQLFragment("SELECT PropertyURI, Required " +
@@ -245,7 +252,7 @@ public class OntologyManager
                 .toList();
         }
     });
-    private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {
+    private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {
         String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
 
         Map<String, DomainDescriptor> dds = new LinkedHashMap<>();
@@ -292,7 +299,6 @@ public class OntologyManager
         return m;
     }
 
-    public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
     public static final int UPDATE_STATS_BATCH_COUNT = 1000;
 
     public static void insertTabDelimited(Container c,
@@ -376,8 +382,10 @@ public class OntologyManager
         assert total.start();
         assert getExpSchema().getScope().isTransactionActive();
 
+        int maxPropsInBatch = BatchSize.get(ROWS);
+
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
-        List<PropertyRow> propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
+        List<PropertyRow> propsToInsert = new ArrayList<>(maxPropsInBatch + descriptors.size());
 
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
@@ -464,13 +472,13 @@ public class OntologyManager
 
                 rowCount++;
 
-                if (propsToInsert.size() > MAX_PROPS_IN_BATCH)
+                if (propsToInsert.size() > maxPropsInBatch)
                 {
                     assert insert.start();
                     insertPropertiesBulk(c, propsToInsert, false);
                     helper.afterBatchInsert(rowCount);
                     assert insert.stop();
-                    propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
+                    propsToInsert = new ArrayList<>(maxPropsInBatch + descriptors.size());
 
                     if (++batchCount % UPDATE_STATS_BATCH_COUNT == 0)
                     {
@@ -850,10 +858,12 @@ public class OntologyManager
         void bindAdditionalParameters(Map<String, Object> map, ParameterMapStatement target) throws ValidationException;
     }
 
+    private record PropertyMapKey(@Nullable GUID containerId, @NotNull String objectLSID) {}
+
     @NotNull
-    private static Pair<Container, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
+    private static PropertyMapKey getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
     {
-        return Pair.of(container, objectLSID);
+        return new PropertyMapKey(null == container ? null : container.getEntityId(), objectLSID);
     }
 
     /**
@@ -864,22 +874,22 @@ public class OntologyManager
      */
     public static Map<String, ObjectProperty> getPropertyObjects(@Nullable Container container, @NotNull String objectLSID)
     {
-        Pair<Container, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
+        PropertyMapKey cacheKey = getPropertyMapCacheKey(container, objectLSID);
         return PROPERTY_MAP_CACHE.get(cacheKey);
     }
 
-    public static class PropertyMapCacheLoader implements CacheLoader<Pair<Container, String>, Map<String, ObjectProperty>>
+    public static class PropertyMapCacheLoader implements CacheLoader<PropertyMapKey, Map<String, ObjectProperty>>
     {
         @Override
-        public Map<String, ObjectProperty> load(@NotNull Pair<Container, String> key, @Nullable Object argument)
+        public Map<String, ObjectProperty> load(@NotNull PropertyMapKey key, @Nullable Object argument)
         {
-            Container container = key.first;
-            String objectLSID = key.second;
+            GUID containerId = key.containerId();
+            String objectLSID = key.objectLSID();
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), objectLSID);
-            if (container != null)
+            if (containerId != null)
             {
-                filter.addCondition(FieldKey.fromParts("Container"), container);
+                filter.addCondition(FieldKey.fromParts("Container"), containerId.toString());
             }
 
             if (_log.isDebugEnabled())
@@ -1053,44 +1063,72 @@ public class OntologyManager
         }
         finally
         {
-            PROPERTY_MAP_CACHE.clear();
-            OBJECT_ID_CACHE.clear();
+            // deleteObject also deletes owned objects, whose URIs aren't known here
+            uncacheDeletedObjects(c, Arrays.asList(uris), true);
         }
     }
 
     public static int deleteOntologyObjects(DbSchema schema, SQLFragment objectUriSql, @Nullable Container c)
     {
         SQLFragment objectIdSQL = new SQLFragment("SELECT ObjectId FROM ")
-            .append(getTinfoObject()).append("\n")
-            .append(" WHERE ");
+            .append(getTinfoObject()).unsafeAppend("\n")
+            .unsafeAppend(" WHERE ");
         if (c != null)
         {
-            objectIdSQL.append(" Container = ?").add(c.getId());
-            objectIdSQL.append(" AND ");
+            objectIdSQL.unsafeAppend(" Container = ?").add(c.getId());
+            objectIdSQL.unsafeAppend(" AND ");
         }
-        objectIdSQL.append("ObjectUri IN (");
+        objectIdSQL.unsafeAppend("ObjectUri IN (");
         objectIdSQL.append(objectUriSql);
-        objectIdSQL.append(")");
+        objectIdSQL.unsafeAppend(")");
         return deleteOntologyObjectsByObjectIdSql(schema, objectIdSQL);
     }
 
+    /**
+     * Deletes the objects whose ObjectIds objectIdSql selects, along with their properties. Owned objects aren't
+     * deleted, so a target that still owns one fails FK_Object_Object.
+     */
     public static int deleteOntologyObjectsByObjectIdSql(DbSchema schema, SQLFragment objectIdSql)
     {
         if (!schema.getScope().equals(getExpSchema().getScope()))
             throw new UnsupportedOperationException("can only use with same DbScope");
 
-        SQLFragment sqlDeleteProperties = new SQLFragment();
-        sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty())
-                .append(" WHERE ObjectId IN (\n");
-        sqlDeleteProperties.append(objectIdSql);
-        sqlDeleteProperties.append(")");
-        new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
+        SqlDialect dialect = getExpSchema().getSqlDialect();
+        List<PropertyMapKey> deletedKeys = new ArrayList<>();
+        Set<GUID> untrackedContainers = new HashSet<>();
 
-        SQLFragment sqlDeleteObjects = new SQLFragment();
-        sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (");
-        sqlDeleteObjects.append(objectIdSql);
-        sqlDeleteObjects.append(")");
-        return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
+        // One statement: a CTE referenced twice is materialized, so the caller's SQL (possibly an expensive union) runs
+        // once, and the FK from ObjectProperty is checked only after both deletes. The column alias matches by position.
+        SQLFragment deleteSql = new SQLFragment();
+        String ids = deleteSql.addCommonTableExpression(dialect, "ids", "ids",
+                new SQLFragment("SELECT ObjectId FROM (").append(objectIdSql).append(") x (ObjectId)"));
+        deleteSql.addCommonTableExpression(dialect, "deletedProps", "deletedProps",
+                new SQLFragment("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).append(")"));
+        String deleted = deleteSql.addCommonTableExpression(dialect, "deleted", "deleted",
+                new SQLFragment("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).append(") RETURNING ObjectURI, Container"));
+        // Keys come from the DELETE itself so they match exactly what was removed. Counting first means a delete past
+        // the limit never aggregates its URIs, which could otherwise reach millions.
+        String counted = deleteSql.addCommonTableExpression(dialect, "counted", "counted",
+                new SQLFragment("SELECT ObjectURI, Container, COUNT(*) OVER () AS TotalCount FROM ").append(deleted));
+        deleteSql.append("SELECT Container, COUNT(*) AS DeletedCount, array_agg(CAST(ObjectURI AS VARCHAR)) FILTER (WHERE TotalCount <= ?) AS URIs").add(MAX_TARGETED_CACHE_REMOVALS)
+                .append("\nFROM ").append(counted).append(" GROUP BY Container");
+
+        int deletedCount = new SqlExecutor(getExpSchema()).executeWithResults(deleteSql, (rs, _) -> {
+            int total = 0;
+            while (rs.next())
+            {
+                GUID containerId = new GUID(rs.getString("Container"));
+                total += rs.getInt("DeletedCount");
+                Array uris = rs.getArray("URIs");
+                if (uris == null)
+                    untrackedContainers.add(containerId);
+                else
+                    Arrays.stream((String[]) uris.getArray()).forEach(uri -> deletedKeys.add(new PropertyMapKey(containerId, uri)));
+            }
+            return total;
+        });
+        uncacheDeletedObjects(deletedKeys, untrackedContainers);
+        return deletedCount;
     }
 
 
@@ -1106,68 +1144,73 @@ public class OntologyManager
 
         try
         {
-            // if it's a long list, split it up
-            if (objectIds.length > 1000)
-            {
-                int countBatches = objectIds.length / 1000;
-                int lenBatch = 1 + objectIds.length / (countBatches + 1);
-
-                for (int s = 0; s < objectIds.length; s += lenBatch)
-                {
-                    long[] sub = new long[Math.min(lenBatch, objectIds.length - s)];
-                    System.arraycopy(objectIds, s, sub, 0, sub.length);
-                    deleteOntologyObjects(c, deleteOwnedObjects, deleteObjectProperties, deleteObjects, sub);
-                }
-
-                return;
-            }
-
-            SQLFragment objectIdInClause = new SQLFragment();
-            getExpSchema().getSqlDialect().appendInClauseSql(objectIdInClause, Arrays.stream(objectIds).boxed().toList());
-
-            if (deleteOwnedObjects)
-            {
-                // NOTE: owned objects should never be in a different container than the owner, that would be a problem
-                SQLFragment sqlDeleteOwnedProperties = new SQLFragment("DELETE FROM ")
-                    .append(getTinfoObjectProperty())
-                    .append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
-                    .append(getTinfoObject())
-                    .append(" WHERE Container = ? AND OwnerObjectId ")
-                    .add(c)
-                    .append(objectIdInClause)
-                    .append(")");
-
-                new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedProperties);
-
-                SQLFragment sqlDeleteOwnedObjects = new SQLFragment("DELETE FROM ")
-                    .append(getTinfoObject())
-                    .append(" WHERE Container = ? AND OwnerObjectId ")
-                    .add(c)
-                    .append(objectIdInClause);
-
-                new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedObjects);
-            }
-
-            if (deleteObjectProperties)
-            {
-                deleteProperties(c, objectIdInClause);
-            }
-
-            if (deleteObjects)
-            {
-                SQLFragment sqlDeleteObjects = new SQLFragment("DELETE FROM ")
-                    .append(getTinfoObject())
-                    .append(" WHERE Container = ? AND ObjectId ")
-                    .add(c)
-                    .append(objectIdInClause);
-
-                new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
-            }
+            deleteOntologyObjectsById(c, deleteOwnedObjects, deleteObjectProperties, deleteObjects, objectIds);
         }
         finally
         {
-            PROPERTY_MAP_CACHE.clear();
-            OBJECT_ID_CACHE.clear();
+            uncacheDeletedObjects(c, List.of(), true);
+        }
+    }
+
+    /** Deletes without clearing caches, so callers that know the deleted URIs can clear just those */
+    private static void deleteOntologyObjectsById(Container c, boolean deleteOwnedObjects, boolean deleteObjectProperties, boolean deleteObjects, long... objectIds)
+    {
+        // if it's a long list, split it up
+        if (objectIds.length > 1000)
+        {
+            int countBatches = objectIds.length / 1000;
+            int lenBatch = 1 + objectIds.length / (countBatches + 1);
+
+            for (int s = 0; s < objectIds.length; s += lenBatch)
+            {
+                long[] sub = new long[Math.min(lenBatch, objectIds.length - s)];
+                System.arraycopy(objectIds, s, sub, 0, sub.length);
+                deleteOntologyObjectsById(c, deleteOwnedObjects, deleteObjectProperties, deleteObjects, sub);
+            }
+
+            return;
+        }
+
+        SQLFragment objectIdInClause = new SQLFragment();
+        getExpSchema().getSqlDialect().appendInClauseSql(objectIdInClause, Arrays.stream(objectIds).boxed().toList());
+
+        if (deleteOwnedObjects)
+        {
+            // NOTE: owned objects should never be in a different container than the owner, that would be a problem
+            SQLFragment sqlDeleteOwnedProperties = new SQLFragment("DELETE FROM ")
+                .append(getTinfoObjectProperty())
+                .unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                .append(getTinfoObject())
+                .unsafeAppend(" WHERE Container = ? AND OwnerObjectId ")
+                .add(c)
+                .append(objectIdInClause)
+                .unsafeAppend(")");
+
+            new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedProperties);
+
+            SQLFragment sqlDeleteOwnedObjects = new SQLFragment("DELETE FROM ")
+                .append(getTinfoObject())
+                .unsafeAppend(" WHERE Container = ? AND OwnerObjectId ")
+                .add(c)
+                .append(objectIdInClause);
+
+            new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedObjects);
+        }
+
+        if (deleteObjectProperties)
+        {
+            deleteProperties(c, objectIdInClause);
+        }
+
+        if (deleteObjects)
+        {
+            SQLFragment sqlDeleteObjects = new SQLFragment("DELETE FROM ")
+                .append(getTinfoObject())
+                .unsafeAppend(" WHERE Container = ? AND ObjectId ")
+                .add(c)
+                .append(objectIdInClause);
+
+            new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
         }
     }
 
@@ -1178,7 +1221,14 @@ public class OntologyManager
 
         if (null != ontologyObject)
         {
-            deleteOntologyObjects(container, deleteOwnedObjects, true, true, ontologyObject.getObjectId());
+            try
+            {
+                deleteOntologyObjectsById(container, deleteOwnedObjects, true, true, ontologyObject.getObjectId());
+            }
+            finally
+            {
+                uncacheDeletedObjects(container, List.of(objectURI), deleteOwnedObjects);
+            }
         }
     }
 
@@ -1216,26 +1266,20 @@ public class OntologyManager
                     " AND PD.Container = DD.Container";
             Long[] objIdsToDelete = new SqlSelector(getExpSchema(), selectObjectsToDelete).getArray(Long.class);
 
-            String sep;
-            StringBuilder sqlIN = null;
+            SqlDialect dialect = getExpSchema().getSqlDialect();
+            List<Long> objIdsToDeleteList = Arrays.asList(objIdsToDelete);
             Long[] ownerObjIds = null;
 
             if (objIdsToDelete.length > 0)
             {
                 //also need list of owner objects whose subobjects are going to be deleted
                 // Seems cheaper but less correct to delete the subobjects then cleanup any owner objects with no children
-                sep = "";
-                sqlIN = new StringBuilder();
-                for (Long id : objIdsToDelete)
-                {
-                    sqlIN.append(sep).append(id);
-                    sep = ", ";
-                }
-
-                String selectOwnerObjects = "SELECT O.ObjectId FROM " + getTinfoObject() + " O " +
+                SQLFragment selectOwnerObjects = new SQLFragment("SELECT O.ObjectId FROM " + getTinfoObject() + " O " +
                         " WHERE ObjectId IN " +
                         " (SELECT DISTINCT SUBO.OwnerObjectId FROM " + getTinfoObject() + " SUBO " +
-                        " WHERE SUBO.ObjectId IN ( " + sqlIN + " ) )";
+                        " WHERE SUBO.ObjectId")
+                        .appendInClause(objIdsToDeleteList, dialect)
+                        .append(" )");
 
                 ownerObjIds = new SqlSelector(getExpSchema(), selectOwnerObjects).getArray(Long.class);
             }
@@ -1254,25 +1298,18 @@ public class OntologyManager
             {
                 // now cleanup the object table entries from the list we made, but make sure they don't have
                 // other properties attached to them
-                String deleteObjSql = "DELETE FROM " + getTinfoObject() +
-                        " WHERE ObjectId IN ( " + sqlIN + " ) " +
-                        " AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
-                        " WHERE  OP.ObjectId = " + getTinfoObject() + ".ObjectId)";
+                SQLFragment deleteObjSql = new SQLFragment("DELETE FROM " + getTinfoObject() + " WHERE ObjectId")
+                        .appendInClause(objIdsToDeleteList, dialect)
+                        .append(" AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
+                        " WHERE  OP.ObjectId = " + getTinfoObject() + ".ObjectId)");
                 new SqlExecutor(getExpSchema()).execute(deleteObjSql);
 
                 if (ownerObjIds.length > 0)
                 {
-                    sep = "";
-                    sqlIN = new StringBuilder();
-                    for (Long id : ownerObjIds)
-                    {
-                        sqlIN.append(sep).append(id);
-                        sep = ", ";
-                    }
-                    String deleteOwnerSql = "DELETE FROM " + getTinfoObject() +
-                            " WHERE ObjectId IN ( " + sqlIN + " ) " +
-                            " AND NOT EXISTS (SELECT * FROM " + getTinfoObject() + " SUBO " +
-                            " WHERE SUBO.OwnerObjectId = " + getTinfoObject() + ".ObjectId)";
+                    SQLFragment deleteOwnerSql = new SQLFragment("DELETE FROM " + getTinfoObject() + " WHERE ObjectId")
+                            .appendInClause(Arrays.asList(ownerObjIds), dialect)
+                            .append(" AND NOT EXISTS (SELECT * FROM " + getTinfoObject() + " SUBO " +
+                            " WHERE SUBO.OwnerObjectId = " + getTinfoObject() + ".ObjectId)");
                     new SqlExecutor(getExpSchema()).execute(deleteOwnerSql);
                 }
             }
@@ -1318,26 +1355,20 @@ public class OntologyManager
 
             if (pdIdsToDelete.length > 0)
             {
-                String sep = "";
-                StringBuilder sqlIN = new StringBuilder();
                 for (Integer id : pdIdsToDelete)
                 {
                     PropertyService.get().deleteValidatorsAndFormats(container, id);
-
-                    sqlIN.append(sep);
-                    sqlIN.append(id);
-                    sep = ", ";
                 }
 
-                String deletePDs = "DELETE FROM " + getTinfoPropertyDescriptor() +
-                        " WHERE PropertyId IN ( " + sqlIN + " ) " +
-                        "AND Container = ? " +
-                        "AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
+                SQLFragment deletePDs = new SQLFragment("DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyId")
+                        .appendInClause(Arrays.asList(pdIdsToDelete), getExpSchema().getSqlDialect())
+                        .append(" AND Container = ? ").add(dd.getContainer().getId())
+                        .append("AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
                         "WHERE OP.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId) " +
                         "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
-                        "WHERE PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId)";
+                        "WHERE PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId)");
 
-                new SqlExecutor(getExpSchema()).execute(deletePDs, dd.getContainer().getId());
+                new SqlExecutor(getExpSchema()).execute(deletePDs);
             }
 
             String deleteDD = "DELETE FROM " + getTinfoDomainDescriptor() +
@@ -1420,8 +1451,7 @@ public class OntologyManager
                 " AND O.Container <> PD.Container ";
 
         final Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<>();
-        final StringBuilder sqlIn = new StringBuilder();
-        final StringBuilder sep = new StringBuilder();
+        final List<Integer> propIds = new ArrayList<>();
 
         if (_log.isDebugEnabled())
         {
@@ -1441,10 +1471,7 @@ public class OntologyManager
             Integer propId = rs.getInt(3);
             String propURI = rs.getString(4);
 
-            sqlIn.append(sep).append(propId);
-
-            if (sep.isEmpty())
-                sep.append(", ");
+            propIds.add(propId);
 
             Map<String, ObjectProperty> mtemp = getPropertyObjects(ContainerManager.getForId(objContainer), objURI);
 
@@ -1466,18 +1493,21 @@ public class OntologyManager
 
         if (!mObjsUsingMyProps.isEmpty())
         {
-            sql = "SELECT PD.PropertyURI, DD.DomainURI " +
+            SqlDialect dialect = getExpSchema().getSqlDialect();
+            SQLFragment myPropsSql = new SQLFragment("SELECT PD.PropertyURI, DD.DomainURI " +
                     " FROM " + getTinfoPropertyDescriptor() + " PD " +
                     " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
                     " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
                     " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) " +
                     " ON (PD.PropertyId = PDM2.PropertyId) " +
-                    " WHERE PDM.PropertyId IN (" + sqlIn + ") " +
-                    " OR PD.PropertyId IN (" + sqlIn + ") ";
+                    " WHERE PDM.PropertyId")
+                    .appendInClause(propIds, dialect)
+                    .append(" OR PD.PropertyId")
+                    .appendInClause(propIds, dialect);
 
             if (_log.isDebugEnabled())
             {
-                try (ResultSet rs = new SqlSelector(getExpSchema(), sql).getResultSet())
+                try (ResultSet rs = new SqlSelector(getExpSchema(), myPropsSql).getResultSet())
                 {
                     ResultSetUtil.logData(rs, _log);
                 }
@@ -1487,7 +1517,7 @@ public class OntologyManager
                 }
             }
 
-            new SqlSelector(getExpSchema(), sql).forEach(rsMyProps -> {
+            new SqlSelector(getExpSchema(), myPropsSql).forEach(rsMyProps -> {
                 String propUri = rsMyProps.getString(1);
                 String domUri = rsMyProps.getString(2);
                 PropertyDescriptor pd = getPropertyDescriptor(propUri, c);
@@ -1621,18 +1651,14 @@ public class OntologyManager
 
 
             final Map<String, ObjectProperty> mMyObjsThatRefProjProps = new HashMap<>();
-            final StringBuilder sqlIn = new StringBuilder();
-            final StringBuilder sep = new StringBuilder();
+            final List<Integer> propIds = new ArrayList<>();
 
             new SqlSelector(getExpSchema(), sql, c, ContainerManager.getSharedContainer(), newProject).forEach(rs -> {
                 String objURI = rs.getString(1);
                 String propURI = rs.getString(2);
                 Integer propId = rs.getInt(3);
 
-                sqlIn.append(sep).append(propId);
-
-                if (sep.isEmpty())
-                    sep.append(", ");
+                propIds.add(propId);
 
                 Map<String, ObjectProperty> mtemp = getPropertyObjects(c, objURI);
 
@@ -1651,17 +1677,18 @@ public class OntologyManager
             //todo  what about materialsource ?
             if (!mMyObjsThatRefProjProps.isEmpty())
             {
-                sql = "SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
+                SQLFragment refdPropsSql = new SQLFragment("SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
                         " FROM " + getTinfoPropertyDescriptor() + " PD " +
                         " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
                         " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
                         " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) " +
                         " ON (PD.PropertyId = PDM2.PropertyId) " +
-                        " WHERE PDM.PropertyId IN (" + sqlIn + " ) ";
+                        " WHERE PDM.PropertyId")
+                        .appendInClause(propIds, getExpSchema().getSqlDialect());
 
                 if (_log.isDebugEnabled())
                 {
-                    try (ResultSet rs = new SqlSelector(getExpSchema(), sql).getResultSet())
+                    try (ResultSet rs = new SqlSelector(getExpSchema(), refdPropsSql).getResultSet())
                     {
                         ResultSetUtil.logData(rs, _log);
                     }
@@ -1669,7 +1696,7 @@ public class OntologyManager
 
                 final Container fNewProject = newProject;
 
-                new SqlSelector(getExpSchema(), sql).forEach(rsPropsRefdByMe -> {
+                new SqlSelector(getExpSchema(), refdPropsSql).forEach(rsPropsRefdByMe -> {
                     String propUri = rsPropsRefdByMe.getString(1);
                     String domUri = rsPropsRefdByMe.getString(2);
                     PropertyDescriptor pd = getPropertyDescriptor(propUri, oldProject);
@@ -1949,10 +1976,10 @@ public class OntologyManager
                         .append(" (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo, SystemFieldConfig)\n" +
                         "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS " + timestamp + "),?,?\n")
                         .addAll(ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson, ddIn.getSystemFieldConfig())
-                .append("WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoDomainDescriptor(),"x").append(" WHERE x.DomainURI=? AND x.Project=?)\n")
+                .unsafeAppend("WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoDomainDescriptor(),"x").unsafeAppend(" WHERE x.DomainURI=? AND x.Project=?)\n")
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
                 // belt and suspenders approach to avoiding constraint violation exception
-                insert.append(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING");
+                insert.unsafeAppend(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING");
                 int count;
                 try (var tx = expSchema.getScope().ensureTransaction())
                 {
@@ -2138,19 +2165,19 @@ public class OntologyManager
     {
         SQLFragment objectUriSql = new SQLFragment("SELECT ObjectURI FROM ")
                 .append(getTinfoObject(), "o")
-                .append(" WHERE ObjectId ");
+                .unsafeAppend(" WHERE ObjectId ");
         objectUriSql.append(objectIdClause);
 
         List<String> objectURIs = new SqlSelector(getExpSchema(), objectUriSql).getArrayList(String.class);
 
         SQLFragment sqlDeleteProperties = new SQLFragment("DELETE FROM ")
                 .append(getTinfoObjectProperty())
-                .append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                .unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ")
                 .append(getTinfoObject())
-                .append(" WHERE Container = ? AND ObjectId ")
+                .unsafeAppend(" WHERE Container = ? AND ObjectId ")
                 .add(objContainer)
                 .append(objectIdClause)
-                .append(")");
+                .unsafeAppend(")");
 
         new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
@@ -2199,7 +2226,7 @@ public class OntologyManager
             executor.execute(deleteObjPropSql);
             executor.execute(deletePropDomSql);
             executor.execute(deletePropSql);
-            Pair<String, GUID> key = getCacheKey(pd);
+            ProjectUriKey key = getCacheKey(pd);
             _log.debug("Removing property descriptor from cache. Key: {} descriptor: {}", key, pd);
             PROP_DESCRIPTOR_CACHE.remove(key);
             DOMAIN_PROPERTIES_CACHE.clear();
@@ -2306,7 +2333,7 @@ public class OntologyManager
     public static PropertyDescriptor getPropertyDescriptor(String propertyURI, Container c)
     {
         // cache lookup by project. if not found at project level, check to see if global
-        Pair<String, GUID> key = getCacheKey(propertyURI, c);
+        ProjectUriKey key = getCacheKey(propertyURI, c);
         PropertyDescriptor pd = PROP_DESCRIPTOR_CACHE.get(key);
         if (null != pd)
             return pd;
@@ -2508,7 +2535,7 @@ public class OntologyManager
             return getDomainDescriptorForUpdate(domainURI, c);
 
         // cache lookup by project. if not found at project level, check to see if global
-        Pair<String, GUID> key = getCacheKey(domainURI, c);
+        ProjectUriKey key = getCacheKey(domainURI, c);
         DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
         if (null != dd)
             return dd;
@@ -2581,17 +2608,17 @@ public class OntologyManager
         return DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.get(c);
     }
 
-    public static Pair<String, GUID> getURICacheKey(DomainDescriptor dd)
+    public static ProjectUriKey getURICacheKey(DomainDescriptor dd)
     {
         return getCacheKey(dd.getDomainURI(), dd.getContainer());
     }
 
-    public static Pair<String, GUID> getCacheKey(PropertyDescriptor pd)
+    public static ProjectUriKey getCacheKey(PropertyDescriptor pd)
     {
         return getCacheKey(pd.getPropertyURI(), pd.getContainer());
     }
 
-    public static Pair<String, GUID> getCacheKey(String uri, Container c)
+    public static ProjectUriKey getCacheKey(String uri, Container c)
     {
         Container proj = c.getProject();
         GUID projId;
@@ -2601,8 +2628,10 @@ public class OntologyManager
         else
             projId = proj.getEntityId();
 
-        return Pair.of(uri, projId);
+        return new ProjectUriKey(uri, projId);
     }
+
+    public record ProjectUriKey(String uri, GUID projectId) {}
 
     //TODO: Cache semantics. This loads the cache but does not fetch cause need to get them all together
     public static List<PropertyDescriptor> getPropertiesForType(String typeURI, Container c)
@@ -2706,7 +2735,7 @@ public class OntologyManager
             if (null == (c = t.getColumn(p)))
                 continue;
             sql.append(comma).append(p);
-            values.append(comma).append("?");
+            values.append(comma).unsafeAppend("?");
             comma = ",";
             Parameter parameter = new Parameter(p, c.getJdbcType());
             values.add(parameter);
@@ -2715,12 +2744,12 @@ public class OntologyManager
             else if ("propertyuri".equals(p))
                 propertyuri = parameter;
         }
-        sql.append(", createdby, created, modifiedby, modified)\n");
+        sql.unsafeAppend(", createdby, created, modifiedby, modified)\n");
         values.append(", " + user.getUserId() + ", {fn now()}, " + user.getUserId() + ", {fn now()}");
         sql.append(values);
         if (ifNotExists)
         {
-            sql.append("\nWHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?)\n");
+            sql.unsafeAppend("\nWHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?)\n");
             sql.add(propertyuri).add(container);
         }
         return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
@@ -2734,6 +2763,12 @@ public class OntologyManager
         _log.debug("Adding property descriptor to cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
         PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         return pd;
+    }
+
+    // For callers that write a PropertyDescriptor with a raw Table.update and so bypass the cache eviction here
+    public static void clearPropertyDescriptorCache(PropertyDescriptor pd)
+    {
+        PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
     }
 
     //todo:  we automatically update a pd to the last  one in?
@@ -2916,8 +2951,29 @@ public class OntologyManager
 
     public static void invalidateDomain(Domain d)
     {
-        // TODO can we please implement a surgical version of this
-        clearCaches();
+        String domainURI = d.getTypeURI();
+        Set<String> propertyURIs = d.getProperties().stream().map(DomainProperty::getPropertyURI).collect(Collectors.toSet());
+
+        // Keys are per lookup project and nulls are cached, so drop this domain's entries under every project
+        DOMAIN_DESCRIPTORS_BY_URI_CACHE.removeUsingFilter(key -> domainURI.equals(key.uri()));
+        DOMAIN_DESC_BY_ID_CACHE.remove(d.getTypeId());
+        DOMAIN_PROPERTIES_CACHE.removeUsingFilter(key -> domainURI.equals(key.uri()));
+        uncachePropertyDescriptors(propertyURIs);
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer());
+
+        // Cached property values embed property metadata (name, type) from any domain, so these can't be narrowed
+        PROPERTY_MAP_CACHE.clear();
+        ExperimentService.get().clearCaches();
+    }
+
+    /** For callers that update exp.PropertyDescriptor rows directly; invalidateDomain() only covers the saved domain's own properties */
+    public static void uncachePropertyDescriptors(Collection<String> propertyURIs)
+    {
+        if (!propertyURIs.isEmpty())
+        {
+            Set<String> uris = propertyURIs instanceof Set<String> set ? set : new HashSet<>(propertyURIs);
+            PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> uris.contains(key.uri()));
+        }
     }
 
 
@@ -2936,9 +2992,46 @@ public class OntologyManager
 
     public static void clearPropertyCache(String parentObjectURI)
     {
-        PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
+        PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.objectLSID(), parentObjectURI));
     }
 
+    /**
+     * Every exp.Object delete must call this, or a recreated URI reuses its deleted ObjectId or property map. Pass
+     * deletedUnknownUris when objects outside deletedUris were also deleted (owned children, or deletes by object id).
+     */
+    private static void uncacheDeletedObjects(Container c, Collection<String> deletedUris, boolean deletedUnknownUris)
+    {
+        // Owned objects share their owner's container, so this covers deleted objects whose URIs aren't known
+        uncacheDeletedObjects(deletedUris.stream().map(uri -> getPropertyMapCacheKey(c, uri)).toList(),
+                deletedUnknownUris ? List.of(c.getEntityId()) : List.of());
+    }
+
+    /** @param unknownDeletedContainers containers where objects whose URIs aren't known were deleted */
+    private static void uncacheDeletedObjects(Collection<PropertyMapKey> deletedKeys, Collection<GUID> unknownDeletedContainers)
+    {
+        // Unlike a filter, remove() marks the key even when it isn't cached, so a deleting transaction never reads
+        // a pre-delete map that another thread caches later
+        for (PropertyMapKey key : deletedKeys)
+        {
+            PROPERTY_MAP_CACHE.remove(key);
+            PROPERTY_MAP_CACHE.remove(getPropertyMapCacheKey(null, key.objectLSID()));
+            OBJECT_ID_CACHE.remove(key.objectLSID());
+        }
+
+        unknownDeletedContainers.forEach(containerId -> PROPERTY_MAP_CACHE.removeUsingFilter(new ContainerPropertyMapKeys(containerId)));
+        if (!unknownDeletedContainers.isEmpty())
+            OBJECT_ID_CACHE.clear();
+    }
+
+    /** A record rather than a lambda so a transaction's equal post-commit removal tasks dedupe */
+    private record ContainerPropertyMapKeys(GUID containerId) implements Predicate<PropertyMapKey>
+    {
+        @Override
+        public boolean test(PropertyMapKey key)
+        {
+            return key.containerId() == null || key.containerId().equals(containerId);
+        }
+    }
 
     public static void clearPropertyCache()
     {
@@ -3126,6 +3219,290 @@ public class OntologyManager
 
             m = getProperties(c, oChild.getObjectURI());
             assertEquals(0, m.size());
+        }
+
+        @Test
+        public void testDeleteClearsPropertyMapCacheInTransaction() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
+            String parentObjectLsid = new Lsid("Junit", "OntologyManager", "cacheParent").toString();
+            String childObjectLsid = new Lsid("Junit", "OntologyManager", "cacheChild").toString();
+            String strProp = new Lsid("Junit", "OntologyManager", "cacheStringProp").toString();
+            DbScope scope = getExpSchema().getScope();
+
+            deleteOntologyObjects(c, parentObjectLsid);
+            try
+            {
+                ensureObject(c, childObjectLsid, parentObjectLsid);
+                insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "Cached"));
+                assertEquals(1, getPropertyObjects(c, childObjectLsid).size());
+
+                // Deleting the owner must also drop the cached map of its child, whose URI isn't passed in
+                try (Transaction ignored = scope.ensureTransaction())
+                {
+                    deleteOntologyObject(parentObjectLsid, c, true);
+                    assertTrue(getPropertyObjects(c, childObjectLsid).isEmpty());
+                }
+
+                // Uncached at delete time, then cached by another thread that still sees the committed rows
+                clearPropertyCache(childObjectLsid);
+                try (Transaction tx = scope.ensureTransaction())
+                {
+                    deleteOntologyObject(childObjectLsid, c, false);
+
+                    AtomicReference<Map<String, ObjectProperty>> otherThreadProps = new AtomicReference<>();
+                    Thread otherThread = new Thread(() -> otherThreadProps.set(getPropertyObjects(c, childObjectLsid)));
+                    otherThread.start();
+                    otherThread.join();
+                    assertNotNull(otherThreadProps.get());
+                    assertEquals(1, otherThreadProps.get().size());
+
+                    assertTrue(getPropertyObjects(c, childObjectLsid).isEmpty());
+                    tx.commit();
+                }
+
+                assertTrue(getPropertyObjects(c, childObjectLsid).isEmpty());
+            }
+            finally
+            {
+                deleteOntologyObjects(c, parentObjectLsid);
+            }
+        }
+
+        @Test
+        public void testDeleteByUriSqlClearsObjectCaches() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
+            String parentObjectLsid = new Lsid("Junit", "OntologyManager", "sqlDeleteParent").toString();
+            String childObjectLsid = new Lsid("Junit", "OntologyManager", "sqlDeleteChild").toString();
+            String intProp = new Lsid("Junit", "OntologyManager", "sqlDeleteIntProp").toString();
+            SQLFragment childUriSql = new SQLFragment("SELECT ObjectURI FROM ").append(getTinfoObject())
+                .append(" WHERE ObjectURI = ?").add(childObjectLsid);
+            DbScope scope = getExpSchema().getScope();
+
+            deleteOntologyObjects(c, parentObjectLsid);
+            try
+            {
+                // Insert then look up again in one transaction, so its commit leaves the ObjectId in the shared cache
+                long firstId;
+                try (Transaction tx = scope.ensureTransaction())
+                {
+                    firstId = ensureObject(c, childObjectLsid, parentObjectLsid);
+                    assertEquals(firstId, ensureObject(c, childObjectLsid, parentObjectLsid));
+                    insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 1));
+                    tx.commit();
+                }
+                assertEquals(1, getProperties(c, childObjectLsid).get(intProp));
+
+                long secondId;
+                try (Transaction tx = scope.ensureTransaction())
+                {
+                    deleteOntologyObjects(getExpSchema(), childUriSql, c);
+                    assertNull(getOntologyObject(c, childObjectLsid));
+                    assertTrue(getProperties(c, childObjectLsid).isEmpty());
+
+                    secondId = ensureObject(c, childObjectLsid, parentObjectLsid);
+                    assertNotEquals(firstId, secondId);
+                    insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 2));
+                    tx.commit();
+                }
+
+                // Same without a transaction, where the delete must invalidate the shared caches directly
+                assertEquals(secondId, ensureObject(c, childObjectLsid, parentObjectLsid));
+                assertEquals(2, getProperties(c, childObjectLsid).get(intProp));
+                deleteOntologyObjects(getExpSchema(), childUriSql, c);
+                assertTrue(getProperties(c, childObjectLsid).isEmpty());
+                long thirdId = ensureObject(c, childObjectLsid, parentObjectLsid);
+                assertNotEquals(secondId, thirdId);
+                insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 3));
+
+                OntologyObject child = getOntologyObject(c, childObjectLsid);
+                assertNotNull(child);
+                assertEquals(thirdId, child.getObjectId());
+                assertEquals(3, getProperties(c, childObjectLsid).get(intProp));
+            }
+            finally
+            {
+                deleteOntologyObjects(c, parentObjectLsid);
+                PropertyDescriptor pd = getPropertyDescriptor(intProp, c);
+                if (pd != null)
+                    deletePropertyDescriptor(pd);
+            }
+        }
+
+        @Test
+        public void testDeleteByObjectIdSqlAcrossContainers() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c1 = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
+            Container c2 = ContainerManager.ensureContainer("/_ontologyManagerTest/crossFolderDelete", user);
+            String lsid1 = new Lsid("Junit", "OntologyManager", "crossFolder1").toString();
+            String lsid2 = new Lsid("Junit", "OntologyManager", "crossFolder2").toString();
+            String keptLsid = new Lsid("Junit", "OntologyManager", "crossFolderKept").toString();
+            String intProp = new Lsid("Junit", "OntologyManager", "crossFolderIntProp").toString();
+
+            try
+            {
+                insertProperties(c1, user, null, new ObjectProperty(lsid1, c1, intProp, 1));
+                insertProperties(c2, user, null, new ObjectProperty(lsid2, c2, intProp, 2), new ObjectProperty(keptLsid, c2, intProp, 3));
+                long id1 = ensureObject(c1, lsid1);
+                ensureObject(c2, lsid2);
+                ensureObject(c2, keptLsid);
+                assertEquals(1, getProperties(c1, lsid1).get(intProp));
+                assertEquals(2, getProperties(c2, lsid2).get(intProp));
+                assertEquals(3, getProperties(c2, keptLsid).get(intProp));
+                for (String lsid : List.of(lsid1, lsid2, keptLsid))
+                    assertTrue(isObjectIdCached(lsid));
+                assertTrue(isPropertyMapCached(c1, lsid1));
+                assertTrue(isPropertyMapCached(c2, lsid2));
+                assertTrue(isPropertyMapCached(c2, keptLsid));
+
+                SQLFragment idSql = new SQLFragment("SELECT ObjectId FROM ").append(getTinfoObject())
+                    .append(" WHERE ObjectURI IN (?, ?)").add(lsid1).add(lsid2);
+                assertEquals(2, deleteOntologyObjectsByObjectIdSql(getExpSchema(), idSql));
+
+                assertNull(getOntologyObject(c1, lsid1));
+                assertNull(getOntologyObject(c2, lsid2));
+                assertFalse(isObjectIdCached(lsid1));
+                assertFalse(isObjectIdCached(lsid2));
+                assertFalse(isPropertyMapCached(c1, lsid1));
+                assertFalse(isPropertyMapCached(c2, lsid2));
+
+                // Under the limit, removal is targeted, so an untouched object in a deleted object's container stays cached
+                assertTrue(isObjectIdCached(keptLsid));
+                assertTrue(isPropertyMapCached(c2, keptLsid));
+                assertEquals(3, getProperties(c2, keptLsid).get(intProp));
+
+                assertNotEquals(id1, ensureObject(c1, lsid1));
+            }
+            finally
+            {
+                deleteOntologyObjects(c1, lsid1);
+                ContainerManager.delete(c2, user);
+                PropertyDescriptor pd = getPropertyDescriptor(intProp, c1);
+                if (pd != null)
+                    deletePropertyDescriptor(pd);
+            }
+        }
+
+        @Test
+        public void testDeleteByObjectIdSqlOverLimitClearsContainer() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c1 = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
+            Container c2 = ContainerManager.ensureContainer("/_ontologyManagerTest/overLimitDelete", user);
+            String uriPrefix = new Lsid("Junit", "OntologyManager", "overLimit") + "-";
+            String trackedLsid = uriPrefix + "tracked";
+            String keptLsid = new Lsid("Junit", "OntologyManager", "overLimitKept").toString();
+            String intProp = new Lsid("Junit", "OntologyManager", "overLimitIntProp").toString();
+            SQLFragment bulkIdSql = new SQLFragment("SELECT ObjectId FROM ").append(getTinfoObject())
+                .append(" WHERE Container = ? AND ObjectURI LIKE ?").add(c1.getId()).add(uriPrefix + "%");
+
+            try
+            {
+                insertProperties(c1, user, null, new ObjectProperty(trackedLsid, c1, intProp, 1));
+                insertProperties(c2, user, null, new ObjectProperty(keptLsid, c2, intProp, 2));
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment("INSERT INTO ").append(getTinfoObject())
+                    .append(" (Container, ObjectURI) SELECT ?, ? || g FROM generate_series(1, ?) g")
+                    .add(c1.getId()).add(uriPrefix).add(MAX_TARGETED_CACHE_REMOVALS));
+                long trackedId = ensureObject(c1, trackedLsid);
+                assertEquals(1, getProperties(c1, trackedLsid).get(intProp));
+                assertEquals(2, getProperties(c2, keptLsid).get(intProp));
+                assertTrue(isObjectIdCached(trackedLsid));
+                assertTrue(isPropertyMapCached(c1, trackedLsid));
+                assertTrue(isPropertyMapCached(c2, keptLsid));
+
+                assertEquals(MAX_TARGETED_CACHE_REMOVALS + 1, deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql));
+
+                assertNull(getOntologyObject(c1, trackedLsid));
+                assertFalse(isObjectIdCached(trackedLsid));
+                assertFalse(isPropertyMapCached(c1, trackedLsid));
+                assertTrue(getProperties(c1, trackedLsid).isEmpty());
+
+                // Past the limit, only the deleted objects' container loses its property maps
+                assertTrue(isPropertyMapCached(c2, keptLsid));
+                assertEquals(2, getProperties(c2, keptLsid).get(intProp));
+
+                assertNotEquals(trackedId, ensureObject(c1, trackedLsid));
+            }
+            finally
+            {
+                deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql);
+                ContainerManager.delete(c2, user);
+                PropertyDescriptor pd = getPropertyDescriptor(intProp, c1);
+                if (pd != null)
+                    deletePropertyDescriptor(pd);
+            }
+        }
+
+        @Test
+        public void testDeleteByObjectIdSqlOverLimitAcrossContainers() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c1 = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
+            Container c2 = ContainerManager.ensureContainer("/_ontologyManagerTest/overLimitSplit", user);
+            Container c3 = ContainerManager.ensureContainer("/_ontologyManagerTest/overLimitSplitKept", user);
+            String uriPrefix = new Lsid("Junit", "OntologyManager", "overLimitSplit") + "-";
+            String tracked1 = uriPrefix + "tracked1";
+            String tracked2 = uriPrefix + "tracked2";
+            String keptLsid = new Lsid("Junit", "OntologyManager", "overLimitSplitKept").toString();
+            String intProp = new Lsid("Junit", "OntologyManager", "overLimitSplitIntProp").toString();
+            SQLFragment bulkIdSql = new SQLFragment("SELECT ObjectId FROM ").append(getTinfoObject())
+                .append(" WHERE ObjectURI LIKE ?").add(uriPrefix + "%");
+
+            try
+            {
+                insertProperties(c1, user, null, new ObjectProperty(tracked1, c1, intProp, 1));
+                insertProperties(c2, user, null, new ObjectProperty(tracked2, c2, intProp, 2));
+                insertProperties(c3, user, null, new ObjectProperty(keptLsid, c3, intProp, 3));
+                // Each container stays under the limit; only the delete as a whole exceeds it
+                for (Container c : List.of(c1, c2))
+                {
+                    new SqlExecutor(getExpSchema()).execute(new SQLFragment("INSERT INTO ").append(getTinfoObject())
+                        .append(" (Container, ObjectURI) SELECT ?, ? || g FROM generate_series(1, ?) g")
+                        .add(c.getId()).add(uriPrefix + c.getRowId() + "-").add(MAX_TARGETED_CACHE_REMOVALS / 2));
+                }
+                long trackedId1 = ensureObject(c1, tracked1);
+                ensureObject(c2, tracked2);
+                ensureObject(c3, keptLsid);
+                assertEquals(1, getProperties(c1, tracked1).get(intProp));
+                assertEquals(2, getProperties(c2, tracked2).get(intProp));
+                assertEquals(3, getProperties(c3, keptLsid).get(intProp));
+                assertTrue(isObjectIdCached(keptLsid));
+
+                assertEquals(2 * (MAX_TARGETED_CACHE_REMOVALS / 2) + 2, deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql));
+
+                assertFalse(isObjectIdCached(tracked1));
+                assertFalse(isObjectIdCached(tracked2));
+                assertFalse(isPropertyMapCached(c1, tracked1));
+                assertFalse(isPropertyMapCached(c2, tracked2));
+                // Past the total limit, the ObjectId cache is cleared rather than removed key by key
+                assertFalse(isObjectIdCached(keptLsid));
+                assertEquals(3, getProperties(c3, keptLsid).get(intProp));
+
+                assertNotEquals(trackedId1, ensureObject(c1, tracked1));
+            }
+            finally
+            {
+                deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql);
+                ContainerManager.delete(c2, user);
+                ContainerManager.delete(c3, user);
+                PropertyDescriptor pd = getPropertyDescriptor(intProp, c1);
+                if (pd != null)
+                    deletePropertyDescriptor(pd);
+            }
+        }
+
+        private static boolean isObjectIdCached(String lsid)
+        {
+            return OBJECT_ID_CACHE.getKeys().anyMatch(lsid::equals);
+        }
+
+        private static boolean isPropertyMapCached(Container c, String lsid)
+        {
+            return PROPERTY_MAP_CACHE.getKeys().anyMatch(getPropertyMapCacheKey(c, lsid)::equals);
         }
 
         @Test

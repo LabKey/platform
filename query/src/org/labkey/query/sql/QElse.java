@@ -24,23 +24,23 @@ public class QElse extends QExpr
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("\nELSE (");
+        builder.unsafeAppend("\nELSE (");
         for (QNode child : children())
         {
             ((QExpr)child).appendSql(builder, query);
         }
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("\nELSE (");
+        builder.unsafeAppend("\nELSE (");
         for (QNode child : children())
         {
             child.appendSource(builder);
         }
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override

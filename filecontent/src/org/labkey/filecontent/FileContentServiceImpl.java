@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -330,27 +331,33 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     @Override
     public @Nullable java.nio.file.Path getFileRootPath(@NotNull Container c)
     {
-        if (c == null)
-            return null;
-
         if (c.isRoot())
-        {
             return getSiteDefaultRootPath();
-        }
 
         if (!isFileRootDisabled(c))
-        {
-            FileRoot root = FileRootManager.get().getFileRoot(c);
+            return resolveFileRootPath(c, true);
 
-            // check if there is a site wide file root
-            if (root.getPath() == null || isUseDefaultRoot(c))
-            {
-                return getDefaultRootPath(c, true);
-            }
-            else
-                return getNioPath(c, root.getPath());
-        }
         return null;
+    }
+
+    @Override
+    public @Nullable java.nio.file.Path getConfiguredFileRootPath(@NotNull Container c, @NotNull ContentType type)
+    {
+        java.nio.file.Path fileRootPath = c.isRoot() ? getSiteDefaultRootPath() : resolveFileRootPath(c, false);
+        if (null != fileRootPath && !FileUtil.hasCloudScheme(fileRootPath))
+            fileRootPath = fileRootPath.resolve(getFolderName(type));
+        return fileRootPath;
+    }
+
+    private @Nullable java.nio.file.Path resolveFileRootPath(@NotNull Container c, boolean createDir)
+    {
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+
+        // check if there is a site wide file root
+        if (root.getPath() == null || isUseDefaultRoot(c))
+            return getDefaultRootPath(c, createDir);
+        else
+            return getNioPath(c, root.getPath());
     }
 
     @Override
@@ -478,7 +485,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
     private boolean isCloudFileRoot(String fileRootPseudoPath)
     {
-        return StringUtils.startsWith(fileRootPseudoPath, FileContentService.CLOUD_ROOT_PREFIX);
+        return Strings.CS.startsWith(fileRootPseudoPath, FileContentService.CLOUD_ROOT_PREFIX);
     }
 
     private String getCloudRootName(@NotNull String fileRootPseudoPath)
@@ -1287,7 +1294,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     {
         SQLFragment frag = new SQLFragment();
         String union = "";
-        frag.append("(");
+        frag.unsafeAppend("(");
 
         for (FileListener fileListener : _fileListeners)
         {
@@ -1299,7 +1306,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 union = "UNION\n";
             }
         }
-        frag.append(")");
+        frag.unsafeAppend(")");
         return union.isEmpty() ? new SQLFragment() : frag;
     }
 
@@ -1309,21 +1316,21 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         SQLFragment frag = new SQLFragment();
         if (currentUser == null || !currentUser.hasSiteAdminPermission())
         {
-            frag.append("SELECT\n");
-            frag.append("  CAST(NULL AS VARCHAR) AS Container,\n");
-            frag.append("  NULL AS Created,\n");
-            frag.append("  NULL AS CreatedBy,\n");
-            frag.append("  NULL AS Modified,\n");
-            frag.append("  NULL AS ModifiedBy,\n");
-            frag.append("  NULL AS FilePath,\n");
-            frag.append("  NULL AS SourceKey,\n");
-            frag.append("  NULL AS SourceName\n");
-            frag.append("WHERE 1 = 0");
+            frag.unsafeAppend("SELECT\n");
+            frag.unsafeAppend("  CAST(NULL AS VARCHAR) AS Container,\n");
+            frag.unsafeAppend("  NULL AS Created,\n");
+            frag.unsafeAppend("  NULL AS CreatedBy,\n");
+            frag.unsafeAppend("  NULL AS Modified,\n");
+            frag.unsafeAppend("  NULL AS ModifiedBy,\n");
+            frag.unsafeAppend("  NULL AS FilePath,\n");
+            frag.unsafeAppend("  NULL AS SourceKey,\n");
+            frag.unsafeAppend("  NULL AS SourceName\n");
+            frag.unsafeAppend("WHERE 1 = 0");
         }
         else
         {
             String union = "";
-            frag.append("(");
+            frag.unsafeAppend("(");
             for (FileListener fileListener : _fileListeners)
             {
                 SQLFragment subselect = fileListener.listFilesQuery();
@@ -1334,7 +1341,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     union = "UNION\n";
                 }
             }
-            frag.append(")");
+            frag.unsafeAppend(")");
         }
         return frag;
     }
@@ -1510,7 +1517,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 filesRoot = rootPath;
 
             String absoluteFilePath = getAbsolutePathFromDataFileUrl(dataFileUrl, container);
-            if (StringUtils.startsWith(absoluteFilePath, rootPath))
+            if (Strings.CS.startsWith(absoluteFilePath, rootPath))
             {
                 String offset = absoluteFilePath.replace(rootPath, "").replace("\\", "/");
                 int lastSlash = offset.lastIndexOf("/");
@@ -1765,7 +1772,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     // Cache with short-lived entries so that exp.files can perform reasonably
-    private static final Cache<Container, Boolean> _fileDataUpToDateCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
+    private static final Cache<Container, Boolean> _fileDataUpToDateCache = CacheManager.getCache(Container.class, CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends AssertionError

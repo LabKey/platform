@@ -67,6 +67,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.GridViewAuditProvider.GridViewAuditEvent;
 import org.labkey.query.audit.QueryExportAuditProvider;
@@ -433,6 +434,8 @@ public class QueryManager
         {
             ExternalSchemaDefCache.uncache(c);
             ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
+            // GH Issue 1512: a schema reload can change a source-table PK without touching the query row
+            QueryDefinitionImpl.clearHasPkColumnCache();
         }
     }
 
@@ -444,6 +447,7 @@ public class QueryManager
     public void reloadExternalSchema(ExternalSchemaDef def)
     {
         ExternalSchema.uncache(def);
+        QueryDefinitionImpl.clearHasPkColumnCache();
     }
 
     public boolean canInherit(int flag)
@@ -1093,7 +1097,7 @@ public class QueryManager
             if (table != null)
             {
                 SQLFragment sql = new SQLFragment("SELECT COUNT(*) as ExportCount, Comment FROM ").append(table, "t")
-                        .append(" GROUP BY Comment");
+                        .unsafeAppend(" GROUP BY Comment");
 
                 new SqlSelector(dbSchema, sql)
                         .getMapCollection().forEach(row -> {
@@ -1111,7 +1115,7 @@ public class QueryManager
                 // they are all likely to have the same timestamp. Not exact, but perhaps good enough for current purposes.
                 sql = new SQLFragment("SELECT COUNT(*) FROM (SELECT *\n" +
                         "                      FROM (SELECT COUNT(*) as count, DATE_TRUNC('second', Created) as created, CreatedBy\n" +
-                        "                            FROM ").append(table, "t").append("\n" +
+                        "                            FROM ").append(table, "t").unsafeAppend("\n" +
                         "                            WHERE comment = 'Exported to Excel'\n" +
                         "                            AND CreatedBy IS NOT NULL\n" +
                         "                            GROUP BY CreatedBy, DATE_TRUNC('second', created)\n" +
@@ -1144,20 +1148,20 @@ public class QueryManager
         var schemaField = customView.getColumn("schema").getSelectIdentifier();
         SQLFragment schemaClause;
         if (schema.equalsIgnoreCase("assay"))
-            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).append(" LIKE 'assay.%'");
+            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).unsafeAppend(" LIKE 'assay.%'");
         else
-            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).append(" = ").appendValue(schema);
+            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).unsafeAppend(" = ").appendValue(schema);
         return Map.of(
                 "defaultOverrides", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags < 2 AND C.name IS NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags < 2 AND C.name IS NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "inheritable", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags = 1")).getObject(Long.class), // inheritable, not hidden, not snapshot
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags = 1")).getObject(Long.class), // inheritable, not hidden, not snapshot
                 "namedViews", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags < 2 AND C.name IS NOT NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags < 2 AND C.name IS NOT NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "shared", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.customviewowner IS NULL")).getObject(Long.class),
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.customviewowner IS NULL")).getObject(Long.class),
                 "identifyingFieldsViews", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.name = '~~identifyingfields~~'")).getObject(Long.class)
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.name = '~~identifyingfields~~'")).getObject(Long.class)
         );
     }
 
@@ -1201,7 +1205,7 @@ public class QueryManager
         DbSchema schema = DbSchema.get("query", DbSchemaType.Module);
         SqlDialect sqlDialect = schema.getSqlDialect();
         SQLFragment sql = new SQLFragment()
-                .append("SELECT columns FROM query.customview WHERE flags < 2 AND (columns LIKE ? OR columns LIKE ? OR columns LIKE ?)")
+                .unsafeAppend("SELECT columns FROM query.customview WHERE flags < 2 AND (columns LIKE ? OR columns LIKE ? OR columns LIKE ?)")
                 .add("%" + sqlDialect.encodeLikeOpSearchString("Ancestors%2F") + "%")
                 .add("%" + sqlDialect.encodeLikeOpSearchString("Inputs%2F") + "%")
                 .add("%" + sqlDialect.encodeLikeOpSearchString("Outputs%2F") + "%");

@@ -82,6 +82,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
@@ -100,6 +101,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -130,8 +132,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     String ILLEGAL_PARENT_ALIAS_CHARSET = "/:<>$[]{};,`\"~!@#$%^*=|?\\";
 
     String EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS = "org.labkey.api.exp.api.ExperimentService#FROM_EXPANCESTORS";
-
-    String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
 
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
@@ -176,7 +176,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpRun getExpRun(long rowId);
 
     @Nullable
-    ExpRun getExpRun(long rowId, @Nullable Container container);
+    ExpRun getExpRun(@NotNull Container container, long rowId);
 
     List<? extends ExpRun> getExpRuns(Collection<Long> rowIds);
 
@@ -230,6 +230,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable
     ExpData getExpData(long rowId);
+
+    @Nullable
+    ExpData getExpData(@NotNull Container container, long rowId);
 
     @Nullable
     ExpData getExpData(String lsid);
@@ -458,6 +461,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
     @Nullable ExpProtocol getExpProtocol(long rowId);
+
+    @Nullable ExpProtocol getExpProtocol(@NotNull Container container, long rowId);
 
     @Nullable ExpProtocol getExpProtocol(String lsid);
 
@@ -793,6 +798,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpData> getAllExpDataByURL(String canonicalURL, @Nullable Container c);
     List<? extends ExpData> getAllExpDataByURL(File f, @Nullable Container c);
     List<? extends ExpData> getAllExpDataByURL(Path p, @Nullable Container c);
+
+    /** The per-sample facts an operation confirmation or a status pre-check needs, read straight off exp.material. */
+    record SampleOperationRow(long rowId, Container container, Long sampleState, String cpasType) {}
+
+    /**
+     * Streams the facts an operation confirmation needs about each sample. A confirmation can cover tens of thousands
+     * of samples at once, so nothing is collected here and nothing wider than these four columns is read; callers fold
+     * the rows as they arrive.
+     */
+    void forEachSampleOperationRow(Collection<Long> rowIds, Consumer<SampleOperationRow> block);
 
     TableInfo getTinfoMaterial();
 
@@ -1257,7 +1272,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerNameExpressionType(String dataType, String schemaName, String queryname, String nameExpressionCol);
 
-    Map<String, Map<String, Object>> getDomainMetrics();
+    UsageMetrics addDomainMetrics(UsageMetrics metrics);
 
     void clearAncestors(ExpRunItem runItem);
     void clearDataAncestors(Collection<Long> dataRowIds);

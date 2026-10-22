@@ -85,7 +85,7 @@ public class ParticipantReport extends AbstractReport
 
         JspView<ReportsController.ParticipantReportForm> view = new JspView<>("/org/labkey/study/view/participantReport.jsp", form);
 
-        String rwp = (String)context.get("reportWebPart");
+        String rwp = context.getString("reportWebPart");
         form.setExpanded(rwp == null);
 
         form.setAllowOverflow(!BooleanUtils.toBoolean(rwp));

@@ -440,7 +440,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         SqlBuilder sql = new SqlBuilder(getSchema().getDbSchema());
         assert sql.appendComment("<QueryLookupWrapper>");
 
-        sql.append("SELECT ");
+        sql.unsafeAppend("SELECT ");
         String comma = "";
         for (RelationColumn col : _selectedColumns.values())
         {
@@ -451,14 +451,14 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
                 col.declareJoins(_source.getAlias(), joins);
             SQLFragment f = col.getInternalSql();
             if (f.getSQL().length() > 40)
-                sql.append("\n").append(f).append("\n");
+                sql.unsafeAppend("\n").append(f).unsafeAppend("\n");
             else
                 sql.append(f);
-            sql.append(" AS ");
+            sql.unsafeAppend(" AS ");
             sql.appendIdentifier(col.getAlias());
             comma = ", ";
         }
-        sql.append("\nFROM ");
+        sql.unsafeAppend("\nFROM ");
         sql.append(sourceFromSql);
 
         for (SQLFragment j : joins.values())

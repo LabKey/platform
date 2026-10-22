@@ -15,7 +15,7 @@
  */
 package org.labkey.api.search;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -305,19 +305,14 @@ public interface SearchService extends SearchMXBean
             return _name;
         }
 
-        protected Set<String> getPermittedContainerIds(User user, Map<String, Container> containers, @NotNull Class<? extends Permission> perm)
+        /**
+         * Permission required, beyond base container Read (which every searchable container already has), for this
+         * category's documents to be visible. Return null if base Read is sufficient.
+         */
+        @Nullable
+        public Class<? extends Permission> getRequiredPermission()
         {
-            Set<String> containerIds = new HashSet<>();
-            containers.forEach((id, container) -> {
-                if (container.hasPermission(user, perm))
-                    containerIds.add(id);
-            });
-            return containerIds.size() == containers.size() ? containers.keySet() : containerIds;
-        }
-
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return containers.keySet();
+            return null;
         }
 
         public boolean isShowInAdvancedSearch()
@@ -682,7 +677,7 @@ public interface SearchService extends SearchMXBean
             String or = "";
             if (null != lastIndexed)
             {
-                _sqlf.append(lastIndexed.getValueSql(lastIndexedTableAlias)).append(" IS NULL");
+                _sqlf.append(lastIndexed.getValueSql(lastIndexedTableAlias)).unsafeAppend(" IS NULL");
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
             }
@@ -690,7 +685,7 @@ public interface SearchService extends SearchMXBean
             if (null != modified && null != lastIndexed)
             {
                 _sqlf.append(or);
-                _sqlf.append(modified.getValueSql(modifiedTableAlias)).append(">").append(lastIndexed.getValueSql(lastIndexedTableAlias));
+                _sqlf.append(modified.getValueSql(modifiedTableAlias)).unsafeAppend(">").append(lastIndexed.getValueSql(lastIndexedTableAlias));
                 _fieldKeys.add(modified.getFieldKey());
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
@@ -699,19 +694,19 @@ public interface SearchService extends SearchMXBean
             if (null != modifiedSince && null != modified)
             {
                 _sqlf.append(or);
-                _sqlf.append(modified.getValueSql(modifiedTableAlias)).append("> ?");
+                _sqlf.append(modified.getValueSql(modifiedTableAlias)).unsafeAppend("> ?");
                 _sqlf.add(modifiedSince);
                 _fieldKeys.add(modified.getFieldKey());
             }
 
             if (_sqlf.isEmpty())
             {
-                _sqlf.append("1=1");
+                _sqlf.unsafeAppend("1=1");
             }
             else
             {
                 _sqlf.insert(0, "(");
-                _sqlf.append(")");
+                _sqlf.unsafeAppend(")");
             }
         }
 
@@ -739,7 +734,7 @@ public interface SearchService extends SearchMXBean
             assert tableAliasProvidedInConstructor || tableAlias != null;
             if (this._sqlf.isEmpty() || null == tableAlias)
                 return _sqlf;
-            String sql = StringUtils.replace(_sqlf.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
+            String sql = Strings.CS.replace(_sqlf.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
             SQLFragment ret = new SQLFragment(sql);
             ret.addAll(_sqlf.getParams());
             return ret;
@@ -841,7 +836,7 @@ public interface SearchService extends SearchMXBean
             {
                 var list = SearchService.get().getCategories(categories);
                 if (null != list && !list.isEmpty())
-                this.categories = list;
+                    this.categories = list;
                 return this;
             }
 
@@ -851,5 +846,4 @@ public interface SearchService extends SearchMXBean
             }
         }
     }
-
 }

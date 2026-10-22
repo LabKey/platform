@@ -101,6 +101,13 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(scriptExecutionTimeout, timeout);
     }
 
+    public void setAssayTransformScriptTimeout(int timeout)
+    {
+        if (timeout < 0)
+            throw new IllegalArgumentException("assayTransformScriptTimeout must be >= 0");
+        storeIntValue(assayTransformScriptTimeout, timeout);
+    }
+
     public void setMaxBLOBSize(int maxSize)
     {
         if (maxSize < 0)

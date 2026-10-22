@@ -108,7 +108,7 @@ public class NestedRenderContext extends RenderContext
 
             SQLFragment fromSQL = new SQLFragment(" FROM (");
             ColumnInfo groupColumn = appendFromSQL(tinfo, name, groupingSort, fromSQL, _nestingOption.getRowIdFieldKey(), true);
-            fromSQL.append(" ) FilterOnly ");
+            fromSQL.unsafeAppend(" ) FilterOnly ");
 
             Collection<ColumnInfo> cols = Collections.singletonList(groupColumn);
             SQLFragment withoutSort = QueryService.get().getSelectBuilder(tinfo).columns(cols).buildSqlFragment();
@@ -125,10 +125,10 @@ public class NestedRenderContext extends RenderContext
             String groupBySQL = sortSQL.replaceAll(" DESC", "").replaceAll(" ASC", "").replaceAll("ORDER BY ", "GROUP BY ");
 
             // Add one to the limit so we can tell if there are more groups or not, and should therefore show pagination
-            SQLFragment fullSQL = new SQLFragment(" ").appendIdentifier(groupColumn.getAlias()).append(" IN (SELECT ").appendIdentifier(groupColumn.getAlias()).append(" FROM (");
-            fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(new SQLFragment("SELECT ").appendIdentifier(groupColumn.getAlias()).append(" "),
+            SQLFragment fullSQL = new SQLFragment(" ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" IN (SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" FROM (");
+            fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(new SQLFragment("SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" "),
                     fromSQL, null, maxRows != Table.ALL_ROWS || offset > 0 ? new SQLFragment(sortSQL) : null, new SQLFragment(groupBySQL), maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
-            fullSQL.append(" ) Limited )");
+            fullSQL.unsafeAppend(" ) Limited )");
 
             // Apply a filter that restricts the group ids to the right "page" of data
             result.addClause(new SimpleFilter.SQLClause(fullSQL));
@@ -157,8 +157,8 @@ public class NestedRenderContext extends RenderContext
         Sort sort = new Sort(_nestingOption.getRowIdFieldKey());
         final SQLFragment fromSQL = new SQLFragment();
         ColumnInfo groupColumn = appendFromSQL(tinfo, dataRegionName, sort, fromSQL, _nestingOption.getAggregateRowIdFieldKey(), false);
-        fromSQL.insert(0, "SELECT " + groupColumn.getAlias().getSql().getRawSQL() + " FROM (");
-        fromSQL.append(") FilterOnly GROUP BY ");
+        fromSQL.insert(0, SQLFragment.unsafe("SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" FROM ("));
+        fromSQL.unsafeAppend(") FilterOnly GROUP BY ");
         fromSQL.appendIdentifier(groupColumn.getAlias());
 
         // Create a TableInfo that wraps the GROUP BY query

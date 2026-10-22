@@ -23,14 +23,13 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 /**
  * User: klum
  * Date: Mar 15, 2012
  */
-public class RunGroupColumn extends ExperimentAuditColumn
+public class RunGroupColumn extends ExperimentAuditColumn<ExpExperiment>
 {
     public RunGroupColumn(ColumnInfo col, ColumnInfo containerId, @Nullable ColumnInfo defaultName)
     {
@@ -39,7 +38,7 @@ public class RunGroupColumn extends ExperimentAuditColumn
 
     @Nullable
     @Override
-    protected Pair getExpValue(RenderContext ctx)
+    protected ExpLink<ExpExperiment> getExpValue(RenderContext ctx)
     {
         Object rowId = getBoundColumn().getValue(ctx);
         if (rowId != null)
@@ -53,7 +52,7 @@ public class RunGroupColumn extends ExperimentAuditColumn
                 if (runGroup != null)
                     url = PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(c, runGroup);
 
-                return runGroup == null ? null : new Pair<>(runGroup, url);
+                return runGroup == null ? null : new ExpLink<>(runGroup, url);
             }
         }
         return null;
