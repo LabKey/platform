@@ -355,8 +355,23 @@ public class AsyncQueryRequest<T>
             }
             catch (SQLException e)
             {
-                _log.error("Error cancelling statement", e);
+                if (isClosed(_statement))
+                    _log.debug("Statement already closed; nothing to cancel");
+                else
+                    _log.error("Error cancelling statement", e);
             }
+        }
+    }
+
+    private static boolean isClosed(Statement statement)
+    {
+        try
+        {
+            return statement.isClosed();
+        }
+        catch (SQLException e)
+        {
+            return false;
         }
     }
 
