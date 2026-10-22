@@ -101,6 +101,14 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             writeable.setScriptExecutionTimeout(Integer.parseInt(value));
         }
     },
+    assayTransformScriptTimeout("Timeout in minutes for assay transform and validation scripts. Set to 0 to disable.", Integer.class, AppProps::getAssayTransformScriptTimeout)
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setAssayTransformScriptTimeout(Integer.parseInt(value));
+        }
+    },
     maxBLOBSize("Maximum file size, in bytes, to allow in database BLOBs", Integer.class, AppProps::getMaxBLOBSize)
     {
         @Override

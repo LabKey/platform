@@ -21,6 +21,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
@@ -32,6 +33,7 @@ import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,14 +72,35 @@ public interface DataExchangeHandler
             FileLike scriptDir
     ) throws Exception;
 
-    TransformResult processTransformationOutput(
+    /**
+     * Data inputs to list in the run properties file when {@link #createTransformationRunInfo} is called without a
+     * saved run.
+     */
+    default void setRunDataInputs(@NotNull Collection<? extends ExpData> dataInputs)
+    {
+    }
+
+    /**
+     * Reads a script's output files without writing to the database, collecting the records the output needs into
+     * scriptOutput for {@link #recordTransformationOutput}.
+     */
+    TransformResult parseTransformationOutput(
             DataTransformService.TransformOperation operation,
             AssayRunUploadContext<? extends AssayProvider> context,
             FileLike runInfo,
-            @Nullable ExpRun run,
             FileLike scriptFile,
             TransformResult mergeResult,
-            Set<FileLike> inputDataFiles
+            TransformScriptOutput scriptOutput
+    ) throws ValidationException;
+
+    /**
+     * Saves the script's protocol application and output data collected by {@link #parseTransformationOutput}.
+     * @param run the saved run, or null when no run is being created
+     */
+    void recordTransformationOutput(
+            AssayRunUploadContext<? extends AssayProvider> context,
+            @Nullable ExpRun run,
+            TransformScriptOutput scriptOutput
     ) throws ValidationException;
 
     DataSerializer getDataSerializer();
