@@ -55,8 +55,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implements AssaySaveHandler
 {
@@ -64,6 +67,9 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     protected AssayProvider _provider;
     private PreparedTransforms _preparedTransforms = new PreparedTransforms();
     private final Map<String, JSONObject> _serializedRuns = new HashMap<>();
+    /** For each prepared run, the parts of its existing serialization its scripts read before the transaction. */
+    private final Map<JSONObject, JSONObject> _preparedSerializations = new IdentityHashMap<>();
+    private static final List<String> PREPARED_KEYS = List.of(AssayJSONConverter.DATA_ROWS, ExperimentJSONConverter.DATA_INPUTS, ExperimentJSONConverter.DATA_OUTPUTS);
 
     @Override
     public AssayProvider getProvider()
@@ -177,7 +183,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return materialOutputs;
     }
 
-    /** Serializes a run once for all the serialize methods, across both passes of a save. */
+    /** Serializes a run once for all the serialize methods within one pass of a save. */
     private JSONObject serializeExistingRun(ViewContext context, ExpRun run, ExpProtocol protocol)
     {
         return _serializedRuns.computeIfAbsent(run.getLSID(), lsid ->
@@ -210,8 +216,8 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         Map<ExpMaterial, String> outputMaterial
     ) throws ExperimentException, ValidationException
     {
-        // Done with this run's serialization; a later post of the same run must see this save
-        _serializedRuns.remove(run.getLSID());
+        // This run's read inside the transaction, to check against what its scripts saw
+        JSONObject serializedRun = _serializedRuns.remove(run.getLSID());
 
         List<Map<String, Object>> dataRows = convertRunData(dataArray, run.getContainer(), protocol);
         if (skipsAssayRun(dataRows, !outputData.isEmpty()))
@@ -224,6 +230,10 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         PreparedTransform prepared = _preparedTransforms.get(runJson);
         if (prepared != null && uploadContext != null)
         {
+            // Rerunning the scripts inside the transaction would reopen the deadlock they ran early to avoid
+            if (!matchesPrepared(runJson, serializedRun))
+                throw new ValidationException("Run " + run.getRowId() + " changed while its transform scripts ran. Retry the save.");
+
             if (prepared.getRunDataInputs() != null)
             {
                 Map<ExpData, String> runDataInputs = new HashMap<>(prepared.getRunDataInputs());
@@ -234,6 +244,27 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         }
 
         return saveAssayRun(uploadContext, batch, run, BaseViewAction.getTransactionAuditDetails(context));
+    }
+
+    /** Whether the run, read inside the transaction, still holds what its scripts saw before it. */
+    private boolean matchesPrepared(JSONObject runJson, @Nullable JSONObject serializedRun)
+    {
+        JSONObject seen = _preparedSerializations.get(runJson);
+        if (seen == null)
+            return true;
+        return serializedRun != null && seen.similar(readFromSerialization(runJson, serializedRun));
+    }
+
+    /** The arrays read from an existing run's serialization because the client didn't post them. */
+    private static JSONObject readFromSerialization(JSONObject runJson, JSONObject serializedRun)
+    {
+        JSONObject read = new JSONObject();
+        for (String key : PREPARED_KEYS)
+        {
+            if (!runJson.has(key))
+                read.put(key, serializedRun.getJSONArray(key));
+        }
+        return read;
     }
 
     /** Whether saveExperimentRun skips the assay save, and with it the transform scripts. */
@@ -286,14 +317,33 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         if (!hasRunContent(runJson))
             return null;
 
+        try
+        {
+            PreparedTransform prepared = prepareTransform(context, protocol, runJson, existingRun);
+            JSONObject serializedRun = existingRun == null ? null : _serializedRuns.get(existingRun.getLSID());
+            if (prepared != null && serializedRun != null)
+                _preparedSerializations.put(runJson, readFromSerialization(runJson, serializedRun));
+            return prepared;
+        }
+        finally
+        {
+            // The save pass reads the run again inside its transaction
+            if (existingRun != null)
+                _serializedRuns.remove(existingRun.getLSID());
+        }
+    }
+
+    private @Nullable PreparedTransform prepareTransform(ViewContext context, ExpProtocol protocol, JSONObject runJson, @Nullable ExpRun existingRun) throws ExperimentException, ValidationException
+    {
         JSONArray dataArray = existingRun != null ? serializeRunData(context, existingRun, runJson, protocol, null) : postedArray(runJson, AssayJSONConverter.DATA_ROWS);
         JSONArray dataInputs = existingRun != null ? serializeDataInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_INPUTS);
         JSONArray dataOutputs = existingRun != null ? serializeDataOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_OUTPUTS);
 
-        Map<String, ExpData> newDataByUrl = new HashMap<>();
-        Map<ExpData, String> inputData = new HashMap<>();
+        // Unsaved data all have rowId 0 and can share an LSID, so key by file instead of ExpData equality
+        Map<Object, ExpData> dataByKey = new HashMap<>();
+        Map<ExpData, String> inputData = new IdentityHashMap<>();
         for (JSONObject dataObject : JsonUtil.toJSONObjectList(dataInputs))
-            inputData.put(lookupData(context, dataObject, newDataByUrl), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
+            inputData.put(lookupData(context, dataObject, dataByKey), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
 
         List<Map<String, Object>> dataRows = convertRunData(dataArray, context.getContainer(), protocol);
         if (skipsAssayRun(dataRows, !dataOutputs.isEmpty()))
@@ -307,20 +357,24 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         if (prepared != null && prepared.getRunDataInputs() != null)
         {
             // saveExperimentRun adds the saved inputs back; keep only those the participant visit resolver added
-            Map<ExpData, String> resolverInputs = new HashMap<>(prepared.getRunDataInputs());
-            resolverInputs.keySet().removeAll(inputData.keySet());
+            Set<Object> postedKeys = inputData.keySet().stream().map(DefaultAssaySaveHandler::dataKey).collect(Collectors.toSet());
+            Map<ExpData, String> resolverInputs = new IdentityHashMap<>(prepared.getRunDataInputs());
+            resolverInputs.keySet().removeIf(data -> postedKeys.contains(dataKey(data)));
             prepared.setRunDataInputs(resolverInputs);
         }
         return prepared;
     }
 
     /** Each lookup of a not-yet-saved file returns a new data object, but handleData saves the first and reuses it for the rest. */
-    private ExpData lookupData(ViewContext context, JSONObject dataObject, Map<String, ExpData> newDataByUrl)
+    private ExpData lookupData(ViewContext context, JSONObject dataObject, Map<Object, ExpData> dataByKey)
     {
         ExpData data = lookupData(context, dataObject);
-        if (data.getRowId() == 0 && data.getDataFileUrl() != null)
-            return newDataByUrl.computeIfAbsent(data.getDataFileUrl(), url -> data);
-        return data;
+        return dataByKey.computeIfAbsent(dataKey(data), key -> data);
+    }
+
+    private static Object dataKey(ExpData data)
+    {
+        return data.getDataFileUrl() != null ? data.getDataFileUrl() : data.getRowId();
     }
 
     private static JSONArray postedArray(JSONObject runJson, String key)

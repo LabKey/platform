@@ -24,8 +24,10 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.transform.PreparedTransforms;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
@@ -85,7 +87,10 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
         List<ExpExperiment> batches = new ArrayList<>(batchesJsonArray.length());
         List<JSONObject> runJsons = new ArrayList<>();
         for (JSONObject batchJsonObject : JsonUtil.toJSONObjectList(batchesJsonArray))
+        {
+            checkBatch(batchJsonObject);
             runJsons.addAll(getRunJsons(batchJsonObject));
+        }
         try (PreparedTransforms ignored = prepareTransforms(saveHandler, protocol, runJsons);
              DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
@@ -108,6 +113,7 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
         List<ExpExperiment> batches = new ArrayList<>(1);
 
         saveHandler.beforeSave(getViewContext(), rootJsonObject, protocol);
+        checkBatch(batchJsonObject);
         try (PreparedTransforms ignored = prepareTransforms(saveHandler, protocol, getRunJsons(batchJsonObject));
              DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
@@ -116,6 +122,13 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
         }
         saveHandler.afterSave(getViewContext(), batches, protocol);
         return AssayJSONConverter.serializeResult(provider, protocol, batches.getFirst(), getUser());
+    }
+
+    /** Rejects a missing batch before any transform script runs. */
+    private void checkBatch(JSONObject batchJsonObject)
+    {
+        if (!batchJsonObject.isNull(ExperimentJSONConverter.ID))
+            DefaultExperimentSaveHandler.lookupBatch(getContainer(), batchJsonObject.getInt(ExperimentJSONConverter.ID));
     }
 
     private static List<JSONObject> getRunJsons(JSONObject batchJsonObject)
