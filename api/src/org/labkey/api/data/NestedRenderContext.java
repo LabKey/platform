@@ -157,7 +157,7 @@ public class NestedRenderContext extends RenderContext
         Sort sort = new Sort(_nestingOption.getRowIdFieldKey());
         final SQLFragment fromSQL = new SQLFragment();
         ColumnInfo groupColumn = appendFromSQL(tinfo, dataRegionName, sort, fromSQL, _nestingOption.getAggregateRowIdFieldKey(), false);
-        fromSQL.insert(0, "SELECT " + groupColumn.getAlias().getSql().getRawSQL() + " FROM (");
+        fromSQL.insert(0, SQLFragment.unsafe("SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" FROM ("));
         fromSQL.unsafeAppend(") FilterOnly GROUP BY ");
         fromSQL.appendIdentifier(groupColumn.getAlias());
 
