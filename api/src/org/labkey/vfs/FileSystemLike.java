@@ -296,8 +296,8 @@ public interface FileSystemLike
         if (!root.isDirectory())
             throw new FileNotFoundException(root.getPath());
         FileSystemLike fs = new Builder(root.toURI()).build();
-        String rel = FileUtil.relativize(root, f, true);
-        return fs.getRoot().resolveFile(Path.parse(rel));
+        var rel = FileUtil.getAbsoluteCaseSensitiveFile(root).toPath().relativize(FileUtil.getAbsoluteCaseSensitiveFile(f).toPath());
+        return fs.getRoot().resolveFile(new Path(rel));
     }
 
     /** Helper for partially converted code. root must exist. */
@@ -311,7 +311,7 @@ public interface FileSystemLike
         {
             throw new IOException("File '" + f.toUri().getPath() + "' is outside the allowed root '" + root.toUri().getPath() + "'");
         }
-        return fs.resolveFile(new Path(relative.getPath()));
+        return fs.resolveFile(Path.parse(relative.getPath()));
     }
 
     /** Helper for partially converted code. May throw if the FileLike does not wrap a local file system. */
@@ -408,7 +408,7 @@ public interface FileSystemLike
         }
 
         // if root = /a/b/c/ and file = /a/b/c/d/e/f.xlsx - among other things, this essentially checks if '/a/b/c/d/e/f.xlsx' starts with '/a/b/c/'
-        return allowedRoot.resolveFile(new Path(relativeURI.getPath()));
+        return allowedRoot.resolveFile(Path.parse(relativeURI.getPath()));
     }
 }
 

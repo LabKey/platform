@@ -91,13 +91,32 @@ public class FileSystemLocal extends AbstractFileSystemLike
     public FileLike resolveFile(Path path)
     {
         LOG.debug("Resolving {} against {}", path, nioRoot);
-        path = path.absolute().normalize();
-        if (null == path)
-            throw new IllegalArgumentException("Path could not be resolved");
+        var normalized = path.absolute().normalize();
+        if (null == normalized)
+            throw new FileUtil.InvalidPathReferenceException(path.toString(), "Path could not be resolved");
         var nioPath = nioRoot;
-        for (var s : path)
-            nioPath = nioPath.resolve(s);
-        return createFileLike(path, nioPath.toFile());
+        for (var s : normalized)
+            nioPath = nioPath.resolve(toNioName(s));
+        if (!nioPath.normalize().startsWith(nioRoot.normalize()))
+            throw new FileUtil.InvalidPathReferenceException(path.toString(), "Path is outside the file system root");
+        return createFileLike(normalized, nioPath.toFile());
+    }
+
+    // A Path part is a single name, but nio re-splits it on the platform separator (e.g. "..\x" or "C:\x" on Windows)
+    private java.nio.file.Path toNioName(String part)
+    {
+        java.nio.file.Path name;
+        try
+        {
+            name = nioRoot.getFileSystem().getPath(part);
+        }
+        catch (InvalidPathException x)
+        {
+            throw new FileUtil.InvalidPathReferenceException(part, x.getReason());
+        }
+        if (name.getRoot() != null || name.getNameCount() != 1 || ".".equals(part) || "..".equals(part))
+            throw new FileUtil.InvalidPathReferenceException(part, "Not a valid file name");
+        return name;
     }
 
 

@@ -17,6 +17,7 @@
 <%@ page import="org.junit.Before" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.nio.file.Files" %>
 <%@ page import="java.net.URI" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.vfs.FileSystemLike" %>
@@ -69,13 +70,19 @@
 
             FileLike tempDir = new FileSystemLike.Builder(tempPath.toFile()).root();
             assertNotNull(tempDir);
-            FileLike t1 = tempDir.resolveFile(Path.parse(tempPath + "\\b\\t1.txt"));
+            FileLike t1 = tempDir.resolveFile(Path.parse("b/t1.txt"));
             assertNotNull(t1);
-            FileLike td1 = tempDir.resolveFile(Path.parse(tempPath + "\\b\\"));
+            FileLike td1 = tempDir.resolveFile(Path.parse("b/"));
             assertNotNull(td1);
             FileLike tc1 = td1.resolveChild("t1.txt");
             assertNotNull(tc1);
             assertEquals(t1, tc1);
+
+            for (String name : new String[] {tempPath + "\\b\\t1.txt", "..\\x", "a\\..\\..\\x", "a\\b", "C:\\x", "C:x", "\\x", "\\\\host\\share\\x", "a<b.txt", "a|b"})
+            {
+                assertThrows(name, FileUtil.InvalidPathReferenceException.class, () -> tempDir.resolveFile(new Path(name)));
+                assertThrows(name, FileUtil.InvalidPathReferenceException.class, () -> tempDir.resolveChild(name));
+            }
 
             FileLike root = new FileSystemLike.Builder(new File("C:\\")).root();
             assertNotNull(root);
@@ -203,9 +210,49 @@
     }
 
 
+    @Test
+    public void testWrapFile() throws Exception
+    {
+        File root = tempPath.toFile();
+        java.nio.file.Path nested = Files.createFile(Files.createDirectory(tempPath.resolve("sub")).resolve("f.txt"));
+
+        FileLike fromFile = FileSystemLike.wrapFile(root, nested.toFile());
+        assertEquals(2, fromFile.getPath().size());
+        assertEquals("sub", fromFile.getPath().get(0));
+        assertEquals("f.txt", fromFile.getName());
+        assertTrue(fromFile.isFile());
+
+        FileLike fromNio = FileSystemLike.wrapFile(tempPath, nested);
+        assertEquals(fromFile, fromNio);
+        assertTrue(fromNio.isFile());
+
+        assertThrows(FileUtil.InvalidPathReferenceException.class, () -> FileSystemLike.wrapFile(root, new File(root.getParentFile(), "x.txt")));
+
+        if (!System.getProperty("os.name").toLowerCase().startsWith("windows"))
+        {
+            // '\' is an ordinary file name character here
+            java.nio.file.Path backslash = Files.createFile(tempPath.resolve("a\\b.txt"));
+            FileLike f = FileSystemLike.wrapFile(root, backslash.toFile());
+            assertEquals(1, f.getPath().size());
+            assertEquals("a\\b.txt", f.getName());
+            assertTrue(f.isFile());
+        }
+    }
+
+
     void resolve(FileSystemLike fs)
     {
+        FileLike root = fs.getRoot();
+        FileLike a = root.resolveChild("a");
+        assertEquals(a, root.resolveFile(Path.parse("b/../a")));
+        assertEquals("b.txt", a.resolveFile(new Path("b.txt")).getName());
 
+        // a Path part is a single file name, never a path
+        for (String name : new String[] {"../x", "a/../../x", "a/b", "/x"})
+            assertThrows(name, FileUtil.InvalidPathReferenceException.class, () -> a.resolveFile(new Path(name)));
+        for (String name : new String[] {"..", "../x", "a/b"})
+            assertThrows(name, FileUtil.InvalidPathReferenceException.class, () -> a.resolveChild(name));
+        assertThrows(FileUtil.InvalidPathReferenceException.class, () -> a.resolveFile(Path.parse("../../x")));
     }
 
     void list(FileSystemLike fs)

@@ -29,14 +29,15 @@ import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.io.File;
-import java.io.FileFilter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.function.Predicate;
 
 /**
  * Created by matthew on 7/14/17.
@@ -100,7 +101,9 @@ public class RDockerScriptEngine extends RScriptEngine
         {
             try (CustomTiming t = MiniProfiler.custom("docker", "execute r in docker container"))
             {
-                _ds.executeR(_dockerImage, scriptFile, getRWorkingDir(context), _remoteWorkingDir, InputFiles());
+                // root the file system at the working dir so files copied back from the container can't escape it
+                FileLike workingDir = new FileSystemLike.Builder(getWorkingDir(context).toNioPathForWrite()).readwrite().root();
+                _ds.executeR(_dockerImage, scriptFile, workingDir, _remoteWorkingDir, InputFiles());
                 appendConsoleOutput(context, output);
             }
             catch (Exception e)
@@ -122,7 +125,7 @@ public class RDockerScriptEngine extends RScriptEngine
     /**
      * Filter for the input script files in the report temp folder to copy to the Docker container which will run R
      */
-    private static FileFilter InputFiles()
+    private static Predicate<FileLike> InputFiles()
     {
         return pathname ->
                 pathname.isFile() &&
