@@ -105,11 +105,16 @@ public class AsyncQueryRequest<T>
     /** A request can run several async queries, so the web span describes only the slowest */
     private static void tagRootSpan(MutableSpan rootSpan, long elapsedMs, Map<String, String> tags, boolean cancelled)
     {
-        if (rootSpan.getTag(ELAPSED_TAG) instanceof Number prior && prior.longValue() >= elapsedMs)
+        Object prior = rootSpan.getTag(ELAPSED_TAG);
+        if (prior instanceof Number priorMs && priorMs.longValue() >= elapsedMs)
             return;
 
         rootSpan.setTag(ELAPSED_TAG, elapsedMs);
-        tags.forEach(rootSpan::setTag);
+        // A null clears an earlier query's tag, but must not remove one the root set itself, such as a job's container
+        tags.forEach((name, value) -> {
+            if (null != value || null != prior)
+                rootSpan.setTag(name, value);
+        });
         rootSpan.setTag(CANCELLED_TAG, cancelled);
     }
 
@@ -447,6 +452,11 @@ public class AsyncQueryRequest<T>
         {
             Map<String, Object> tags = new HashMap<>();
             MutableSpan root = TagRecordingSpan.create(tags);
+
+            // The first query's null must leave the root's own tag alone
+            tags.put("labkey.db_schema", "job");
+            tagRootSpan(root, 100, queryTags("Z", null), false);
+            assertEquals("job", tags.get("labkey.db_schema"));
 
             tagRootSpan(root, 500, queryTags("A", "core"), false);
             tagRootSpan(root, 200, queryTags("B", "exp"), true);

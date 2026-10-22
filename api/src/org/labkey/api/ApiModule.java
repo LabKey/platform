@@ -413,7 +413,6 @@ public class ApiModule extends CodeOnlyModule
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
             AssayResultsFileWriter.TestCase.class,
-            AsyncQueryRequest.TestCase.class,
             AuthenticationManager.ReauthTokenTest.class,
             BaseServerProperties.TestCase.class,
             BatchSize.TestCase.class,

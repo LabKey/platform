@@ -1094,9 +1094,10 @@ abstract public class PipelineJob extends Job implements Serializable, Container
                         }
                         finally
                         {
-                            // run() catches its own failures, so the summary would otherwise read as success
+                            // run() catches its own failures, so the summary would otherwise read as success. Jobs
+                            // that override run() report via setStatus(), leaving the active status at waiting.
                             TaskStatus status = getActiveTaskStatus();
-                            if (null != status)
+                            if (null != status && status != TaskStatus.waiting)
                                 op.tag("labkey.job_status", status).outcome(status.toString());
                         }
                     });

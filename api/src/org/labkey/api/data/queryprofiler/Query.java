@@ -194,7 +194,7 @@ public class Query
             _normalizationReason = "It references \"" + name + "\", a temporary table or other generated object. Its random name was removed so that similar queries are grouped together, and the object likely no longer exists.";
     }
 
-    // Removes the last 32 digits of each run of 32+ hex digits (a GUID.makeHash() name suffix, possibly after a prefix
+    // Removes the last 32 digits of each identifier's run of 32+ hex digits (a GUID.makeHash() name suffix, possibly after a prefix
     // ending in a hex digit) and any '$' before them, skipping string literals and comments. A hand-written scan because
     // java.util.regex costs ~10x more per character, which matters on the request thread for large SQL. Knows only
     // standard '...' strings, not dollar-quoted or E'...' ones, so SQL using those can group imperfectly in the profiler.
@@ -232,7 +232,7 @@ public class Query
             while (i < length && isHexDigit(in.charAt(i)))
                 i++;
 
-            if (i - start >= GENERATED_HASH_LENGTH)
+            if (i - start >= GENERATED_HASH_LENGTH && isInIdentifier(in, start, identifierEnd))
             {
                 start = i - GENERATED_HASH_LENGTH;
                 if (start > 0 && in.charAt(start - 1) == '$')
@@ -248,6 +248,15 @@ public class Query
         }
 
         return null == out ? in : out.append(in, copied, length).toString();
+    }
+
+    // A run that starts with a decimal digit outside quotes and after no identifier character is a numeric literal
+    private static boolean isInIdentifier(String sql, int runStart, int identifierEnd)
+    {
+        if (runStart < identifierEnd || !Character.isDigit(sql.charAt(runStart)))
+            return true;
+        char prior = runStart > 0 ? sql.charAt(runStart - 1) : ' ';
+        return Character.isLetter(prior) || prior == '_' || prior == '$';
     }
 
     // Index just past the next occurrence of terminator at or after from, or the end of sql if it's unterminated
@@ -298,7 +307,8 @@ public class Query
             assertEquals("SELECT * FROM temp.ExpMaterial_x_ t", transform("SELECT * FROM temp.ExpMaterial_x_" + HASH + " t"));
             assertEquals("SELECT * FROM edges JOIN temp.fn_()", transform("SELECT * FROM edges" + HASH + " JOIN temp.fn_" + HASH.toUpperCase() + "()"));
             assertEquals("CREATE INDEX ix__col ON t", transform("CREATE INDEX ix_" + HASH + "_col ON t"));
-            assertEquals("WITH  AS (SELECT 1)", transform("WITH " + HASH + " AS (SELECT 1)"));
+            assertEquals("WITH \"\" AS (SELECT 1)", transform("WITH \"" + HASH + "\" AS (SELECT 1)"));
+            assertEquals("WITH  AS (SELECT 1)", transform("WITH " + HASH.substring(10) + HASH.substring(0, 10) + " AS (SELECT 1)"));
             assertEquals("SELECT * FROM temp.SampleScopeB", transform("SELECT * FROM temp.SampleScopeB" + HASH));
             assertEquals("SELECT * FROM temp.\"tt_\" WHERE \"Bob's\" = 1", transform("SELECT * FROM temp.\"tt_" + HASH + "\" WHERE \"Bob's\" = 1"));
             assertEquals("SELECT 'it''s' -- don't\nFROM temp.tt_ /* ' */", transform("SELECT 'it''s' -- don't\nFROM temp.tt_" + HASH + " /* ' */"));
@@ -316,6 +326,8 @@ public class Query
                 "SELECT * FROM t WHERE x = 'it''s " + HASH + "' -- " + HASH,
                 "SELECT /* " + HASH + " */ 1",
                 "SELECT 'unterminated " + HASH,
+                "SELECT * FROM t WHERE x = 123456789012345678901234567890123456",
+                "SELECT 1.123456789012345678901234567890123456e10",
                 "SELECT x FROM study.c108d1468_demographics"))
             {
                 Query query = new Query(null, sql, null, 0, null, false);
