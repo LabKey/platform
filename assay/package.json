@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.72.3"
+    "@labkey/components": "7.72.4-fb-request-cancel-ws-2224.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.4",
