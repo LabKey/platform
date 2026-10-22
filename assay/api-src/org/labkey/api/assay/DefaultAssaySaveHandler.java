@@ -23,6 +23,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.assay.transform.PreparedTransform;
+import org.labkey.api.assay.transform.PreparedTransforms;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
@@ -39,6 +41,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -51,6 +54,7 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +62,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
 {
     protected static final Logger LOG = LogManager.getLogger(DefaultAssaySaveHandler.class);
     protected AssayProvider _provider;
+    private PreparedTransforms _preparedTransforms = new PreparedTransforms();
 
     @Override
     public AssayProvider getProvider()
@@ -221,9 +226,115 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
             AssayRunUploadContext<?> uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
                     inputData, outputData, inputMaterial, outputMaterial);
 
+            PreparedTransform prepared = _preparedTransforms.get(runJson);
+            if (prepared != null && uploadContext != null)
+            {
+                if (prepared.getRunDataInputs() != null)
+                {
+                    Map<ExpData, String> runDataInputs = new HashMap<>(prepared.getRunDataInputs());
+                    runDataInputs.putAll(inputData);
+                    prepared.setRunDataInputs(runDataInputs);
+                }
+                uploadContext.setPreparedTransform(prepared);
+            }
+
             return saveAssayRun(uploadContext, batch, run, BaseViewAction.getTransactionAuditDetails(context));
         }
         return null;
+    }
+
+    /** Whether runs are saved exactly as this class saves them, which the first pass of prepareTransforms assumes. */
+    protected boolean isPrepareTransformsSupported()
+    {
+        return false;
+    }
+
+    @Override
+    public @NotNull PreparedTransforms prepareTransforms(ViewContext context, ExpProtocol protocol, List<JSONObject> runJsons) throws ExperimentException, ValidationException
+    {
+        PreparedTransforms preparedTransforms = new PreparedTransforms();
+        if (!isPrepareTransformsSupported()
+                || !getProvider().isTransformBeforeRunSupported(protocol)
+                || getProvider().getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ALL).isEmpty())
+            return preparedTransforms;
+
+        boolean success = false;
+        try
+        {
+            for (JSONObject runJson : runJsons)
+            {
+                PreparedTransform prepared = prepareTransform(context, protocol, runJson);
+                if (prepared != null)
+                    preparedTransforms.put(runJson, prepared);
+            }
+            success = true;
+        }
+        finally
+        {
+            if (!success)
+                preparedTransforms.close();
+        }
+        _preparedTransforms = preparedTransforms;
+        return preparedTransforms;
+    }
+
+    /** Builds the upload context handleRun would build for this run, without writing anything, and runs its transform scripts. */
+    private @Nullable PreparedTransform prepareTransform(ViewContext context, ExpProtocol protocol, JSONObject runJson) throws ExperimentException, ValidationException
+    {
+        if (!runJson.has(AssayJSONConverter.DATA_ROWS) && !runJson.has(ExperimentJSONConverter.DATA_INPUTS)
+                && !runJson.has(ExperimentJSONConverter.MATERIAL_INPUTS) && !runJson.has(ExperimentJSONConverter.DATA_OUTPUTS))
+            return null;
+
+        ExpRun existingRun = null;
+        if (!runJson.isNull(ExperimentJSONConverter.ID))
+        {
+            existingRun = ExperimentService.get().getExpRun(runJson.getInt(ExperimentJSONConverter.ID));
+            // Leave the error to handleRun
+            if (existingRun == null || !existingRun.getContainer().equals(context.getContainer()))
+                return null;
+        }
+
+        JSONArray dataArray = existingRun != null ? serializeRunData(context, existingRun, runJson, protocol, null) : postedArray(runJson, AssayJSONConverter.DATA_ROWS);
+        JSONArray dataInputs = existingRun != null ? serializeDataInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_INPUTS);
+        JSONArray materialInputs = existingRun != null ? serializeMaterialInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.MATERIAL_INPUTS);
+        JSONArray dataOutputs = existingRun != null ? serializeDataOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_OUTPUTS);
+        JSONArray materialOutputs = existingRun != null ? serializeMaterialOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.MATERIAL_OUTPUTS);
+
+        Map<ExpData, String> inputData = new HashMap<>();
+        for (JSONObject dataObject : JsonUtil.toJSONObjectList(dataInputs))
+            inputData.put(lookupData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
+        Map<ExpData, String> outputData = new HashMap<>();
+        for (JSONObject dataObject : JsonUtil.toJSONObjectList(dataOutputs))
+            outputData.put(lookupData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
+
+        // Scripts don't see the run's materials, so these lookups only reject bad references before any script runs
+        for (JSONObject materialObject : JsonUtil.toJSONObjectList(materialInputs))
+            lookupMaterial(context, materialObject);
+        for (JSONObject materialObject : JsonUtil.toJSONObjectList(materialOutputs))
+            lookupMaterial(context, materialObject);
+
+        // saveExperimentRun skips the assay save, and with it the scripts, when there are neither result rows nor outputs
+        List<Map<String, Object>> dataRows = convertRunData(dataArray, context.getContainer(), protocol);
+        if (dataRows.isEmpty() && outputData.isEmpty())
+            return null;
+
+        AssayRunUploadContext<?> uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
+                inputData, outputData, Collections.emptyMap(), Collections.emptyMap());
+        AssayRunCreator runCreator = getProvider().getRunCreator();
+        PreparedTransform prepared = runCreator.prepareTransform(uploadContext, false);
+        if (prepared != null && prepared.getRunDataInputs() != null)
+        {
+            // saveExperimentRun adds the saved inputs back; keep only those the participant visit resolver added
+            Map<ExpData, String> resolverInputs = new HashMap<>(prepared.getRunDataInputs());
+            resolverInputs.keySet().removeAll(inputData.keySet());
+            prepared.setRunDataInputs(resolverInputs);
+        }
+        return prepared;
+    }
+
+    private static JSONArray postedArray(JSONObject runJson, String key)
+    {
+        return runJson.has(key) ? runJson.getJSONArray(key) : new JSONArray();
     }
 
     /**

@@ -16,7 +16,16 @@
 
 package org.labkey.api.assay;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+import org.labkey.api.assay.transform.PreparedTransforms;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.view.ViewContext;
+
+import java.util.List;
 
 /**
  * User: dax
@@ -64,4 +73,14 @@ public interface AssaySaveHandler extends ExperimentSaveHandler
      */
     void setProvider(AssayProvider provider);
     AssayProvider getProvider();
+
+    /**
+     * Runs the transform scripts of the given runs before the save's transaction opens, so a script's callbacks into
+     * the server can't deadlock with it. The handler records the outputs as it saves each run; runs it doesn't prepare
+     * run their scripts inside the transaction. Called after beforeSave.
+     */
+    default @NotNull PreparedTransforms prepareTransforms(ViewContext context, ExpProtocol protocol, List<JSONObject> runJsons) throws ExperimentException, ValidationException
+    {
+        return new PreparedTransforms();
+    }
 }
