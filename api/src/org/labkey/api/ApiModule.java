@@ -56,6 +56,7 @@ import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AsyncQueryRequest;
 import org.labkey.api.data.AtomicDatabaseInteger;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
@@ -255,6 +256,8 @@ public class ApiModule extends CodeOnlyModule
     protected void init()
     {
         ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/vfs", this);
+        // In init() so module upgrade code also sees configured sizes
+        BatchSize.populate();
         AttachmentService.get().registerAttachmentParentType(ReportType.get());
         AttachmentService.get().registerAttachmentParentType(LookAndFeelResourceType.get());
         AttachmentService.get().registerAttachmentParentType(AuthenticationLogoType.get());
@@ -409,6 +412,7 @@ public class ApiModule extends CodeOnlyModule
             AssayResultsFileWriter.TestCase.class,
             AuthenticationManager.ReauthTokenTest.class,
             BaseServerProperties.TestCase.class,
+            BatchSize.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CacheManager.TestCase.class,

@@ -19,13 +19,21 @@ package org.labkey.audit.model;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -38,10 +46,11 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.audit.AuditSchema;
 
@@ -52,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 public class LogManager
 {
@@ -80,7 +90,8 @@ public class LogManager
         if (provider != null)
         {
             // consider using etl data iterator for inserts
-            type = validateFields(provider, type);
+            Domain domain = provider.getDomain();
+            type = validateFields(domain, domain.getDomainKind().getBaseProperties(domain), type);
             return Table.insert(user, provider.getStorageTableInfoForInsert(), type);
         }
         return null;
@@ -131,13 +142,17 @@ public class LogManager
         Logger auditLogger = getAuditLogger(type);
         SQLException sqlx = null;
 
+        // getDomain() regenerates the domain URI on every call, so resolve it once for the batch
+        Domain domain = provider.getDomain();
+        Set<PropertyStorageSpec> baseProperties = domain.getDomainKind().getBaseProperties(domain);
+
         try (Connection conn = dbTable.getSchema().getScope().getConnection();
              ParameterMapStatement stmt = StatementUtils.insertStatement(conn, dbTable, c, user, false, true))
         {
             for (var event : events)
             {
-                event = validateFields(provider, event);
                 Map<String,Object> map = ObjectFactory.Registry.getFactory((Class<K>)event.getClass()).toMap(event, null);
+                trimToColumnSizes(domain, baseProperties, map);
                 stmt.clearParameters();
                 stmt.putAll(map);
                 stmt.addBatch();
@@ -214,21 +229,21 @@ public class LogManager
         return Collections.emptyList();
     }
 
-    /**
-     * Ensure that the string properties don't exceed the length of the provisioned columns.
-     * Values will be trimmed to the max length.
-     */
-    private <K extends AuditTypeEvent> K validateFields(@NotNull AuditTypeProvider provider, @NotNull K type)
+    private <K extends AuditTypeEvent> K validateFields(@NotNull Domain domain, @NotNull Set<PropertyStorageSpec> baseProperties, @NotNull K type)
     {
         ObjectFactory<K> factory = ObjectFactory.Registry.getFactory((Class<K>)type.getClass());
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         factory.toMap(type, values);
 
-        boolean changed = false;
-        Domain domain = provider.getDomain();
+        return trimToColumnSizes(domain, baseProperties, values) ? factory.fromMap(values) : type;
+    }
 
-        DomainKind<?> domainKind = domain.getDomainKind();
-        for (PropertyStorageSpec prop : domainKind.getBaseProperties(domain))
+    /** Trims string values in place to their provisioned column lengths; returns true if any were trimmed. */
+    private boolean trimToColumnSizes(@NotNull Domain domain, @NotNull Set<PropertyStorageSpec> baseProperties, @NotNull Map<String, Object> values)
+    {
+        boolean changed = false;
+
+        for (PropertyStorageSpec prop : baseProperties)
         {
             Object value = values.get(prop.getName());
             if (prop.getJdbcType().isText() && value instanceof String s)
@@ -266,9 +281,92 @@ public class LogManager
             }
         }
 
-        if (changed)
-            return factory.fromMap(values);
-        else
-            return type;
+        return changed;
+    }
+
+    /**
+     * Over-long strings must be trimmed the same way by the single-event and batched insert paths. SampleTimelineEvent
+     * covers both trim rules: a base column (Comment, 4000) and domain properties wider (SampleName, 200) and no wider
+     * (SampleType, 100) than the 100-character cutoff for appending "...".
+     */
+    public static class TruncationTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "AuditTruncationTest Project";
+
+        private static User _user;
+        private static Container _container;
+
+        @BeforeClass
+        public static void setup()
+        {
+            Assume.assumeTrue("The SampleTimelineEvent provider is registered by the experiment module",
+                    null != AuditLogService.get().getAuditProvider(SampleTimelineAuditEvent.EVENT_TYPE));
+
+            _user = TestContext.get().getUser();
+
+            deleteTestContainer();
+            _container = ContainerManager.ensureContainer(PROJECT_NAME, _user);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            _container = null;
+            _user = null;
+
+            deleteTestContainer();
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+        }
+
+        private static SampleTimelineAuditEvent overLongEvent(long sampleId)
+        {
+            SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(_container, "c".repeat(PropertyStorageSpec.DEFAULT_SIZE + 50));
+            event.setSampleId(sampleId);
+            event.setSampleTypeId(4242L);
+            event.setSampleName("n".repeat(250));
+            event.setSampleType("t".repeat(150));
+
+            return event;
+        }
+
+        private static void assertTrimmed(long sampleId)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SampleId"), sampleId);
+            List<SampleTimelineAuditEvent> stored = get().getAuditEvents(_container, _user, SampleTimelineAuditEvent.EVENT_TYPE, filter, null);
+            assertEquals("expected one stored event for sample " + sampleId, 1, stored.size());
+
+            SampleTimelineAuditEvent event = stored.getFirst();
+            assertEquals("c".repeat(PropertyStorageSpec.DEFAULT_SIZE - 3) + "...", event.getComment());
+            assertEquals("n".repeat(197) + "...", event.getSampleName());
+            assertEquals("t".repeat(100), event.getSampleType());
+        }
+
+        @Test
+        public void singleInsertTrims()
+        {
+            get().insertEvent(_user, overLongEvent(1));
+            assertTrimmed(1);
+        }
+
+        @Test
+        public void batchedInsertTrims()
+        {
+            // insertEvents only takes the batched path for multiple events inside a transaction
+            try (DbScope.Transaction tx = get().getSchema().getScope().ensureTransaction())
+            {
+                get().insertEvents(_user, List.of(overLongEvent(2), overLongEvent(3)));
+                tx.commit();
+            }
+
+            assertTrimmed(2);
+            assertTrimmed(3);
+        }
     }
 }
