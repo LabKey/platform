@@ -27,7 +27,7 @@ public class QPivot extends QNode
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("PIVOT ");
+        builder.unsafeAppend("PIVOT ");
         List<QNode> children = childList();
 
         if (children.isEmpty())
@@ -59,7 +59,7 @@ public class QPivot extends QNode
 
         if (children.size() < 3)
             return;
-        builder.append(" IN " );
+        builder.unsafeAppend(" IN " );
         exprList = children.get(2);
         // PARENS OK
         exprList.appendSource(builder);

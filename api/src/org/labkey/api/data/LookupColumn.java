@@ -175,10 +175,10 @@ public class LookupColumn extends BaseColumnInfo
             ColumnInfo fk = entry.getKey();
             ColumnInfo pk = entry.getValue().first;
             boolean equalOrIsNull = entry.getValue().second;
-            result.append("\n\t AND ");
+            result.unsafeAppend("\n\t AND ");
             result.append(getJoinCondition(tableAliasName, fk, pk, equalOrIsNull));
         }
-        result.append(")");
+        result.unsafeAppend(")");
         return result;
     }
 
@@ -191,26 +191,26 @@ public class LookupColumn extends BaseColumnInfo
     {
         SQLFragment condition = new SQLFragment();
         if (equalOrIsNull)
-            condition.append("(");
+            condition.unsafeAppend("(");
 
         boolean addCast = fk.getJdbcType() != pk.getJdbcType() && getSqlDialect().isPostgreSQL();
         SQLFragment fkSql = fk.getValueSql(fkTableAlias);
         if (addCast)
-            condition.append("CAST((").append(fkSql).append(") AS VARCHAR)");
+            condition.unsafeAppend("CAST((").append(fkSql).unsafeAppend(") AS VARCHAR)");
         else
             condition.append(fkSql);
-        condition.append(" = ");
+        condition.unsafeAppend(" = ");
 
         SQLFragment pkSql = pk.getValueSql(pkTableAlias);
         if (addCast)
-            condition.append("CAST((").append(pkSql).append(") AS VARCHAR)");
+            condition.unsafeAppend("CAST((").append(pkSql).unsafeAppend(") AS VARCHAR)");
         else
             condition.append(pkSql);
 
         if (equalOrIsNull)
         {
-            condition.append(" OR (").append(fkSql).append(" IS NULL");
-            condition.append(" AND ").append(pkSql).append(" IS NULL))");
+            condition.unsafeAppend(" OR (").append(fkSql).unsafeAppend(" IS NULL");
+            condition.unsafeAppend(" AND ").append(pkSql).unsafeAppend(" IS NULL))");
         }
 
         return condition;
@@ -239,10 +239,10 @@ public class LookupColumn extends BaseColumnInfo
             else
             {
                 strJoin.append(_joinType.getSQL());
-                strJoin.append(" JOIN ");
+                strJoin.unsafeAppend(" JOIN ");
 
                 addLookupSql(strJoin, lookupTable, colTableAlias);
-                strJoin.append(" ON ");
+                strJoin.unsafeAppend(" ON ");
                 strJoin.append(getJoinCondition(baseAlias));
             }
             SQLFragment sqlJoinPrev = map.get(colTableAlias);

@@ -78,7 +78,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         MaterializedQueryHelper _mqh;
         private final long _created;
         private final String _cacheKey;
-        private final String _fromSql;
+        private final SQLFragment _fromSql;
         private final String _tableName;
         private final ArrayList<Invalidator> _invalidators = new ArrayList<>(3);
 
@@ -89,7 +89,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         public RuntimeException _loadException = null;
 
 
-        public Materialized(MaterializedQueryHelper parent, String tableName, String cacheKey, long created, String sql)
+        public Materialized(MaterializedQueryHelper parent, String tableName, String cacheKey, long created, SQLFragment sql)
         {
             _mqh = parent;
             _created = created;
@@ -177,9 +177,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                         // UNLOGGED skips WAL when populating and indexing the table.
                         selectInto = new SQLFragment("SELECT * INTO ")
                                 .append(_mqh._unlogged ? "UNLOGGED " : "")
-                                .appendIdentifier(temp.getName()).append(".").appendIdentifier(_tableName).append("\nFROM (\n");
+                                .appendIdentifier(temp.getName()).unsafeAppend(".").appendIdentifier(_tableName).unsafeAppend("\nFROM (\n");
                         selectInto.append(selectQuery);
-                        selectInto.append("\n) _sql_");
+                        selectInto.unsafeAppend("\n) _sql_");
                     }
                     new SqlExecutor(_mqh._scope).execute(selectInto);
 
@@ -561,7 +561,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         _countGetFromSql.incrementAndGet();
         SQLFragment sqlf = new SQLFragment(m._fromSql);
         if (!StringUtils.isBlank(tableAlias))
-            sqlf.append(" ").append(tableAlias);
+            sqlf.unsafeAppend(" ").append(tableAlias);
         sqlf.addTempToken(m);
         return sqlf;
     }
@@ -647,7 +647,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         _lastUsed.set(HeartBeat.currentTimeMillis());
         SQLFragment sqlf = new SQLFragment(materialized._fromSql);
         if (!StringUtils.isBlank(tableAlias))
-            sqlf.append(" ").append(tableAlias);
+            sqlf.unsafeAppend(" ").append(tableAlias);
         sqlf.addTempToken(materialized);
         _countGetFromSql.incrementAndGet();
         return sqlf;
@@ -785,7 +785,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     {
         DbSchema temp = DbSchema.getTemp();
         String name = _prefix + "_" + GUID.makeHash();
-        Materialized materialized = new Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), "\"" + temp.getName() + "\".\"" + name + "\"");
+        Materialized materialized = new Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), new SQLFragment().appendDottedIdentifiers("\"" + temp.getName() + "\"", "\"" + name + "\""));
         initMaterialized(materialized);
         return materialized;
     }

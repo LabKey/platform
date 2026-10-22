@@ -385,10 +385,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        if (null != getSelectName())
-            return new SQLFragment().appendIdentifier(getSelectName()).append(" ").appendIdentifier(alias);
+        SQLFragment sqlName = getSQLName();
+        if (null != sqlName)
+            return new SQLFragment().append(sqlName).unsafeAppend(" ").appendIdentifier(alias);
         else
-            return new SQLFragment().append("(").append(getFromSQL()).append(") ").appendIdentifier(alias);
+            return new SQLFragment().unsafeAppend("(").append(getFromSQL()).unsafeAppend(") ").appendIdentifier(alias);
     }
 
     // Clear the cached resolved/referenced columns so we regenerate them when the shape of the table changes

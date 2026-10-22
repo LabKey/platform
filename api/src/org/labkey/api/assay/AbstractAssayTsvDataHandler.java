@@ -381,9 +381,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         throw new IllegalStateException("Assay results table expected to have dataId lookup column and " + assayResultLsidFieldKey + " column");
 
                     // select the assay results LSID column for all rows referenced by the data
-                    assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).append(" AS ObjectURI")
-                            .append(" FROM ").append(assayDataTable.getFromSQL("X"))
-                            .append(" WHERE ").append(dataIdCol.getValueSql("X")).appendInClause(dataIds, assayDataTable.getSqlDialect());
+                    assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).unsafeAppend(" AS ObjectURI")
+                            .unsafeAppend(" FROM ").append(assayDataTable.getFromSQL("X"))
+                            .unsafeAppend(" WHERE ").append(dataIdCol.getValueSql("X")).appendInClause(dataIds, assayDataTable.getSqlDialect());
                 }
             }
             else
@@ -409,11 +409,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (LOG.isDebugEnabled())
                 {
                     SQLFragment t = new SQLFragment("SELECT o.*")
-                            .append(" FROM ").append(OntologyManager.getTinfoObject(), "o")
-                            .append(" WHERE Container = ?").add(run.getContainer())
-                            .append(" AND ObjectURI IN (")
+                            .unsafeAppend(" FROM ").append(OntologyManager.getTinfoObject(), "o")
+                            .unsafeAppend(" WHERE Container = ?").add(run.getContainer())
+                            .unsafeAppend(" AND ObjectURI IN (")
                             .append(assayResultLsidSql)
-                            .append(")");
+                            .unsafeAppend(")");
                     SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), t);
                     try (TableResultSet rs = ss.getResultSet())
                     {
@@ -427,7 +427,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
 
                 // delete provenance for assay result rows
-                ProvenanceService.get().deleteProvenanceByLsids(run.getContainer(), user, new SQLFragment(" IN (").append(assayResultLsidSql).append(")"), true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
+                ProvenanceService.get().deleteProvenanceByLsids(run.getContainer(), user, new SQLFragment(" IN (").append(assayResultLsidSql).unsafeAppend(")"), true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
 
                 int count = OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer());
                 LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted {} ontology objects for assay result lsids", count);
@@ -437,7 +437,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
                 deleteSQL.appendDottedIdentifiers(domain.getDomainKind().getStorageSchemaName(),domain.getStorageTableName());
-                deleteSQL.append(" WHERE DataId ").appendInClause(dataIds, ExperimentService.get().getSchema().getSqlDialect());
+                deleteSQL.unsafeAppend(" WHERE DataId ").appendInClause(dataIds, ExperimentService.get().getSchema().getSqlDialect());
 
                 try
                 {

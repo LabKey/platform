@@ -104,7 +104,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     public Container getDomainContainer(Container c)

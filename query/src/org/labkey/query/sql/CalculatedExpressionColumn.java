@@ -384,9 +384,9 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     {
         QExpr bound = getBoundExpression();
         SqlBuilder sql = new SqlBuilder(getSqlDialect());
-        sql.append("(");
+        sql.unsafeAppend("(");
         bound.appendSql(sql, new _Query(tableAliasName));
-        sql.append(")");
+        sql.unsafeAppend(")");
         sql.append(SQLFragment.unsafe(CALCULATED_COLUMN_SQL_TAG));
         return sql;
     }

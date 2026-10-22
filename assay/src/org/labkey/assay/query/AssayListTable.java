@@ -73,19 +73,19 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         // Generate a CASE statement that matches an LSID to an AssayProvider so we can create a lookup to the AssayProviderTable.
         // The column value is null if no AssayProvider is matched.
         SQLFragment typeFrag = new SQLFragment();
-        typeFrag.append("(CASE");
+        typeFrag.unsafeAppend("(CASE");
         for (AssayProvider provider : AssayService.get().getAssayProviders())
         {
             String protocolPattern = provider.getProtocolPattern();
             if (protocolPattern != null)
             {
-                typeFrag.append("\n");
-                typeFrag.append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".LSID LIKE ? THEN ?");
+                typeFrag.unsafeAppend("\n");
+                typeFrag.unsafeAppend("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID LIKE ? THEN ?");
                 typeFrag.add(protocolPattern);
                 typeFrag.add(provider.getName());
             }
         }
-        typeFrag.append(" END)");
+        typeFrag.unsafeAppend(" END)");
         var typeColumn = new ExprColumn(this, "Type", typeFrag, JdbcType.VARCHAR);
         typeColumn.setFk(QueryForeignKey.from(getUserSchema(),null).to(AssaySchema.ASSAY_PROVIDERS_TABLE_NAME, "Name", "Name"));
         typeColumn.setDisplayColumnFactory(TypeDisplayColumn::new);
@@ -93,10 +93,10 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
 
         var runCountFragment = new SQLFragment("(SELECT COUNT(*) FROM ")
                 .append(ExperimentService.get().getTinfoExperimentRun(), "r")
-                .append(" WHERE r.ProtocolLSID = ").append(ExprColumn.STR_TABLE_ALIAS).append(".LSID")
-                .append(" AND ")
+                .unsafeAppend(" WHERE r.ProtocolLSID = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID")
+                .unsafeAppend(" AND ")
                 .append(getContainerFilter().getSQLFragment(getSchema(), new SQLFragment("r.container")))
-                .append(")");
+                .unsafeAppend(")");
         addColumn(new ExprColumn(this, "RunCount", runCountFragment, JdbcType.INTEGER)).setHidden(true);
 
         addWrapColumn(_rootTable.getColumn("Status")).setHidden(true);

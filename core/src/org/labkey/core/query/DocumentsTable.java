@@ -69,18 +69,18 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
             .map(type -> new SQLFragment("SELECT ? AS ParentType, EntityId, Description FROM (")
                 .add(type.getUniqueName())
                 .append(type.getSelectEntityIdAndDescriptionSql())
-                .append(") ")
+                .unsafeAppend(") ")
                 .appendIdentifier(am.decideAlias("x")))
             .filter(Objects::nonNull)
             .collect(LabKeyCollectors.joining(new SQLFragment("\nUNION\n")));
 
         return new SQLFragment("(SELECT d.*, p.Description AS ParentDescription, ")
             .append(dialect.wrapBooleanExpression(new SQLFragment("EntityId IS NULL")))
-            .append(" AS Orphaned FROM ")
+            .unsafeAppend(" AS Orphaned FROM ")
             .append(super.getFromSQL("d")) // core.Documents with container filter applied
-            .append(" LEFT JOIN (\n")
+            .unsafeAppend(" LEFT JOIN (\n")
             .append(parents)
-            .append("\n) p ON d.Parent = p.EntityId AND d.ParentType = p.ParentType) ")
+            .unsafeAppend("\n) p ON d.Parent = p.EntityId AND d.ParentType = p.ParentType) ")
             .append(alias);
     }
 }

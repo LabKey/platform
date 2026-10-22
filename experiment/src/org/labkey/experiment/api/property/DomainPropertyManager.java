@@ -64,10 +64,10 @@ public class DomainPropertyManager
         {
             SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
             sql.append(getExpSchema().getTable("ConditionalFormat"), "CF");
-            sql.append(" WHERE CF.PropertyId IN ");
-            sql.append("(SELECT PropertyId FROM ");
+            sql.unsafeAppend(" WHERE CF.PropertyId IN ");
+            sql.unsafeAppend("(SELECT PropertyId FROM ");
             sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-            sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
+            sql.unsafeAppend(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
             sql.add(container);
 
             return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
