@@ -178,6 +178,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -1476,6 +1477,7 @@ public class AssayController extends SpringActionController
                         settings.setQueryName("ExperimentAuditEvent");
 
                         QueryView auditView = schema.createView(getViewContext(), settings, errors);
+                        auditView.setContainerFilter(getRunQCHistoryContainerFilter(run, getUser()));
                         auditView.setTitle("QC History");
 
                         view.addView(auditView);
@@ -1510,7 +1512,7 @@ public class AssayController extends SpringActionController
             // Resolve the run and confirm the (non-elevated) user can read its container BEFORE elevating, so this
             // action can't be used to read audit events from a container the user otherwise can't access.
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
-            if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
+            if (run == null || !run.getContainer().hasPermission(getUser(), AssayReadPermission.class))
                 throw new NotFoundException("Run " + form.getRunId() + " not found.");
 
             Container runContainer = run.getContainer();
@@ -1527,8 +1529,19 @@ public class AssayController extends SpringActionController
             settings.setBaseSort(new Sort("-Created"));
 
             QueryView view = schema.createView(getViewContext(), settings, errors);
+            view.setContainerFilter(getRunQCHistoryContainerFilter(run, getUser()));
             return new ExtendedApiQueryResponse(view, false, false, "auditLog", "ExperimentAuditEvent", 0, null, false, false, false);
         }
+    }
+
+    // GH Issue 1619: older QC events may be stamped with an ancestor of the run's container (the folder the change was
+    // made from). Use an explicit container filter instead based on the original user's permissions.
+    private static ContainerFilter getRunQCHistoryContainerFilter(ExpRun run, User user)
+    {
+        List<Container> containers = Stream.iterate(run.getContainer(), c -> c != null && !c.isRoot(), Container::getParent)
+                .filter(c -> c.hasPermission(user, AssayReadPermission.class))
+                .toList();
+        return new ContainerFilter.SimpleContainerFilter(containers);
     }
 
     public static class RunQCHistoryForm
