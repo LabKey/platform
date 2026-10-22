@@ -259,7 +259,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                         DataState state = qcId != null ? DataStateManager.getInstance().getStateForRowId(run.getProtocol().getContainer(), qcId) : null;
                         if (state != null)
                         {
-                            // GH Issue 1619: user the run's container, not the request's container
+                            // GH Issue 1619: use the run's container, not the request's container
                             ExperimentAuditEvent event = new ExperimentAuditEvent(run.getContainer(), comment);
 
                             event.setProtocolLsid(run.getProtocol().getLSID());

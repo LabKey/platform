@@ -1481,6 +1481,7 @@ public class AssayController extends SpringActionController
 
                         QueryView auditView = schema.createView(getViewContext(), settings, errors);
                         auditView.setContainerFilter(getRunQCHistoryContainerFilter(run, getUser()));
+                        auditView.disableContainerFilterSelection();
                         auditView.setTitle("QC History");
 
                         view.addView(auditView);
@@ -1537,13 +1538,16 @@ public class AssayController extends SpringActionController
         }
     }
 
-    // GH Issue 1619: older QC events may be stamped with an ancestor of the run's container (the folder the change was
-    // made from). Use an explicit container filter instead based on the original user's permissions.
+    // GH Issue 1619: older QC events may be stamped with an ancestor or descendant of the run's container (the folder the
+    // change was made from). Use an explicit container filter instead based on the original user's permissions.
     private static ContainerFilter getRunQCHistoryContainerFilter(ExpRun run, User user)
     {
-        List<Container> containers = Stream.iterate(run.getContainer(), c -> c != null && !c.isRoot(), Container::getParent)
-                .filter(c -> c.hasPermission(user, AssayReadPermission.class))
-                .toList();
+        Container runContainer = run.getContainer();
+        List<Container> containers = Stream.concat(
+                Stream.iterate(runContainer.getParent(), c -> c != null && !c.isRoot(), Container::getParent)
+                        .filter(c -> c.hasPermission(user, AssayReadPermission.class)),
+                ContainerManager.getAllChildren(runContainer, user, AssayReadPermission.class).stream()
+        ).toList();
         return new ContainerFilter.SimpleContainerFilter(containers);
     }
 
