@@ -1832,12 +1832,6 @@ public class SecurityController extends SpringActionController
             return null;
         }
 
-        @Override
-        public ModelAndView getSuccessView(UserForm form) throws Exception
-        {
-            return renderEmail(form);
-        }
-
         private ModelAndView renderEmail(UserForm form) throws Exception
         {
             Writer out = getViewContext().getResponse().getWriter();
