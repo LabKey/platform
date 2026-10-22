@@ -77,7 +77,7 @@ public interface AssaySaveHandler extends ExperimentSaveHandler
     /**
      * Runs the transform scripts of the given runs before the save's transaction opens, so a script's callbacks into
      * the server can't deadlock with it. The handler records the outputs as it saves each run; runs it doesn't prepare
-     * run their scripts inside the transaction. Called after beforeSave.
+     * run their scripts inside the transaction. Don't rely on beforeSave having run: saveAssayRuns never calls it.
      */
     default @NotNull PreparedTransforms prepareTransforms(ViewContext context, ExpProtocol protocol, List<JSONObject> runJsons) throws ExperimentException, ValidationException
     {

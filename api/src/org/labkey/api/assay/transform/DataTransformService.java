@@ -27,7 +27,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
@@ -56,7 +55,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.labkey.api.security.SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID;
@@ -65,8 +63,6 @@ public class DataTransformService
 {
     private static final DataTransformService _instance = new DataTransformService();
     private static final Logger LOG = LogHelper.getLogger(DataTransformService.class, "Assay transform scripts");
-
-    private final Set<Long> _protocolsLoggedInTransaction = ConcurrentHashMap.newKeySet();
 
     private DataTransformService() {}
 
@@ -156,8 +152,6 @@ public class DataTransformService
                     throw new ValidationException("The transform script, " + scriptFile + ", configured for this assay does not exist. Please check " +
                             "the configuration for this assay design.");
                 }
-
-                logIfInTransaction(context, operation);
 
                 if (operation == TransformOperation.UPDATE)
                     SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForUpdate");
@@ -298,17 +292,6 @@ public class DataTransformService
                 dataHandler.recordTransformationOutput(context, run, scriptOutput);
         }
         return prepared.getResult();
-    }
-
-    private void logIfInTransaction(AssayRunUploadContext<?> context, TransformOperation operation)
-    {
-        if (operation == TransformOperation.INSERT
-                && context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
-                && ExperimentService.get().getSchema().getScope().isTransactionActive()
-                && _protocolsLoggedInTransaction.add(context.getProtocol().getRowId()))
-        {
-            LOG.warn("Transform script for assay '{}' is running inside a database transaction; callbacks from the script into the server can deadlock. Logged once per assay.", context.getProtocol().getName(), new Throwable());
-        }
     }
 
     public void addStandardParameters(@Nullable HttpServletRequest request, @Nullable Container container, @Nullable FileLike scriptFile, @Nullable String apiKey, @NotNull Map<String, String> paramMap)

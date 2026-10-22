@@ -282,26 +282,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, @Nullable  ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
     {
-        ExpRun run;
-
-        if (!runJsonObject.isNull(ExperimentJSONConverter.ID))
-        {
-            int runId = runJsonObject.getInt(ExperimentJSONConverter.ID);
-            run = ExperimentService.get().getExpRun(runId);
-            if (run == null)
-            {
-                throw new NotFoundException("Could not find experiment run " + runId);
-            }
-            if (!run.getContainer().equals(context.getContainer()))
-            {
-                throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
-            }
-            if (null != batch && !batch.getContainer().equals(context.getContainer()))
-            {
-                throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
-            }
-        }
-        else
+        ExpRun run = lookupRun(context, runJsonObject, batch);
+        if (run == null)
         {
             String name = runJsonObject.optString(ExperimentJSONConverter.NAME, null);
             run = createRun(name, context.getContainer(), protocol);
@@ -316,10 +298,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             handleStandardProperties(context, runJsonObject, run, getRunDomainProperties(protocol));
 
-            if (runJsonObject.has(AssayJSONConverter.DATA_ROWS) ||
-                    runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS) ||
-                    runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS) ||
-                    runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS))
+            if (hasRunContent(runJsonObject))
             {
                 JSONArray dataRows = serializeRunData(context, run, runJsonObject, protocol, batch);
                 JSONArray dataInputs = serializeDataInputs(context, run, runJsonObject, protocol, batch);
@@ -338,6 +317,38 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         ExperimentService.get().queueSyncRunEdges(run);
 
         return run;
+    }
+
+    /** The existing run the post identifies, or null when it posts a new run. */
+    protected @Nullable ExpRun lookupRun(ViewContext context, JSONObject runJsonObject, @Nullable ExpExperiment batch)
+    {
+        if (runJsonObject.isNull(ExperimentJSONConverter.ID))
+            return null;
+
+        int runId = runJsonObject.getInt(ExperimentJSONConverter.ID);
+        ExpRun run = ExperimentService.get().getExpRun(runId);
+        if (run == null)
+        {
+            throw new NotFoundException("Could not find experiment run " + runId);
+        }
+        if (!run.getContainer().equals(context.getContainer()))
+        {
+            throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
+        }
+        if (null != batch && !batch.getContainer().equals(context.getContainer()))
+        {
+            throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
+        }
+        return run;
+    }
+
+    /** Whether the post replaces the run's data and protocol applications rather than only its properties. */
+    protected static boolean hasRunContent(JSONObject runJsonObject)
+    {
+        return runJsonObject.has(AssayJSONConverter.DATA_ROWS) ||
+                runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS) ||
+                runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS) ||
+                runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS);
     }
 
     @Override
@@ -556,57 +567,9 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpMaterial handleMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
     {
-        MaterialLookup lookup = lookupMaterial(context, materialObject);
-        if (lookup == null)
-            return null;
-
-        ExpSampleType sampleType = lookup.sampleType();
-        ExpMaterial material = lookup.material();
-        boolean createdHere = material == null;
-        if (createdHere)
-        {
-            material = createMaterial(context, sampleType, lookup.name());
-            createdMaterialLsids.add(material.getLSID());
-        }
-
-        if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
-        {
-            JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
-            // Treat an empty properties collection as if there were no property map at all.
-            // To delete a property, include a property map with that property and set its value to null.
-            if (!materialProperties.isEmpty())
-            {
-                List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
-
-                if (propertiesWouldChange(context, material, dps, materialProperties))
-                {
-                    // A sample created by this request needs only insert rights; an existing one needs edit rights.
-                    // The status check below applies either way.
-                    Class<? extends Permission> editPerm = createdHere
-                            ? InsertPermission.class
-                            : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
-                    if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
-                        throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
-                    if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
-                        throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
-                                List.of(material), SampleTypeService.SampleOperations.EditMetadata));
-                }
-
-                handleProperties(context, material, dps, materialProperties);
-            }
-        }
-
-        return material;
-    }
-
-    /** An existing material, or, when material is null, the sample type and name of the one handleMaterial would create. */
-    protected record MaterialLookup(@Nullable ExpMaterial material, @Nullable ExpSampleType sampleType, @NotNull String name) {}
-
-    /** Resolves the material handleMaterial would use, without writing anything. Returns null when there's nothing to resolve. */
-    protected @Nullable MaterialLookup lookupMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
-    {
         ExpSampleType sampleType = null;
         ExpMaterial material = null;
+        boolean createdHere = false;
         if (materialObject.has(ExperimentJSONConverter.ID))
         {
             int materialRowId = materialObject.getInt(ExperimentJSONConverter.ID);
@@ -689,11 +652,46 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 if (material != null && !material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
                     throw new NotFoundException("Could not find material '" + materialName + "'");
 
-                return new MaterialLookup(material, sampleType, materialName);
+                if (material == null)
+                {
+                    material = createMaterial(context, sampleType, materialName);
+                    createdHere = true;
+                    createdMaterialLsids.add(material.getLSID());
+                }
             }
         }
 
-        return material == null ? null : new MaterialLookup(material, sampleType, material.getName());
+        if (material == null)
+            return null;
+
+        if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
+        {
+            JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
+            // Treat an empty properties collection as if there were no property map at all.
+            // To delete a property, include a property map with that property and set its value to null.
+            if (!materialProperties.isEmpty())
+            {
+                List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
+
+                if (propertiesWouldChange(context, material, dps, materialProperties))
+                {
+                    // A sample created by this request needs only insert rights; an existing one needs edit rights.
+                    // The status check below applies either way.
+                    Class<? extends Permission> editPerm = createdHere
+                            ? InsertPermission.class
+                            : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
+                    if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
+                        throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
+                    if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
+                        throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                                List.of(material), SampleTypeService.SampleOperations.EditMetadata));
+                }
+
+                handleProperties(context, material, dps, materialProperties);
+            }
+        }
+
+        return material;
     }
 
     private boolean propertiesWouldChange(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject submitted) throws ValidationException
