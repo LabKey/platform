@@ -58,6 +58,9 @@ public class FilterSuggestionColumns
 {
     private enum Strategy { BOOLEAN, DATE, FIXED, FLOAT, INT, KEY, LOOKUP, STRING }
 
+    // A text field's default length; a textarea column at least this long holds free text rather than values
+    private static final int LONG_TEXT_SCALE = 4000;
+
     private record Candidate(FieldKey fieldKey, ColumnInfo column, @Nullable String caption) {}
 
     /**
@@ -196,9 +199,12 @@ public class FilterSuggestionColumns
         if (!renderer.isFilterable() || isFacetingOff(column, renderer))
             return null;
         String inputType = column.getInputType();
-        // LSID keys default to textarea, but a lookup is searched by its display value
-        boolean longText = "textarea".equals(inputType) && !isLookup(column);
-        if ("file".equals(inputType) || longText || PropertyType.TIME.getTypeUri().equals(column.getRangeURI()))
+        // Any string column over 255 characters defaults to textarea, so that alone doesn't mark it as long text
+        boolean longText = PropertyType.MULTI_LINE.getTypeUri().equals(column.getRangeURI())
+            || ("textarea".equals(inputType) && column.getScale() >= LONG_TEXT_SCALE);
+        // A lookup is searched by its display value, even when its key is an LSID
+        boolean lsid = "lsidtype".equalsIgnoreCase(column.getSqlTypeName());
+        if (((longText || lsid) && !isLookup(column)) || "file".equals(inputType) || PropertyType.TIME.getTypeUri().equals(column.getRangeURI()))
             return null;
         if (PropertyType.MULTI_CHOICE.getTypeUri().equals(column.getRangeURI()))
             return null;
