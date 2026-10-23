@@ -20,7 +20,7 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.72.4-fb-request-cancel-ws-2224.0",
+    "@labkey/components": "7.72.4-fb-request-cancel-ws-2224.1",
     "@labkey/themes": "1.9.8"
   },
   "devDependencies": {
