@@ -18,10 +18,22 @@ package org.labkey.api.usageMetrics;
 import java.util.Map;
 
 /**
- * Functional interface for modules to report their own usage metrics.
+ * Functional interface for modules to report their own usage metrics, together with their descriptions.
  * Register an implementation with UsageMetricsService at module startup.
  */
+@FunctionalInterface
 public interface UsageMetricsProvider
 {
-    Map<String, Object> getUsageMetrics();
+    UsageMetrics addUsageMetrics(UsageMetrics metrics);
+
+    default Map<String, Object> getUsageMetrics()
+    {
+        return collectUsageMetrics().getValues();
+    }
+
+    default UsageMetrics collectUsageMetrics()
+    {
+        UsageMetrics metrics = new UsageMetrics();
+        return addUsageMetrics(metrics);
+    }
 }

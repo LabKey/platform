@@ -21,7 +21,6 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
@@ -102,10 +101,7 @@ public class UsageMetricsServiceImpl implements UsageMetricsService
             {
                 try
                 {
-                    if (provider instanceof DescribedUsageMetricsProvider described)
-                        moduleDescriptions.addAll(described.collectUsageMetrics().getDescriptions());
-                    else
-                        provider.getUsageMetrics().keySet().forEach(key -> moduleDescriptions.add(new UsageMetrics.Description(key, null, null)));
+                    moduleDescriptions.addAll(provider.collectUsageMetrics().getDescriptions());
                 }
                 catch (Exception e)
                 {

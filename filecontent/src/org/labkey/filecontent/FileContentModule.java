@@ -58,7 +58,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,7 +76,7 @@ public class FileContentModule extends DefaultModule
 
     static void incrementNamedFileSetMetric(String metricName)
     {
-        SimpleMetricsService.get().increment(NAME, "namedFileSets", metricName);
+        SimpleMetricsService.get().increment(FileContentMetricArea.NAMED_FILE_SETS, metricName);
     }
 
     private static boolean usesNamedFileSet(@Nullable String webPartProperties)
@@ -190,6 +189,8 @@ public class FileContentModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        SimpleMetricsService.get().describeFeatureAreas(FileContentMetricArea.values());
+
         WebdavService.get().addProvider(new FileWebdavProvider());
 
         // initialize message digests
@@ -211,19 +212,17 @@ public class FileContentModule extends DefaultModule
 
         AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
 
-        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
-            Map<String, Object> results = new HashMap<>();
-
+        UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> {
             // During system maintenance, FileRootMaintenanceTask populates FileRootSize and FileRootLastCrawled for every container (subject to a timeout)
             TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
             String select = "SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl, COUNT(*) AS AllFileRoots, COUNT(FileRootLastCrawled) AS FileRootsCrawled FROM ";
             Map<String, Object> map = new SqlSelector(containers.getSchema(), select + containers.getSelectName())
                 .getMap();
-            results.put("fileRootsTotalSize", map.get("TotalSize"));
-            results.put("fileRootsEarliestCrawlTime", map.get("EarliestCrawl"));
+            metrics.put("fileRootsTotalSize", map.get("TotalSize"), "Sum of all containers' file root sizes in bytes, as of each one's last system maintenance crawl; null if none crawled");
+            metrics.put("fileRootsEarliestCrawlTime", map.get("EarliestCrawl"), "Oldest last-crawled time across containers' file roots, showing how stale fileRootsTotalSize may be; null if none crawled");
             long crawled = ((Number)map.get("FileRootsCrawled")).longValue();
-            results.put("fileRootsCrawled", crawled);
-            results.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled);
+            metrics.put("fileRootsCrawled", crawled, "Containers whose file root has been crawled for size at least once, including invalid or missing roots");
+            metrics.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled, "Containers whose file root has never been crawled for size");
 
             // findPipelineRoot() is non-null only for a valid pipeline override on the folder or an ancestor, since a disabled file root has no default
             Map<Boolean, Long> disabledFileRoots = new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"),new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
@@ -231,23 +230,23 @@ public class FileContentModule extends DefaultModule
                 .map(ContainerManager::getForId)
                 .filter(c -> c != null && !c.isRoot())
                 .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting()));
-            results.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true));
-            results.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false));
+            metrics.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true), "Folders with a disabled file root that still have a valid pipeline root override on the folder or an ancestor");
+            metrics.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false), "Folders with a disabled file root and no valid pipeline root override");
 
             TableInfo mappedDirectories = CoreSchema.getInstance().getMappedDirectories();
             Map<String, Object> fileSets = new SqlSelector(mappedDirectories.getSchema(),
                     new SQLFragment("SELECT COUNT(*) AS NamedFileSets, COUNT(DISTINCT Container) AS NamedFileSetContainers FROM ").append(mappedDirectories, "md"))
                 .getMap();
-            results.put("namedFileSets", fileSets.get("NamedFileSets"));
-            results.put("namedFileSetContainers", fileSets.get("NamedFileSetContainers"));
+            metrics.put("namedFileSets", fileSets.get("NamedFileSets"), "Named file sets across all containers");
+            metrics.put("namedFileSetContainers", fileSets.get("NamedFileSetContainers"), "Distinct containers that define at least one named file set");
 
             try (Stream<String> webPartProperties = new TableSelector(Portal.getTableInfoPortalWebParts(), PageFlowUtil.set("Properties"), new SimpleFilter(FieldKey.fromParts("Name"), FilesWebPart.PART_NAME), null)
                 .uncachedStream(String.class))
             {
-                results.put("filesWebPartsUsingFileSet", webPartProperties.filter(FileContentModule::usesNamedFileSet).count());
+                metrics.put("filesWebPartsUsingFileSet", webPartProperties.filter(FileContentModule::usesNamedFileSet).count(), "Files web parts across the server configured to show a named file set");
             }
 
-            return results;
+            return metrics;
         });
 
         SystemMaintenance.addTask(new FileRootMaintenanceTask());

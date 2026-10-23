@@ -70,9 +70,7 @@ import org.labkey.list.view.SingleListWebPartFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class ListModule extends SpringModule
@@ -155,13 +153,12 @@ public class ListModule extends SpringModule
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(getName(), () -> {
-                Map<String, Object> metric = new HashMap<>();
+            svc.registerUsageMetrics(getName(), metrics -> {
                 DbSchema dbSchema = DbSchema.get("exp", DbSchemaType.Module);
-                metric.put("listCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
-                metric.put("publicPicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist + "'").getObject(Long.class));
-                metric.put("privatePicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist + "'").getObject(Long.class));
-                return metric;
+                metrics.put("listCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list").getObject(Long.class), "List definitions across all containers, including picklists");
+                metrics.put("publicPicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist + "'").getObject(Long.class), "Shared (public) picklists across all containers");
+                metrics.put("privatePicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist + "'").getObject(Long.class), "Private picklists across all containers");
+                return metrics;
             });
         }
     }
