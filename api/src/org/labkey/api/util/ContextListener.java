@@ -30,6 +30,7 @@ import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.bootstrap.PipelineBootstrapConfig;
 import org.labkey.bootstrap.StartupEnvironment;
 import org.springframework.web.context.ContextLoaderListener;
 
@@ -43,6 +44,8 @@ public class ContextListener implements ServletContextListener
     static
     {
         StartupEnvironment.ensureHeadless();
+        // Covers launchers other than LabKeyServer.main, which sets this first
+        PipelineBootstrapConfig.ensureLogHomeSet("logs");
 
         // Adds non-standard TLDs to allowable values for Apache Commons Validator. See Issue 25041. Since this
         // is set statically, it must be called very early, before any reference to UrlValidator occurs. Any

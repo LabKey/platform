@@ -457,9 +457,10 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     {
         List<String> args = new ArrayList<>();
         args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
-        File labkeyBootstrap = FileUtil.appendName(StartupEnvironment.getLabKeyHome(), "labkeyBootstrap.jar");
+        File labkeyHome = StartupEnvironment.getLabKeyHome();
+        File labkeyBootstrap = labkeyHome == null ? null : FileUtil.appendName(labkeyHome, "labkeyBootstrap.jar");
 
-        if (!labkeyBootstrap.exists())
+        if (labkeyBootstrap == null || !labkeyBootstrap.exists())
         {
             try
             {
