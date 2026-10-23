@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -49,6 +50,6 @@ public class ThreadsTable extends FilteredTable<AnnouncementSchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, ReadPermission.class, "EntityId", _userSchema.getUser());
+        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, ReadPermission.class, SQLFragment.unsafe("EntityId"), _userSchema.getUser());
     }
 }

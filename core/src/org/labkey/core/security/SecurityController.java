@@ -1713,7 +1713,7 @@ public class SecurityController extends SpringActionController
 
             // We already have a spring error if targetUser parameter is blank
             if (!errors.hasErrors() && null == form.getTargetUserObject())
-                errors.reject(ERROR_MSG, "Unknown target user");
+                throw new NotFoundException("Unknown target user");
 
             return new JspView<>("/org/labkey/core/security/clonePermissions.jsp", form, errors);
         }

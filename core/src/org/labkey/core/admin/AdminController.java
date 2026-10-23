@@ -260,6 +260,7 @@ import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
@@ -10898,6 +10899,27 @@ public class AdminController extends SpringActionController
                 ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, "metrics.json");
             }
             return new ApiSimpleResponse(params);
+        }
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class UsageMetricDescriptionsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            List<Map<String, Object>> metrics = new ArrayList<>();
+            UsageMetricsService.get().getModuleUsageMetricDescriptions().forEach((module, descriptions) ->
+                descriptions.forEach(d -> {
+                    Map<String, Object> metric = new LinkedHashMap<>();
+                    // Matches JsonKey in mothership's JsonMetricMetadata list
+                    metric.put("jsonKey", "modules." + module + "." + d.path());
+                    metric.put("module", module);
+                    metric.put("description", d.description());
+                    metric.put("kind", d.kind() == null ? null : d.kind().name());
+                    metrics.add(metric);
+                }));
+            return new ApiSimpleResponse("metrics", metrics);
         }
     }
 

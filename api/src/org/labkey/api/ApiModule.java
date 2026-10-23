@@ -56,6 +56,7 @@ import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AsyncQueryRequest;
 import org.labkey.api.data.AtomicDatabaseInteger;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
@@ -173,6 +174,7 @@ import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
@@ -255,6 +257,8 @@ public class ApiModule extends CodeOnlyModule
     protected void init()
     {
         ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/vfs", this);
+        // In init() so module upgrade code also sees configured sizes
+        BatchSize.populate();
         AttachmentService.get().registerAttachmentParentType(ReportType.get());
         AttachmentService.get().registerAttachmentParentType(LookAndFeelResourceType.get());
         AttachmentService.get().registerAttachmentParentType(AuthenticationLogoType.get());
@@ -409,6 +413,7 @@ public class ApiModule extends CodeOnlyModule
             AssayResultsFileWriter.TestCase.class,
             AuthenticationManager.ReauthTokenTest.class,
             BaseServerProperties.TestCase.class,
+            BatchSize.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CacheManager.TestCase.class,
@@ -503,6 +508,7 @@ public class ApiModule extends CodeOnlyModule
             Table.LogExceptionTestCase.class,
             TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
+            UsageMetrics.TestCase.class,
             ValidEmail.TestCase.class,
             VersionNumber.TestCase.class,
             ViewContext.TestCase.class,

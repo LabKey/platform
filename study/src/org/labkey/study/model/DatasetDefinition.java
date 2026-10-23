@@ -38,6 +38,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
@@ -170,6 +171,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.BatchSize.Kind.AUDIT;
 import static org.labkey.api.query.QueryService.AuditAction.DELETE;
 import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
@@ -1794,7 +1796,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                         // note switched order (oldRecord, newRecord)
                         var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null, List.of());
                         batch.add(event);
-                        if (batch.size() > AbstractAuditHandler.AUDIT_BATCH_SIZE)
+                        if (batch.size() >= BatchSize.get(AUDIT))
                         {
                             auditLog.addEvents(user, batch);
                             batch.clear();

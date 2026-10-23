@@ -294,6 +294,16 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * Return the helper to handle data exchange between the server and external scripts.
      */
     DataExchangeHandler createDataExchangeHandler();
+
+    /**
+     * Whether transform scripts can run before the run is saved, so the import transaction isn't held open while
+     * they execute. The data exchange handler must then build the scripts' input without a saved run.
+     */
+    default boolean isTransformBeforeRunSupported(ExpProtocol protocol)
+    {
+        return false;
+    }
+
     /** Make a context that knows how to update a run that's already been stored in the database */
     AssayRunDatabaseContext<?> createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
     /**

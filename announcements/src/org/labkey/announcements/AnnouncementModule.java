@@ -194,7 +194,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                 MultiSet<String> secure = new HashMultiSet<>();
                 MultiSet<String> moderator = new HashMultiSet<>();
                 CommSchema comm = CommSchema.getInstance();
-                SqlSelector selector = new SqlSelector(comm.getSchema(), new SQLFragment("SELECT DISTINCT Container FROM ").append(comm.getTableInfoAnnouncements()));
+                SqlSelector selector = new SqlSelector(comm.getSchema(), SQLFragment.unsafe("SELECT DISTINCT Container FROM ").append(comm.getTableInfoAnnouncements()));
                 AtomicInteger boards = new AtomicInteger();
                 try (Stream<String> ids = selector.uncachedStream(String.class))
                 {
