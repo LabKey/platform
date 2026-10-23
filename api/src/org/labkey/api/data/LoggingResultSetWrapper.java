@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.QuietCloser;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,6 +33,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
 {
     private final QueryLogging _queryLogging;
     private final Set<Object> _dataLoggingValues = new HashSet<>();
+    private final QuietCloser _cancelDeferral = TransactionFilter.deferCancellation();
 
 
     public LoggingResultSetWrapper(ResultSet rs, @NotNull QueryLogging queryLogging)
@@ -71,7 +73,14 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
         }
         finally
         {
-            super.close();
+            try
+            {
+                super.close();
+            }
+            finally
+            {
+                _cancelDeferral.close();
+            }
         }
     }
 

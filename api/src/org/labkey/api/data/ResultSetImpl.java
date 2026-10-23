@@ -231,7 +231,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public void close() throws SQLException
     {
-        // super.close() can throw from a canceled request's banned thread, so use try/finally
+        // super.close() can throw, e.g. from the select-query audit; the connection must still be released.
         try
         {
             super.close();

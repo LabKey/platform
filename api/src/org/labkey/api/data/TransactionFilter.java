@@ -40,6 +40,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -59,6 +60,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -78,13 +81,16 @@ public class TransactionFilter implements Filter
     /**
      * @param tabId and requestId identify a request the client may cancel; read here, since another thread can't read a recycled request's headers
      * @param cancellation set once, by the first {@link RequestCancellation#requestCancelled}
+     * @param cancelDeferrals open {@link #deferCancellation} scopes, changed under the tracker's lock
+     * @param deferredCancel a cancel that arrived while deferred, applied when the last scope closes
      */
-    public record RequestTracker(HttpServletRequest request, long startTime, @Nullable String tabId, @Nullable String requestId, AtomicReference<RequestCancellation.Cancelled> cancellation)
+    public record RequestTracker(HttpServletRequest request, long startTime, @Nullable String tabId, @Nullable String requestId, AtomicReference<RequestCancellation.Cancelled> cancellation,
+                                 AtomicInteger cancelDeferrals, AtomicReference<RequestCancellation.Source> deferredCancel)
     {
         private RequestTracker(HttpServletRequest request)
         {
             this(request, System.currentTimeMillis(), request.getHeader(RequestCancellation.TAB_ID_HEADER),
-                request.getHeader(RequestCancellation.REQUEST_ID_HEADER), new AtomicReference<>());
+                request.getHeader(RequestCancellation.REQUEST_ID_HEADER), new AtomicReference<>(), new AtomicInteger(), new AtomicReference<>());
         }
 
         public String toLogString()
@@ -301,6 +307,12 @@ public class TransactionFilter implements Filter
      */
     private static boolean cancelRequest(Thread thread, RequestTracker tracker, RequestCancellation.Source source)
     {
+        return cancelRequest(thread, tracker, source, false);
+    }
+
+    /** @param deferred true when applying a cancel that {@link #deferCancellation} held off, so nothing was signalled yet */
+    private static boolean cancelRequest(Thread thread, RequestTracker tracker, RequestCancellation.Source source, boolean deferred)
+    {
         boolean first;
         RequestCancellation.Cancelled cancelled;
         Map<DbScope, Set<ConnectionWrapper>> unsignalled;
@@ -312,10 +324,17 @@ public class TransactionFilter implements Filter
             if (_pendingRequests.get(thread) != tracker)
                 return false;
 
-            first = RequestCancellation.requestCancelled(thread, tracker, source);
+            first = RequestCancellation.requestCancelled(thread, tracker, source) || deferred;
+            cancelled = tracker.cancellation().get();
+
+            if (tracker.cancelDeferrals().get() > 0)
+            {
+                tracker.deferredCancel().compareAndSet(null, source);
+                return true;
+            }
+
             if (!first)
                 RequestCancellation.cancelledRequestStillRunning(thread, tracker);
-            cancelled = tracker.cancellation().get();
 
             // Resent on later sweeps, since a cancel that arrives between statements does nothing
             Map<DbScope, Set<ConnectionWrapper>> connections = ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread);
@@ -338,6 +357,42 @@ public class TransactionFilter implements Filter
             }
         });
         return true;
+    }
+
+    /**
+     * Holds off cancelling the current request until closed, then applies any cancel that arrived meanwhile. For work a
+     * cancel can't stop early, only break, such as reading a finished query's rows or writing an audit row.
+     */
+    public static @NotNull QuietCloser deferCancellation()
+    {
+        // An AsyncQueryRequest worker runs its query on the request's behalf
+        Thread thread = DbScope.getEffectiveThread();
+        RequestTracker tracker = _pendingRequests.get(thread);
+        if (tracker == null)
+            return () -> {};
+
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (tracker)
+        {
+            tracker.cancelDeferrals().incrementAndGet();
+        }
+
+        AtomicBoolean closed = new AtomicBoolean();
+        return () -> {
+            if (!closed.compareAndSet(false, true))
+                return;
+
+            RequestCancellation.Source deferred;
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (tracker)
+            {
+                if (tracker.cancelDeferrals().decrementAndGet() > 0)
+                    return;
+                deferred = tracker.deferredCancel().getAndSet(null);
+            }
+            if (deferred != null)
+                cancelRequest(thread, tracker, deferred, true);
+        };
     }
 
     public static int getPendingRequestCount()
@@ -531,6 +586,37 @@ public class TransactionFilter implements Filter
             assertCancelledWhileQuerying(cancellableRequest("GET", tabId, "r3"),
                 () -> cancelRequests(userId, tabId, null, RequestCancellation.Source.WS_CLOSE),
                 Map.of("r3", Outcome.CANCELLED), RequestCancellation.Source.WS_CLOSE);
+        }
+
+        /** A cancel while a finished query's rows are read waits for the last deferral to close, then applies */
+        @Test
+        public void testCancelDeferred() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+
+            RequestCancellation.TestCase.runOnRequestThread(() -> {
+                Thread thread = Thread.currentThread();
+
+                RequestCancellation.TestCase.doRequest(null, () -> {
+                    try (TableResultSet rs = new SqlSelector(scope, "SELECT 1").getResultSet(false))
+                    {
+                        try (QuietCloser ignored = deferCancellation())
+                        {
+                            assertTrue(cancelRequest(thread, getRequestSummary(thread), RequestCancellation.Source.WS_MESSAGE));
+                            assertEquals("Cancel wasn't recorded", RequestCancellation.Source.WS_MESSAGE, RequestCancellation.getSource(thread));
+                        }
+                        assertFalse("Cancel applied while rows were still being read", thread.isInterrupted());
+                        assertTrue(rs.next());
+                        assertEquals(1, rs.getInt(1));
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                    assertTrue("Deferred cancel wasn't applied", Thread.interrupted());
+                });
+                assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(thread).isEmpty());
+            });
         }
 
         private static MockHttpServletRequest cancellableRequest(String method, String tabId, String requestId)
