@@ -16,42 +16,36 @@
  */
 %>
 <%@ page import="org.labkey.api.assay.AssayQCService" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="org.labkey.api.qc.DataState" %>
 <%@ page import="org.labkey.api.util.InputBuilder.Input" %>
 <%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.util.TextAreaBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.assay.AssayController.QCStateBean" %>
 <%@ page import="org.labkey.assay.AssayController.UpdateQCStateForm" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<UpdateQCStateForm> view = HttpView.currentView();
-    UpdateQCStateForm form = view.getModelBean();
+    JspView<QCStateBean> view = HttpView.currentView();
+    QCStateBean bean = view.getModelBean();
+    UpdateQCStateForm form = bean.form();
+    ExpRun firstRun = bean.runs().getFirst();
     String currentState = null;
-    String protocolContainerPath = null;
-    boolean requireComment = false;
 
-    if (form.getRuns().size() == 1)
+    if (bean.runs().size() == 1)
     {
         // for single row selections, display the current QC state
-        ExpRun run = ExperimentService.get().getExpRun(getContainer(), form.getRuns().stream().findFirst().get());
-        if (run != null)
-        {
-            DataState state = AssayQCService.getProvider().getQCState(run.getProtocol(), run.getRowId());
-            currentState = state != null ? state.getLabel() : null;
-        }
+        DataState state = AssayQCService.getProvider().getQCState(firstRun.getProtocol(), firstRun.getRowId());
+        currentState = state != null ? state.getLabel() : null;
     }
 
     // get the protocol container to determine the folder where QC states are defined
-    ExpRun expRun = ExperimentService.get().getExpRun(getContainer(), form.getRuns().stream().findFirst().get());
-    if (expRun != null)
-    {
-        protocolContainerPath = expRun.getProtocol().getContainer().getPath();
-        requireComment = AssayQCService.getProvider().isRequireCommentOnQCStateChange(expRun.getProtocol().getContainer());
-    }
+    Container protocolContainer = firstRun.getProtocol().getContainer();
+    String protocolContainerPath = protocolContainer.getPath();
+    boolean requireComment = AssayQCService.getProvider().isRequireCommentOnQCStateChange(protocolContainer);
 %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
