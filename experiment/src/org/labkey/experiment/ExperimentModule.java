@@ -1117,6 +1117,7 @@ public class ExperimentModule extends SpringModule
             ExperimentController.ContainerScopingTestCase.class,
             DataColorTable.TestCase.class,
             DomainImpl.TestCase.class,
+            DomainUtil.LookupScopeTestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
             ExpMaterialTableImpl.IncrementalUpdateTestCase.class,

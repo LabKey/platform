@@ -6775,10 +6775,22 @@ public class QueryController extends SpringActionController
     {
         private boolean _includeHidden = true;
         private SchemaKey _schemaName;
+        private SchemaKey _sameDataSourceAs;
 
         public SchemaKey getSchemaName()
         {
             return _schemaName;
+        }
+
+        public SchemaKey getSameDataSourceAs()
+        {
+            return _sameDataSourceAs;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSameDataSourceAs(SchemaKey sameDataSourceAs)
+        {
+            _sameDataSourceAs = sameDataSourceAs;
         }
 
         @SuppressWarnings("unused")
@@ -6813,11 +6825,15 @@ public class QueryController extends SpringActionController
             final boolean includeHidden = form.isIncludeHidden();
             if (getRequestedApiVersion() >= 9.3)
             {
+                final DbScope scope = getSameDataSourceScope(form.getSameDataSourceAs());
                 SimpleSchemaTreeVisitor<Void, JSONObject> visitor = new SimpleSchemaTreeVisitor<>(includeHidden)
                 {
                     @Override
                     public Void visitUserSchema(UserSchema schema, Path path, JSONObject json)
                     {
+                        if (null != scope && null != schema.getDbSchema() && schema.getDbSchema().getScope() != scope)
+                            return null;
+
                         JSONObject schemaProps = new JSONObject();
 
                         schemaProps.put("schemaName", schema.getName());
@@ -6860,6 +6876,16 @@ public class QueryController extends SpringActionController
             {
                 return new ApiSimpleResponse("schemas", DefaultSchema.get(user, container).getUserSchemaPaths(includeHidden));
             }
+        }
+
+        // GH Issue 438: lookups can't span data sources. Domain schemas (e.g., an assay's) may not exist in this container; those live in the LabKey DB.
+        private @Nullable DbScope getSameDataSourceScope(@Nullable SchemaKey sameDataSourceAs)
+        {
+            if (null == sameDataSourceAs)
+                return null;
+
+            QuerySchema schema = DefaultSchema.get(getUser(), getContainer(), sameDataSourceAs);
+            return null == schema || null == schema.getDbSchema() ? DbScope.getLabKeyScope() : schema.getDbSchema().getScope();
         }
     }
 
