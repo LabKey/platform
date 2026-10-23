@@ -148,7 +148,6 @@ public class ConnectionWrapper implements java.sql.Connection
     private final ConnectionType _type;
     private final java.util.Date _allocationTime = new java.util.Date();
     private final Thread _allocatingThread;
-    private final Thread _owningThread;
     private final Throwable _allocation;
     private final Set<String> _referencingThreadNames = Collections.synchronizedSet(new TreeSet<>());
     private final @NotNull Logger _log;
@@ -236,7 +235,6 @@ public class ConnectionWrapper implements java.sql.Connection
 
         MemTracker.getInstance().put(this);
         _allocatingThread = Thread.currentThread();
-        _owningThread = DbScope.getEffectiveThread();
         _allocation = new Throwable();
         _referencingThreadNames.add(_allocatingThread.getName());
 
@@ -390,21 +388,7 @@ public class ConnectionWrapper implements java.sql.Connection
     /** Like {@link #getConnectionsByScopeForThread}, but also includes connections allocated by threads currently sharing t's connections, such as AsyncQueryRequest workers */
     public static Map<DbScope, Set<ConnectionWrapper>> getConnectionsByScopeForEffectiveThread(Thread t)
     {
-        return getConnectionsByScope(effectiveThread(t));
-    }
-
-    /**
-     * Like {@link #getConnectionsByScopeForEffectiveThread}, but also includes connections that t's finished AsyncQueryRequest
-     * workers allocated since requestStart, such as a streaming ResultSet's, which outlive the worker's share
-     */
-    public static Map<DbScope, Set<ConnectionWrapper>> getConnectionsByScopeForRequest(Thread t, long requestStart)
-    {
-        return getConnectionsByScope(effectiveThread(t).or(c -> c._owningThread == t && c._allocationTime.getTime() >= requestStart));
-    }
-
-    private static Predicate<ConnectionWrapper> effectiveThread(Thread t)
-    {
-        return c -> c._allocatingThread == t || DbScope.getEffectiveThread(c._allocatingThread) == t;
+        return getConnectionsByScope(c -> c._allocatingThread == t || DbScope.getEffectiveThread(c._allocatingThread) == t);
     }
 
     private static Map<DbScope, Set<ConnectionWrapper>> getConnectionsByScope(Predicate<ConnectionWrapper> filter)

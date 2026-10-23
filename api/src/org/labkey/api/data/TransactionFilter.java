@@ -318,7 +318,7 @@ public class TransactionFilter implements Filter
             cancelled = tracker.cancellation().get();
 
             // Resent on later sweeps, since a cancel that arrives between statements does nothing
-            Map<DbScope, Set<ConnectionWrapper>> connections = ConnectionWrapper.getConnectionsByScopeForRequest(thread, tracker.startTime());
+            Map<DbScope, Set<ConnectionWrapper>> connections = ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread);
             unsignalled = RequestCancellation.cancelQueriesViaOwningConnection(connections, source, cancelled, first);
 
             // Never close the thread's connections from here: the pool would hand one out while the thread is still mid-call on it
