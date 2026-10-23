@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -63,12 +64,21 @@ public final class RequestCancellation
     /** Tests set this to make the driver's cancel signal nothing, forcing the pg_cancel_backend fallback */
     static volatile boolean _skipDriverCancel = false;
 
+    /** Opts a server out of client cancels of abandoned read-only requests */
+    public static final String FEATUREFLAG_DISABLE_CANCEL_ABANDONED_REQUESTS = "disableCancelAbandonedRequests";
+    /** The client-side flag in LABKEY.experimental; the client sends request ids only while it's true */
+    public static final String CLIENT_FLAG_CANCEL_ABANDONED_REQUESTS = "cancelAbandonedRequests";
+    public static final String TAB_ID_HEADER = "X-LABKEY-TabId";
+    public static final String REQUEST_ID_HEADER = "X-LABKEY-RequestId";
+
     public enum Source
     {
         TIMEOUT("timeout", "timeout"),
         CLIENT_DISCONNECT("client_disconnect", "clientDisconnect"),
         SHUTDOWN("shutdown", "shutdown"),
-        PIPELINE("pipeline", null);
+        PIPELINE("pipeline", null),
+        WS_MESSAGE("ws_message", "wsMessage"),
+        WS_CLOSE("ws_close", "wsClose");
 
         private final String _logName;
         private final @Nullable String _metricName;
@@ -77,6 +87,30 @@ public final class RequestCancellation
         {
             _logName = logName;
             _metricName = metricName;
+        }
+
+        @Override
+        public String toString()
+        {
+            return _logName;
+        }
+    }
+
+    /** What a client's cancel did to one request */
+    public enum Outcome
+    {
+        CANCELLED("cancelled"),
+        ALREADY_FINISHED("already_finished"),
+        NOT_FOUND("not_found"),
+        NOT_READ_ONLY("not_read_only"),
+        EXPORT("export"),
+        WRONG_USER("wrong_user");
+
+        private final String _logName;
+
+        Outcome(String logName)
+        {
+            _logName = logName;
         }
 
         @Override
@@ -109,6 +143,17 @@ public final class RequestCancellation
 
     private RequestCancellation()
     {
+    }
+
+    public static boolean isCancelAbandonedRequestsEnabled()
+    {
+        return !OptionalFeatureService.get().isFeatureEnabled(FEATUREFLAG_DISABLE_CANCEL_ABANDONED_REQUESTS);
+    }
+
+    /** A client's cancel that stopped nothing; a cancelled request logs its line when it exits instead */
+    static void cancelIgnored(@NotNull Source source, @NotNull Outcome outcome, @NotNull String requestId, int userId)
+    {
+        LOG.info("request-cancel-ignored source={} outcome={} requestId={} userId={}", source, outcome, requestId, userId);
     }
 
     /**
@@ -188,9 +233,9 @@ public final class RequestCancellation
         }
         catch (IllegalStateException ignored) {} // The request has already been recycled
 
-        LOG.info("request-cancel source={} thread={} elapsedMs={} cancelToExitMs={} statementCancelled={} spidsSignalled={} user={} url={}",
+        LOG.info("request-cancel source={} thread={} elapsedMs={} cancelToExitMs={} statementCancelled={} spidsSignalled={} requestId={} user={} url={}",
             cancelled._source, thread.getName(), cancelled._cancelledAt - tracker.startTime(), cancelToExitMs,
-            cancelled._statementCancelled, cancelled._spids, user, getUrl(tracker));
+            cancelled._statementCancelled, cancelled._spids, tracker.requestId(), user, getUrl(tracker));
 
         Span span = GlobalTracer.get().activeSpan();
         if (span != null)

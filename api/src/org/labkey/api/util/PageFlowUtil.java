@@ -53,6 +53,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Project;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -2173,6 +2174,7 @@ public class PageFlowUtil
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", true);
         experimental.put(AppProps.OPTIONAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS));
+        experimental.put(RequestCancellation.CLIENT_FLAG_CANCEL_ABANDONED_REQUESTS, RequestCancellation.isCancelAbandonedRequestsEnabled());
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);

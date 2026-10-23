@@ -69,6 +69,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
@@ -541,6 +542,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(RequestCancellation.FEATUREFLAG_DISABLE_CANCEL_ABANDONED_REQUESTS,
+            "Disable cancelling abandoned requests",
+            "By default, when a page abandons a read-only request, e.g. the user navigates away or closes the tab, the server stops the request and its database queries. You can disable this feature with this flag.",
+            false, false, FeatureType.Optional));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
             "Allow script authentication via legacy substitution parameters",
             "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
