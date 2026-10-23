@@ -159,15 +159,16 @@ public class NotificationEndpoint extends Endpoint
         {
             int code = closeReason.getCloseCode().getCode();
             long lifetimeMs = System.currentTimeMillis() - this.openedAt;
-            // An abnormal close near the load balancer's idle timeout means it killed a silent socket. The tab may still
-            // be open and waiting, so leave its requests to the read-only timeout.
-            if (code == CloseReason.CloseCodes.CLOSED_ABNORMALLY.getCode())
+            // An abnormal close near the load balancer's idle timeout means it killed a silent socket; errored means the server
+            // closed it after a failed send; 1008 means Tomcat closed it because the HTTP session ended. The tab may still be
+            // open and waiting, so leave its requests to the read-only timeout.
+            if (this.errored || code == CloseReason.CloseCodes.CLOSED_ABNORMALLY.getCode() || code == CloseReason.CloseCodes.VIOLATED_POLICY.getCode())
             {
-                LOG.info("websocket-close userId={} lifetimeMs={} code={} reason={}", this.userId, lifetimeMs, code, closeReason.getReasonPhrase());
+                LOG.info("websocket-close userId={} lifetimeMs={} code={} errored={} reason={}", this.userId, lifetimeMs, code, this.errored, closeReason.getReasonPhrase());
             }
             else
             {
-                LOG.debug("websocket-close userId={} lifetimeMs={} code={} reason={}", this.userId, lifetimeMs, code, closeReason.getReasonPhrase());
+                LOG.debug("websocket-close userId={} lifetimeMs={} code={} errored={} reason={}", this.userId, lifetimeMs, code, this.errored, closeReason.getReasonPhrase());
                 // The page is gone, so nobody is left to read its results
                 TransactionFilter.cancelRequests(this.userId, this.tabId, null, RequestCancellation.Source.WS_CLOSE);
             }
