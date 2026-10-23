@@ -35,6 +35,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -340,8 +341,9 @@ public class TransactionFilter implements Filter
             Map<DbScope, Set<ConnectionWrapper>> connections = ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread);
             unsignalled = RequestCancellation.cancelQueriesViaOwningConnection(connections, source, cancelled, first);
 
-            // Never close the thread's connections from here: the pool would hand one out while the thread is still mid-call on it
-            if (connections.isEmpty())
+            // Never close the thread's connections from here: the pool would hand one out while the thread is still mid-call on it.
+            // A deferred cancel lands between statements, where only the ban stops the request's next one.
+            if (connections.isEmpty() || deferred)
                 DbScope.banNewConnections(thread);
             PipelineJobService.get().killProcessesForThread(thread);
             thread.interrupt();
@@ -361,7 +363,7 @@ public class TransactionFilter implements Filter
 
     /**
      * Holds off cancelling the current request until closed, then applies any cancel that arrived meanwhile. For work a
-     * cancel can't stop early, only break, such as reading a finished query's rows or writing an audit row.
+     * cancel can't stop early, only break, such as writing an audit row; an earlier cancel's ban doesn't apply inside it either.
      */
     public static @NotNull QuietCloser deferCancellation()
     {
@@ -393,6 +395,12 @@ public class TransactionFilter implements Filter
             if (deferred != null)
                 cancelRequest(thread, tracker, deferred, true);
         };
+    }
+
+    static boolean isCancellationDeferred(Thread thread)
+    {
+        RequestTracker tracker = _pendingRequests.get(thread);
+        return tracker != null && tracker.cancelDeferrals().get() > 0;
     }
 
     public static int getPendingRequestCount()
@@ -588,7 +596,7 @@ public class TransactionFilter implements Filter
                 Map.of("r3", Outcome.CANCELLED), RequestCancellation.Source.WS_CLOSE);
         }
 
-        /** A cancel while a finished query's rows are read waits for the last deferral to close, then applies */
+        /** A deferred cancel waits for the last deferral to close, then bans the request's next connection, which only a deferral may still get */
         @Test
         public void testCancelDeferred() throws Exception
         {
@@ -600,20 +608,41 @@ public class TransactionFilter implements Filter
                 RequestCancellation.TestCase.doRequest(null, () -> {
                     try (TableResultSet rs = new SqlSelector(scope, "SELECT 1").getResultSet(false))
                     {
-                        try (QuietCloser ignored = deferCancellation())
-                        {
-                            assertTrue(cancelRequest(thread, getRequestSummary(thread), RequestCancellation.Source.WS_MESSAGE));
-                            assertEquals("Cancel wasn't recorded", RequestCancellation.Source.WS_MESSAGE, RequestCancellation.getSource(thread));
-                        }
-                        assertFalse("Cancel applied while rows were still being read", thread.isInterrupted());
                         assertTrue(rs.next());
-                        assertEquals(1, rs.getInt(1));
+                        try (QuietCloser outer = deferCancellation())
+                        {
+                            try (QuietCloser inner = deferCancellation())
+                            {
+                                assertTrue(cancelRequest(thread, getRequestSummary(thread), RequestCancellation.Source.WS_MESSAGE));
+                                assertEquals("Cancel wasn't recorded", RequestCancellation.Source.WS_MESSAGE, RequestCancellation.getSource(thread));
+                            }
+                            assertFalse("Cancel applied before the last deferral closed", thread.isInterrupted());
+                        }
+                        assertTrue("Deferred cancel wasn't applied", Thread.interrupted());
                     }
                     catch (SQLException e)
                     {
                         throw new RuntimeException(e);
                     }
-                    assertTrue("Deferred cancel wasn't applied", Thread.interrupted());
+
+                    // Like an audit insert, work inside a deferral still gets a connection despite the ban
+                    try (QuietCloser ignored = deferCancellation())
+                    {
+                        assertEquals(Integer.valueOf(1), new SqlSelector(scope, "SELECT 1").getObject(Integer.class));
+                    }
+
+                    try
+                    {
+                        new SqlSelector(scope, "SELECT 1").getObject(Integer.class);
+                        fail("Query after the deferred cancel wasn't stopped");
+                    }
+                    catch (RuntimeException e)
+                    {
+                        boolean aborted = false;
+                        for (Throwable t = e; t != null && !aborted; t = ExceptionUtil.getCause(t))
+                            aborted = t instanceof AbortedRequestException;
+                        assertTrue("Query failed with something other than the ban: " + e, aborted);
+                    }
                 });
                 assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(thread).isEmpty());
             });

@@ -1478,8 +1478,10 @@ public class DbScope
 
     public ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
-        // If the thread is banned, release the ban so that future DB cleanup (dropping temp tables, for example) can proceed
-        if (BANNED_THREADS.remove(getEffectiveThread()))
+        // If the thread is banned, release the ban so that future DB cleanup (dropping temp tables, for example) can proceed.
+        // A deferral, e.g. an audit insert, is exempt; the ban waits for the thread's next connection after it.
+        Thread thread = getEffectiveThread();
+        if (BANNED_THREADS.contains(thread) && !TransactionFilter.isCancellationDeferred(thread) && BANNED_THREADS.remove(thread))
         {
             throw new AbortedRequestException("Cannot get another DB connection for this thread");
         }
