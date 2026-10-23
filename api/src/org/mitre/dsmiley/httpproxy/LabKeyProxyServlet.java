@@ -7,11 +7,22 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.Strings;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.hc.core5.http.message.BasicHttpRequest;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 
+import org.springframework.mock.web.MockHttpServletRequest;
+
 import java.net.HttpCookie;
+import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
@@ -45,6 +56,44 @@ public class LabKeyProxyServlet extends ProxyServlet
         // httpclient5 v5.4 protocolUpgradeEnabled default to true
         // https://github.com/apache/httpcomponents-client/commit/3235f00
         this._allowProtocolUpgrade = readBooleanConfigParam(ALLOW_PROTOCOL_UPGRADE_PARAM_NAME, true);
+    }
+
+    private static final String ATTR_ASSERTED_HEADERS = LabKeyProxyServlet.class.getName() + "$assertedHeaders";
+
+    /**
+     * Assert a header on the caller's behalf: client-supplied copies are stripped before the proxy's value is added, so
+     * the target can't be handed two identities and pick the wrong one. A null value strips without asserting.
+     */
+    public static void assertHeader(HttpServletRequest request, String name, @Nullable String value)
+    {
+        @SuppressWarnings("unchecked")
+        Map<String, String> asserted = (Map<String, String>) request.getAttribute(ATTR_ASSERTED_HEADERS);
+
+        if (null == asserted)
+        {
+            asserted = new CaseInsensitiveHashMap<>();
+            request.setAttribute(ATTR_ASSERTED_HEADERS, asserted);
+        }
+
+        asserted.put(name, value);
+    }
+
+    @Override
+    protected void copyRequestHeaders(HttpServletRequest servletRequest, HttpRequest proxyRequest)
+    {
+        super.copyRequestHeaders(servletRequest, proxyRequest);
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> asserted = (Map<String, String>) servletRequest.getAttribute(ATTR_ASSERTED_HEADERS);
+
+        if (null != asserted)
+        {
+            asserted.forEach((name, value) -> {
+                proxyRequest.removeHeaders(name); // case-insensitive, drops every copy the client sent
+                if (null != value)
+                    proxyRequest.addHeader(name, value);
+            });
+        }
     }
 
     protected String getSourcePath(HttpServletRequest request)
@@ -195,4 +244,75 @@ public class LabKeyProxyServlet extends ProxyServlet
         return _allowProtocolUpgrade;
     }
 
+
+    public static class TestCase extends Assert
+    {
+        private static final String IDENTITY = "X-Proxy-Username";
+
+        private List<String> forward(String clientHeaderName, @Nullable String assertedValue)
+        {
+            MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+            if (null != clientHeaderName)
+                servletRequest.addHeader(clientHeaderName, "attacker");
+            if (null != assertedValue)
+                assertHeader(servletRequest, IDENTITY, assertedValue);
+
+            BasicHttpRequest proxyRequest = new BasicHttpRequest("GET", "/");
+            new LabKeyProxyServlet().copyRequestHeaders(servletRequest, proxyRequest);
+
+            return Arrays.stream(proxyRequest.getHeaders(IDENTITY)).map(Header::getValue).toList();
+        }
+
+        @Test
+        public void testAssertedHeaderReplacesClientCopy()
+        {
+            assertEquals(List.of("victim"), forward(IDENTITY, "victim"));
+        }
+
+        @Test
+        public void testAssertedHeaderReplacesClientCopyRegardlessOfCase()
+        {
+            assertEquals(List.of("victim"), forward("x-rstudio-username", "victim"));
+            assertEquals(List.of("victim"), forward("X-RSTUDIO-USERNAME", "victim"));
+        }
+
+        @Test
+        public void testAssertedHeaderForwardedWhenClientSentNone()
+        {
+            assertEquals(List.of("victim"), forward(null, "victim"));
+        }
+
+        @Test
+        public void testClientCopyForwardedWhenNothingAsserted()
+        {
+            assertEquals(List.of("attacker"), forward(IDENTITY, null));
+        }
+
+        @Test
+        public void testNullAssertedValueStripsClientCopy()
+        {
+            MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+            servletRequest.addHeader(IDENTITY, "attacker");
+            assertHeader(servletRequest, IDENTITY, null);
+
+            BasicHttpRequest proxyRequest = new BasicHttpRequest("GET", "/");
+            new LabKeyProxyServlet().copyRequestHeaders(servletRequest, proxyRequest);
+
+            assertEquals(0, proxyRequest.getHeaders(IDENTITY).length);
+        }
+
+        @Test
+        public void testOtherHeadersUntouched()
+        {
+            MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+            servletRequest.addHeader("Accept", "text/html");
+            servletRequest.addHeader("Accept", "text/plain");
+            assertHeader(servletRequest, IDENTITY, "victim");
+
+            BasicHttpRequest proxyRequest = new BasicHttpRequest("GET", "/");
+            new LabKeyProxyServlet().copyRequestHeaders(servletRequest, proxyRequest);
+
+            assertEquals(List.of("text/html", "text/plain"), Arrays.stream(proxyRequest.getHeaders("Accept")).map(Header::getValue).toList());
+        }
+    }
 }

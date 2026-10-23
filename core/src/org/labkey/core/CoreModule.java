@@ -322,6 +322,7 @@ import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
 import org.labkey.filters.ContentSecurityPolicyFilter;
+import org.mitre.dsmiley.httpproxy.LabKeyProxyServlet;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
@@ -1555,6 +1556,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.FileRootPermissionTestCase.class,
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
+            LabKeyProxyServlet.TestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
