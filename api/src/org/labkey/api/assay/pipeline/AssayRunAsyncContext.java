@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.assay.transform.DefaultTransformResult;
 import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ActionURL;
@@ -47,6 +48,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -90,6 +92,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private transient Set<Domain> _domains;
     private transient TransformResult _transformResult;
     private transient @Nullable PreparedTransform _preparedTransform;
+    private transient @Nullable List<FileSystemAuditProvider.FileSystemAuditEvent> _pendingFileAuditEvents;
     private transient Logger _logger;
 
     // async fields
@@ -402,6 +405,18 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public void setPreparedTransform(@Nullable PreparedTransform prepared)
     {
         _preparedTransform = prepared;
+    }
+
+    @Override
+    public @Nullable List<FileSystemAuditProvider.FileSystemAuditEvent> getPendingFileAuditEvents()
+    {
+        return _pendingFileAuditEvents;
+    }
+
+    @Override
+    public void setPendingFileAuditEvents(@Nullable List<FileSystemAuditProvider.FileSystemAuditEvent> events)
+    {
+        _pendingFileAuditEvents = events;
     }
 
     @Override

@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
@@ -37,6 +38,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -186,6 +188,17 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     default void setPreparedTransform(@Nullable PreparedTransform prepared)
     {
         throw new UnsupportedOperationException(getClass().getName() + " can't carry a prepared transform");
+    }
+
+    /** File audit events held until the import transaction opens, or null to add them as they're created. */
+    default @Nullable List<FileSystemAuditProvider.FileSystemAuditEvent> getPendingFileAuditEvents()
+    {
+        return null;
+    }
+
+    default void setPendingFileAuditEvents(@Nullable List<FileSystemAuditProvider.FileSystemAuditEvent> events)
+    {
+        throw new UnsupportedOperationException(getClass().getName() + " can't hold file audit events");
     }
 
     /** The RowId for the run that is being deleted and reuploaded, or null if this is a new run */

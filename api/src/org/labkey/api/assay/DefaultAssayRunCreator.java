@@ -33,7 +33,9 @@ import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformDataHandler;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -148,6 +150,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<DomainProperty, String> allProperties = new HashMap<>(context.getRunProperties());
         allProperties.putAll(context.getBatchProperties());
 
+        // Collecting the inputs saves the primary file, whose audit event belongs to the import transaction that isn't open yet
+        context.setPendingFileAuditEvents(new ArrayList<>());
         Map<ExpData, String> inputDatas = new HashMap<>();
         addRunDataInputs(context, null, findResolverType(allProperties), inputDatas);
         PreparedTransform prepared = runTransformBeforeRun(context, inputDatas.keySet());
@@ -204,6 +208,19 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
         context.setPreparedTransform(prepared);
         return prepared;
+    }
+
+    private static void addPendingFileAuditEvents(AssayRunUploadContext<?> context, TransactionAuditProvider.TransactionAuditEvent auditEvent)
+    {
+        List<FileSystemAuditProvider.FileSystemAuditEvent> pending = context.getPendingFileAuditEvents();
+        if (pending == null)
+            return;
+        context.setPendingFileAuditEvents(null);
+        for (FileSystemAuditProvider.FileSystemAuditEvent event : pending)
+        {
+            event.setTransactionEvent(auditEvent, FileSystemAuditProvider.EVENT_TYPE);
+            AuditLogService.get().addEvent(context.getUser(), event);
+        }
     }
 
     /** Issue 26811: If we don't have a view, assume that we are on a background job thread already. */
@@ -263,6 +280,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, transactionDetails);
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
             }
+            addPendingFileAuditEvents(context, auditEvent);
             if (!importInBackground)
             {
                 if ((Object) context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)

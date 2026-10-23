@@ -262,7 +262,11 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                                 event.setProvidedFileName(fileName);
                                 event.setFile(file.getName());
                                 event.setDirectory(dir.toURI().getPath());
-                                AuditLogService.get().addEvent(context.getUser(), event);
+                                List<FileSystemAuditProvider.FileSystemAuditEvent> pending = context.getPendingFileAuditEvents();
+                                if (pending != null)
+                                    pending.add(event);
+                                else
+                                    AuditLogService.get().addEvent(context.getUser(), event);
                             }
                             if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
                             {

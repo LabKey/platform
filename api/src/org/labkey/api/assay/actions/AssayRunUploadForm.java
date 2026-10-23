@@ -51,6 +51,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.assay.transform.DefaultTransformResult;
 import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -108,6 +109,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private List<AssayDataCollector> _collectors;
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
     private @Nullable PreparedTransform _preparedTransform;
+    private @Nullable List<FileSystemAuditProvider.FileSystemAuditEvent> _pendingFileAuditEvents;
     private ExpRun _reRun;
     private boolean _allowCrossRunFileInputs;
 
@@ -725,6 +727,18 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setPreparedTransform(@Nullable PreparedTransform prepared)
     {
         _preparedTransform = prepared;
+    }
+
+    @Override
+    public @Nullable List<FileSystemAuditProvider.FileSystemAuditEvent> getPendingFileAuditEvents()
+    {
+        return _pendingFileAuditEvents;
+    }
+
+    @Override
+    public void setPendingFileAuditEvents(@Nullable List<FileSystemAuditProvider.FileSystemAuditEvent> events)
+    {
+        _pendingFileAuditEvents = events;
     }
 
     @Override
