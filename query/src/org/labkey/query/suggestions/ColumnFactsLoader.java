@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -53,7 +54,7 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
     static final int MAX_VALUE_LENGTH = 200;
 
     @Override
-    public @NotNull Map<FieldKey, ColumnFact.Stats> loadStats(@NotNull TableInfo table, @NotNull Map<String, Object> parameters, @NotNull List<ColumnFactsCache.StatsRequest> requests)
+    public @NotNull Map<FieldKey, ColumnFact.Stats> loadStats(@NotNull TableInfo table, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter, @NotNull List<ColumnFactsCache.StatsRequest> requests)
     {
         record Aggregates(@Nullable Aggregate min, @Nullable Aggregate max, @Nullable Aggregate distinct) {}
 
@@ -73,7 +74,7 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
             byFieldKey.put(fieldKey, new Aggregates(min, max, distinct));
         }
 
-        Map<String, List<Aggregate.Result>> results = new TableSelector(table, columns, null, null)
+        Map<String, List<Aggregate.Result>> results = new TableSelector(table, columns, filter, null)
             .setNamedParameters(parameters)
             .setQueryTimeout(QUERY_TIMEOUT_SECONDS)
             .getAggregates(aggregates);
@@ -94,12 +95,13 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
     }
 
     @Override
-    public @NotNull ColumnFact.Values loadValues(@NotNull TableInfo table, @NotNull ColumnInfo column, @NotNull SuggestionColumn.Type type, @NotNull Map<String, Object> parameters)
+    public @NotNull ColumnFact.Values loadValues(@NotNull TableInfo table, @NotNull ColumnInfo column, @NotNull SuggestionColumn.Type type, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter)
     {
         QueryService service = QueryService.get();
         QueryLogging queryLogging = new QueryLogging();
         SQLFragment selectSql = service.getSelectBuilder(table)
             .columns(List.of(column))
+            .filter(filter)
             .queryLogging(queryLogging)
             .distinct(true)
             .buildSqlFragment();
@@ -126,12 +128,12 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
     }
 
     @Override
-    public @NotNull Map<FieldKey, ColumnFact.Shapes> loadShapes(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @NotNull Map<String, Object> parameters)
+    public @NotNull Map<FieldKey, ColumnFact.Shapes> loadShapes(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter)
     {
         Map<FieldKey, Set<String>> shapes = new LinkedHashMap<>();
         columns.forEach(column -> shapes.put(column.getFieldKey(), new LinkedHashSet<>()));
 
-        TableSelector selector = new TableSelector(table, columns, null, getNewestFirstSort(table))
+        TableSelector selector = new TableSelector(table, columns, filter, getNewestFirstSort(table))
             .setMaxRows(SHAPE_SAMPLE_SIZE)
             .setNamedParameters(parameters)
             .setQueryTimeout(QUERY_TIMEOUT_SECONDS);
