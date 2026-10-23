@@ -31,6 +31,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
@@ -93,8 +94,9 @@ import java.util.stream.Collectors;
  * load on a small background pool; a request waits for them only up to its budget, and late results still fill the
  * cache for the next keystroke.
  * <p>
- * Tables with a change token share entries across users, since their row visibility depends on containers alone; all
- * others are cached per user for a few minutes. Either way the key includes the resolved container scope.
+ * Tables with a change token share entries across users, since their row visibility depends on containers alone, unless
+ * the filter selects rows by data the token doesn't cover; all others are cached per user for a few minutes. Either way
+ * the key includes the resolved container scope.
  */
 public class ColumnFactsCache
 {
@@ -243,9 +245,10 @@ public class ColumnFactsCache
         Map<String, Object> declaredParameters = getDeclaredParameters(table, parameters);
         // Tokens are read before the data they guard, so a race can only pair newer data with an older token
         String token = tokens.apply(table);
-        Scope scope = Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, token != null, declaredParameters, filter);
+        boolean shared = token != null && isShared(table, filter);
+        Scope scope = Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, shared, declaredParameters, filter);
         // Per-user entries follow the token too, so a change to the table's rows reaches them before they age out
-        Scope userScope = token == null ? scope : Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, false, declaredParameters, filter);
+        Scope userScope = shared ? Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, false, declaredParameters, filter) : scope;
 
         List<Plan> plans = new ArrayList<>();
         for (SuggestionColumn column : described.columns())
@@ -291,6 +294,20 @@ public class ColumnFactsCache
             return false;
         // A calculated value can depend on the user, e.g. ISMEMBEROF(), unless the column's own token vouches that it doesn't
         return !info.isCalculated() || column.getChangeToken() != null;
+    }
+
+    /** Whether the rows the filter selects follow the table's token, for the same reasons as a shared column */
+    private static boolean isShared(TableInfo table, @Nullable SimpleFilter filter)
+    {
+        if (filter == null)
+            return true;
+        // A search names no field keys until it runs, and it also matches lookup display values
+        if (filter.getClauses().stream().anyMatch(clause -> clause instanceof CompareType.CompareClause compare && compare.getCompareType() == CompareType.Q))
+            return false;
+        return filter.getAllFieldKeys().stream().allMatch(fieldKey -> {
+            ColumnInfo column = fieldKey.getParent() == null ? table.getColumn(fieldKey) : null;
+            return column != null && !column.isCalculated();
+        });
     }
 
     private @Nullable Plan plan(User user, Scope scope, SuggestionColumn column, @Nullable ColumnInfo lookup)
@@ -617,7 +634,13 @@ public class ColumnFactsCache
     /** For tests: the cached fact a request would read, or null. */
     @Nullable ColumnFact peek(@NotNull FilterSuggestionContext context, @Nullable String token, boolean shared, @NotNull String kind, @NotNull String fieldKey)
     {
-        Scope scope = Scope.create(context.getTable(), context.getContainerFilter(), context.getContainer(), context.getUser(), token, shared, null, null);
+        return peek(context, token, shared, null, kind, fieldKey);
+    }
+
+    /** For tests: the cached fact a filtered request would read, or null. */
+    @Nullable ColumnFact peek(@NotNull FilterSuggestionContext context, @Nullable String token, boolean shared, @Nullable SimpleFilter filter, @NotNull String kind, @NotNull String fieldKey)
+    {
+        Scope scope = Scope.create(context.getTable(), context.getContainerFilter(), context.getContainer(), context.getUser(), token, shared, null, filter);
         return _cache.get(scope.key(kind, fieldKey, null));
     }
 
@@ -1024,6 +1047,30 @@ public class ColumnFactsCache
             FilterSuggestionColumns.Described unfiltered = FilterSuggestionColumns.describe(table, null, List.of("color"));
             assertTrue(cache.fill(context(table, _user), null, null, unfiltered, _ -> "token-5", 30_000));
             assertEquals("Filtered entries must not serve the unfiltered table", Set.of("red", "green", "blue"), Set.copyOf(Objects.requireNonNull(byFieldKey(unfiltered).get("color").getValues())));
+        }
+
+        @Test
+        public void testFiltersBeyondTheTokenAreNotShared()
+        {
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
+            TableInfo table = getTable(SAMPLE_TYPE);
+            User other = UserManager.getGuestUser();
+
+            List<SimpleFilter> unshared = List.of(
+                new SimpleFilter(FieldKey.fromParts("CreatedBy", "Email"), _user.getEmail()),
+                new SimpleFilter(FieldKey.fromParts("*"), "red", CompareType.Q),
+                new SimpleFilter(FieldKey.fromParts("viewer"), null, CompareType.NONBLANK)
+            );
+            for (SimpleFilter filter : unshared)
+            {
+                assertTrue(filter.toString(), cache.fill(context(table, _user), null, filter, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
+                assertNotNull(filter.toString(), cache.peek(context(table, _user), "shared", false, filter, "values", "color"));
+                assertNull(filter.toString(), cache.peek(context(table, other), "shared", true, filter, "values", "color"));
+            }
+
+            SimpleFilter own = new SimpleFilter(FieldKey.fromParts("thawCount"), 0);
+            assertTrue(cache.fill(context(table, _user), null, own, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
+            assertNotNull("A filter on the table's own columns follows its token", cache.peek(context(table, other), "shared", true, own, "values", "color"));
         }
 
         @Test
