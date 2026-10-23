@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -35,6 +36,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -61,6 +63,7 @@ import org.labkey.api.util.logging.LogHelper;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -116,11 +119,11 @@ public class ColumnFactsCache
     public interface Source
     {
         /** @return stats keyed by each request's column fieldKey; a missing entry is recorded as a failure */
-        @NotNull Map<FieldKey, ColumnFact.Stats> loadStats(@NotNull TableInfo table, @NotNull Map<String, Object> parameters, @NotNull List<StatsRequest> requests);
+        @NotNull Map<FieldKey, ColumnFact.Stats> loadStats(@NotNull TableInfo table, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter, @NotNull List<StatsRequest> requests);
 
-        @NotNull ColumnFact.Values loadValues(@NotNull TableInfo table, @NotNull ColumnInfo column, @NotNull SuggestionColumn.Type type, @NotNull Map<String, Object> parameters);
+        @NotNull ColumnFact.Values loadValues(@NotNull TableInfo table, @NotNull ColumnInfo column, @NotNull SuggestionColumn.Type type, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter);
 
-        @NotNull Map<FieldKey, ColumnFact.Shapes> loadShapes(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @NotNull Map<String, Object> parameters);
+        @NotNull Map<FieldKey, ColumnFact.Shapes> loadShapes(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter);
     }
 
     /** @param range MIN and MAX; distinctCount COUNT(DISTINCT) */
@@ -129,20 +132,23 @@ public class ColumnFactsCache
     private enum Kind { RANGE, INT, STRING, LOOKUP }
 
     /**
-     * A table read in one container scope with one set of parameters.
+     * A table read in one container scope with one set of parameters and one filter.
      * @param owner the change token when shared, else the user plus any change token
      */
-    record Scope(TableInfo table, Map<String, Object> parameters, String name, String scopeHash, String owner, long ttl)
+    record Scope(TableInfo table, Map<String, Object> parameters, @Nullable SimpleFilter filter, String name, String scopeHash, String owner, long ttl)
     {
         /** @param shared whether the entries are shared across users, which requires a token */
-        static Scope create(TableInfo table, ContainerFilter containerFilter, Container container, User user, @Nullable String token, boolean shared, @Nullable Map<String, Object> parameters)
+        static Scope create(TableInfo table, ContainerFilter containerFilter, Container container, User user, @Nullable String token, boolean shared,
+                            @Nullable Map<String, Object> parameters, @Nullable SimpleFilter filter)
         {
             Collection<GUID> ids = containerFilter.getIds();
             String containerIds = ids == null ? "*" : ids.stream().map(GUID::toString).sorted().collect(Collectors.joining(","));
             Map<String, Object> sortedParameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             if (parameters != null)
                 sortedParameters.putAll(parameters);
-            String scopeHash = HashHelpers.hash(container.getId() + "|" + containerIds + "|" + sortedParameters);
+            // Sorted, so the same filters in another order share entries
+            String filterText = filter == null ? "" : Arrays.stream(filter.toQueryString(null).split("&")).sorted().collect(Collectors.joining("&"));
+            String scopeHash = HashHelpers.hash(container.getId() + "|" + containerIds + "|" + sortedParameters + "|" + filterText);
             String owner;
             long ttl;
             if (shared)
@@ -156,12 +162,12 @@ public class ColumnFactsCache
                 ttl = NO_TOKEN_TTL;
             }
             String name = (table.getPublicSchemaName() + "/" + table.getPublicName()).toLowerCase(Locale.ROOT);
-            return new Scope(table, Collections.unmodifiableMap(sortedParameters), name, scopeHash, owner, ttl);
+            return new Scope(table, Collections.unmodifiableMap(sortedParameters), filter, name, scopeHash, owner, ttl);
         }
 
         Scope withName(String name)
         {
-            return new Scope(table, parameters, name, scopeHash, owner, ttl);
+            return new Scope(table, parameters, filter, name, scopeHash, owner, ttl);
         }
 
         String key(String kind, String fieldKey, @Nullable String columnToken)
@@ -224,10 +230,11 @@ public class ColumnFactsCache
 
     /**
      * Sets cached facts on the columns, loading missing ones and waiting for them up to the budget.
+     * @param filter  bounds the rows read from the table, but not the junction tables that multi-valued lookups read
      * @param tokens each table's change token, or null when its facts must not be shared across users
      * @return false when some fact wasn't available within the budget
      */
-    public boolean fill(@NotNull FilterSuggestionContext context, @Nullable Map<String, Object> parameters, @NotNull FilterSuggestionColumns.Described described,
+    public boolean fill(@NotNull FilterSuggestionContext context, @Nullable Map<String, Object> parameters, @Nullable SimpleFilter filter, @NotNull FilterSuggestionColumns.Described described,
                         @NotNull Function<TableInfo, String> tokens, long budgetMs)
     {
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(budgetMs);
@@ -236,9 +243,9 @@ public class ColumnFactsCache
         Map<String, Object> declaredParameters = getDeclaredParameters(table, parameters);
         // Tokens are read before the data they guard, so a race can only pair newer data with an older token
         String token = tokens.apply(table);
-        Scope scope = Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, token != null, declaredParameters);
+        Scope scope = Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, token != null, declaredParameters, filter);
         // Per-user entries follow the token too, so a change to the table's rows reaches them before they age out
-        Scope userScope = token == null ? scope : Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, false, declaredParameters);
+        Scope userScope = token == null ? scope : Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, false, declaredParameters, filter);
 
         List<Plan> plans = new ArrayList<>();
         for (SuggestionColumn column : described.columns())
@@ -334,7 +341,7 @@ public class ColumnFactsCache
             ContainerFilter containerFilter = Objects.requireNonNullElseGet(target.getContainerFilter(), () -> ContainerFilter.current(targetContainer, user));
             // A target's public name doesn't identify the rows its FK reaches, so key by the grid's table
             // Values come through the junction's own lookup, which its token doesn't cover, so keep them per user
-            Scope lookupScope = Scope.create(target, containerFilter, targetContainer, user, null, false, null).withName(scope.name());
+            Scope lookupScope = Scope.create(target, containerFilter, targetContainer, user, null, false, null, null).withName(scope.name());
             return new Plan(column, info, Kind.LOOKUP, scope, lookupScope, display);
         }
         catch (RuntimeException e)
@@ -384,7 +391,7 @@ public class ColumnFactsCache
             List<StatsRequest> requests = missing.stream()
                 .map(plan -> new StatsRequest(plan.info(), plan.kind() != Kind.STRING, plan.kind() != Kind.RANGE))
                 .toList();
-            Map<FieldKey, ColumnFact.Stats> stats = _source.loadStats(scope.table(), scope.parameters(), requests);
+            Map<FieldKey, ColumnFact.Stats> stats = _source.loadStats(scope.table(), scope.parameters(), scope.filter(), requests);
             Map<String, ColumnFact> facts = new HashMap<>();
             missing.forEach(plan -> {
                 ColumnFact.Stats columnStats = stats.get(plan.info().getFieldKey());
@@ -417,7 +424,7 @@ public class ColumnFactsCache
         String key = plan.valuesKey();
         ColumnInfo column = plan.lookupDisplay() != null ? plan.lookupDisplay() : plan.info();
         return ensure(List.of(key), scope.ttl(), environment, scope.name(),
-            _ -> Map.of(key, _source.loadValues(scope.table(), column, plan.column().getType(), scope.parameters())));
+            _ -> Map.of(key, _source.loadValues(scope.table(), column, plan.column().getType(), scope.parameters(), scope.filter())));
     }
 
     private CompletableFuture<Void> loadShapes(Scope scope, List<Plan> plans, Object environment)
@@ -429,7 +436,7 @@ public class ColumnFactsCache
         plans.forEach(plan -> byKey.put(plan.shapesKey(), plan));
         return ensure(byKey.keySet(), scope.ttl(), environment, scope.name(), keys -> {
             List<Plan> missing = keys.stream().map(byKey::get).toList();
-            Map<FieldKey, ColumnFact.Shapes> shapes = _source.loadShapes(scope.table(), missing.stream().map(Plan::shapesColumn).toList(), scope.parameters());
+            Map<FieldKey, ColumnFact.Shapes> shapes = _source.loadShapes(scope.table(), missing.stream().map(Plan::shapesColumn).toList(), scope.parameters(), scope.filter());
             Map<String, ColumnFact> facts = new HashMap<>();
             missing.forEach(plan -> {
                 ColumnFact.Shapes columnShapes = shapes.get(plan.shapesColumn().getFieldKey());
@@ -610,7 +617,7 @@ public class ColumnFactsCache
     /** For tests: the cached fact a request would read, or null. */
     @Nullable ColumnFact peek(@NotNull FilterSuggestionContext context, @Nullable String token, boolean shared, @NotNull String kind, @NotNull String fieldKey)
     {
-        Scope scope = Scope.create(context.getTable(), context.getContainerFilter(), context.getContainer(), context.getUser(), token, shared, null);
+        Scope scope = Scope.create(context.getTable(), context.getContainerFilter(), context.getContainer(), context.getUser(), token, shared, null, null);
         return _cache.get(scope.key(kind, fieldKey, null));
     }
 
@@ -774,24 +781,24 @@ public class ColumnFactsCache
             }
 
             @Override
-            public @NotNull Map<FieldKey, ColumnFact.Stats> loadStats(@NotNull TableInfo table, @NotNull Map<String, Object> parameters, @NotNull List<StatsRequest> requests)
+            public @NotNull Map<FieldKey, ColumnFact.Stats> loadStats(@NotNull TableInfo table, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter, @NotNull List<StatsRequest> requests)
             {
                 call();
-                return _delegate.loadStats(table, parameters, requests);
+                return _delegate.loadStats(table, parameters, filter, requests);
             }
 
             @Override
-            public @NotNull ColumnFact.Values loadValues(@NotNull TableInfo table, @NotNull ColumnInfo column, @NotNull SuggestionColumn.Type type, @NotNull Map<String, Object> parameters)
+            public @NotNull ColumnFact.Values loadValues(@NotNull TableInfo table, @NotNull ColumnInfo column, @NotNull SuggestionColumn.Type type, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter)
             {
                 call();
-                return _delegate.loadValues(table, column, type, parameters);
+                return _delegate.loadValues(table, column, type, parameters, filter);
             }
 
             @Override
-            public @NotNull Map<FieldKey, ColumnFact.Shapes> loadShapes(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @NotNull Map<String, Object> parameters)
+            public @NotNull Map<FieldKey, ColumnFact.Shapes> loadShapes(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter)
             {
                 call();
-                return _delegate.loadShapes(table, columns, parameters);
+                return _delegate.loadShapes(table, columns, parameters, filter);
             }
         }
 
@@ -803,7 +810,7 @@ public class ColumnFactsCache
             TableInfo table = getTable(SAMPLE_TYPE);
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
 
-            assertTrue(cache.fill(context(table, _user), null, described, _ -> "token-1", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "token-1", 30_000));
             Map<String, SuggestionColumn> columns = byFieldKey(described);
 
             assertEquals(Set.of("red", "green", "blue"), Set.copyOf(Objects.requireNonNull(columns.get("color").getValues())));
@@ -830,7 +837,7 @@ public class ColumnFactsCache
 
             int calls = source._calls.get();
             FilterSuggestionColumns.Described again = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
-            assertTrue("Cached facts should need no wait", cache.fill(context(table, _user), null, again, _ -> "token-1", 0));
+            assertTrue("Cached facts should need no wait", cache.fill(context(table, _user), null, null, again, _ -> "token-1", 0));
             assertEquals(calls, source._calls.get());
             assertEquals(List.of("AAAA-999999"), byFieldKey(again).get("subject").getShapes());
         }
@@ -842,7 +849,7 @@ public class ColumnFactsCache
             assertEquals("The sample must skip exactly the oldest 100 rows", 100, ROWS - ColumnFactsLoader.SHAPE_SAMPLE_SIZE);
             TableInfo table = getTable(SAMPLE_TYPE);
             ColumnInfo name = Objects.requireNonNull(table.getColumn("Name"));
-            Map<FieldKey, ColumnFact.Shapes> shapes = new ColumnFactsLoader().loadShapes(table, List.of(name), Map.of());
+            Map<FieldKey, ColumnFact.Shapes> shapes = new ColumnFactsLoader().loadShapes(table, List.of(name), Map.of(), null);
             assertEquals(List.of("A-999"), shapes.get(name.getFieldKey()).shapes());
         }
 
@@ -853,11 +860,11 @@ public class ColumnFactsCache
             TableInfo table = getTable(SAMPLE_TYPE);
             User other = UserManager.getGuestUser();
 
-            assertTrue(cache.fill(context(table, _user), null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> null, 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> null, 30_000));
             assertNotNull(cache.peek(context(table, _user), null, false, "values", "color"));
             assertNull("Facts of a table without a token must not cross users", cache.peek(context(table, other), null, false, "values", "color"));
 
-            assertTrue(cache.fill(context(table, _user), null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, other), "shared", true, "values", "color"));
             assertNull("A new token must miss", cache.peek(context(table, other), "changed", true, "values", "color"));
         }
@@ -871,7 +878,7 @@ public class ColumnFactsCache
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of(email));
             assertTrue(byFieldKey(described).containsKey(email));
 
-            assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, _user), "shared", false, "values", email));
             assertNull("The table's token doesn't cover data reached through a lookup", cache.peek(context(table, UserManager.getGuestUser()), "shared", true, "values", email));
         }
@@ -883,7 +890,7 @@ public class ColumnFactsCache
             TableInfo table = getTable(SAMPLE_TYPE);
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("viewer"));
 
-            assertTrue(cache.fill(context(table, _user), null, described, _ -> "before", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "before", 30_000));
             assertNotNull(cache.peek(context(table, _user), "before", false, "values", "viewer"));
             assertNull("A per-user entry must miss once the table's token changes", cache.peek(context(table, _user), "after", false, "values", "viewer"));
         }
@@ -896,7 +903,7 @@ public class ColumnFactsCache
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("viewer"));
             assertTrue(byFieldKey(described).containsKey("viewer"));
 
-            assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, _user), "shared", false, "values", "viewer"));
             assertNull("A calculated value can depend on the user", cache.peek(context(table, UserManager.getGuestUser()), "shared", true, "values", "viewer"));
         }
@@ -910,7 +917,7 @@ public class ColumnFactsCache
             assertEquals(2, described.columns().size());
             assertTrue(described.lookups().isEmpty());
 
-            assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000));
             for (SuggestionColumn column : described.columns())
                 assertEquals(column.getFieldKey(), List.of(_user.getDisplayName(_user)), column.getValues());
         }
@@ -933,7 +940,7 @@ public class ColumnFactsCache
             ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
             TableInfo table = getTable(SAMPLE_TYPE);
 
-            assertTrue(cache.fill(context(table, _user), Map.of("bogus", 1), FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
+            assertTrue(cache.fill(context(table, _user), Map.of("bogus", 1), null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, _user), "shared", true, "values", "color"));
         }
 
@@ -955,7 +962,7 @@ public class ColumnFactsCache
                 logged.add(copy);
             }
 
-            assertTrue(cache.fill(context(table, _user), null, new FilterSuggestionColumns.Described(logged, Map.of(), Set.of()), _ -> "token-2", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, new FilterSuggestionColumns.Described(logged, Map.of(), Set.of()), _ -> "token-2", 30_000));
             assertEquals(0, source._calls.get());
             for (SuggestionColumn column : logged)
             {
@@ -975,7 +982,7 @@ public class ColumnFactsCache
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("CreatedBy"));
             SuggestionColumn createdBy = described.columns().getFirst();
 
-            assertTrue(cache.fill(context(table, _user), null, new FilterSuggestionColumns.Described(described.columns(), described.lookups(), Set.of(createdBy)), _ -> "token-4", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, null, new FilterSuggestionColumns.Described(described.columns(), described.lookups(), Set.of(createdBy)), _ -> "token-4", 30_000));
             assertEquals(0, source._calls.get());
             assertNull(createdBy.getValues());
         }
@@ -988,7 +995,7 @@ public class ColumnFactsCache
 
             long start = System.currentTimeMillis();
             FilterSuggestionColumns.Described cold = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
-            assertFalse(cache.fill(context(table, _user), null, cold, _ -> "token-3", 100));
+            assertFalse(cache.fill(context(table, _user), null, null, cold, _ -> "token-3", 100));
             assertTrue("Budget not honored", System.currentTimeMillis() - start < 1_500);
             assertNull(byFieldKey(cold).get("color").getValues());
             assertNull(byFieldKey(cold).get("concentration").getMin());
@@ -997,15 +1004,33 @@ public class ColumnFactsCache
 
             assertTrue(cache.awaitIdle(60_000));
             FilterSuggestionColumns.Described warm = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
-            assertTrue("Late results should fill the cache", cache.fill(context(table, _user), null, warm, _ -> "token-3", 0));
+            assertTrue("Late results should fill the cache", cache.fill(context(table, _user), null, null, warm, _ -> "token-3", 0));
             assertNotNull(byFieldKey(warm).get("color").getValues());
+        }
+
+        @Test
+        public void testFilterBoundsFacts()
+        {
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
+            TableInfo table = getTable(SAMPLE_TYPE);
+            // Filters on a column the facts don't read
+            SimpleFilter firstSubject = new SimpleFilter(FieldKey.fromParts("subject"), "SUBJ-000000");
+
+            FilterSuggestionColumns.Described filtered = FilterSuggestionColumns.describe(table, null, List.of("color", "thawCount"));
+            assertTrue(cache.fill(context(table, _user), null, firstSubject, filtered, _ -> "token-5", 30_000));
+            assertEquals(List.of("red"), byFieldKey(filtered).get("color").getValues());
+            assertEquals(List.of("0"), byFieldKey(filtered).get("thawCount").getValues());
+
+            FilterSuggestionColumns.Described unfiltered = FilterSuggestionColumns.describe(table, null, List.of("color"));
+            assertTrue(cache.fill(context(table, _user), null, null, unfiltered, _ -> "token-5", 30_000));
+            assertEquals("Filtered entries must not serve the unfiltered table", Set.of("red", "green", "blue"), Set.copyOf(Objects.requireNonNull(byFieldKey(unfiltered).get("color").getValues())));
         }
 
         @Test
         public void testService() throws Exception
         {
             FilterSuggestionService.FilterSuggestionsRequest request = new FilterSuggestionService.FilterSuggestionsRequest(
-                SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, FIELD_KEYS, "gree", null);
+                SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, null, FIELD_KEYS, "gree", null);
             FilterSuggestionService.getSuggestions(_user, _c, request);
             assertTrue(ColumnFactsCache.get().awaitIdle(60_000));
 
@@ -1013,15 +1038,32 @@ public class ColumnFactsCache
             assertTrue(suggestions.toString(), suggestions.stream().anyMatch(s -> "color".equalsIgnoreCase(s.fieldKey()) && "green".equals(s.value())));
 
             FilterSuggestionService.FilterSuggestionsRequest subject = new FilterSuggestionService.FilterSuggestionsRequest(
-                SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, FIELD_KEYS, "SUBJ-999999", null);
+                SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, null, FIELD_KEYS, "SUBJ-999999", null);
             suggestions = FilterSuggestionService.getSuggestions(_user, _c, subject).suggestions();
             assertTrue(suggestions.toString(), suggestions.stream().anyMatch(s -> "subject".equalsIgnoreCase(s.fieldKey()) && "shape".equals(s.source())));
 
             String longTerm = "a".repeat(ColumnFactsLoader.MAX_VALUE_LENGTH + 1);
             FilterSuggestionService.FilterSuggestionsRequest tooLong = new FilterSuggestionService.FilterSuggestionsRequest(
-                SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, FIELD_KEYS, longTerm, null);
+                SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, null, FIELD_KEYS, longTerm, null);
             suggestions = FilterSuggestionService.getSuggestions(_user, _c, tooLong).suggestions();
             assertEquals(List.of(FilterSuggestion.search(longTerm)), suggestions);
+
+            FilterSuggestionService.FilterSuggestionsRequest redOnly = new FilterSuggestionService.FilterSuggestionsRequest(
+                SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, List.of(new FilterSuggestionService.RequestFilter("color", "eq", "red")), FIELD_KEYS, "gree", null);
+            FilterSuggestionService.getSuggestions(_user, _c, redOnly);
+            assertTrue(ColumnFactsCache.get().awaitIdle(60_000));
+            suggestions = FilterSuggestionService.getSuggestions(_user, _c, redOnly).suggestions();
+            assertTrue("Filtered-out rows must not supply values: " + suggestions, suggestions.stream().noneMatch(s -> "green".equals(s.value())));
+
+            for (FilterSuggestionService.RequestFilter invalid : List.of(
+                new FilterSuggestionService.RequestFilter("color", "nosuchop", "red"),
+                new FilterSuggestionService.RequestFilter("nosuchcolumn", "eq", "red"),
+                new FilterSuggestionService.RequestFilter("collected", "dateeq", "not a date")))
+            {
+                FilterSuggestionService.FilterSuggestionsRequest bad = new FilterSuggestionService.FilterSuggestionsRequest(
+                    SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, List.of(invalid), FIELD_KEYS, "gree", null);
+                assertThrows(invalid.toString(), ApiUsageException.class, () -> FilterSuggestionService.getSuggestions(_user, _c, bad));
+            }
         }
     }
 }
