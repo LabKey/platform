@@ -118,6 +118,17 @@ public abstract class AbstractContainerScopingTest extends Assert
     }
 
     /**
+     * Create a throwaway subfolder of {@code parent} (for example, one from {@link #createContainer(String, Module...)}),
+     * registered for cleanup ahead of its parent.
+     */
+    protected Container createChildContainer(Container parent, String name, Module... enabledModules)
+    {
+        Container c = activateModules(ContainerManager.createContainer(parent, name, getAdmin()), enabledModules);
+        _containers.addFirst(c);
+        return c;
+    }
+
+    /**
      * Like {@link #createContainer(String, Module...)}, but created once and reused by every test in the class, then
      * deleted after the last one. Container deletes are slow, so prefer this whenever a test only asserts on data it
      * creates itself. Users and role grants are still per test.
