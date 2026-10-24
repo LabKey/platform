@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.73.0"
+    "@labkey/components": "7.73.1-fb-grid-search.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.4",
