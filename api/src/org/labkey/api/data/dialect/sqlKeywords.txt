@@ -1134,6 +1134,7 @@ tinyblob
 tinyint
 tinytext
 to
+to_date
 token
 top
 top_level_count
