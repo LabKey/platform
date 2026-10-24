@@ -290,6 +290,10 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
                 || getProvider().getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ALL).isEmpty())
             return preparedTransforms;
 
+        // A script's side effects can't be rolled back, so refuse the request before any of them runs
+        for (JSONObject runJson : runJsons)
+            checkRun(context, protocol, runJson);
+
         boolean success = false;
         try
         {
@@ -308,6 +312,20 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         }
         _preparedTransforms = preparedTransforms;
         return preparedTransforms;
+    }
+
+    private void checkRun(ViewContext context, ExpProtocol protocol, JSONObject runJson) throws ExperimentException, ValidationException
+    {
+        ExpRun existingRun = lookupRun(context, runJson, null);
+        if (!hasRunContent(runJson))
+            return;
+
+        // An existing run's serialization stays cached for prepareTransform, which reads it next
+        checkProtocolApplications(context, existingRun,
+                existingRun != null ? serializeDataInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_INPUTS),
+                existingRun != null ? serializeMaterialInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.MATERIAL_INPUTS),
+                existingRun != null ? serializeDataOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_OUTPUTS),
+                existingRun != null ? serializeMaterialOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.MATERIAL_OUTPUTS));
     }
 
     /** Builds the upload context handleRun would build for this run, without writing anything, and runs its transform scripts. */

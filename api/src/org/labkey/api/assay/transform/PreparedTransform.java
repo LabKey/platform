@@ -18,6 +18,7 @@ package org.labkey.api.assay.transform;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.junit.After;
@@ -25,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -133,15 +135,19 @@ public class PreparedTransform implements AutoCloseable
         _fileAudits.addAll(audits);
     }
 
-    public void recordFileAuditEvents(@Nullable TransactionAuditProvider.TransactionAuditEvent transactionEvent)
+    /** Records the held audits in the import transaction; a rollback discards them too, so they stay held for close() until it commits. */
+    public void recordFileAuditEvents(@NotNull DbScope.Transaction transaction)
     {
-        List<FileSystemAuditProvider.FileSystemAuditEvent> events = _fileAudits.stream().map(PendingFileAudit::event).toList();
-        _fileAudits.clear();
-        if (events.isEmpty())
+        List<PendingFileAudit> audits = List.copyOf(_fileAudits);
+        if (audits.isEmpty())
             return;
+        List<FileSystemAuditProvider.FileSystemAuditEvent> events = audits.stream().map(PendingFileAudit::event).toList();
+        TransactionAuditProvider.TransactionAuditEvent transactionEvent = transaction.getAuditEvent();
         if (transactionEvent != null)
             events.forEach(event -> event.setTransactionEvent(transactionEvent, FileSystemAuditProvider.EVENT_TYPE));
         AuditLogService.get().addEvents(_fileAuditUser, events);
+        transaction.addCommitTask(() -> _fileAudits.removeAll(audits), DbScope.CommitTaskOption.POSTCOMMIT);
+        transaction.addCommitTask(() -> events.forEach(event -> event.setTransactionId(null)), DbScope.CommitTaskOption.POSTROLLBACK);
     }
 
     /** For an import that failed before recording its held audits; cleanup may already have deleted some of the files. */
@@ -246,12 +252,67 @@ public class PreparedTransform implements AutoCloseable
             try (PreparedTransform prepared = PreparedTransform.empty())
             {
                 prepared.holdFileAudits(TestContext.get().getUser(), List.of(audit(comment, file)));
-                prepared.recordFileAuditEvents(transactionEvent);
+                try (DbScope.Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
+                {
+                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction, TestContext.get().getUser(), transactionEvent);
+                    prepared.recordFileAuditEvents(transaction);
+                    transaction.commit();
+                }
             }
 
             List<FileSystemAuditProvider.FileSystemAuditEvent> events = selectEvents(comment);
             assertEquals("Events after recording and closing", 1, events.size());
             assertEquals("Transaction of the recorded event", Long.valueOf(transactionEvent.getRowId()), events.getFirst().getTransactionId());
+        }
+
+        @Test
+        public void testRolledBackRecordLeavesEventsForClose() throws IOException
+        {
+            String comment = "PreparedTransform rollback " + GUID.makeGUID();
+            FileLike file = FileUtil.createTempFile("rolledBack", ".tsv", _dir);
+            TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(JunitUtil.getTestContainer(), QueryService.AuditAction.INSERT);
+
+            try (PreparedTransform prepared = PreparedTransform.empty())
+            {
+                prepared.holdFileAudits(TestContext.get().getUser(), List.of(audit(comment, file)));
+                try (DbScope.Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
+                {
+                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction, TestContext.get().getUser(), transactionEvent);
+                    prepared.recordFileAuditEvents(transaction);
+                }
+            }
+
+            List<FileSystemAuditProvider.FileSystemAuditEvent> events = selectEvents(comment);
+            assertEquals("Events after a rolled back record and closing", 1, events.size());
+            assertNull("Transaction of an event added on close", events.getFirst().getTransactionId());
+        }
+
+        @Test
+        public void testCloseAllContinuesPastFailure() throws IOException
+        {
+            FileLike scriptDir = _dir.resolveChild("run").resolveChild("work");
+            FileUtil.mkdirs(scriptDir);
+            // Closing order isn't defined, so two failures guarantee one comes before another close
+            PreparedTransforms preparedTransforms = new PreparedTransforms();
+            preparedTransforms.put(new JSONObject(), failingTransform());
+            preparedTransforms.put(new JSONObject(), failingTransform());
+            preparedTransforms.put(new JSONObject(), new PreparedTransform(null, DefaultTransformResult.createEmptyResult(), List.of(), List.of(scriptDir)));
+
+            IllegalStateException e = assertThrows(IllegalStateException.class, preparedTransforms::close);
+            assertEquals("Failures suppressed into the first", 1, e.getSuppressed().length);
+            assertFalse("Working directory of the run that closed cleanly", scriptDir.exists());
+        }
+
+        private static PreparedTransform failingTransform()
+        {
+            return new PreparedTransform(null, DefaultTransformResult.createEmptyResult(), List.of(), List.of())
+            {
+                @Override
+                public void close()
+                {
+                    throw new IllegalStateException("close failed");
+                }
+            };
         }
 
         private static PendingFileAudit audit(String comment, FileLike file)

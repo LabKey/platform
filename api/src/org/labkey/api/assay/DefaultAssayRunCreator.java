@@ -448,7 +448,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 }
             }
             if (preparedBeforeRun != null)
-                preparedBeforeRun.recordFileAuditEvents(transaction.getAuditEvent());
+                preparedBeforeRun.recordFileAuditEvents(transaction);
             boolean saveBatchProps = forceSaveBatchProps;
 
             // Add any material/data inputs related to the specimen IDs, etc in the incoming data.

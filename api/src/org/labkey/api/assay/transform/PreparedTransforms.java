@@ -43,6 +43,23 @@ public class PreparedTransforms implements AutoCloseable
     @Override
     public void close()
     {
-        _byRunJson.values().forEach(PreparedTransform::close);
+        // Closing writes audit events, so one failure must not leave the other runs' working directories behind
+        RuntimeException failure = null;
+        for (PreparedTransform prepared : _byRunJson.values())
+        {
+            try
+            {
+                prepared.close();
+            }
+            catch (RuntimeException e)
+            {
+                if (failure == null)
+                    failure = e;
+                else
+                    failure.addSuppressed(e);
+            }
+        }
+        if (failure != null)
+            throw failure;
     }
 }
