@@ -18,26 +18,29 @@ package org.labkey.api.usageMetrics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Map;
 
 /** A described nested object; its children may omit descriptions because they inherit the group's */
 public class UsageMetricGroup extends UsageMetrics
 {
-    UsageMetricGroup(@NotNull String path, Map<String, Object> values, List<Description> descriptions)
+    UsageMetricGroup(@NotNull String path, @Nullable Map<String, Object> values, Map<String, Description> descriptions)
     {
         super(path, values, descriptions);
     }
 
     public UsageMetricGroup put(@NotNull String key, @Nullable Object value)
     {
-        getMutableValues().put(key, value);
+        Map<String, Object> values = getMutableValues();
+        if (values != null)
+            values.put(key, value);
         return this;
     }
 
     public UsageMetricGroup putAll(@NotNull Map<String, ?> values)
     {
-        getMutableValues().putAll(values);
+        Map<String, Object> mutable = getMutableValues();
+        if (mutable != null)
+            mutable.putAll(values);
         return this;
     }
 

@@ -79,8 +79,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetrics;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
@@ -106,7 +106,7 @@ import java.util.stream.Stream;
 
 import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidatorURI;
 
-public class PropertyServiceImpl implements PropertyService, DescribedUsageMetricsProvider
+public class PropertyServiceImpl implements PropertyService, UsageMetricsProvider
 {
     private final List<DomainKind<?>> _domainTypes = new CopyOnWriteArrayList<>();
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();

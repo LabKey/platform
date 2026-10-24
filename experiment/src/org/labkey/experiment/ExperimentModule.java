@@ -94,6 +94,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricGroup;
 import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
@@ -506,6 +508,9 @@ public class ExperimentModule extends SpringModule
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
+        SimpleMetricsService simpleMetrics = SimpleMetricsService.get();
+        simpleMetrics.describeFeatureAreas(ExperimentMetricArea.values());
+
         SearchService ss = SearchService.get();
 //        ss.addSearchCategory(OntologyManager.conceptCategory);
         ss.addSearchCategory(ExpSampleTypeImpl.searchCategory);
@@ -764,22 +769,19 @@ public class ExperimentModule extends SpringModule
                 UsageMetricGroup sampleColorMetrics = metrics.group("sampleColors", "Sample color usage; only colorCount is reported when no colors exist");
                 Long colorCount = new SqlSelector(schema, "SELECT COUNT(*) FROM exp.datacolors").getObject(Long.class);
                 sampleColorMetrics.put("colorCount", colorCount, "Sample colors defined, archived included");
-                if (colorCount > 0)
-                {
-                    Long archivedColorCount = new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = ?", true)).getObject(Long.class);
-                    sampleColorMetrics.put("archivedColorCount", archivedColorCount, "Archived sample colors");
-                    sampleColorMetrics.put("samplesWithColorCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE expmaterialcolor IS NOT NULL").getObject(Long.class), "Samples with a color assigned");
-                    sampleColorMetrics.put("samplesWithArchivedColorCount", new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = ?", true)).getObject(Long.class), "Samples assigned a color that is now archived");
+                UsageMetrics colorDetailMetrics = sampleColorMetrics.reportedIf(colorCount > 0);
+                colorDetailMetrics.put("archivedColorCount", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = ?", true)).getObject(Long.class), "Archived sample colors");
+                colorDetailMetrics.put("samplesWithColorCount", () -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE expmaterialcolor IS NOT NULL").getObject(Long.class), "Samples with a color assigned");
+                colorDetailMetrics.put("samplesWithArchivedColorCount", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = ?", true)).getObject(Long.class), "Samples assigned a color that is now archived");
 
-                    sampleColorMetrics.put("sampleTypesWithColorsEnabledCount", new SqlSelector(schema, new SQLFragment(
-                            "SELECT COUNT(*) FROM exp.materialsource ms WHERE EXISTS (" +
-                                    "SELECT 1 FROM exp.datacolors dc WHERE dc.container = ms.container AND dc.archived = ? AND NOT EXISTS (" +
-                                    "SELECT 1 FROM exp.datatypecolorexclusion e WHERE e.datatype = ? AND e.datatyperowid = ms.rowid AND e.colorrowid = dc.rowid))",
-                            false, ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types whose folder has at least one active color not excluded for the type");
-                    sampleColorMetrics.put("sampleTypesWithColorsDisabledCount", new SqlSelector(schema, new SQLFragment(
-                            "SELECT COUNT(DISTINCT datatyperowid) FROM exp.datatypecolorexclusion WHERE datatype = ?")
-                            .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types with at least one color excluded, not necessarily all");
-                }
+                colorDetailMetrics.put("sampleTypesWithColorsEnabledCount", () -> new SqlSelector(schema, new SQLFragment(
+                        "SELECT COUNT(*) FROM exp.materialsource ms WHERE EXISTS (" +
+                                "SELECT 1 FROM exp.datacolors dc WHERE dc.container = ms.container AND dc.archived = ? AND NOT EXISTS (" +
+                                "SELECT 1 FROM exp.datatypecolorexclusion e WHERE e.datatype = ? AND e.datatyperowid = ms.rowid AND e.colorrowid = dc.rowid))",
+                        false, ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types whose folder has at least one active color not excluded for the type");
+                colorDetailMetrics.put("sampleTypesWithColorsDisabledCount", () -> new SqlSelector(schema, new SQLFragment(
+                        "SELECT COUNT(DISTINCT datatyperowid) FROM exp.datatypecolorexclusion WHERE datatype = ?")
+                        .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types with at least one color excluded, not necessarily all");
 
                 metrics.put("duplicateSampleMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
                         "(SELECT name, cpastype FROM exp.material WHERE cpastype <> 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class), "Names used by more than one sample within a sample type; counts names, not samples");

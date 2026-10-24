@@ -54,6 +54,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.usageMetrics.QueryMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
@@ -608,7 +609,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                             PipelineService.get().queueJob(job, getQueryImportJobNotificationProviderName());
 
                             if (_target != null)
-                                SimpleMetricsService.get().increment("query", "fileBackgroundImports", getMetricPrefix(_target));
+                                SimpleMetricsService.get().increment(QueryMetricArea.FILE_BACKGROUND_IMPORTS, getMetricPrefix(_target));
                             JSONObject response = new JSONObject();
                             response.put("success", true);
                             response.put("jobId", PipelineService.get().getJobId(user, getContainer(), job.getJobGUID()));
@@ -1001,14 +1002,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static void addImportValidationErrorMetric(QueryUpdateService.InsertOption insertOption, @Nullable TableInfo target, @Nullable String queryName)
     {
-        String featureArea =  insertOption.toString().toLowerCase() + "FailWithValidationError";
+        QueryMetricArea featureArea = QueryMetricArea.validationErrors(insertOption);
         String targetType = null;
         if (target != null)
             targetType = getMetricPrefix(target);
         else if (queryName != null)
             targetType = queryName.equalsIgnoreCase("materials") ? "samples" : queryName;
         if (targetType != null)
-            SimpleMetricsService.get().increment("query", featureArea, targetType);
+            SimpleMetricsService.get().increment(featureArea, targetType);
     }
 
     private static String getMetricPrefix(@NotNull TableInfo target)
@@ -1019,16 +1020,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static void incrementRowCountMetric(int count, QueryUpdateService.InsertOption insertOption, String prefix)
     {
-        String featureArea = "file" + StringUtils.capitalize(insertOption.toString().toLowerCase()) + "Counts";
+        QueryMetricArea featureArea = QueryMetricArea.rowCounts(insertOption);
         String lcPrefix = prefix.toLowerCase();
         if (count <= 1000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "1to1000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "1to1000");
         else if (count <= 5000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "1001to5000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "1001to5000");
         else if (count <= 10000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "5001to10000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "5001to10000");
         else
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "GT10000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "GT10000");
     }
 
 

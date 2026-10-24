@@ -63,6 +63,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
@@ -1054,7 +1055,7 @@ public class QueryManager
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(moduleName, () -> {
+            svc.registerUsageMetrics(moduleName, metrics -> {
                 MultiSet<String> multiSet = DbScope.getDbScopes().stream()
                     .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
                     .collect(Collectors.toCollection(HashMultiSet::new));
@@ -1062,8 +1063,7 @@ public class QueryManager
                 Map<String, Object> statsMap = multiSet.uniqueSet().stream()
                     .collect(Collectors.toMap(Function.identity(), multiSet::getCount));
 
-                Map<String, Object> metrics = new HashMap<>();
-                metrics.put("externalDatasources", statsMap);
+                metrics.put("externalDatasources", statsMap, "External (non-LabKey) data sources by database product name");
                 metrics.put(
                     "customViewCounts",
                     Map.of(
@@ -1071,14 +1071,15 @@ public class QueryManager
                         "SampleTypes", getSchemaCustomViewCounts("samples"),
                         "Assays", getSchemaCustomViewCounts("assay"),
                         "Inventory", getSchemaCustomViewCounts("inventory")
-                    )
+                    ),
+                    "Saved custom views across all containers by schema area (DataClasses, SampleTypes, Assays, Inventory): defaultOverrides (unnamed) and namedViews exclude hidden and snapshot views, inheritable likewise, shared (no owner) and identifyingFieldsViews count all"
                 );
-                metrics.put("customViewWithLineageColumn", getLineageCustomViewMetrics());
-                metrics.put("queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric());
+                metrics.put("customViewWithLineageColumn", getLineageCustomViewMetrics(), "Custom views with lineage (input, output, ancestor) columns, hidden and snapshot views excluded: view counts, plus total and min/percentile/max/avg columns per view when any exist");
+                metrics.put("queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric(), "Query definitions whose metadata defines a calculated field, by schema (assay.* schemas grouped as assay)");
 
                 Map<String, Object> exportTypeCounts = getExportTypeCountsMetric();
                 if (exportTypeCounts != null)
-                    metrics.put("exportTypeCounts", exportTypeCounts);
+                    metrics.put("exportTypeCounts", exportTypeCounts, "Query export audit events by export type, from the audit log across all folders; \"Excel multi-tab\" approximates multi-tab Excel exports", UsageMetrics.Kind.CUMULATIVE);
                 return metrics;
             });
         }

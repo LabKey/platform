@@ -42,6 +42,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaExportScriptFactory;
 import org.labkey.api.query.JavaScriptExportScriptFactory;
@@ -49,6 +50,7 @@ import org.labkey.api.query.PerlExportScriptFactory;
 import org.labkey.api.query.PythonExportScriptFactory;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.query.SasExportScriptFactory;
@@ -81,6 +83,8 @@ import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
+import org.labkey.api.usageMetrics.QueryMetricArea;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -272,6 +276,8 @@ public class QueryModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        SimpleMetricsService.get().describeFeatureAreas(QueryMetricArea.values());
+
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER, ContainerManager.ContainerListener.Order.Last);
 
         if (null != PipelineService.get())

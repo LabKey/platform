@@ -1890,11 +1890,11 @@ public class AuthenticationManager
 
     public static void registerMetricsProvider()
     {
-        UsageMetricsService.get().registerUsageMetrics(ModuleLoader.getInstance().getCoreModule().getName(), () -> {
+        UsageMetricsService.get().registerUsageMetrics(ModuleLoader.getInstance().getCoreModule().getName(), metrics -> {
             Map<String, Long> map = AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
                 .collect(Collectors.groupingBy(config->config.getAuthenticationProvider().getName(), Collectors.counting()));
 
-            return Collections.singletonMap("authenticationConfigurations", map);
+            return metrics.put("authenticationConfigurations", map, "Enabled authentication configurations by provider (Database, LDAP, SAML, CAS, etc.)");
         });
     }
 

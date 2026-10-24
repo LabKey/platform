@@ -18,11 +18,9 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.ApiModule;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService.NamedParameterNotProvided;
@@ -40,6 +38,7 @@ import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.usageMetrics.ApiMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -418,7 +417,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 }
             }
 
-            SimpleMetricsService.get().increment(ModuleLoader.getInstance().getModule(ApiModule.class).getName(), METRIC_FEATURE_AREA, getClass().getSimpleName() + "-" + engine.getClass().getSimpleName());
+            SimpleMetricsService.get().increment(ApiMetricArea.REPORT_INVOCATION, getClass().getSimpleName() + "-" + engine.getClass().getSimpleName());
 
             return engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
         }
