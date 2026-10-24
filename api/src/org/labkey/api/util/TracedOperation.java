@@ -33,6 +33,8 @@ import org.labkey.api.util.logging.LogHelper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * A Datadog APM span paired with a summary log line, for a unit of work whose row counts are known only once it has run.
@@ -72,7 +74,7 @@ public class TracedOperation implements AutoCloseable
     private final long _startNanos;
 
     private String _description;
-    private String _rowSummary;
+    private String _summary;
     private boolean _completed;
     private @Nullable Boolean _committed;
     private boolean _closed;
@@ -125,11 +127,17 @@ public class TracedOperation implements AutoCloseable
         /** Runs work that reports no row count, recording any exception on the span before letting it propagate */
         public void run(@NotNull Runnable work)
         {
+            run(op -> work.run());
+        }
+
+        /** Like run(Runnable), for work that tags the operation as it learns more */
+        public void run(@NotNull Consumer<TracedOperation> work)
+        {
             try (TracedOperation op = start())
             {
                 try
                 {
-                    work.run();
+                    work.accept(op);
                 }
                 catch (Throwable t)
                 {
@@ -188,8 +196,15 @@ public class TracedOperation implements AutoCloseable
     public void completed(int rows)
     {
         _span.setTag("labkey.rows", rows);
-        _rowSummary = rows + " rows";
+        _summary = rows + " rows";
         _completed = true;
+    }
+
+    /** Leads the log line's summary in place of a row count, for work that ends in a status rather than rows */
+    public TracedOperation outcome(@NotNull String outcome)
+    {
+        _summary = outcome;
+        return this;
     }
 
     /** For operations that ran to the end but may have rolled back, like a rejected or validate-only save */
@@ -220,18 +235,18 @@ public class TracedOperation implements AutoCloseable
             _span.finish();
         }
 
-        String message = formatMessage(_description, _completed, _committed, _rowSummary, elapsedMs);
+        String message = formatMessage(_description, _completed, _committed, _summary, elapsedMs);
         if (elapsedMs >= SLOW_MS)
             LOG.info(message);
         else
             LOG.debug(message);
     }
 
-    static String formatMessage(String description, boolean completed, @Nullable Boolean committed, @Nullable String rowSummary, long elapsedMs)
+    static String formatMessage(String description, boolean completed, @Nullable Boolean committed, @Nullable String summary, long elapsedMs)
     {
         if (!completed)
             return description + ": did not complete after " + elapsedMs + " ms";
-        return description + ": " + (null == rowSummary ? "" : rowSummary + ", ") + (Boolean.FALSE.equals(committed) ? "not committed, " : "") + elapsedMs + " ms";
+        return description + ": " + (null == summary ? "" : summary + ", ") + (Boolean.FALSE.equals(committed) ? "not committed, " : "") + elapsedMs + " ms";
     }
 
     public static class TestCase extends Assert
@@ -270,6 +285,33 @@ public class TracedOperation implements AutoCloseable
                 op.close();
             }
             TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(() -> {});
+        }
+
+        @Test
+        public void testRunWithOperation()
+        {
+            AtomicReference<TracedOperation> succeeded = new AtomicReference<>();
+            TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(op -> succeeded.set(op.tag("labkey.job_status", "COMPLETE").outcome("COMPLETE")));
+            assertTrue(succeeded.get()._completed);
+            assertEquals("COMPLETE", succeeded.get()._summary);
+            assertTrue(succeeded.get()._closed);
+
+            IllegalStateException thrown = new IllegalStateException("test");
+            AtomicReference<TracedOperation> failed = new AtomicReference<>();
+            try
+            {
+                TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(op -> {
+                    failed.set(op);
+                    throw thrown;
+                });
+                fail("Expected the work's exception to propagate");
+            }
+            catch (IllegalStateException e)
+            {
+                assertSame(thrown, e);
+            }
+            assertFalse(failed.get()._completed);
+            assertTrue(failed.get()._closed);
         }
     }
 }
