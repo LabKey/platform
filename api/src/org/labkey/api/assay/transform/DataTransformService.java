@@ -27,7 +27,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
@@ -153,8 +152,6 @@ public class DataTransformService
                     throw new ValidationException("The transform script, " + scriptFile + ", configured for this assay does not exist. Please check " +
                             "the configuration for this assay design.");
                 }
-
-                logIfInTransaction(context, operation);
 
                 if (operation == TransformOperation.UPDATE)
                     SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForUpdate");
@@ -295,17 +292,6 @@ public class DataTransformService
                 dataHandler.recordTransformationOutput(context, run, scriptOutput);
         }
         return prepared.getResult();
-    }
-
-    private void logIfInTransaction(AssayRunUploadContext<?> context, TransformOperation operation)
-    {
-        if (LOG.isDebugEnabled()
-                && operation == TransformOperation.INSERT
-                && context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
-                && ExperimentService.get().getSchema().getScope().isTransactionActive())
-        {
-            LOG.debug("Transform script for assay '{}' is running inside a database transaction; callbacks from the script into the server can deadlock", context.getProtocol().getName(), new Throwable());
-        }
     }
 
     public void addStandardParameters(@Nullable HttpServletRequest request, @Nullable Container container, @Nullable FileLike scriptFile, @Nullable String apiKey, @NotNull Map<String, String> paramMap)

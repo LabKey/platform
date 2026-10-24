@@ -95,6 +95,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     // Mutable fields
     private TransformResult _transformResult;
     private @Nullable PreparedTransform _preparedTransform;
+    private @Nullable List<PreparedTransform.PendingFileAudit> _pendingFileAudits;
 
     // async fields
     protected String _jobDescription;
@@ -451,6 +452,18 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public void setPreparedTransform(@Nullable PreparedTransform prepared)
     {
         _preparedTransform = prepared;
+    }
+
+    @Override
+    public @Nullable List<PreparedTransform.PendingFileAudit> getPendingFileAudits()
+    {
+        return _pendingFileAudits;
+    }
+
+    @Override
+    public void setPendingFileAudits(@Nullable List<PreparedTransform.PendingFileAudit> audits)
+    {
+        _pendingFileAudits = audits;
     }
 
     @Override

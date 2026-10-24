@@ -25,6 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
@@ -61,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 
@@ -281,26 +283,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, @Nullable  ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
     {
-        ExpRun run;
-
-        if (!runJsonObject.isNull(ExperimentJSONConverter.ID))
-        {
-            int runId = runJsonObject.getInt(ExperimentJSONConverter.ID);
-            run = ExperimentService.get().getExpRun(runId);
-            if (run == null)
-            {
-                throw new NotFoundException("Could not find experiment run " + runId);
-            }
-            if (!run.getContainer().equals(context.getContainer()))
-            {
-                throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
-            }
-            if (null != batch && !batch.getContainer().equals(context.getContainer()))
-            {
-                throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
-            }
-        }
-        else
+        ExpRun run = lookupRun(context, runJsonObject, batch);
+        if (run == null)
         {
             String name = runJsonObject.optString(ExperimentJSONConverter.NAME, null);
             run = createRun(name, context.getContainer(), protocol);
@@ -315,10 +299,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             handleStandardProperties(context, runJsonObject, run, getRunDomainProperties(protocol));
 
-            if (runJsonObject.has(AssayJSONConverter.DATA_ROWS) ||
-                    runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS) ||
-                    runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS) ||
-                    runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS))
+            if (hasRunContent(runJsonObject))
             {
                 JSONArray dataRows = serializeRunData(context, run, runJsonObject, protocol, batch);
                 JSONArray dataInputs = serializeDataInputs(context, run, runJsonObject, protocol, batch);
@@ -337,6 +318,38 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         ExperimentService.get().queueSyncRunEdges(run);
 
         return run;
+    }
+
+    /** The existing run the post identifies, or null when it posts a new run. */
+    protected @Nullable ExpRun lookupRun(ViewContext context, JSONObject runJsonObject, @Nullable ExpExperiment batch)
+    {
+        if (runJsonObject.isNull(ExperimentJSONConverter.ID))
+            return null;
+
+        int runId = runJsonObject.getInt(ExperimentJSONConverter.ID);
+        ExpRun run = ExperimentService.get().getExpRun(runId);
+        if (run == null)
+        {
+            throw new NotFoundException("Could not find experiment run " + runId);
+        }
+        if (!run.getContainer().equals(context.getContainer()))
+        {
+            throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
+        }
+        if (null != batch && !batch.getContainer().equals(context.getContainer()))
+        {
+            throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
+        }
+        return run;
+    }
+
+    /** Whether the post replaces the run's data and protocol applications rather than only its properties. */
+    protected static boolean hasRunContent(JSONObject runJsonObject)
+    {
+        return runJsonObject.has(AssayJSONConverter.DATA_ROWS) ||
+                runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS) ||
+                runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS) ||
+                runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS);
     }
 
     @Override
@@ -460,30 +473,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             aliquotRootRowId = parent.getRootMaterialRowId() == null ? parent.getRowId() : parent.getRootMaterialRowId();
         }
 
-        Map<Long, ExpMaterial> existingOutputs = new HashMap<>();
-        ExpProtocolApplication existingOutputApp = run.getOutputProtocolApplication();
-        if (existingOutputApp != null)
-        {
-            for (ExpMaterialRunInput input : existingOutputApp.getMaterialInputs())
-                existingOutputs.put(input.getMaterial().getRowId(), input.getMaterial());
-        }
-
-        Set<Long> existingMaterialInputRowIds = new HashSet<>();
-        for (ExpMaterial in : run.getMaterialInputs().keySet())
-            existingMaterialInputRowIds.add(in.getRowId());
-        Set<Long> postedMaterialInputRowIds = new HashSet<>();
-        for (ExpMaterial in : inputMaterial.keySet())
-            postedMaterialInputRowIds.add(in.getRowId());
-
-        Set<Long> existingDataInputRowIds = new HashSet<>();
-        for (ExpData in : run.getDataInputs().keySet())
-            existingDataInputRowIds.add(in.getRowId());
-        Set<Long> postedDataInputRowIds = new HashSet<>();
-        for (ExpData in : inputData.keySet())
-            postedDataInputRowIds.add(in.getRowId());
-
-        boolean inputsUnchanged = existingMaterialInputRowIds.equals(postedMaterialInputRowIds)
-                && existingDataInputRowIds.equals(postedDataInputRowIds);
+        ExistingOutputs existingOutputs = ExistingOutputs.read(run, rowIds(inputData.keySet()), rowIds(inputMaterial.keySet()));
 
         run.deleteProtocolApplications(context.getUser());
 
@@ -507,12 +497,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (material != null)
             {
                 keptOutputRowIds.add(material.getRowId());
-
-                // Attaching an output rewrites the material's lineage, so require write access - but skip
-                // materials that were already outputs of this run, since a re-save isn't changing them.
-                // A sample created in this request only needs insert rights.
-                if (!existingOutputs.containsKey(material.getRowId()) || !inputsUnchanged)
-                    assertCanEditLineage(context.getUser(), material.getLSID(), material, createdMaterialLsids.contains(material.getLSID()));
+                existingOutputs.assertCanAttach(context.getUser(), material, createdMaterialLsids.contains(material.getLSID()));
 
                 if (isAliquotProtocol)
                 {
@@ -524,18 +509,116 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             }
         }
 
-        // Detaching an output also rewrites its lineage: authorize any prior output the post didn't keep.
         // This runs inside the save's transaction, so a denial rolls the detach above back.
-        for (Map.Entry<Long, ExpMaterial> entry : existingOutputs.entrySet())
-        {
-            if (!keptOutputRowIds.contains(entry.getKey()))
-                assertCanEditLineage(context.getUser(), entry.getValue().getLSID(), entry.getValue());
-        }
+        existingOutputs.assertCanDetachOthers(context.getUser(), keptOutputRowIds);
 
         checkForCycles(inputData, outputData);
         checkForCycles(inputMaterial, outputMaterial);
 
         saveExperimentRun(context, protocol, batch, run, runJsonObject, dataArray, inputData, outputData, inputMaterial, outputMaterial);
+    }
+
+    /**
+     * Runs handleProtocolApplications' permission and cycle checks without writing anything, to refuse a post
+     * before work a rollback can't undo, like running transform scripts. The save pass still runs every check.
+     */
+    protected void checkProtocolApplications(ViewContext context, @Nullable ExpRun run, JSONArray inputDataArray, JSONArray inputMaterialArray, JSONArray outputDataArray, JSONArray outputMaterialArray) throws ExperimentException, ValidationException
+    {
+        Map<ExpData, String> inputData = lookupDatas(context, inputDataArray);
+        Map<ExpData, String> outputData = lookupDatas(context, outputDataArray);
+        checkForCycles(inputData, outputData);
+
+        Map<ExpMaterial, String> inputMaterial = new HashMap<>();
+        Set<Long> inputMaterialRowIds = new HashSet<>();
+        for (JSONObject materialObject : JsonUtil.toJSONObjectList(inputMaterialArray))
+        {
+            MaterialLookup lookup = checkMaterial(context, materialObject);
+            if (lookup.material() != null)
+            {
+                inputMaterial.put(lookup.material(), materialObject.optString(ExperimentJSONConverter.ROLE, ExpMaterialRunInput.DEFAULT_ROLE));
+                inputMaterialRowIds.add(lookup.material().getRowId());
+            }
+            else if (lookup.newName() != null)
+                inputMaterialRowIds.add(0L); // Not created yet, but still a changed input
+        }
+
+        ExistingOutputs existingOutputs = ExistingOutputs.read(run, rowIds(inputData.keySet()), inputMaterialRowIds);
+        Map<ExpMaterial, String> outputMaterial = new HashMap<>();
+        for (JSONObject materialObject : JsonUtil.toJSONObjectList(outputMaterialArray))
+        {
+            // A material the save would create needs only insert rights, which the save actions already require
+            ExpMaterial material = checkMaterial(context, materialObject).material();
+            if (material != null)
+            {
+                existingOutputs.assertCanAttach(context.getUser(), material, false);
+                outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, ExpMaterial.DEFAULT_CPAS_TYPE));
+            }
+        }
+        existingOutputs.assertCanDetachOthers(context.getUser(), rowIds(outputMaterial.keySet()));
+        checkForCycles(inputMaterial, outputMaterial);
+    }
+
+    private Map<ExpData, String> lookupDatas(ViewContext context, JSONArray dataArray)
+    {
+        Map<ExpData, String> datas = new HashMap<>();
+        for (JSONObject dataObject : JsonUtil.toJSONObjectList(dataArray))
+            datas.put(lookupData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
+        return datas;
+    }
+
+    private MaterialLookup checkMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
+    {
+        MaterialLookup lookup = lookupMaterial(context, materialObject);
+        JSONObject materialProperties = materialObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
+        if (lookup.material() != null && materialProperties != null && !materialProperties.isEmpty())
+            assertCanEditProperties(context, lookup.material(), lookup.domainProperties(), materialProperties, false);
+        return lookup;
+    }
+
+    private static Set<Long> rowIds(Collection<? extends ExpRunItem> items)
+    {
+        return items.stream().map(ExpRunItem::getRowId).collect(Collectors.toSet());
+    }
+
+    /** A run's output materials before the save replaces its protocol applications, and whether the post keeps its inputs. */
+    private record ExistingOutputs(Map<Long, ExpMaterial> materials, boolean inputsUnchanged)
+    {
+        static ExistingOutputs read(@Nullable ExpRun run, Set<Long> postedDataInputRowIds, Set<Long> postedMaterialInputRowIds)
+        {
+            if (run == null)
+                return new ExistingOutputs(Map.of(), false);
+
+            Map<Long, ExpMaterial> materials = new HashMap<>();
+            ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
+            if (outputApp != null)
+            {
+                for (ExpMaterialRunInput input : outputApp.getMaterialInputs())
+                    materials.put(input.getMaterial().getRowId(), input.getMaterial());
+            }
+
+            boolean inputsUnchanged = rowIds(run.getMaterialInputs().keySet()).equals(postedMaterialInputRowIds)
+                    && rowIds(run.getDataInputs().keySet()).equals(postedDataInputRowIds);
+            return new ExistingOutputs(materials, inputsUnchanged);
+        }
+
+        // Attaching an output rewrites the material's lineage, so require write access - but skip
+        // materials that were already outputs of this run, since a re-save isn't changing them.
+        // A sample created in this request only needs insert rights.
+        void assertCanAttach(User user, ExpMaterial material, boolean createdHere)
+        {
+            if (!materials.containsKey(material.getRowId()) || !inputsUnchanged)
+                assertCanEditLineage(user, material.getLSID(), material, createdHere);
+        }
+
+        /** Detaching an output also rewrites its lineage: authorize any prior output the post didn't keep. */
+        void assertCanDetachOthers(User user, Set<Long> keptRowIds)
+        {
+            for (Map.Entry<Long, ExpMaterial> entry : materials.entrySet())
+            {
+                if (!keptRowIds.contains(entry.getKey()))
+                    assertCanEditLineage(user, entry.getValue().getLSID(), entry.getValue());
+            }
+        }
     }
 
     protected ExpExperiment saveExperimentRun(ViewContext context, ExpProtocol protocol, ExpExperiment batch, ExpRun run,
@@ -555,9 +638,48 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpMaterial handleMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
     {
+        MaterialLookup lookup = lookupMaterial(context, materialObject);
+        ExpMaterial material = lookup.material();
+        boolean createdHere = false;
+        if (material == null && lookup.newName() != null)
+        {
+            material = createMaterial(context, lookup.sampleType(), lookup.newName());
+            createdHere = true;
+            createdMaterialLsids.add(material.getLSID());
+        }
+
+        if (material == null)
+            return null;
+
+        if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
+        {
+            JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
+            // Treat an empty properties collection as if there were no property map at all.
+            // To delete a property, include a property map with that property and set its value to null.
+            if (!materialProperties.isEmpty())
+            {
+                List<? extends DomainProperty> dps = lookup.domainProperties();
+                assertCanEditProperties(context, material, dps, materialProperties, createdHere);
+                handleProperties(context, material, dps, materialProperties);
+            }
+        }
+
+        return material;
+    }
+
+    /** A posted material that exists, or the sample type and name of the one handleMaterial would create. */
+    private record MaterialLookup(@Nullable ExpMaterial material, @Nullable ExpSampleType sampleType, @Nullable String newName)
+    {
+        List<? extends DomainProperty> domainProperties()
+        {
+            return sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
+        }
+    }
+
+    private MaterialLookup lookupMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
+    {
         ExpSampleType sampleType = null;
         ExpMaterial material = null;
-        boolean createdHere = false;
         if (materialObject.has(ExperimentJSONConverter.ID))
         {
             int materialRowId = materialObject.getInt(ExperimentJSONConverter.ID);
@@ -575,6 +697,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             sampleType = material.getSampleType();
         }
 
+        String newName = null;
         if (material == null)
         {
             // Get SampleType by id, name, or lsid
@@ -641,45 +764,27 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                     throw new NotFoundException("Could not find material '" + materialName + "'");
 
                 if (material == null)
-                {
-                    material = createMaterial(context, sampleType, materialName);
-                    createdHere = true;
-                    createdMaterialLsids.add(material.getLSID());
-                }
+                    newName = materialName;
             }
         }
+        return new MaterialLookup(material, sampleType, newName);
+    }
 
-        if (material == null)
-            return null;
+    // A sample created by this request needs only insert rights; an existing one needs edit rights.
+    // The status check below applies either way.
+    private void assertCanEditProperties(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject materialProperties, boolean createdHere) throws ValidationException
+    {
+        if (!propertiesWouldChange(context, material, dps, materialProperties))
+            return;
 
-        if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
-        {
-            JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
-            // Treat an empty properties collection as if there were no property map at all.
-            // To delete a property, include a property map with that property and set its value to null.
-            if (!materialProperties.isEmpty())
-            {
-                List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
-
-                if (propertiesWouldChange(context, material, dps, materialProperties))
-                {
-                    // A sample created by this request needs only insert rights; an existing one needs edit rights.
-                    // The status check below applies either way.
-                    Class<? extends Permission> editPerm = createdHere
-                            ? InsertPermission.class
-                            : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
-                    if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
-                        throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
-                    if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
-                        throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
-                                List.of(material), SampleTypeService.SampleOperations.EditMetadata));
-                }
-
-                handleProperties(context, material, dps, materialProperties);
-            }
-        }
-
-        return material;
+        Class<? extends Permission> editPerm = createdHere
+                ? InsertPermission.class
+                : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
+        if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
+            throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
+        if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
+            throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                    List.of(material), SampleTypeService.SampleOperations.EditMetadata));
     }
 
     private boolean propertiesWouldChange(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject submitted) throws ValidationException
@@ -752,7 +857,19 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpData handleData(ViewContext context, JSONObject dataObject) throws ValidationException
     {
-        return ExpDataFileConverter.resolveExpData(dataObject, context.getContainer(), context.getUser(), Collections.emptyList());
+        return ExpDataFileConverter.resolveExpData(dataObject, context.getContainer(), context.getUser(), getKnownDataTypes());
+    }
+
+    /** Resolves the data handleData would use, without writing anything. Data that doesn't exist yet comes back unsaved. */
+    protected ExpData lookupData(ViewContext context, JSONObject dataObject)
+    {
+        return ExpDataFileConverter.resolveExpDataWithoutSaving(dataObject, context.getContainer(), context.getUser(), getKnownDataTypes());
+    }
+
+    /** Data types used to pick the type of data created for a new file. */
+    protected @NotNull Collection<AssayDataType> getKnownDataTypes()
+    {
+        return Collections.emptyList();
     }
 
     // XXX: doesn't handle SampleType parent property magic

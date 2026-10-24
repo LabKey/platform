@@ -134,9 +134,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     @Override
-    public @Nullable PreparedTransform prepareTransform(AssayRunUploadContext<ProviderType> context, boolean forceAsync) throws ExperimentException, ValidationException
+    public @Nullable PreparedTransform prepareTransform(AssayRunUploadContext<ProviderType> context) throws ExperimentException, ValidationException
     {
-        if (isBackgroundImport(context.getProvider(), context.getProtocol(), forceAsync) || !hasTransformBeforeRun(context))
+        if (!hasTransformBeforeRun(context))
             return null;
 
         context.init();
@@ -148,9 +148,23 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<DomainProperty, String> allProperties = new HashMap<>(context.getRunProperties());
         allProperties.putAll(context.getBatchProperties());
 
+        // Collecting the inputs saves posted files, whose audit events belong to the import transaction that isn't open yet
+        List<PreparedTransform.PendingFileAudit> fileAudits = new ArrayList<>();
+        context.setPendingFileAudits(fileAudits);
         Map<ExpData, String> inputDatas = new HashMap<>();
-        addRunDataInputs(context, null, findResolverType(allProperties), inputDatas);
-        PreparedTransform prepared = runTransformBeforeRun(context, inputDatas.keySet());
+        PreparedTransform prepared = null;
+        try
+        {
+            addRunDataInputs(context, null, findResolverType(allProperties), inputDatas);
+            prepared = runTransformBeforeRun(context, inputDatas.keySet());
+        }
+        finally
+        {
+            context.setPendingFileAudits(null);
+            if (prepared == null)
+                PreparedTransform.addFileAuditEventsForRemainingFiles(context.getUser(), fileAudits);
+        }
+        prepared.holdFileAudits(context.getUser(), fileAudits);
         // Run creation reuses these rather than collecting again, since a thaw list resolver writes a new file each time
         prepared.setRunDataInputs(inputDatas);
         return prepared;
@@ -433,6 +447,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
                 }
             }
+            if (preparedBeforeRun != null)
+                preparedBeforeRun.recordFileAuditEvents(transaction);
             boolean saveBatchProps = forceSaveBatchProps;
 
             // Add any material/data inputs related to the specimen IDs, etc in the incoming data.

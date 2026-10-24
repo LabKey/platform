@@ -19,22 +19,29 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySaveHandler;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.transform.PreparedTransforms;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> extends MutatingApiAction<FORM>
@@ -151,5 +158,21 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
             saveHandler = new DefaultExperimentSaveHandler();
 
         return saveHandler;
+    }
+
+    /** GH Issue 1720: run transform scripts before the save's transaction so their callbacks into the server can't deadlock with it */
+    protected PreparedTransforms prepareTransforms(ExperimentSaveHandler saveHandler, ExpProtocol protocol, List<JSONObject> runJsons) throws ExperimentException, ValidationException
+    {
+        // A repeated run's later posts would save over what its scripts saw before the transaction
+        Set<Integer> runIds = new HashSet<>();
+        for (JSONObject runJson : runJsons)
+        {
+            if (!runJson.isNull(ExperimentJSONConverter.ID) && !runIds.add(runJson.getInt(ExperimentJSONConverter.ID)))
+                throw new ApiUsageException("Run " + runJson.getInt(ExperimentJSONConverter.ID) + " appears more than once in the request");
+        }
+
+        if (saveHandler instanceof AssaySaveHandler assaySaveHandler)
+            return assaySaveHandler.prepareTransforms(getViewContext(), protocol, runJsons);
+        return new PreparedTransforms();
     }
 }

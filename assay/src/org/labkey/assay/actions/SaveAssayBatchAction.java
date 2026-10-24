@@ -21,14 +21,18 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.transform.PreparedTransforms;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.JsonUtil;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -81,7 +85,14 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
     {
         saveHandler.beforeSave(getViewContext(), rootJsonObject, protocol);
         List<ExpExperiment> batches = new ArrayList<>(batchesJsonArray.length());
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        List<JSONObject> runJsons = new ArrayList<>();
+        for (JSONObject batchJsonObject : JsonUtil.toJSONObjectList(batchesJsonArray))
+        {
+            checkBatch(batchJsonObject);
+            runJsons.addAll(getRunJsons(batchJsonObject));
+        }
+        try (PreparedTransforms ignored = prepareTransforms(saveHandler, protocol, runJsons);
+             DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             for (int i = 0; i < batchesJsonArray.length(); i++)
             {
@@ -102,13 +113,28 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
         List<ExpExperiment> batches = new ArrayList<>(1);
 
         saveHandler.beforeSave(getViewContext(), rootJsonObject, protocol);
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        checkBatch(batchJsonObject);
+        try (PreparedTransforms ignored = prepareTransforms(saveHandler, protocol, getRunJsons(batchJsonObject));
+             DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             batches.add(saveHandler.handleBatch(getViewContext(), batchJsonObject, protocol));
             transaction.commit();
         }
         saveHandler.afterSave(getViewContext(), batches, protocol);
         return AssayJSONConverter.serializeResult(provider, protocol, batches.getFirst(), getUser());
+    }
+
+    /** Rejects a missing batch before any transform script runs. */
+    private void checkBatch(JSONObject batchJsonObject)
+    {
+        if (!batchJsonObject.isNull(ExperimentJSONConverter.ID))
+            DefaultExperimentSaveHandler.lookupBatch(getContainer(), batchJsonObject.getInt(ExperimentJSONConverter.ID));
+    }
+
+    private static List<JSONObject> getRunJsons(JSONObject batchJsonObject)
+    {
+        JSONArray runsArray = batchJsonObject.optJSONArray(AssayJSONConverter.RUNS);
+        return runsArray == null ? List.of() : JsonUtil.toJSONObjectList(runsArray);
     }
 }
 
