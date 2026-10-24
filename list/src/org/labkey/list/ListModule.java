@@ -242,7 +242,8 @@ public class ListModule extends SpringModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            ListQueryUpdateService.AuditBatchTestCase.class
+            ListQueryUpdateService.AuditBatchTestCase.class,
+            ListQueryUpdateService.GetRowsTestCase.class
         );
     }
 }
