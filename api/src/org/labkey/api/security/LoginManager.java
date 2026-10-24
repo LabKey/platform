@@ -38,7 +38,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,6 +50,7 @@ public class LoginManager
     public static final int TEMP_PASSWORD_LENGTH = 32;
     public static final Duration SETUP_LINK_TIMEOUT = Duration.ofDays(7);
     public static final Duration RESET_LINK_TIMEOUT = Duration.ofDays(1);
+    public static final Duration EMAIL_CHANGE_LINK_TIMEOUT = Duration.ofDays(1);
     private static final int MAX_HISTORY = 10;
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
@@ -262,7 +262,7 @@ public class LoginManager
             DbScope scope = CORE.getSchema().getScope();
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                Instant timeoutDate = Instant.now().plus(UserManager.VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
+                Instant timeoutDate = Instant.now().plus(EMAIL_CHANGE_LINK_TIMEOUT);
                 SqlExecutor executor = new SqlExecutor(CORE.getSchema());
                 int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail = ?, Verification = ?, VerificationTimeout = ? WHERE UserId = ?",
                         requestedEmail.getEmailAddress(), hashVerification(verificationToken), Date.from(timeoutDate), userToChange.getUserId());

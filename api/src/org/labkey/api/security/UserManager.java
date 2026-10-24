@@ -116,7 +116,6 @@ public class UserManager
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
     public static final int VALID_GROUP_NAME_LENGTH = 64;
-    public static final int VERIFICATION_EMAIL_TIMEOUT = 60 * 24;  // in minutes, one day currently
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
 

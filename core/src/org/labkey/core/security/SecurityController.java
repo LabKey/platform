@@ -1846,8 +1846,6 @@ public class SecurityController extends SpringActionController
             else
             {
                 SecurityMessage message = createMessage(form);
-
-                // Issue 33254: allow only Site Admins to see the verification token
                 message.setMaskToken(true);
 
                 if (LoginManager.isVerified(affectedUser))
@@ -1857,7 +1855,7 @@ public class SecurityController extends SpringActionController
                 else
                 {
                     ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), affectedUser, null != _verification ? _verification : "**********", null);
-                    SecurityManager.renderEmail(getContainer(), getUser(), message, affectedUser.getEmail(), verificationURL, out);
+                    SecurityManager.renderEmail(getContainer(), getUser(), message, affectedUser.getEmail(), verificationURL, getLinkTimeout(), out);
 
                     if (null == _verification && getUser().hasSiteAdminPermission())
                     {

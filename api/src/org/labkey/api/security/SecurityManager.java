@@ -106,6 +106,7 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -1203,19 +1204,25 @@ public class SecurityManager
         return displayName;
     }
 
+    // Passes no timeout duration. Should be called only by MacCoss SignUpManager, which doesn't implement expiration.
     public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
     {
-        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL);
+        sendEmail(c, fromUser, message, to, verificationURL, null);
+    }
+
+    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout) throws ConfigurationException, MessagingException
+    {
+        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
         MailHelper.send(m, fromUser, c);
     }
 
-    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
+    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout, Writer out) throws MessagingException
     {
-        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL);
+        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
         MailHelper.renderHtml(m, message.getType(), out);
     }
 
-    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
+    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout) throws MessagingException
     {
         try
         {
@@ -1224,6 +1231,7 @@ public class SecurityManager
                 verificationURL.replaceParameter("verification", "**********");
 
             message.setVerificationURL(verificationURL.getURIString());
+            message.setLinkTimeout(linkTimeout);
             message.setOriginatingUser(fromUser);
             if (message.getTo() == null)
                 message.setTo(to);
@@ -2335,12 +2343,12 @@ public class SecurityManager
 
         ActionURL verificationURL = LoginManager.createModuleVerificationURL(context.getContainer(), newUser, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
 
-        sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
+        sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL, LoginManager.SETUP_LINK_TIMEOUT);
         if (!currentUser.isGuest() && !currentUser.equals(newUser))
         {
             SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
             msg.setTo(email.getEmailAddress());
-            sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
+            sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL, LoginManager.SETUP_LINK_TIMEOUT);
         }
     }
 
@@ -2509,6 +2517,7 @@ public class SecurityManager
         protected String _optionalPrefix;
         private String _verificationUrl = "";
         private String _recipient = "";
+        private @Nullable Duration _linkTimeout;
         protected boolean _verificationUrlRequired = true;
 
         protected SecurityEmailTemplate(@NotNull String name, String description, String subject, String body)
@@ -2519,12 +2528,20 @@ public class SecurityManager
         public void setOptionPrefix(String optionalPrefix){_optionalPrefix = optionalPrefix;}
         public void setVerificationUrl(String verificationUrl){_verificationUrl = verificationUrl;}
         public void setRecipient(String recipient){_recipient = recipient;}
+        public void setLinkTimeout(@Nullable Duration linkTimeout){_linkTimeout = linkTimeout;}
+
+        private static String formatLinkTimeout(Duration timeout)
+        {
+            long hours = timeout.toHours();
+            return hours > 24 && hours % 24 == 0 ? StringUtilsLabKey.pluralize(hours / 24, "day") : StringUtilsLabKey.pluralize(hours, "hour");
+        }
 
         @Override
         protected void addCustomReplacements(Replacements replacements)
         {
             super.addCustomReplacements(replacements);
             replacements.add("verificationURL", String.class, "Link for a user to set a password", ContentType.Plain, c -> _verificationUrl);
+            replacements.add("linkExpiration", String.class, "How long the verification link remains valid, e.g., \"7 days\"", ContentType.Plain, c -> null == _linkTimeout ? null : formatLinkTimeout(_linkTimeout));
             replacements.add("emailAddress", String.class, "The email address of the user performing the operation", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getEmail());
             replacements.add("recipient", String.class, "The email address on the 'to:' line", ContentType.Plain, c -> _recipient);
         }
@@ -2534,7 +2551,7 @@ public class SecurityManager
         {
             if (super.isValid(error))
             {
-                // add an additional requirement for the verification url
+                // add a requirement for the verification url
                 if (!_verificationUrlRequired || getBody().contains("^verificationURL^"))
                 {
                     return true;
@@ -2556,7 +2573,7 @@ public class SecurityManager
                 You now have an account on the ^organizationName^ ^siteShortName^ web site. We are sending \
                 you this message to verify your email address and to allow you to create a password that will provide secure \
                 access to your data on the web site. To complete the registration process, simply click the link below or \
-                copy it to your browser's address bar. You will then be asked to choose a password.
+                copy it to your browser's address bar. You will then be asked to choose a password.^linkExpiration| This link expires in %s.^
                 
                 ^verificationURL^
                 
@@ -2601,7 +2618,7 @@ public class SecurityManager
                 We have reset your password on the ^organizationName^ ^siteShortName^ web site. \
                 To sign in to the system you will need \
                 to specify a new password. Click the link below or copy it to your browser's address bar. You will then be \
-                asked to enter a new password.
+                asked to enter a new password.^linkExpiration| This link expires in %s.^
                 
                 ^verificationURL^
                 
@@ -2665,29 +2682,32 @@ public class SecurityManager
         try
         {
             String verification;
+            Duration linkTimeout;
 
             if (loginExists)
             {
                 // Create a placeholder password that's impossible to guess and a separate email
                 // verification key that gets emailed.
                 LoginManager.setPassword(affectedUser, LoginManager.createTempPassword());
-                verification = LoginManager.createVerification(affectedUser, LoginManager.RESET_LINK_TIMEOUT);
+                linkTimeout = LoginManager.RESET_LINK_TIMEOUT;
+                verification = LoginManager.createVerification(affectedUser, linkTimeout);
             }
             else
             {
+                linkTimeout = LoginManager.SETUP_LINK_TIMEOUT;
                 verification = LoginManager.createLogin(affectedUser.getUserId(), affectedUser.getEmail());
             }
 
             try
             {
                 ActionURL verificationURL = LoginManager.createVerificationURL(c, affectedUser, verification, null);
-                sendEmail(c, currentUser, getResetMessage(false), affectedUser.getEmail(), verificationURL);
+                sendEmail(c, currentUser, getResetMessage(false), affectedUser.getEmail(), verificationURL, linkTimeout);
 
                 if (!currentUser.equals(affectedUser))
                 {
                     SecurityMessage msg = getResetMessage(true);
                     msg.setTo(affectedUser.getEmail());
-                    sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
+                    sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL, linkTimeout);
                 }
                 UserManager.addToUserHistory(affectedUser, currentUser.getEmail() + " " + pastVerb + " the password.");
             }

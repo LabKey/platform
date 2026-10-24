@@ -874,7 +874,7 @@ public class LoginController extends SpringActionController
         {
             final ApiSimpleResponse response = new ApiSimpleResponse();
 
-            Pair<Boolean, String> pair = attemptReset(form.getEmail(), form.getProvider());
+            Pair<Boolean, String> pair = attemptPasswordReset(form.getEmail(), form.getProvider());
             response.put("success", pair.first);
             response.put("message", pair.second);
 
@@ -882,7 +882,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    private Pair<Boolean, String> attemptReset(String rawEmail, String providerName)
+    private Pair<Boolean, String> attemptPasswordReset(String rawEmail, String providerName)
     {
         if (null == rawEmail)
         {
@@ -934,14 +934,14 @@ public class LoginController extends SpringActionController
 
                 final User system = new User(laf.getSystemEmailAddress(), 0);
                 system.setFirstName(laf.getCompanyName());
-                SecurityManager.sendEmail(c, system, message, email.getEmailAddress(), verificationURL);
+                SecurityManager.sendEmail(c, system, message, email.getEmailAddress(), verificationURL, LoginManager.RESET_LINK_TIMEOUT);
 
                 // TODO: When is this ever true? Admin reset goes through a different code path!
                 if (!user.getEmail().equals(email.getEmailAddress()))
                 {
                     final SecurityMessage adminMessage = SecurityManager.getResetMessage(true, user, providerName);
                     message.setTo(email.getEmailAddress());
-                    SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL);
+                    SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL, LoginManager.RESET_LINK_TIMEOUT);
                 }
             }
             catch (ConfigurationException | MessagingException e)
@@ -2295,7 +2295,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(LoginForm form, BindException errors)
         {
-            Pair<Boolean, String> pair = attemptReset(form.getEmail(), form.getProvider());
+            Pair<Boolean, String> pair = attemptPasswordReset(form.getEmail(), form.getProvider());
 
             if (pair.first)
                 _finishView = new JspView<>("/org/labkey/core/login/finishResetPassword.jsp", pair.second);
