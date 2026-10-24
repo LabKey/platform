@@ -174,7 +174,7 @@ public class ApiKeyManager
     public void deleteKey(@NotNull User user, int rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
+        filter.addCondition(FieldKey.fromParts("CreatedBy"), user);
         deleteKeys(filter);
     }
 
