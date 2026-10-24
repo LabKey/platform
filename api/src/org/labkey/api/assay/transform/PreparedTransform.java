@@ -18,14 +18,30 @@ package org.labkey.api.assay.transform;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +50,8 @@ import java.util.Set;
 /**
  * The outcome of running an assay's transform scripts, before any of it is written to the database.
  * {@link DataTransformService#recordTransform} writes it against the saved run; closing it deletes the scripts'
- * working directories, so close it only after the transaction that recorded it has committed or rolled back.
+ * working directories and adds unrecorded file audit events for files still on disk, so close it only after the transaction that
+ * recorded it has committed or rolled back.
  */
 public class PreparedTransform implements AutoCloseable
 {
@@ -46,6 +63,8 @@ public class PreparedTransform implements AutoCloseable
     private final @NotNull List<FileLike> _scriptDirs;
     private boolean _recorded;
     private @Nullable Map<ExpData, String> _runDataInputs;
+    private final @NotNull List<PendingFileAudit> _fileAudits = new ArrayList<>();
+    private @Nullable User _fileAuditUser;
 
     PreparedTransform(@Nullable DataExchangeHandler handler, @NotNull TransformResult result, @NotNull List<TransformScriptOutput> scriptOutputs, @NotNull List<FileLike> scriptDirs)
     {
@@ -104,6 +123,38 @@ public class PreparedTransform implements AutoCloseable
         _runDataInputs = runDataInputs;
     }
 
+    /** The audit event of a file saved while preparing, held until the import transaction opens. */
+    public record PendingFileAudit(@NotNull FileSystemAuditProvider.FileSystemAuditEvent event, @NotNull FileLike file) {}
+
+    /** Holds the audits of files saved while preparing, to record against the import transaction once it opens. */
+    public void holdFileAudits(@Nullable User user, @NotNull List<PendingFileAudit> audits)
+    {
+        _fileAuditUser = user;
+        _fileAudits.addAll(audits);
+    }
+
+    public void recordFileAuditEvents(@Nullable TransactionAuditProvider.TransactionAuditEvent transactionEvent)
+    {
+        List<FileSystemAuditProvider.FileSystemAuditEvent> events = _fileAudits.stream().map(PendingFileAudit::event).toList();
+        _fileAudits.clear();
+        if (events.isEmpty())
+            return;
+        if (transactionEvent != null)
+            events.forEach(event -> event.setTransactionEvent(transactionEvent, FileSystemAuditProvider.EVENT_TYPE));
+        AuditLogService.get().addEvents(_fileAuditUser, events);
+    }
+
+    /** For an import that failed before recording its held audits; cleanup may already have deleted some of the files. */
+    public static void addFileAuditEventsForRemainingFiles(@Nullable User user, @NotNull List<PendingFileAudit> audits)
+    {
+        List<FileSystemAuditProvider.FileSystemAuditEvent> events = audits.stream()
+                .filter(audit -> audit.file().exists())
+                .map(PendingFileAudit::event)
+                .toList();
+        if (!events.isEmpty())
+            AuditLogService.get().addEvents(user, events);
+    }
+
     public static @NotNull Path normalize(@NotNull File file)
     {
         return file.toPath().toAbsolutePath().normalize();
@@ -122,7 +173,15 @@ public class PreparedTransform implements AutoCloseable
     @Override
     public void close()
     {
-        deleteScriptDirs(_scriptDirs);
+        try
+        {
+            addFileAuditEventsForRemainingFiles(_fileAuditUser, _fileAudits);
+            _fileAudits.clear();
+        }
+        finally
+        {
+            deleteScriptDirs(_scriptDirs);
+        }
     }
 
     static void deleteScriptDirs(List<FileLike> scriptDirs)
@@ -140,6 +199,73 @@ public class PreparedTransform implements AutoCloseable
             {
                 LOG.warn("Unable to delete transform script working directory {}", scriptDir, e);
             }
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        private FileLike _dir;
+
+        @Before
+        public void createDirectory() throws IOException
+        {
+            _dir = FileUtil.createTempDirectoryFileLike("preparedTransformTest");
+        }
+
+        @After
+        public void deleteDirectory() throws IOException
+        {
+            FileUtil.deleteDir(_dir.toNioPathForWrite().toFile());
+        }
+
+        @Test
+        public void testCloseAddsEventsOnlyForRemainingFiles() throws IOException
+        {
+            String comment = "PreparedTransform close " + GUID.makeGUID();
+            FileLike kept = FileUtil.createTempFile("kept", ".tsv", _dir);
+            FileLike deleted = FileUtil.createTempFile("deleted", ".tsv", _dir);
+
+            try (PreparedTransform prepared = PreparedTransform.empty())
+            {
+                prepared.holdFileAudits(TestContext.get().getUser(), List.of(audit(comment, kept), audit(comment, deleted)));
+                deleted.delete();
+            }
+
+            List<FileSystemAuditProvider.FileSystemAuditEvent> events = selectEvents(comment);
+            assertEquals("Events added on close", List.of(kept.getName()), events.stream().map(FileSystemAuditProvider.FileSystemAuditEvent::getFile).toList());
+            assertNull("Transaction of an event added on close", events.getFirst().getTransactionId());
+        }
+
+        @Test
+        public void testRecordLinksTransactionAndCloseAddsNothingMore() throws IOException
+        {
+            String comment = "PreparedTransform record " + GUID.makeGUID();
+            FileLike file = FileUtil.createTempFile("recorded", ".tsv", _dir);
+            TransactionAuditProvider.TransactionAuditEvent transactionEvent = AbstractQueryUpdateService.createTransactionAuditEvent(JunitUtil.getTestContainer(), QueryService.AuditAction.INSERT);
+
+            try (PreparedTransform prepared = PreparedTransform.empty())
+            {
+                prepared.holdFileAudits(TestContext.get().getUser(), List.of(audit(comment, file)));
+                prepared.recordFileAuditEvents(transactionEvent);
+            }
+
+            List<FileSystemAuditProvider.FileSystemAuditEvent> events = selectEvents(comment);
+            assertEquals("Events after recording and closing", 1, events.size());
+            assertEquals("Transaction of the recorded event", Long.valueOf(transactionEvent.getRowId()), events.getFirst().getTransactionId());
+        }
+
+        private static PendingFileAudit audit(String comment, FileLike file)
+        {
+            FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(JunitUtil.getTestContainer(), comment);
+            event.setFile(file.getName());
+            event.setProvidedFileName(file.getName());
+            return new PendingFileAudit(event, file);
+        }
+
+        private static List<FileSystemAuditProvider.FileSystemAuditEvent> selectEvents(String comment)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Comment"), comment);
+            return AuditLogService.get().getAuditEvents(JunitUtil.getTestContainer(), TestContext.get().getUser(), FileSystemAuditProvider.EVENT_TYPE, filter, null);
         }
     }
 }

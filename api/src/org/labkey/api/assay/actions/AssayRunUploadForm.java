@@ -108,6 +108,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private List<AssayDataCollector> _collectors;
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
     private @Nullable PreparedTransform _preparedTransform;
+    private @Nullable List<PreparedTransform.PendingFileAudit> _pendingFileAudits;
     private ExpRun _reRun;
     private boolean _allowCrossRunFileInputs;
 
@@ -725,6 +726,18 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setPreparedTransform(@Nullable PreparedTransform prepared)
     {
         _preparedTransform = prepared;
+    }
+
+    @Override
+    public @Nullable List<PreparedTransform.PendingFileAudit> getPendingFileAudits()
+    {
+        return _pendingFileAudits;
+    }
+
+    @Override
+    public void setPendingFileAudits(@Nullable List<PreparedTransform.PendingFileAudit> audits)
+    {
+        _pendingFileAudits = audits;
     }
 
     @Override
