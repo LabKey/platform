@@ -35,7 +35,6 @@ import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.PositionImpl;
-import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -386,8 +385,7 @@ public class AssayModule extends SpringModule
         return Set.of(
             ModuleAssayCache.TestCase.class,
             PlateManagerTest.class,
-            PlateSchemaTest.class,
-            PreparedTransform.TestCase.class
+            PlateSchemaTest.class
         );
     }
 

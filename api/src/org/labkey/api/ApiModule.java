@@ -30,6 +30,7 @@ import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.assay.sample.MaterialInputRoleComparator;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ImageServlet;
 import org.labkey.api.attachments.LookAndFeelResourceType;
@@ -581,6 +582,7 @@ public class ApiModule extends CodeOnlyModule
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,
             PostgresSnapshot.TestCase.class,
+            PreparedTransform.TestCase.class,
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
             QueryView.TestCase.class,
