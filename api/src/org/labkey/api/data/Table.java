@@ -819,7 +819,8 @@ public class Table
      * @return a new Map&lt;String, Object&gt; if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
      * The row is not re-queried after the insert, so the returned value carries only the fields passed in plus the
      * generated autoincrement key and special fields (e.g. created/createdBy) -- not any other database-computed
-     * values such as defaults, computed columns, or trigger-modified data.
+     * values such as defaults, computed columns, or trigger-modified data. A record can be provided to insert, but
+     * it's returned unchanged, since it's immutable and can't receive the generated key or special fields.
      * @throws RuntimeValidationException if there is a problem with the data that's detected before we try to actually do the insert
      * @throws RuntimeSQLException if there is a problem communicating with the database or there is a constraint violation or similar error
      */

@@ -126,7 +126,7 @@ public class ApiKeyManager
 
     public record CreatedApiKey(@NotNull String apiKey, int rowId) {}
 
-    /** Also returns the new key's RowId, which lets a caller delete the key later via {@link #deleteKey(int)} without retaining it */
+    /** Also returns the new key's RowId, which lets a caller delete the key later via {@link #deleteKey(User, int)} without retaining it */
     public @NotNull CreatedApiKey createKeyWithRowId(@NotNull User user, int expirationSeconds, @Nullable String description, @Nullable Class<? extends Role> restrictionRole)
     {
         if (user.isGuest())
@@ -170,10 +170,12 @@ public class ApiKeyManager
         deleteKeys(new SimpleFilter(FieldKey.fromParts("Crypt"), crypt(apiKey)));
     }
 
-    // Delete a single API key by RowId and clear any active sessions that were established using it
-    public void deleteKey(int rowId)
+    // Delete a single API key by RowId, ignoring keys that belong to other users, and clear any active sessions that were established using it
+    public void deleteKey(@NotNull User user, int rowId)
     {
-        deleteKeys(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
+        filter.addCondition(FieldKey.fromParts("CreatedBy"), user.getUserId());
+        deleteKeys(filter);
     }
 
     // Delete all API keys that match the filter and clear all active sessions that were established using them
@@ -182,13 +184,13 @@ public class ApiKeyManager
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
             new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), filter, null)
-                .forEach(ApiKeyAuthentication.class, auth -> deleteKey(auth.getUser(), auth.rowId()));
+                .forEach(ApiKeyAuthentication.class, auth -> deleteKeyAndSessions(auth.getUser(), auth.rowId()));
             t.commit();
         }
     }
 
     // Delete a single API key and clear all active sessions that were established using it
-    private void deleteKey(User user, int rowId)
+    private void deleteKeyAndSessions(User user, int rowId)
     {
         Table.delete(CoreSchema.getInstance().getTableAPIKeys(), rowId);
         UserManager.handleSessionsForUser(user, new SessionHandler()
@@ -366,7 +368,10 @@ public class ApiKeyManager
             assertNotNull(auth);
             assertEquals(created.rowId(), auth.rowId());
 
-            ApiKeyManager.get().deleteKey(created.rowId());
+            ApiKeyManager.get().deleteKey(User.guest, created.rowId());
+            assertNotNull("Another user's key must not be deleted", ApiKeyManager.get().authenticateFromApiKey(created.apiKey()));
+
+            ApiKeyManager.get().deleteKey(user, created.rowId());
             assertNull(ApiKeyManager.get().authenticateFromApiKey(created.apiKey()));
         }
 
@@ -411,21 +416,25 @@ public class ApiKeyManager
             UserAndKey editorUAK = createApiKeyAndRetrieveUser(admin, EditorRole.class);
             User editor = editorUAK.user();
 
+            // Locked projects deny everyone but admins, so the restricted keys would fail every check there
             ContainerManager.getAllChildren(ContainerManager.getRoot(), admin, AdminPermission.class).stream()
+                .filter(child -> null == child.getProject() || !child.getProject().getLockState().isLocked())
                 .limit(5)
                 .forEach(child -> {
-                    assertTrue(child.hasPermission(admin, AdminPermission.class));
-                    assertFalse(child.hasPermission(editor, AdminPermission.class));
-                    assertFalse(child.hasPermission(reader, AdminPermission.class));
+                    String path = child.getPath();
+                    assertTrue(path, child.hasPermission(admin, AdminPermission.class));
+                    assertFalse(path, child.hasPermission(editor, AdminPermission.class));
+                    assertFalse(path, child.hasPermission(reader, AdminPermission.class));
                     Stream.of(DeletePermission.class, UpdatePermission.class, InsertPermission.class)
                         .forEach(perm -> {
-                            assertTrue(child.hasPermission(admin, perm));
-                            assertTrue(child.hasPermission(editor, perm));
-                            assertFalse(child.hasPermission(reader, perm));
+                            String message = path + ": " + perm.getSimpleName();
+                            assertTrue(message, child.hasPermission(admin, perm));
+                            assertTrue(message, child.hasPermission(editor, perm));
+                            assertFalse(message, child.hasPermission(reader, perm));
                         });
-                    assertTrue(child.hasPermission(admin, ReadPermission.class));
-                    assertTrue(child.hasPermission(editor, ReadPermission.class));
-                    assertTrue(child.hasPermission(reader, ReadPermission.class));
+                    assertTrue(path, child.hasPermission(admin, ReadPermission.class));
+                    assertTrue(path, child.hasPermission(editor, ReadPermission.class));
+                    assertTrue(path, child.hasPermission(reader, ReadPermission.class));
                 });
 
             ApiKeyManager.get().deleteKey(readerUAK.apiKey());
