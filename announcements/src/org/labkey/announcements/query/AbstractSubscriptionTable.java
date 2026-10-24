@@ -53,7 +53,7 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
     {
         User user = _userSchema.getUser();
         ContainerFilter.ContainerFilterWithPermission scope = filter instanceof ContainerFilter.ContainerFilterWithPermission cfp ? cfp : new ContainerFilter.AllFolders(user);
-        SQLFragment sql = new SQLFragment("UserId = ? OR ", user.getUserId());
+        SQLFragment sql = SQLFragment.unsafe("UserId = ? OR ", user.getUserId());
         sql.append(scope.getSQLFragment(getSchema(), containerSql, AdminPermission.class, Set.of(), false));
 
         clearConditions(USER_FILTER_KEY);

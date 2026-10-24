@@ -221,7 +221,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
         {
             Map<String, Object> newRow = super._insert(user, c, row);
-            addAuditEvent(c, user, INSERT, row);
+            addAuditEvent(user, INSERT, row);
             return newRow;
         }
 
@@ -229,7 +229,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
         {
             Map<String, Object> newRow = super._update(user, c, row, oldRow, keys);
-            addAuditEvent(c, user, UPDATE, row);
+            addAuditEvent(user, UPDATE, row);
             return newRow;
         }
 
@@ -237,11 +237,11 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             Map<String, Object> newRow = super.deleteRow(user, container, oldRowMap);
-            addAuditEvent(container, user, DELETE, oldRowMap);
+            addAuditEvent(user, DELETE, oldRowMap);
             return newRow;
         }
 
-        private void addAuditEvent(Container container, @Nullable User user, int action, Map<String, Object> row)
+        private void addAuditEvent(@Nullable User user, int action, Map<String, Object> row)
         {
             // for now we are only auditing QCState related flag events
             if (row.containsKey("IntKey1") && row.get("IntKey1") != null)
@@ -259,7 +259,8 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                         DataState state = qcId != null ? DataStateManager.getInstance().getStateForRowId(run.getProtocol().getContainer(), qcId) : null;
                         if (state != null)
                         {
-                            ExperimentAuditEvent event = new ExperimentAuditEvent(container, comment);
+                            // GH Issue 1619: use the run's container, not the request's container
+                            ExperimentAuditEvent event = new ExperimentAuditEvent(run.getContainer(), comment);
 
                             event.setProtocolLsid(run.getProtocol().getLSID());
                             event.setRunLsid(run.getLSID());

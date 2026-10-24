@@ -18,6 +18,7 @@ package org.labkey.api.usageMetrics;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,6 +52,8 @@ public interface UsageMetricsService
     @Nullable Map<String, Map<String, Object>> getModuleUsageMetrics();
 
     /**
+     *  Switch to using the DescribedUsageMetricsProvider variant.
+     *
      *  Method to register a module's metrics. Call from doStartup() / startupAfterSpringConfiguration()
      *  Metrics can be included at UsageReportingLevel OFF or ON. Usage metrics will only be sent for ON.
      *
@@ -59,5 +62,26 @@ public interface UsageMetricsService
      *                this will return a map of metric name -> value pairs.
      * @throws IllegalArgumentException if moduleName doesn't correspond to an existing module
      */
+    @Deprecated
     void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
+
+    /**
+     *
+     *  Method to register a module's metrics. Call from doStartup() / startupAfterSpringConfiguration()
+     *  Metrics can be included at UsageReportingLevel OFF or ON. Usage metrics will only be sent for ON.
+     *
+     * @param moduleName The name of the module
+     * @throws IllegalArgumentException if moduleName doesn't correspond to an existing module
+     */
+    default void registerUsageMetrics(String moduleName, DescribedUsageMetricsProvider metrics)
+    {
+        registerUsageMetrics(moduleName, (UsageMetricsProvider) metrics);
+    }
+
+    /**
+     * Not included in the mothership report. Runs every provider, so it costs as much as generating a report.
+     * @return map of module name to its metric descriptions; top-level keys from providers that aren't
+     * {@link DescribedUsageMetricsProvider}s are included with a null description
+     */
+    Map<String, List<UsageMetrics.Description>> getModuleUsageMetricDescriptions();
 }

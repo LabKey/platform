@@ -82,6 +82,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
@@ -1271,7 +1272,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerNameExpressionType(String dataType, String schemaName, String queryname, String nameExpressionCol);
 
-    Map<String, Map<String, Object>> getDomainMetrics();
+    UsageMetrics addDomainMetrics(UsageMetrics metrics);
 
     void clearAncestors(ExpRunItem runItem);
     void clearDataAncestors(Collection<Long> dataRowIds);

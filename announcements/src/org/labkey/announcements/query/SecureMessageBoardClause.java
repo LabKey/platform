@@ -50,14 +50,14 @@ class SecureMessageBoardClause extends SimpleFilter.FilterClause
     private final SimpleFilter.FilterClause _containerClause;
     private final SqlDialect _dialect;
     private final FieldKey _containerFieldKey;
-    private final String _threadEntityIdSql;
+    private final SQLFragment _threadEntityIdSql;
     private final User _user;
 
     /**
      * @param threadEntityIdSql unqualified expression yielding the EntityId of each row's thread
      * @param permission permission the user needs in a folder to see any of its rows
      */
-    SecureMessageBoardClause(DbSchema schema, ContainerFilter filter, FieldKey containerFieldKey, Class<? extends Permission> permission, String threadEntityIdSql, User user)
+    SecureMessageBoardClause(DbSchema schema, ContainerFilter filter, FieldKey containerFieldKey, Class<? extends Permission> permission, SQLFragment threadEntityIdSql, User user)
     {
         _containerClause = filter.createFilterClause(schema, containerFieldKey, permission);
         _dialect = schema.getSqlDialect();
@@ -115,31 +115,28 @@ class SecureMessageBoardClause extends SimpleFilter.FilterClause
     @Override
     public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
     {
-        SQLFragment sql = new SQLFragment("(").append(_containerClause.toSQLFragment(columnMap, dialect)).append(")");
+        SQLFragment sql = SQLFragment.unsafe("(").append(_containerClause.toSQLFragment(columnMap, dialect)).unsafeAppend(")");
 
         List<String> hidden = getRestrictedFolders().hidden();
         List<String> memberListOnly = getRestrictedFolders().memberListOnly();
 
-        String containerColumn = _containerFieldKey.toString();
-
         if (!hidden.isEmpty())
         {
-            sql.append(" AND NOT ").append(containerColumn).appendInClause(hidden, _dialect);
+            sql.unsafeAppend(" AND NOT ").append(_containerFieldKey).appendInClause(hidden, _dialect);
         }
 
         if (!memberListOnly.isEmpty())
         {
             CommSchema comm = CommSchema.getInstance();
-            sql.append(" AND (NOT ").append(containerColumn).appendInClause(memberListOnly, _dialect);
-            sql.append(" OR ").append(_threadEntityIdSql).append(" IN (SELECT t.EntityId FROM ");
+            sql.unsafeAppend(" AND (NOT ").append(_containerFieldKey).appendInClause(memberListOnly, _dialect);
+            sql.unsafeAppend(" OR ").append(_threadEntityIdSql).unsafeAppend(" IN (SELECT t.EntityId FROM ");
             sql.append(comm.getTableInfoThreads(), "t");
-            sql.append(" INNER JOIN ");
+            sql.unsafeAppend(" INNER JOIN ");
             sql.append(comm.getTableInfoMemberList(), "ul");
-            sql.append(" ON ul.MessageId = t.LatestId WHERE ul.UserId = ?");
-            sql.add(_user.getUserId());
+            sql.unsafeAppend(" ON ul.MessageId = t.LatestId WHERE ul.UserId = ?", _user.getUserId());
             // Lets the planner restrict the Threads view's aggregation to these folders
-            sql.append(" AND t.Container").appendInClause(memberListOnly, _dialect);
-            sql.append("))");
+            sql.unsafeAppend(" AND t.Container").appendInClause(memberListOnly, _dialect);
+            sql.unsafeAppend("))");
         }
 
         return sql;

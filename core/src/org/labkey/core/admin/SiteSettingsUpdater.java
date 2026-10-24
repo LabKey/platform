@@ -187,6 +187,8 @@ public class SiteSettingsUpdater
             reject(errors, memoryUsageDumpInterval, "Memory logging frequency must be non-negative");
         if (isChanged(scriptExecutionTimeout) && mergedInt(scriptExecutionTimeout) < 0)
             reject(errors, scriptExecutionTimeout, "Script execution timeout must be non-negative; set to 0 to disable the timeout");
+        if (isChanged(assayTransformScriptTimeout) && mergedInt(assayTransformScriptTimeout) < 0)
+            reject(errors, assayTransformScriptTimeout, "Assay transform script timeout must be non-negative; set to 0 to disable the timeout");
 
         if (isChanged(baseServerURL) || isChanged(sslRequired))
         {
