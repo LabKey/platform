@@ -31,8 +31,6 @@ import java.util.List;
 
 /**
  * Responsible for executing SQL scripts as part of module install or upgrade at server startup-time.
- * User: arauch
- * Date: Jun 14, 2005
  */
 public class SqlScriptRunner
 {
