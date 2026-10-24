@@ -2624,6 +2624,7 @@ public class SecurityManager
                 
                 The ^siteShortName^ home page is ^homePageURL^.""";
 
+        @SuppressWarnings("unused") // Called via reflection from EmailTemplateService
         public PasswordResetEmailTemplate()
         {
             this("Reset password", DEFAULT_SUBJECT, DEFAULT_BODY);
@@ -2637,6 +2638,7 @@ public class SecurityManager
 
     public static class PasswordResetAdminEmailTemplate extends PasswordResetEmailTemplate
     {
+        @SuppressWarnings("unused") // Called via reflection from EmailTemplateService
         public PasswordResetAdminEmailTemplate()
         {
             super("Reset password (bcc to admin)", "^recipient^ : " + DEFAULT_SUBJECT, "The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
