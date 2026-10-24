@@ -30,13 +30,17 @@ public class UsageMetricGroup extends UsageMetrics
 
     public UsageMetricGroup put(@NotNull String key, @Nullable Object value)
     {
-        getMutableValues().put(key, value);
+        Map<String, Object> values = getMutableValues();
+        if (values != null)
+            values.put(key, value);
         return this;
     }
 
     public UsageMetricGroup putAll(@NotNull Map<String, ?> values)
     {
-        getMutableValues().putAll(values);
+        Map<String, Object> mutable = getMutableValues();
+        if (mutable != null)
+            mutable.putAll(values);
         return this;
     }
 

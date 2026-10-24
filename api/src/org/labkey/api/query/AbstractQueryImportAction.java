@@ -1002,24 +1002,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static void addImportValidationErrorMetric(QueryUpdateService.InsertOption insertOption, @Nullable TableInfo target, @Nullable String queryName)
     {
-        String featureArea = getValidationErrorFeatureArea(insertOption);
+        QueryMetricArea featureArea = QueryMetricArea.validationErrors(insertOption);
         String targetType = null;
         if (target != null)
             targetType = getMetricPrefix(target);
         else if (queryName != null)
             targetType = queryName.equalsIgnoreCase("materials") ? "samples" : queryName;
         if (targetType != null)
-            SimpleMetricsService.get().increment("query", featureArea, targetType);
-    }
-
-    public static String getValidationErrorFeatureArea(QueryUpdateService.InsertOption insertOption)
-    {
-        return insertOption.toString().toLowerCase() + "FailWithValidationError";
-    }
-
-    public static String getRowCountFeatureArea(QueryUpdateService.InsertOption insertOption)
-    {
-        return "file" + StringUtils.capitalize(insertOption.toString().toLowerCase()) + "Counts";
+            SimpleMetricsService.get().increment(featureArea, targetType);
     }
 
     private static String getMetricPrefix(@NotNull TableInfo target)
@@ -1030,16 +1020,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static void incrementRowCountMetric(int count, QueryUpdateService.InsertOption insertOption, String prefix)
     {
-        String featureArea = getRowCountFeatureArea(insertOption);
+        QueryMetricArea featureArea = QueryMetricArea.rowCounts(insertOption);
         String lcPrefix = prefix.toLowerCase();
         if (count <= 1000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "1to1000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "1to1000");
         else if (count <= 5000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "1001to5000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "1001to5000");
         else if (count <= 10000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "5001to10000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "5001to10000");
         else
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "GT10000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "GT10000");
     }
 
 

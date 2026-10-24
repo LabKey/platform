@@ -200,8 +200,6 @@ public class ExperimentModule extends SpringModule
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
-    // Usage metric descriptions shared by the branches that report a key and the ones that only describe it
-
     public static final String AMOUNT_AND_UNIT_UPGRADE_PROP = "AmountAndUnitAudit";
     public static final String TRANSACTION_ID_PROP = "AuditTransactionId";
     public static final String AUDIT_COUNT_PROP = "AuditRecordCount";

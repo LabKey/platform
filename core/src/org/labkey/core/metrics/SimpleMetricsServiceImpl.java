@@ -189,7 +189,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         getModuleMetrics(module); // Registers the provider so the description is reported before anything is counted
         String existing = _featureAreaDescriptions.computeIfAbsent(module.getName(), k -> new ConcurrentHashMap<>()).putIfAbsent(featureArea, description);
         if (existing != null && !existing.equals(description))
-            throw new IllegalStateException("Feature area " + module.getName() + "." + featureArea + " is described inconsistently: \"" + existing + "\" vs. \"" + description + "\"");
+            UsageMetrics.reportInconsistentDescription("Feature area " + module.getName() + "." + featureArea + " is described inconsistently: \"" + existing + "\" vs. \"" + description + "\"");
     }
 
     @Override

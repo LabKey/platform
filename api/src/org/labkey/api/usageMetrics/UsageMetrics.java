@@ -15,10 +15,13 @@
  */
 package org.labkey.api.usageMetrics;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -33,6 +36,8 @@ import java.util.function.Supplier;
  */
 public class UsageMetrics
 {
+    private static final Logger LOG = LogHelper.getLogger(UsageMetrics.class, "Usage metric descriptions");
+
     public enum Kind
     {
         /** Recomputed from current data at each report */
@@ -69,25 +74,26 @@ public class UsageMetrics
     public UsageMetrics put(@NotNull String key, @Nullable Object value, @NotNull String description, @NotNull Kind kind)
     {
         describe(key, description, kind);
-        getMutableValues().put(key, value);
+        if (_values != null)
+            _values.put(key, value);
         return this;
     }
 
-    /** Calls the supplier only when values are reported, so a {@code reportedIf(false)} view skips the work */
-    public UsageMetrics put(@NotNull String key, @NotNull Supplier<?> value, @NotNull String description)
+    /** Calls the supplier only when values are reported, so a {@code reportedIf(false)} view skips the work. A literal null value resolves here. */
+    public UsageMetrics put(@NotNull String key, @Nullable Supplier<?> value, @NotNull String description)
     {
         return put(key, value, description, Kind.CURRENT);
     }
 
-    public UsageMetrics put(@NotNull String key, @NotNull Supplier<?> value, @NotNull String description, @NotNull Kind kind)
+    public UsageMetrics put(@NotNull String key, @Nullable Supplier<?> value, @NotNull String description, @NotNull Kind kind)
     {
         describe(key, description, kind);
         if (_values != null)
-            _values.put(key, value.get());
+            _values.put(key, value == null ? null : value.get());
         return this;
     }
 
-    /** @return this, or if not reported, a view at the same path that only describes what's put into it, groups included */
+    /** @return this, or if not reported, a view at the same path that describes what's put into it and drops the values, groups included */
     public UsageMetrics reportedIf(boolean reported)
     {
         return reported ? this : new UsageMetrics(_path, null, _descriptions);
@@ -104,8 +110,16 @@ public class UsageMetrics
         Description added = new Description(describedPath(key), description, kind);
         Description existing = _descriptions.putIfAbsent(added.path(), added);
         if (existing != null && !existing.equals(added))
-            throw new IllegalStateException("Usage metric " + added.path() + " is described inconsistently: " + existing + " vs. " + added);
+            reportInconsistentDescription("Usage metric " + added.path() + " is described inconsistently: " + existing + " vs. " + added);
         return this;
+    }
+
+    /** Throws in dev mode; otherwise warns and keeps the first description, so a wording mismatch can't break startup or a report */
+    public static void reportInconsistentDescription(@NotNull String message)
+    {
+        if (AppProps.getInstance().isDevMode())
+            throw new IllegalStateException(message);
+        LOG.warn(message);
     }
 
     /** Adds a nested object whose children, including keys only known at runtime, share this description */
@@ -120,7 +134,7 @@ public class UsageMetrics
         return addGroup(key);
     }
 
-    /** Describes a nested object without reporting it. Its children can be described, but not given values. */
+    /** Describes a nested object without reporting it. Its children can be described; values put into it are dropped. */
     public UsageMetricGroup describeGroup(@NotNull String key, @NotNull String description)
     {
         return describeGroup(key, description, Kind.CURRENT);
@@ -137,7 +151,7 @@ public class UsageMetrics
         if (_values == null)
             return new UsageMetricGroup(childPath(key), null, _descriptions);
         Map<String, Object> child = new LinkedHashMap<>();
-        getMutableValues().put(key, child);
+        _values.put(key, child);
         return new UsageMetricGroup(childPath(key), child, _descriptions);
     }
 
@@ -154,10 +168,9 @@ public class UsageMetrics
         return _path == null ? key : _path + "." + key;
     }
 
-    Map<String, Object> getMutableValues()
+    /** @return null for a view that's only described */
+    @Nullable Map<String, Object> getMutableValues()
     {
-        if (_values == null)
-            throw new IllegalStateException("Usage metric group " + _path + " is only described, so it can't hold values");
         return _values;
     }
 
@@ -250,8 +263,9 @@ public class UsageMetrics
                 new Description("perFolder", "Folder counts", Kind.CURRENT),
                 new Description("perFolder.runs", "Runs", Kind.CURRENT)),
                 metrics.getDescriptions());
-            assertThrows(IllegalStateException.class, () -> absent.put("runs", 1L));
-            assertThrows(IllegalStateException.class, () -> absent.put("runs", 1L, "Runs"));
+            absent.put("runs", 1L);
+            absent.put("runs", 1L, "Runs");
+            assertEquals(Map.of(), metrics.getValues());
         }
 
         @Test
@@ -266,9 +280,15 @@ public class UsageMetrics
             colors.reportedIf(false).put("archived", () -> 2L, "Archived colors");
             UsageMetricGroup absent = metrics.reportedIf(false).group("absent", "Absent group");
             absent.group("child", "Absent child").describe("leaf", "Leaf");
-            assertThrows(IllegalStateException.class, () -> absent.put("x", 1L));
+            absent.put("x", 1L);
+            metrics.reportedIf(false).put("plain", 3L, "Plain value");
+            metrics.put("none", null, "Null value");
 
-            assertEquals(Map.of("shown", 1L, "colors", Map.of("count", 0L)), metrics.getValues());
+            Map<String, Object> expected = new LinkedHashMap<>();
+            expected.put("shown", 1L);
+            expected.put("colors", Map.of("count", 0L));
+            expected.put("none", null);
+            assertEquals(expected, metrics.getValues());
             assertEquals(List.of(
                 new Description("shown", "Shown", Kind.CURRENT),
                 new Description("hidden", "Hidden", Kind.CUMULATIVE),
@@ -277,7 +297,9 @@ public class UsageMetrics
                 new Description("colors.archived", "Archived colors", Kind.CURRENT),
                 new Description("absent", "Absent group", Kind.CURRENT),
                 new Description("absent.child", "Absent child", Kind.CURRENT),
-                new Description("absent.child.leaf", "Leaf", Kind.CURRENT)),
+                new Description("absent.child.leaf", "Leaf", Kind.CURRENT),
+                new Description("plain", "Plain value", Kind.CURRENT),
+                new Description("none", "Null value", Kind.CURRENT)),
                 metrics.getDescriptions());
         }
     }

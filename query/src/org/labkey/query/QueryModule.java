@@ -276,13 +276,7 @@ public class QueryModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        SimpleMetricsService simpleMetrics = SimpleMetricsService.get();
-        simpleMetrics.describeFeatureAreas(QueryMetricArea.values());
-        for (QueryUpdateService.InsertOption option : QueryUpdateService.InsertOption.values())
-        {
-            simpleMetrics.describeFeatureArea(getName(), AbstractQueryImportAction.getRowCountFeatureArea(option), "Completed query imports (file, pasted text, background job, or other server code) using this insert option, by lowercase target schema name plus row-count bucket (1to1000, 1001to5000, 5001to10000, GT10000)");
-            simpleMetrics.describeFeatureArea(getName(), AbstractQueryImportAction.getValidationErrorFeatureArea(option), "Query imports using this insert option that failed with validation errors, by target schema name, or query name when the table is unresolved (materials as samples)");
-        }
+        SimpleMetricsService.get().describeFeatureAreas(QueryMetricArea.values());
 
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER, ContainerManager.ContainerListener.Order.Last);
 
