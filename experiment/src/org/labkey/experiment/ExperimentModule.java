@@ -139,6 +139,7 @@ import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
 import org.labkey.experiment.api.SampleProvidedAmountAuditTestCase;
+import org.labkey.experiment.api.SampleTypeFilterSuggestionProvider;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.UniqueValueCounterTestCase;
 import org.labkey.experiment.api.VocabularyDomainKind;
@@ -259,6 +260,7 @@ public class ExperimentModule extends SpringModule
         QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), JdbcType.BOOLEAN, 2, 3);
         QueryService.get().addQueryListener(new ExperimentQueryChangeListener());
         QueryService.get().addQueryListener(new PropertyQueryChangeListener());
+        QueryService.get().registerFilterSuggestionProvider(new SampleTypeFilterSuggestionProvider());
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
@@ -1134,6 +1136,7 @@ public class ExperimentModule extends SpringModule
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
             SampleProvidedAmountAuditTestCase.class,
+            SampleTypeFilterSuggestionProvider.TestCase.class,
             SampleTypeServiceImpl.TestCase.class,
             SpecialCharacterMetricsMaintenanceTask.TestCase.class,
             StorageNameGenerator.TestCase.class,

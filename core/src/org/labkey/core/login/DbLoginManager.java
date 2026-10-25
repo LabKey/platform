@@ -147,7 +147,7 @@ public class DbLoginManager implements DbLoginService
         try
         {
             if (clearVerification)
-                LoginManager.setVerification(affectedUser, null);
+                LoginManager.clearVerification(affectedUser);
             UserManager.addToUserHistory(affectedUser, auditMessage);
         }
         catch (SecurityManager.UserManagementException e)
