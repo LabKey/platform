@@ -4960,6 +4960,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // Deleted rowIds by sample type LSID, so materialized views can drop just those rows; too many to track forces a full pass.
             Map<String, Set<Long>> deletedRowIds = new HashMap<>();
+            Map<Container, Set<Long>> changedSampleTypeIds = new HashMap<>();
             Set<String> untrackedDeletes = new HashSet<>();
 
             // Document IDs to tell the search indexer should be deleted. Do this at the end to make sure the transaction
@@ -4989,6 +4990,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
 
                     docids.add(material.getDocumentId());
+                    ExpSampleType materialSampleType = stDeleteFrom != null ? stDeleteFrom : material.getSampleType();
+                    Set<Long> containerSampleTypeIds = changedSampleTypeIds.computeIfAbsent(material.getContainer(), _ -> new HashSet<>());
+                    if (materialSampleType != null)
+                        containerSampleTypeIds.add(materialSampleType.getRowId());
 
                     if (null == stDeleteFrom)
                     {
@@ -5183,9 +5188,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 () -> SearchService.get().deleteResources(docids),
                 POSTCOMMIT);
 
-            // Notify connected clients that sample data changed so cached "insights" counts can be flagged stale.
-            // Deletes don't go through onSamplesChanged, so the notification is fired here.
-            transaction.addCommitTask(new SampleChangeNotify.FireSampleDataChangedTask(container), POSTCOMMIT);
+            // Deletes don't go through onSamplesChanged, so sample count listeners and clients are notified here
+            changedSampleTypeIds.forEach((changed, ids) -> new SampleChangeNotify.SampleDataChangedTask(changed).register(getExpSchema().getScope(), ids));
 
             transaction.commit();
             return deletedCount;
