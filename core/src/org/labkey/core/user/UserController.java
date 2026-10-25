@@ -1904,7 +1904,7 @@ public class UserController extends SpringActionController
                         {
                             if (!canUpdateUser)  // don't bother auditing admin password link clicks
                             {
-                                UserManager.auditEmailTimeout(loggedInUser.getUserId(), oldEmail, requestedEmail, verificationToken, getUser());
+                                UserManager.auditEmailTimeout(loggedInUser.getUserId(), oldEmail, requestedEmail, getUser());
                             }
                             errors.reject(ERROR_MSG, "This verification link has expired. Please try to change your email address again.");
                         }
@@ -1915,15 +1915,15 @@ public class UserController extends SpringActionController
                         {
                             if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                             {
-                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), verificationToken, loggedInUser);
+                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), loggedInUser);
                             }
                             errors.reject(ERROR_MSG, "Verification was incorrect. Make sure you've copied the entire link into your browser's address bar.");  // double error, to better explain to user
                         }
-                        else if (!verificationToken.equals(verifyEmail.verification()))
+                        else
                         {
                             if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                             {
-                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), verificationToken, loggedInUser);
+                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), loggedInUser);
                             }
                         }
                     }
@@ -2028,7 +2028,7 @@ public class UserController extends SpringActionController
                         verifyLinkUrl.addParameter("verificationToken", verificationToken);
                         verifyLinkUrl.addParameter("isFromVerifiedLink", true);
 
-                        SecurityManager.sendEmail(c, userToChange, getRequestEmailMessage(userEmail, validRequestedEmail.getEmailAddress()), validRequestedEmail.getEmailAddress(), verifyLinkUrl);
+                        SecurityManager.sendEmail(c, userToChange, getRequestEmailMessage(userEmail, validRequestedEmail.getEmailAddress()), validRequestedEmail.getEmailAddress(), verifyLinkUrl, LoginManager.EMAIL_CHANGE_LINK_TIMEOUT);
                     }
                     else
                     {
@@ -2377,7 +2377,7 @@ public class UserController extends SpringActionController
                 "You recently requested a change to the email address associated with your account on the " +
                 "^organizationName^ ^siteShortName^ Web Site. If you did not issue this request, you can ignore this email.\n\n" +
                 "To complete the process of changing your account's email address from ^currentEmailAddress^ to ^newEmailAddress^, " +
-                "simply click the link below or copy it to your browser's address bar.\n\n" +
+                "simply click the link below or copy it to your browser's address bar.^linkExpiration| This link expires in %s.^\n\n" +
                 "^verificationURL^\n\n" +
                 "This step confirms that you are the owner of the new email account. After you click the link, you will need " +
                 "to use the new email address when logging into the server.";

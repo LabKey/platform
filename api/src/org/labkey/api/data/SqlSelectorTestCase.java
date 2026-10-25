@@ -51,13 +51,26 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         Map<Integer, Integer> identityMap = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId FROM comm.Announcements").getValueMap();
         assertTrue("Expected an identity map!", identityMap.entrySet().stream().allMatch(entry -> entry.getKey().equals(entry.getValue())));
 
-        // Verify that we can generate the supported execution plans
+        verifyExecutionPlans(selector);
+        verifyExecutionPlans(new SqlSelector(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT RowId FROM comm.Announcements WHERE RowId > ?", 0)));
+    }
+
+    // Verify that we can generate the supported execution plans and that they contain neither the query nor its results
+    private void verifyExecutionPlans(SqlSelector selector)
+    {
         for (SqlDialect.ExecutionPlanType type : SqlDialect.ExecutionPlanType.values())
         {
             if (CoreSchema.getInstance().getSqlDialect().canShowExecutionPlan(type))
             {
                 Collection<String> executionPlan = selector.getExecutionPlan(type);
-                assertFalse(executionPlan.isEmpty());
+                assertFalse(type + " plan is empty", executionPlan.isEmpty());
+
+                for (String line : executionPlan)
+                {
+                    String trimmed = line.trim();
+                    assertFalse(type + " plan repeats the query: " + line, trimmed.toUpperCase().startsWith("SELECT"));
+                    assertFalse(type + " plan contains a data row: " + line, trimmed.matches("\\d+"));
+                }
             }
         }
     }
