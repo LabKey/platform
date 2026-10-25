@@ -147,6 +147,23 @@ public class TracedOperation implements AutoCloseable
         return new Builder(operationName);
     }
 
+    /**
+     * Tags the active span, usually the request's, for work that has no span of its own.
+     * Numbers stay numeric so Datadog can aggregate them.
+     */
+    public static void tagActiveSpan(@NotNull String name, @NotNull Object value)
+    {
+        Span span = GlobalTracer.get().activeSpan();
+        if (span == null)
+            return;
+        switch (value)
+        {
+            case Number n -> span.setTag(name, n);
+            case Boolean b -> span.setTag(name, b);
+            default -> span.setTag(name, value.toString());
+        }
+    }
+
     private TracedOperation(Builder builder)
     {
         Tracer tracer = GlobalTracer.get();
@@ -183,6 +200,20 @@ public class TracedOperation implements AutoCloseable
     public TracedOperation container(@Nullable Container c)
     {
         return tag(CONTAINER_TAG, null == c ? null : c.getPath());
+    }
+
+    /** Unlike tag(), keeps the value numeric so Datadog can compute percentiles over it */
+    public TracedOperation measure(@NotNull String name, @Nullable Number value)
+    {
+        if (value != null)
+            _span.setTag(name, value);
+        return this;
+    }
+
+    /** For operations with no row count */
+    public void completed()
+    {
+        _completed = true;
     }
 
     public void completed(int rows)
@@ -269,7 +300,14 @@ public class TracedOperation implements AutoCloseable
                 op.committed(false);
                 op.close();
             }
+            try (TracedOperation op = TracedOperation.builder("labkey.test").start())
+            {
+                op.measure("labkey.test.ms", 5L).measure("labkey.test.ratio", 0.5).measure("labkey.test.none", null).completed();
+            }
             TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(() -> {});
+            TracedOperation.tagActiveSpan("labkey.test.count", 1);
+            TracedOperation.tagActiveSpan("labkey.test.flag", true);
+            TracedOperation.tagActiveSpan("labkey.test.name", "a");
         }
     }
 }

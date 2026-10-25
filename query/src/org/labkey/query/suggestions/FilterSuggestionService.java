@@ -41,6 +41,7 @@ import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.query.suggestions.SuggestionColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
@@ -172,7 +173,11 @@ public class FilterSuggestionService
             complete = false;
         }
 
-        return new FilterSuggestionsResponse(FilterSuggestionRanker.rank(term, columns, getMaxSuggestions(request)), complete);
+        List<FilterSuggestion> suggestions = FilterSuggestionRanker.rank(term, columns, getMaxSuggestions(request));
+        TracedOperation.tagActiveSpan("labkey.query", table.getPublicSchemaName() + "." + table.getPublicName());
+        TracedOperation.tagActiveSpan("labkey.suggestion.count", suggestions.size());
+        TracedOperation.tagActiveSpan("labkey.suggestion.complete", complete);
+        return new FilterSuggestionsResponse(suggestions, complete);
     }
 
     /** The first non-null token from a provider that handles the table; null keeps its facts per user. */

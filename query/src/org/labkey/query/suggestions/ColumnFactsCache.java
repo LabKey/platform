@@ -39,6 +39,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -59,9 +60,11 @@ import org.labkey.api.util.HashHelpers;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,6 +113,7 @@ public class ColumnFactsCache
     private static final int MAX_CONCURRENT_LOADS = 4;
     // Beyond this, bursts of keystrokes across tables return what's cached rather than queueing more scans
     private static final int MAX_PENDING_LOADS = 100;
+    private static final String OUTCOME_TAG = "labkey.suggestion.outcome";
 
     private static final ColumnFactsCache INSTANCE = new ColumnFactsCache(
         CacheManager.getCache(String.class, CacheManager.DEFAULT_CACHE_SIZE, TOKEN_TTL, "Grid search suggestion facts"),
@@ -133,11 +137,25 @@ public class ColumnFactsCache
 
     private enum Kind { RANGE, INT, STRING, LOOKUP }
 
+    private enum FactState
+    {
+        READY, PENDING, FAILED;
+
+        static FactState of(@Nullable ColumnFact fact)
+        {
+            if (fact == null)
+                return PENDING;
+            if (fact instanceof ColumnFact.Failed)
+                return FAILED;
+            return READY;
+        }
+    }
+
     /**
      * A table read in one container scope with one set of parameters and one filter.
      * @param owner the change token when shared, else the user plus any change token
      */
-    record Scope(TableInfo table, Map<String, Object> parameters, @Nullable SimpleFilter filter, String name, String scopeHash, String owner, long ttl)
+    record Scope(TableInfo table, Map<String, Object> parameters, @Nullable SimpleFilter filter, String name, String scopeHash, String owner, boolean shared, long ttl)
     {
         /** @param shared whether the entries are shared across users, which requires a token */
         static Scope create(TableInfo table, ContainerFilter containerFilter, Container container, User user, @Nullable String token, boolean shared,
@@ -164,12 +182,12 @@ public class ColumnFactsCache
                 ttl = NO_TOKEN_TTL;
             }
             String name = (table.getPublicSchemaName() + "/" + table.getPublicName()).toLowerCase(Locale.ROOT);
-            return new Scope(table, Collections.unmodifiableMap(sortedParameters), filter, name, scopeHash, owner, ttl);
+            return new Scope(table, Collections.unmodifiableMap(sortedParameters), filter, name, scopeHash, owner, shared, ttl);
         }
 
         Scope withName(String name)
         {
-            return new Scope(table, parameters, filter, name, scopeHash, owner, ttl);
+            return new Scope(table, parameters, filter, name, scopeHash, owner, shared, ttl);
         }
 
         String key(String kind, String fieldKey, @Nullable String columnToken)
@@ -263,7 +281,10 @@ public class ColumnFactsCache
                 plans.add(plan);
         }
         if (plans.isEmpty())
+        {
+            tagRequest(0, 0, 0, false);
             return true;
+        }
 
         List<CompletableFuture<Void>> loads = new ArrayList<>();
         // Columns with their own token get their own stats pass, so their entries follow that token
@@ -277,12 +298,30 @@ public class ColumnFactsCache
             if (plan.kind() == Kind.LOOKUP)
                 loads.add(loadLookup(plan, environment));
 
-        waitUntil(CompletableFuture.allOf(loads.toArray(CompletableFuture[]::new)), deadline);
+        boolean finished = waitUntil(CompletableFuture.allOf(loads.toArray(CompletableFuture[]::new)), deadline);
 
-        boolean complete = true;
+        int pending = 0;
+        int failed = 0;
         for (Plan plan : plans)
-            complete &= apply(plan);
-        return complete;
+        {
+            switch (apply(plan))
+            {
+                case PENDING -> pending++;
+                case FAILED -> failed++;
+                case READY -> {}
+            }
+        }
+        tagRequest(plans.size(), pending, failed, !finished);
+        return pending == 0;
+    }
+
+    /** Tags the request's span with how many columns' facts were ready, since the loads run in traces of their own */
+    private static void tagRequest(int columns, int pending, int failed, boolean budgetExhausted)
+    {
+        TracedOperation.tagActiveSpan("labkey.suggestion.columns", columns);
+        TracedOperation.tagActiveSpan("labkey.suggestion.columns_pending", pending);
+        TracedOperation.tagActiveSpan("labkey.suggestion.columns_failed", failed);
+        TracedOperation.tagActiveSpan("labkey.suggestion.budget_exhausted", budgetExhausted);
     }
 
     /** Whether the column's facts can follow the table's token, which shares them across users */
@@ -403,7 +442,7 @@ public class ColumnFactsCache
     {
         Map<String, Plan> byKey = new LinkedHashMap<>();
         group.forEach(plan -> byKey.put(plan.statsKey(), plan));
-        return ensure(byKey.keySet(), scope.ttl(), environment, scope.name(), keys -> {
+        return ensure(byKey.keySet(), scope, "stats", environment, keys -> {
             List<Plan> missing = keys.stream().map(byKey::get).toList();
             List<StatsRequest> requests = missing.stream()
                 .map(plan -> new StatsRequest(plan.info(), plan.kind() != Kind.STRING, plan.kind() != Kind.RANGE))
@@ -440,7 +479,7 @@ public class ColumnFactsCache
     {
         String key = plan.valuesKey();
         ColumnInfo column = plan.lookupDisplay() != null ? plan.lookupDisplay() : plan.info();
-        return ensure(List.of(key), scope.ttl(), environment, scope.name(),
+        return ensure(List.of(key), scope, "values", environment,
             _ -> Map.of(key, _source.loadValues(scope.table(), column, plan.column().getType(), scope.parameters(), scope.filter())));
     }
 
@@ -451,7 +490,7 @@ public class ColumnFactsCache
 
         Map<String, Plan> byKey = new LinkedHashMap<>();
         plans.forEach(plan -> byKey.put(plan.shapesKey(), plan));
-        return ensure(byKey.keySet(), scope.ttl(), environment, scope.name(), keys -> {
+        return ensure(byKey.keySet(), scope, "shapes", environment, keys -> {
             List<Plan> missing = keys.stream().map(byKey::get).toList();
             Map<FieldKey, ColumnFact.Shapes> shapes = _source.loadShapes(scope.table(), missing.stream().map(Plan::shapesColumn).toList(), scope.parameters(), scope.filter());
             Map<String, ColumnFact> facts = new HashMap<>();
@@ -477,7 +516,7 @@ public class ColumnFactsCache
      * Starts one background load for the keys that are neither cached nor already loading.
      * @return completes once every key has been loaded or failed, or at once if the load couldn't be queued
      */
-    private CompletableFuture<Void> ensure(Collection<String> keys, long ttl, Object environment, String description, Function<Set<String>, Map<String, ColumnFact>> load)
+    private CompletableFuture<Void> ensure(Collection<String> keys, Scope scope, String kind, Object environment, Function<Set<String>, Map<String, ColumnFact>> load)
     {
         CompletableFuture<Void> future = new CompletableFuture<>();
         List<CompletableFuture<Void>> waits = new ArrayList<>();
@@ -497,7 +536,7 @@ public class ColumnFactsCache
 
         if (!claimed.isEmpty())
         {
-            if (submit(claimed, ttl, environment, description, load, future))
+            if (submit(claimed, scope, kind, environment, load, future))
             {
                 waits.add(future);
             }
@@ -510,7 +549,7 @@ public class ColumnFactsCache
         return CompletableFuture.allOf(waits.toArray(CompletableFuture[]::new));
     }
 
-    private boolean submit(Set<String> keys, long ttl, Object environment, String description, Function<Set<String>, Map<String, ColumnFact>> load, CompletableFuture<Void> future)
+    private boolean submit(Set<String> keys, Scope scope, String kind, Object environment, Function<Set<String>, Map<String, ColumnFact>> load, CompletableFuture<Void> future)
     {
         if (_pending.incrementAndGet() > MAX_PENDING_LOADS)
         {
@@ -518,9 +557,12 @@ public class ColumnFactsCache
             return false;
         }
 
+        long queuedAt = System.nanoTime();
         Runnable task = () -> {
-            try
+            try (TracedOperation op = startLoad(scope, kind))
             {
+                op.measure("labkey.suggestion.queue_ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - queuedAt));
+                op.measure("labkey.suggestion.facts", keys.size());
                 QueryService.get().copyEnvironment(environment);
                 Map<String, ColumnFact> facts;
                 ColumnFact failure;
@@ -528,23 +570,32 @@ public class ColumnFactsCache
                 {
                     facts = load.apply(keys);
                     failure = new ColumnFact.Failed("Not returned by the load");
+                    op.tag(OUTCOME_TAG, "loaded");
+                    op.completed();
                 }
                 catch (RuntimeException e)
                 {
-                    if (e instanceof QueryService.NamedParameterNotProvided)
-                        LOG.debug("Unable to load grid search facts for {}", description, e);
+                    // Outside shutdown, the statement timeout is the only thing that cancels a load's query
+                    boolean timedOut = isCancel(e);
+                    // A timeout already logs at INFO when the operation closes, since it always runs past the slow threshold
+                    if (e instanceof QueryService.NamedParameterNotProvided || timedOut)
+                        LOG.debug("Unable to load grid search facts for {}", scope.name(), e);
                     else
-                        LOG.warn("Unable to load grid search facts for {}: {}", description, e.getMessage());
+                        LOG.warn("Unable to load grid search facts for {}: {}", scope.name(), e.getMessage());
                     facts = Map.of();
                     failure = new ColumnFact.Failed(Objects.toString(e.getMessage(), e.getClass().getName()));
+                    if (timedOut)
+                        op.tag(OUTCOME_TAG, "timed_out");
+                    else
+                        op.tag(OUTCOME_TAG, "failed");
                 }
                 for (String key : keys)
                 {
                     ColumnFact fact = facts.get(key);
                     if (fact != null)
-                        _cache.put(key, fact, ttl);
+                        _cache.put(key, fact, scope.ttl());
                     else
-                        _cache.put(key, failure, Math.min(ttl, NO_TOKEN_TTL));
+                        _cache.put(key, failure, Math.min(scope.ttl(), NO_TOKEN_TTL));
                 }
             }
             finally
@@ -570,7 +621,38 @@ public class ColumnFactsCache
         }
     }
 
-    private static void waitUntil(CompletableFuture<Void> loads, long deadline)
+    /** A span of its own, since a load outlives the request that started it */
+    private static TracedOperation startLoad(Scope scope, String kind)
+    {
+        TableInfo table = scope.table();
+        String resource = kind;
+        String schema = TracedOperation.boundedSchemaName(table.getPublicSchemaName());
+        if (schema != null)
+            resource += " " + schema;
+        Container container = null;
+        if (table.getUserSchema() != null)
+            container = table.getUserSchema().getContainer();
+        return TracedOperation.builder("labkey.suggestionFacts")
+            .resource(resource)
+            .describedAs("grid search " + kind + " facts for " + scope.name())
+            .tag("labkey.query", table.getPublicSchemaName() + "." + table.getPublicName())
+            .tag("labkey.suggestion.shared", scope.shared())
+            .container(container)
+            .start();
+    }
+
+    private static boolean isCancel(Throwable t)
+    {
+        for (; t != null; t = t.getCause())
+        {
+            if (t instanceof SQLException e && SqlDialect.isCancelException(e))
+                return true;
+        }
+        return false;
+    }
+
+    /** @return whether the loads finished in time */
+    private static boolean waitUntil(CompletableFuture<Void> loads, long deadline)
     {
         try
         {
@@ -586,10 +668,11 @@ public class ColumnFactsCache
         {
             Thread.currentThread().interrupt();
         }
+        return loads.isDone();
     }
 
-    /** @return false when a fact the column needs hasn't loaded yet */
-    private boolean apply(Plan plan)
+    /** @return PENDING when a fact the column needs hasn't loaded yet */
+    private FactState apply(Plan plan)
     {
         SuggestionColumn column = plan.column();
         if (plan.kind() == Kind.LOOKUP)
@@ -609,26 +692,28 @@ public class ColumnFactsCache
                 column.setRange(s.min(), s.max());
         }
         if (!(stats instanceof ColumnFact.Stats s) || s.distinctCount() == null)
-            return stats != null;
+            return FactState.of(stats);
         if (s.distinctCount() <= DISTINCT_VALUE_LIMIT)
             return applyValues(plan);
-        return plan.kind() != Kind.STRING || applyShapes(plan);
+        if (plan.kind() != Kind.STRING)
+            return FactState.READY;
+        return applyShapes(plan);
     }
 
-    private boolean applyValues(Plan plan)
+    private FactState applyValues(Plan plan)
     {
         ColumnFact values = _cache.get(plan.valuesKey());
         if (values instanceof ColumnFact.Values v && !v.isOverflow())
             plan.column().setValues(v.values());
-        return values != null;
+        return FactState.of(values);
     }
 
-    private boolean applyShapes(Plan plan)
+    private FactState applyShapes(Plan plan)
     {
         ColumnFact shapes = _cache.get(plan.shapesKey());
         if (shapes instanceof ColumnFact.Shapes s)
             plan.column().setShapes(s.shapes());
-        return shapes != null;
+        return FactState.of(shapes);
     }
 
     /** For tests: the cached fact a request would read, or null. */
