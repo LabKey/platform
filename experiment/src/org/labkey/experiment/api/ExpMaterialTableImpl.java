@@ -1957,17 +1957,29 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _scope.executeWithRetryReadOnly((_) -> upsert(sql));
         }
 
+        private static final String MAX_ROW_ID = "(SELECT COALESCE(MAX(rowid), 0) FROM temp.${NAME})";
+
         /** Copy every sample missing from the view, including any committed after a higher rowid was already copied. */
         void executeIncrementalInsert()
         {
-            // CTE is preferred over filtering the view's query directly as it can read from the (cpastype, rowid) index alone
+            // Anti-join only below the view's max rowid: against a view analyzed while empty, the planner rescans it
+            // per new row, quadratic in the rows added. CTE is preferred over filtering the view's query directly as
+            // it can read from the (cpastype, rowid) index alone.
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
-            SQLFragment incremental = new SQLFragment()
+            SQLFragment lateCommits = new SQLFragment()
                     .unsafeAppend("WITH added AS (SELECT rowid FROM exp.material em WHERE em.cpastype = ").appendValue(_lsid, d)
+                    .unsafeAppend(" AND em.rowid <= (SELECT COALESCE(MAX(rowid), 0) FROM temp.${NAME})")
                     .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM temp.${NAME} t WHERE t.rowid = em.rowid))\n")
                     .unsafeAppend("INSERT INTO temp.${NAME}\n")
-                    .append(getViewSourceSql()).unsafeAppend(" AND m.rowId IN (SELECT rowid FROM added)");
-            upsertWithRetry(incremental);
+                    .append(getViewSourceSql())
+                    .unsafeAppend(" AND m.rowId IN (SELECT rowid FROM added)");
+            upsertWithRetry(lateCommits);
+
+            SQLFragment newRows = new SQLFragment()
+                    .unsafeAppend("INSERT INTO temp.${NAME}\n")
+                    .append(getViewSourceSql())
+                    .unsafeAppend(" AND m.rowId > (SELECT COALESCE(MAX(rowid), 0) FROM temp.${NAME})");
+            upsertWithRetry(newRows);
         }
 
         /** Delete the rows removed between two delete-counter tokens, falling back to a full pass if they weren't all logged. */
