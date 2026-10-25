@@ -200,6 +200,12 @@ public class TracedOperation implements AutoCloseable
         _completed = true;
     }
 
+    /** For work that reports no row count */
+    public void completed()
+    {
+        _completed = true;
+    }
+
     /** Leads the log line's summary in place of a row count, for work that ends in a status rather than rows */
     public TracedOperation outcome(@NotNull String outcome)
     {
