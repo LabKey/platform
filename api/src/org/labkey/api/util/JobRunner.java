@@ -151,7 +151,7 @@ public class JobRunner implements Executor
 
         synchronized (_jobs)
         {
-            Future<?> task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
+            Future<?> task = _executor.schedule(job::runJob, delay, TimeUnit.MILLISECONDS);
 
             job._task = task;
             _jobs.put(task, job);
