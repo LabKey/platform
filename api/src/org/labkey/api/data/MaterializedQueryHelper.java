@@ -98,6 +98,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             _fromSql = sql;
         }
 
+        public SQLFragment getFromSql()
+        {
+            return new SQLFragment(_fromSql);
+        }
+
         public void addUpToDateQuery(SQLFragment uptodate)
         {
             if (null != uptodate)

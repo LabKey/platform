@@ -1908,7 +1908,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 runIncremental("update", materialized.incrementalUpdateCheck, _ -> executeIncrementalUpdate(materialized.counters));
                 String rolledUpAfter = materialized.incrementalRollupCheck.snapshot();
                 runIncremental("rollup", materialized.incrementalRollupCheck, token -> executeIncrementalRollup(materialized.counters, rolledUpAfter, token));
-                runIncremental("insert", materialized.incrementalInsertCheck, _ -> executeIncrementalInsert());
+                runIncremental("insert", materialized.incrementalInsertCheck, _ -> executeIncrementalInsert(materialized));
             }
             catch (RuntimeException|InterruptedException ex)
             {
@@ -1958,25 +1958,33 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         /** Copy every sample missing from the view, including any committed after a higher rowid was already copied. */
-        void executeIncrementalInsert()
+        void executeIncrementalInsert(Materialized materialized)
         {
-            // Anti-join only below the view's max rowid: against a view analyzed while empty, the planner rescans it
-            // per new row, quadratic in the rows added. CTE is preferred over filtering the view's query directly as
-            // it can read from the (cpastype, rowid) index alone.
-            var d = CoreSchema.getInstance().getSchema().getSqlDialect();
-            SQLFragment lateCommits = new SQLFragment()
-                    .unsafeAppend("WITH added AS (SELECT rowid FROM exp.material em WHERE em.cpastype = ").appendValue(_lsid, d)
-                    .unsafeAppend(" AND em.rowid <= (SELECT COALESCE(MAX(rowid), 0) FROM temp.${NAME})")
-                    .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM temp.${NAME} t WHERE t.rowid = em.rowid))\n")
-                    .unsafeAppend("INSERT INTO temp.${NAME}\n")
-                    .append(getViewSourceSql())
-                    .unsafeAppend(" AND m.rowId IN (SELECT rowid FROM added)");
-            upsertWithRetry(lateCommits);
+            // Bound by the view's max rowid as a value: given a subquery instead, the planner can't estimate the range
+            // and scans the whole provisioned table. The caller's lock keeps the max stable across both statements.
+            SQLFragment maxSql = new SQLFragment("SELECT COALESCE(MAX(rowid), 0) FROM ").append(materialized.getFromSql());
+            long maxRowId = new SqlSelector(_scope, maxSql).getObject(Long.class);
+
+            // Anti-join only up to the max: against a view analyzed while empty, the planner rescans it per new row,
+            // quadratic in the rows added. CTE is preferred over filtering the view's query directly as it can read
+            // from the (cpastype, rowid) index alone.
+            if (maxRowId > 0)
+            {
+                var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+                SQLFragment lateCommits = new SQLFragment()
+                        .unsafeAppend("WITH added AS (SELECT rowid FROM exp.material em WHERE em.cpastype = ").appendValue(_lsid, d)
+                        .unsafeAppend(" AND em.rowid <= ?").add(maxRowId)
+                        .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM temp.${NAME} t WHERE t.rowid = em.rowid))\n")
+                        .unsafeAppend("INSERT INTO temp.${NAME}\n")
+                        .append(getViewSourceSql())
+                        .unsafeAppend(" AND m.rowId IN (SELECT rowid FROM added)");
+                upsertWithRetry(lateCommits);
+            }
 
             SQLFragment newRows = new SQLFragment()
                     .unsafeAppend("INSERT INTO temp.${NAME}\n")
                     .append(getViewSourceSql())
-                    .unsafeAppend(" AND m.rowId > (SELECT COALESCE(MAX(rowid), 0) FROM temp.${NAME})");
+                    .unsafeAppend(" AND m.rowId > ?").add(maxRowId);
             upsertWithRetry(newRows);
         }
 
