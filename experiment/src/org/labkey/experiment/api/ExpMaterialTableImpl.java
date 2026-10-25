@@ -1957,8 +1957,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _scope.executeWithRetryReadOnly((_) -> upsert(sql));
         }
 
-        private static final String MAX_ROW_ID = "(SELECT COALESCE(MAX(rowid), 0) FROM temp.${NAME})";
-
         /** Copy every sample missing from the view, including any committed after a higher rowid was already copied. */
         void executeIncrementalInsert()
         {
