@@ -21,17 +21,26 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.query.ExecuteSqlCommand;
+import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.TestProperties;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.components.ext4.Window;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.core.admin.ServerUsageUtils;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * Checks that an abandoned read-only request is canceled on the server end to end: the page tags the request, sends
@@ -40,18 +49,48 @@ import static org.junit.Assert.assertTrue;
 @Category({Daily.class})
 public class RequestCancellationTest extends BaseWebDriverTest
 {
-    // Runs for minutes with any module set, so it can only finish early by being canceled
     private static final String SLOW_SQL = "SELECT COUNT(*) AS n FROM core.Modules a, core.Modules b, core.Modules c, core.Modules d, core.Modules e, core.Modules f";
+    private static final String SLOW_NAMES = "SlowNames";
+    private static final String SLOW_NAMES_SQL = "SELECT a.Name, COUNT(*) AS n FROM core.Modules a, core.Modules b, core.Modules c, core.Modules d, core.Modules e, core.Modules f GROUP BY a.Name";
+    private static final String SLOW_STATS = "SlowStats";
+    private static final double SLOW_STATS_ROWS = 3e7;
     private static final int METRICS_TIMEOUT = 180_000;
     private static final String WS_MESSAGE = "wsMessage";
     private static final String WS_CLOSE = "wsClose";
     private static final String FEATURE_DISABLE_CANCELLING = "disableCancelAbandonedRequests";
 
     @BeforeClass
-    public static void setupProject()
+    public static void setupProject() throws Exception
     {
         RequestCancellationTest init = getCurrentTest();
         init._containerHelper.createProject(init.getProjectName(), null);
+        init.createQuery(init.getProjectName(), SLOW_NAMES, "core", SLOW_NAMES_SQL, null, false);
+        init.createQuery(init.getProjectName(), SLOW_STATS, "core", init.getSlowStatsSql(), null, false);
+    }
+
+    /**
+     * A cross join of core.Modules with about {@link #SLOW_STATS_ROWS} rows, since the module count varies by server.
+     * Limiting the last join to some modules sets the row count closely; a LIMIT would make Postgres build every row
+     * before the grid's first page.
+     */
+    private String getSlowStatsSql() throws IOException, CommandException
+    {
+        SelectRowsResponse response = new ExecuteSqlCommand("core", "SELECT Name FROM core.Modules ORDER BY Name")
+            .execute(createDefaultConnection(), getProjectName());
+        List<String> names = response.getRows().stream().map(row -> (String) row.get("Name")).toList();
+        int modules = names.size();
+        // Val needs three of them
+        int joins = Math.max(3, (int) Math.ceil(Math.log(SLOW_STATS_ROWS) / Math.log(modules)));
+        int lastJoinModules = (int) Math.min(modules, Math.ceil(SLOW_STATS_ROWS / Math.pow(modules, joins - 1)));
+
+        String from = IntStream.range(0, joins)
+            .mapToObj(i -> "core.Modules m" + i)
+            .collect(Collectors.joining(", "));
+        String lastJoinNames = names.subList(0, lastJoinModules).stream()
+            .map(name -> "'" + name.replace("'", "''") + "'")
+            .collect(Collectors.joining(", "));
+        return "SELECT m0.Name AS A, m1.Name AS B, CAST(LENGTH(m0.Name) * 10000 + LENGTH(m1.Name) * 100 + LENGTH(m2.Name) AS DOUBLE) AS Val" +
+            " FROM " + from + " WHERE m" + (joins - 1) + ".Name IN (" + lastJoinNames + ")";
     }
 
     @Before
@@ -65,14 +104,29 @@ public class RequestCancellationTest extends BaseWebDriverTest
     @Test
     public void testAbortedRequestIsCancelledOnServer() throws Exception
     {
+        abortSlowRequest("executeSql", Map.of("schemaName", "core", "sql", SLOW_SQL));
+    }
+
+    /** Unlike executeSql, which runs on the async query path, selectDistinct runs on the request thread */
+    @Test
+    public void testAbortedSelectDistinctIsCancelledOnServer() throws Exception
+    {
+        abortSlowRequest("selectDistinctRows", Map.of("schemaName", "core", "queryName", SLOW_NAMES, "column", "Name"));
+    }
+
+    /** GH Issue 1568 */
+    @Test
+    public void testClosingSummaryStatisticsCancelsItsQuery() throws Exception
+    {
         long before = getCancelCount(WS_MESSAGE);
 
-        assertTrue("Request wasn't tagged as cancellable", startSlowQuery());
-        sleep(2000); // Let the server start the request before the cancel arrives
-        executeScript("window.requestCancelTest.controller.abort();");
+        beginAt(WebTestHelper.buildURL("query", getProjectName(), "executeQuery", Map.of("schemaName", "core", "query.queryName", SLOW_STATS)));
+        waitForWebSocket();
+        DataRegionTable.DataRegion(getDriver()).withName("query").waitFor().clickColumnMenu("Val", false, "Summary Statistics...");
+        sleep(2000); // Let the server start the stats query before the dialog closes
+        // SummaryStatisticsDialog waits for the stats, which never arrive
+        new Window<>("Summary Statistics", getDriver()).clickButton("Cancel", true);
 
-        waitForEquals("Wrong request outcome", () -> "aborted",
-            () -> executeScript("return window.requestCancelTest.outcome;"), WAIT_FOR_JAVASCRIPT);
         waitForCancelCount(WS_MESSAGE, before + 1);
     }
 
@@ -84,7 +138,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
         doInNewTab(() -> {
             goToProjectHome();
             waitForWebSocket();
-            assertTrue("Request wasn't tagged as cancellable", startSlowQuery());
+            assertTrue("Request wasn't tagged as cancellable", startSlowRequest("executeSql", Map.of("schemaName", "core", "sql", SLOW_SQL)));
             sleep(2000); // Let the server start the request before the tab closes
             return null;
         });
@@ -95,6 +149,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
     @Test
     public void testOptOutDisablesCancelling()
     {
+        assumeFalse("An app admin can't change optional features", TestProperties.isPrimaryUserAppAdmin());
         Connection connection = createDefaultConnection();
         OptionalFeatureHelper.enableOptionalFeature(connection, FEATURE_DISABLE_CANCELLING);
         try
@@ -112,6 +167,19 @@ public class RequestCancellationTest extends BaseWebDriverTest
         }
     }
 
+    private void abortSlowRequest(String apiFunction, Map<String, Object> config) throws Exception
+    {
+        long before = getCancelCount(WS_MESSAGE);
+
+        assertTrue("Request wasn't tagged as cancellable", startSlowRequest(apiFunction, config));
+        sleep(2000); // Let the server start the request before the cancel arrives
+        executeScript("window.requestCancelTest.controller.abort();");
+
+        waitForEquals("Wrong request outcome", () -> "aborted",
+            () -> executeScript("return window.requestCancelTest.outcome;"), WAIT_FOR_JAVASCRIPT);
+        waitForCancelCount(WS_MESSAGE, before + 1);
+    }
+
     private boolean isCancellingEnabledOnPage()
     {
         return (Boolean) executeScript("return LABKEY.experimental.cancelAbandonedRequests === true;");
@@ -124,22 +192,21 @@ public class RequestCancellationTest extends BaseWebDriverTest
     }
 
     /**
-     * Starts {@link #SLOW_SQL} through LABKEY.Query.executeSql, which is cancellable by default
+     * Starts a request through a LABKEY.Query function that is cancellable by default, abortable through
+     * window.requestCancelTest.controller
      * @return whether the request was tagged for cancelling on the server
      */
-    private boolean startSlowQuery()
+    private boolean startSlowRequest(String apiFunction, Map<String, Object> config)
     {
         return (Boolean) executeScript("""
             const state = window.requestCancelTest = { controller: new AbortController(), outcome: null };
-            const xhr = LABKEY.Query.executeSql({
-                schemaName: 'core',
-                sql: arguments[0],
+            const xhr = LABKEY.Query[arguments[0]](Object.assign({
                 signal: state.controller.signal,
                 success: function() { state.outcome = 'succeeded'; },
                 failure: function(error, response) { state.outcome = LABKEY.Ajax.isAborted(response) ? 'aborted' : 'failed'; },
-            });
+            }, arguments[1]));
             return LABKEY.Ajax.getCancellableRequests().includes(xhr);
-            """, SLOW_SQL);
+            """, apiFunction, config);
     }
 
     private void waitForCancelCount(String metric, long expected)
