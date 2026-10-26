@@ -211,11 +211,14 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
         for (FileRoot root : FileRootManager.get().getFileRoots())
         {
+            // Skip cloud roots before resolving: resolution goes through CloudStoreService, which may be absent or misconfigured
+            if (isCloudFileRoot(root.getPath()))
+                continue;
             Container c = ContainerManager.getForId(root.getContainer());
             if (c == null || c.isRoot() || isUseDefaultRoot(c))
                 continue;
             java.nio.file.Path rootPath = getExistingFileRootPath(c);
-            if (rootPath != null && !FileUtil.hasCloudScheme(rootPath) && path.startsWith(rootPath) && (anchorPath == null || rootPath.startsWith(anchorPath)))
+            if (rootPath != null && path.startsWith(rootPath) && (anchorPath == null || rootPath.startsWith(anchorPath)))
             {
                 anchor = c;
                 anchorPath = rootPath;
