@@ -105,6 +105,7 @@ import org.labkey.api.data.dialect.PostgresSnapshot;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.data.queryprofiler.Query;
+import org.labkey.api.data.queryprofiler.QueryCounter;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
@@ -592,6 +593,7 @@ public class ApiModule extends CodeOnlyModule
             PostgresSnapshot.TestCase.class,
             PreparedTransform.TestCase.class,
             PropertyManager.TestCase.class,
+            QueryCounter.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
             QueryProfiler.ExecutionPlanUnavailableTestCase.class,
             QueryView.TestCase.class,
