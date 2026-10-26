@@ -2391,12 +2391,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /** Test seam: by sample type LSID, a queue that receives the search indexing persistRows queues */
     static final Map<String, SearchService.TaskIndexingQueue> _testIndexingQueues = new ConcurrentHashMap<>();
 
-    /** Queue the task POSTCOMMIT behind every task registered before commit, so it reads the view after the change's refresh signal. */
-    static void addLatePostCommitTask(DbScope scope, Runnable task)
-    {
-        scope.addCommitTask(() -> scope.addCommitTask(task, DbScope.CommitTaskOption.POSTCOMMIT), DbScope.CommitTaskOption.PRECOMMIT);
-    }
-
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
@@ -2416,7 +2410,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             DataIteratorBuilder dib = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, container, user, _ss.getImportAliasesIncludingAliquot())
                 .setFileLinkDirectory(SAMPLE_TYPE_FILE_DIRECTORY_NAME)
-                .setIndexFunction(searchIndexDataKeys -> addLatePostCommitTask(propertiesTable.getSchema().getScope(), () -> {
+                // LATE_POSTCOMMIT so indexing reads the materialized view after this change's POSTCOMMIT refresh signal
+                .setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
+                        // Built once per commit, not per batch, and shared by every batch's indexing
+                        UserSchema searchSchema = QueryService.get().getUserSchema(User.getSearchUser(), container, SamplesSchema.SCHEMA_SAMPLES);
+                        TableInfo searchTable = searchSchema == null ? null : searchSchema.getTable(_ss.getName());
+                        if (searchTable == null)
+                        {
+                            // Expected only when the sample type was deleted after this commit
+                            _log.debug("Skipping search indexing for sample type {}: no search table in {}", _ss.getName(), container.getPath());
+                            return;
+                        }
+
                         List<String> lsids = searchIndexDataKeys.lsids();
                         List<Long> orderedRowIds = searchIndexDataKeys.orderedRowIds();
 
@@ -2424,21 +2429,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
                                 queue.addRunnable((q) ->
                                 {
-                                    Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
                                     for (ExpMaterialImpl expMaterial : expService.getExpMaterials(sublist))
-                                        expMaterial.indexWithTableCache(q, tableCache);
+                                        expMaterial.index(q, searchTable);
                                 })
                         );
 
                         ListUtils.partition(lsids, 100).forEach(sublist ->
                                 queue.addRunnable((q) ->
                                 {
-                                    Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
                                     for (ExpMaterialImpl expMaterial : expService.getExpMaterialsByLsid(sublist))
-                                        expMaterial.indexWithTableCache(q, tableCache);
+                                        expMaterial.index(q, searchTable);
                                 })
                         );
-                    })
+                    }, DbScope.CommitTaskOption.LATE_POSTCOMMIT)
                 );
 
             dib = LoggingDataIterator.wrap(dib);
