@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.assay.PipelineDataCollector" %>
 <%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.data.BatchSize" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
@@ -40,6 +41,7 @@
 <%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.data.queryprofiler.QueryCounter" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.OntologyObject" %>
@@ -51,6 +53,7 @@
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.exp.api.ProvenanceService" %>
 <%@ page import="org.labkey.api.exp.api.SampleTypeService" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
@@ -93,6 +96,7 @@
 <%@ page import="static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
@@ -780,6 +784,78 @@
         }
         fail("Expected the import to fail");
         return null;
+    }
+
+    @Test // GH Issue 1746
+    public void testSampleLookupQueriesDoNotScaleWithDistinctSamples() throws Exception
+    {
+        var assayPair = createAssay(context, false, true);
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        final int rowCount = 20;
+        final int fewerSamples = 10;
+        Iterator<ExpMaterial> unusedSamples = createSamples(1 + 2 * (fewerSamples + rowCount)).iterator();
+
+        // Pay one-time costs, such as loading the assay design and lookup tables, outside the counted imports
+        var warmUpSample = unusedSamples.next();
+        assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(String.format(
+            "SampleTypeLookup\tExpMaterialSampleTypeLookup\n%s\t%d\n",
+            warmUpSample.getName(), warmUpSample.getRowId()
+        )), false, null);
+
+        // The provenance callback looks up each distinct input sample on its own
+        int allowedQueriesPerSample = 1;
+        if (ProvenanceService.get().isProvenanceSupported())
+            allowedQueriesPerSample = 2;
+
+        List<String> failures = new ArrayList<>();
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
+        {
+            for (String column : List.of("SampleTypeLookup", "ExpMaterialSampleTypeLookup"))
+            {
+                // Same row count in both imports, so per-row costs such as result inserts cancel out; each import gets its own samples so neither warms the other
+                List<String> repeatedValues = new ArrayList<>();
+                for (int i = 0; i < fewerSamples; i++)
+                {
+                    String value = sampleLookupValue(column, unusedSamples.next());
+                    repeatedValues.add(value);
+                    repeatedValues.add(value);
+                }
+
+                List<String> distinctValues = new ArrayList<>();
+                for (int i = 0; i < rowCount; i++)
+                    distinctValues.add(sampleLookupValue(column, unusedSamples.next()));
+
+                int repeatedQueries = countImportQueries(provider, assayProtocol, column, repeatedValues);
+                int distinctQueries = countImportQueries(provider, assayProtocol, column, distinctValues);
+                String counts = String.format("%s: %d queries for %d distinct samples, %d queries for %d distinct samples",
+                    column, repeatedQueries, fewerSamples, distinctQueries, rowCount);
+                log.info(counts);
+
+                if (distinctQueries - repeatedQueries >= allowedQueriesPerSample * (rowCount - fewerSamples))
+                    failures.add(counts);
+            }
+        }
+
+        assertTrue(String.join("; ", failures), failures.isEmpty());
+    }
+
+    private String sampleLookupValue(String column, ExpMaterial sample)
+    {
+        if ("SampleTypeLookup".equals(column))
+            return sample.getName();
+        return String.valueOf(sample.getRowId());
+    }
+
+    private int countImportQueries(AssayProvider provider, ExpProtocol assayProtocol, String column, List<String> values) throws Exception
+    {
+        var file = createAssayDataFile(column + "\n" + String.join("\n", values) + "\n");
+        try (QueryCounter counter = new QueryCounter())
+        {
+            assayImportFile(c, user, provider, assayProtocol, file, false, null);
+            return counter.getCount();
+        }
     }
 
     @Test
