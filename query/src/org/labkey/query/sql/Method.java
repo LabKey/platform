@@ -248,14 +248,6 @@ public abstract class Method
                 return new IsMemberInfo();
             }
         });
-        labkeyMethod.put("isnumeric", new Method("isnumeric", JdbcType.BOOLEAN, 1, 1)
-        {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsNumericInfo();
-            }
-        });
         labkeyMethod.put("javaconstant", new Method("javaconstant", JdbcType.VARBINARY, 1, 1)
         {
             @Override
@@ -500,6 +492,25 @@ public abstract class Method
         // Put new methods below this line and move above after they're documented, i.e.,
         // added to https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql
 
+        // week() is a passthrough, so its numbering is whatever the database does. These two are defined by LabKey and return the same number on either dialect.
+        //   weekiso(x) -- ISO 8601, 1 to 53. Weeks start Monday and week 1 holds the year's first Thursday, so early January can number as the prior year's week 52 or 53.
+        //   weekus(x)  -- US, 1 to 54. Weeks start Sunday and week 1 holds Jan 1, so every date numbers within its own year.
+        labkeyMethod.put("weekiso", new Method("weekiso", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new WeekIsoInfo();
+            }
+        });
+        labkeyMethod.put("weekus", new Method("weekus", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new WeekUsInfo();
+            }
+        });
 
         // ========== Don't document these ==========
         labkeyMethod.put("__cte_two__", new Method(JdbcType.INTEGER, 0, 0)
@@ -1094,14 +1105,13 @@ public abstract class Method
         }
     }
 
-    // Portable isnumeric() emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
-    // Returns 1 for digit strings with an optional sign/decimal point, 0 otherwise.
-    // This is stricter than SQL Server's ISNUMERIC(), which also accepts formats like scientific notation.
+    // PostgreSQL only; SQL Server uses its native ISNUMERIC() via the mssqlMethods passthrough. Returns 1/0 like
+    // ISNUMERIC() because callers write isnumeric(x) = 1, which a true/false predicate would break.
     static class IsNumericInfo extends AbstractMethodInfo
     {
         IsNumericInfo()
         {
-            super(JdbcType.BOOLEAN);
+            super(JdbcType.INTEGER);
         }
 
         @Override
@@ -1112,6 +1122,34 @@ public abstract class Method
                 return dialect.isNumericExpr(arg);
 
             throw new IllegalStateException("isnumeric() is not supported for this database dialect: " + dialect.getProductName());
+        }
+    }
+
+    static class WeekIsoInfo extends AbstractMethodInfo
+    {
+        WeekIsoInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            return dialect.weekIsoExpr(arguments[0]);
+        }
+    }
+
+    static class WeekUsInfo extends AbstractMethodInfo
+    {
+        WeekUsInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            return dialect.weekUsExpr(arguments[0]);
         }
     }
 
@@ -1697,6 +1735,14 @@ public abstract class Method
         postgresMethods.put("decode", new PassthroughMethod("decode", JdbcType.VARCHAR, 2, 2));
         postgresMethods.put("encode", new PassthroughMethod("encode", JdbcType.VARCHAR, 2, 2));
         postgresMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsNumericInfo();
+            }
+        });
         postgresMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2, 3));
         postgresMethods.put("md5", new PassthroughMethod("md5", JdbcType.VARCHAR, 1, 1));
         postgresMethods.put("octet_length", new PassthroughMethod("octet_length", JdbcType.INTEGER, 1, 1));
@@ -1928,7 +1974,7 @@ public abstract class Method
         mssqlMethods.put("charindex", new PassthroughMethod("charindex", JdbcType.INTEGER, 2, 3));
         mssqlMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         mssqlMethods.put("difference", new PassthroughMethod("difference", JdbcType.INTEGER, 2, 2));
-        // isnumeric is registered in labkeyMethod (portable across PostgreSQL and SQL Server)
+        mssqlMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.BOOLEAN, 1, 1));
         mssqlMethods.put("len", new PassthroughMethod("len", JdbcType.INTEGER, 1, 1));
         mssqlMethods.put("patindex", new PassthroughMethod("patindex", JdbcType.INTEGER, 2, 2));
         mssqlMethods.put("quotename", new PassthroughMethod("quotename", JdbcType.VARCHAR, 1, 2));
