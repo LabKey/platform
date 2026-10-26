@@ -37,7 +37,7 @@ public class PipelineJobRunner
             // when running through Enterprise Pipeline
             QueryService.get().setEnvironment(job);
             PipelineJobService.get().trackJobThread(job);
-            job.run();
+            job.runJob();
         }
         finally
         {
