@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.api.SampleCountsService;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.DetailsURL;
@@ -120,11 +121,24 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
 
     private ExprColumn createSampleCountColumn(@NotNull ContainerFilter sampleCountContainerFilter)
     {
-        SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial(), "m")
+        SQLFragment liveCount = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial(), "m")
                 .unsafeAppend(" WHERE m.CpasType = ").append(ExprColumn.STR_TABLE_ALIAS + ".LSID")
                 .unsafeAppend(" AND ")
                 .append(sampleCountContainerFilter.getSQLFragment(getSchema(), new SQLFragment("m.container")))
                 .unsafeAppend(")");
+
+        // Counting every sample of every type is the slowest column on this table at scale, so read counts a module
+        // already maintains where one does. It falls back to the live count wherever those aren't ready.
+        SQLFragment sql = liveCount;
+        SampleCountsService countsService = SampleCountsService.get();
+        if (countsService != null)
+        {
+            SQLFragment maintained = countsService.getSampleCountSQL(
+                    new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RowId"), sampleCountContainerFilter, getSchema(), liveCount);
+            if (maintained != null)
+                sql = maintained;
+        }
+
         ExprColumn column = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
         column.setDescription("Contains the number of samples currently stored in this sample type");
         column.setFormat("#,##0");
