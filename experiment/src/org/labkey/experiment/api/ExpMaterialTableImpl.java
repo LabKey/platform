@@ -137,6 +137,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
@@ -160,6 +161,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -2385,6 +2388,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    /** Test seam: by sample type LSID, a queue that receives the search indexing persistRows queues */
+    static final Map<String, SearchService.TaskIndexingQueue> _testIndexingQueues = new ConcurrentHashMap<>();
+
+    /** Queue the task POSTCOMMIT behind every task registered before commit, so it reads the view after the change's refresh signal. */
+    static void addLatePostCommitTask(DbScope scope, Runnable task)
+    {
+        scope.addCommitTask(() -> scope.addCommitTask(task, DbScope.CommitTaskOption.POSTCOMMIT), DbScope.CommitTaskOption.PRECOMMIT);
+    }
+
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
@@ -2399,11 +2411,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             final Container container = getContainer();
             final User user = getUserSchema().getUser();
             ExperimentServiceImpl expService = ExperimentServiceImpl.get();
-            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified);
+            SearchService.TaskIndexingQueue queue = Objects.requireNonNullElseGet(_testIndexingQueues.get(_ss.getLSID()),
+                () -> SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified));
 
             DataIteratorBuilder dib = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, container, user, _ss.getImportAliasesIncludingAliquot())
                 .setFileLinkDirectory(SAMPLE_TYPE_FILE_DIRECTORY_NAME)
-                .setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
+                .setIndexFunction(searchIndexDataKeys -> addLatePostCommitTask(propertiesTable.getSchema().getScope(), () -> {
                         List<String> lsids = searchIndexDataKeys.lsids();
                         List<Long> orderedRowIds = searchIndexDataKeys.orderedRowIds();
 
@@ -2411,19 +2424,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
                                 queue.addRunnable((q) ->
                                 {
+                                    Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
                                     for (ExpMaterialImpl expMaterial : expService.getExpMaterials(sublist))
-                                        expMaterial.index(q, this);
+                                        expMaterial.indexWithTableCache(q, tableCache);
                                 })
                         );
 
                         ListUtils.partition(lsids, 100).forEach(sublist ->
                                 queue.addRunnable((q) ->
                                 {
+                                    Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
                                     for (ExpMaterialImpl expMaterial : expService.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(q, this);
+                                        expMaterial.indexWithTableCache(q, tableCache);
                                 })
                         );
-                    }, DbScope.CommitTaskOption.POSTCOMMIT)
+                    })
                 );
 
             dib = LoggingDataIterator.wrap(dib);
@@ -2752,6 +2767,80 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     release.countDown();
                 }
             }
+        }
+
+        @Test
+        public void testIndexDocumentAfterInsertSignal() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrIndexRace");
+            insertRoots(st, "R1");
+            assertCacheMatchesFreshDerivation(getSamplesTable(st), st.getLSID());
+
+            String value = "indexRaceValue";
+            WebdavResource doc = indexDocument(st, "R2", () -> insert(st, List.of(CaseInsensitiveHashMap.of("name", "R2", "rootProp", value))));
+            Object identifiers = doc.getProperties().get(SearchService.PROPERTY.identifiersMed.toString());
+            assertTrue("R2's search document is missing its rootProp value: " + identifiers, String.valueOf(identifiers).contains(value));
+        }
+
+        @Test
+        public void testIndexDocumentAfterUpdateSignal() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrIndexUpdateRace");
+            long root = insertRoots(st, "R1").getFirst();
+            assertCacheMatchesFreshDerivation(getSamplesTable(st), st.getLSID());
+
+            String value = "indexRaceUpdated";
+            WebdavResource doc = indexDocument(st, "R1", () -> {
+                updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", value)));
+                return null;
+            });
+            Object identifiers = doc.getProperties().get(SearchService.PROPERTY.identifiersMed.toString());
+            assertTrue("R1's search document is missing its updated rootProp value: " + identifiers, String.valueOf(identifiers).contains(value));
+        }
+
+        /**
+         * Commits the change with persistRows' search indexing run the moment it's queued, as an idle indexer would,
+         * and returns the document built for the named sample.
+         */
+        private WebdavResource indexDocument(ExpSampleType st, String name, Callable<?> change) throws Exception
+        {
+            List<WebdavResource> docs = Collections.synchronizedList(new ArrayList<>());
+            _testIndexingQueues.put(st.getLSID(), new SearchService.TaskIndexingQueue()
+            {
+                @Override
+                public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
+                {
+                    r.accept(this);
+                }
+
+                @Override
+                public void addResource(@NotNull WebdavResource r)
+                {
+                    docs.add(r);
+                }
+
+                @Override
+                public Container getContainer()
+                {
+                    return _c;
+                }
+            });
+
+            try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+            {
+                change.call();
+                tx.commit();
+            }
+            finally
+            {
+                _testIndexingQueues.remove(st.getLSID());
+            }
+
+            String title = "Sample - " + name;
+            return docs.stream()
+                .filter(doc -> String.valueOf(doc.getProperties().get(SearchService.PROPERTY.title.toString())).startsWith(title))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("persistRows queued no search document for " + name));
         }
 
         @Test
