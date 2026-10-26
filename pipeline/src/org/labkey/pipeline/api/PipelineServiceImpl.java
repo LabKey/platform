@@ -82,6 +82,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.bootstrap.ClusterBootstrap;
+import org.labkey.bootstrap.StartupEnvironment;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.analysis.ProtocolManagementAuditProvider;
 import org.labkey.pipeline.importer.FolderImportJob;
@@ -456,9 +457,10 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     {
         List<String> args = new ArrayList<>();
         args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
-        File labkeyBootstrap = FileUtil.appendName(new File(System.getProperty("catalina.home")), "labkeyBootstrap.jar");
+        File labkeyHome = StartupEnvironment.getLabKeyHome();
+        File labkeyBootstrap = labkeyHome == null ? null : FileUtil.appendName(labkeyHome, "labkeyBootstrap.jar");
 
-        if (!labkeyBootstrap.exists())
+        if (labkeyBootstrap == null || !labkeyBootstrap.exists())
         {
             try
             {
