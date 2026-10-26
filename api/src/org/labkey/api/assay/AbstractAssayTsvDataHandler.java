@@ -96,6 +96,7 @@ import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
@@ -710,7 +711,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         RemapCache cacheWithoutPkLookup = new RemapCache();
         RemapCache cacheWithPkLookup = new RemapCache();
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
-        Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
+        // GH Issue 1781: separate caches for various lookup types
+        Map<Pair<Container, ExpSampleType>, Map<Long, ExpMaterial>> materialCacheByLookup = new HashMap<>();
+        Map<Long, ExpMaterial> materialByIdCache = new LongHashMap<>();
+        Map<Long, ExpMaterial> plateMaterialCache = new LongHashMap<>();
         Map<Long, Map<String, Long>> plateWellCache = new LongHashMap<>();
 
         Map<DomainProperty, ExpSampleType> lookupToSampleTypeByName = new HashMap<>();
@@ -1047,7 +1051,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             try
                             {
                                 if (material == null)
+                                {
+                                    var materialCache = materialCacheByLookup.computeIfAbsent(Pair.of(lookupContainer, byNameSS), k -> new LongHashMap<>());
                                     material = exp.findExpMaterial(lookupContainer, user, materialName, byNameSS, cacheWithoutPkLookup, materialCache);
+                                }
                             }
                             catch (ValidationException ve)
                             {
@@ -1055,7 +1062,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             }
                         }
                         else if (asLongElseNull(o) instanceof Long n)
-                            material = materialCache.computeIfAbsent(n, (id) -> exp.getExpMaterial(id, containerFilter));
+                            material = materialByIdCache.computeIfAbsent(n, (id) -> exp.getExpMaterial(id, containerFilter));
 
                         if (material != null)
                         {
@@ -1103,23 +1110,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         Map<String, Long> wellSampleCache = plateWellCache.computeIfAbsent(plateId, (id) -> AssayPlateMetadataService.get().getWellLocationToSampleIdMap(plateId));
 
                         // If we had to load the wellSampleCache we should also preload the ExpMaterials into the
-                        // materialCache, so we don't need to fetch them with individual queries. This has a large
+                        // plateMaterialCache, so we don't need to fetch them with individual queries. This has a large
                         // impact on performance.
                         if (loadMaterialsCache)
                         {
                             Set<Long> samplesToFetch = wellSampleCache.values().stream()
-                                    .filter(id -> !materialCache.containsKey(id))
+                                    .filter(id -> !plateMaterialCache.containsKey(id))
                                     .collect(Collectors.toSet());
 
                             for (ExpMaterial m : exp.getExpMaterials(samplesToFetch))
-                                materialCache.put(m.getRowId(), m);
+                                plateMaterialCache.put(m.getRowId(), m);
                         }
                         sampleId = wellSampleCache.get(wellLocation);
                     }
 
                     if (sampleId != null)
                     {
-                        material = materialCache.get(sampleId);
+                        material = plateMaterialCache.get(sampleId);
                     }
 
                     if (material != null)

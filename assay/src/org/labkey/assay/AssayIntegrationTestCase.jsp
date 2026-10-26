@@ -136,6 +136,11 @@
 
     private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups) throws Exception
     {
+        return createAssay(context, editableRunsAndResults, includeSampleTypeLookups, emptyList());
+    }
+
+    private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups, List<GWTPropertyDescriptor> extraResultFields) throws Exception
+    {
         // create assay design
         AssayDomainService assayDomainService = new AssayDomainServiceImpl(context.getUser(), context.getContainer());
         GWTProtocol assayTemplate = assayDomainService.getAssayTemplate("General");
@@ -184,6 +189,8 @@
             resultFields.add(expMaterialsSampleTypeLookup);
         }
 
+        resultFields.addAll(extraResultFields);
+
         // clear the batch domain fields
         GWTDomain<GWTPropertyDescriptor> batchDomain = domains.stream().filter(d -> "Batch Fields".equals(d.getName())).findFirst().orElseThrow();
         batchDomain.setFields(Collections.emptyList());
@@ -224,20 +231,30 @@
 
     private ExpSampleType createSampleType() throws Exception
     {
+        return createSampleType(SAMPLE_TYPE_NAME, "S-${genId}");
+    }
+
+    private ExpSampleType createSampleType(String sampleTypeName, String nameExpression) throws Exception
+    {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
 
-        return SampleTypeService.get().createSampleType(c, user, SAMPLE_TYPE_NAME, null, props, emptyList(), -1, -1, -1, -1, "S-${genId}", null);
+        return SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, emptyList(), -1, -1, -1, -1, nameExpression, null);
     }
 
     private List<ExpMaterial> createSamples(int numSamples) throws Exception
+    {
+        return createSamples(SAMPLE_TYPE_NAME, numSamples);
+    }
+
+    private List<ExpMaterial> createSamples(String sampleTypeName, int numSamples) throws Exception
     {
         List<Map<String, Object>> rows = new ArrayList<>();
 
         for (int i = 0; i < numSamples; i++)
             rows.add(CaseInsensitiveHashMap.of());
 
-        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, SAMPLE_TYPE_NAME);
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, sampleTypeName);
         TableInfo table = QueryService.get().getUserSchema(user, c, SCHEMA_SAMPLES).getTable(sampleType.getName());
 
         var errors = new BatchValidationException();
@@ -712,6 +729,57 @@
         assertNotNull(updatedRun);
 
         assertEquals(0, updatedRun.getMaterialInputs().size());
+    }
+
+    @Test // GH Issue 1781
+    public void testSampleLookupRowIdFallbackHonorsSampleType() throws Exception
+    {
+        createSampleType("XSampleType", "X-${genId}");
+        createSampleType("YSampleType", "Y-${genId}");
+        var xSample = createSamples("XSampleType", 1).getFirst();
+        var ySample = createSamples("YSampleType", 1).getFirst();
+
+        var xLookup = new GWTPropertyDescriptor("XLookup", "string");
+        xLookup.setLookupSchema(SamplesSchema.SCHEMA_NAME);
+        xLookup.setLookupQuery("XSampleType");
+
+        var yLookup = new GWTPropertyDescriptor("YLookup", "int");
+        yLookup.setLookupSchema(ExpSchema.SCHEMA_EXP_MATERIALS.toString());
+        yLookup.setLookupQuery("YSampleType");
+
+        var assayPair = createAssay(context, false, false, List.of(xLookup, yLookup));
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        // Mixing a name into YLookup keeps the column as text, so the X row ID reaches findExpMaterial's row ID fallback
+        String expectedError = importErrorMessage(provider, assayProtocol, String.format(
+            "YLookup\n%s\n%d\n",
+            ySample.getName(),
+            xSample.getRowId()
+        ));
+        assertTrue(expectedError, expectedError.contains("not found in the current context"));
+
+        // XLookup resolving xSample first must not let YLookup's fallback return it from XLookup's material cache
+        String actualError = importErrorMessage(provider, assayProtocol, String.format(
+            "XLookup\tYLookup\n%s\t%s\n\t%d\n",
+            xSample.getName(), ySample.getName(),
+            xSample.getRowId()
+        ));
+        assertEquals(expectedError, actualError);
+    }
+
+    private String importErrorMessage(AssayProvider provider, ExpProtocol assayProtocol, String fileContents) throws Exception
+    {
+        try
+        {
+            assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, null);
+        }
+        catch (ExperimentException | ValidationException e)
+        {
+            return e.getMessage();
+        }
+        fail("Expected the import to fail");
+        return null;
     }
 
     @Test
