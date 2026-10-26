@@ -68,10 +68,19 @@ public interface FileContentService
     }
 
     /**
-     * Returns a list of Container in which the path resides.
+     * Returns the container whose file root holds the path, or null if none does.
      */
+    @Nullable
+    Container getContainerForFilePath(java.nio.file.Path path);
+
+    /** @deprecated use {@link #getContainerForFilePath(java.nio.file.Path)} */
+    @Deprecated
     @NotNull
-    List<Container> getContainersForFilePath(java.nio.file.Path path);
+    default List<Container> getContainersForFilePath(java.nio.file.Path path)
+    {
+        Container c = getContainerForFilePath(path);
+        return c == null ? List.of() : List.of(c);
+    }
 
     /**
      * Returns the file root of the specified container. If not explicitly defined,

@@ -2452,8 +2452,8 @@ public class ExperimentController extends SpringActionController
                 if (!underFileRoot)
                 {
                     // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
-                    List<Container> containers = fileSvc.getContainersForFilePath(dataPath);
-                    if (containers.isEmpty() || containers.stream().noneMatch(c -> c.hasPermission(getUser(), ReadPermission.class)))
+                    Container fileContainer = fileSvc.getContainerForFilePath(dataPath);
+                    if (fileContainer == null || !fileContainer.hasPermission(getUser(), ReadPermission.class))
                         throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
                 }
             }

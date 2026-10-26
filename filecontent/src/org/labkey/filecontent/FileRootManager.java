@@ -28,6 +28,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.files.FileRoot;
 import org.labkey.api.security.User;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,6 +71,11 @@ public class FileRootManager
         FileRoot root = CACHE.get(CACHE_KEY).get(c.getId());
 
         return null == root ? new FileRoot(c) : root;
+    }
+
+    public Collection<FileRoot> getFileRoots()
+    {
+        return CACHE.get(CACHE_KEY).values();
     }
 
     public void deleteFileRoot(Container c)
