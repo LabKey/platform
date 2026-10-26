@@ -97,7 +97,7 @@ public class OptionalFeatureFlag implements Comparable<OptionalFeatureFlag>, Sta
 
     public boolean isEnabled()
     {
-        return AppProps.getInstance().isOptionalFeatureEnabled(getFlag());
+        return OptionalFeatureService.get().isFeatureEnabled(getFlag());
     }
 
     public boolean isHidden()

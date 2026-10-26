@@ -227,6 +227,7 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
@@ -10437,7 +10438,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public boolean useStrictCounter()
     {
-        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
+        return !OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
     }
 
     @Override

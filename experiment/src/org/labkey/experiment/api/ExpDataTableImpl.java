@@ -75,7 +75,7 @@ import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -203,7 +203,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.FileExtension);
         addColumn(Column.WebDavUrl);
         addColumn(Column.WebDavUrlRelative);
-        if (AppProps.getInstance().isOptionalFeatureEnabled(ExpSchema.SAMPLE_FILES_TABLE))
+        if (OptionalFeatureService.get().isFeatureEnabled(ExpSchema.SAMPLE_FILES_TABLE))
             addColumn(getFileLinkReferenceCountColumn());
         var flagCol = addColumn(Column.Flag);
         if (isFilesTable)

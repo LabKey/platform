@@ -46,8 +46,8 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
@@ -105,7 +105,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     {
         MailHelper.send(m, createdByUser, c);
 
-        if (!AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+        if (!OptionalFeatureService.get().isFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
             return null;
 
         Notification notification = new Notification();

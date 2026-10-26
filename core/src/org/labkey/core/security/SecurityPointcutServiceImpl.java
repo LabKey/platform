@@ -18,6 +18,7 @@ package org.labkey.core.security;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.SecurityPointcutService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.CSRFException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ViewServlet;
@@ -49,7 +50,7 @@ public class SecurityPointcutServiceImpl implements SecurityPointcutService
             return sendError(res, HttpServletResponse.SC_BAD_REQUEST, "Invalid characters in request.");
         }
 
-        if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_BLOCKER))
+        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.EXPERIMENTAL_BLOCKER))
         {
            if (BlockListFilter.isOnBlockList(req))
                return sendError(res, SC_GONE,"Try again later.");

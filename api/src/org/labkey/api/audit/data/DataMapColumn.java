@@ -27,8 +27,8 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +37,8 @@ import java.util.Map;
  */
 public class DataMapColumn extends DataColumn
 {
+    private static final String DECODED_CACHE_KEY = DataMapColumn.class.getName() + ".decoded";
+
     public DataMapColumn(ColumnInfo col)
     {
         super(col);
@@ -47,7 +49,7 @@ public class DataMapColumn extends DataColumn
     {
         HtmlStringBuilder b = HtmlStringBuilder.of();
         HtmlString separator = HtmlString.EMPTY_STRING;
-        for (String s : formatColumn(getValue(ctx)))
+        for (String s : formatColumn(ctx))
         {
             b.append(separator);
             separator = HtmlString.BR;
@@ -59,13 +61,13 @@ public class DataMapColumn extends DataColumn
     @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
-        return StringUtils.join(formatColumn(getValue(ctx)), "\n");
+        return StringUtils.join(formatColumn(ctx), "\n");
     }
 
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return StringUtils.join(formatColumn(getValue(ctx)), "\n");
+        return StringUtils.join(formatColumn(ctx), "\n");
     }
 
     @Override
@@ -80,19 +82,29 @@ public class DataMapColumn extends DataColumn
     }
 
     @NotNull
-    private List<String> formatColumn(@Nullable Object contents)
+    private List<String> formatColumn(RenderContext ctx)
     {
-        if (contents instanceof String)
-        {
-            List<String> result = new ArrayList<>();
+        return decode(ctx, getValue(ctx)).entrySet().stream()
+            .map(entry -> entry.getKey() + ": " + entry.getValue())
+            .toList();
+    }
 
-            for (Map.Entry<String, String> entry : AbstractAuditTypeProvider.decodeFromDataMap((String) contents).entrySet())
-            {
-                result.add(entry.getKey() + ": " + entry.getValue());
-            }
-            return result;
-        }
-        return Collections.emptyList();
+    /**
+     * Old and new record maps are each decoded by their own column and again by the diff column, so share the
+     * read-only result across columns of the current row.
+     */
+    @NotNull
+    static Map<String, String> decode(RenderContext ctx, @Nullable Object contents)
+    {
+        if (!(contents instanceof String s))
+            return Collections.emptyMap();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Map<String, String>> cache = (Map<String, Map<String, String>>) ctx.computeIfAbsent(DECODED_CACHE_KEY, k -> new HashMap<>());
+        // Holds a couple of rows' worth; the render context lives for the whole export
+        if (cache.size() > 8)
+            cache.clear();
+        return cache.computeIfAbsent(s, k -> Collections.unmodifiableMap(AbstractAuditTypeProvider.decodeFromDataMap(k)));
     }
 
     public static class Factory implements DisplayColumnFactory

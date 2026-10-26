@@ -35,6 +35,7 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -316,7 +317,7 @@ public class DataTransformService
             if (srcDir != null && srcDir.exists())
                 paramMap.put(SRC_DIR_REPLACEMENT, srcDir.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
         }
-        if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+        if (OptionalFeatureService.get().isFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
         {
             paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(request, apiKey));
             paramMap.put(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(request));

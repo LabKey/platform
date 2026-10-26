@@ -19,7 +19,7 @@ import org.labkey.api.docker.DockerService;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.rstudio.RStudioService;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 
 import javax.script.ScriptEngine;
 
@@ -41,7 +41,7 @@ public class RDockerScriptEngineFactory extends ExternalScriptEngineFactory
     {
         DockerService ds = DockerService.get();
         if (null != ds && ds.isDockerEnabled()
-                && AppProps.getInstance().isOptionalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX)
+                && OptionalFeatureService.get().isFeatureEnabled(RStudioService.R_DOCKER_SANDBOX)
                 && this._dockerImage != null)
             return new RDockerScriptEngine(_def, ds, this._dockerImage);
         else return null;

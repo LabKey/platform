@@ -118,6 +118,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.DataColorManager;
 import org.labkey.experiment.api.DataColorTable;
+import org.labkey.experiment.api.DataMapDiffColumnTestCase;
 import org.labkey.experiment.api.EdgeDiagnosticsTestCase;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataClassTableImpl;
@@ -1118,6 +1119,7 @@ public class ExperimentModule extends SpringModule
             EdgeDiagnosticsTestCase.class,
             ExperimentController.ContainerScopingTestCase.class,
             DataColorTable.TestCase.class,
+            DataMapDiffColumnTestCase.class,
             DomainImpl.TestCase.class,
             DomainUtil.LookupScopeTestCase.class,
             DomainPropertyImpl.TestCase.class,

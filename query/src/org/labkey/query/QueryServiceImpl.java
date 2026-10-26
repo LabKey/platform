@@ -119,7 +119,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
@@ -3464,19 +3464,19 @@ public class QueryServiceImpl implements QueryService
     @Override
     public boolean isProductFoldersAllFolderScopeEnabled()
     {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
     }
 
     @Override
     public boolean isProductFoldersDataListingScopedToProject()
     {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }
 
     @Override
     public boolean isTriggerManagedColumnsEnabled()
     {
-        return !AppProps.getInstance().isOptionalFeatureEnabled(DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS);
+        return !OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert

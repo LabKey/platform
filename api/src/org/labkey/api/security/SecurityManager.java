@@ -92,6 +92,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
@@ -713,7 +714,7 @@ public class SecurityManager
 
             if (null != transformSessionId)
             {
-                if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+                if (OptionalFeatureService.get().isFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
                 {
                     apiKey = transformSessionId;
                     AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' header instead");
@@ -746,7 +747,7 @@ public class SecurityManager
 
                 if (apiKeyParameter != null)
                 {
-                    if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
+                    if (OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
                     {
                         apiKey = apiKeyParameter;
                         shouldSetSessionCookie = false;

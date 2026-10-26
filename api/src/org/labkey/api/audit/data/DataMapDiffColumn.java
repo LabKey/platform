@@ -15,7 +15,6 @@
  */package org.labkey.api.audit.data;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -27,7 +26,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -74,19 +72,19 @@ public class DataMapDiffColumn extends AliasedColumn
         @Override @NotNull
         public HtmlString getFormattedHtml(RenderContext ctx)
         {
-            return HtmlString.unsafe(formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), true));
+            return HtmlString.unsafe(formatColumn(ctx, true));
         }
 
         @Override
         public String getTsvFormattedValue(RenderContext ctx)
         {
-            return formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), false);
+            return formatColumn(ctx, false);
         }
 
         @Override
         public Object getDisplayValue(RenderContext ctx)
         {
-            return formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), false);
+            return formatColumn(ctx, false);
         }
 
         @Override
@@ -111,8 +109,10 @@ public class DataMapDiffColumn extends AliasedColumn
         }
 
         @NotNull
-        private String formatColumn(Object oldContent, Object newContent, boolean html)
+        private String formatColumn(RenderContext ctx, boolean html)
         {
+            Object oldContent = ctx.get(_oldValues.getFieldKey());
+            Object newContent = ctx.get(_newValues.getFieldKey());
             String arrow = html ? "&nbsp;&raquo;&nbsp;" : " > ";
             String lineBreak = html ? "<br/>" : "\n";
 
@@ -121,14 +121,8 @@ public class DataMapDiffColumn extends AliasedColumn
                 String delim = "";
                 StringBuilder sb = new StringBuilder();
 
-                Map<String, String> oldValues = Collections.emptyMap();
-                Map<String, String> newValues = Collections.emptyMap();
-
-                if (oldContent instanceof String)
-                    oldValues = AbstractAuditTypeProvider.decodeFromDataMap((String)oldContent);
-
-                if (newContent instanceof String)
-                    newValues = AbstractAuditTypeProvider.decodeFromDataMap((String)newContent);
+                Map<String, String> oldValues = DataMapColumn.decode(ctx, oldContent);
+                Map<String, String> newValues = DataMapColumn.decode(ctx, newContent);
 
                 for (Map.Entry<String, String> entry : oldValues.entrySet())
                 {
@@ -136,7 +130,7 @@ public class DataMapDiffColumn extends AliasedColumn
                     if (oldValue == null)
                         oldValue = "";
 
-                    String newValue = newValues.remove(entry.getKey());
+                    String newValue = newValues.get(entry.getKey());
                     if (newValue == null)
                         newValue = "";
 
@@ -155,6 +149,9 @@ public class DataMapDiffColumn extends AliasedColumn
 
                 for (Map.Entry<String, String> entry : newValues.entrySet())
                 {
+                    if (oldValues.containsKey(entry.getKey()))
+                        continue;
+
                     sb.append(delim);
                     sb.append(html ? PageFlowUtil.filter(entry.getKey()) : entry.getKey());
                     sb.append(": ");

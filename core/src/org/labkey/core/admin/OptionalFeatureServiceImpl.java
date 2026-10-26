@@ -15,6 +15,10 @@
  */
 package org.labkey.core.admin;
 
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertySchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureFlag;
@@ -23,17 +27,20 @@ import org.labkey.api.settings.WriteableAppProps;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class OptionalFeatureServiceImpl implements OptionalFeatureService
 {
     private final Set<OptionalFeatureFlag> _optionalFlags = new ConcurrentSkipListSet<>();
-    private final Map<String, List<OptionalFeatureListener>> _listeners = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, List<OptionalFeatureListener>> _listeners = new ConcurrentHashMap<>();
+    // Checked per column and per exported cell, and the underlying property lookup is comparatively costly
+    private final BlockingCache<String, Boolean> _enabled = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "Optional feature flags",
+        (feature, _) -> WriteableAppProps.isOptionalFeatureEnabledUncached(feature));
 
     public OptionalFeatureServiceImpl()
     {
@@ -62,16 +69,13 @@ public class OptionalFeatureServiceImpl implements OptionalFeatureService
     @Override
     public void addFeatureListener(String feature, OptionalFeatureListener listener)
     {
-        if (!_listeners.containsKey(feature))
-            _listeners.put(feature, new CopyOnWriteArrayList<>());
-
-        _listeners.get(feature).add(listener);
+        _listeners.computeIfAbsent(feature, _ -> new CopyOnWriteArrayList<>()).add(listener);
     }
 
     @Override
     public boolean isFeatureEnabled(String feature)
     {
-        return AppProps.getInstance().isOptionalFeatureEnabled(feature);
+        return _enabled.get(feature);
     }
 
     @Override
@@ -89,6 +93,9 @@ public class OptionalFeatureServiceImpl implements OptionalFeatureService
         WriteableAppProps props = AppProps.getWriteableInstance();
         setFeatureEnabled(feature, enabled, props);
         props.save(user);
+        // Clear again at commit or rollback; a read inside an enclosing transaction would otherwise re-cache a stale value
+        PropertySchema.getInstance().getSchema().getScope().addCommitTask(() -> _enabled.remove(feature),
+            DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
     }
 
     private void setFeatureEnabled(String feature, boolean enabled, WriteableAppProps props)
