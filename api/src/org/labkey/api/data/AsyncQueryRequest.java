@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import datadog.trace.api.CorrelationIdentifier;
 import datadog.trace.api.DDTags;
+import datadog.trace.api.interceptor.MutableSpan;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -36,6 +37,7 @@ import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.TagRecordingSpan;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
@@ -48,6 +50,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -60,6 +63,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AsyncQueryRequest<T>
 {
     private static final Logger _log = LogHelper.getLogger(AsyncQueryRequest.class, "Runs DB queries on a background thread");
+    private static final String CANCELLED_TAG = "labkey.async_query.cancelled";
+    private static final String CLIENT_DISCONNECTED_TAG = "labkey.client_disconnected";
+    private static final String ELAPSED_TAG = "labkey.async_query.ms";
     private static final long WORKER_EXIT_TIMEOUT_MS = 10_000;
 
     private static class CancelledException extends RuntimeException
@@ -73,6 +79,8 @@ public class AsyncQueryRequest<T>
     private final @Nullable String _resourceName;
     /** Extra tags for APM search and grouping, beyond the resource name */
     private final @NotNull Map<String, String> _spanTags;
+    /** The request's web span, which carries the URL, user agent, and client-observed duration */
+    private final @Nullable MutableSpan _rootSpan;
 
     boolean _cancelled;
     boolean _finished;
@@ -88,7 +96,26 @@ public class AsyncQueryRequest<T>
         _resourceName = resourceName;
         _spanTags = spanTags;
 
+        // Constructed on the request thread, so the active span leads to the web span
+        _rootSpan = GlobalTracer.get().activeSpan() instanceof MutableSpan active ? active.getLocalRootSpan() : null;
+
         _rootResponse = getRootResponse(response);
+    }
+
+    /** A request can run several async queries, so the web span describes only the slowest */
+    private static void tagRootSpan(MutableSpan rootSpan, long elapsedMs, Map<String, String> tags, boolean cancelled)
+    {
+        Object prior = rootSpan.getTag(ELAPSED_TAG);
+        if (prior instanceof Number priorMs && priorMs.longValue() >= elapsedMs)
+            return;
+
+        rootSpan.setTag(ELAPSED_TAG, elapsedMs);
+        // A null clears an earlier query's tag, but must not remove one the root set itself, such as a job's container
+        tags.forEach((name, value) -> {
+            if (null != value || null != prior)
+                rootSpan.setTag(name, value);
+        });
+        rootSpan.setTag(CANCELLED_TAG, cancelled);
     }
 
     private HttpServletResponse getRootResponse(HttpServletResponse response)
@@ -124,6 +151,7 @@ public class AsyncQueryRequest<T>
 
     synchronized public T waitForResult(final Callable<T> callable) throws SQLException, IOException
     {
+        final long start = System.currentTimeMillis();
         final QueryService qs = QueryService.get();
         final Object state = qs.cloneEnvironment();
         final RequestInfo current = MemTracker.getInstance().current();
@@ -195,6 +223,8 @@ public class AsyncQueryRequest<T>
 
             // Stash the original disconnect exception if the client has dropped off
             IOException clientDisconnectException = null;
+            // A ping commits the response, so a fast query must not ping just to check for a disconnect
+            boolean pinged = false;
 
             while(true)
             {
@@ -222,6 +252,12 @@ public class AsyncQueryRequest<T>
 
                 if (_result != null)
                 {
+                    // The client may have left since the last ping; catch it here rather than as a Broken pipe while rendering
+                    if (pinged && null != (clientDisconnectException = pingClient()))
+                    {
+                        closeResult(_result);
+                        throw clientDisconnectException;
+                    }
                     return _result;
                 }
 
@@ -247,6 +283,7 @@ public class AsyncQueryRequest<T>
                     // Remember if the client has disconnected, but don't break out of this loop until the async
                     // thread has finished its work and released any resources it holds
                     clientDisconnectException = checkCancelled();
+                    pinged = true;
                 }
             }
         }
@@ -255,6 +292,9 @@ public class AsyncQueryRequest<T>
             // The runnable finishes the span; without a thread to run it the span stays open and its parent trace never completes
             if (!started)
                 span.finish();
+
+            if (null != _rootSpan)
+                tagRootSpan(_rootSpan, System.currentTimeMillis() - start, _spanTags, _cancelled);
         }
     }
 
@@ -339,7 +379,7 @@ public class AsyncQueryRequest<T>
         _cancelled = true;
         if (_span != null)
         {
-            _span.setTag("labkey.async_query.cancelled", true);
+            _span.setTag(CANCELLED_TAG, true);
             if (source != null)
                 _span.setTag("labkey.cancel.source", source.toString());
         }
@@ -363,20 +403,32 @@ public class AsyncQueryRequest<T>
     /** @return the IOException from failing to write a space to the client, or null if the client is still connected */
     private IOException checkCancelled()
     {
+        IOException ioe = pingClient();
+        if (null != ioe)
+        {
+            RequestCancellation.requestCancelled(Thread.currentThread(), TransactionFilter.getRequestSummary(Thread.currentThread()), RequestCancellation.Source.CLIENT_DISCONNECT);
+            cancel(RequestCancellation.Source.CLIENT_DISCONNECT);
+        }
+        return ioe;
+    }
+
+    private @Nullable IOException pingClient()
+    {
         try
         {
             _rootResponse.getWriter().write(" ");
             _rootResponse.flushBuffer();
             _log.debug("ping client: success");
+            return null;
         }
         catch (IOException ioe)
         {
             _log.debug("ping client: failure: {}", ioe.getMessage());
-            RequestCancellation.requestCancelled(Thread.currentThread(), TransactionFilter.getRequestSummary(Thread.currentThread()), RequestCancellation.Source.CLIENT_DISCONNECT);
-            cancel(RequestCancellation.Source.CLIENT_DISCONNECT);
+            // On the root span, since the AsyncRequest span has already finished when the final ping fails
+            if (_rootSpan != null)
+                _rootSpan.setTag(CLIENT_DISCONNECTED_TAG, true);
             return ioe;
         }
-        return null;
     }
 
     @Nullable
@@ -387,6 +439,35 @@ public class AsyncQueryRequest<T>
 
     public static class TestCase extends Assert
     {
+        private static Map<String, String> queryTags(String query, @Nullable String schema)
+        {
+            Map<String, String> tags = new HashMap<>();
+            tags.put("labkey.query", query);
+            tags.put("labkey.db_schema", schema);
+            return tags;
+        }
+
+        @Test
+        public void testSlowestQueryTagsRootSpan()
+        {
+            Map<String, Object> tags = new HashMap<>();
+            MutableSpan root = TagRecordingSpan.create(tags);
+
+            // The first query's null must leave the root's own tag alone
+            tags.put("labkey.db_schema", "job");
+            tagRootSpan(root, 100, queryTags("Z", null), false);
+            assertEquals("job", tags.get("labkey.db_schema"));
+
+            tagRootSpan(root, 500, queryTags("A", "core"), false);
+            tagRootSpan(root, 200, queryTags("B", "exp"), true);
+            tagRootSpan(root, 500, queryTags("C", "exp"), true);
+            assertEquals(Map.of(ELAPSED_TAG, 500L, "labkey.query", "A", "labkey.db_schema", "core", CANCELLED_TAG, false), tags);
+
+            // A slower query with no schema must not inherit the faster one's
+            tagRootSpan(root, 900, queryTags("D", null), true);
+            assertEquals(Map.of(ELAPSED_TAG, 900L, "labkey.query", "D", CANCELLED_TAG, true), tags);
+        }
+
         /** An interrupt must leave the request thread's connection holder released and its next query working */
         @Test
         public void testInterruptReleasesConnection() throws Exception

@@ -116,6 +116,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -241,6 +242,7 @@ public class QueryServiceImpl implements QueryService
     private QueryAnalysisService _queryAnalysisService;
 
     private final List<QueryIconURLProvider> _queryIconURLProviders = new CopyOnWriteArrayList<>();
+    private final List<FilterSuggestionProvider> _filterSuggestionProviders = new CopyOnWriteArrayList<>();
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -2919,6 +2921,18 @@ public class QueryServiceImpl implements QueryService
     {
         ArrayList<QueryIconURLProvider> providers = new ArrayList<>(_queryIconURLProviders);
         return Collections.unmodifiableList(providers);
+    }
+
+    @Override
+    public void registerFilterSuggestionProvider(FilterSuggestionProvider provider)
+    {
+        _filterSuggestionProviders.add(provider);
+    }
+
+    @Override
+    public @NotNull List<FilterSuggestionProvider> getFilterSuggestionProviders()
+    {
+        return Collections.unmodifiableList(_filterSuggestionProviders);
     }
 
     private static class QAliasedColumn extends AliasedColumn
