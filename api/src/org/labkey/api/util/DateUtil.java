@@ -45,12 +45,16 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Year;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.Temporal;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -62,6 +66,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.util.Calendar.AM_PM;
@@ -96,6 +101,9 @@ public class DateUtil
 
     // SimpleDataFormat does not support microseconds, it can only support up to milliseconds
     private static final Pattern NON_SIMPLE_PRECISION_TIME_PATTERN = Pattern.compile(".*([0-5][0-9]):([0-5][0-9])\\.(\\d{4,6}).*");
+    private static final Pattern YEAR_PATTERN = Pattern.compile("\\d{4}");
+    // The scanner reads a trailing number as the day, so "2024-02" would be February 2nd of an unknown month
+    private static final Pattern YEAR_MONTH_PATTERN = Pattern.compile("(\\d{4})[-/](\\d{1,2})");
     private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {
         ISO_LONG_TIME_FORMAT_STRING,
@@ -806,6 +814,46 @@ public class DateUtil
             {
             }
             throw e;
+        }
+    }
+
+    /** Parses a date that may stop at the month or year, such as "2024", "2024-02" or "Feb 2024", using the site's month/day setting. */
+    public static @Nullable Temporal parsePartialDate(@NotNull String s)
+    {
+        MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth();
+
+        return parsePartialDate(s, monthDayOption);
+    }
+
+    /**
+     * Returns a LocalDate, YearMonth or Year, or null when s isn't one. Fields are taken as written, so any time is
+     * ignored and an explicit zone can't shift the date into the server's zone.
+     */
+    public static @Nullable Temporal parsePartialDate(@NotNull String s, @NotNull MonthDayOption md)
+    {
+        s = s.trim();
+        if (YEAR_PATTERN.matcher(s).matches())
+            return Year.of(Integer.parseInt(s));
+
+        try
+        {
+            Matcher m = YEAR_MONTH_PATTERN.matcher(s);
+            if (m.matches())
+                return YearMonth.of(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)));
+
+            CalendarParts parts = new CalendarParts();
+            ParseDateTimeEN.getInstance(_localeDefault, _timezoneDefault, DateTimeOption.DateTime, md, false).scan(s, new ParsePosition(0), parts);
+            if (!parts.isSet(YEAR, MONTH))
+                return null;
+            if (parts.isSet(DAY_OF_MONTH))
+                return LocalDate.of(parts.getYear(), parts.getMonth() + 1, parts.getDayOfMonth());
+            if (parts.isHourSet() || parts.anySet(MINUTE, SECOND))
+                return null;
+            return YearMonth.of(parts.getYear(), parts.getMonth() + 1);
+        }
+        catch (ConversionException | DateTimeException e)
+        {
+            return null;
         }
     }
 
@@ -1824,6 +1872,23 @@ Parse:
             // DateTime without time
             assertEquals(dateExpected, DateUtil.parseDateTime("3.2.01", MonthDayOption.DAY_MONTH));
             assertEquals(dateExpected, DateUtil.parseDateTime("3.2.2001", MonthDayOption.DAY_MONTH));
+        }
+
+        @Test
+        public void testParsePartialDate()
+        {
+            assertEquals(Year.of(2024), parsePartialDate("2024", MonthDayOption.MONTH_DAY));
+            YearMonth feb = YearMonth.of(2024, 2);
+            for (String s : List.of("2024-02", "2024/2", "Feb 2024", "Feb. 2024", "february 2024"))
+                assertEquals(s, feb, parsePartialDate(s, MonthDayOption.MONTH_DAY));
+
+            assertEquals(LocalDate.of(2024, 2, 3), parsePartialDate("2/3/2024", MonthDayOption.MONTH_DAY));
+            assertEquals(LocalDate.of(2024, 3, 2), parsePartialDate("2/3/2024", MonthDayOption.DAY_MONTH));
+            assertEquals(LocalDate.of(2024, 2, 3), parsePartialDate("Feb 3, 2024 11:38 pm", MonthDayOption.MONTH_DAY));
+            assertEquals(LocalDate.of(2024, 2, 3), parsePartialDate("2024-02-03T23:30:00Z", MonthDayOption.MONTH_DAY));
+
+            for (String s : List.of("2024-13", "2023-02-29", "31/12/2023", "Feb", "86", "Feb 2024 11:38", "11:38", "Sodium"))
+                assertNull(s, parsePartialDate(s, MonthDayOption.MONTH_DAY));
         }
 
         private void assertXmlDateMatches(long millis)

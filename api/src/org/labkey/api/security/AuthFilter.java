@@ -16,6 +16,8 @@
 
 package org.labkey.api.security;
 
+import datadog.trace.api.interceptor.MutableSpan;
+import io.opentracing.util.GlobalTracer;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
@@ -54,6 +56,9 @@ import java.util.Random;
 public class AuthFilter implements Filter
 {
     private static final Object FIRST_REQUEST_LOCK = new Object();
+    /** Datadog's standard user attribute */
+    private static final String USER_ID_TAG = "usr.id";
+    private static final String IMPERSONATED_USER_ID_TAG = "labkey.impersonated_user_id";
 
     public static final String STRICT_TRANSPORT_SECURITY_HEADER_NAME = "Strict-Transport-Security";
     public static final String X_CONTENT_TYPE_OPTIONS_HEADER_NAME = "X-Content-Type-Options";
@@ -218,6 +223,7 @@ public class AuthFilter implements Filter
         }
 
         QueryService.get().setEnvironment(QueryService.Environment.USER, user);
+        tagRootSpan(user);
 
         try
         {
@@ -248,6 +254,19 @@ public class AuthFilter implements Filter
             assert clearRequestAttributes(req);
             ((AuthenticatedRequest) req).close();
         }
+    }
+
+    // The user id, not the email, so no personal data reaches Datadog; with the host it still identifies the account
+    private static void tagRootSpan(User user)
+    {
+        User authenticated = user.isImpersonated() ? user.getImpersonatingUser() : user;
+        if (authenticated.isGuest() || !(GlobalTracer.get().activeSpan() instanceof MutableSpan active))
+            return;
+
+        MutableSpan root = active.getLocalRootSpan();
+        root.setTag(USER_ID_TAG, String.valueOf(authenticated.getUserId()));
+        if (user.isImpersonated())
+            root.setTag(IMPERSONATED_USER_ID_TAG, String.valueOf(user.getUserId()));
     }
 
     private void addRandomHeader(HttpServletRequest req, HttpServletResponse resp)

@@ -1387,8 +1387,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         static final int MAX_LOGGED_DELETES = 250_000;
         static final int MAX_LOGGED_ROLLUPS = 250_000;
+        private static final AtomicLong INSTANCES = new AtomicLong();
 
+        // Counters restart from the clock when cleared, so a replacement's values can repeat its predecessor's
+        private final long instance = INSTANCES.incrementAndGet();
         public final AtomicLong update, insert, delete, rollup;
+        // Bumped when a change drops the MQH instead of bumping the counters above
+        public final AtomicLong rebuild = new AtomicLong();
         public final AtomicReference<Timestamp> pendingUpdateSince = new AtomicReference<>();
 
         private final RowIdLog deleteLog;
@@ -1453,6 +1458,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         @Nullable Timestamp drainPendingUpdate()
         {
             return pendingUpdateSince.getAndSet(null);
+        }
+
+        String getDataChangeToken()
+        {
+            return instance + "-" + update.get() + "-" + insert.get() + "-" + delete.get() + "-" + rollup.get() + "-" + rebuild.get() + "-" + UnloggedTableGeneration.current();
         }
     }
 
@@ -1600,6 +1610,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                  * MQH from the cache to force the SQL to be regenerated.
                  */
                 removeMaterializedView(lsid);
+                getInvalidateCounters(lsid).rebuild.incrementAndGet();
                 return;
             }
 
@@ -1615,6 +1626,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     {
                         counters.pendingUpdateSince.set(null);
                         removeMaterializedView(lsid);
+                        counters.rebuild.incrementAndGet();
                         return;
                     }
 
@@ -1650,6 +1662,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             CacheManager.addListener(_invalidationCounters::clear);
 
         return _invalidationCounters.computeIfAbsent(lsid, (_) -> new InvalidationCounters());
+    }
+
+    /** Callers must read this before the data it guards; a read racing a bump can only pair newer data with an older token. */
+    static String getDataChangeToken(String lsid)
+    {
+        return getInvalidateCounters(lsid).getDataChangeToken();
     }
 
     /** Look up (or build and cache) the {@link _MaterializedQueryHelper} for this table's sample type. Caller must ensure {@code _ss != null}. */
