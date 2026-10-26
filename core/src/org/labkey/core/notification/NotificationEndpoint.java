@@ -25,6 +25,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.security.SecurityManager;
@@ -128,10 +129,19 @@ public class NotificationEndpoint extends Endpoint
             if (!"cancel".equals(json.optString("type")) || ids == null || ids.isEmpty())
                 return;
 
+            if (ids.length() > MAX_CANCEL_REQUEST_IDS)
+                LOG.debug("{} ignoring {} of {} request ids past the limit", this, ids.length() - MAX_CANCEL_REQUEST_IDS, ids.length());
+
+            // Ids are client-generated UUIDs; anything else can't match a request and would only be logged as ignored
             List<String> requestIds = new ArrayList<>();
             for (int i = 0; i < Math.min(ids.length(), MAX_CANCEL_REQUEST_IDS); i++)
-                requestIds.add(ids.getString(i));
-            TransactionFilter.cancelRequests(this.userId, this.tabId, requestIds, RequestCancellation.Source.WS_MESSAGE);
+            {
+                String requestId = ids.optString(i);
+                if (GUID.isGUID(requestId))
+                    requestIds.add(requestId);
+            }
+            if (!requestIds.isEmpty())
+                TransactionFilter.cancelRequests(this.userId, this.tabId, requestIds, RequestCancellation.Source.WS_MESSAGE);
         }
         catch (JSONException e)
         {

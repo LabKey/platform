@@ -289,35 +289,43 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         {
             DbScope scope = DbScope.getLabKeyScope();
             Connection conn = scope.getPooledConnection();
-            Statement stmt = conn.createStatement();
-            ResultSet throwsOnFirstClose = new ResultSetWrapper(stmt.executeQuery("SELECT 1"))
-            {
-                private boolean _thrown = false;
-
-                @Override
-                public void close() throws SQLException
-                {
-                    super.close();
-                    if (!_thrown)
-                    {
-                        _thrown = true;
-                        throw new SQLException("Simulated close failure");
-                    }
-                }
-            };
-
-            ResultSetImpl rs = new ResultSetImpl(conn, scope, throwsOnFirstClose, Table.ALL_ROWS, QueryLogging.emptyQueryLogging());
             try
             {
-                rs.close();
-                fail("close() didn't throw");
+                Statement stmt = conn.createStatement();
+                ResultSet throwsOnFirstClose = new ResultSetWrapper(stmt.executeQuery("SELECT 1"))
+                {
+                    private boolean _thrown = false;
+
+                    @Override
+                    public void close() throws SQLException
+                    {
+                        super.close();
+                        if (!_thrown)
+                        {
+                            _thrown = true;
+                            throw new SQLException("Simulated close failure");
+                        }
+                    }
+                };
+
+                ResultSetImpl rs = new ResultSetImpl(conn, scope, throwsOnFirstClose, Table.ALL_ROWS, QueryLogging.emptyQueryLogging());
+                try
+                {
+                    rs.close();
+                    fail("close() didn't throw");
+                }
+                catch (SQLException e)
+                {
+                    assertEquals("Simulated close failure", e.getMessage());
+                }
+                assertTrue("Statement wasn't closed", stmt.isClosed());
+                assertTrue("Connection wasn't released", conn.isClosed());
             }
-            catch (SQLException e)
+            finally
             {
-                assertEquals("Simulated close failure", e.getMessage());
+                if (!conn.isClosed())
+                    conn.close();
             }
-            assertTrue("Statement wasn't closed", stmt.isClosed());
-            assertTrue("Connection wasn't released", conn.isClosed());
         }
     }
 }
