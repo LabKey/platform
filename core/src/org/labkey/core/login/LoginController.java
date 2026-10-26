@@ -874,7 +874,7 @@ public class LoginController extends SpringActionController
         {
             final ApiSimpleResponse response = new ApiSimpleResponse();
 
-            Pair<Boolean, String> pair = attemptReset(form.getEmail(), form.getProvider());
+            Pair<Boolean, String> pair = attemptPasswordReset(form.getEmail(), form.getProvider());
             response.put("success", pair.first);
             response.put("message", pair.second);
 
@@ -882,7 +882,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    private Pair<Boolean, String> attemptReset(String rawEmail, String providerName)
+    private Pair<Boolean, String> attemptPasswordReset(String rawEmail, String providerName)
     {
         if (null == rawEmail)
         {
@@ -924,8 +924,7 @@ public class LoginController extends SpringActionController
         try
         {
             // Create a verification key to email the user
-            String verification = LoginManager.createTempPassword();
-            LoginManager.setVerification(user, verification);
+            String verification = LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
             try
             {
                 Container c = getContainer();
@@ -935,14 +934,14 @@ public class LoginController extends SpringActionController
 
                 final User system = new User(laf.getSystemEmailAddress(), 0);
                 system.setFirstName(laf.getCompanyName());
-                SecurityManager.sendEmail(c, system, message, email.getEmailAddress(), verificationURL);
+                SecurityManager.sendEmail(c, system, message, email.getEmailAddress(), verificationURL, LoginManager.RESET_LINK_TIMEOUT);
 
                 // TODO: When is this ever true? Admin reset goes through a different code path!
                 if (!user.getEmail().equals(email.getEmailAddress()))
                 {
                     final SecurityMessage adminMessage = SecurityManager.getResetMessage(true, user, providerName);
                     message.setTo(email.getEmailAddress());
-                    SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL);
+                    SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL, LoginManager.RESET_LINK_TIMEOUT);
                 }
             }
             catch (ConfigurationException | MessagingException e)
@@ -1706,7 +1705,7 @@ public class LoginController extends SpringActionController
             if (errors.hasErrors())
             {
                 if (_unrecoverableError)
-                    _log.warn("Verification failed: {} {}", form.getEmail(), form.getVerification());
+                    _log.warn("Verification failed: {}", form.getEmail());
                 else
                     _log.warn("Password entry error: {}", form.getEmail());
             }
@@ -1910,7 +1909,7 @@ public class LoginController extends SpringActionController
             else if (verification.length() < LoginManager.TEMP_PASSWORD_LENGTH)
                 errors.reject("setPassword", "Verification failed. The verification parameter is shorter than expected. Make sure you've copied the entire link into your browser's address bar.");
             else
-                errors.reject("setPassword", "Verification failed. You may have already verified.");
+                errors.reject("setPassword", "Verification failed. The link may have expired or already been used. Request a new one if needed.");
         }
     }
 
@@ -2296,7 +2295,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(LoginForm form, BindException errors)
         {
-            Pair<Boolean, String> pair = attemptReset(form.getEmail(), form.getProvider());
+            Pair<Boolean, String> pair = attemptPasswordReset(form.getEmail(), form.getProvider());
 
             if (pair.first)
                 _finishView = new JspView<>("/org/labkey/core/login/finishResetPassword.jsp", pair.second);

@@ -38,6 +38,12 @@ public abstract class Job implements Future<Object>, Runnable
         //MemTracker.getInstance().put(this);
     }
 
+    /** What the runners call. Override to wrap run() in work its overrides can't skip. */
+    public void runJob()
+    {
+        run();
+    }
+
     protected void starting(Thread t)
     {
     }

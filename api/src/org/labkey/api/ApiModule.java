@@ -102,7 +102,10 @@ import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.PostgresSnapshot;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
+import org.labkey.api.data.queryprofiler.Query;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
@@ -478,6 +481,8 @@ public class ApiModule extends CodeOnlyModule
             Pair.TestCase.class,
             PasswordExpiration.TestCase.class,
             Path.TestCase.class,
+            Query.TestCase.class,
+            QueryProfiler.TestCase.class,
             RReport.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
             RepeatedCommitTaskMonitor.TestCase.class,
@@ -493,6 +498,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.SqlClauseTestCase.class,
             SimpleKeyMappingCache.TestCase.class,
             SqlExecutingSelector.TestCase.class,
+            SqlDialect.ExecutionPlanTypeTestCase.class,
             SqlScanner.TestCase.class,
             StrictBoundedReader.TestCase.class,
             StringExpressionFactory.TestCase.class,
@@ -584,6 +590,7 @@ public class ApiModule extends CodeOnlyModule
             PostgresSnapshot.TestCase.class,
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
+            QueryProfiler.ExecutionPlanUnavailableTestCase.class,
             QueryView.TestCase.class,
             RecordFactory.TestCase.class,
             RequestCancellation.TestCase.class,

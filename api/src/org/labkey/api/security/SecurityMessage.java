@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.MailHelper;
@@ -23,6 +24,8 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 
 import jakarta.mail.Address;
 import jakarta.mail.internet.MimeMessage;
+
+import java.time.Duration;
 
 public class SecurityMessage
 {
@@ -33,6 +36,7 @@ public class SecurityMessage
     private String _messagePrefix;
     private SecurityManager.SecurityEmailTemplate _template;
     private boolean _maskToken;
+    private @Nullable Duration _linkTimeout;
 
     public SecurityMessage(){}
 
@@ -56,6 +60,7 @@ public class SecurityMessage
             _template.setOriginatingUser(getOriginatingUser());
             _template.setRecipient(getTo());
             _template.setOptionPrefix(getMessagePrefix());
+            _template.setLinkTimeout(getLinkTimeout());
 
             m.setTemplate(_template, c);
             LookAndFeelProperties properties = LookAndFeelProperties.getInstance(c);
@@ -114,5 +119,14 @@ public class SecurityMessage
     public boolean isMaskToken()
     {
         return _maskToken;
+    }
+
+    public @Nullable Duration getLinkTimeout()
+    {
+        return _linkTimeout;
+    }
+    public void setLinkTimeout(@Nullable Duration linkTimeout)
+    {
+        _linkTimeout = linkTimeout;
     }
 }
