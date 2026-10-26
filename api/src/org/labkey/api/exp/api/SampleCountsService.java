@@ -45,7 +45,9 @@ public interface SampleCountsService
      *
      * @param sampleTypeRowId the enclosing query's sample type RowId column
      * @param liveCount counts the samples directly; the returned expression falls back to it wherever the maintained
-     *                  counts can't answer, so a count that isn't ready is slow rather than wrong
+     *                  counts can't answer, so a count that isn't ready is slow rather than wrong. An implementation
+     *                  may embed it more than once, and must append this fragment itself at each position rather than
+     *                  copying its SQL text, so that its bound parameters stay aligned with their placeholders.
      * @return null when this service can't answer at all, leaving the caller to use liveCount
      */
     @Nullable

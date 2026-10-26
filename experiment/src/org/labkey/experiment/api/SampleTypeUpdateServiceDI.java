@@ -1250,7 +1250,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         var backgroundRecalcKeys = useBackgroundRecalc && !skipRecalc ? parentKeys : null;
         var change = new SampleChange(_sampleType, getUser(), container, reason, changedSince, backgroundRecalcKeys);
-        SampleChangeNotify.recordSampleDataChange(scope, getContainer(), _sampleType == null ? null : Set.of(_sampleType.getRowId()));
+        // The container the rows were written to, which is what the counts are keyed on; it can differ from the
+        // update service's own container
+        SampleChangeNotify.recordSampleDataChange(scope, container, _sampleType == null ? null : Set.of(_sampleType.getRowId()));
         new SamplesChangedTask(getContainer()).register(scope, List.of(change), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 

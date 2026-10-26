@@ -94,14 +94,17 @@ public enum SampleChangeNotify
         {
             for (SampleCountsListener listener : LISTENERS)
             {
-                // A listener failure must not roll back the sample change itself
+                // A listener failure must not roll back the sample change itself. The cost is that whatever the
+                // listener meant to record is lost, so its counts stay wrong until it reconciles them against the
+                // samples -- say so, because this log line is the only sign of it.
                 try
                 {
                     listener.samplesChanging(container, fromTaskValues(values));
                 }
                 catch (Exception e)
                 {
-                    LOG.warn("Sample counts listener failed for container " + container.getPath(), e);
+                    LOG.error("Sample counts listener failed to record a change in " + container.getPath()
+                            + "; its counts for this folder will be stale until it reconciles them", e);
                 }
             }
         }
@@ -153,7 +156,7 @@ public enum SampleChangeNotify
             }
             catch (Exception e)
             {
-                LOG.warn("Sample counts listener failed for container " + container.getPath(), e);
+                LOG.warn("Sample counts listener failed to handle a change in " + container.getPath(), e);
             }
         }
 
