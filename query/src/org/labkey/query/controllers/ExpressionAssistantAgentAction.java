@@ -120,7 +120,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                         .put("phiColumns", form.getPhiColumns())
                         .put(VALIDATION_CALLS_ATTR, validationCalls);
 
-                LOG.info("Expression assistant prompt: {}", prompt);
+                LOG.debug("Expression assistant prompt: {}", prompt);
                 segments = buildSegments(McpService.get().sendMessageEx(chatSession, composedPrompt));
 
                 Function<String, Validation> validator = sql -> validate(sql, columnMap, form.getPhiColumns());
@@ -403,7 +403,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         while (!problems.isEmpty() && attempts.get() < MAX_REPAIR_ATTEMPTS)
         {
             int attempt = attempts.incrementAndGet();
-            LOG.info("Expression assistant reply failed server-side checks, repair attempt {}: {}", attempt, problems);
+            LOG.info("Expression assistant reply failed {} server-side check(s), repair attempt {}", problems.size(), attempt);
+            LOG.debug("Expression assistant repair attempt {} problems: {}", attempt, problems);
             List<McpService.MessageResponse> responses;
             try
             {
@@ -496,9 +497,9 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         flushHtmlSegment(segments, htmlBuf, md);
 
         // A payload the user can read means the model broke the fence protocol, so it renders as raw JSON
-        // instead of a working Apply Expression action. Log the response that caused it.
+        // instead of a working Apply Expression action.
         if (hasLeakedPayload(segments))
-            LOG.warn("Expression assistant leaked a validator payload into its reply:\n{}", text);
+            LOG.warn("Expression assistant leaked a validator payload into its reply");
 
         return segments;
     }
