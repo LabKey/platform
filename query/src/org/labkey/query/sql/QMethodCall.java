@@ -54,13 +54,15 @@ public class QMethodCall extends QExpr
         {
 			QExpr expr = (QExpr)n;
             SQLFragment sqlf = expr.getSqlFragment(builder.getDialect(), query);
-            if (null == sqlf)
+            // MethodInfo implementations read argument SQL (CAST type, isSimpleString, ROUND), which throws for an error fragment
+            if (null == sqlf || sqlf.hasError())
             {
                 QueryParseException qpe = new QueryParseException("Unexpected error parsing query near method " + getFirstChild().getTokenText(), null, expr.getLine(), expr.getColumn());
                 if (null == query)
                     throw qpe;
                 if (query.getParseErrors().isEmpty())
                     query.getParseErrors().add(qpe);
+                builder.appendError();
                 return;
             }
             argumentsEx.add(new Pair<>(sqlf,expr.isConstant()));

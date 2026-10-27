@@ -359,7 +359,7 @@ public class QueryServiceImpl implements QueryService
         return new SQLFragment()
             .unsafeAppend("(").appendIdentifier(col.getAlias())
             .unsafeAppend(")")
-            .append(negate ? " NOT" : "")
+            .unsafeAppend(negate ? " NOT" : "")
             .unsafeAppend(" IN (")
             .unsafeAppend(" SELECT ")
             .append(t.getColumns().getFirst().getValueSql("_"))
@@ -519,12 +519,12 @@ public class QueryServiceImpl implements QueryService
             }
             String expression = (String) getParamVals()[0];
             if (isBlank(expression))
-                return new SQLFragment("1=1");
+                return SQLFragment.unsafe("1=1");
             // reparse because we have a dialect now
             List<QueryParseException> errors = new ArrayList<>();
             QExpr expr = new SqlParser(dialect, null).parseExpr(expression, errors);
             if (null == expr || !errors.isEmpty())
-                return new SQLFragment("0=1"); // UNDONE: error reporting
+                return SQLFragment.unsafe("0=1"); // UNDONE: error reporting
             QExpr bound = bind(expr, columnMap);
             SQLFragment ret = null;
             if (null != bound && query.getParseErrors().isEmpty())

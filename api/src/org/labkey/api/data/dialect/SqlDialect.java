@@ -723,6 +723,11 @@ public abstract class SqlDialect
 
     public abstract String getCaseInsensitiveLikeOperator();
 
+    public final SQLFragment getCaseInsensitiveLikeOperatorAsSql()
+    {
+        return new SQLFragment().setSqlUnsafe(getCaseInsensitiveLikeOperator());
+    }
+
     public abstract String getVarcharLengthFunction();
 
     public abstract String getStdDevFunction();

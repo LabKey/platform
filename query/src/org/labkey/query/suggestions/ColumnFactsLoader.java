@@ -106,9 +106,9 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
             .distinct(true)
             .buildSqlFragment();
 
-        SQLFragment sql = new SQLFragment("SELECT S.").appendIdentifier(column.getAlias()).append(" AS value FROM (")
+        SQLFragment sql = SQLFragment.unsafe("SELECT S.").appendIdentifier(column.getAlias()).unsafeAppend(" AS value FROM (")
             .append(selectSql)
-            .append(") S WHERE S.").appendIdentifier(column.getAlias()).append(" IS NOT NULL");
+            .unsafeAppend(") S WHERE S.").appendIdentifier(column.getAlias()).unsafeAppend(" IS NOT NULL");
         // One extra row for a blank value, which is dropped, and one to detect overflow
         sql = table.getSqlDialect().limitRows(sql, ColumnFactsCache.DISTINCT_VALUE_LIMIT + 2);
         service.bindNamedParameters(sql, parameters);

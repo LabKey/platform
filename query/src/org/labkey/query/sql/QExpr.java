@@ -104,7 +104,7 @@ abstract public class QExpr extends QNode
 
     public ColumnInfo createColumnInfo(TableInfo table, String name, final Query query)
     {
-        ExprColumn expr = new ExprColumn(table, name, new SQLFragment("{{expr}}"), getJdbcType())
+        ExprColumn expr = new ExprColumn(table, name, SQLFragment.unsafe("{{expr}}"), getJdbcType())
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)

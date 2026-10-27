@@ -258,8 +258,8 @@ public class QuerySelectView extends AbstractQueryRelation
                 columnMap.put(c.getFieldKey(), c);
         }
 
-        SQLFragment selectFrag = new SQLFragment("SELECT ");   // SAS/SHARE JDBC driver requires "SELECT " ("SELECT\n" is not allowed), #17168
-        String strComma = "\n";
+        SQLFragment selectFrag = new SQLFragment().SELECT();   // SAS/SHARE JDBC driver requires "SELECT " ("SELECT\n" is not allowed), #17168
+        SQLFragment.SqlSeparator selectSep = SQLFragment.sep("\n", ",\n");
         String tableName = table.getName();
 
         if (tableName == null)
@@ -293,11 +293,10 @@ public class QuerySelectView extends AbstractQueryRelation
                     continue;
                 }
                 column.declareJoins(tableAlias, joins);
-                selectFrag.append(strComma);
+                selectFrag.append(selectSep.next());
                 selectFrag.append(column.getValueSql(tableAlias));
                 selectFrag.unsafeAppend(" AS ");
                 selectFrag.appendIdentifier(column.getAlias());
-                strComma = ",\n";
             }
         }
 
@@ -308,17 +307,16 @@ public class QuerySelectView extends AbstractQueryRelation
         // It is easier and more consistent to always wrap.
         SQLFragment outerSelect;
         {
-            outerSelect = distinct ? new SQLFragment("SELECT DISTINCT ") : new SQLFragment("SELECT ");
-            strComma = "";
+            outerSelect = distinct ? new SQLFragment().SELECT_DISTINCT() : new SQLFragment().SELECT();
+            SQLFragment.SqlSeparator outerSep = SQLFragment.sep("", ", ");
 
             Set<FieldKey> selectedFieldKeys = new HashSet<>();
             for (ColumnInfo column : selectColumns)
             {
                 if (selectedFieldKeys.add(column.getFieldKey()))
                 {
-                    outerSelect.append(strComma);
+                    outerSelect.append(outerSep.next());
                     outerSelect.appendIdentifier(column.getAlias());
-                    strComma = ", ";
                 }
             }
 
@@ -328,9 +326,8 @@ public class QuerySelectView extends AbstractQueryRelation
                 {
                     if (selectedFieldKeys.add(column.getFieldKey()))
                     {
-                        outerSelect.append(strComma);
+                        outerSelect.append(outerSep.next());
                         outerSelect.appendIdentifier(column.getAlias());
-                        strComma = ", ";
                     }
                 }
             }
@@ -366,7 +363,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 effectiveFilter = reduced;
         }
 
-        SQLFragment fromFrag = new SQLFragment("FROM ");
+        SQLFragment fromFrag = SQLFragment.unsafe("FROM ");
         Set<FieldKey> fieldKeySet = new TreeSet<>();
         allColumns.stream()
             .map(col -> (null != col.getWrappedColumnName() && null != table.getColumn(col.getWrappedColumnName())) ?  table.getColumn(col.getWrappedColumnName()) : col)

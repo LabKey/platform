@@ -41,13 +41,18 @@ public class StandardDialectStringHandler implements DialectStringHandler
     @Override
     public String substituteParameters(SQLFragment frag)
     {
+        return substituteParameters(frag.getSQL(), frag.getParams());
+    }
+
+    @Override
+    public String substituteParameters(String sql, List<Object> parameters)
+    {
         // Substitute the parameters into the SQL string, following the rules for quoted identifiers, string literals,
         // comments, etc. Previously, we used regular expressions to find (and ignore) string literals and quoted
         // identifiers while doing parameter substitution, but the first attempt exploded with long string literals
         // (#12866) and the second attempt occasionally failed to return. So, we wrote this dumb little parser instead.
-        String sql = frag.getSQL();
         StringBuilder ret = new StringBuilder();
-        List<Object> params = new LinkedList<>(frag.getParams());
+        List<Object> params = new LinkedList<>(parameters);
 
         int begin = 0;
         int current = 0;

@@ -115,11 +115,9 @@ public class QField extends QInternalExpr
         AbstractQueryRelation.RelationColumn col = getRelationColumn();
         if (null == col)
         {
-            if (null != _table && !_table.getParseErrors().isEmpty())
-                return;
-            String message = "Unexpected error parsing field:" + getSourceText();
-            _table.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
-            builder.unsafeAppend("#ERROR: ").append(message).unsafeAppend("#");
+            if (_table.getParseErrors().isEmpty())
+                _table.getParseErrors().add(new QueryParseException("Unexpected error parsing field:" + getSourceText(), null, getLine(), getColumn()));
+            builder.appendError();
             return;
         }
         builder.append(col.getValueSql());

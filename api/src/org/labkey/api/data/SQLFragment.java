@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -28,9 +29,9 @@ import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -82,9 +83,15 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 /// ```
 public class SQLFragment
 {
+    private static final Logger LOG = LogHelper.getLogger(SQLFragment.class, "SQL generated with errors");
+
     private String sql;
     private StringBuilder sb = null;
     private List<Object> params;          // TODO: Should be List<?>
+    private boolean hasError = false;
+
+    // A syntax error on every dialect, in case the SQL escapes hasError() via a string round trip; spaced so no dialect lexes it as one operator or a comment
+    private static final String ERROR_MARKER = "< < < ERROR: generated with errors > > >";
 
     private final List<Object> tempTokens = new ArrayList<>();      // Hold refs to ensure they're not GC'd
 
@@ -173,6 +180,7 @@ public class SQLFragment
     public SQLFragment(SQLFragment other, boolean deep)
     {
         sql = other.getSqlCharSequence().toString();
+        hasError = other.hasError;
         if (null != other.params)
             addAll(other.params);
         if (null != other.commonTableExpressionsMap && !other.commonTableExpressionsMap.isEmpty())
@@ -198,7 +206,36 @@ public class SQLFragment
     /* same as getSQL() but without CTE handling */
     public String getRawSQL()
     {
+        checkError();
+        return _getRawSQL();
+    }
+
+    private String _getRawSQL()
+    {
         return null != sb ? sb.toString() : null != sql ? sql : "";
+    }
+
+    /** Marks this SQL as never to be executed (e.g. generated after a parse error); getSQL() and getRawSQL() then throw */
+    public SQLFragment appendError()
+    {
+        unsafeAppend(ERROR_MARKER);
+        hasError = true;
+        return this;
+    }
+
+    public boolean hasError()
+    {
+        // CTE sqlf is null between createCommonTableExpressionToken() and setCommonTableExpressionSql()
+        return hasError || (null != commonTableExpressionsMap && commonTableExpressionsMap.values().stream().anyMatch(cte -> null != cte.sqlf && cte.sqlf.hasError()));
+    }
+
+    private void checkError()
+    {
+        if (hasError())
+        {
+            LOG.debug("SQL was generated with errors and must not be executed:\n{}", _getSQL());
+            throw new IllegalStateException("SQL was generated with errors and must not be executed");
+        }
     }
 
     /*
@@ -319,6 +356,13 @@ public class SQLFragment
 
     public String getSQL()
     {
+        checkError();
+        return _getSQL();
+    }
+
+
+    protected String _getSQL()
+    {
         if (null == commonTableExpressionsMap || commonTableExpressionsMap.isEmpty())
             return null != sb ? sb.toString() : null != sql ? sql : "";
 
@@ -366,8 +410,8 @@ public class SQLFragment
     /* This is not an exhaustive .equals() test, but it give pretty good confidence that these statements are the same */
     static boolean debugCompareSQL(SQLFragment sql1, SQLFragment sql2)
     {
-        String select1 = sql1.getRawSQL();
-        String select2 = sql2.getRawSQL();
+        String select1 = sql1._getRawSQL();
+        String select2 = sql2._getRawSQL();
 
         if ((null == sql1.commonTableExpressionsMap || sql1.commonTableExpressionsMap.isEmpty()) &&
                 (null == sql2.commonTableExpressionsMap || sql2.commonTableExpressionsMap.isEmpty()))
@@ -379,10 +423,10 @@ public class SQLFragment
             return false;
 
         Set<String> ctes1 = sql1.commonTableExpressionsMap.values().stream()
-                .map(cte -> markerPattern.matcher(cte.sqlf.getRawSQL()).replaceAll("CTE"))
+                .map(cte -> markerPattern.matcher(cte.sqlf._getRawSQL()).replaceAll("CTE"))
                 .collect(Collectors.toSet());
         Set<String> ctes2 = sql2.commonTableExpressionsMap.values().stream()
-                .map(cte -> markerPattern.matcher(cte.sqlf.getRawSQL()).replaceAll("CTE"))
+                .map(cte -> markerPattern.matcher(cte.sqlf._getRawSQL()).replaceAll("CTE"))
                 .collect(Collectors.toSet());
         return ctes1.equals(ctes2);
     }
@@ -407,7 +451,7 @@ public class SQLFragment
 
     public String toDebugString(SqlDialect dialect)
     {
-        return JdbcUtil.format(this, dialect);
+        return dialect.getStringHandler().substituteParameters(_getSQL(), getParams());
     }
 
     public List<Object> getParams()
@@ -871,6 +915,7 @@ public class SQLFragment
             addAll(f.params);
         mergeCommonTableExpressions(f);
         tempTokens.addAll(f.tempTokens);
+        hasError |= f.hasError;
         return this;
     }
 
@@ -1035,8 +1080,9 @@ public class SQLFragment
         {
             throw new IllegalArgumentException("Not supported for SQLFragments with CTEs - they must be inserted/merged separately");
         }
-        getStringBuilder().insert(index, sql.getRawSQL());
+        getStringBuilder().insert(index, sql._getRawSQL());
         tempTokens.addAll(sql.tempTokens);
+        hasError |= sql.hasError;
     }
 
     /** Insert into the SQL
@@ -1062,6 +1108,7 @@ public class SQLFragment
             getMutableParams().addAll(0, sql.params);
         mergeCommonTableExpressions(sql);
         tempTokens.addAll(sql.tempTokens);
+        hasError |= sql.hasError;
     }
 
 
@@ -1306,6 +1353,44 @@ public class SQLFragment
 
             assertEquals(List.of("s", "t"), SQLFragment.unsafe("?, ?", List.of("s", "t")).getParams());
             assertTrue(SQLFragment.unsafe("x", (List<?>) null).getParams().isEmpty());
+        }
+
+        @Test
+        public void appendError()
+        {
+            SQLFragment bad = SQLFragment.unsafe("SELECT 1 AS x, ").appendError();
+            assertTrue(bad.hasError());
+            assertThrows(IllegalStateException.class, bad::getSQL);
+            assertThrows(IllegalStateException.class, bad::getRawSQL);
+            assertTrue(bad.toString().contains(ERROR_MARKER));
+            assertEquals(bad, new SQLFragment(bad));
+            assertEquals(bad.hashCode(), new SQLFragment(bad).hashCode());
+
+            assertTrue(new SQLFragment(bad).hasError());
+            assertTrue(SQLFragment.unsafe("SELECT * FROM (").append(bad).unsafeAppend(") t").hasError());
+            SQLFragment prepended = SQLFragment.unsafe(" FROM t");
+            prepended.prepend(bad);
+            assertTrue(prepended.hasError());
+            SQLFragment inserted = SQLFragment.unsafe("SELECT * FROM t");
+            inserted.insert(0, bad);
+            assertTrue(inserted.hasError());
+            SQLFragment withCte = new SQLFragment();
+            String token = withCte.addCommonTableExpression(dialect, "bad", "bad", bad);
+            withCte.unsafeAppend("SELECT * FROM ").append(new SQLFragment().setSqlUnsafe(token));
+            assertTrue(withCte.hasError());
+            assertThrows(IllegalStateException.class, withCte::getSQL);
+            assertThrows(IllegalStateException.class, () -> new SqlSelector(CoreSchema.getInstance().getSchema(), bad));
+            assertThrows(IllegalStateException.class, () -> new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(bad));
+            SQLFragment pendingCte = new SQLFragment();
+            String pendingToken = pendingCte.createCommonTableExpressionToken(dialect, "pending", "pending");
+            pendingCte.unsafeAppend("SELECT * FROM ").append(new SQLFragment().setSqlUnsafe(pendingToken));
+            assertFalse(pendingCte.hasError());
+            assertEquals("SELECT * FROM " + pendingToken, pendingCte.getRawSQL());
+
+            // The marker must fail on the database too, for SQL that lost the flag through a string round trip
+            SQLFragment roundTrip = new SQLFragment().setSqlUnsafe(bad._getRawSQL());
+            assertFalse(roundTrip.hasError());
+            assertThrows(RuntimeException.class, () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roundTrip).getObject(Integer.class));
         }
 
         @Test
@@ -1720,13 +1805,13 @@ public class SQLFragment
         {
             return false;
         }
-        return getSQL().equals(other.getSQL()) && getParams().equals(other.getParams());
+        return _getSQL().equals(other._getSQL()) && getParams().equals(other.getParams());
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(getSQL(), getParams());
+        return Objects.hash(_getSQL(), getParams());
     }
 
     /**

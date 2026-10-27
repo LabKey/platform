@@ -1124,6 +1124,12 @@ d,seven,twelve,day,month,date,duration,guid
             new FailTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0) UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),  // Can't have 2 recursive references
             new FailTest("WITH peeps AS (SELECT * FROM R), peeps2 AS (SELECT seven FROM peeps UNION ALL SELECT date FROM peeps) SELECT * FROM peeps2"),   // Column type mismatch
             new FailTest("WITH peeps2 AS (SELECT seven FROM R UNION SELECT seven FROM S WHERE S.seven IN (SELECT seven FROM peeps2) ) SELECT * FROM peeps2"),
+            // Subquery errors found during SQL generation must surface as parse errors, including inside method arguments
+            new FailTest("SELECT (SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b) AS x FROM R"),
+            new FailTest("SELECT CAST((SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b) AS DOUBLE) AS x FROM R"),
+            new FailTest("SELECT ROUND(1.5, (SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b)) AS x FROM R"),
+            new FailTest("SELECT (SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b) AS x FROM R LIMIT 5"),
+            new FailTest("SELECT GROUP_CONCAT((SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b)) AS x FROM R"),
 
             // UNDONE: should work since R.seven and seven are the same
             new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),
@@ -2009,7 +2015,7 @@ d,seven,twelve,day,month,date,duration,guid
 
     Boolean booleanSelect(SQLFragment s)
     {
-        SQLFragment select = new SQLFragment("SELECT ").append(s);
+        SQLFragment select = new SQLFragment().SELECT().append(s);
         return new SqlSelector(DbScope.getLabKeyScope(), select).getObject(Boolean.class);
     }
 

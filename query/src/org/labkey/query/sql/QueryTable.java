@@ -400,8 +400,8 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
         if (null == _generateSelectSQL)
             _generateSelectSQL = false;
 
-        sql.unsafeAppend("SELECT ");
-        String comma = "";
+        sql.SELECT();
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
         int columnCount = 0;
         for (TableColumn col : _selectedColumns.values())
         {
@@ -415,15 +415,14 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             if (col._col instanceof PropertyColumn)
                 _generateSelectSQL = true;
             col.declareJoins(_innerAlias, joins);
-            sql.append(comma);
+            sql.append(comma.next());
             SQLFragment f = col.getInternalSql();
-            if (f.getSQL().length() > 80)
+            if (f.getSqlCharSequence().length() > 80)
                 sql.unsafeAppend("\n").append(f).unsafeAppend("\n");
             else
                 sql.append(f);
             sql.unsafeAppend(" AS ");
-            sql.append(col.getAlias());
-            comma = ", ";
+            sql.appendIdentifier(col.getAlias());
         }
         if (0 == columnCount)
             sql.unsafeAppend("1 AS \"_ONE_\"");
@@ -518,7 +517,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             if (_generateSelectSQL == null)
             {
                 _query.getParseErrors().add(new QueryParseException("Missing from-clause entry: " + _originalAlias, null, 0, 0));
-                return new SQLFragment("NULL");
+                return SQLFragment.unsafe("NULL");
             }
             else if (_generateSelectSQL)
                 return super.getValueSql();

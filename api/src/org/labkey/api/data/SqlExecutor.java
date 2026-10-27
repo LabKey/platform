@@ -75,6 +75,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
 
     public Collection<String> getExecutionPlan(SQLFragment sql, ExecutionPlanType type)
     {
+        checkError(sql);
         SqlDialect dialect = getScope().getSqlDialect();
 
         if (dialect.canShowExecutionPlan(type))
@@ -102,8 +103,15 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
         return execute(sql, resultsExecutor, handler);
     }
 
+    private static void checkError(SQLFragment sql)
+    {
+        if (sql.hasError())
+            throw new IllegalStateException("SQL was generated with errors and must not be executed");
+    }
+
     private <T, C> T execute(SQLFragment sql, StatementExecutor<T, C> statementExecutor, @Nullable C context)
     {
+        checkError(sql);
         Connection conn = null;
 
         try

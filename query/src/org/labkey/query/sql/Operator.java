@@ -296,6 +296,11 @@ public enum Operator
         return _strOp;
     }
 
+    public SQLFragment getOperatorSql(SqlDialect d)
+    {
+        return new SQLFragment().setSqlUnsafe(getOperator(d));
+    }
+
     public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
     {
         _appendSql(builder,query,operands);
@@ -326,7 +331,7 @@ public enum Operator
 
     public void appendSqlUnary(SqlBuilder builder, Query query, Iterable<QNode> operands)
     {
-        builder.append(getOperator(builder.getDialect()));
+        builder.append(getOperatorSql(builder.getDialect()));
         builder.unsafeAppend("(");
         Iterator<QNode> i = operands.iterator();
         assert i.hasNext();

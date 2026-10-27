@@ -1096,7 +1096,7 @@ public class QueryManager
             TableInfo table = schema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT, new ContainerFilter.AllFolders(adminUser));
             if (table != null)
             {
-                SQLFragment sql = new SQLFragment("SELECT COUNT(*) as ExportCount, Comment FROM ").append(table, "t")
+                SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) as ExportCount, Comment FROM ").append(table, "t")
                         .unsafeAppend(" GROUP BY Comment");
 
                 new SqlSelector(dbSchema, sql)
@@ -1113,7 +1113,7 @@ public class QueryManager
 
                 // This is an approximation of the multi-tab export count. We record an audit log for each tab, and
                 // they are all likely to have the same timestamp. Not exact, but perhaps good enough for current purposes.
-                sql = new SQLFragment("SELECT COUNT(*) FROM (SELECT *\n" +
+                sql = SQLFragment.unsafe("SELECT COUNT(*) FROM (SELECT *\n" +
                         "                      FROM (SELECT COUNT(*) as count, DATE_TRUNC('second', Created) as created, CreatedBy\n" +
                         "                            FROM ").append(table, "t").unsafeAppend("\n" +
                         "                            WHERE comment = 'Exported to Excel'\n" +
@@ -1132,7 +1132,7 @@ public class QueryManager
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
         return new SqlSelector(dbSchema,
-                new SQLFragment("SELECT \"schema\", COUNT(*) AS count FROM (\n" +
+                SQLFragment.unsafe("SELECT \"schema\", COUNT(*) AS count FROM (\n" +
                         "    SELECT CASE WHEN \"schema\" LIKE 'assay.%' THEN 'assay' ELSE \"schema\" END AS \"schema\" FROM query.querydef WHERE metadata LIKE '%<valueExpression%'\n" +
                         ") AS subquery GROUP BY \"schema\"")
         ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
@@ -1148,20 +1148,20 @@ public class QueryManager
         var schemaField = customView.getColumn("schema").getSelectIdentifier();
         SQLFragment schemaClause;
         if (schema.equalsIgnoreCase("assay"))
-            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).unsafeAppend(" LIKE 'assay.%'");
+            schemaClause = SQLFragment.unsafe("C.").appendIdentifier(schemaField).unsafeAppend(" LIKE 'assay.%'");
         else
-            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).unsafeAppend(" = ").appendValue(schema);
+            schemaClause = SQLFragment.unsafe("C.").appendIdentifier(schemaField).unsafeAppend(" = ").appendValue(schema);
         return Map.of(
                 "defaultOverrides", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags < 2 AND C.name IS NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags < 2 AND C.name IS NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "inheritable", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags = 1")).getObject(Long.class), // inheritable, not hidden, not snapshot
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags = 1")).getObject(Long.class), // inheritable, not hidden, not snapshot
                 "namedViews", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags < 2 AND C.name IS NOT NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags < 2 AND C.name IS NOT NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "shared", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.customviewowner IS NULL")).getObject(Long.class),
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.customviewowner IS NULL")).getObject(Long.class),
                 "identifyingFieldsViews", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.name = '~~identifyingfields~~'")).getObject(Long.class)
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.name = '~~identifyingfields~~'")).getObject(Long.class)
         );
     }
 

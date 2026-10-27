@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.query.QueryParseException;
 
 public class QType extends QExpr
 {
@@ -54,7 +55,13 @@ public class QType extends QExpr
     public void appendSql(SqlBuilder builder, Query query)
     {
         String typeName = builder.getDialect().getSqlTypeName(jdbcType);
-        builder.append(typeName);
+        if (null == typeName)
+        {
+            query.getParseErrors().add(new QueryParseException("Unsupported CAST type: " + jdbcType.name(), null, getLine(), getColumn()));
+            builder.appendError();
+            return;
+        }
+        builder.append(builder.getDialect().getSqlTypeNameAsSql(jdbcType));
         Integer len = length;
 
         // SQL Server silently truncates CAST(value AS NVARCHAR) to the first 30 characters.

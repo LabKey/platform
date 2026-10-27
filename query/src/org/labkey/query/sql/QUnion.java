@@ -17,6 +17,8 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.query.QueryParseException;
 
 
 public class QUnion extends QExpr
@@ -55,8 +57,16 @@ public class QUnion extends QExpr
         {
             throw new IllegalStateException("Fields should have been resolved");
         }
+        SQLFragment f = _union.getSql();
+        if (null == f)
+        {
+            if (_union.getParseErrors().isEmpty())
+                _union.getParseErrors().add(new QueryParseException("Unexpected error parsing union: " + getSourceText(), null, getLine(), getColumn()));
+            builder.appendError();
+            return;
+        }
         builder.unsafeAppend("(");
-        builder.append(_union.getSql());
+        builder.append(f);
         builder.unsafeAppend(")");
     }
 

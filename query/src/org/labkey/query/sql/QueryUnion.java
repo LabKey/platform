@@ -385,7 +385,14 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
         if (!_query.getParseErrors().isEmpty())
             return null;
 
-		String unionOperator = "";
+        SQLFragment.SqlSeparator unionOperator = switch (_qunion.getTokenType())
+        {
+            case SqlBaseParser.UNION -> SQLFragment.sep("", "\nUNION\n");
+            case SqlBaseParser.UNION_ALL -> SQLFragment.sep("", "\nUNION ALL\n");
+            case SqlBaseParser.INTERSECT -> SQLFragment.sep("", "\nINTERSECT\n");
+            case SqlBaseParser.EXCEPT -> SQLFragment.sep("", "\nEXCEPT\n");
+            default -> throw new IllegalStateException("Unexpected set operator: " + SqlParser.tokenName(_qunion.getTokenType()));
+        };
         SqlBuilder unionSql = new SqlBuilder(dialect);
 
         assert unionSql.appendComment("<QueryUnion>", dialect);
@@ -453,14 +460,12 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
                 }
                 String message = "Unexpected error parsing union term: " + src;
                 _query.getParseErrors().add(new QueryParseException(message, null, line, col));
-                unionSql.unsafeAppend("#ERROR: ").append(message).unsafeAppend("#");
                 return null;
             }
-			unionSql.append(unionOperator);
+			unionSql.append(unionOperator.next());
 			unionSql.unsafeAppend("(");
 			unionSql.append(sql);
 			unionSql.unsafeAppend(")");
-			unionOperator = "\n" + SqlParser.tokenName(_qunion.getTokenType()) + "\n";
 		}
 
         List<QOrder.SortEntry> sort = null == _qorderBy ? null : _qorderBy.getSort();
@@ -477,15 +482,15 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
 		if (null != sort && !sort.isEmpty())
 		{
             unionSql.unsafeAppend("\nORDER BY ");
-            String comma = "";
+            boolean first = true;
             for (var entry : sort)
             {
                 QExpr expr = resolveFields(entry.expr());
-                unionSql.append(comma);
+                unionSql.unsafeAppend(first ? "" : ", ");
                 unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
                 if (!entry.direction())
                     unionSql.unsafeAppend(" DESC");
-                comma = ", ";
+                first = false;
             }
             if (null == _limit)
                 dialect.appendSortOnSubqueryWithoutLimitQualifier(unionSql);
@@ -604,7 +609,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
 				@Override
 				public void appendSql(SqlBuilder builder, Query query)
 				{
-                    builder.append(uc.getAlias());
+                    builder.appendIdentifier(uc.getAlias());
 				}
 			};
 		}

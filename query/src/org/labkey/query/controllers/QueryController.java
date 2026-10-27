@@ -4141,7 +4141,7 @@ public class QueryController extends SpringActionController
                 // I don't believe the above comment, so here's an assert
                 assert(colGetAgain.getAlias().equals(col.getAlias()));
 
-                SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(col.getAlias()).unsafeAppend(" AS value FROM (");
+                SQLFragment sql = new SQLFragment().SELECT().appendIdentifier(col.getAlias()).unsafeAppend(" AS value FROM (");
                 sql.append(selectSql);
                 sql.unsafeAppend(") S ORDER BY value");
 
@@ -8982,7 +8982,7 @@ public class QueryController extends SpringActionController
                         }
                         // if that worked, let have the DB check it too
                         // CONSIDER: will this work with LabKey SQL named parameters?
-                        SQLFragment sql = new SQLFragment("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
+                        SQLFragment sql = SQLFragment.unsafe("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
                         new SqlExecutor(ti.getSchema().getScope()).execute(sql);
                     }
                     catch (Exception x)
