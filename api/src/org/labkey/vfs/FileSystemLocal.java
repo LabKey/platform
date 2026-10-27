@@ -102,7 +102,7 @@ public class FileSystemLocal extends AbstractFileSystemLike
         return createFileLike(normalized, nioPath.toFile());
     }
 
-    // A Path part is a single name, but nio re-splits it on the platform separator (e.g. "..\x" or "C:\x" on Windows)
+    // Each Path part must map to exactly one nio name; reject a part nio would split or treat as a root (e.g. "..\x" or "C:x" on Windows)
     private java.nio.file.Path toNioName(String part)
     {
         java.nio.file.Path name;

@@ -293,11 +293,7 @@ public interface FileSystemLike
     /** Helper for partially converted code. root must exist. */
     static FileLike wrapFile(File root, File f) throws IOException
     {
-        if (!root.isDirectory())
-            throw new FileNotFoundException(root.getPath());
-        FileSystemLike fs = new Builder(root.toURI()).build();
-        var rel = FileUtil.getAbsoluteCaseSensitiveFile(root).toPath().relativize(FileUtil.getAbsoluteCaseSensitiveFile(f).toPath());
-        return fs.getRoot().resolveFile(new Path(rel));
+        return wrapFile(FileUtil.getAbsoluteCaseSensitiveFile(root).toPath(), FileUtil.getAbsoluteCaseSensitiveFile(f).toPath());
     }
 
     /** Helper for partially converted code. root must exist. */

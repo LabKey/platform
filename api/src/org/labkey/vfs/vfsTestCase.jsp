@@ -17,6 +17,8 @@
 <%@ page import="org.junit.Before" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.io.IOException" %>
+<%@ page import="java.io.FileNotFoundException" %>
 <%@ page import="java.nio.file.Files" %>
 <%@ page import="java.net.URI" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
@@ -226,7 +228,23 @@
         assertEquals(fromFile, fromNio);
         assertTrue(fromNio.isFile());
 
-        assertThrows(FileUtil.InvalidPathReferenceException.class, () -> FileSystemLike.wrapFile(root, new File(root.getParentFile(), "x.txt")));
+        assertThrows(IOException.class, () -> FileSystemLike.wrapFile(root, new File(root.getParentFile(), "x.txt")));
+        assertThrows(IOException.class, () -> FileSystemLike.wrapFile(root, new File(new File(root.getParentFile(), root.getName() + "foo"), "x.txt")));
+        assertThrows(IOException.class, () -> FileSystemLike.wrapFile(root, new File(root, "sub/../../x.txt")));
+        assertEquals(fromFile, FileSystemLike.wrapFile(root, new File(root, "sub/../sub/f.txt")));
+
+        FileLike self = FileSystemLike.wrapFile(root, root);
+        assertTrue(self.getPath().isEmpty());
+        assertTrue(self.isDirectory());
+
+        // URI round trip must not decode the name twice
+        java.nio.file.Path encoded = Files.createFile(tempPath.resolve("a b%20c.txt"));
+        FileLike e = FileSystemLike.wrapFile(root, encoded.toFile());
+        assertEquals(1, e.getPath().size());
+        assertEquals("a b%20c.txt", e.getName());
+        assertTrue(e.isFile());
+
+        assertThrows(FileNotFoundException.class, () -> FileSystemLike.wrapFile(nested.toFile(), nested.toFile()));
 
         if (!System.getProperty("os.name").toLowerCase().startsWith("windows"))
         {
