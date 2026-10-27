@@ -15,6 +15,7 @@
  */
 package org.labkey.core.metrics;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
@@ -34,6 +35,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +60,9 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
 
     /** Feature area descriptions by module name, then feature area */
     private final Map<String, Map<String, String>> _featureAreaDescriptions = new ConcurrentHashMap<>();
+
+    /** "module.featureArea" keys already warned about lacking a description */
+    private final Set<String> _undescribedWarned = ConcurrentHashMap.newKeySet();
 
     /** Timestamp when we last saved the counts to the DB */
     private Runnable _saver;
@@ -205,6 +210,9 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         String scoping = getScoping(module, featureArea);
         Map<String, Map<String, AtomicLong>> moduleMetrics = getModuleMetrics(module);
         String moduleName = module.getName();  // Use canonical name to ensure consistent casing
+
+        if (!_featureAreaDescriptions.getOrDefault(moduleName, Map.of()).containsKey(featureArea) && _undescribedWarned.add(moduleName + "." + featureArea))
+            LOG.log(AppProps.getInstance().isDevMode() ? Level.ERROR : Level.WARN, "Simple metric feature area {}.{} has no description. Describe it via SimpleMetricsService.describeFeatureArea() or, for client-side metrics, ClientSideMetricDescriptions", moduleName, featureArea);
 
         Map<String, AtomicLong> counts = moduleMetrics.computeIfAbsent(featureArea, k ->
         {

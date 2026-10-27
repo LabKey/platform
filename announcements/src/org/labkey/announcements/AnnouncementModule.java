@@ -210,7 +210,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                 }
                 return metrics
                     .put("messageBoards", boards.get(), "Containers with at least one message")
-                    .put("messages", new TableSelector(comm.getTableInfoAnnouncements()).getRowCount(), "Messages across all containers, including responses")
+                    .put("messages", () -> new TableSelector(comm.getTableInfoAnnouncements()).getRowCount(), "Messages across all containers, including responses")
                     .put("settings", Map.of(
                         "secure", MultiSetUtils.getOccurrenceMap(secure),
                         "moderatorReview", MultiSetUtils.getOccurrenceMap(moderator)

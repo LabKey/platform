@@ -58,6 +58,12 @@ public class UsageMetrics
         this(null, new LinkedHashMap<>(), new LinkedHashMap<>());
     }
 
+    /** @return an instance that records descriptions and drops values without calling their suppliers */
+    public static UsageMetrics describeOnly()
+    {
+        return new UsageMetrics(null, null, new LinkedHashMap<>());
+    }
+
     /** @param values null for a group that's only described */
     UsageMetrics(@Nullable String path, @Nullable Map<String, Object> values, Map<String, Description> descriptions)
     {
@@ -79,7 +85,7 @@ public class UsageMetrics
         return this;
     }
 
-    /** Calls the supplier only when values are reported, so a {@code reportedIf(false)} view skips the work. A literal null value resolves here. */
+    /** Skips the supplier on a describe-only instance from {@code reportedIf(false)}. Java binds {@code put(key, null, description)} to this overload. */
     public UsageMetrics put(@NotNull String key, @Nullable Supplier<?> value, @NotNull String description)
     {
         return put(key, value, description, Kind.CURRENT);
@@ -93,7 +99,7 @@ public class UsageMetrics
         return this;
     }
 
-    /** @return this, or if not reported, a view at the same path that describes what's put into it and drops the values, groups included */
+    /** @return this, or if not reported, a describe-only instance at the same path: it records descriptions of what's put into it, groups included, but drops the values */
     public UsageMetrics reportedIf(boolean reported)
     {
         return reported ? this : new UsageMetrics(_path, null, _descriptions);
@@ -168,7 +174,7 @@ public class UsageMetrics
         return _path == null ? key : _path + "." + key;
     }
 
-    /** @return null for a view that's only described */
+    /** @return null for a describe-only instance */
     @Nullable Map<String, Object> getMutableValues()
     {
         return _values;
@@ -266,6 +272,23 @@ public class UsageMetrics
             absent.put("runs", 1L);
             absent.put("runs", 1L, "Runs");
             assertEquals(Map.of(), metrics.getValues());
+        }
+
+        @Test
+        public void testDescribeOnly()
+        {
+            UsageMetrics metrics = describeOnly();
+            metrics.put("count", () -> { throw new AssertionError("Supplier called while only describing"); }, "Count");
+            UsageMetricGroup group = metrics.group("byType", "Counts by type");
+            group.put("lazy", () -> { throw new AssertionError("Supplier called while only describing"); });
+            group.put("eager", 1L, "Eager value");
+
+            assertEquals(Map.of(), metrics.getValues());
+            assertEquals(List.of(
+                new Description("count", "Count", Kind.CURRENT),
+                new Description("byType", "Counts by type", Kind.CURRENT),
+                new Description("byType.eager", "Eager value", Kind.CURRENT)),
+                metrics.getDescriptions());
         }
 
         @Test

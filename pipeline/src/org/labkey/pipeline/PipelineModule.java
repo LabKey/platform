@@ -263,8 +263,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             metrics.put("triggerCounts", triggerCounts, "Pipeline trigger configurations across all containers, by task pipeline: Enabled, Disabled, and Jobs run by that pipeline; computed over config-job join rows, so Enabled/Disabled are inflated when jobs exist");
             metrics.put("jmsType", PipelineService.get().getJmsType().toString(), "JMS queue type for pipeline jobs: none, inProcess, external, or unknown");
 
-            metrics.put("pipelineRootCount", PipelineService.get().getAllPipelineRoots().size(), "Containers with an explicitly configured primary pipeline root");
-            metrics.put("supplementalDirectories", new TableSelector(PipelineSchema.getInstance().getTableInfoPipelineRoots(), new SimpleFilter("SupplementalPath", null, CompareType.NONBLANK), null).getRowCount(), "Configured pipeline roots that have a supplemental directory");
+            metrics.put("pipelineRootCount", () -> PipelineService.get().getAllPipelineRoots().size(), "Containers with an explicitly configured primary pipeline root");
+            metrics.put("supplementalDirectories", () -> new TableSelector(PipelineSchema.getInstance().getTableInfoPipelineRoots(), new SimpleFilter("SupplementalPath", null, CompareType.NONBLANK), null).getRowCount(), "Configured pipeline roots that have a supplemental directory");
 
             return metrics;
         });

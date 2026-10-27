@@ -1066,7 +1066,7 @@ public class QueryManager
                 metrics.put("externalDatasources", statsMap, "External (non-LabKey) data sources by database product name");
                 metrics.put(
                     "customViewCounts",
-                    Map.of(
+                    () -> Map.of(
                         "DataClasses", getSchemaCustomViewCounts("exp.data"),
                         "SampleTypes", getSchemaCustomViewCounts("samples"),
                         "Assays", getSchemaCustomViewCounts("assay"),
@@ -1074,8 +1074,8 @@ public class QueryManager
                     ),
                     "Saved custom views across all containers by schema area (DataClasses, SampleTypes, Assays, Inventory): defaultOverrides (unnamed) and namedViews exclude hidden and snapshot views, inheritable likewise, shared (no owner) and identifyingFieldsViews count all"
                 );
-                metrics.put("customViewWithLineageColumn", getLineageCustomViewMetrics(), "Custom views with lineage (input, output, ancestor) columns, hidden and snapshot views excluded: view counts, plus total and min/percentile/max/avg columns per view when any exist");
-                metrics.put("queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric(), "Query definitions whose metadata defines a calculated field, by schema (assay.* schemas grouped as assay)");
+                metrics.put("customViewWithLineageColumn", () -> getLineageCustomViewMetrics(), "Custom views with lineage (input, output, ancestor) columns, hidden and snapshot views excluded: view counts, plus total and min/percentile/max/avg columns per view when any exist");
+                metrics.put("queryDefWithCalculatedFieldsCounts", () -> getCalculatedFieldsCountsMetric(), "Query definitions whose metadata defines a calculated field, by schema (assay.* schemas grouped as assay)");
 
                 Map<String, Object> exportTypeCounts = getExportTypeCountsMetric();
                 if (exportTypeCounts != null)

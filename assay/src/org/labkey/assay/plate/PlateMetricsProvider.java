@@ -272,7 +272,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             TableInfo hitTable = schema.getTableInfoHit();
             TableInfo filterCriteriaTable = schema.getTableInfoFilterCriteria();
             List<ExpProtocol> plateEnabledProtocols = getPlateEnabledAssayProtocols();
-            plateMetrics.put("assays", Map.of(
+            plateMetrics.put("assays", () -> Map.of(
                 "hitCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(hitTable, "h")).getObject(Long.class),
                 "plateSetsWithHits", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(DISTINCT plateSetPath) FROM ").append(hitTable, "h")).getObject(Long.class),
                 "assaysWithPlateMetadataEnabled", plateEnabledProtocols.size(),
@@ -292,7 +292,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             plateMetrics.put("wells", wells, "All wells, including those on templates and archived plates, and those with a sample");
         }
 
-        plateMetrics.put("metadata", Map.of(
+        plateMetrics.put("metadata", () -> Map.of(
             "fieldsCount", getMetadataFieldsCount()
         ), "Custom plate metadata fields, summed across Biologics projects");
 

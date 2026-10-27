@@ -101,11 +101,11 @@ public class UsageMetricsServiceImpl implements UsageMetricsService
             {
                 try
                 {
-                    moduleDescriptions.addAll(provider.collectUsageMetrics().getDescriptions());
+                    moduleDescriptions.addAll(provider.getUsageMetricDescriptions());
                 }
                 catch (Exception e)
                 {
-                    LOG.error("Failed to collect usage metric descriptions for module {}", moduleName, e);
+                    LOG.error("A provider in module {} failed to collect usage metric descriptions", moduleName, e);
                 }
             });
             moduleDescriptions.sort(Comparator.comparing(UsageMetrics.Description::path, String.CASE_INSENSITIVE_ORDER));

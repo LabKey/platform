@@ -1285,15 +1285,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
             metrics.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","), "Comma-separated names of other webapps deployed alongside LabKey");
 
-            metrics.put("totalLogins", UserManager.getAuthCount(null, false, false, false), "Login events in the audit log; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
-            metrics.put("apiKeyLogins", UserManager.getAuthCount(null, false, true, false), "Login events in the audit log that used an API key; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
+            metrics.put("totalLogins", () -> UserManager.getAuthCount(null, false, false, false), "Login events in the audit log; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
+            metrics.put("apiKeyLogins", () -> UserManager.getAuthCount(null, false, true, false), "Login events in the audit log that used an API key; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
             metrics.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout(), "HTTP session timeout in minutes");
             metrics.put("userLimits", new LimitActiveUsersSettings().getMetricsMap(), "Active user warning and limit settings: whether each is on, its user count threshold, and its message");
             metrics.put("systemUserCount", UserManager.getSystemUserCount(), "Active users marked as system users, which don't count toward user limits");
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
-            metrics.put("uniqueRecentUserCount", UserManager.getAuthCount(cal.getTime(), false, false, true), "Distinct users who logged in during the last 30 days");
-            metrics.put("uniqueRecentNonSystemUserCount", UserManager.getAuthCount(cal.getTime(), true, false, true), "Distinct non-system users who logged in during the last 30 days");
+            metrics.put("uniqueRecentUserCount", () -> UserManager.getAuthCount(cal.getTime(), false, false, true), "Distinct users who logged in during the last 30 days");
+            metrics.put("uniqueRecentNonSystemUserCount", () -> UserManager.getAuthCount(cal.getTime(), true, false, true), "Distinct non-system users who logged in during the last 30 days");
             // Optionally include a list of active users, Issue #53050
             metrics.reportedIf(OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_EXTENDED_METRICS))
                 .put("activeUsers", () -> UserManager.getActiveUsers().stream()
@@ -1303,9 +1303,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     "Emails of active non-system users; only reported when the extended metrics feature flag is on"
                 );
 
-            metrics.put("workbookCount", ContainerManager.getWorkbookCount(), "Workbooks across the server");
-            metrics.put("archivedFolderCount", ContainerManager.getArchivedContainerCount(), "Archived folders across the server");
-            metrics.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize(), "Size of the LabKey database in bytes");
+            metrics.put("workbookCount", () -> ContainerManager.getWorkbookCount(), "Workbooks across the server");
+            metrics.put("archivedFolderCount", () -> ContainerManager.getArchivedContainerCount(), "Archived folders across the server");
+            metrics.put("databaseSize", () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize(), "Size of the LabKey database in bytes");
 
             // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
             // Note that they can be non-trivial in size.
@@ -1317,12 +1317,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             metrics.put("databaseSchemaSize", schemaSizes, "Size in bytes of each database schema, including indexes; temp excluded");
 
             metrics.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics(), "Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
-            metrics.put("customLabels", CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
+            metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
             UsageMetricGroup roleAssignments = metrics.group("roleAssignments", "Direct assignments of designer roles to users or groups, by role, across all containers");
             final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
-            roleAssignments.put("assayDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
-            roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
-            roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
+            roleAssignments.put("assayDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
+            roleAssignments.put("dataClassDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
+            roleAssignments.put("sampleTypeDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
 
             UsageMetricGroup allowListCounts = metrics.group("allowListCounts", "Entries in each site allow list, such as external redirect hosts and file extensions");
             for (AllowListType type : AllowListType.values())

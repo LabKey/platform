@@ -211,7 +211,7 @@ public class Portal implements ModuleChangeListener
                     append(getTableInfoPortalWebParts(), "pwp").
                     unsafeAppend(" GROUP BY Name");
 
-            return metrics.put("webPartCounts", new SqlSelector(getSchema(), sql).getValueMap(String.class), "Web parts on portal pages across the server, by web part name");
+            return metrics.put("webPartCounts", () -> new SqlSelector(getSchema(), sql).getValueMap(String.class), "Web parts on portal pages across the server, by web part name");
         };
     }
 

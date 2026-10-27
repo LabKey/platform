@@ -131,8 +131,8 @@ public class SurveyModule extends DefaultModule
         if (null != svc)
         {
             svc.registerUsageMetrics(NAME, metrics -> {
-                metrics.put("surveyDesigns", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class), "Survey designs across all containers");
-                metrics.put("surveys", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class), "Survey responses across all containers, submitted or in progress");
+                metrics.put("surveyDesigns", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class), "Survey designs across all containers");
+                metrics.put("surveys", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class), "Survey responses across all containers, submitted or in progress");
                 return metrics;
             });
         }

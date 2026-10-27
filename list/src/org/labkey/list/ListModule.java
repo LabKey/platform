@@ -155,9 +155,9 @@ public class ListModule extends SpringModule
         {
             svc.registerUsageMetrics(getName(), metrics -> {
                 DbSchema dbSchema = DbSchema.get("exp", DbSchemaType.Module);
-                metrics.put("listCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list").getObject(Long.class), "List definitions across all containers, including picklists");
-                metrics.put("publicPicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist + "'").getObject(Long.class), "Shared (public) picklists across all containers");
-                metrics.put("privatePicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist + "'").getObject(Long.class), "Private picklists across all containers");
+                metrics.put("listCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list").getObject(Long.class), "List definitions across all containers, including picklists");
+                metrics.put("publicPicklistCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist + "'").getObject(Long.class), "Shared (public) picklists across all containers");
+                metrics.put("privatePicklistCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist + "'").getObject(Long.class), "Private picklists across all containers");
                 return metrics;
             });
         }

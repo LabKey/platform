@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /** A described nested object; its children may omit descriptions because they inherit the group's */
 public class UsageMetricGroup extends UsageMetrics
@@ -33,6 +34,15 @@ public class UsageMetricGroup extends UsageMetrics
         Map<String, Object> values = getMutableValues();
         if (values != null)
             values.put(key, value);
+        return this;
+    }
+
+    /** Skips the supplier on a describe-only group. Java binds {@code put(key, null)} to this overload. */
+    public UsageMetricGroup put(@NotNull String key, @Nullable Supplier<?> value)
+    {
+        Map<String, Object> values = getMutableValues();
+        if (values != null)
+            values.put(key, value == null ? null : value.get());
         return this;
     }
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.usageMetrics;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,6 +30,12 @@ public interface UsageMetricsProvider
     default Map<String, Object> getUsageMetrics()
     {
         return collectUsageMetrics().getValues();
+    }
+
+    /** Skips values passed as suppliers; work done outside a supplier still runs */
+    default List<UsageMetrics.Description> getUsageMetricDescriptions()
+    {
+        return addUsageMetrics(UsageMetrics.describeOnly()).getDescriptions();
     }
 
     default UsageMetrics collectUsageMetrics()
