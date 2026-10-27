@@ -14,6 +14,7 @@ import org.labkey.api.mcp.PromptForm;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -24,6 +25,7 @@ import org.springframework.validation.BindException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -47,12 +49,38 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
     {
         try
         {
-            return IOUtils.resourceToString(PROMPT_RESOURCE, null, DocumentationAssistantAgentAction.class.getClassLoader());
+            return IOUtils.resourceToString(PROMPT_RESOURCE, null, DocumentationAssistantAgentAction.class.getClassLoader()) +
+                    "\n## This server\n\nThis server is running LabKey version " + AppProps.getInstance().getReleaseVersion() + ".\n";
         }
         catch (IOException x)
         {
             throw new ConfigurationException("error loading resource", x);
         }
+    }
+
+    @Override
+    protected Set<String> getToolNames()
+    {
+        // This is a list of most tools. We're skipping tools like executeSQL right now because it returns rows of data,
+        // which could potentially return PHI, and we don't want PHI leaking into the ChatHistory, even if it's a temp
+        // table.
+        return Set.of(
+                "whereAmIWhoAmITalkingTo",
+                "getMyPermissions",
+                "listModules",
+                "listContainers",
+                "siteSearch",
+                "listSearchCategories",
+                "searchDocumentation",
+                "retrieveDocument",
+                "listResources",
+                "readResource",
+                "listSchemas",
+                "listTables",
+                "listColumns",
+                "getSourceForSavedQuery",
+                "validateSQL"
+        );
     }
 
     @Override
