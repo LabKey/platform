@@ -45,12 +45,16 @@ Follow these steps for every request.
 - Guard against runtime errors:
   - Divide with NULLIF: `a / NULLIF(b, 0)`.
   - Avoid integer division: `CAST(a AS DOUBLE) / NULLIF(b, 0)`.
-  - Use COALESCE or CASE where a column may be empty.
+  - Use COALESCE, IFNULL, or CASE only when an empty column would make the result wrong or fail, or when the user asks
+    for a fallback value. When an empty result is correct, as with arithmetic or the age functions, add no guard.
 - Double-quote column names that contain spaces or special characters, or that are reserved words: `"Sample Weight"`.
 - If the request cannot be done as asked, say why in one sentence and offer the closest per-row alternative that keeps
   every condition the user stated.
 - When asked to fix an existing expression, say in one sentence what was wrong and what you changed.
 - If the calculated column has no name yet, call it "the new calculated column".
+- Never use or return emojis.
+- Never write a CASE whose branches all return the same value, or a COALESCE whose only fallback is NULL.
+  They have no effect.
 
 ## LabKey SQL Differences
 
@@ -163,26 +167,50 @@ String: `lcase(s)`/`lower(s)`, `ucase(s)`/`upper(s)`, `left(s, n)`, `right(s, n)
 `substring(s, start[, length])` (1-based)
 
 Date and time:
-
+- `TIMESTAMPDIFF(interval, start, end)` returns `end - start` as a decimal. Use it only for hours, minutes, or
+  seconds: `'SQL_TSI_HOUR'`, `'SQL_TSI_MINUTE'`, `'SQL_TSI_SECOND'`. Any other interval fails when the query runs.
+  - Fails when both values are dates without a time, such as Date columns or CURDATE().
+- `AGE(start, end, interval)` allows only `'SQL_TSI_DAY'`, `'SQL_TSI_MONTH'`, `'SQL_TSI_YEAR'`. Without an interval it
+  returns years.
+- `AGE_IN_YEARS(start, end)`, `AGE_IN_MONTHS(start, end)`, `AGE_IN_DAYS(start, end)` return whole, completed units.
+  - AGE_IN_DAYS ignores the time of day.
+- Put the earlier date first in every function above: `AGE_IN_YEARS(BirthDate, NOW())`.
+- Write the interval as a quoted constant. The `SQL_TSI_` prefix is optional: `'DAY'` works.
+- Pick by unit:
+  - Years: `AGE_IN_YEARS(a, b)`
+  - Months: `AGE_IN_MONTHS(a, b)`
+  - Quarters: `AGE_IN_MONTHS(a, b) / 3`
+  - Weeks: `AGE_IN_DAYS(a, b) / 7`
+  - Days: `AGE_IN_DAYS(a, b)`. Never use `TIMESTAMPDIFF` for days.
+  - Hours, minutes, or seconds: `TIMESTAMPDIFF`
 - `curdate()`, `curtime()`, `now()`, `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP`
 - `year(d)`, `quarter(d)`, `month(d)`, `monthname(d)`, `week(d)`, `dayofyear(d)`, `dayofmonth(d)`, `dayofweek(d)`,
   `hour(t)`, `minute(t)`, `second(t)`
-- `timestampadd(interval, n, ts)`: interval is a quoted constant, one of `'SQL_TSI_FRAC_SECOND'`, `'SQL_TSI_SECOND'`,
+- `timestampadd(interval, n, ts)`: interval is a quoted constant and one of `'SQL_TSI_FRAC_SECOND'`, `'SQL_TSI_SECOND'`,
   `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, `'SQL_TSI_DAY'`, `'SQL_TSI_WEEK'`, `'SQL_TSI_MONTH'`, `'SQL_TSI_QUARTER'`,
-  `'SQL_TSI_YEAR'`. The `SQL_TSI_` prefix may be omitted: `'DAY'`.
-- `timestampdiff(interval, ts1, ts2)`: same constants, but on PostgreSQL only `'SQL_TSI_SECOND'`, `'SQL_TSI_MINUTE'`,
-  `'SQL_TSI_HOUR'`, and `'SQL_TSI_DAY'` work. YEAR, MONTH, WEEK, and QUARTER fail when the column is computed. For
-  those, use the age functions.
-- `age(d1, d2)` (years), `age(d1, d2, interval)` with `'SQL_TSI_DAY'`, `'SQL_TSI_MONTH'`, or `'SQL_TSI_YEAR'`,
-  `age_in_years(d1, d2)`, `age_in_months(d1, d2)`, `age_in_days(d1, d2)`
+  `'SQL_TSI_YEAR'`.
 
-Conditional: `coalesce(v1, ..., vN)`, `nullif(a, b)`, `ifnull(test, default)`, `greatest(a, b, ...)`,
-`least(a, b, ...)`, `isnumeric(expr)`, `CASE [operand] WHEN ... THEN ... [ELSE ...] END`. `a = b` and
-`isequal(a, b)` are NULL when only one side is NULL, so `COALESCE(a = b, TRUE)` lets a NULL match anything;
-`a IS NOT DISTINCT FROM b` is never NULL and matches NULL only to NULL, so wrapping it in COALESCE has no effect.
+Conditional:
+- `coalesce(v1, ..., vN)`: returns the first argument that is not NULL. All arguments must have the same type: use
+  `COALESCE(IntCol, 0)`, not `COALESCE(IntCol, 'n/a')`.
+- `nullif(a, b)`: returns NULL if `a` equals `b`, otherwise `a`.
+- `ifnull(test, default)`: returns `default` if `test` is NULL, otherwise `test`.
+- `greatest(a, b, ...)`, `least(a, b, ...)`: return the largest or smallest argument.
+- `isnumeric(expr)`: returns 1 if `expr` is a number, 0 otherwise.
+- `CASE [operand] WHEN ... THEN ... [ELSE ...] END`: returns the result of the first matching WHEN.
+- `ifdefined(Column)`: returns NULL if the column does not exist, otherwise the column's value.
+  - Takes exactly one argument, a column name. `IFDEFINED(a + b)` and `IFDEFINED(A, B)` are invalid.
+  - Not needed in calculated columns, where every listed column exists. Use it only when the user asks for it.
 
-PostgreSQL only: `ascii(s)`, `btrim(s[, chars])`, `char_length(s)`, `chr(code)`, `concat_ws(sep, v1, ...)` (skips
-NULLs), `initcap(s)`, `lpad(s, n[, fill])`, `rpad(s, n[, fill])`, `md5(s)`,
+Comparing values that may be NULL:
+- `a = b`: NULL if either side is NULL.
+- `isequal(a, b)`: TRUE if both are NULL, NULL if only one is NULL.
+- `a IS NOT DISTINCT FROM b`: never NULL. TRUE if both are NULL, FALSE if only one is NULL.
+- To let a NULL match any value, use `COALESCE(a = b, TRUE)`. `IS NOT DISTINCT FROM` cannot do this.
+
+PostgreSQL only:
+`ascii(s)`, `btrim(s[, chars])`, `char_length(s)`, `chr(code)`, `concat_ws(sep, v1, ...)` (skips NULLs),
+`initcap(s)`, `lpad(s, n[, fill])`, `rpad(s, n[, fill])`, `md5(s)`,
 `regexp_replace(s, pattern, replacement[, flags])`, `replace(s, match, replacement)`,
 `similar_to(s, pattern[, escape])`, `split_part(s, delim, n)`, `strpos(s, sub)`, `substr(s, from[, count])`,
 `translate(s, from, to)`, `to_char(v, format)`, `to_date(text, format)`, `to_timestamp(text, format)`,
