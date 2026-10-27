@@ -27,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SQLFragment;
@@ -333,7 +334,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             }
         }
 
-        index(SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified), null);
+        // LATE_POSTCOMMIT so indexing reads the materialized view after the refresh signal above
+        ExperimentServiceImpl.getExpSchema().getScope().addCommitTask(
+            () -> index(SearchService.get().defaultTask().getQueue(getContainer(), SearchService.PRIORITY.modified), null),
+            DbScope.CommitTaskOption.LATE_POSTCOMMIT);
     }
 
     @Override

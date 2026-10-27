@@ -29,6 +29,7 @@ import org.labkey.api.pipeline.PipelineJobNotificationProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.workflow.WorkflowService;
@@ -349,12 +350,17 @@ public class QueryImportPipelineJob extends PipelineJob
             if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))
                 auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction, _importContextBuilder.getTransactionDetails());
 
-            int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
-
-            if (ve.hasErrors())
+            int importedCount;
+            try (TracedOperation op = AbstractQueryImportAction.importDataOperation(target, getContainer()).start())
             {
-                AbstractQueryImportAction.addImportValidationErrorMetric(_importContextBuilder.getInsertOption(), target, null);
-                throw ve;
+                importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
+
+                if (ve.hasErrors())
+                {
+                    AbstractQueryImportAction.addImportValidationErrorMetric(_importContextBuilder.getInsertOption(), target, null);
+                    throw ve;
+                }
+                op.completed(importedCount);
             }
 
             if (auditEvent != null)
