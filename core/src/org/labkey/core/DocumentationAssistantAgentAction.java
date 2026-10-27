@@ -1,5 +1,6 @@
 package org.labkey.core;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -15,12 +16,14 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.AbortedRequestException;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +37,7 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
 {
     private static final Logger LOG = LogHelper.getLogger(DocumentationAssistantAgentAction.class, "Documentation Assistant interactions");
     private static final String UNEXPECTED_ERROR_MESSAGE = "Request failed. Please try again.";
+    private static final String PROMPT_RESOURCE = "org/labkey/core/prompts/DocumentationAssistant.md";
 
     @Override
     protected String getAgentName()
@@ -44,7 +48,14 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
     @Override
     protected String getServicePrompt()
     {
-        return "Use the Server Documentation to answer the question.";
+        try
+        {
+            return IOUtils.resourceToString(PROMPT_RESOURCE, null, DocumentationAssistantAgentAction.class.getClassLoader());
+        }
+        catch (IOException x)
+        {
+            throw new ConfigurationException("error loading resource", x);
+        }
     }
 
     @Override
@@ -127,8 +138,8 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
     }
 
     /**
-     * Combines the user's prompt with any first-turn context supplied by the client. When {@code firstTurn} is false the context fields are ignored, and the
-     * user's prompt is returned verbatim.
+     * Combines the user's prompt with any first-turn context supplied by the client. When {@code firstTurn} is false
+     * the context fields are ignored, and the user's prompt is returned verbatim.
      */
     static String composePrompt(boolean firstTurn, String userPrompt)
     {
