@@ -2139,6 +2139,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         StringBuilder errors = new StringBuilder();
         String sampleTypeName = sampleType == null ? null : sampleType.getName();
+        Pair<SchemaKey, String> remapQuery = sampleRemapQuery(sampleType);
 
         // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
         // First attempt to resolve by name.
@@ -2146,9 +2147,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // TODO, rowId is not found for samples newly created in the same import.
             // This is causing name patterns containing lineage lookup to fail to generate the correct names if the child samples and their parents are created from the same import file
-            Object remap = (sampleTypeName == null) ?
-                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, container, getContainerFilterTypeForFind(container), sampleName) :
-                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, container, getContainerFilterTypeForFind(container), sampleName);
+            Object remap = cache.remap(remapQuery.first, remapQuery.second, user, container, getContainerFilterTypeForFind(container), sampleName);
             Long rowId = asLong(remap);
 
             if (rowId != null)
@@ -2181,6 +2180,63 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             throw new ValidationException(errors.toString());
 
         return null;
+    }
+
+    @Override
+    public void prefetchExpMaterials(
+        Container container,
+        User user,
+        Collection<String> sampleNames,
+        @Nullable ExpSampleType sampleType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Long, ExpMaterial> materialCache
+    )
+    {
+        Pair<SchemaKey, String> remapQuery = sampleRemapQuery(sampleType);
+        ContainerFilter.Type containerFilterType = getContainerFilterTypeForFind(container);
+        cache.prefetch(remapQuery.first, remapQuery.second, user, container, containerFilterType, sampleNames);
+
+        Set<Long> rowIds = new LinkedHashSet<>();
+        for (String sampleName : sampleNames)
+        {
+            if (StringUtils.isEmpty(sampleName))
+                continue;
+
+            Long rowId = null;
+            try
+            {
+                rowId = asLong(cache.remap(remapQuery.first, remapQuery.second, user, container, containerFilterType, sampleName));
+            }
+            catch (ConversionException e)
+            {
+                // Like findExpMaterial, an ambiguous name falls back to resolving by rowId
+            }
+
+            if (rowId == null)
+            {
+                try
+                {
+                    rowId = ConvertHelper.convert(sampleName, Long.class);
+                }
+                catch (ConversionException e)
+                {
+                    // not a rowId
+                }
+            }
+
+            if (rowId != null && !materialCache.containsKey(rowId))
+                rowIds.add(rowId);
+        }
+
+        for (List<Long> batch : ListUtils.partition(new ArrayList<>(rowIds), BatchSize.get(ROWS)))
+            getExpMaterials(container, user, batch, sampleType).forEach(m -> materialCache.putIfAbsent(m.getRowId(), m));
+    }
+
+    private Pair<SchemaKey, String> sampleRemapQuery(@Nullable ExpSampleType sampleType)
+    {
+        if (sampleType == null)
+            return Pair.of(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name());
+        return Pair.of(SamplesSchema.SCHEMA_SAMPLES, sampleType.getName());
     }
 
     @Override

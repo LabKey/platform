@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.audit.SampleTimelineAuditEvent" %>
 <%@ page import="org.labkey.api.collections.ArrayListMap" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.collections.LongHashMap" %>
 <%@ page import="org.labkey.api.data.BatchSize" %>
 <%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -61,6 +62,7 @@
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.query.SchemaKey" %>
+<%@ page import="org.labkey.api.query.ValidationException" %>
 <%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
@@ -1465,6 +1467,100 @@ public void testRemapPrefetchMatchesPerValueLookup() throws Exception
 
         // One query per batch of 3 for each of the LSID and Name maps
         assertTrue(query.second + ": prefetch ran " + prefetchQueries + " queries", prefetchQueries <= 2 * 3);
+    }
+}
+
+@Test // GH Issue 1746
+public void testPrefetchExpMaterialsMatchesFindExpMaterial() throws Exception
+{
+    List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+    ExpSampleType typeA = createSampleType(generateSampleTypeName(), props, null);
+    String typeB = createSampleType(generateSampleTypeName(), props, null).getName();
+
+    String prefix = typeA.getName() + "-";
+    List<Map<String, Object>> samplesA = insertSampleRows(typeA.getName(), List.of(
+        CaseInsensitiveHashMap.of("name", prefix + "1"),
+        CaseInsensitiveHashMap.of("name", prefix + "Shared")
+    ));
+    List<Map<String, Object>> samplesB = insertSampleRows(typeB, List.of(
+        CaseInsensitiveHashMap.of("name", prefix + "Shared"),
+        CaseInsensitiveHashMap.of("name", prefix + "OnlyInB")
+    ));
+    String rowIdA1 = String.valueOf(samplesA.getFirst().get("rowid"));
+    String rowIdBShared = String.valueOf(samplesB.getFirst().get("rowid"));
+    String rowIdBOnly = String.valueOf(samplesB.get(1).get("rowid"));
+
+    // Issue 47509: names that are other samples' row IDs; rowIdA1 is in both types, so ambiguous in exp.Materials
+    insertSampleRows(typeA.getName(), List.of(CaseInsensitiveHashMap.of("name", rowIdA1), CaseInsensitiveHashMap.of("name", rowIdBOnly)));
+    insertSampleRows(typeB, List.of(CaseInsensitiveHashMap.of("name", rowIdA1)));
+
+    String cachedBeforePrefetch = prefix + "1";
+    List<String> keys = List.of(
+        cachedBeforePrefetch,
+        cachedBeforePrefetch,
+        rowIdA1,
+        rowIdBOnly,
+        rowIdBShared,
+        prefix + "Shared",
+        prefix + "OnlyInB",
+        prefix + "Missing"
+    );
+
+    for (ExpSampleType sampleType : Arrays.asList(typeA, null))
+    {
+        String label = "untyped";
+        if (sampleType != null)
+            label = sampleType.getName();
+
+        Map<String, String> expected = new HashMap<>();
+        RemapCache coldCache = new RemapCache();
+        Map<Long, ExpMaterial> coldMaterials = new LongHashMap<>();
+        for (String key : keys)
+            expected.put(key, findResult(sampleType, key, coldCache, coldMaterials));
+
+        RemapCache cache = new RemapCache();
+        Map<Long, ExpMaterial> materials = new LongHashMap<>();
+        findResult(sampleType, cachedBeforePrefetch, cache, materials);
+
+        int prefetchQueries;
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3); QueryCounter counter = new QueryCounter())
+        {
+            ExperimentService.get().prefetchExpMaterials(c, _user, keys, sampleType, cache, materials);
+            prefetchQueries = counter.getCount();
+        }
+
+        Map<String, String> actual = new HashMap<>();
+        List<String> queried = new ArrayList<>();
+        for (String key : keys)
+        {
+            try (QueryCounter counter = new QueryCounter())
+            {
+                actual.put(key, findResult(sampleType, key, cache, materials));
+                // findExpMaterial doesn't cache a row ID that matches no sample, so it queries that one again
+                if (!"null".equals(expected.get(key)) && counter.getCount() > 0)
+                    queried.add(key + ": " + counter.getSql());
+            }
+        }
+        assertEquals(label, expected, actual);
+        assertTrue(label + ": lookups after the prefetch queried: " + queried, queried.isEmpty());
+
+        // One query per batch of 3 for each of the LSID map, the Name map, and the sample load
+        assertTrue(label + ": prefetch ran " + prefetchQueries + " queries", prefetchQueries <= 3 * 3);
+    }
+}
+
+private String findResult(@Nullable ExpSampleType sampleType, String key, RemapCache cache, Map<Long, ExpMaterial> materialCache)
+{
+    try
+    {
+        ExpMaterial material = ExperimentService.get().findExpMaterial(c, _user, key, sampleType, cache, materialCache);
+        if (material == null)
+            return "null";
+        return String.valueOf(material.getRowId());
+    }
+    catch (ValidationException e)
+    {
+        return "error: " + e.getMessage();
     }
 }
 

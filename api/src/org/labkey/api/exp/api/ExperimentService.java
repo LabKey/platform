@@ -448,6 +448,19 @@ public interface ExperimentService extends ExperimentRunTypeSource
         @NotNull Map<Long, ExpMaterial> materialCache
     ) throws ValidationException;
 
+    /**
+     * Resolve many sample names in bulk into the same caches, so {@link #findExpMaterial} runs no queries for them.
+     * Errors are left for findExpMaterial to report.
+     */
+    void prefetchExpMaterials(
+        Container container,
+        User user,
+        Collection<String> sampleNames,
+        @Nullable ExpSampleType sampleType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Long, ExpMaterial> materialCache
+    );
+
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
     @NotNull ExpExperiment createExpExperiment(Container container, String name);
