@@ -2848,12 +2848,24 @@ public class CoreController extends SpringActionController
         }
     }
 
+    private static final String HIDDEN_CHAT_MESSAGE = "This message was sent from a folder you no longer have permission to see.";
+
     /** Matches the client's ChatMessage, which shows an error as an assistant message. */
     private static JSONObject toChatMessage(ChatHistoryService.ChatSnippet snippet)
     {
         JSONObject message = new JSONObject()
                 .put("id", String.valueOf(snippet.rowId()))
                 .put("timestamp", snippet.created().getTime());
+        if (snippet.hidden())
+        {
+            message.put("hidden", true);
+            return switch (snippet.role())
+            {
+                case user -> message.put("role", "user").put("text", HIDDEN_CHAT_MESSAGE);
+                case assistant -> message.put("role", "assistant").put("segments", new JSONArray().put(new JSONObject(Map.of("type", "html", "html", "<p>" + HIDDEN_CHAT_MESSAGE + "</p>"))));
+                case error -> message.put("role", "assistant").put("error", HIDDEN_CHAT_MESSAGE);
+            };
+        }
         return switch (snippet.role())
         {
             case user -> message.put("role", "user").put("text", snippet.content());

@@ -37,8 +37,11 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.mcp.ChatHistoryService;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -90,17 +93,18 @@ public class ChatHistoryManager implements ChatHistoryService
             return List.of();
 
         SQLFragment sql = new SQLFragment("SELECT RowId, Container, AgentName, Role, Content, Created FROM ").append(sqlName(table))
-                .append(" WHERE CreatedBy = ? AND ConversationId = ? ORDER BY RowId")
+                .append(" WHERE CreatedBy = ? AND ConversationId = ? ORDER BY RowId DESC")
                 .addAll(user.getUserId(), conversationId.toString());
 
         Map<String, Boolean> readable = new HashMap<>();
         List<ChatSnippet> snippets = new ArrayList<>();
-        new SqlSelector(table.getSchema(), sql).forEach(rs -> {
-            if (readable.computeIfAbsent(rs.getString("Container"), id -> canRead(user, id)))
-                snippets.add(new ChatSnippet(rs.getInt("RowId"), rs.getString("AgentName"), Role.valueOf(rs.getString("Role")), rs.getString("Content"), rs.getTimestamp("Created")));
+        new SqlSelector(table.getSchema(), table.getSqlDialect().limitRows(sql, MAX_HISTORY_ROWS)).forEach(rs -> {
+            boolean hidden = !readable.computeIfAbsent(rs.getString("Container"), id -> canRead(user, id));
+            snippets.add(new ChatSnippet(rs.getInt("RowId"), rs.getString("AgentName"), Role.valueOf(rs.getString("Role")),
+                    hidden ? null : rs.getString("Content"), rs.getTimestamp("Created"), hidden));
         });
 
-        return snippets.size() > MAX_HISTORY_ROWS ? List.copyOf(snippets.subList(snippets.size() - MAX_HISTORY_ROWS, snippets.size())) : snippets;
+        return snippets.reversed();
     }
 
     @Override
@@ -233,6 +237,7 @@ public class ChatHistoryManager implements ChatHistoryService
     public static class TestCase extends Assert
     {
         private static final String AGENT = "ChatHistoryManager.TestCase";
+        private static final String FOLDER_NAME = "ChatHistoryManagerTestCase";
 
         private final ChatHistoryManager _manager = new ChatHistoryManager();
         private final MockHttpSession _session = new MockHttpSession();
@@ -245,6 +250,9 @@ public class ChatHistoryManager implements ChatHistoryService
         {
             if (!_session.isInvalid())
                 _session.invalidate();
+            Container folder = ContainerManager.getForPath(_container.getPath() + "/" + FOLDER_NAME);
+            if (null != folder)
+                ContainerManager.deleteAll(folder, _user);
         }
 
         @Test
@@ -296,6 +304,41 @@ public class ChatHistoryManager implements ChatHistoryService
             _manager.addChatSnippet(_session, _user, _container, AGENT, _conversationId, Role.user, "Yours");
 
             assertEquals(List.of("Yours"), _manager.getChatHistory(_user, _conversationId).stream().map(ChatSnippet::content).toList());
+        }
+
+        @Test
+        public void testUnreadableRowsAreHidden()
+        {
+            Container folder = ContainerManager.createContainer(_container, FOLDER_NAME, _user);
+            // A non-empty policy of its own, so the folder doesn't inherit the parent's
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(folder);
+            policy.addRoleAssignment(_user, ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, _user);
+            User other = new User("chathistory-other@example.com", Integer.MAX_VALUE - 1);
+            assertFalse(folder.hasPermission(other, ReadPermission.class));
+
+            _manager.addChatSnippet(_session, other, folder, AGENT, _conversationId, Role.user, "Secret");
+            _manager.addChatSnippet(_session, other, folder, AGENT, _conversationId, Role.assistant, "[]");
+
+            List<ChatSnippet> snippets = _manager.getChatHistory(other, _conversationId);
+            assertEquals(List.of(Role.user, Role.assistant), snippets.stream().map(ChatSnippet::role).toList());
+            for (ChatSnippet snippet : snippets)
+            {
+                assertTrue(snippet.hidden());
+                assertNull(snippet.content());
+            }
+        }
+
+        @Test
+        public void testHistoryKeepsLatestRows()
+        {
+            for (int i = 0; i <= MAX_HISTORY_ROWS; i++)
+                _manager.addChatSnippet(_session, _user, _container, AGENT, _conversationId, Role.user, String.valueOf(i));
+
+            List<ChatSnippet> snippets = _manager.getChatHistory(_user, _conversationId);
+            assertEquals(MAX_HISTORY_ROWS, snippets.size());
+            assertEquals("Oldest row dropped", "1", snippets.getFirst().content());
+            assertEquals(String.valueOf(MAX_HISTORY_ROWS), snippets.getLast().content());
         }
 
         @Test
