@@ -80,7 +80,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.ChatHistoryService;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.AllowedDuringUpgrade;
@@ -2886,8 +2885,8 @@ public class CoreController extends SpringActionController
 
             // Stale rows are left to the session listener
             String agentName = snippets.getFirst().agentName();
-            if (null == AbstractAgentAction.resolveIssuedConversationId(getViewContext().getSession(), agentName, form.getConversationId()) ||
-                    !AbstractAgentAction.isConversationOpen(getViewContext().getSession(), agentName, conversationId))
+            if (null == McpService.get().resolveIssuedConversationId(getViewContext().getSession(), agentName, form.getConversationId()) ||
+                    !McpService.get().isConversationOpen(getViewContext().getSession(), agentName, conversationId))
                 throw new NotFoundException("Conversation not found");
 
             return new JSONObject()

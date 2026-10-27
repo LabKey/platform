@@ -24,18 +24,13 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.SessionHelper;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,7 +44,6 @@ import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
  */
 public abstract class AbstractAgentAction<F extends PromptForm> extends MutatingApiAction<F>
 {
-    private static final int MAX_ISSUED_CONVERSATION_IDS = 16;
     private static final int MAX_PROMPT_CHAR_LENGTH = 4_000;
     // Matches the client's fallback for a failure response without an error
     private static final String DEFAULT_ERROR_MESSAGE = "Request failed.";
@@ -75,8 +69,7 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
     protected ChatClient getChat(boolean create)
     {
         HttpSession session = getViewContext().getSession();
-        String conversationName = getConversationName(getAgentName(), getConversationId());
-        return McpService.get().getChat(session, conversationName, this::getServicePrompt, create, getToolNames());
+        return McpService.get().getConversationChat(session, getAgentName(), getConversationId(), this::getServicePrompt, create, getToolNames());
     }
 
     @Override
@@ -103,13 +96,10 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
         }
 
         HttpSession session = getViewContext().getSession();
-        conversationId = resolveIssuedConversationId(session, getAgentName(), supplied);
+        conversationId = McpService.get().resolveIssuedConversationId(session, getAgentName(), supplied);
 
         if (null == conversationId)
-        {
-            conversationId = new GUID();
-            getIssuedConversationIds(session, getAgentName()).add(conversationId);
-        }
+            conversationId = McpService.get().issueConversationId(session, getAgentName());
     }
 
     @Override
@@ -185,7 +175,7 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
         if (!"/clear".equals(StringUtils.trimToEmpty(prompt)))
             return null;
 
-        closeConversation(getViewContext().getSession(), getUser(), getAgentName(), conversationId);
+        McpService.get().closeConversation(getViewContext().getSession(), getUser(), getAgentName(), conversationId);
 
         // No conversationId, since it was just closed; "reset" tells the client to clear its messages too
         return new JSONObject(Map.of(
@@ -245,77 +235,8 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
         return conversationId;
     }
 
-    private static String getConversationName(String agentName, GUID conversationId)
-    {
-        return agentName + ":" + conversationId;
-    }
-
-    /** The conversation id if this session was issued it by the named agent; never issues one. */
-    public static @Nullable GUID resolveIssuedConversationId(HttpSession session, String agentName, @Nullable String supplied)
-    {
-        if (!GUID.isGUID(supplied))
-            return null;
-
-        // Only honor an id this agent previously issued this session. This prevents a same-session caller from
-        // splicing into another conversation by guessing or replaying a GUID.
-        GUID candidate = new GUID(supplied);
-        return getIssuedConversationIds(session, agentName).contains(candidate) ? candidate : null;
-    }
-
-    /** True while the model still holds this conversation's memory. */
-    public static boolean isConversationOpen(HttpSession session, String agentName, GUID conversationId)
-    {
-        return null != McpService.get().getChat(session, getConversationName(agentName, conversationId), () -> "", false);
-    }
-
-    /** Clears the model's memory, the issued id, and the display transcript. */
-    private static void closeConversation(HttpSession session, User user, String agentName, GUID conversationId)
-    {
-        ChatClient chatSession = McpService.get().getChat(session, getConversationName(agentName, conversationId), () -> "", false);
-        if (null != chatSession)
-            McpService.get().close(session, chatSession);
-        getIssuedConversationIds(session, agentName).remove(conversationId);
-        ChatHistoryService.get().deleteChatHistory(session, user, conversationId);
-    }
-
-    private static Set<GUID> getIssuedConversationIds(HttpSession session, String agentName)
-    {
-        return SessionHelper.getAttribute(session, agentName + "#issuedConversationIds", AbstractAgentAction::newIssuedConversationIdSet);
-    }
-
-    private static Set<GUID> newIssuedConversationIdSet()
-    {
-        return Collections.synchronizedSet(Collections.newSetFromMap(
-            new LinkedHashMap<>(16, 0.75f, false)
-            {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<GUID, Boolean> eldest)
-                {
-                    return size() > MAX_ISSUED_CONVERSATION_IDS;
-                }
-            }
-        ));
-    }
-
     public static class TestCase extends Assert
     {
-        private static final String AGENT = "TestAgent";
-
-        @Test
-        public void testResolveIssuedConversationId()
-        {
-            HttpSession session = new MockHttpSession();
-            GUID issued = new GUID();
-            getIssuedConversationIds(session, AGENT).add(issued);
-
-            assertEquals(issued, resolveIssuedConversationId(session, AGENT, issued.toString()));
-            assertNull("Another agent's id", resolveIssuedConversationId(session, "OtherAgent", issued.toString()));
-            assertNull("Unknown id", resolveIssuedConversationId(session, AGENT, new GUID().toString()));
-            assertNull("Invalid id", resolveIssuedConversationId(session, AGENT, "not-a-guid"));
-            assertNull("Missing id", resolveIssuedConversationId(session, AGENT, null));
-            assertEquals("Must never issue an id", Set.of(issued), getIssuedConversationIds(session, AGENT));
-        }
-
         @Test
         public void testToHistorySnippet()
         {

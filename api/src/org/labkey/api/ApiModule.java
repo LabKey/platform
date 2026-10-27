@@ -127,6 +127,7 @@ import org.labkey.api.jsp.RecompilingJspClassLoader;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.OperationsMXBean;
 import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
@@ -476,6 +477,7 @@ public class ApiModule extends CodeOnlyModule
             LookAheadDataIterator.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
+            McpService.TestCase.class,
             MemTracker.TestCase.class,
             ModuleArchiveTestCase.class,
             ModuleContext.TestCase.class,
