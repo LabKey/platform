@@ -34,8 +34,11 @@ public interface ChatHistoryService
 {
     enum Role { user, assistant, error }
 
-    /** content is the raw prompt (user), the segments JSON array (assistant), or the error text (error) */
-    record ChatSnippet(int rowId, String agentName, Role role, String content, Date created) {}
+    /**
+     * content is the raw prompt (user), the segments JSON array (assistant), or the error text (error). Hidden snippets
+     * were added in a container the user can no longer read and have null content.
+     */
+    record ChatSnippet(int rowId, String agentName, Role role, @Nullable String content, Date created, boolean hidden) {}
 
     static ChatHistoryService get()
     {
@@ -51,8 +54,8 @@ public interface ChatHistoryService
     void addChatSnippet(HttpSession session, User user, Container c, String agentName, GUID conversationId, Role role, String content);
 
     /**
-     * The user's own snippets in containers they can still read, oldest first. Guests share a user id, so callers must
-     * also check the session was issued the conversation (McpService.getIssuingAgentName).
+     * The user's latest snippets, oldest first, with those from containers they can no longer read hidden. Guests share
+     * a user id, so callers must also check the session was issued the conversation (McpService.getIssuingAgentName).
      */
     @NotNull List<ChatSnippet> getChatHistory(User user, GUID conversationId);
 
