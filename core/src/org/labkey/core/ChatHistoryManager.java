@@ -23,19 +23,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TempTableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.mcp.ChatHistoryService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -75,9 +72,9 @@ public class ChatHistoryManager implements ChatHistoryService
             // Bound first, so a session that ends mid-turn can't leave an unbound row behind
             SessionHelper.getAttribute(session, getSessionKey(user.getUserId(), conversationId), () -> new SessionBinding(user.getUserId(), conversationId));
             TempTableInfo table = ensureTable();
-            execute(table, new SQLFragment("INSERT INTO ").append(sqlName(table))
-                    .append(" (Container, CreatedBy, Created, AgentName, ConversationId, Role, Content) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)")
-                    .addAll(c.getId(), user.getUserId(), agentName, conversationId.toString(), role.name(), content));
+            execute(table, SQLFragment.unsafe("INSERT INTO ").append(sqlName(table))
+                    .unsafeAppend(" (Container, CreatedBy, Created, AgentName, ConversationId, Role, Content) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)",
+                            c.getId(), user.getUserId(), agentName, conversationId.toString(), role.name(), content));
         }
         catch (RuntimeException x)
         {
@@ -92,9 +89,8 @@ public class ChatHistoryManager implements ChatHistoryService
         if (null == table)
             return List.of();
 
-        SQLFragment sql = new SQLFragment("SELECT RowId, Container, AgentName, Role, Content, Created FROM ").append(sqlName(table))
-                .append(" WHERE CreatedBy = ? AND ConversationId = ? ORDER BY RowId DESC")
-                .addAll(user.getUserId(), conversationId.toString());
+        SQLFragment sql = SQLFragment.unsafe("SELECT RowId, Container, AgentName, Role, Content, Created FROM ").append(sqlName(table))
+                .unsafeAppend(" WHERE CreatedBy = ? AND ConversationId = ? ORDER BY RowId DESC", user.getUserId(), conversationId.toString());
 
         Map<String, Boolean> readable = new HashMap<>();
         List<ChatSnippet> snippets = new ArrayList<>();
@@ -115,9 +111,8 @@ public class ChatHistoryManager implements ChatHistoryService
         if (null == table)
             return null;
 
-        SQLFragment sql = new SQLFragment("SELECT Container FROM ").append(sqlName(table))
-                .append(" WHERE CreatedBy = ? AND ConversationId = ? AND Role = ? ORDER BY RowId DESC")
-                .addAll(user.getUserId(), conversationId.toString(), Role.user.name());
+        SQLFragment sql = SQLFragment.unsafe("SELECT Container FROM ").append(sqlName(table))
+                .unsafeAppend(" WHERE CreatedBy = ? AND ConversationId = ? AND Role = ? ORDER BY RowId DESC", user.getUserId(), conversationId.toString(), Role.user.name());
 
         return new SqlSelector(table.getSchema(), table.getSqlDialect().limitRows(sql, 1)).getObject(String.class);
     }
@@ -143,8 +138,8 @@ public class ChatHistoryManager implements ChatHistoryService
 
         try
         {
-            execute(table, new SQLFragment("DELETE FROM ").append(sqlName(table))
-                    .append(" WHERE CreatedBy = ? AND ConversationId = ?").addAll(userId, conversationId.toString()));
+            execute(table, SQLFragment.unsafe("DELETE FROM ").append(sqlName(table))
+                    .unsafeAppend(" WHERE CreatedBy = ? AND ConversationId = ?", userId, conversationId.toString()));
         }
         catch (RuntimeException x)
         {
@@ -202,21 +197,13 @@ public class ChatHistoryManager implements ChatHistoryService
     {
         // Columns are declared in the DDL below; the TableInfo supplies only the tracked name
         TempTableInfo table = new TempTableInfo("ChatHistory", List.of(), null);
-        SqlDialect dialect = table.getSqlDialect();
-        String guidType = dialect.getGuidType();
 
         // UNLOGGED keeps chat transcripts out of WAL, so they never reach standbys or point-in-time recovery; a reset only loses display history
-        SQLFragment create = new SQLFragment("CREATE ").append(dialect.isPostgreSQL() ? "UNLOGGED " : "").append("TABLE ").append(sqlName(table))
-                .append(" (RowId ").append(dialect.getUniqueIdentType()).append(" PRIMARY KEY")
-                .append(", Container ").append(guidType).append(" NOT NULL")
-                .append(", CreatedBy INT NOT NULL")
-                .append(", Created ").append(dialect.getSqlTypeName(JdbcType.TIMESTAMP)).append(" NOT NULL")
-                .append(", AgentName VARCHAR(200) NOT NULL")
-                .append(", ConversationId ").append(guidType).append(" NOT NULL")
-                .append(", Role VARCHAR(20) NOT NULL")
-                .append(", Content ").append(dialect.getSqlTypeName(JdbcType.LONGVARCHAR)).append(" NOT NULL)");
-        SQLFragment index = new SQLFragment("CREATE INDEX ").append("IX_ChatHistory_").append(GUID.makeHash()).append(" ON ").append(sqlName(table))
-                .append(" (CreatedBy, ConversationId)");
+        SQLFragment create = SQLFragment.unsafe("CREATE UNLOGGED TABLE ").append(sqlName(table))
+                .unsafeAppend(" (RowId SERIAL PRIMARY KEY, Container VARCHAR(36) NOT NULL, CreatedBy INT NOT NULL, Created TIMESTAMP NOT NULL" +
+                        ", AgentName VARCHAR(200) NOT NULL, ConversationId VARCHAR(36) NOT NULL, Role VARCHAR(20) NOT NULL, Content TEXT NOT NULL)");
+        SQLFragment index = SQLFragment.unsafe("CREATE INDEX ").appendIdentifier("IX_ChatHistory_" + GUID.makeHash()).unsafeAppend(" ON ").append(sqlName(table))
+                .unsafeAppend(" (CreatedBy, ConversationId)");
 
         table.track();
         execute(table, create);
@@ -357,9 +344,8 @@ public class ChatHistoryManager implements ChatHistoryService
             _manager.addChatSnippet(_session, _user, _container, AGENT, _conversationId, Role.user, "Hello");
             TempTableInfo table = _table;
             assertNotNull(table);
-            Assume.assumeTrue("UNLOGGED is PostgreSQL only", table.getSqlDialect().isPostgreSQL());
 
-            SQLFragment sql = new SQLFragment("SELECT relpersistence FROM pg_class WHERE oid = CAST(? AS regclass)").add(table.getSelectName());
+            SQLFragment sql = SQLFragment.unsafe("SELECT relpersistence FROM pg_class WHERE oid = CAST(? AS regclass)", table.getSelectName());
             assertEquals("u", new SqlSelector(table.getSchema(), sql).getObject(String.class));
         }
     }
