@@ -1204,12 +1204,6 @@ public class SecurityManager
         return displayName;
     }
 
-    // Passes no timeout duration. Should be called only by MacCoss SignUpManager, which doesn't implement expiration.
-    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
-    {
-        sendEmail(c, fromUser, message, to, verificationURL, null);
-    }
-
     public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout) throws ConfigurationException, MessagingException
     {
         MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
