@@ -36,6 +36,10 @@ LABKEY.WebSocket = new function ()
     var _callbacks = {};
     var _modalShowing = false;
     var _shouldAddFocusListener = true;
+    var _keepAliveStarted = false;
+
+    // Shorter than the idle timeout of common proxies, e.g. nginx's 60 s default, which close a silent socket
+    var KEEPALIVE_INTERVAL_MS = 30000;
 
     // Identifies this page load; @labkey/api sends it with requests the server may cancel when this socket asks or closes
     LABKEY.tabId = LABKEY.tabId || LABKEY.Utils.generateUUID();
@@ -55,6 +59,22 @@ LABKEY.WebSocket = new function ()
             });
             _shouldAddFocusListener = false;
         }
+
+        startKeepAlive();
+    }
+
+    /**
+     * Keeps a visible tab's socket open so it can cancel the tab's abandoned requests. A hidden tab's socket is left to
+     * idle out, freeing its server connection (GH Issue 1574), and the focus listener reopens it.
+     */
+    function startKeepAlive() {
+        if (_keepAliveStarted || !LABKEY.user.isSignedIn || !(LABKEY.experimental && LABKEY.experimental.cancelAbandonedRequests)) return;
+        _keepAliveStarted = true;
+
+        // The server ignores any message type but "cancel"
+        setInterval(function() {
+            if (!document.hidden) send({ type: 'ping' });
+        }, KEEPALIVE_INTERVAL_MS);
     }
 
     function websocketConnectionFailure() {
