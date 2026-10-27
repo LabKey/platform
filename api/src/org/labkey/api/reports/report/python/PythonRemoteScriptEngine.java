@@ -12,6 +12,7 @@ import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.remoterunner.RemoteRunnerService;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.RemoteWorkingDirScriptEngine;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.util.logging.LogHelper;
@@ -67,6 +68,13 @@ public class PythonRemoteScriptEngine extends PythonScriptEngine implements Remo
         if (relative.startsWith(".."))
             throw new IllegalArgumentException("'" + localFile.getName() + "' is outside the working directory, so the remote runner cannot see it");
         return "./" + FilenameUtils.separatorsToUnix(relative.toString());
+    }
+
+    // Transform and pipeline scripts get appserver paths in runProperties, which the runner can't see
+    @Override
+    public boolean supportsContext(LabKeyScriptEngineManager.EngineContext context)
+    {
+        return context != LabKeyScriptEngineManager.EngineContext.pipeline;
     }
 
     @Override

@@ -15,6 +15,7 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.remoterunner.RemoteRunnerService;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
@@ -133,6 +134,13 @@ public class RRemoteScriptEngine extends RScriptEngine
                 pathname.isFile() &&
                         (RScriptEngineFactory.isRScriptEngine(new String[]{FilenameUtils.getExtension(pathname.getName())})
                                 || RReport.DATA_INPUT.equals(pathname.getName()));
+    }
+
+    // Transform and pipeline scripts get appserver paths in runProperties, which the runner can't see
+    @Override
+    public boolean supportsContext(LabKeyScriptEngineManager.EngineContext context)
+    {
+        return context != LabKeyScriptEngineManager.EngineContext.pipeline;
     }
 
     @Override
