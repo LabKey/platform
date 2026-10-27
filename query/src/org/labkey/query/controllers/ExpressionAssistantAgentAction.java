@@ -606,34 +606,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         return new Fence(tag, body.toString(), terminated ? j + 1 : lines.length, terminated);
     }
 
-    private static void flushHtmlSegment(JSONArray segments, StringBuilder buf, MarkdownService md)
-    {
-        if (buf.isEmpty())
-            return;
-
-        String raw = buf.toString().strip();
-        buf.setLength(0);
-        if (raw.isEmpty())
-            return;
-
-        String html;
-        try
-        {
-            html = md != null ? md.toHtml(raw) : raw;
-        }
-        catch (Exception x)
-        {
-            html = raw;
-        }
-
-        var validateErrors = new ArrayList<String>();
-        PageFlowUtil.validateHtml(html, validateErrors, validateErrors);
-        if (!validateErrors.isEmpty())
-            throw new RuntimeValidationException("Invalid HTML markup. " + String.join("\n", validateErrors));
-
-        segments.put(new JSONObject(Map.of("type", "html", "html", html)));
-    }
-
     public static class TestCase extends Assert
     {
         private static McpService.MessageResponse markdownResponse(String md)

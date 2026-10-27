@@ -24,13 +24,17 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -263,5 +267,33 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
             else
                 assertEquals(content, snippet.second);
         }
+    }
+
+    protected static void flushHtmlSegment(JSONArray segments, StringBuilder buf, MarkdownService md)
+    {
+        if (buf.isEmpty())
+            return;
+
+        String raw = buf.toString().strip();
+        buf.setLength(0);
+        if (raw.isEmpty())
+            return;
+
+        String html;
+        try
+        {
+            html = md != null ? md.toHtml(raw) : raw;
+        }
+        catch (Exception x)
+        {
+            html = raw;
+        }
+
+        var validateErrors = new ArrayList<String>();
+        PageFlowUtil.validateHtml(html, validateErrors, validateErrors);
+        if (!validateErrors.isEmpty())
+            throw new RuntimeValidationException("Invalid HTML markup. " + String.join("\n", validateErrors));
+
+        segments.put(new JSONObject(Map.of("type", "html", "html", html)));
     }
 }
