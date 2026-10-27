@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.mcp.McpInternal;
@@ -57,6 +58,7 @@ import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -266,10 +268,21 @@ public class QueryMcp implements McpService.McpImpl
         }
         catch (Exception x)
         {
-            if (!(x instanceof QueryException))
+            if (x instanceof SQLException sqlx)
+                logSqlFailure(sqlx);
+            else if (x instanceof RuntimeSQLException rsx)
+                logSqlFailure(rsx.getSQLException());
+            else if (!(x instanceof QueryException))
                 LOG.error("executeSQL failed", x);
             return x.getMessage() != null ? x.getMessage() : x.getClass().getSimpleName();
         }
+    }
+
+    // DB error messages echo literals from the model's SQL, which often come from the user's prompt
+    private static void logSqlFailure(SQLException x)
+    {
+        LOG.warn("executeSQL failed with SQLState {}", x.getSQLState());
+        LOG.debug("executeSQL failed", x);
     }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */
