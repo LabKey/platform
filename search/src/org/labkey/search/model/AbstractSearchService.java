@@ -61,6 +61,7 @@ import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -422,6 +423,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         String taskDescription = i._task != null ? i._task.getDescription() : "unknown";
         return "Search item: " + i._id + " (task: " + taskDescription + ")";
+    }
+
+    /** Names a runnable by the class that queued it, since its toString() is unique per instance */
+    static String getRunnableSource(Object r)
+    {
+        return StringUtils.substringBefore(StringUtils.substringAfterLast(r.getClass().getName(), "."), "$");
     }
 
     final Item _commitItem = new Item(null, (_) -> {}, PRIORITY.commit, null);
@@ -1131,7 +1138,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     }
 
                     // Hand off a queue that piggybacks on the same priority as the original work
-                    item._run.accept(new TaskIndexingQueue()
+                    TaskIndexingQueue queue = new TaskIndexingQueue()
                     {
                         @Override
                         public void addRunnable(@NotNull Consumer<TaskIndexingQueue> r)
@@ -1154,7 +1161,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         {
                             return c;
                         }
-                    });
+                    };
+                    TracedOperation.builder("labkey.search.run")
+                            .resource(getRunnableSource(item._run))
+                            .describedAs(getSearchThreadDumpContext(item))
+                            .container(c)
+                            .tag("labkey.search.priority", item._pri)
+                            .run(() -> item._run.accept(queue));
                 }
             }
             catch (InterruptedException ignored) {}
@@ -1350,7 +1363,17 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             Throwable[] out = new Throwable[] {null};
 
-            success = processAndIndex(i._id, i._res, out);
+            String category = (String) r.getProperties().get(PROPERTY.categories.toString());
+            try (TracedOperation op = TracedOperation.builder("labkey.search.index")
+                    .resource(Objects.toString(category, "uncategorized"))
+                    .describedAs(getSearchThreadDumpContext(i))
+                    .container(ContainerManager.getForId(r.getContainerId()))
+                    .tag("labkey.search.priority", i._pri)
+                    .start())
+            {
+                success = processAndIndex(i._id, i._res, out);
+                op.tag("labkey.search.indexed", success).outcome(success ? "indexed" : "skipped").completed();
+            }
 
             if (null != out[0])
             {
@@ -1367,7 +1390,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 i._res.setLastIndexed(Math.max(i._start, i._modified), i._modified);
                 synchronized (_commitLock)
                 {
-                    String category = (String)i.getResource().getProperties().get(PROPERTY.categories.toString());
                     incrementIndexStat(ms, category);
                     _countIndexedSinceCommit++;
                     _lastIndexedTime = ms;
@@ -1706,6 +1728,22 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testRunnableSource()
+        {
+            Consumer<TaskIndexingQueue> lambda = _ -> {};
+            Consumer<TaskIndexingQueue> anonymous = new Consumer<>()
+            {
+                @Override
+                public void accept(TaskIndexingQueue q) {}
+            };
+            assertEquals("AbstractSearchService", getRunnableSource(lambda));
+            assertEquals("AbstractSearchService", getRunnableSource(anonymous));
+            assertEquals("AbstractSearchService", getRunnableSource((Consumer<TaskIndexingQueue>) TestCase::ignore));
+        }
+
+        private static void ignore(TaskIndexingQueue q) {}
+
         @Test
         public void testAdvanceTracksMaxRowId()
         {

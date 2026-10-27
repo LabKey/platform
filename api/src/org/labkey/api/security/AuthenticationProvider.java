@@ -36,6 +36,7 @@ import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.bootstrap.StartupEnvironment;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -245,13 +246,17 @@ public interface AuthenticationProvider
     interface SecondaryAuthenticationProvider<SAC extends SecondaryAuthenticationConfiguration<?>> extends ConfigurableAuthenticationProvider<SAC>
     {
         String REQUIRED_FOR = "requiredFor";
-
         /**
          * Bypass authentication from this provider. Might be configured via context.bypass2FA=true property in
          * application.properties to temporarily not require secondary authentication if this has been misconfigured, or
          * a 3rd party service provider is unavailable.
          */
         boolean bypass();
+
+        static boolean isBypassConfigured()
+        {
+            return Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter(StartupEnvironment.BYPASS_2FA_PARAMETER));
+        }
 
         default SettingsField getRequiredForField(String name)
         {

@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
@@ -609,7 +608,7 @@ public class DbScope
                 LOG.info(
                         "Initializing DbScope with the following configuration:" +
                                 "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
-                                "\n    Server URL:               " + filterUrl(dbmd.getURL()) +
+                                "\n    Server URL:               " + dbmd.getURL() +
                                 "\n    Database Name:            " + _databaseName +
                                 "\n    Database Product Name:    " + _databaseProductName +
                                 "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
@@ -631,21 +630,6 @@ public class DbScope
             // Issue 50488: Pre-register this data source's SQL error codes in Spring to prevent deadlocks
             SQLErrorCodesFactory.getInstance().registerDatabase(dataSource.getDataSource(), _databaseProductName);
         }
-    }
-
-    // MariaDB driver adds username and password to the URL. This masks the password so we don't log it.
-    private String filterUrl(String url)
-    {
-        int start = url.indexOf("password=");
-        if (start != -1)
-        {
-            start = start + 9;
-            int end = url.indexOf('&', start);
-            if (end == -1)
-                end = url.length();
-            url = url.substring(0, start) + StringUtils.repeat('?', end - start) + url.substring(end);
-        }
-        return url;
     }
 
     private String determineDriverLocation(Class<Driver> driverClass)
@@ -2495,6 +2479,15 @@ public class DbScope
                 return transaction._postCommitQueue;
             }
         },
+        /** Run after every POSTCOMMIT task, so it sees the effects of post-commit signals such as materialized view refreshes */
+        LATE_POSTCOMMIT
+        {
+            @Override
+            CommitTaskQueue getQueue(TransactionImpl transaction)
+            {
+                return transaction._latePostCommitQueue;
+            }
+        },
         /** Run after the transaction has been completely rolled back and abandoned, but not if it was committed */
         POSTROLLBACK
         {
@@ -2743,6 +2736,7 @@ public class DbScope
 
         private final CommitTaskQueue _preCommitQueue = new CommitTaskQueue();
         private final CommitTaskQueue _postCommitQueue = new CommitTaskQueue();
+        private final CommitTaskQueue _latePostCommitQueue = new CommitTaskQueue();
         private final CommitTaskQueue _postRollbackQueue = new CommitTaskQueue();
 
         private final List<List<Lock>> _locks = new ArrayList<>();
@@ -2822,6 +2816,7 @@ public class DbScope
         {
             _preCommitQueue.clear();
             _postCommitQueue.clear();
+            _latePostCommitQueue.clear();
             _postRollbackQueue.clear();
             closeCaches();
         }
@@ -2920,6 +2915,7 @@ public class DbScope
                         }
 
                         CommitTaskOption.POSTCOMMIT.run(this);
+                        CommitTaskOption.LATE_POSTCOMMIT.run(this);
                     }
                     catch (SQLException e)
                     {
@@ -2956,6 +2952,7 @@ public class DbScope
                 try
                 {
                     CommitTaskOption.POSTCOMMIT.run(this);
+                    CommitTaskOption.LATE_POSTCOMMIT.run(this);
                 }
                 finally
                 {
@@ -3415,6 +3412,31 @@ public class DbScope
             }
             assertFalse(getLabKeyScope().isTransactionActive());
             closeAllConnectionsForCurrentThread();
+        }
+
+        @Test
+        public void testLatePostCommitOrder()
+        {
+            DbScope scope = getLabKeyScope();
+            List<String> order = new ArrayList<>();
+
+            try (Transaction t = scope.ensureTransaction())
+            {
+                t.addCommitTask(() -> order.add("late"), CommitTaskOption.LATE_POSTCOMMIT);
+                t.addCommitTask(() -> order.add("post"), CommitTaskOption.POSTCOMMIT);
+                // Added while the PRECOMMIT queue runs, after it has been snapshotted
+                t.addCommitTask(() -> t.addCommitTask(() -> order.add("lateFromPre"), CommitTaskOption.LATE_POSTCOMMIT), CommitTaskOption.PRECOMMIT);
+
+                t.commitAndKeepConnection();
+                assertEquals(List.of("post", "late", "lateFromPre"), order);
+
+                order.clear();
+                t.addCommitTask(() -> order.add("late"), CommitTaskOption.LATE_POSTCOMMIT);
+                t.addCommitTask(() -> order.add("post"), CommitTaskOption.POSTCOMMIT);
+                t.commit();
+            }
+            assertEquals(List.of("post", "late"), order);
+            assertFalse(scope.isTransactionActive());
         }
 
         @Test

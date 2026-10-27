@@ -55,7 +55,7 @@ class QueryTracker
     private String _sql;
     private boolean _truncated;
     private final String _hash;
-    private boolean _validSql;
+    private final @Nullable String _normalizationReason;
     private final long _firstInvocation;
     private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new ReferenceMap<>(ReferenceStrength.SOFT, ReferenceStrength.HARD, true); // Not sure about purgeValues
 
@@ -66,12 +66,12 @@ class QueryTracker
     private long _cumulative = 0;
     private long _lastInvocation;
 
-    QueryTracker(@Nullable DbScope scope, @NotNull String sql, @NotNull String hash, long elapsed, String stackTrace, boolean validSql, boolean truncated)
+    QueryTracker(@Nullable DbScope scope, @NotNull String sql, @NotNull String hash, long elapsed, String stackTrace, @Nullable String normalizationReason, boolean truncated)
     {
         _scope = scope;
         _sql = sql;
         _hash = hash;
-        _validSql = validSql;
+        _normalizationReason = normalizationReason;
         _firstInvocation = System.currentTimeMillis();
         _truncated = truncated;
     }
@@ -140,9 +140,18 @@ class QueryTracker
         return _parameters;
     }
 
-    public boolean canShowExecutionPlan(ExecutionPlanType type)
+    /** Why this type of execution plan can't be shown, or null if it can */
+    public @Nullable String getExecutionPlanUnavailableReason(ExecutionPlanType type)
     {
-        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && !_truncated && type.canShowExecutionPlan(_sql);
+        if (null == _scope)
+            return "It isn't a SQL statement run against a database connection (for example, a database metadata call or an MDX query).";
+        if (_truncated)
+            return "Its SQL was truncated to limit memory use, so it can't be re-run.";
+        if (null != _normalizationReason)
+            return _normalizationReason;
+        if (!_scope.getSqlDialect().canShowExecutionPlan(type))
+            return "Execution plans of this type aren't supported for " + _scope.getSqlDialect().getProductName() + ".";
+        return type.getUnavailableReason(_sql);
     }
 
     public long getCount()
@@ -362,7 +371,6 @@ class QueryTracker
         if (_sql.length() > longSqlLimit)
         {
             _truncated = true;
-            _validSql = false;
             _sql = _sql.substring(0, longSqlLimit);
         }
 

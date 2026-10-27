@@ -83,17 +83,17 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         // We need to filter on the announcement's container, since we don't have a container column directly on userlist
         getFilter().deleteConditions(FieldKey.fromParts("Container"));
 
-        SQLFragment sql = new SQLFragment("MessageId IN (SELECT RowId FROM ");
+        SQLFragment sql = SQLFragment.unsafe("MessageId IN (SELECT RowId FROM ");
         sql.append(CommSchema.getInstance().getTableInfoAnnouncements(), "a");
         sql.unsafeAppend(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("a.Container")));
+        sql.append(filter.getSQLFragment(getSchema(), SQLFragment.unsafe("a.Container")));
         sql.unsafeAppend(")");
 
         addCondition(sql, FieldKey.fromParts("Container"));
 
-        SQLFragment containerSql = new SQLFragment("(SELECT a.Container FROM ");
+        SQLFragment containerSql = SQLFragment.unsafe("(SELECT a.Container FROM ");
         containerSql.append(CommSchema.getInstance().getTableInfoAnnouncements(), "a");
-        containerSql.append(" WHERE a.RowId = MessageId)");
+        containerSql.unsafeAppend(" WHERE a.RowId = MessageId)");
         applyUserFilter(filter, containerSql);
     }
 
