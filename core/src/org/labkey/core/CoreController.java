@@ -2878,15 +2878,15 @@ public class CoreController extends SpringActionController
         @Override
         public Object execute(ChatHistoryForm form, BindException errors)
         {
+            HttpSession session = getViewContext().getSession();
             GUID conversationId = new GUID(form.getConversationId());
-            List<ChatHistoryService.ChatSnippet> snippets = ChatHistoryService.get().getChatHistory(getUser(), conversationId);
-            if (snippets.isEmpty())
+            String agentName = McpService.get().getIssuingAgentName(session, conversationId);
+            // Stale rows are left to the session listener
+            if (null == agentName || !McpService.get().isConversationOpen(session, agentName, conversationId))
                 throw new NotFoundException("Conversation not found");
 
-            // Stale rows are left to the session listener
-            String agentName = snippets.getFirst().agentName();
-            if (null == McpService.get().resolveIssuedConversationId(getViewContext().getSession(), agentName, form.getConversationId()) ||
-                    !McpService.get().isConversationOpen(getViewContext().getSession(), agentName, conversationId))
+            List<ChatHistoryService.ChatSnippet> snippets = ChatHistoryService.get().getChatHistory(getUser(), conversationId);
+            if (snippets.isEmpty())
                 throw new NotFoundException("Conversation not found");
 
             return new JSONObject()

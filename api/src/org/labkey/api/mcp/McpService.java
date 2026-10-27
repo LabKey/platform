@@ -43,7 +43,6 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.mock.web.MockHttpSession;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -228,8 +227,32 @@ public interface McpService extends ToolCallbackProvider
     default @NotNull GUID issueConversationId(HttpSession session, String agentName)
     {
         GUID conversationId = new GUID();
-        getIssuedConversationIds(session, agentName).add(conversationId);
+        Map<GUID, String> issued = getIssuedConversationIds(session);
+        synchronized (issued)
+        {
+            issued.put(conversationId, agentName);
+            // Evict this agent's oldest ids so one agent can't push out another's
+            long count = issued.values().stream().filter(agentName::equals).count();
+            for (var it = issued.values().iterator(); count > MAX_ISSUED_CONVERSATION_IDS && it.hasNext(); )
+            {
+                if (agentName.equals(it.next()))
+                {
+                    it.remove();
+                    count--;
+                }
+            }
+        }
         return conversationId;
+    }
+
+    /** The agent that issued this conversation id to this session, or null if none did. */
+    default @Nullable String getIssuingAgentName(HttpSession session, GUID conversationId)
+    {
+        Map<GUID, String> issued = getIssuedConversationIds(session);
+        synchronized (issued)
+        {
+            return issued.get(conversationId);
+        }
     }
 
     /** The conversation id if this session was issued it by the named agent; never issues one. */
@@ -241,7 +264,7 @@ public interface McpService extends ToolCallbackProvider
         // Only honor an id this agent previously issued this session. This prevents a same-session caller from
         // splicing into another conversation by guessing or replaying a GUID.
         GUID candidate = new GUID(supplied);
-        return getIssuedConversationIds(session, agentName).contains(candidate) ? candidate : null;
+        return agentName.equals(getIssuingAgentName(session, candidate)) ? candidate : null;
     }
 
     /** True while the model still holds this conversation's memory. */
@@ -256,27 +279,18 @@ public interface McpService extends ToolCallbackProvider
         ChatClient chat = getConversationChat(session, agentName, conversationId, () -> "", false, null);
         if (null != chat)
             close(session, chat);
-        getIssuedConversationIds(session, agentName).remove(conversationId);
+        Map<GUID, String> issued = getIssuedConversationIds(session);
+        synchronized (issued)
+        {
+            issued.remove(conversationId, agentName);
+        }
         ChatHistoryService.get().deleteChatHistory(session, user, conversationId);
     }
 
-    private static Set<GUID> getIssuedConversationIds(HttpSession session, String agentName)
+    /** Conversation id to issuing agent name, in issue order; synchronize on it. */
+    private static Map<GUID, String> getIssuedConversationIds(HttpSession session)
     {
-        return SessionHelper.getAttribute(session, agentName + "#issuedConversationIds", McpService::newIssuedConversationIdSet);
-    }
-
-    private static Set<GUID> newIssuedConversationIdSet()
-    {
-        return Collections.synchronizedSet(Collections.newSetFromMap(
-            new LinkedHashMap<>(16, 0.75f, false)
-            {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<GUID, Boolean> eldest)
-                {
-                    return size() > MAX_ISSUED_CONVERSATION_IDS;
-                }
-            }
-        ));
+        return SessionHelper.getAttribute(session, "issuedConversationIds", LinkedHashMap::new);
     }
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
@@ -350,6 +364,9 @@ public interface McpService extends ToolCallbackProvider
             assertNull("Must never issue an id", svc.resolveIssuedConversationId(session, AGENT, unknown.toString()));
             assertNull("Invalid id", svc.resolveIssuedConversationId(session, AGENT, "not-a-guid"));
             assertNull("Missing id", svc.resolveIssuedConversationId(session, AGENT, null));
+
+            assertEquals(AGENT, svc.getIssuingAgentName(session, issued));
+            assertNull("Unknown id", svc.getIssuingAgentName(session, unknown));
         }
 
         @Test
@@ -359,10 +376,12 @@ public interface McpService extends ToolCallbackProvider
             HttpSession session = new MockHttpSession();
             GUID oldest = svc.issueConversationId(session, AGENT);
             GUID otherAgent = svc.issueConversationId(session, "OtherAgent");
-            for (int i = 0; i < MAX_ISSUED_CONVERSATION_IDS; i++)
+            for (int i = 0; i < MAX_ISSUED_CONVERSATION_IDS - 1; i++)
                 svc.issueConversationId(session, AGENT);
+            GUID newest = svc.issueConversationId(session, AGENT);
 
             assertNull("Oldest id evicted", svc.resolveIssuedConversationId(session, AGENT, oldest.toString()));
+            assertNotNull("Newer id kept", svc.resolveIssuedConversationId(session, AGENT, newest.toString()));
             assertEquals("Limit is per agent", otherAgent, svc.resolveIssuedConversationId(session, "OtherAgent", otherAgent.toString()));
         }
     }
