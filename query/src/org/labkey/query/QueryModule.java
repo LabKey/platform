@@ -280,6 +280,7 @@ public class QueryModule extends DefaultModule
     public void doStartup(ModuleContext moduleContext)
     {
         SimpleMetricsService.get().describeFeatureAreas(QueryMetricArea.values());
+        SimpleMetricsService.get().describeClientSideFeatureArea("expressionAssistant", "Calculated field expression assistant use: clickButton, submitPrompt, applyExpression, clickHelpWithValidate");
 
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER, ContainerManager.ContainerListener.Order.Last);
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.core.metrics;
 
+import jakarta.servlet.ServletContext;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +33,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
@@ -61,8 +63,11 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
     /** Feature area descriptions by module name, then feature area */
     private final Map<String, Map<String, String>> _featureAreaDescriptions = new ConcurrentHashMap<>();
 
-    /** "module.featureArea" keys already warned about lacking a description */
-    private final Set<String> _undescribedWarned = ConcurrentHashMap.newKeySet();
+    /** Feature areas counted without a description, already warned about or held until startup completes; also guards _startupComplete */
+    private final Set<FeatureArea> _undescribed = ConcurrentHashMap.newKeySet();
+    private boolean _startupComplete = ModuleLoader.getInstance().isStartupComplete();
+
+    private record FeatureArea(String moduleName, String featureArea) {}
 
     /** Timestamp when we last saved the counts to the DB */
     private Runnable _saver;
@@ -88,6 +93,36 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
                 save();
             }
         });
+        // Areas can be counted before their module's startup() describes them, so judge only once every module has started
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "Simple Metrics Service";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                synchronized (_undescribed)
+                {
+                    _startupComplete = true;
+                    _undescribed.removeIf(area -> isDescribed(area.moduleName(), area.featureArea()));
+                    _undescribed.forEach(SimpleMetricsServiceImpl::logUndescribed);
+                }
+            }
+        });
+    }
+
+    private boolean isDescribed(String moduleName, String featureArea)
+    {
+        return _featureAreaDescriptions.getOrDefault(moduleName, Map.of()).containsKey(featureArea);
+    }
+
+    private static void logUndescribed(FeatureArea area)
+    {
+        LOG.log(AppProps.getInstance().isDevMode() ? Level.ERROR : Level.WARN, "Simple metric feature area {}.{} has no description. Describe it via SimpleMetricsService.describeFeatureArea() or, for client-side metrics, ClientSideMetricDescriptions", area.moduleName(), area.featureArea());
     }
 
     private class SimpleMetricsProvider implements UsageMetricsProvider
@@ -211,8 +246,15 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         Map<String, Map<String, AtomicLong>> moduleMetrics = getModuleMetrics(module);
         String moduleName = module.getName();  // Use canonical name to ensure consistent casing
 
-        if (!_featureAreaDescriptions.getOrDefault(moduleName, Map.of()).containsKey(featureArea) && _undescribedWarned.add(moduleName + "." + featureArea))
-            LOG.log(AppProps.getInstance().isDevMode() ? Level.ERROR : Level.WARN, "Simple metric feature area {}.{} has no description. Describe it via SimpleMetricsService.describeFeatureArea() or, for client-side metrics, ClientSideMetricDescriptions", moduleName, featureArea);
+        FeatureArea area = new FeatureArea(moduleName, featureArea);
+        if (!isDescribed(moduleName, featureArea) && !_undescribed.contains(area))
+        {
+            synchronized (_undescribed)
+            {
+                if (_undescribed.add(area) && _startupComplete)
+                    logUndescribed(area);
+            }
+        }
 
         Map<String, AtomicLong> counts = moduleMetrics.computeIfAbsent(featureArea, k ->
         {
