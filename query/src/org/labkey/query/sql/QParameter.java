@@ -88,7 +88,7 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
         }
         if (count > 2)
         {
-            builder.append(" DEFAULT ");
+            builder.unsafeAppend(" DEFAULT ");
             _decl.childList().get(2).appendSource(builder);
         }
     }
@@ -96,9 +96,9 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("CAST(? AS ");
+        builder.unsafeAppend("CAST(? AS ");
         _type.appendSql(builder, query);
-        builder.append(")");
+        builder.unsafeAppend(")");
         builder.add(this);
     }
 

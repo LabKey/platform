@@ -45,7 +45,7 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
         setName(NAME);
         setDescription("Metadata table containing one row of metadata for each column in all study datasets.");
         List<FieldKey> defaultCols = new ArrayList<>();
-        SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");
+        SQLFragment sql = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");
         var datasetLookupCol = new ExprColumn(this, "DataSet", sql, JdbcType.INTEGER);
         datasetLookupCol.setFk(new LookupForeignKey(cf, "DataSetId", null)
         {
@@ -77,16 +77,16 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
         checkReadBeforeExecute();
         SQLFragment result = new SQLFragment();
         result.appendComment("<DataSetColumnsTable>", getSqlDialect());
-        result.append("(SELECT DataSet.DataSetId, PropertyDescriptor.* FROM ");
+        result.unsafeAppend("(SELECT DataSet.DataSetId, PropertyDescriptor.* FROM ");
         result.append(super.getFromSQL("PropertyDescriptor"));
-        result.append("\n" +
+        result.unsafeAppend("\n" +
                 "JOIN exp.PropertyDomain AS PropertyDomain ON PropertyDomain.PropertyId = PropertyDescriptor.PropertyId\n" +
                 "JOIN exp.DomainDescriptor AS DomainDescriptor ON DomainDescriptor.DomainId = PropertyDomain.DomainId\n" +
                 "JOIN (SELECT * FROM study.DataSet ");
         TableInfo dataset = StudySchema.getInstance().getTableInfoDataset();
         SQLFragment datasetFilter = DatasetsTable.getDatasetFilter(getContainer()).getSQLFragment(dataset, "DataSet");
         result.append(datasetFilter);
-        result.append(") AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI) ");
+        result.unsafeAppend(") AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI) ");
         result.appendIdentifier(alias);
         result.appendComment("</DataSetColumnsTable>", getSqlDialect());
         return result;

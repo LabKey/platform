@@ -632,15 +632,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (isCrossTypeImport || (behaviorType != null && behaviorType != AuditBehaviorType.NONE))
                 auditEvent = createTransactionAuditEvent(getContainer(), _insertOption.auditAction, transactionDetails);
 
-            String targetName = null == _target ? "unknown" : _target.getPublicSchemaName() + "." + _target.getPublicName();
             JSONObject response;
-            try (TracedOperation op = TracedOperation.builder("labkey.importData")
-                    .resource(null == _target ? "importData" : "importData " + TracedOperation.boundedSchemaName(_target.getPublicSchemaName()))
-                    .describedAs("importData " + targetName + " in " + getContainer().getPath())
-                    .tag("labkey.query", null == _target ? null : targetName)
-                    .tag("labkey.db_schema", null == _target || null == _target.getSchema() ? null : _target.getSchema().getName())
-                    .container(getContainer())
-                    .start())
+            try (TracedOperation op = importDataOperation(_target, getContainer()).start())
             {
                 response = handleImportData(loader, dataFiles, file, originalName, behaviorType, auditEvent, (form instanceof QueryForm qf ? qf.getQueryName() : null));
                 op.completed(response.optInt("rowCount", 0));
@@ -673,6 +666,18 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         }
 
+    }
+
+    /** Shared with background imports, so both report under one span resource and log line format */
+    public static TracedOperation.Builder importDataOperation(@Nullable TableInfo target, Container c)
+    {
+        String targetName = null == target ? "unknown" : target.getPublicSchemaName() + "." + target.getPublicName();
+        return TracedOperation.builder("labkey.importData")
+                .resource(null == target ? "importData" : "importData " + TracedOperation.boundedSchemaName(target.getPublicSchemaName()))
+                .describedAs("importData " + targetName + " in " + c.getPath())
+                .tag("labkey.query", null == target ? null : targetName)
+                .tag("labkey.db_schema", null == target || null == target.getSchema() ? null : target.getSchema().getName())
+                .container(c);
     }
 
     protected Pair<DataLoader, FileStream> prepareDataFileLoader(FileLike dataFile, MultipartFile multipartFile) throws IOException

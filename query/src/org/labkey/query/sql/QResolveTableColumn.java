@@ -96,7 +96,7 @@ public class QResolveTableColumn extends QIfDefined
     public void appendSource(SourceBuilder builder)
     {
         getFirstChild().appendSource(builder);
-        builder.append("(");
+        builder.unsafeAppend("(");
         builder.pushPrefix("");
 
         for (QNode n : getLastChild().children())
@@ -106,7 +106,7 @@ public class QResolveTableColumn extends QIfDefined
             builder.nextPrefix(",");
         }
         builder.popPrefix();
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override

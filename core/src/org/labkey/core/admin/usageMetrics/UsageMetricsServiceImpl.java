@@ -21,12 +21,17 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -84,5 +89,32 @@ public class UsageMetricsServiceImpl implements UsageMetricsService
         });
 
         return allModulesMetrics;
+    }
+
+    @Override
+    public Map<String, List<UsageMetrics.Description>> getModuleUsageMetricDescriptions()
+    {
+        Map<String, List<UsageMetrics.Description>> allDescriptions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        moduleUsageReports.forEach((moduleName, providers) ->
+        {
+            List<UsageMetrics.Description> moduleDescriptions = allDescriptions.computeIfAbsent(moduleName, k -> new ArrayList<>());
+            providers.forEach(provider ->
+            {
+                try
+                {
+                    if (provider instanceof DescribedUsageMetricsProvider described)
+                        moduleDescriptions.addAll(described.collectUsageMetrics().getDescriptions());
+                    else
+                        provider.getUsageMetrics().keySet().forEach(key -> moduleDescriptions.add(new UsageMetrics.Description(key, null, null)));
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Failed to collect usage metric descriptions for module {}", moduleName, e);
+                }
+            });
+            moduleDescriptions.sort(Comparator.comparing(UsageMetrics.Description::path, String.CASE_INSENSITIVE_ORDER));
+        });
+
+        return allDescriptions;
     }
 }

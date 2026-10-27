@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
@@ -408,6 +407,9 @@ public class DbScope
                     throw new ConfigurationException("Database name \"" + name + "\" in DataSource \"" + dsName + "\" exceeds the maximum identifier length");
             }
 
+            if (_connectionProperties != null)
+                _dialect.addDefaultConnectionProperties(_connectionProperties);
+
             // Validate that the data source is using a supported connection pool
             validateConnectionPool();
 
@@ -606,7 +608,7 @@ public class DbScope
                 LOG.info(
                         "Initializing DbScope with the following configuration:" +
                                 "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
-                                "\n    Server URL:               " + filterUrl(dbmd.getURL()) +
+                                "\n    Server URL:               " + dbmd.getURL() +
                                 "\n    Database Name:            " + _databaseName +
                                 "\n    Database Product Name:    " + _databaseProductName +
                                 "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
@@ -628,21 +630,6 @@ public class DbScope
             // Issue 50488: Pre-register this data source's SQL error codes in Spring to prevent deadlocks
             SQLErrorCodesFactory.getInstance().registerDatabase(dataSource.getDataSource(), _databaseProductName);
         }
-    }
-
-    // MariaDB driver adds username and password to the URL. This masks the password so we don't log it.
-    private String filterUrl(String url)
-    {
-        int start = url.indexOf("password=");
-        if (start != -1)
-        {
-            start = start + 9;
-            int end = url.indexOf('&', start);
-            if (end == -1)
-                end = url.length();
-            url = url.substring(0, start) + StringUtils.repeat('?', end - start) + url.substring(end);
-        }
-        return url;
     }
 
     private String determineDriverLocation(Class<Driver> driverClass)
@@ -1161,7 +1148,9 @@ public class DbScope
                     @Override
                     void close(DbScope scope, Connection conn, Closer closer) throws SQLException
                     {
-                        if (scope.getConnectionHolder().release(conn))
+                        // Looking the holder up by effective thread is wrong once an AsyncQueryRequest worker outlives its share
+                        ConnectionHolder holder = conn instanceof ConnectionWrapper w && w.getThreadConnectionHolder() != null ? w.getThreadConnectionHolder() : scope.getConnectionHolder();
+                        if (holder.release(conn))
                         {
                             closer.close();
                         }
@@ -1179,7 +1168,7 @@ public class DbScope
         abstract void close(DbScope scope, Connection conn, Closer closer) throws SQLException;
     }
 
-    private class ConnectionHolder
+    class ConnectionHolder
     {
         private int _refCount = 0;
         private Connection _conn;
@@ -1192,7 +1181,9 @@ public class DbScope
         {
             if (0 == _refCount)
             {
-                _conn = getPooledConnection(ConnectionType.Thread, log);
+                ConnectionWrapper conn = getPooledConnection(ConnectionType.Thread, log);
+                conn.setThreadConnectionHolder(this);
+                _conn = conn;
             }
 
             _refCount++;
@@ -1244,11 +1235,7 @@ public class DbScope
         }
     }
 
-    /**
-     * Special case for when the connection that we expected to close has already been closed and another connection is
-     * in use instead. Expected rather than a bug because TransactionFilter's read-only request timeout closes a
-     * thread's connections from a different thread.
-     */
+    /** Special case for when the connection that we expected to close has already been closed and another connection is in use instead */
     public static class DifferentConnectionException extends IllegalStateException implements SkipMothershipLogging
     {
         public DifferentConnectionException(String s)
@@ -1315,9 +1302,16 @@ public class DbScope
     @JsonIgnore
     public Connection getUnpooledConnection() throws SQLException
     {
+        return getUnpooledConnection(null);
+    }
+
+    /** @param overrides driver properties that replace the data source's for this connection */
+    public Connection getUnpooledConnection(@Nullable Properties overrides) throws SQLException
+    {
         try
         {
-            Connection raw = getRawConnection(getDbScopeLoader().getLabKeyDataSource());
+            LabKeyDataSource dataSource = getDbScopeLoader().getLabKeyDataSource();
+            Connection raw = getRawConnection(dataSource.getUrl(), dataSource, overrides);
             return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
@@ -2070,6 +2064,11 @@ public class DbScope
     // This bypasses the connection pool.
     private static Connection getRawConnection(String url, LabKeyDataSource dataSource) throws ServletException, SQLException
     {
+        return getRawConnection(url, dataSource, null);
+    }
+
+    private static Connection getRawConnection(String url, LabKeyDataSource dataSource, @Nullable Properties overrides) throws ServletException, SQLException
+    {
         DataSourcePropertyReader reader = dataSource.getDataSourcePropertyReader();
         Driver driver;
         Properties props;
@@ -2085,6 +2084,10 @@ public class DbScope
             if (reader.getPassword() != null)
             {
                 props.put("password", reader.getPassword());
+            }
+            if (overrides != null)
+            {
+                props.putAll(overrides);
             }
         }
         catch (Exception e)
@@ -2250,17 +2253,21 @@ public class DbScope
 
 
 
-    /**
-     * Close connections without releasing their locks. Useful when a third-party thread wants to interrupt another
-     * thread. If no connections were found, we'll also prevent that thread from getting a new connection.
-     */
-    public static void closeConnectionsForCurrentThreadWithoutReleasingLocks()
+    /** The thread's next attempt to get a new connection throws an AbortedRequestException; cleared when it finishes with the thread */
+    static void banNewConnections(Thread thread)
     {
-        boolean closed = ConnectionWrapper.closeConnections(false);
-        if (!closed)
+        BANNED_THREADS.add(thread);
+    }
+
+    /** Next connection request from the thread gets a new holder; wrappers already handed out still release through their own */
+    static void detachConnectionHolders(Thread thread)
+    {
+        for (DbScope scope : getInitializedDbScopes())
         {
-            // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
-            BANNED_THREADS.add(getEffectiveThread());
+            synchronized (scope._threadConnections)
+            {
+                scope._threadConnections.remove(thread);
+            }
         }
     }
 
@@ -2303,7 +2310,7 @@ public class DbScope
         }
 
         // Also close down connections that might not have been connected with a Transaction object
-        ConnectionWrapper.closeConnections(true);
+        ConnectionWrapper.closeConnections();
     }
 
     /**
@@ -2470,6 +2477,15 @@ public class DbScope
             CommitTaskQueue getQueue(TransactionImpl transaction)
             {
                 return transaction._postCommitQueue;
+            }
+        },
+        /** Run after every POSTCOMMIT task, so it sees the effects of post-commit signals such as materialized view refreshes */
+        LATE_POSTCOMMIT
+        {
+            @Override
+            CommitTaskQueue getQueue(TransactionImpl transaction)
+            {
+                return transaction._latePostCommitQueue;
             }
         },
         /** Run after the transaction has been completely rolled back and abandoned, but not if it was committed */
@@ -2720,6 +2736,7 @@ public class DbScope
 
         private final CommitTaskQueue _preCommitQueue = new CommitTaskQueue();
         private final CommitTaskQueue _postCommitQueue = new CommitTaskQueue();
+        private final CommitTaskQueue _latePostCommitQueue = new CommitTaskQueue();
         private final CommitTaskQueue _postRollbackQueue = new CommitTaskQueue();
 
         private final List<List<Lock>> _locks = new ArrayList<>();
@@ -2799,6 +2816,7 @@ public class DbScope
         {
             _preCommitQueue.clear();
             _postCommitQueue.clear();
+            _latePostCommitQueue.clear();
             _postRollbackQueue.clear();
             closeCaches();
         }
@@ -2897,6 +2915,7 @@ public class DbScope
                         }
 
                         CommitTaskOption.POSTCOMMIT.run(this);
+                        CommitTaskOption.LATE_POSTCOMMIT.run(this);
                     }
                     catch (SQLException e)
                     {
@@ -2933,6 +2952,7 @@ public class DbScope
                 try
                 {
                     CommitTaskOption.POSTCOMMIT.run(this);
+                    CommitTaskOption.LATE_POSTCOMMIT.run(this);
                 }
                 finally
                 {
@@ -3149,7 +3169,7 @@ public class DbScope
         {
             SQLFragment sql = new SQLFragment("SELECT (");
             sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
-            sql.append(") AS Diff");
+            sql.unsafeAppend(") AS Diff");
 
             int actual = new SqlSelector(scope, sql).getObject(Integer.class);
             assertEquals(expected, actual);
@@ -3191,16 +3211,16 @@ public class DbScope
             String delimiter = " ";
 
             SQLFragment query = new SQLFragment("SELECT\n");
-            query.append("  COUNT(*) AS NumRows,\n");
-            query.append("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).append(" AS StrVals\n");
-            query.append("FROM (\n");
-            query.append("  VALUES\n");
-            query.append("  (1, 'x'),\n");
-            query.append("  (2, 'Y'),\n");
-            query.append("  (3, 'z'),\n");
-            query.append("  (4, 'z'),\n");
-            query.append("  (5, 'y')\n");
-            query.append(") AS t (IntVal, StrVal)\n");
+            query.unsafeAppend("  COUNT(*) AS NumRows,\n");
+            query.unsafeAppend("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).unsafeAppend(" AS StrVals\n");
+            query.unsafeAppend("FROM (\n");
+            query.unsafeAppend("  VALUES\n");
+            query.unsafeAppend("  (1, 'x'),\n");
+            query.unsafeAppend("  (2, 'Y'),\n");
+            query.unsafeAppend("  (3, 'z'),\n");
+            query.unsafeAppend("  (4, 'z'),\n");
+            query.unsafeAppend("  (5, 'y')\n");
+            query.unsafeAppend(") AS t (IntVal, StrVal)\n");
 
             Map<String, Object> map = new SqlSelector(scope, query).getMap();
             Number numRows = (Number)map.get("NumRows");
@@ -3392,6 +3412,31 @@ public class DbScope
             }
             assertFalse(getLabKeyScope().isTransactionActive());
             closeAllConnectionsForCurrentThread();
+        }
+
+        @Test
+        public void testLatePostCommitOrder()
+        {
+            DbScope scope = getLabKeyScope();
+            List<String> order = new ArrayList<>();
+
+            try (Transaction t = scope.ensureTransaction())
+            {
+                t.addCommitTask(() -> order.add("late"), CommitTaskOption.LATE_POSTCOMMIT);
+                t.addCommitTask(() -> order.add("post"), CommitTaskOption.POSTCOMMIT);
+                // Added while the PRECOMMIT queue runs, after it has been snapshotted
+                t.addCommitTask(() -> t.addCommitTask(() -> order.add("lateFromPre"), CommitTaskOption.LATE_POSTCOMMIT), CommitTaskOption.PRECOMMIT);
+
+                t.commitAndKeepConnection();
+                assertEquals(List.of("post", "late", "lateFromPre"), order);
+
+                order.clear();
+                t.addCommitTask(() -> order.add("late"), CommitTaskOption.LATE_POSTCOMMIT);
+                t.addCommitTask(() -> order.add("post"), CommitTaskOption.POSTCOMMIT);
+                t.commit();
+            }
+            assertEquals(List.of("post", "late"), order);
+            assertFalse(scope.isTransactionActive());
         }
 
         @Test

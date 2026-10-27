@@ -476,7 +476,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             @Override
             public SQLFragment getValueSql(String tableAliasName)
             {
-                return new SQLFragment(String.valueOf(_dsd.getDatasetId()));
+                return new SQLFragment().appendValue(_dsd.getDatasetId());
             }
         };
         datasetId.setHidden(true);
@@ -717,28 +717,28 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
             if (!includeParticipantVisit)
             {
-                sqlf.append("(SELECT * FROM ");
+                sqlf.unsafeAppend("(SELECT * FROM ");
                 sqlf.append(super.getFromSQL(innerAlias, true));
             }
             else
             {
                 TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-                sqlf.append("(SELECT * FROM (SELECT __DS__.*, __PV__.VisitRowId");
+                sqlf.unsafeAppend("(SELECT * FROM (SELECT __DS__.*, __PV__.VisitRowId");
                 if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
-                    sqlf.append(", __PV__.Day");
+                    sqlf.unsafeAppend(", __PV__.Day");
                 SQLFragment from = getRealTable().getFromSQL("__DS__");
-                sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("__PV__"))
-                        .append("\n" + "    ON __DS__.ParticipantId = __PV__.ParticipantId AND __DS__.SequenceNum = __PV__.SequenceNum");
+                sqlf.unsafeAppend("\n FROM ").append(from).unsafeAppend(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("__PV__"))
+                        .unsafeAppend("\n" + "    ON __DS__.ParticipantId = __PV__.ParticipantId AND __DS__.SequenceNum = __PV__.SequenceNum");
 
                 if (null != getRealTable().getColumn("container"))
                 {
-                    sqlf.append(" AND __PV__.Container = __DS__.Container");
+                    sqlf.unsafeAppend(" AND __PV__.Container = __DS__.Container");
                 }
                 else
                 {
-                    sqlf.append(" AND __PV__.Container = ").appendValue(getContainer());
+                    sqlf.unsafeAppend(" AND __PV__.Container = ").appendValue(getContainer());
                 }
-                sqlf.append(") ").appendIdentifier(innerAlias).append(" ");
+                sqlf.unsafeAppend(") ").appendIdentifier(innerAlias).unsafeAppend(" ");
 
                 Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
                 SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), innerAlias, columnMap);
@@ -764,14 +764,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
                     if (getDataset().getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
                     {
-                        sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+                        sqlf.unsafeAppend(hasWhere ? " AND " : " WHERE ").appendIdentifier(innerAlias).unsafeAppend(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).unsafeAppend(")");
                     }
                     else
                     {
                         // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
                         if (!Strings.CI.startsWith(sqlCF.getRawSQL(), "container"))
                             throw new IllegalStateException("problem generating dataset SQL");
-                        sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".").append(sqlCF);
+                        sqlf.unsafeAppend(hasWhere ? " AND " : " WHERE ").appendIdentifier(innerAlias).unsafeAppend(".").append(sqlCF);
                         hasWhere = true;
                     }
                 }
@@ -794,7 +794,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
                     // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
                     String sql = Strings.CS.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
-                    frag = new SQLFragment(sql, temp.getParams());
+                    frag = new SQLFragment().setSqlUnsafe(sql).addAll(temp.getParams());
                 }
                 else
                 {
@@ -803,14 +803,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     // participant group filter "ParticipantId/<category> = <group>" filter, we don't join on
                     // ParticipantGroupMap.Container to support project-level shared datasets.
                     frag = new SQLFragment();
-                    frag.append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)");
+                    frag.appendIdentifier(innerAlias).unsafeAppend(".ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)");
                     frag.add(group.getRowId());
                 }
 
-                sqlf.append("\n").append(hasWhere ? "AND " : "WHERE ").append(frag);
+                sqlf.unsafeAppend("\n").unsafeAppend(hasWhere ? "AND " : "WHERE ").append(frag);
             }
 
-            sqlf.append(") AS ").appendIdentifier(alias);
+            sqlf.unsafeAppend(") AS ").appendIdentifier(alias);
         }
 
         return sqlf;

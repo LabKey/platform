@@ -27,7 +27,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
@@ -69,6 +68,18 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 ///
 /// Enforces basic SQL injection safeguards by rejecting unmatched quotes and
 /// semicolons in appended text.
+///
+/// Use `unsafeAppend()` for compile-time constant SQL and `appendValue()` for values.
+/// Keyword methods such as `SELECT()` and `LEFT_OUTER_JOIN()` add a space before when needed
+/// and one after; punctuation methods (`LP()`, `RP()`, `COMMA()`, `DOT()`, `SP()`, `NL()`) append exactly one character.
+/// ```java
+/// SQLFragment sql = new SQLFragment()
+///     .SELECT().unsafeAppend("RowId, Name").NL()
+///     .FROM().append(table, "t").NL()
+///     .WHERE().unsafeAppend("Container = ").appendValue(container)
+///         .AND().unsafeAppend("Status").IN().LP().appendValue("A").COMMA().appendValue("B").RP().NL()
+///     .ORDER_BY().unsafeAppend("Name");
+/// ```
 public class SQLFragment
 {
     private String sql;
@@ -130,11 +141,12 @@ public class SQLFragment
         sql = "";
     }
 
+    @Deprecated
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
         if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
-            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
-            StringUtils.contains(charseq, ';'))
+                (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+                StringUtils.contains(charseq, ';'))
         {
             throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
         }
@@ -145,6 +157,7 @@ public class SQLFragment
     }
 
 
+    @Deprecated
     public SQLFragment(CharSequence sql, Object... params)
     {
         this(sql, Arrays.asList(params));
@@ -206,6 +219,17 @@ public class SQLFragment
     public static SQLFragment unsafe(@CompileTimeConstant String unsafe)
     {
         return new SQLFragment().setSqlUnsafe(unsafe);
+    }
+
+    public static SQLFragment unsafe(@CompileTimeConstant String unsafe, Object... params)
+    {
+        return unsafe(unsafe).addAll(params);
+    }
+
+    public static SQLFragment unsafe(@CompileTimeConstant String unsafe, @Nullable List<?> params)
+    {
+        SQLFragment ret = unsafe(unsafe);
+        return null == params ? ret : ret.addAll(params);
     }
 
 
@@ -309,8 +333,8 @@ public class SQLFragment
         SqlDialect dialect = Objects.requireNonNull(commonTableExpressions.getFirst().dialect);
         AliasManager am = new AliasManager(dialect);
         List<Pair<String,CTE>> ctes = commonTableExpressions.stream()
-                    .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
-                    .collect(Collectors.toList());
+                .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
+                .collect(Collectors.toList());
 
         String comma = "\n/*CTE*/\n\t";
         for (Pair<String,CTE> p : ctes)
@@ -346,7 +370,7 @@ public class SQLFragment
         String select2 = sql2.getRawSQL();
 
         if ((null == sql1.commonTableExpressionsMap || sql1.commonTableExpressionsMap.isEmpty()) &&
-            (null == sql2.commonTableExpressionsMap || sql2.commonTableExpressionsMap.isEmpty()))
+                (null == sql2.commonTableExpressionsMap || sql2.commonTableExpressionsMap.isEmpty()))
             return select1.equals(select2);
 
         select1 = markerPattern.matcher(select1).replaceAll("CTE");
@@ -463,14 +487,26 @@ public class SQLFragment
         return append(str);
     }
 
+    public SQLFragment unsafeAppend(@CompileTimeConstant String str, Object... params)
+    {
+        return unsafeAppend(str).addAll(params);
+    }
+
+    public SQLFragment unsafeAppend(@CompileTimeConstant String str, @Nullable List<?> params)
+    {
+        unsafeAppend(str);
+        return null == params ? this : addAll(params);
+    }
+
+    @Deprecated
     public SQLFragment append(CharSequence charseq)
     {
         if (null == charseq)
             return this;
 
         if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
-            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
-            StringUtils.contains(charseq, ';'))
+                (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+                StringUtils.contains(charseq, ';'))
         {
             throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
         }
@@ -489,13 +525,6 @@ public class SQLFragment
     {
         if (null == charseq)
             return this;
-        if (charseq instanceof SQLFragment sqlf)
-        {
-            if (0 != sqlf.getParamsArray().length)
-                throw new IllegalStateException("Unexpected SQL in appendIdentifier()");
-            charseq = sqlf.getRawSQL();
-        }
-
         String identifier = charseq.toString().strip();
 
         if (STR_TABLE_ALIAS.equals(identifier))
@@ -589,6 +618,7 @@ public class SQLFragment
     }
 
 
+    @Deprecated
     public SQLFragment append(CharSequence csq, int start, int end)
     {
         append(csq.subSequence(start, end));
@@ -778,7 +808,7 @@ public class SQLFragment
         String name = e.name();
         // Enum.name() returns a legal Java identifier per JLS, so none of these characters can appear
         // in practice. Defense in depth: reject anything SQL-active rather than only the apostrophe.
-        if (StringUtils.containsAny(name, "'\"\\;\r\n "))
+        if (StringUtils.containsAny(name, "'\"\\;\r\n\0 "))
             throw new IllegalStateException("Unexpected character in Enum.name(): " + name);
         getStringBuilder().append("'").append(name).append("'");
         return this;
@@ -844,19 +874,20 @@ public class SQLFragment
         return this;
     }
 
-    public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @NotNull String separator)
+    public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @CompileTimeConstant @NotNull String separator)
     {
-        String s = "";
-        for (SQLFragment fragment : fragments)
-        {
-            append(s);
-            s = separator;
-            append(fragment);
-        }
-        return this;
+        return append(fragments, sep("", separator, null));
     }
 
-    // return boolean so this can be used in an assert.  passing in a dialect is not ideal, but parsing comments out
+    /** Appends sep.next() before each fragment, then sep.last(). sep is stateful, so pass a fresh one per call. */
+    public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @NotNull SqlSeparator sep)
+    {
+        for (SQLFragment fragment : fragments)
+            append(sep.next()).append(fragment);
+        return append(sep.last());
+    }
+
+    // return boolean so this can be used in an assert().  passing in a dialect is not ideal, but parsing comments out
     // before submitting the fragment is not reliable and holding statements & comments separately (to eliminate the
     // need to parse them) isn't particularly easy... so punt for now.
     public boolean appendComment(String comment, SqlDialect dialect)
@@ -1008,12 +1039,14 @@ public class SQLFragment
         tempTokens.addAll(sql.tempTokens);
     }
 
-    /** Insert into the SQL */
+    /** Insert into the SQL
+     * TODO @CompileTimeConstant
+     */
     public void insert(int index, String str)
     {
         if ((StringUtils.countMatches(str, '\'') % 2) != 0 ||
-            (StringUtils.countMatches(str, '\"') % 2) != 0 ||
-            StringUtils.contains(str, ';'))
+                (StringUtils.countMatches(str, '\"') % 2) != 0 ||
+                StringUtils.contains(str, ';'))
         {
             throw new IllegalArgumentException("SQLFragment.insert(int,String) does not allow semicolons or unmatched quotes");
         }
@@ -1189,9 +1222,91 @@ public class SQLFragment
         return DbScope.getLabKeyScope().getSqlDialect().isSqlServer() ? debugString.replace("N'", "'") : debugString;
     }
 
+
+    // Shortcuts e.g. .SELECT() instead of .appendUnsafe(" SELECT ");
+
+    private void ensureWhiteSpace()
+    {
+        var sb = getStringBuilder();
+        if (!sb.isEmpty() && " \t\n(".indexOf(sb.charAt(sb.length() - 1)) < 0)
+            sb.append(" ");
+    }
+
+    private SQLFragment keyword(String keyword)
+    {
+        ensureWhiteSpace();
+        getStringBuilder().append(keyword).append(" ");
+        return this;
+    }
+
+    public SQLFragment SELECT()             { return keyword("SELECT"); }
+    public SQLFragment SELECT_DISTINCT()    { return keyword("SELECT DISTINCT"); }
+    public SQLFragment DISTINCT()           { return keyword("DISTINCT"); }
+    public SQLFragment AS()                 { return keyword("AS"); }
+    public SQLFragment FROM()               { return keyword("FROM"); }
+    public SQLFragment JOIN()               { return keyword("JOIN"); }
+    public SQLFragment INNER_JOIN()         { return keyword("INNER JOIN"); }
+    public SQLFragment LEFT_JOIN()          { return keyword("LEFT JOIN"); }
+    public SQLFragment LEFT_OUTER_JOIN()    { return keyword("LEFT OUTER JOIN"); }
+    public SQLFragment ON()                 { return keyword("ON"); }
+    public SQLFragment WHERE()              { return keyword("WHERE"); }
+    public SQLFragment AND()                { return keyword("AND"); }
+    public SQLFragment OR()                 { return keyword("OR"); }
+    public SQLFragment NOT()                { return keyword("NOT"); }
+    public SQLFragment IN()                 { return keyword("IN"); }
+    public SQLFragment NULL()               { return keyword("NULL"); }
+    public SQLFragment IS_NULL()            { return keyword("IS NULL"); }
+    public SQLFragment IS_NOT_NULL()        { return keyword("IS NOT NULL"); }
+    public SQLFragment CASE()               { return keyword("CASE"); }
+    public SQLFragment WHEN()               { return keyword("WHEN"); }
+    public SQLFragment THEN()               { return keyword("THEN"); }
+    public SQLFragment ELSE()               { return keyword("ELSE"); }
+    public SQLFragment END()                { return keyword("END"); }
+    public SQLFragment GROUP_BY()           { return keyword("GROUP BY"); }
+    public SQLFragment ORDER_BY()           { return keyword("ORDER BY"); }
+    public SQLFragment UNION()              { return keyword("UNION"); }
+    public SQLFragment DESC()               { return keyword("DESC"); }
+    public SQLFragment INSERT_INTO()        { return keyword("INSERT INTO"); }
+    public SQLFragment VALUES()             { return keyword("VALUES"); }
+    public SQLFragment UPDATE()             { return keyword("UPDATE"); }
+    public SQLFragment SET()                { return keyword("SET"); }
+    public SQLFragment DELETE_FROM()        { return keyword("DELETE FROM"); }
+    public SQLFragment DEFAULT()            { return keyword("DEFAULT"); }
+
+    private SQLFragment punctuation(char c)
+    {
+        getStringBuilder().append(c);
+        return this;
+    }
+
+    public SQLFragment LP()                 { return punctuation('('); }
+    public SQLFragment RP()                 { return punctuation(')'); }
+    public SQLFragment COMMA()              { return punctuation(','); }
+    public SQLFragment DOT()                { return punctuation('.'); }
+    public SQLFragment SP()                 { return punctuation(' '); }
+    public SQLFragment NL()                 { return punctuation('\n'); }
+
+
+
+
+    // Tests
+
     public static class UnitTestCase extends Assert
     {
         SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+
+        @Test
+        public void unsafeWithParams()
+        {
+            SQLFragment sql = SQLFragment.unsafe("SELECT a FROM b WHERE x = ?", 5)
+                .unsafeAppend(" AND y IN (?, ?)", List.of("p", "q"))
+                .unsafeAppend(" AND z = ?", "r");
+            assertEquals("SELECT a FROM b WHERE x = ? AND y IN (?, ?) AND z = ?", sql.getSQL());
+            assertEquals(List.of(5, "p", "q", "r"), sql.getParams());
+
+            assertEquals(List.of("s", "t"), SQLFragment.unsafe("?, ?", List.of("s", "t")).getParams());
+            assertTrue(SQLFragment.unsafe("x", (List<?>) null).getParams().isEmpty());
+        }
 
         @Test
         public void cte()
@@ -1415,9 +1530,12 @@ public class SQLFragment
         {
             shouldFail(() -> new SQLFragment(";"));
             shouldFail(() -> new SQLFragment().append(";"));
+            shouldFail(() -> new SQLFragment().unsafeAppend(";"));
             shouldFail(() -> new SQLFragment("AND name='"));
             shouldFail(() -> new SQLFragment().append("AND name = '"));
+            shouldFail(() -> new SQLFragment().unsafeAppend("AND name = '"));
             shouldFail(() -> new SQLFragment().append("AND name = 'Robert'); DROP TABLE Students; --"));
+            shouldFail(() -> new SQLFragment().unsafeAppend("AND name = 'Robert'); DROP TABLE Students; --"));
 
             shouldFail(() -> new SQLFragment().appendIdentifier("column name"));
             shouldFail(() -> new SQLFragment().appendIdentifier("?"));
@@ -1575,6 +1693,23 @@ public class SQLFragment
             cond.append(terms.last());
             assertEquals("(x) AND (y) AND (z)", cond.getRawSQL());
             assertEquals(")", terms.last().getRawSQL());
+        }
+
+        @Test
+        public void testAppendIterable()
+        {
+            List<SQLFragment> parts = List.of(SQLFragment.unsafe("a = ?", 1), SQLFragment.unsafe("b = ?", 2));
+
+            SQLFragment joined = new SQLFragment().append(parts, " AND ");
+            assertEquals("a = ? AND b = ?", joined.getRawSQL());
+            assertEquals(List.of(1, 2), joined.getParams());
+
+            SQLFragment wrapped = SQLFragment.unsafe("SELECT * FROM t").append(parts, SQLFragment.sep(" WHERE (", ") AND (", ")"));
+            assertEquals("SELECT * FROM t WHERE (a = ?) AND (b = ?)", wrapped.getRawSQL());
+            assertEquals(List.of(1, 2), wrapped.getParams());
+
+            SQLFragment empty = SQLFragment.unsafe("SELECT * FROM t").append(List.of(), SQLFragment.sep(" WHERE (", ") AND (", ")"));
+            assertEquals("SELECT * FROM t", empty.getRawSQL());
         }
     }
 

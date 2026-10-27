@@ -149,7 +149,7 @@ public class ClosureQueryHelper
         assert selectIntoParts.length == 2;
 
         SQLFragment sql = new SQLFragment();
-        sql.append(cteParts[0]).append(" ").append(from).append(" ").append(cteParts[1]);
+        sql.append(cteParts[0]).unsafeAppend(" ").append(from).unsafeAppend(" ").append(cteParts[1]);
         if (insert != null)
             sql.append(insert);
         sql.append(selectIntoParts[0]);
@@ -163,7 +163,7 @@ public class ClosureQueryHelper
     {
         SQLFragment into = new SQLFragment(" INTO temp.${NAME} ");
         if (null != tempTable)
-            into = new SQLFragment(" INTO temp.").append(tempTable).append(" ");
+            into = new SQLFragment(" INTO temp.").append(tempTable).unsafeAppend(" ");
         return selectAndInsertSql(from, into, null);
     }
 
@@ -246,11 +246,11 @@ public class ClosureQueryHelper
     {
         TableInfo info = isSample ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
         SQLFragment sql = new SQLFragment()
-                .append("(SELECT ancestorRowId FROM ")
+                .unsafeAppend("(SELECT ancestorRowId FROM ")
                 .append(info)
-                .append(" WHERE ancestorTypeId=").appendValue(targetTypeId);
-        sql.append(" AND RowId=").append(sourceRowId)
-            .append(")");
+                .unsafeAppend(" WHERE ancestorTypeId=").appendValue(targetTypeId);
+        sql.unsafeAppend(" AND RowId=").append(sourceRowId)
+            .unsafeAppend(")");
         return sql;
     }
 
@@ -259,9 +259,9 @@ public class ClosureQueryHelper
     private static SQLFragment invalidateAncestorData(TableInfo tInfo, SQLFragment familyIdTableName, boolean isSampleType)
     {
         SQLFragment delete = new SQLFragment();
-        delete.append("DELETE FROM ").append(tInfo).append(" WHERE RowId IN (\n");
-        delete.append("  SELECT RowId FROM temp.").append(familyIdTableName).append(" WHERE ObjectType=").appendValue(isSampleType ? "m" : "d")
-                .append("\n)");
+        delete.unsafeAppend("DELETE FROM ").append(tInfo).unsafeAppend(" WHERE RowId IN (\n");
+        delete.unsafeAppend("  SELECT RowId FROM temp.").append(familyIdTableName).unsafeAppend(" WHERE ObjectType=").appendValue(isSampleType ? "m" : "d")
+                .unsafeAppend("\n)");
         return delete;
     }
 
@@ -275,7 +275,7 @@ public class ClosureQueryHelper
             SQLFragment tableNameSql = new SQLFragment(tempTableName);
             tableNameSql.addTempToken(ref);
             ttt = TempTableTracker.track(tempTableName, ref);
-            SQLFragment from = new SQLFragment("FROM temp.").append(familyTempTable).append(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").append(" ");
+            SQLFragment from = new SQLFragment("FROM temp.").append(familyTempTable).unsafeAppend(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").unsafeAppend(" ");
             SQLFragment selectInto = selectIntoTempTableSql(from, tableNameSql);
             selectInto.addTempToken(ref);
             int count = new SqlExecutor(getScope()).execute(selectInto);
@@ -292,10 +292,10 @@ public class ClosureQueryHelper
                 return;
 
             upsert = new SQLFragment()
-                    .append("INSERT INTO ").append(tInfo)
-                    .append(" (RowId, AncestorRowId, AncestorTypeId)\n")
-                    .append("SELECT RowId, ancestorRowId, ancestorTypeId FROM temp.").append(tableNameSql).append(" TMP\n")
-                    .append("ON CONFLICT(RowId,ancestorTypeId) DO UPDATE SET ancestorRowId = EXCLUDED.ancestorRowId").appendEOS();
+                    .unsafeAppend("INSERT INTO ").append(tInfo)
+                    .unsafeAppend(" (RowId, AncestorRowId, AncestorTypeId)\n")
+                    .unsafeAppend("SELECT RowId, ancestorRowId, ancestorTypeId FROM temp.").append(tableNameSql).unsafeAppend(" TMP\n")
+                    .unsafeAppend("ON CONFLICT(RowId,ancestorTypeId) DO UPDATE SET ancestorRowId = EXCLUDED.ancestorRowId").appendEOS();
             upsert.addTempToken(ref);
             new SqlExecutor(scope).execute(upsert);
         }
@@ -448,7 +448,7 @@ public class ClosureQueryHelper
             ttt = TempTableTracker.track(tableNameSql.getSQL(), ref);
 
             // add the seed ids to the temp table
-            SQLFragment selectIntoSql = new SQLFragment("SELECT RowId, ObjectId, ObjectType INTO temp.").append(tableNameSql).append(" FROM (").append(selectSeedsSql).append(") x");
+            SQLFragment selectIntoSql = new SQLFragment("SELECT RowId, ObjectId, ObjectType INTO temp.").append(tableNameSql).unsafeAppend(" FROM (").append(selectSeedsSql).unsafeAppend(") x");
             int numSeeds = new SqlExecutor(getScope()).execute(selectIntoSql);
             logger.debug("Added {} seed {} rows to temp.{}", numSeeds, isSampleType ? "sample" : "data", familyTableName);
             // if we didn't actually insert any items into the table, there's nothing more to be done
@@ -460,11 +460,11 @@ public class ClosureQueryHelper
             String cte = "WITH RECURSIVE " + pgDescendantClosureCTE;
             String[] cteParts = StringUtils.splitByWholeSeparator(cte, "/*FROM*/");
             SQLFragment descendantsCte = new SQLFragment();
-            descendantsCte.append(cteParts[0]).append("FROM (SELECT * FROM temp.").append(tableNameSql).append(") s ").append(cteParts[1]);
+            descendantsCte.append(cteParts[0]).unsafeAppend("FROM (SELECT * FROM temp.").append(tableNameSql).unsafeAppend(") s ").append(cteParts[1]);
             descendants.append(descendantsCte);
 
-            descendants.append("INSERT INTO temp.").append(tableNameSql)
-                    .append(" (RowId, ObjectId, ObjectType) ").append(descendantClosureSelectSql);
+            descendants.unsafeAppend("INSERT INTO temp.").append(tableNameSql)
+                    .unsafeAppend(" (RowId, ObjectId, ObjectType) ").append(descendantClosureSelectSql);
             int numRows = new SqlExecutor(getScope()).execute(descendants);
             logger.debug("Added {} {} descendant rows for {}", numRows, isSampleType ? "sample" : "data", familyTableName);
 
@@ -482,8 +482,8 @@ public class ClosureQueryHelper
     private static void recomputeMaterialAncestors(Collection<Long> rowIds)
     {
         SQLFragment selectSeedsSql = new SQLFragment()
-                .append("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
-                .append("WHERE m.RowId ").appendInClause(rowIds, getScope().getSqlDialect());
+                .unsafeAppend("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
+                .unsafeAppend("WHERE m.RowId ").appendInClause(rowIds, getScope().getSqlDialect());
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
@@ -495,12 +495,12 @@ public class ClosureQueryHelper
     private static void recomputeMaterialAncestorsForRunOutputs(String sourceTypeLsid, Collection<Long> runIds)
     {
         SQLFragment selectSeedsSql = new SQLFragment()
-                .append("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
-                .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
-                .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
-                .append(" AND m.cpasType = ? ").add(sourceTypeLsid)
-                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
+                .unsafeAppend("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
+                .unsafeAppend("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
+                .unsafeAppend("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
+                .unsafeAppend("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
+                .unsafeAppend(" AND m.cpasType = ? ").add(sourceTypeLsid)
+                .unsafeAppend(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
@@ -514,19 +514,19 @@ public class ClosureQueryHelper
         }
 
         SQLFragment selectSeedsSql = new SQLFragment()
-                .append("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
-                .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
-                .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
-                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
+                .unsafeAppend("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
+                .unsafeAppend("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
+                .unsafeAppend("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
+                .unsafeAppend("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
+                .unsafeAppend(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, true);
     }
 
     private static void recomputeDataObjectAncestors(Collection<Long> rowIds)
     {
         SQLFragment selectSeedsSql = new SQLFragment()
-                .append("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
-                .append("WHERE d.RowId ").appendInClause(rowIds, getScope().getSqlDialect());
+                .unsafeAppend("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
+                .unsafeAppend("WHERE d.RowId ").appendInClause(rowIds, getScope().getSqlDialect());
         recomputeFromSeeds(selectSeedsSql, false);
     }
 
@@ -538,12 +538,12 @@ public class ClosureQueryHelper
     private static void recomputeDataAncestorsForRunOutputs(String sourceTypeLsid, Collection<Long> runIds)
     {
         SQLFragment selectSeedsSql = new SQLFragment()
-                .append("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
-                .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
-                .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
-                .append(" AND d.cpasType = ? ").add(sourceTypeLsid)
-                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
+                .unsafeAppend("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
+                .unsafeAppend("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
+                .unsafeAppend("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
+                .unsafeAppend("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
+                .unsafeAppend(" AND d.cpasType = ? ").add(sourceTypeLsid)
+                .unsafeAppend(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, false);
     }
 
@@ -557,11 +557,11 @@ public class ClosureQueryHelper
         }
 
         SQLFragment selectSeedsSql = new SQLFragment()
-                .append("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
-                .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
-                .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
-                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
+                .unsafeAppend("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
+                .unsafeAppend("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
+                .unsafeAppend("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
+                .unsafeAppend("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
+                .unsafeAppend(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, false);
     }
 

@@ -37,10 +37,10 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SystemUpgradeAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.ContainerKeySimpleCache;
 import org.labkey.api.cache.SimpleKeyMappingCache;
 import org.labkey.api.cache.UserKeySimpleCache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -54,10 +54,13 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AsyncQueryRequest;
 import org.labkey.api.data.AtomicDatabaseInteger;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
+import org.labkey.api.data.CacheReplayCommitTask;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -78,6 +81,7 @@ import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RecordFactory;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RepeatedCommitTaskMonitor;
 import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
@@ -92,11 +96,15 @@ import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelectorTestCase;
 import org.labkey.api.data.TempTableInClauseGenerator;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.PostgresSnapshot;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
+import org.labkey.api.data.queryprofiler.Query;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
@@ -111,6 +119,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
+import org.labkey.api.jsp.RecompilingJspClassLoader;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.OperationsMXBean;
 import org.labkey.api.module.CodeOnlyModule;
@@ -168,6 +177,7 @@ import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
@@ -250,6 +260,8 @@ public class ApiModule extends CodeOnlyModule
     protected void init()
     {
         ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/vfs", this);
+        // In init() so module upgrade code also sees configured sizes
+        BatchSize.populate();
         AttachmentService.get().registerAttachmentParentType(ReportType.get());
         AttachmentService.get().registerAttachmentParentType(LookAndFeelResourceType.get());
         AttachmentService.get().registerAttachmentParentType(AuthenticationLogoType.get());
@@ -404,9 +416,11 @@ public class ApiModule extends CodeOnlyModule
             AssayResultsFileWriter.TestCase.class,
             AuthenticationManager.ReauthTokenTest.class,
             BaseServerProperties.TestCase.class,
+            BatchSize.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CacheManager.TestCase.class,
+            CacheReplayCommitTask.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,
             CaseInsensitiveHashMap.TestCase.class,
             CaseInsensitiveHashSet.TestCase.class,
@@ -467,7 +481,10 @@ public class ApiModule extends CodeOnlyModule
             Pair.TestCase.class,
             PasswordExpiration.TestCase.class,
             Path.TestCase.class,
+            Query.TestCase.class,
+            QueryProfiler.TestCase.class,
             RReport.TestCase.class,
+            RecompilingJspClassLoader.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
             RepeatedCommitTaskMonitor.TestCase.class,
             ReplacedRunFilter.TestCase.class,
@@ -482,6 +499,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.SqlClauseTestCase.class,
             SimpleKeyMappingCache.TestCase.class,
             SqlExecutingSelector.TestCase.class,
+            SqlDialect.ExecutionPlanTypeTestCase.class,
             SqlScanner.TestCase.class,
             StrictBoundedReader.TestCase.class,
             StringExpressionFactory.TestCase.class,
@@ -497,6 +515,7 @@ public class ApiModule extends CodeOnlyModule
             Table.LogExceptionTestCase.class,
             TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
+            UsageMetrics.TestCase.class,
             ValidEmail.TestCase.class,
             VersionNumber.TestCase.class,
             ViewContext.TestCase.class,
@@ -528,6 +547,7 @@ public class ApiModule extends CodeOnlyModule
             ApiKeyManager.TestCase.class,
             ApiQueryResponse.TestCase.class,
             AppPropsTestCase.class,
+            AsyncQueryRequest.TestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BindingTestCase.class,
             BlockingCache.BlockingCacheTest.class,
@@ -571,8 +591,10 @@ public class ApiModule extends CodeOnlyModule
             PostgresSnapshot.TestCase.class,
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
+            QueryProfiler.ExecutionPlanUnavailableTestCase.class,
             QueryView.TestCase.class,
             RecordFactory.TestCase.class,
+            RequestCancellation.TestCase.class,
             RepeatedCommitTaskMonitor.IntegrationTestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
@@ -592,6 +614,7 @@ public class ApiModule extends CodeOnlyModule
             Table.TestCase.class,
             TableSelectorTestCase.CoreTableSelectorTest.class,
             TempTableInClauseGenerator.TestCase.class,
+            TransactionFilter.TestCase.class,
             URLHelper.TestCase.class,
             UserKeySimpleCache.TestCase.class,
             UserManager.TestCase.class,

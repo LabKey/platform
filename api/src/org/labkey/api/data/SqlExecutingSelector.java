@@ -67,6 +67,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     private @Nullable ConnectionFactory _connectionFactory = null; // null means "no explicit choice"; see getEffectiveConnectionFactory()
     private boolean _jdbcCachingExplicitlySet = false;
     private Integer _fetchSize = null; // By default, use the standard fetch size
+    private @Nullable Integer _queryTimeout = null; // Seconds; null means no timeout
 
     private @Nullable AsyncQueryRequest<?> _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
@@ -229,6 +230,13 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     public SELECTOR setFetchSize(int fetchSize)
     {
         _fetchSize = fetchSize;
+        return getThis();
+    }
+
+    /** Cancels each statement this selector executes after the given number of seconds. */
+    public SELECTOR setQueryTimeout(int seconds)
+    {
+        _queryTimeout = seconds;
         return getThis();
     }
 
@@ -432,7 +440,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         {
             SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM\n(\n");
             sql.append(_factory.getSql());
-            sql.append("\n) x");
+            sql.unsafeAppend("\n) x");
 
             return sql;
         }
@@ -456,7 +464,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
             SQLFragment existsSql = new SQLFragment("EXISTS\n(\n");
             existsSql.append(_factory.getSql());
-            existsSql.append("\n)");
+            existsSql.unsafeAppend("\n)");
 
             // Turn this into an expression that can be SELECTed
             SQLFragment selectSql = dialect.wrapBooleanExpression(existsSql);
@@ -633,6 +641,11 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             if (null != _fetchSize)
             {
                 stmt.setFetchSize(_fetchSize);
+            }
+
+            if (null != _queryTimeout)
+            {
+                stmt.setQueryTimeout(_queryTimeout);
             }
 
             if (asyncRequest != null)

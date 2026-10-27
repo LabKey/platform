@@ -415,10 +415,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         Map<String, String> tags = new HashMap<>();
         tags.put("labkey.query", getAsyncQueryName());
-        if (null != _table.getSchema())
-            tags.put("labkey.db_schema", _table.getSchema().getName());
-        if (null != _table.getUserSchema())
-            tags.put(TracedOperation.CONTAINER_TAG, _table.getUserSchema().getContainer().getPath());
+        // A null value removes the tag, so a slower query's tags on the web span don't mix with a faster one's
+        tags.put("labkey.db_schema", null != _table.getSchema() ? _table.getSchema().getName() : null);
+        tags.put(TracedOperation.CONTAINER_TAG, null != _table.getUserSchema() ? _table.getUserSchema().getContainer().getPath() : null);
         return tags;
     }
 
@@ -817,7 +816,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             SQLFragment innerSql = super.getSql();
 
             SQLFragment aggregateSql = new SQLFragment();
-            aggregateSql.append("SELECT ");
+            aggregateSql.unsafeAppend("SELECT ");
             int validAggregates = 0;
 
             for (Aggregate agg : _aggregates)
@@ -828,7 +827,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                     if (sql != null)
                     {
                         if (validAggregates > 0)
-                            aggregateSql.append(",\n");
+                            aggregateSql.unsafeAppend(",\n");
 
                         aggregateSql.append(sql);
                         validAggregates++;
@@ -840,7 +839,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             if (validAggregates == 0)
                 return null;
 
-            return aggregateSql.append(" FROM (").append(innerSql).append(") S");
+            return aggregateSql.unsafeAppend(" FROM (").append(innerSql).unsafeAppend(") S");
         }
     }
 }

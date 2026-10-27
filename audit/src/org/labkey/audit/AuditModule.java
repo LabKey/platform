@@ -29,6 +29,7 @@ import org.labkey.api.migration.MigrationTableHandler;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
 import java.util.Collection;
@@ -89,7 +90,8 @@ public class AuditModule extends DefaultModule
     {
         return Set.of(
             AuditController.ContainerScopeTestCase.class,
-            AuditLogImpl.TransactionScopeTestCase.class
+            AuditLogImpl.TransactionScopeTestCase.class,
+            LogManager.TruncationTestCase.class
         );
     }
 
@@ -156,7 +158,7 @@ public class AuditModule extends DefaultModule
         @Override
         public SQLFragment getValueSql(String tableAlias)
         {
-            return new SQLFragment("CAST(").append(super.getValueSql(tableAlias)).append(" AS BIT)");
+            return new SQLFragment("CAST(").append(super.getValueSql(tableAlias)).unsafeAppend(" AS BIT)");
         }
     }
 }

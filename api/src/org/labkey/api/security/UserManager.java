@@ -116,7 +116,6 @@ public class UserManager
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
     public static final int VALID_GROUP_NAME_LENGTH = 64;
-    public static final int VERIFICATION_EMAIL_TIMEOUT = 60 * 24;  // in minutes, one day currently
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
 
@@ -486,34 +485,34 @@ public class UserManager
         TableInfo uat = getUserAuditSchemaTableInfo();
         SQLFragment sql = new SQLFragment("SELECT COUNT(");
         sql.append(distinct ?  "DISTINCT uat.CreatedBy" : "*");
-        sql.append(") FROM ");
+        sql.unsafeAppend(") FROM ");
         sql.append(uat, "uat");
         if (excludeSystemUsers)
         {
-            sql.append(" INNER JOIN ");
+            sql.unsafeAppend(" INNER JOIN ");
             sql.append(CoreSchema.getInstance().getTableInfoUsersData(), "ud");
-            sql.append(" ON uat.CreatedBy = ud.UserId");
-            sql.append(" WHERE ud.System = ?");
+            sql.unsafeAppend(" ON uat.CreatedBy = ud.UserId");
+            sql.unsafeAppend(" WHERE ud.System = ?");
             sql.add(false);
         }
         else
         {
             // Make string concat easy
-            sql.append(" WHERE 1=1");
+            sql.unsafeAppend(" WHERE 1=1");
         }
 
-        sql.append(" AND uat.Comment LIKE ");
+        sql.unsafeAppend(" AND uat.Comment LIKE ");
         sql.appendStringLiteral("%" + UserAuditEvent.LOGGED_IN + "%", uat.getSqlDialect());
 
         if (apiKeyOnly)
         {
-            sql.append(" AND uat.Comment LIKE ");
+            sql.unsafeAppend(" AND uat.Comment LIKE ");
             sql.appendStringLiteral("%" + UserAuditEvent.API_KEY + "%", uat.getSqlDialect());
         }
 
         if (since != null)
         {
-            sql.append(" AND uat.Created >= ?");
+            sql.unsafeAppend(" AND uat.Created >= ?");
             sql.add(since);
         }
 
@@ -860,7 +859,7 @@ public class UserManager
             {
                 if (!LoginManager.getVerifyEmail(userToChange).isVerified(verificationToken))  // shouldn't happen! should be testing this earlier too
                 {
-                    throw new UserManagementException(oldEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + oldEmail);
+                    throw new UserManagementException(oldEmail, "Verification token is incorrect for email change for user " + oldEmail);
                 }
             }
 
@@ -875,7 +874,7 @@ public class UserManager
             }
             else
             {
-                addToUserHistory(userToChange, currentUser + " changed their email address from " + oldEmail + " to " + newEmail + " with token '" + verificationToken + "'.");
+                addToUserHistory(userToChange, currentUser + " changed their email address from " + oldEmail + " to " + newEmail + ".");
             }
 
             if (userToChange.getDisplayName(userToChange).equals(oldEmail))
@@ -887,7 +886,7 @@ public class UserManager
 
             if (LoginManager.loginExists(userToChange))
             {
-                LoginManager.setVerification(userToChange, null);  // so we don't let user use this link again
+                LoginManager.clearVerification(userToChange);  // so we don't let user use this link again
             }
 
             transaction.commit();
@@ -896,16 +895,16 @@ public class UserManager
         clearUserList();
     }
 
-    public static void auditEmailTimeout(int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
+    public static void auditEmailTimeout(int userId, String oldEmail, String newEmail, User currentUser)
     {
         addToUserHistory(getUser(userId), currentUser + " tried to change an email address from " + oldEmail + " to " + newEmail +
-                " with token '" + verificationToken + "', but the verification link was timed out.");
+                ", but the verification link was timed out.");
     }
 
-    public static void auditBadVerificationToken(int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
+    public static void auditBadVerificationToken(int userId, String oldEmail, String newEmail, User currentUser)
     {
         addToUserHistory(getUser(userId), currentUser + " tried to change an email address from " + oldEmail + " to " + newEmail +
-                " with token '" + verificationToken + "', but the verification token for that email address was not correct.");
+                ", but the verification token for that email address was not correct.");
     }
 
     public static void deleteUser(int userId) throws UserManagementException

@@ -152,7 +152,7 @@ public class Sort
         {
             SQLFragment sql = new SQLFragment();
             sql.appendIdentifier(alias);
-            sql.append(" ");
+            sql.unsafeAppend(" ");
             sql.append(_dir.getSqlDir());
             return sql;
         }
@@ -557,7 +557,7 @@ public class Sort
             return;
 
         if (!distinctKeys.isEmpty())
-            sql.append(", ");
+            sql.unsafeAppend(", ");
 
         sql.append(sf.toOrderByFragment(dialect, alias));
         distinctKeys.add(alias.getId());

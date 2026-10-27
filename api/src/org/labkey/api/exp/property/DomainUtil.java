@@ -31,6 +31,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.CompareType;
@@ -91,10 +92,12 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatType;
@@ -121,6 +124,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.exp.PropertyType.CALCULATED_CONCEPT_URI;
@@ -206,24 +210,30 @@ public class DomainUtil
         return defaultValue.toString();
     }
 
-    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap)
+    @Nullable
+    private static QuerySchema resolveLookupSchema(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap)
     {
         Container lookupContainer = p.getLookupContainer() == null ? c : ContainerService.get().getForPath(p.getLookupContainer());
 
         if (null == lookupContainer)
-            return false;
+            return null;
 
         // Saving default schema for use again if there are multiple lookups from the same schema
-        DefaultSchema defaultSchema = defaultSchemaMap.get(lookupContainer);
-        if (null == defaultSchema)
-        {
-            defaultSchema = DefaultSchema.get(user, lookupContainer);
-            defaultSchemaMap.put(lookupContainer, defaultSchema);
-        }
+        DefaultSchema defaultSchema = defaultSchemaMap.computeIfAbsent(lookupContainer, lc -> DefaultSchema.get(user, lc));
 
-        QuerySchema schema = DefaultSchema.resolve(defaultSchema, SchemaKey.fromString(p.getLookupSchema()));
+        return DefaultSchema.resolve(defaultSchema, SchemaKey.fromString(p.getLookupSchema()));
+    }
 
-        if (null == schema)
+    private static boolean isSameScope(QuerySchema schema, DbScope scope)
+    {
+        return null == schema.getDbSchema() || schema.getDbSchema().getScope() == scope;
+    }
+
+    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap, DbScope domainScope)
+    {
+        QuerySchema schema = resolveLookupSchema(user, c, p, defaultSchemaMap);
+
+        if (null == schema || !isSameScope(schema, domainScope))
             return false;
 
         // Only checking names here to avoid creating tableinfo each time. Avoids potential infinite loop.
@@ -317,7 +327,7 @@ public class DomainUtil
                 if (null == lookupDefaultSchemaMap)
                     lookupDefaultSchemaMap = new HashMap<>();
 
-                field.setLookupIsValid(isValidPdLookup(user, container, field, lookupDefaultSchemaMap));
+                field.setLookupIsValid(isValidPdLookup(user, container, field, lookupDefaultSchemaMap, getDomainScope(domainKind)));
             }
 
             //set property as PK
@@ -759,6 +769,7 @@ public class DomainUtil
         DomainKind<?> validateDomainKind = templateInfo == null && strictFieldValidation ? kind : null;
 
         ValidationException ve = DomainUtil.validateProperties(null, domain, validateDomainKind, null, user);
+        validateLookupScopes(domain, null, getDomainScope(kind), container, user, ve);
         if (ve.hasErrors())
         {
             throw new ValidationException(ve);
@@ -808,6 +819,7 @@ public class DomainUtil
 
         DomainKind<?> kind = d.getDomainKind();
         ValidationException validationException = validateProperties(d, update, kind, orig, user);
+        validateLookupScopes(update, orig, getDomainScope(kind), d.getContainer(), user, validationException);
 
         if (validationException.hasErrors())
         {
@@ -986,7 +998,7 @@ public class DomainUtil
 
                             SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
                                     .append(domainTable)
-                                    .append(" WHERE ")
+                                    .unsafeAppend(" WHERE ")
                                     .append(dialect.array_some_in_array(columnFrag, deletedArray));
 
                             if (new SqlSelector(domainTable.getSchema().getScope(), sql).exists())
@@ -1414,8 +1426,6 @@ public class DomainUtil
         return Pair.of(valueUpdates, deletedValues);
     }
 
-    private static final int TEXT_CHOICE_UPDATE_BATCH_SIZE = 1000;
-
     private static void updateTextChoiceValueRows(Domain domain, User user, DomainProperty prop, Map<String, Object> valueUpdates, ValidationException errors)
     {
         if (domain != null && domain.getDomainKind() != null)
@@ -1451,7 +1461,8 @@ public class DomainUtil
                 try (DbScope.Transaction transaction = domainTable.getSchema().getScope().ensureTransaction();
                      Stream<Map<String, Object>> stream = new TableSelector(domainTable, columns, filter, null).uncachedMapStream())
                 {
-                    List<Map<String, Object>> batch = new ArrayList<>(TEXT_CHOICE_UPDATE_BATCH_SIZE);
+                    int batchSize = BatchSize.get(ROWS);
+                    List<Map<String, Object>> batch = new ArrayList<>(batchSize);
                     Iterator<Map<String, Object>> iter = stream.iterator();
                     while (iter.hasNext())
                     {
@@ -1462,12 +1473,12 @@ public class DomainUtil
                         valueRow.put(propCol.getName(), valueUpdates.get((String) propCol.getValue(rsRow)));
                         batch.add(valueRow);
 
-                        if (batch.size() == TEXT_CHOICE_UPDATE_BATCH_SIZE || !iter.hasNext())
+                        if (batch.size() == batchSize || !iter.hasNext())
                         {
                             updateTextChoiceValueBatch(domain, user, domainTable, containerCol, containerTables, batch, batchErrors);
                             if (batchErrors.hasErrors())
                                 throw batchErrors;
-                            batch = new ArrayList<>(TEXT_CHOICE_UPDATE_BATCH_SIZE);
+                            batch = new ArrayList<>(batchSize);
                         }
                     }
                     transaction.commit();
@@ -1730,6 +1741,37 @@ public class DomainUtil
         return exception;
     }
 
+    private static DbScope getDomainScope(DomainKind<?> kind)
+    {
+        return Objects.requireNonNullElse(kind.getScope(), DbScope.getLabKeyScope());
+    }
+
+    // GH Issue 438: a lookup join can't span data sources. Unchanged lookups are skipped so an existing bad one doesn't block unrelated edits.
+    private static void validateLookupScopes(GWTDomain<?> updates, @Nullable GWTDomain<?> orig, DbScope domainScope, Container c, User user, ValidationException errors)
+    {
+        Map<Integer, GWTPropertyDescriptor> origFields = null == orig ? Map.of() : orig.getFields().stream()
+            .collect(Collectors.toMap(GWTPropertyDescriptor::getPropertyId, f -> f, (a, b) -> a));
+        Map<Container, DefaultSchema> defaultSchemaMap = new HashMap<>();
+
+        for (GWTPropertyDescriptor field : updates.getFields(true))
+        {
+            if (field.getLookupSchema() == null || field.getLookupQuery() == null || !isLookupChanged(field, origFields.get(field.getPropertyId())))
+                continue;
+
+            QuerySchema schema = resolveLookupSchema(user, c, field, defaultSchemaMap);
+            if (null != schema && !isSameScope(schema, domainScope))
+                errors.addFieldError(field.getName(), getDomainErrorMessage(updates, "Field '" + field.getName() + "' can't look up '" + field.getLookupSchema() + "." + field.getLookupQuery() + "' because it is in a different data source."));
+        }
+    }
+
+    private static boolean isLookupChanged(GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField)
+    {
+        return null == origField
+            || !Strings.CI.equals(field.getLookupContainer(), origField.getLookupContainer())
+            || !Strings.CI.equals(field.getLookupSchema(), origField.getLookupSchema())
+            || !Strings.CI.equals(field.getLookupQuery(), origField.getLookupQuery());
+    }
+
     /** Anchor an import alias error on every field that declares the offending alias so the designer can highlight them. */
     private static void addImportAliasErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
     {
@@ -1925,6 +1967,79 @@ public class DomainUtil
                     errors.getGlobalErrorStrings());
             assertTrue("Only one named field declares the alias, so it is not a duplicate: " + errors.getAllErrors(),
                     errors.getFieldErrors(FIELD_ONE).isEmpty());
+        }
+    }
+
+    public static class LookupScopeTestCase extends Assert
+    {
+        private static final String FIELD_NAME = "LookupField";
+        private static final int PROPERTY_ID = 1;
+
+        // Stands in for an external data source; core.Users lives in the LabKey DB
+        private static final DbScope OTHER_SCOPE = new DbScope() {};
+
+        private static GWTPropertyDescriptor lookup(int propertyId, @Nullable String schema, @Nullable String query)
+        {
+            GWTPropertyDescriptor pd = new GWTPropertyDescriptor(FIELD_NAME, PropertyType.INTEGER.getTypeUri());
+            pd.setPropertyId(propertyId);
+            pd.setLookupSchema(schema);
+            pd.setLookupQuery(query);
+            return pd;
+        }
+
+        private static GWTDomain<GWTPropertyDescriptor> domain(GWTPropertyDescriptor field)
+        {
+            GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
+            domain.setFields(List.of(field));
+            return domain;
+        }
+
+        private static List<String> validate(GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField, DbScope domainScope)
+        {
+            ValidationException errors = new ValidationException();
+            validateLookupScopes(domain(field), null == origField ? null : domain(origField), domainScope, JunitUtil.getTestContainer(), TestContext.get().getUser(), errors);
+            return errors.getFieldErrors(FIELD_NAME);
+        }
+
+        @Test
+        public void sameDataSourceIsAllowed()
+        {
+            assertEquals(List.of(), validate(lookup(0, "core", "Users"), null, DbScope.getLabKeyScope()));
+        }
+
+        @Test
+        public void newLookupToOtherDataSourceIsRejected()
+        {
+            assertEquals(List.of("Field '" + FIELD_NAME + "' can't look up 'core.Users' because it is in a different data source."),
+                    validate(lookup(0, "core", "Users"), null, OTHER_SCOPE));
+        }
+
+        @Test
+        public void unchangedLookupToOtherDataSourceIsAllowed()
+        {
+            // Case-only differences don't count as a change
+            assertEquals(List.of(), validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, "Core", "users"), OTHER_SCOPE));
+        }
+
+        @Test
+        public void changedLookupToOtherDataSourceIsRejected()
+        {
+            assertEquals(1, validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, "core", "Containers"), OTHER_SCOPE).size());
+            assertEquals(1, validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, null, null), OTHER_SCOPE).size());
+        }
+
+        @Test
+        public void newFieldIsNotMatchedToAnExistingField()
+        {
+            // New fields arrive with propertyId 0, so they never match an original field and are always validated
+            assertEquals(1, validate(lookup(0, "core", "Users"), lookup(PROPERTY_ID, "core", "Users"), OTHER_SCOPE).size());
+        }
+
+        @Test
+        public void incompleteOrUnresolvableLookupIsSkipped()
+        {
+            assertEquals(List.of(), validate(lookup(0, "core", null), null, OTHER_SCOPE));
+            assertEquals(List.of(), validate(lookup(0, "noSuchSchema", "Users"), null, OTHER_SCOPE));
         }
     }
 }

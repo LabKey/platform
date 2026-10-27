@@ -40,13 +40,19 @@ final class CallSiteKeys
      */
     String getStackKey(Throwable t)
     {
+        return Arrays.stream(t.getStackTrace()).limit(getCallSiteIndex(t) + 1L).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
+    }
+
+    /** Index of the first frame outside the plumbing classes, capped at {@link #MAX_KEY_FRAMES} */
+    int getCallSiteIndex(Throwable t)
+    {
         StackTraceElement[] frames = t.getStackTrace();
-        int lastFrame = 0;
+        int index = 0;
 
-        while (lastFrame < frames.length - 1 && lastFrame < MAX_KEY_FRAMES - 1 && isPlumbingStackFrame(frames[lastFrame]))
-            lastFrame++;
+        while (index < frames.length - 1 && index < MAX_KEY_FRAMES - 1 && isPlumbingStackFrame(frames[index]))
+            index++;
 
-        return Arrays.stream(frames).limit(lastFrame + 1L).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
+        return index;
     }
 
     private boolean isPlumbingStackFrame(StackTraceElement frame)

@@ -29,7 +29,6 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
@@ -52,7 +51,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortManager;
@@ -298,7 +296,7 @@ public abstract class VisitManager
             @Override
             SQLFragment getSql(@NotNull SQLFragment ptid)
             {
-                return new SQLFragment("CAST(COUNT(DISTINCT ").append(ptid).append(") AS INT)");
+                return SQLFragment.unsafe("CAST(COUNT(DISTINCT ").append(ptid).unsafeAppend(") AS INT)");
             }
 
             @Override
@@ -312,7 +310,7 @@ public abstract class VisitManager
             @Override
             SQLFragment getSql(@NotNull SQLFragment ptid)
             {
-                return new SQLFragment("CAST(COUNT(*) AS INT)");
+                return SQLFragment.unsafe("CAST(COUNT(*) AS INT)");
             }
 
             @Override
@@ -420,9 +418,9 @@ public abstract class VisitManager
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo visitTable = StudySchema.getInstance().getTableInfoVisit();
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ");
         sql.append(visitTable, "vt");
-        sql.append(" WHERE SequenceNumMax >= ? AND SequenceNumMin <= ? AND Container = ? AND RowId <> ?");
+        sql.unsafeAppend(" WHERE SequenceNumMax >= ? AND SequenceNumMin <= ? AND Container = ? AND RowId <> ?");
         sql.add(visit.getSequenceNumMin());
         sql.add(visit.getSequenceNumMax());
         sql.add(visit.getContainer());
@@ -449,27 +447,27 @@ public abstract class VisitManager
             // INSERT INTO participant FROM participantvisit WHERE not in participant...
 
             SQLFragment datasetParticipantsSQL = new SQLFragment();
-            datasetParticipantsSQL.append(
-                    "SELECT ParticipantId FROM (").append(studyPtidsFragment).append(") _ptids\n");
+            datasetParticipantsSQL.unsafeAppend(
+                    "SELECT ParticipantId FROM (").append(studyPtidsFragment).unsafeAppend(") _ptids\n");
             // Databases limit the size of IN clauses, so check that we won't blow the cap
             if (potentiallyInsertedParticipants != null && potentiallyInsertedParticipants.size() < 450)
             {
                 // We have an explicit list of potentially added participants, so filter to only look at them
-                datasetParticipantsSQL.append("WHERE ParticipantId ");
+                datasetParticipantsSQL.unsafeAppend("WHERE ParticipantId ");
                 schema.getSqlDialect().appendInClauseSql(datasetParticipantsSQL, potentiallyInsertedParticipants);
             }
-            datasetParticipantsSQL.append("\nEXCEPT\n");
-            datasetParticipantsSQL.append(
+            datasetParticipantsSQL.unsafeAppend("\nEXCEPT\n");
+            datasetParticipantsSQL.unsafeAppend(
                     "SELECT ParticipantId FROM study.Participant p WHERE Container = ?");
             datasetParticipantsSQL.add(c);
 
             SQLFragment insert = new SQLFragment();
-            insert.append(
+            insert.unsafeAppend(
                     "INSERT INTO study.Participant (Container, ParticipantId)\n" +
                     "SELECT ? AS Container, ParticipantId FROM (\n");
             insert.add(c);
             insert.append(datasetParticipantsSQL);
-            insert.append(") _insert");
+            insert.unsafeAppend(") _insert");
 
             new SqlExecutor(schema).execute(insert);
         }
@@ -571,7 +569,7 @@ public abstract class VisitManager
     private static SQLFragment studyDataPtids(Collection<DatasetDefinition> defs)
     {
         SQLFragment f = new SQLFragment();
-        String union = "";
+        var union = SQLFragment.sep("", "\nUNION\n");
         for (DatasetDefinition d : defs)
         {
             if (d.getDataSharingEnum()== DatasetDefinition.DataSharing.PTID)
@@ -589,11 +587,10 @@ public abstract class VisitManager
             }
             if (null == sti)
                 continue;
-            f.append(union);
-            f.append("SELECT DISTINCT ParticipantId FROM ").append(sti.getFromSQL("_"));
+            f.append(union.next());
+            f.unsafeAppend("SELECT DISTINCT ParticipantId FROM ").append(sti.getFromSQL("_"));
             if (d.isShared())
-                f.append(" WHERE Container = ?").add(d.getContainer());
-            union = " UNION\n";
+                f.unsafeAppend(" WHERE Container = ?").add(d.getContainer());
         }
         return f.isEmpty() ? null : f;
     }
@@ -613,13 +610,13 @@ public abstract class VisitManager
             ColumnInfo col = tInfo.getColumn(START_DATE_COLUMN_NAME);
             Container c = startDateDataset.getContainer();
             SQLFragment expr = new SQLFragment()
-                    .append("(SELECT MIN(").appendIdentifier(col.getSelectIdentifier()).append(")")
-                    .append(" FROM ").append(tInfo)
-                    .append(" WHERE ").append(tInfo).append(".ParticipantId = ").append(tableParticipant).append(".ParticipantId").append(" AND ").append(tableParticipant).append(".Container = ").appendValue(c).append(")");
+                    .unsafeAppend("(SELECT MIN(").appendIdentifier(col.getSelectIdentifier()).unsafeAppend(")")
+                    .unsafeAppend(" FROM ").append(tInfo)
+                    .unsafeAppend(" WHERE ").append(tInfo).unsafeAppend(".ParticipantId = ").append(tableParticipant).unsafeAppend(".ParticipantId").unsafeAppend(" AND ").append(tableParticipant).unsafeAppend(".Container = ").appendValue(c).unsafeAppend(")");
             SQLFragment subSelect = schema.getSqlDialect().getDateTimeToDateCast(expr);
             SQLFragment sql = new SQLFragment()
-                    .append("UPDATE ").append(tableParticipant).append(" SET StartDate = ").append(subSelect)
-                    .append(" WHERE (").append(tableParticipant).append(".StartDate IS NULL OR NOT ").append(tableParticipant).append(".StartDate = ").append(subSelect).append(") AND Container = ").appendValue(c);
+                    .unsafeAppend("UPDATE ").append(tableParticipant).unsafeAppend(" SET StartDate = ").append(subSelect)
+                    .unsafeAppend(" WHERE (").append(tableParticipant).unsafeAppend(".StartDate IS NULL OR NOT ").append(tableParticipant).unsafeAppend(".StartDate = ").append(subSelect).unsafeAppend(") AND Container = ").appendValue(c);
             new SqlExecutor(schema).execute(sql);
         }
 
@@ -688,32 +685,32 @@ public abstract class VisitManager
         if (null != studyDataPtids)
         {
             ptids.append(studyDataPtids);
-            ptids.append(" UNION\n");
+            ptids.unsafeAppend(" UNION\n");
         }
-        ptids.append("SELECT DISTINCT ptid AS ParticipantId FROM ");
+        ptids.unsafeAppend("SELECT DISTINCT ptid AS ParticipantId FROM ");
         ptids.append(tableSpecimen, "_specimens_");
 
         SQLFragment ptidsP = new SQLFragment();
-        ptidsP.append("SELECT ParticipantId FROM ").append(tableParticipant).append(" WHERE Container = ?");
+        ptidsP.unsafeAppend("SELECT ParticipantId FROM ").append(tableParticipant).unsafeAppend(" WHERE Container = ?");
         ptidsP.add(c);
         // Databases limit the size of IN clauses, so check that we won't blow the cap
         if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
         {
             // We have an explicit list of potentially deleted participants, so filter to only look at them
-            ptidsP.append(" AND ParticipantId ");
+            ptidsP.unsafeAppend(" AND ParticipantId ");
             tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants);
         }
 
         SQLFragment del = new SQLFragment();
-        del.append("DELETE FROM ").append(tableParticipant);
-        del.append("\nWHERE Container = ? ");
+        del.unsafeAppend("DELETE FROM ").append(tableParticipant);
+        del.unsafeAppend("\nWHERE Container = ? ");
         del.add(c);
-        del.append("AND ParticipantId IN\n");
-        del.append("(\n");
-        del.append("    ").append(ptidsP).append("\n");
-        del.append("    EXCEPT\n");
-        del.append("    (SELECT ParticipantId FROM (").append(ptids).append(") _existing_)\n");
-        del.append(")");
+        del.unsafeAppend("AND ParticipantId IN\n");
+        del.unsafeAppend("(\n");
+        del.unsafeAppend("    ").append(ptidsP).unsafeAppend("\n");
+        del.unsafeAppend("    EXCEPT\n");
+        del.unsafeAppend("    (SELECT ParticipantId FROM (").append(ptids).unsafeAppend(") _existing_)\n");
+        del.unsafeAppend(")");
 
         // Our tests often see race conditions (e.g., purge task firing in parallel with container delete) which result in
         // SQLExceptions. Shut off automatic logging of exceptions in the data access layer; caller will catch the exceptions
@@ -739,7 +736,7 @@ public abstract class VisitManager
          */
         StudySchema study = StudySchema.getInstance();
         SQLFragment sqlSelect = new SQLFragment();
-        sqlSelect.append(
+        sqlSelect.unsafeAppend(
                 "SELECT DISTINCT ParticipantId FROM study.ParticipantVisit WHERE Container = ? EXCEPT SELECT DISTINCT ParticipantId FROM study.Participant WHERE Container = ?"
         );
         sqlSelect.add(c);
@@ -747,11 +744,11 @@ public abstract class VisitManager
 
         SQLFragment sqlDelete = new SQLFragment();
         sqlDelete.appendComment("<VisitManager.purgeParticipantsFromParticipantsVisitTable>", study.getSqlDialect());
-        sqlDelete.append("DELETE FROM study.ParticipantVisit");
-        sqlDelete.append(" WHERE Container = ? AND ParticipantId IN (");
+        sqlDelete.unsafeAppend("DELETE FROM study.ParticipantVisit");
+        sqlDelete.unsafeAppend(" WHERE Container = ? AND ParticipantId IN (");
         sqlDelete.add(c);
         sqlDelete.append(sqlSelect);
-        sqlDelete.append(")");
+        sqlDelete.unsafeAppend(")");
         sqlDelete.appendComment("</VisitManager.purgeParticipantsFromParticipantsVisitTable>", study.getSqlDialect());
         return new SqlExecutor(study.getScope()).execute(sqlDelete);
     }
@@ -793,16 +790,5 @@ public abstract class VisitManager
                 TIMER.cancel();
             }
         }
-    }
-
-    void _dump(String sql)
-    {
-        LOGGER.debug("DUMP -- {}", sql);
-        DbScope s = StudySchema.getInstance().getScope();
-        new SqlExecutor(s).executeWithResults(new SQLFragment(sql), (rs, conn) ->
-        {
-            ResultSetUtil.logData(rs, LOGGER);
-            return null;
-        });
     }
 }

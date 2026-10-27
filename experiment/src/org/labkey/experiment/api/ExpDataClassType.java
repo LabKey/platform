@@ -103,17 +103,17 @@ public class ExpDataClassType implements AttachmentParentType
                     selectStatements.add(
                         new SQLFragment("\n    SELECT ")
                             .append(expressionToExtractObjectId)
-                            .append(" AS EntityId, ")
+                            .unsafeAppend(" AS EntityId, ")
                             .append(dialect.concatenate(
                                 new SQLFragment("?", domain.getName()),
                                 new SQLFragment("':'"),
                                 new SQLFragment("Name")
                             ))
-                            .append(" AS Description FROM ")
+                            .unsafeAppend(" AS Description FROM ")
                             .append(ExperimentService.get().getTinfoData())
-                            .append(" WHERE classid = ")
+                            .unsafeAppend(" WHERE classid = ")
                             .appendValue(dataClass.getRowId())
-                            .append(" AND ")
+                            .unsafeAppend(" AND ")
                             .append(where)
                     );
                 }

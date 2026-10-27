@@ -603,17 +603,17 @@ public class PropertyManager
         var setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
 
         SQLFragment deleteProps = new SQLFragment();
-        deleteProps.append("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());
-        deleteProps.append(" WHERE ").appendIdentifier(setSelectName).append(" IN ");
-        deleteProps.append("(SELECT ").appendIdentifier(setSelectName).append(" FROM ").append(SCHEMA.getTableInfoPropertySets(), "ps");
-        deleteProps.append(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+        deleteProps.unsafeAppend("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());
+        deleteProps.unsafeAppend(" WHERE ").appendIdentifier(setSelectName).unsafeAppend(" IN ");
+        deleteProps.unsafeAppend("(SELECT ").appendIdentifier(setSelectName).unsafeAppend(" FROM ").append(SCHEMA.getTableInfoPropertySets(), "ps");
+        deleteProps.unsafeAppend(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
         deleteProps.add(user);
         deleteProps.add(objectId);
         deleteProps.add(category);
 
         store.appendWhereFilter(deleteProps);
 
-        deleteProps.append(")");
+        deleteProps.unsafeAppend(")");
 
         SqlExecutor sqlx = new SqlExecutor(SCHEMA.getSchema());
         sqlx.execute(deleteProps);
@@ -638,17 +638,17 @@ public class PropertyManager
         {
             SQLFragment deleteProps = new SQLFragment("DELETE FROM ")
                 .append(SCHEMA.getTableInfoProperties())
-                .append(" WHERE ")
+                .unsafeAppend(" WHERE ")
                 .appendIdentifier(setSelectName)
-                .append(" = ?")
+                .unsafeAppend(" = ?")
                 .add(propertySet);
             executor.execute(deleteProps);
 
             SQLFragment deleteSet = new SQLFragment("DELETE FROM ")
                 .append(SCHEMA.getTableInfoPropertySets())
-                .append(" WHERE ")
+                .unsafeAppend(" WHERE ")
                 .appendIdentifier(setSelectName)
-                .append(" = ?")
+                .unsafeAppend(" = ?")
                 .add(propertySet);
             executor.execute(deleteSet);
             t.commit();

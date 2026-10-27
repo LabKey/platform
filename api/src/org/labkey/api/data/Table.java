@@ -819,7 +819,8 @@ public class Table
      * @return a new Map&lt;String, Object&gt; if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
      * The row is not re-queried after the insert, so the returned value carries only the fields passed in plus the
      * generated autoincrement key and special fields (e.g. created/createdBy) -- not any other database-computed
-     * values such as defaults, computed columns, or trigger-modified data.
+     * values such as defaults, computed columns, or trigger-modified data. A record can be provided to insert, but
+     * it's returned unchanged, since it's immutable and can't receive the generated key or special fields.
      * @throws RuntimeValidationException if there is a problem with the data that's detected before we try to actually do the insert
      * @throws RuntimeSQLException if there is a problem communicating with the database or there is a constraint violation or similar error
      */
@@ -870,7 +871,7 @@ public class Table
             columnSQL.appendIdentifier(column.getSelectIdentifier());
             valueSQL.append(comma);
             if (null == value || value instanceof String s && s.isEmpty())
-                valueSQL.append("NULL");
+                valueSQL.unsafeAppend("NULL");
             else if (value instanceof NowTimestamp ts)
                 valueSQL.appendValue(ts);
             else
@@ -899,12 +900,12 @@ public class Table
             throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + fieldsIn);
         }
 
-        insertSQL.append("INSERT INTO ");
+        insertSQL.unsafeAppend("INSERT INTO ");
         insertSQL.append(table.getSelectName());
-        insertSQL.append("\n\t(");
+        insertSQL.unsafeAppend("\n\t(");
         insertSQL.append(columnSQL);
-        insertSQL.append(")\n\t");
-        insertSQL.append("VALUES (");
+        insertSQL.unsafeAppend(")\n\t");
+        insertSQL.unsafeAppend("VALUES (");
         insertSQL.append(valueSQL);
         insertSQL.append(")");
 
@@ -1027,7 +1028,7 @@ public class Table
         {
             whereSQL.append(whereAND);
             whereSQL.appendIdentifier(col.getSelectIdentifier());
-            whereSQL.append("=?");
+            whereSQL.unsafeAppend("=?");
             whereSQL.add(keys.get(col.getName()), col.getJdbcType());
             whereAND = " AND ";
         }
@@ -1052,7 +1053,7 @@ public class Table
                 {
                     setSQL.append(comma);
                     setSQL.appendIdentifier(column.getSelectIdentifier());
-                    setSQL.append("=");
+                    setSQL.unsafeAppend("=");
                     setSQL.append(expr);
                     comma = ", ";
                     hasFieldsToSet = true;
@@ -1067,7 +1068,7 @@ public class Table
                 {
                     setSQL.append(comma);
                     setSQL.appendIdentifier(column.getSelectIdentifier());
-                    setSQL.append("=NULL");
+                    setSQL.unsafeAppend("=NULL");
                     comma = ", ";
                 }
                 continue;
@@ -1076,10 +1077,10 @@ public class Table
             Object value = fields.get(column.getName());
             setSQL.append(comma);
             setSQL.appendIdentifier(column.getSelectIdentifier());
-            setSQL.append("=");
+            setSQL.unsafeAppend("=");
 
             if (null == value || value instanceof String s && s.isEmpty())
-                setSQL.append("NULL");
+                setSQL.unsafeAppend("NULL");
             else if (value instanceof NowTimestamp ts)
                 setSQL.appendValue(ts);
             else
@@ -1093,7 +1094,7 @@ public class Table
                         throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
                 }
 
-                setSQL.append("?");
+                setSQL.unsafeAppend("?");
                 if (value instanceof Parameter.JdbcParameterValue)
                     setSQL.add(value);
                 else
@@ -1108,8 +1109,8 @@ public class Table
         {
             // UNDONE: reselect
             SQLFragment updateSQL = new SQLFragment()
-                    .append("UPDATE ").append(table.getSQLName()).append("\n\t")
-                    .append("SET ").append(setSQL).append("\n\t")
+                    .unsafeAppend("UPDATE ").append(table.getSQLName()).unsafeAppend("\n\t")
+                    .unsafeAppend("SET ").append(setSQL).unsafeAppend("\n\t")
                     .append(whereSQL);
 
             try
@@ -1172,8 +1173,8 @@ public class Table
             throw new IllegalArgumentException("Table " + fullTableName(table) + " has no column named '" + SpecialColumn.Container.name() + "'.");
 
         SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(table)
-                .append(" SET  ").appendIdentifier(containerColumn.getSelectIdentifier())
-                .append(" = ")
+                .unsafeAppend(" SET  ").appendIdentifier(containerColumn.getSelectIdentifier())
+                .unsafeAppend(" = ")
                 .appendValue(targetContainer);
 
         if (withModified)
@@ -1182,22 +1183,22 @@ public class Table
             ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
             if (null != colModified)
             {
-                dataUpdate.append(", ").appendIdentifier(colModified.getSelectIdentifier())
-                        .append(" = ")
+                dataUpdate.unsafeAppend(", ").appendIdentifier(colModified.getSelectIdentifier())
+                        .unsafeAppend(" = ")
                         .appendNowTimestamp();
             }
 
             ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
             if (null != colModifiedBy)
             {
-                dataUpdate.append(", ").appendIdentifier(colModifiedBy.getSelectIdentifier())
-                        .append(" = ")
+                dataUpdate.unsafeAppend(", ").appendIdentifier(colModifiedBy.getSelectIdentifier())
+                        .unsafeAppend(" = ")
                         .appendValue(user.getUserId());
             }
         }
 
         SQLFragment whereClause = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
-        dataUpdate.append("\n").append(whereClause);
+        dataUpdate.unsafeAppend("\n").append(whereClause);
 
         return new SqlExecutor(table.getSchema()).execute(dataUpdate);
     }
@@ -1237,7 +1238,7 @@ public class Table
     {
         assert assertInDb(table);
         SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
-        SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).append("\n\t").append(where);
+        SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).unsafeAppend("\n\t").append(where);
 
         return new SqlExecutor(table.getSchema()).execute(deleteSQL);
     }
@@ -1293,9 +1294,9 @@ public class Table
     {
         SQLFragment sqlSelect = getSelectSQL(tinfo, null, null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
-        sqlSelectInto.append("SELECT * INTO ").append(tableName).append(" FROM (");
+        sqlSelectInto.unsafeAppend("SELECT * INTO ").append(tableName).unsafeAppend(" FROM (");
         sqlSelectInto.append(sqlSelect);
-        sqlSelectInto.append(") _from_");
+        sqlSelectInto.unsafeAppend(") _from_");
 
         new SqlExecutor(tinfo.getSchema()).execute(sqlSelectInto);
     }
@@ -1726,20 +1727,20 @@ public class Table
         Parameter paramContainer = new Parameter("container", null, JdbcType.VARCHAR);
 
         SQLFragment sqlfWhere = new SQLFragment();
-        sqlfWhere.append("\nWHERE " );
+        sqlfWhere.unsafeAppend("\nWHERE " );
         String and = "";
         for (int i=0 ; i<columnPK.size() ; i++)
         {
             ColumnInfo pk = columnPK.get(i);
             Parameter p = paramPK.get(i);
             sqlfWhere.append(and); and = " AND ";
-            sqlfWhere.appendIdentifier(pk.getSelectIdentifier()).append("=?");
+            sqlfWhere.appendIdentifier(pk.getSelectIdentifier()).unsafeAppend("=?");
             sqlfWhere.add(p);
         }
         if (null != table.getColumn("container"))
         {
             sqlfWhere.append(and);
-            sqlfWhere.append("container=?");
+            sqlfWhere.unsafeAppend("container=?");
             sqlfWhere.add(paramContainer);
         }
 
@@ -1769,8 +1770,8 @@ public class Table
             {
                 String keyName = Objects.toString(objectIdColumnName, objectURIColumnName);
                 ColumnInfo keyCol = table.getColumn(keyName);
-                sqlfSelectKey.append("SELECT ").appendIdentifier(keyCol.getSelectIdentifier());
-                sqlfSelectKey.append("FROM ").append(table.getFromSQL("X"));
+                sqlfSelectKey.unsafeAppend("SELECT ").appendIdentifier(keyCol.getSelectIdentifier());
+                sqlfSelectKey.unsafeAppend("FROM ").append(table.getFromSQL("X"));
                 sqlfSelectKey.append(sqlfWhere);
             }
 
@@ -1791,7 +1792,7 @@ public class Table
         if (null != sqlfDeleteObject)
         {
             sqlfDelete.append(sqlfDeleteObject);
-            sqlfDelete.append(";\n");
+            sqlfDelete.appendEOS();
         }
         sqlfDelete.append(sqlfDeleteTable);
 

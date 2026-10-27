@@ -204,7 +204,7 @@ public interface StudyService
     // Do any of the tables that study manages reference this location?
     boolean isLocationInUse(Location loc);
 
-    void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists);
+    void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, SQLFragment exists);
 
     interface StudyTabProvider
     {

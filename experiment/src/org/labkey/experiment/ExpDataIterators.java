@@ -31,6 +31,7 @@ import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -155,6 +156,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.dataiterator.ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
@@ -2619,7 +2621,6 @@ public class ExpDataIterators
     {
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
-        private static final int BATCH_SIZE = 1000;
         record TypeData(
                 Container container,
                 ExpObject dataType,
@@ -3103,7 +3104,7 @@ public class ExpDataIterators
 
         private void addDataRow(TypeData typeData)
         {
-            if (typeData.dataRows.size() == BATCH_SIZE)
+            if (typeData.dataRows.size() >= BatchSize.get(ROWS))
                 writeRowsToFile(typeData);
 
             List<Object> dataRow = new ArrayList<>();

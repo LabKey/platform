@@ -64,7 +64,7 @@ public class NormalPropertyStore extends AbstractPropertyStore
     @Override
     protected void appendWhereFilter(SQLFragment sql)
     {
-        sql.append("Encryption = ?");
+        sql.unsafeAppend("Encryption = ?");
         sql.add("None");
     }
 }

@@ -28,6 +28,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -169,6 +170,23 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     TransformResult getTransformResult();
 
     void setTransformResult(TransformResult result);
+
+    /** Whether this context can carry transform output prepared before the import transaction. */
+    default boolean supportsPreparedTransform()
+    {
+        return false;
+    }
+
+    /** Transform output prepared before the import transaction, for run creation to record. */
+    default @Nullable PreparedTransform getPreparedTransform()
+    {
+        return null;
+    }
+
+    default void setPreparedTransform(@Nullable PreparedTransform prepared)
+    {
+        throw new UnsupportedOperationException(getClass().getName() + " can't carry a prepared transform");
+    }
 
     /** The RowId for the run that is being deleted and reuploaded, or null if this is a new run */
     Long getReRunId();

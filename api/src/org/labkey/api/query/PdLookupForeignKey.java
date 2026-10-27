@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
@@ -189,7 +190,17 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (table.getPkColumns().isEmpty() || table.getPkColumns().size() > 2)
             return null;
 
+        // GH Issue 438: the lookup join can't span data sources
+        if (table.getSchema().getScope() != getSourceScope())
+            return null;
+
         return table;
+    }
+
+    private DbScope getSourceScope()
+    {
+        DbSchema sourceDbSchema = null == _sourceSchema ? null : _sourceSchema.getDbSchema();
+        return null == sourceDbSchema ? DbScope.getLabKeyScope() : sourceDbSchema.getScope();
     }
 
     @Nullable

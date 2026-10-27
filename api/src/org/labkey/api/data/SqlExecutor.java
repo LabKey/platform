@@ -65,8 +65,6 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
 
     public int execute(CharSequence sql, Object... params)
     {
-        if (sql instanceof SQLFragment)
-            throw new IllegalArgumentException();
         return execute(new SQLFragment(sql, params));
     }
 

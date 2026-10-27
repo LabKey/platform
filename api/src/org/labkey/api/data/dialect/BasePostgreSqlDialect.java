@@ -46,6 +46,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
+import org.postgresql.core.BaseConnection;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -58,9 +59,12 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 
 // Base dialect for PostgreSQL AND Redshift. IMPORTANT: Make sure everything added here applies to Redshift as well;
 // if not, put it in PostgreSql92Dialect.
@@ -103,43 +107,50 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate, Consumer<Runnable> signaller)
     {
         // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
         String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
 
-        try (Connection conn = scope.getPooledConnection())
+        // Unpooled, since an exhausted pool is when a cancel is most needed and borrowing would wait out maxWaitMillis.
+        // pgjdbc waits forever to log in by default, and the request timeout sweep waits on this.
+        Properties props = new Properties();
+        props.setProperty("loginTimeout", "5");
+        props.setProperty("socketTimeout", "5");
+        try (Connection conn = scope.getUnpooledConnection(props))
         {
             // Spring's translator would hand back a DataAccessException, which the per-connection catch below can't narrow on
             SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);
-            for (ConnectionWrapper connection : connections)
-            {
-                Integer spid = connection.getSPID();
-
-                // Re-check as late as possible: if the thread let go while we were getting the connection above, the pool
-                // may have handed that physical connection, and this SPID, straight back out to someone else
-                if (!connection.isAllocated())
+            signaller.accept(() -> {
+                for (ConnectionWrapper connection : connections)
                 {
-                    LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
-                    continue;
-                }
+                    Integer spid = connection.getSPID();
 
-                try
-                {
-                    // Reports an already-exited backend by returning false, not by throwing
-                    boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
-
-                    if (!signalled)
+                    // Re-check as late as possible: if the thread let go while we were getting the connection above, the pool
+                    // may have handed that physical connection, and this SPID, straight back out to someone else
+                    if (!connection.isAllocated())
                     {
-                        // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
-                        LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                        LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Reports an already-exited backend by returning false, not by throwing
+                        boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
+
+                        if (!signalled)
+                        {
+                            // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
+                            LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                        }
+                    }
+                    catch (RuntimeSQLException e)
+                    {
+                        LOG.warn("{}({}) failed", function, spid, e);
                     }
                 }
-                catch (RuntimeSQLException e)
-                {
-                    LOG.warn("{}({}) failed", function, spid, e);
-                }
-            }
+            });
         }
         catch (SQLException e)
         {
@@ -147,6 +158,34 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         }
 
         return true;
+    }
+
+    @Override
+    public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
+    {
+        Set<ConnectionWrapper> signalled = new HashSet<>();
+        for (ConnectionWrapper connection : connections)
+        {
+            // Same reuse race as cancelQueries(): don't signal a session the pool may have handed to someone else
+            if (!connection.isAllocated())
+                continue;
+
+            // The driver's cancel request opens its own socket and authenticates with the session's secret key
+            if (connection.getPhysicalConnection() instanceof BaseConnection pgConnection)
+            {
+                try
+                {
+                    pgConnection.cancelQuery();
+                    signalled.add(connection);
+                }
+                catch (SQLException e)
+                {
+                    LOG.warn("Cancel request for SPID {} failed", connection.getSPID(), e);
+                }
+            }
+        }
+
+        return signalled;
     }
 
     @Override
@@ -257,9 +296,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
     {
         var columnIdentifier = column.getSelectIdentifier();
-        sql.append("\nRETURNING ").appendIdentifier(columnIdentifier);
+        sql.unsafeAppend("\nRETURNING ").appendIdentifier(columnIdentifier);
         if (null != proposedVariable)
-            sql.append(" INTO ").appendIdentifier(proposedVariable);
+            sql.unsafeAppend(" INTO ").appendIdentifier(proposedVariable);
 
         return proposedVariable;
     }
@@ -307,9 +346,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         SQLFragment select = new SQLFragment("SELECT ");
         select.append(qualifiedProcName);
-        select.append("(");
+        select.unsafeAppend("(");
         select.append(parameters);
-        select.append(")");
+        select.unsafeAppend(")");
         return select;
     }
 
@@ -387,9 +426,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         SQLFragment result = new SQLFragment("POSITION(");
         result.append(toFind);
-        result.append(" IN ");
+        result.unsafeAppend(" IN ");
         result.append(toSearch);
-        result.append(")");
+        result.unsafeAppend(")");
         return result;
     }
 
@@ -402,7 +441,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length)
     {
-        return new SQLFragment("substr(").append(s).append(", ").append(start).append(", ").append(length).append(")");
+        return new SQLFragment("substr(").append(s).unsafeAppend(", ").append(start).unsafeAppend(", ").append(length).unsafeAppend(")");
     }
 
     @Override
@@ -490,11 +529,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             case Calendar.MONTH:
             {
-                return new SQLFragment("((EXTRACT(YEAR FROM ").append(value1).append(") - EXTRACT(YEAR FROM ").append(value2).append(")) * 12 + EXTRACT(MONTH FROM ").append(value1).append(") - EXTRACT(MONTH FROM ").append(value2).append("))::INT");
+                return new SQLFragment("((EXTRACT(YEAR FROM ").append(value1).unsafeAppend(") - EXTRACT(YEAR FROM ").append(value2).unsafeAppend(")) * 12 + EXTRACT(MONTH FROM ").append(value1).unsafeAppend(") - EXTRACT(MONTH FROM ").append(value2).unsafeAppend("))::INT");
             }
             case Calendar.YEAR:
             {
-                return new SQLFragment("(EXTRACT(YEAR FROM ").append(value1).append(") - EXTRACT(YEAR FROM ").append(value2).append("))::INT");
+                return new SQLFragment("(EXTRACT(YEAR FROM ").append(value1).unsafeAppend(") - EXTRACT(YEAR FROM ").append(value2).unsafeAppend("))::INT");
             }
             case Calendar.DATE:
             {
@@ -526,7 +565,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 throw new IllegalArgumentException("Unsupported time unit: " + part);
             }
         }
-        return new SQLFragment("(EXTRACT(EPOCH FROM (").append(value1).append(" - ").append(value2).append(")) / ").append(String.valueOf(divideBy)).append(")::INT");
+        return new SQLFragment("(EXTRACT(EPOCH FROM (").append(value1).unsafeAppend(" - ").append(value2).unsafeAppend(")) / ").append(String.valueOf(divideBy)).unsafeAppend(")::INT");
     }
 
     @Override
@@ -649,9 +688,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         SQLFragment ret = new SQLFragment(" POSITION(");
         ret.append(littleString);
-        ret.append(" IN ");
+        ret.unsafeAppend(" IN ");
         ret.append(bigString);
-        ret.append(") ");
+        ret.unsafeAppend(") ");
         return ret;
     }
 
@@ -660,20 +699,20 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         SQLFragment tmp = new SQLFragment("position(");
         tmp.append(littleString);
-        tmp.append(" in substring(");
+        tmp.unsafeAppend(" in substring(");
         tmp.append(bigString);
-        tmp.append(" from ");
+        tmp.unsafeAppend(" from ");
         tmp.append(startIndex);
-        tmp.append("))");
+        tmp.unsafeAppend("))");
         SQLFragment ret = new SQLFragment("((");
         ret.append(startIndex);
         // TODO: code review this: I believe that this -1 is necessary to produce the correct results.
-        ret.append(" - 1)");
-        ret.append(" * sign(");
+        ret.unsafeAppend(" - 1)");
+        ret.unsafeAppend(" * sign(");
         ret.append(tmp);
-        ret.append(")+");
+        ret.unsafeAppend(")+");
         ret.append(tmp);
-        ret.append(")");
+        ret.unsafeAppend(")");
 
         return ret;
     }
@@ -805,18 +844,18 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement
         SQLFragment sb = new SQLFragment();
-        sb.append("{");
+        sb.unsafeAppend("{");
         if (assignResult)
-            sb.append("? = ");
-        sb.append("CALL ").append(qualifiedProcName).append("(");
+            sb.unsafeAppend("? = ");
+        sb.unsafeAppend("CALL ").append(qualifiedProcName).unsafeAppend("(");
         String comma = "";
         for (int i = 0; i < paramCount; i++)
         {
             sb.append(comma);
-            sb.append("?");
+            sb.unsafeAppend("?");
             comma = ",";
         }
-        sb.append(")}");
+        sb.unsafeAppend(")}");
         return sb;
     }
 
@@ -885,8 +924,25 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment isNumericExpr(SQLFragment expression)
     {
+        // 1/0, matching what SQL Server's ISNUMERIC() passthrough returns.
         return new SQLFragment("(CASE WHEN CAST((").append(expression)
-                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
+                .unsafeAppend(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
+    }
+
+    @Override
+    public SQLFragment weekIsoExpr(SQLFragment expression)
+    {
+        return new SQLFragment("CAST(EXTRACT(week FROM (").append(expression).unsafeAppend(")) AS INTEGER)");
+    }
+
+    @Override
+    public SQLFragment weekUsExpr(SQLFragment expression)
+    {
+        // Week 1 is whatever week contains Jan 1, and weeks start Sunday: (day of year + Sunday-based weekday of Jan 1 - 1) / 7, rounded down, plus one.
+        // The VALUES subquery names the argument so it is evaluated once; spelled out twice, a volatile argument could read either side of midnight.
+        return new SQLFragment("(SELECT CAST(FLOOR((EXTRACT(doy FROM v.d) + EXTRACT(dow FROM date_trunc('year', v.d)) - 1) / 7) + 1 AS INTEGER) FROM (VALUES (CAST(")
+                .append(expression)
+                .unsafeAppend(" AS TIMESTAMP))) AS v(d))");
     }
 
     public static class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
@@ -1032,7 +1088,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         // http://www.postgresql.org/docs/9.1/static/functions-formatting.html
         SQLFragment iso = new SQLFragment("to_char(CAST((");
         iso.append(date);
-        iso.append(") AS TIMESTAMP), 'YYYY-MM-DD HH24:MI:SS.MS')");
+        iso.unsafeAppend(") AS TIMESTAMP), 'YYYY-MM-DD HH24:MI:SS.MS')");
         return iso;
     }
 
@@ -1090,16 +1146,16 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return super.formatJdbcFunction("timestampdiff", arguments);
 
         SQLFragment epoch = new SQLFragment("EXTRACT(epoch FROM ");
-        epoch.append("(").append(arguments[2]).append(") - (").append(arguments[1]).append("))");
+        epoch.unsafeAppend("(").append(arguments[2]).unsafeAppend(") - (").append(arguments[1]).unsafeAppend("))");
 
         if (arguments[0].getSQL().equals("SQL_TSI_SECOND"))
             return epoch;
 
         if (arguments[0].getSQL().equals("SQL_TSI_MINUTE"))
-            return epoch.append("/60.0");
+            return epoch.unsafeAppend("/60.0");
 
         if (arguments[0].getSQL().equals("SQL_TSI_HOUR"))
-            return epoch.append("/3600.0");
+            return epoch.unsafeAppend("/3600.0");
 
         return super.formatJdbcFunction("timestampdiff", arguments);
     }

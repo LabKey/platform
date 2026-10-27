@@ -340,11 +340,11 @@ public class LineageForeignKey extends AbstractForeignKey
                             SQLFragment objectids;
                             if (null != _seedSql)
                             {
-                                objectids = new SQLFragment("(").append(_seedSql).append(")");
+                                objectids = new SQLFragment("(").append(_seedSql).unsafeAppend(")");
                             }
                             else
                             {
-                                objectids = new SQLFragment("(SELECT objectid FROM ").append(_seedTable.getFromSQL("qq")).append(")");
+                                objectids = new SQLFragment("(SELECT objectid FROM ").append(_seedTable.getFromSQL("qq")).unsafeAppend(")");
                             }
                             var ret = new LineageTableInfo("LineageTableInfo (" + (_parents ? "parents)" : "children)"), _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid, getLookupContainerFilter());
                             ret.setLocked(true);
