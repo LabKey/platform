@@ -104,6 +104,21 @@ public class ChatHistoryManager implements ChatHistoryService
     }
 
     @Override
+    public @Nullable String getLastPromptContainerId(User user, GUID conversationId)
+    {
+        TempTableInfo table = _table;
+
+        if (null == table)
+            return null;
+
+        SQLFragment sql = new SQLFragment("SELECT Container FROM ").append(sqlName(table))
+                .append(" WHERE CreatedBy = ? AND ConversationId = ? AND Role = ? ORDER BY RowId DESC")
+                .addAll(user.getUserId(), conversationId.toString(), Role.user.name());
+
+        return new SqlSelector(table.getSchema(), table.getSqlDialect().limitRows(sql, 1)).getObject(String.class);
+    }
+
+    @Override
     public void deleteChatHistory(HttpSession session, User user, GUID conversationId)
     {
         session.removeAttribute(getSessionKey(user.getUserId(), conversationId));
@@ -251,6 +266,26 @@ public class ChatHistoryManager implements ChatHistoryService
 
             _manager.deleteChatHistory(_session, _user, _conversationId);
             assertEquals(List.of(), _manager.getChatHistory(_user, _conversationId));
+        }
+
+        @Test
+        public void testLastPromptContainerId()
+        {
+            Container shared = ContainerManager.getSharedContainer();
+            assertNull(_manager.getLastPromptContainerId(_user, _conversationId));
+
+            _manager.addChatSnippet(_session, _user, _container, AGENT, _conversationId, Role.user, "First");
+            _manager.addChatSnippet(_session, _user, shared, AGENT, _conversationId, Role.assistant, "[]");
+            _manager.addChatSnippet(_session, _user, shared, AGENT, _conversationId, Role.error, "Failed");
+            assertEquals("Only prompts count", _container.getId(), _manager.getLastPromptContainerId(_user, _conversationId));
+
+            _manager.addChatSnippet(_session, _user, shared, AGENT, _conversationId, Role.user, "Second");
+            assertEquals(shared.getId(), _manager.getLastPromptContainerId(_user, _conversationId));
+
+            User other = new User("chathistory-other@example.com", Integer.MAX_VALUE - 1);
+            _manager.addChatSnippet(_session, other, _container, AGENT, _conversationId, Role.user, "Not yours");
+            assertEquals("Other users' prompts don't count", shared.getId(), _manager.getLastPromptContainerId(_user, _conversationId));
+            assertNull("Other conversations are separate", _manager.getLastPromptContainerId(_user, new GUID()));
         }
 
         @Test
