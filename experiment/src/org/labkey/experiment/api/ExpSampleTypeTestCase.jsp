@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+<%@ page import="org.apache.commons.beanutils.ConversionException" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.junit.After" %>
 <%@ page import="org.junit.Before" %>
@@ -22,16 +23,20 @@
 <%@ page import="org.labkey.api.audit.SampleTimelineAuditEvent" %>
 <%@ page import="org.labkey.api.collections.ArrayListMap" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.data.BatchSize" %>
 <%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
+<%@ page import="org.labkey.api.data.RemapCache" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.data.queryprofiler.QueryCounter" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
@@ -55,6 +60,7 @@
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
+<%@ page import="org.labkey.api.query.SchemaKey" %>
 <%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
@@ -66,6 +72,7 @@
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
 <%@ page import="org.labkey.experiment.api.ExpProvisionedTableTestHelper" %>
 <%@ page import="org.labkey.experiment.api.ExperimentServiceImpl" %>
@@ -1390,6 +1397,87 @@ public void testSampleTypeFromTemplateReservedColumnNames() throws Exception
     assertNotNull(domain);
 
     helper.verifyReservedColumnNames(c, _user, domain);
+}
+
+@Test // GH Issue 1746
+public void testRemapPrefetchMatchesPerValueLookup() throws Exception
+{
+    List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+    String typeA = createSampleType(generateSampleTypeName(), props, null).getName();
+    String typeB = createSampleType(generateSampleTypeName(), props, null).getName();
+
+    String prefix = typeA + "-";
+    String integerName = String.valueOf(1_746_000 + increment);
+    List<Map<String, Object>> samplesA = insertSampleRows(typeA, List.of(
+        CaseInsensitiveHashMap.of("name", prefix + "1"),
+        CaseInsensitiveHashMap.of("name", prefix + "2"),
+        CaseInsensitiveHashMap.of("name", prefix + "3"),
+        CaseInsensitiveHashMap.of("name", prefix + "4"),
+        CaseInsensitiveHashMap.of("name", prefix + "Shared"),
+        CaseInsensitiveHashMap.of("name", integerName)
+    ));
+    insertSampleRows(typeB, List.of(
+        CaseInsensitiveHashMap.of("name", prefix + "Shared"),
+        CaseInsensitiveHashMap.of("name", prefix + "OnlyInB")
+    ));
+
+    String cachedBeforePrefetch = prefix + "3";
+    List<String> keys = List.of(
+        prefix + "1",
+        prefix + "1",
+        (prefix + "2").toLowerCase(),
+        cachedBeforePrefetch,
+        (String) samplesA.get(3).get("lsid"),
+        prefix + "Shared",
+        prefix + "OnlyInB",
+        integerName,
+        String.valueOf(samplesA.getFirst().get("rowid")),
+        prefix + "Missing"
+    );
+
+    // exp.Materials spans both types, so the shared name is ambiguous there
+    var queries = List.of(Pair.of(SamplesSchema.SCHEMA_SAMPLES, typeA), Pair.of(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name()));
+    for (Pair<SchemaKey, String> query : queries)
+    {
+        Map<String, String> expected = new HashMap<>();
+        RemapCache cold = new RemapCache();
+        for (String key : keys)
+            expected.put(key, remapResult(cold, query, key));
+
+        RemapCache prefetched = new RemapCache();
+        remapResult(prefetched, query, cachedBeforePrefetch);
+
+        int prefetchQueries;
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3); QueryCounter counter = new QueryCounter())
+        {
+            prefetched.prefetch(query.first, query.second, _user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, keys);
+            prefetchQueries = counter.getCount();
+        }
+
+        Map<String, String> actual = new HashMap<>();
+        try (QueryCounter counter = new QueryCounter())
+        {
+            for (String key : keys)
+                actual.put(key, remapResult(prefetched, query, key));
+            assertEquals(query.second + ": lookups after the prefetch queried: " + counter.getSql(), 0, counter.getCount());
+        }
+        assertEquals(query.second, expected, actual);
+
+        // One query per batch of 3 for each of the LSID and Name maps
+        assertTrue(query.second + ": prefetch ran " + prefetchQueries + " queries", prefetchQueries <= 2 * 3);
+    }
+}
+
+private String remapResult(RemapCache cache, Pair<SchemaKey, String> query, String key)
+{
+    try
+    {
+        return String.valueOf((Object) cache.remap(query.first, query.second, _user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, key));
+    }
+    catch (ConversionException e)
+    {
+        return "error: " + e.getMessage();
+    }
 }
 
 private void assertExpectedName(ExpSampleType st, String expectedName)
