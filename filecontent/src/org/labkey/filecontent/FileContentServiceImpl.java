@@ -203,7 +203,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         Container anchor = null;
         java.nio.file.Path anchorPath = null;
         java.nio.file.Path defaultRootPath = getSiteDefaultRoot().toPath();
-        if (path.startsWith(defaultRootPath))
+        if (URIUtil.isDescendant(defaultRootPath.toUri(), path.toUri()))
         {
             anchor = ContainerManager.getRoot();
             anchorPath = defaultRootPath;
@@ -218,7 +218,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             if (c == null || c.isRoot() || isUseDefaultRoot(c))
                 continue;
             java.nio.file.Path rootPath = getExistingFileRootPath(c);
-            if (rootPath != null && path.startsWith(rootPath) && (anchorPath == null || rootPath.startsWith(anchorPath)))
+            if (rootPath != null && URIUtil.isDescendant(rootPath.toUri(), path.toUri()) && (anchorPath == null ||  URIUtil.isDescendant(rootPath.toUri(), anchorPath.toUri())))
             {
                 anchor = c;
                 anchorPath = rootPath;
@@ -246,7 +246,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             if (c.isRoot())
                 continue;
             java.nio.file.Path fileRoot = getExistingFileRootPath(c);
-            if (fileRoot != null && path.startsWith(fileRoot))
+            if (fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), path.toUri()))
                 return c;
         }
 
