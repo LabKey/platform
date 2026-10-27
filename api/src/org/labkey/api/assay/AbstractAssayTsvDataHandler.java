@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -55,6 +56,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.LookAheadDataIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
@@ -827,7 +829,69 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         boolean resolvePlateSamples = isPlateMetadataEnabled && platePD != null && wellLocationPD != null && wellLsidPD != null;
 
-        return DataIteratorUtil.mapTransformer(rawData, inputCols ->
+        Function<DomainProperty, Pair<Container, ExpSampleType>> sampleLookupKey = pd -> {
+            ExpSampleType sampleType = lookupToSampleTypeByName.get(pd);
+            if (sampleType == null)
+                sampleType = lookupToSampleTypeById.get(pd);
+            Container lookupContainer = pd.getLookup().getContainer();
+            if (lookupContainer == null)
+                lookupContainer = container;
+            return Pair.of(lookupContainer, sampleType);
+        };
+
+        // Columns whose values reach findExpMaterial below
+        Map<Integer, DomainProperty> sampleLookupColumns = new HashMap<>();
+        for (Map.Entry<String, Integer> entry : DataIteratorUtil.createColumnNameMap(rawData).entrySet())
+        {
+            DomainProperty pd = aliasMap.get(entry.getKey());
+            if (pd == null)
+                continue;
+
+            boolean byName = lookupToAllSamplesByName.contains(pd) || lookupToSampleTypeByName.containsKey(pd);
+            boolean byId = lookupToAllSamplesById.contains(pd) || lookupToSampleTypeById.containsKey(pd);
+            if (byName || (byId && settings.getLookupResolutionType().useAlternateKey()))
+                sampleLookupColumns.put(entry.getValue(), pd);
+        }
+
+        // GH Issue 1746: resolve each window's samples in bulk, so the per-row findExpMaterial calls hit the caches
+        DataIterator data = rawData;
+        if (!sampleLookupColumns.isEmpty())
+        {
+            data = new LookAheadDataIterator(rawData, BatchSize.get(BatchSize.Kind.ROWS))
+            {
+                final Map<Pair<Container, ExpSampleType>, Set<String>> sampleNames = new HashMap<>();
+
+                @Override
+                protected void collectRow()
+                {
+                    sampleLookupColumns.forEach((index, pd) -> {
+                        Object value = get(index);
+                        if (value instanceof MvFieldWrapper mvWrapper)
+                            value = mvWrapper.getValue();
+                        if (value instanceof String s)
+                            value = StringUtils.trimToNull(s);
+                        if (value == null || value instanceof Collection)
+                            return;
+
+                        String sampleName = value.toString();
+                        if (!inputMaterials.containsKey(sampleName))
+                            sampleNames.computeIfAbsent(sampleLookupKey.apply(pd), k -> new LinkedHashSet<>()).add(sampleName);
+                    });
+                }
+
+                @Override
+                protected void prefetch()
+                {
+                    sampleNames.forEach((lookup, names) -> {
+                        var materialCache = materialCacheByLookup.computeIfAbsent(lookup, k -> new LongHashMap<>());
+                        exp.prefetchExpMaterials(lookup.first, user, names, lookup.second, cacheWithoutPkLookup, materialCache);
+                    });
+                    sampleNames.clear();
+                }
+            };
+        }
+
+        return DataIteratorUtil.mapTransformer(data, inputCols ->
         {
             List<String> result = new ArrayList<>(inputCols);
             result.addAll(aliasMap.values().stream().map(ImportAliasable::getName).toList());
@@ -1036,8 +1100,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     // Add any sample inputs to the rowInputLSIDs
                     if (o != null && (isSampleLookupById || isSampleLookupByName))
                     {
-                        ExpSampleType byNameSS = isSampleLookupByName ? lookupToSampleTypeByName.get(pd) : lookupToSampleTypeById.get(pd);
-                        Container lookupContainer = pd.getLookup().getContainer() != null ? pd.getLookup().getContainer() : container;
+                        Pair<Container, ExpSampleType> sampleLookup = sampleLookupKey.apply(pd);
+                        Container lookupContainer = sampleLookup.first;
+                        ExpSampleType byNameSS = sampleLookup.second;
 
                         // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
                         // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
@@ -1052,7 +1117,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             {
                                 if (material == null)
                                 {
-                                    var materialCache = materialCacheByLookup.computeIfAbsent(Pair.of(lookupContainer, byNameSS), k -> new LongHashMap<>());
+                                    var materialCache = materialCacheByLookup.computeIfAbsent(sampleLookup, k -> new LongHashMap<>());
                                     material = exp.findExpMaterial(lookupContainer, user, materialName, byNameSS, cacheWithoutPkLookup, materialCache);
                                 }
                             }

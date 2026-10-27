@@ -112,6 +112,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.GenerateUniqueDataIterator;
+import org.labkey.api.dataiterator.LookAheadDataIterator;
 import org.labkey.api.dataiterator.QueryDataIteratorBuilder;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
@@ -468,6 +469,7 @@ public class ApiModule extends CodeOnlyModule
             JsonUtil.TestCase.class,
             KeySharingJSONTokener.TestCase.class,
             LimitedUser.TestCase.class,
+            LookAheadDataIterator.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,
