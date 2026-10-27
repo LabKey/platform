@@ -11,20 +11,17 @@ import org.labkey.api.mcp.ChatException;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.mcp.PromptForm;
-import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -151,7 +148,6 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
     }
 
     /**
-     * TODO update for this action. Will it have SQL blocks?
      * Walks the markdown of each MessageResponse and produces an ordered list of segments.
      * Each segment is either a rendered-HTML span or a fenced SQL block. SQL blocks fenced as
      * `expression` are tagged "expression" (the model's assertion that this SQL has been validated
@@ -173,7 +169,9 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.joining("\n"));
 
-        LOG.debug("Expression assistant raw response:\n{}", text);
+        LOG.debug("Documentation assistant raw response:\n{}", text);
+
+        // TODO: update this to handle SQL blocks like we do in the ExpressionAssistant
 
         String[] lines = text.split("\n", -1);
         int i = 0;
@@ -187,34 +185,5 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
         flushHtmlSegment(segments, htmlBuf, md);
 
         return segments;
-    }
-
-    // TODO move to a shared place
-    private static void flushHtmlSegment(JSONArray segments, StringBuilder buf, MarkdownService md)
-    {
-        if (buf.isEmpty())
-            return;
-
-        String raw = buf.toString().strip();
-        buf.setLength(0);
-        if (raw.isEmpty())
-            return;
-
-        String html;
-        try
-        {
-            html = md != null ? md.toHtml(raw) : raw;
-        }
-        catch (Exception x)
-        {
-            html = raw;
-        }
-
-        var validateErrors = new ArrayList<String>();
-        PageFlowUtil.validateHtml(html, validateErrors, validateErrors);
-        if (!validateErrors.isEmpty())
-            throw new RuntimeValidationException("Invalid HTML markup. " + String.join("\n", validateErrors));
-
-        segments.put(new JSONObject(Map.of("type", "html", "html", html)));
     }
 }
