@@ -51,7 +51,7 @@ public interface ChatHistoryService
 
     /**
      * The user's own snippets in containers they can still read, oldest first. Guests share a user id, so callers must
-     * also check the session was issued the conversation (AbstractAgentAction.resolveIssuedConversationId).
+     * also check the session was issued the conversation (McpService.resolveIssuedConversationId).
      */
     @NotNull List<ChatSnippet> getChatHistory(User user, GUID conversationId);
 
