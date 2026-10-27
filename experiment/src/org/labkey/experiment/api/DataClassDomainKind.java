@@ -234,7 +234,22 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
-        return RESERVED_NAMES;
+        // GH Issue 1589: reserve the persisted parent alias headers, matching SampleTypeDomainKind. Without this a data
+        // class field can be named after an existing parent alias, which is ambiguous at import.
+        ExpDataClass dc = domain == null ? null : getDataClass(domain);
+        if (dc == null)
+            return RESERVED_NAMES;
+
+        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
+        try
+        {
+            reserved.addAll(dc.getImportAliases().keySet());
+        }
+        catch (IOException e)
+        {
+            LOG.error("Failed to parse DataClass parent aliases for [{}]", dc.getRowId(), e);
+        }
+        return reserved;
     }
 
     @Override
@@ -361,20 +376,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             ExpDataClass dataClass = options.getRowId() >= 0 ? ExperimentService.get().getDataClass(options.getRowId()) : null;
             Domain stDomain = dataClass != null ? dataClass.getDomain() : null;
             Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
-            Set<String> existingAliases = new CaseInsensitiveHashSet();
-
-            try
-            {
-                if (dataClass != null)
-                    existingAliases = new CaseInsensitiveHashSet(dataClass.getImportAliases().keySet());
-            }
-            catch (IOException e)
-            {
-                // do nothing
-            }
-
-            final Set<String> finalExistingAliases = existingAliases;
-            ExperimentService.validateParentAlias(aliasMap, reservedNames, finalExistingAliases, updatedDomainDesign, "data class");
+            ExperimentService.validateParentAlias(aliasMap, reservedNames, updatedDomainDesign, "data class");
         }
 
     }

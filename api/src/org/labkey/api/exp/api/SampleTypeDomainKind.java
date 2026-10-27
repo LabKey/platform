@@ -62,7 +62,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -127,7 +126,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 "SampleID", // alias for Name
                 "Status",
                 "Amount", // alias for storedAmount
-                "RunId"
+                "RunId",
+                "Parent" // Issue 52627: Don't allow "Parent" to be used for lineage parent import alias
         ));
         names.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
         RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
@@ -472,22 +472,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             SampleTypeService ss = SampleTypeService.get();
             ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
             Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
-            Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
-            reservedNames.add("Parent"); // Issue 52627: Don't allow "Parent" to be used for lineage parent import alias
-            Set<String> existingAliases = new CaseInsensitiveHashSet();
-
-            try
-            {
-                if (sampleType != null)
-                    existingAliases = new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
-            }
-            catch (IOException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
-
-            final Set<String> finalExistingAliases = existingAliases;
-            ExperimentService.validateParentAlias(aliasMap, reservedNames, finalExistingAliases, updatedDomainDesign, "sample type");
+            ExperimentService.validateParentAlias(aliasMap, this.getReservedPropertyNames(stDomain, user), updatedDomainDesign, "sample type");
         }
 
         List<? extends GWTPropertyDescriptor> properties = updatedDomainDesign.getFields();
