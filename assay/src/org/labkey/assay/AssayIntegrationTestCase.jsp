@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+<%@ page import="org.apache.commons.beanutils.ConversionException" %>
 <%@ page import="org.apache.commons.collections.MapUtils" %>
 <%@ page import="org.apache.logging.log4j.LogManager" %>
 <%@ page import="org.apache.logging.log4j.Logger" %>
@@ -38,6 +39,7 @@
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
@@ -93,6 +95,7 @@
 <%@ page import="static java.util.Collections.emptyList" %>
 <%@ page import="java.nio.file.Files" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashSet" %>
@@ -258,6 +261,16 @@
         for (int i = 0; i < numSamples; i++)
             rows.add(CaseInsensitiveHashMap.of());
 
+        return insertSamples(sampleTypeName, rows);
+    }
+
+    private ExpMaterial createNamedSample(String sampleTypeName, String name) throws Exception
+    {
+        return insertSamples(sampleTypeName, List.of(CaseInsensitiveHashMap.of("name", name))).getFirst();
+    }
+
+    private List<ExpMaterial> insertSamples(String sampleTypeName, List<Map<String, Object>> rows) throws Exception
+    {
         ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, sampleTypeName);
         TableInfo table = QueryService.get().getUserSchema(user, c, SCHEMA_SAMPLES).getTable(sampleType.getName());
 
@@ -839,6 +852,120 @@
         }
 
         assertTrue(String.join("; ", failures), failures.isEmpty());
+    }
+
+    @Test // GH Issue 1746
+    public void testSampleLookupsResolveAcrossLookAheadWindows() throws Exception
+    {
+        var assayPair = createAssay(context, false, true);
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        List<ExpMaterial> s = createSamples(6);
+        // Issue 47509: a name that is another sample's row ID resolves by name, in both columns
+        ExpMaterial integerNamed = createNamedSample(SAMPLE_TYPE_NAME, String.valueOf(s.get(5).getRowId()));
+
+        // Windows of 3 rows: [1-3], [4-6], [7]; s0, s1 and s3 repeat in later windows
+        String fileContents = String.format(
+            "SampleTypeLookup\tExpMaterialSampleTypeLookup\n%s\t%d\n%s\t%d\n%s\t\n%s\t%d\n%s\t%d\n%s\t%d\n%s\t%d\n",
+            s.get(0).getName(), s.get(1).getRowId(),
+            s.get(1).getName(), s.get(2).getRowId(),
+            integerNamed.getName(),
+            "NoSuchSample", s.get(3).getRowId(),
+            s.get(0).getName(), s.get(0).getRowId(),
+            s.get(2).getName(), s.get(5).getRowId(),
+            s.get(3).getName(), s.get(1).getRowId()
+        );
+
+        ExpRun run;
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
+        {
+            run = assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, null);
+        }
+
+        assertEquals(
+            Set.of(s.get(0), s.get(1), s.get(2), s.get(3), integerNamed),
+            run.getMaterialInputs().keySet()
+        );
+
+        TableInfo resultsTable = provider.createProtocolSchema(user, c, assayProtocol, null).getTable("Data");
+        List<Long> storedIds = new TableSelector(resultsTable.getColumn("ExpMaterialSampleTypeLookup"), null, new Sort("RowId")).getArrayList(Long.class);
+        assertEquals(
+            Arrays.asList(s.get(1).getRowId(), s.get(2).getRowId(), null, s.get(3).getRowId(), s.get(0).getRowId(), integerNamed.getRowId(), s.get(1).getRowId()),
+            storedIds
+        );
+    }
+
+    @Test // GH Issue 1746
+    public void testSampleLookupErrorsMatchAcrossLookAheadWindows() throws Exception
+    {
+        var anySampleLookup = new GWTPropertyDescriptor("AnySampleLookup", "string");
+        anySampleLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
+        anySampleLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
+
+        var assayPair = createAssay(context, false, true, List.of(anySampleLookup));
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        List<ExpMaterial> s = createSamples(5);
+        createSampleType("OtherSampleType", "O-${genId}");
+        // Ambiguous in exp.Materials: two sample types hold this name
+        String sharedName = createNamedSample("OtherSampleType", s.get(0).getName()).getName();
+
+        List<String> validRows = List.of(
+            String.format("%s\t%d\t", s.get(1).getName(), s.get(1).getRowId()),
+            String.format("%s\t%d\t", s.get(2).getName(), s.get(2).getRowId()),
+            String.format("%s\t%d\t", s.get(3).getName(), s.get(3).getRowId()),
+            String.format("%s\t%d\t", s.get(4).getName(), s.get(4).getRowId())
+        );
+        String header = "SampleTypeLookup\tExpMaterialSampleTypeLookup\tAnySampleLookup\n";
+        // A missing row ID in an all-numeric column isn't reported, so use a missing name, which keeps the value a string
+        String missingSample = String.format("%s\tNoSuchSample\t", s.get(1).getName());
+        String ambiguousName = String.format("%s\t%d\t%s", s.get(1).getName(), s.get(1).getRowId(), sharedName);
+
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
+        {
+            // The fifth row is the second row of the second window
+            String precedingRows = header + String.join("\n", validRows) + "\n";
+
+            Exception alone = importFailure(provider, assayProtocol, header + missingSample + "\n");
+            Exception fifth = importFailure(provider, assayProtocol, precedingRows + missingSample + "\n");
+            assertEquals(alone.getMessage(), fifth.getMessage());
+            assertEquals(fifth.getMessage(), 1, failedRow(alone));
+            assertEquals(fifth.getMessage(), 5, failedRow(fifth));
+
+            // remappableLookup's remap rejects an ambiguous name with a bare ConversionException, so there's no row number
+            alone = importFailure(provider, assayProtocol, header + ambiguousName + "\n");
+            fifth = importFailure(provider, assayProtocol, precedingRows + ambiguousName + "\n");
+            assertEquals(alone.getMessage(), fifth.getMessage());
+            assertTrue(fifth.getMessage(), fifth.getMessage().contains("Found 2 values matching: " + sharedName));
+        }
+    }
+
+    private Exception importFailure(AssayProvider provider, ExpProtocol assayProtocol, String fileContents) throws Exception
+    {
+        try
+        {
+            assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, null);
+        }
+        catch (ExperimentException | ValidationException | ConversionException e)
+        {
+            return e;
+        }
+        fail("Expected the import to fail: " + fileContents);
+        return null;
+    }
+
+    private static int failedRow(Throwable e)
+    {
+        for (Throwable t = e; t != null; t = t.getCause())
+        {
+            if (t instanceof BatchValidationException bve && bve.getLastRowError() != null)
+                return bve.getLastRowError().getRowNumber();
+            if (t instanceof ValidationException ve && ve.getRowNumber() != -1)
+                return ve.getRowNumber();
+        }
+        return -1;
     }
 
     private String sampleLookupValue(String column, ExpMaterial sample)
