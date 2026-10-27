@@ -136,7 +136,7 @@ public class TransactionFilter implements Filter
                     while (!ContextListener.isShuttingDown())
                     {
                         long timeout = TimeUnit.SECONDS.toMillis(AppProps.getInstance().getReadOnlyHttpRequestTimeout());
-                        if (timeout > 0 && !_pendingRequests.isEmpty())
+                        if (!_pendingRequests.isEmpty())
                         {
                             Map<Thread, RequestTracker> pending;
                             synchronized (_pendingRequests)
@@ -150,12 +150,16 @@ public class TransactionFilter implements Filter
                             {
                                 RequestTracker tracker = entry.getValue();
                                 Thread thread = entry.getKey();
+                                RequestCancellation.Cancelled cancelled = tracker.cancellation().get();
 
-                                if (isTimedOut(thread, tracker, cutoff))
+                                if (timeout > 0 && isTimedOut(thread, tracker, cutoff))
                                 {
                                     _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
                                     cancelRequest(thread, tracker, RequestCancellation.Source.TIMEOUT);
                                 }
+                                // A cancel that lands after a statement is registered but before the database runs it does nothing
+                                else if (cancelled != null)
+                                    cancelRequest(thread, tracker, cancelled.source());
                             }
                         }
                         try
@@ -552,6 +556,53 @@ public class TransactionFilter implements Filter
 
             assertFalse("Request had no connections", spids.isEmpty());
             assertEquals("Cancelled session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, spids));
+        }
+
+        /** Even with no request timeout, the sweep must resend a cancel that reached the request's connection while it was idle */
+        @Test
+        public void testSweepResendsLostCancel() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+
+            int originalTimeout = AppProps.getInstance().getReadOnlyHttpRequestTimeout();
+            setReadOnlyTimeout(0);
+            try
+            {
+                RequestCancellation.TestCase.runOnRequestThread(() -> {
+                    Thread thread = Thread.currentThread();
+
+                    RequestCancellation.TestCase.doRequest(null, () -> {
+                        // Holds a connection, so the cancel signals it rather than banning new ones
+                        try (TableResultSet rs = new SqlSelector(scope, "SELECT 1").getResultSet(false))
+                        {
+                            assertTrue(rs.next());
+                            assertTrue(cancelRequest(thread, getRequestSummary(thread), RequestCancellation.Source.WS_MESSAGE));
+                            // Like the async worker, which never sees the request thread's interrupt
+                            assertTrue("Request wasn't interrupted", Thread.interrupted());
+
+                            long start = System.currentTimeMillis();
+                            try
+                            {
+                                new SqlSelector(scope, "SELECT pg_sleep(30)").getObject(Object.class);
+                                fail("Query wasn't cancelled");
+                            }
+                            catch (RuntimeException ignored) {} // Checked by its source below
+                            // The sweep's 5 s interval, with slack
+                            assertTrue("Cancel took too long", System.currentTimeMillis() - start < 15_000);
+                            assertEquals(RequestCancellation.Source.WS_MESSAGE, RequestCancellation.getSource(thread));
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(thread).isEmpty());
+                });
+            }
+            finally
+            {
+                setReadOnlyTimeout(originalTimeout);
+            }
         }
 
         /** A client may cancel only its user's read-only, non-export requests, and only from the tab that sent them */
