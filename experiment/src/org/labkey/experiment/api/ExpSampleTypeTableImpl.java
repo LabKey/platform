@@ -128,16 +128,16 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 .unsafeAppend(")");
 
         // Counting every sample of every type is the slowest column on this table at scale, so read counts a module
-        // already maintains where one does. It falls back to the live count wherever those aren't ready.
-        SQLFragment sql = liveCount;
+        // already maintains where one does. What it returns falls back to the live count wherever those aren't ready.
         SampleCountsService countsService = SampleCountsService.get();
-        if (countsService != null)
-        {
-            SQLFragment maintained = countsService.getSampleCountSQL(
-                    new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RowId"), sampleCountContainerFilter, getSchema(), liveCount);
-            if (maintained != null)
-                sql = maintained;
-        }
+        SQLFragment maintainedCount = countsService == null ? null : countsService.getSampleCountSQL(
+                new SQLFragment().unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId"), sampleCountContainerFilter, getSchema(), liveCount);
+
+        SQLFragment sql;
+        if (maintainedCount != null)
+            sql = maintainedCount;
+        else
+            sql = liveCount;
 
         ExprColumn column = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
         column.setDescription("Contains the number of samples currently stored in this sample type");

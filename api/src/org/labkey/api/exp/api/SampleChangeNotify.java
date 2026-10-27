@@ -63,12 +63,27 @@ public enum SampleChangeNotify
         LISTENERS.add(listener);
     }
 
-    private static Collection<Long> toTaskValues(@Nullable Collection<Long> sampleTypeIds)
+    /*
+     * The commit tasks below are AccumulatingCommitTasks: every registration in a transaction contributes its "values"
+     * to one set per container, which the task then processes once. Here a value is a sample type row id, and callers
+     * and listeners both speak in those ids, with an empty set meaning "any sample type in this folder may have
+     * changed". The two methods below convert between that vocabulary and what the task accumulates, because an empty
+     * set contributes nothing to accumulate and so would vanish instead of widening the set -- ANY_SAMPLE_TYPE carries
+     * it as a value that does accumulate. It exists only between these two methods; no caller or listener sees it.
+     */
+
+    /** Caller's ids -> values to accumulate. Nothing nameable becomes the sentinel, so it survives accumulation. */
+    private static Collection<Long> sampleTypeIdsToTaskValues(@Nullable Collection<Long> sampleTypeIds)
     {
         return sampleTypeIds == null || sampleTypeIds.isEmpty() ? Set.of(ANY_SAMPLE_TYPE) : sampleTypeIds;
     }
 
-    private static Set<Long> fromTaskValues(Set<Long> values)
+    /**
+     * Accumulated values -> ids for the listener. One sentinel widens the whole set: once some registration in the
+     * transaction couldn't name its types, the ids the others contributed are no longer a complete list, so the
+     * listener is told "any type here" rather than a subset it would otherwise trust.
+     */
+    private static Set<Long> taskValuesToSampleTypeIds(Set<Long> values)
     {
         return values.contains(ANY_SAMPLE_TYPE) ? Set.of() : values;
     }
@@ -79,7 +94,7 @@ public enum SampleChangeNotify
      */
     public static void recordSampleDataChange(@NotNull DbScope scope, @NotNull Container container, @Nullable Collection<Long> sampleTypeIds)
     {
-        new SampleDataChangingTask(container).register(scope, toTaskValues(sampleTypeIds), DbScope.CommitTaskOption.PRECOMMIT);
+        new SampleDataChangingTask(container).register(scope, sampleTypeIdsToTaskValues(sampleTypeIds), DbScope.CommitTaskOption.PRECOMMIT);
     }
 
     private static class SampleDataChangingTask extends AccumulatingCommitTask<Container, Long>
@@ -89,24 +104,17 @@ public enum SampleChangeNotify
             super(container);
         }
 
+        /**
+         * Deliberately lets a listener failure out. This runs inside the changing transaction, so a failed write has
+         * already aborted it and every later statement in it will fail too -- there is no version of carrying on that
+         * commits the sample change and merely loses the bookkeeping. Failing here rolls the whole thing back, which
+         * the caller can report, rather than committing and leaving counts that silently disagree with the samples.
+         */
         @Override
         protected void process(@NotNull Container container, @NotNull Set<Long> values)
         {
             for (SampleCountsListener listener : LISTENERS)
-            {
-                // A listener failure must not roll back the sample change itself. The cost is that whatever the
-                // listener meant to record is lost, so its counts stay wrong until it reconciles them against the
-                // samples -- say so, because this log line is the only sign of it.
-                try
-                {
-                    listener.samplesChanging(container, fromTaskValues(values));
-                }
-                catch (Exception e)
-                {
-                    LOG.error("Sample counts listener failed to record a change in " + container.getPath()
-                            + "; its counts for this folder will be stale until it reconciles them", e);
-                }
-            }
+                listener.samplesChanging(container, taskValuesToSampleTypeIds(values));
         }
     }
 
@@ -125,19 +133,14 @@ public enum SampleChangeNotify
         public void register(@NotNull DbScope scope, @Nullable Collection<Long> sampleTypeIds)
         {
             recordSampleDataChange(scope, _container, sampleTypeIds);
-            register(scope, toTaskValues(sampleTypeIds), DbScope.CommitTaskOption.POSTCOMMIT);
+            register(scope, sampleTypeIdsToTaskValues(sampleTypeIds), DbScope.CommitTaskOption.POSTCOMMIT);
         }
 
         @Override
         protected void process(@NotNull Container container, @NotNull Set<Long> sampleTypeIds)
         {
-            fireSampleDataChanged(container, fromTaskValues(sampleTypeIds));
+            fireSampleDataChanged(container, taskValuesToSampleTypeIds(sampleTypeIds));
         }
-    }
-
-    public static void fireSampleDataChanged(@Nullable Container container)
-    {
-        fireSampleDataChanged(container, null);
     }
 
     /** After a change commits, tells listeners which sample types changed, then notifies clients unless a listener will once its counts are current. */
@@ -150,6 +153,8 @@ public enum SampleChangeNotify
         boolean deferred = false;
         for (SampleCountsListener listener : LISTENERS)
         {
+            // Unlike samplesChanging, this is past the commit: a failure here costs a refresh notification and
+            // nothing else, so it mustn't stop the other listeners being told
             try
             {
                 deferred |= listener.samplesChanged(container, ids);
