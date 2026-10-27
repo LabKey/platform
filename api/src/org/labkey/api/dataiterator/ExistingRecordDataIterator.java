@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
-// TODO: replace the hand-rolled mark/read-ahead/reset with LookAheadDataIterator (added for GH Issue 1746)
+// TODO: replace the mark/read-ahead/reset with LookAheadDataIterator (added for GH Issue 1746)
 public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 {
     public static final String EXISTING_RECORD_COLUMN_NAME = "_" + ExistingRecordDataIterator.class.getName() + "#EXISTING_RECORD_COLUMN_NAME";
