@@ -839,8 +839,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             return Pair.of(lookupContainer, sampleType);
         };
 
-        // Columns whose values reach findExpMaterial below
+        // Columns whose values reach findExpMaterial below, and by-ID columns that reach getExpMaterial instead
         Map<Integer, DomainProperty> sampleLookupColumns = new HashMap<>();
+        Set<Integer> sampleIdColumns = new HashSet<>();
         for (Map.Entry<String, Integer> entry : DataIteratorUtil.createColumnNameMap(rawData).entrySet())
         {
             DomainProperty pd = aliasMap.get(entry.getKey());
@@ -851,15 +852,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             boolean byId = lookupToAllSamplesById.contains(pd) || lookupToSampleTypeById.containsKey(pd);
             if (byName || (byId && settings.getLookupResolutionType().useAlternateKey()))
                 sampleLookupColumns.put(entry.getValue(), pd);
+            else if (byId)
+                sampleIdColumns.add(entry.getValue());
         }
 
-        // GH Issue 1746: resolve each window's samples in bulk, so the per-row findExpMaterial calls hit the caches
+        // GH Issue 1746: resolve each window's samples in bulk, so the per-row lookups below hit the caches
         DataIterator data = rawData;
-        if (!sampleLookupColumns.isEmpty())
+        if (!sampleLookupColumns.isEmpty() || !sampleIdColumns.isEmpty())
         {
             data = new LookAheadDataIterator(rawData, BatchSize.get(BatchSize.Kind.ROWS))
             {
                 final Map<Pair<Container, ExpSampleType>, Set<String>> sampleNames = new HashMap<>();
+                final Set<Long> sampleIds = new HashSet<>();
 
                 @Override
                 protected void collectRow()
@@ -877,6 +881,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         if (!inputMaterials.containsKey(sampleName))
                             sampleNames.computeIfAbsent(sampleLookupKey.apply(pd), k -> new LinkedHashSet<>()).add(sampleName);
                     });
+
+                    sampleIdColumns.forEach(index -> {
+                        if (asLongElseNull(get(index)) instanceof Long rowId && !materialByIdCache.containsKey(rowId))
+                            sampleIds.add(rowId);
+                    });
                 }
 
                 @Override
@@ -887,6 +896,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         exp.prefetchExpMaterials(lookup.first, user, names, lookup.second, cacheWithoutPkLookup, materialCache);
                     });
                     sampleNames.clear();
+
+                    exp.getExpMaterials(sampleIds, containerFilter).forEach(m -> materialByIdCache.putIfAbsent(m.getRowId(), m));
+                    sampleIds.clear();
                 }
             };
         }

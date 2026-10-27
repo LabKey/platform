@@ -293,6 +293,20 @@
         @Nullable Map<String, Object> requestParameters
     ) throws ExperimentException, ValidationException
     {
+        return assayImportFile(c, user, provider, assayProtocol, file, allowCrossRunFileInputs, requestParameters, true);
+    }
+
+    private ExpRun assayImportFile(
+        Container c,
+        User user,
+        AssayProvider provider,
+        ExpProtocol assayProtocol,
+        File file,
+        boolean allowCrossRunFileInputs,
+        @Nullable Map<String, Object> requestParameters,
+        boolean allowLookupByAlternateKey
+    ) throws ExperimentException, ValidationException
+    {
         HttpSession session = TestContext.get().getRequest().getSession();
 
         // Use the AssayFileUploadForm and the PipelineDataCollector to simulate the user selecting a file from the file browser.
@@ -313,7 +327,14 @@
         mockContext.setContainer(c);
         mockContext.setUser(user);
 
-        var uploadForm = new AssayRunUploadForm<TsvAssayProvider>();
+        var uploadForm = new AssayRunUploadForm<TsvAssayProvider>()
+        {
+            @Override
+            public boolean isAllowLookupByAlternateKey()
+            {
+                return allowLookupByAlternateKey;
+            }
+        };
         uploadForm.setViewContext(new ViewContext(mockRequest, null, null));
         uploadForm.setContainer(c);
         uploadForm.setUser(user);
@@ -808,7 +829,7 @@
 
         final int rowCount = 20;
         final int fewerSamples = 10;
-        Iterator<ExpMaterial> unusedSamples = createSamples(1 + 2 * (fewerSamples + rowCount)).iterator();
+        Iterator<ExpMaterial> unusedSamples = createSamples(1 + 4 * (fewerSamples + rowCount)).iterator();
 
         // Pay one-time costs, such as loading the assay design and lookup tables, outside the counted imports
         var warmUpSample = unusedSamples.next();
@@ -825,29 +846,33 @@
         List<String> failures = new ArrayList<>();
         try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
         {
-            for (String column : List.of("SampleTypeLookup", "ExpMaterialSampleTypeLookup"))
+            // Without alternate keys, by-ID values skip findExpMaterial
+            for (boolean allowLookupByAlternateKey : List.of(true, false))
             {
-                // Same row count in both imports, so per-row costs such as result inserts cancel out; each import gets its own samples so neither warms the other
-                List<String> repeatedValues = new ArrayList<>();
-                for (int i = 0; i < fewerSamples; i++)
+                for (String column : List.of("SampleTypeLookup", "ExpMaterialSampleTypeLookup"))
                 {
-                    String value = sampleLookupValue(column, unusedSamples.next());
-                    repeatedValues.add(value);
-                    repeatedValues.add(value);
+                    // Same row count in both imports, so per-row costs such as result inserts cancel out; each import gets its own samples so neither warms the other
+                    List<String> repeatedValues = new ArrayList<>();
+                    for (int i = 0; i < fewerSamples; i++)
+                    {
+                        String value = sampleLookupValue(column, unusedSamples.next());
+                        repeatedValues.add(value);
+                        repeatedValues.add(value);
+                    }
+
+                    List<String> distinctValues = new ArrayList<>();
+                    for (int i = 0; i < rowCount; i++)
+                        distinctValues.add(sampleLookupValue(column, unusedSamples.next()));
+
+                    int repeatedQueries = countImportQueries(provider, assayProtocol, column, repeatedValues, allowLookupByAlternateKey);
+                    int distinctQueries = countImportQueries(provider, assayProtocol, column, distinctValues, allowLookupByAlternateKey);
+                    String counts = String.format("%s (allowLookupByAlternateKey %s): %d queries for %d distinct samples, %d queries for %d distinct samples",
+                        column, allowLookupByAlternateKey, repeatedQueries, fewerSamples, distinctQueries, rowCount);
+                    log.info(counts);
+
+                    if (distinctQueries - repeatedQueries >= allowedQueriesPerSample * (rowCount - fewerSamples))
+                        failures.add(counts);
                 }
-
-                List<String> distinctValues = new ArrayList<>();
-                for (int i = 0; i < rowCount; i++)
-                    distinctValues.add(sampleLookupValue(column, unusedSamples.next()));
-
-                int repeatedQueries = countImportQueries(provider, assayProtocol, column, repeatedValues);
-                int distinctQueries = countImportQueries(provider, assayProtocol, column, distinctValues);
-                String counts = String.format("%s: %d queries for %d distinct samples, %d queries for %d distinct samples",
-                    column, repeatedQueries, fewerSamples, distinctQueries, rowCount);
-                log.info(counts);
-
-                if (distinctQueries - repeatedQueries >= allowedQueriesPerSample * (rowCount - fewerSamples))
-                    failures.add(counts);
             }
         }
 
@@ -975,12 +1000,12 @@
         return String.valueOf(sample.getRowId());
     }
 
-    private int countImportQueries(AssayProvider provider, ExpProtocol assayProtocol, String column, List<String> values) throws Exception
+    private int countImportQueries(AssayProvider provider, ExpProtocol assayProtocol, String column, List<String> values, boolean allowLookupByAlternateKey) throws Exception
     {
         var file = createAssayDataFile(column + "\n" + String.join("\n", values) + "\n");
         try (QueryCounter counter = new QueryCounter())
         {
-            assayImportFile(c, user, provider, assayProtocol, file, false, null);
+            assayImportFile(c, user, provider, assayProtocol, file, false, null, allowLookupByAlternateKey);
             return counter.getCount();
         }
     }

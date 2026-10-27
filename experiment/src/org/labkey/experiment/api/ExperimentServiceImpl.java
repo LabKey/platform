@@ -1054,6 +1054,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    @NotNull
+    public List<ExpMaterialImpl> getExpMaterials(Collection<Long> rowIds, @Nullable ContainerFilter containerFilter)
+    {
+        if (rowIds.isEmpty())
+            return emptyList();
+
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds);
+        if (containerFilter != null)
+            filter.addClause(containerFilter.createFilterClause(getExpSchema(), FieldKey.fromParts("Container")));
+
+        return getExpMaterials(filter);
+    }
+
+    @Override
     public void forEachSampleOperationRow(Collection<Long> rowIds, Consumer<SampleOperationRow> block)
     {
         if (rowIds.isEmpty())

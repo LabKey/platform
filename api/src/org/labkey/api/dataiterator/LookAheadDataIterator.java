@@ -60,6 +60,18 @@ public abstract class LookAheadDataIterator extends CachingDataIterator
         return super.next();
     }
 
+    @Override
+    public boolean isScrollable()
+    {
+        return false;
+    }
+
+    @Override
+    public void beforeFirst()
+    {
+        throw new UnsupportedOperationException("Rows before the current window are no longer cached");
+    }
+
     private void readAhead()
     {
         mark();
@@ -167,6 +179,16 @@ public abstract class LookAheadDataIterator extends CachingDataIterator
             }
             assertFalse(it.next());
             assertFalse(it.next());
+        }
+
+        @Test
+        public void notScrollable() throws Exception
+        {
+            RecordingIterator it = new RecordingIterator(data(3), 2);
+            it.readAll();
+            assertFalse(it.isScrollable());
+            assertThrows(UnsupportedOperationException.class, it::beforeFirst);
+            assertFalse(DataIteratorUtil.wrapScrollable(new RecordingIterator(data(3), 2)) instanceof LookAheadDataIterator);
         }
 
         @Test

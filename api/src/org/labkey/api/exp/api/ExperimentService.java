@@ -407,6 +407,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Long> rowIds);
 
+    @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Long> rowIds, @Nullable ContainerFilter containerFilter);
+
     @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
 
     @Nullable ExpMaterial getExpMaterial(String lsid);
