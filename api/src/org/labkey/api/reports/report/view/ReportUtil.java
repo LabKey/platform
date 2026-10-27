@@ -79,6 +79,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.Errors;
 
 import javax.script.ScriptEngine;
@@ -351,7 +352,7 @@ public class ReportUtil
     /**
      * Helper to determine if the user can create a script report.
      */
-    public static boolean canCreateScript(ViewContext context, String extension)
+    public static boolean canCreateScript(ContainerUser context, String extension)
     {
         User u = context.getUser();
 

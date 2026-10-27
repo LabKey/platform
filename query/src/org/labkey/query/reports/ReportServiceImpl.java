@@ -46,6 +46,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
+import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
@@ -59,6 +60,7 @@ import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
@@ -67,7 +69,9 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
+import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
+import org.labkey.api.reports.report.python.IpynbReport;
 import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.r.RReportDescriptor;
@@ -102,6 +106,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 
+import javax.script.ScriptEngine;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -389,6 +394,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
 
         if (descriptor.isNew())
         {
+            validateScriptCreation(context, report, errors);
             if (descriptor.isShared())
                 report.canShare(context.getUser(), context.getContainer(), errors);
         }
@@ -411,6 +417,39 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         }
 
         return errors.isEmpty();
+    }
+
+    private void validateScriptCreation(ContainerUser context, Report report, List<ValidationError> errors)
+    {
+        if (!(report instanceof ScriptReport))
+            return;
+
+        String extension = null;
+        if (report instanceof ScriptEngineReport scriptEngineReport)
+        {
+            try
+            {
+                ScriptEngine engine = scriptEngineReport.getScriptEngine(context.getContainer());
+                if (engine == null)
+                {
+                    errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
+                    return;
+                }
+                extension = engine.getFactory().getExtensions().getFirst();
+            }
+            catch (PremiumFeatureNotEnabledException e)
+            {
+                errors.add(new SimpleValidationError(e.getMessage()));
+                return;
+            }
+        }
+        else if (report instanceof JavaScriptReport)
+            extension = "js";
+        else if (report instanceof IpynbReport)
+            extension = IpynbReport.EXTENSION;
+
+        if (!ReportUtil.canCreateScript(context, extension))
+            errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or TrustedAnalyst to create a script report."));
     }
 
     private ReportDB _saveDbReport(ContainerUser context, String key, Report report, boolean skipValidation)
