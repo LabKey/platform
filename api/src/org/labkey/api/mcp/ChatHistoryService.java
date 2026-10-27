@@ -17,6 +17,7 @@ package org.labkey.api.mcp;
 
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -54,6 +55,9 @@ public interface ChatHistoryService
      * also check the session was issued the conversation (McpService.getIssuingAgentName).
      */
     @NotNull List<ChatSnippet> getChatHistory(User user, GUID conversationId);
+
+    /** The id of the container the user's latest prompt in the conversation was sent from; not permission checked */
+    @Nullable String getLastPromptContainerId(User user, GUID conversationId);
 
     void deleteChatHistory(HttpSession session, User user, GUID conversationId);
 }
