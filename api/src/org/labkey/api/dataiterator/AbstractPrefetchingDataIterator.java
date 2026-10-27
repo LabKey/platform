@@ -101,7 +101,15 @@ public abstract class AbstractPrefetchingDataIterator extends WrapperDataIterato
         {
             lastPrefetchRowNumber = asInteger(_delegate.get(0));
             Object keyObj = pkSupplier.get();
-            Object key = jdbcType.convert(keyObj);
+            Object key;
+            try
+            {
+                key = jdbcType.convert(keyObj);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException(keyFieldName + " value not valid on row " + lastPrefetchRowNumber);
+            }
 
             if (numericKey)
             {
