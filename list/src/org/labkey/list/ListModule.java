@@ -243,7 +243,9 @@ public class ListModule extends SpringModule
     {
         return Set.of(
             ListQueryUpdateService.AuditBatchTestCase.class,
-            ListQueryUpdateService.GetRowsTestCase.class
+            ListQueryUpdateService.GetRowsTestCase.class,
+            ListQueryUpdateService.BatchedDeleteTestCase.class,
+            ListQueryUpdateService.DeleteContainerCheckTestCase.class
         );
     }
 }
