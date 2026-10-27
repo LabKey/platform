@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import com.google.common.base.Suppliers;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -465,57 +466,60 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", StudySchema.getInstance().getDatasetSchemaName(), PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class), "Datasets with at least one File column");
 
                 // grab the counts of report and dataset notification settings (by notification option)
-                Collection<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
-                Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
-                allStudies.forEach(study -> {
-                    Map<Integer, SortedSet<Integer>> settings = ReportContentEmailManager.getUserCategoryMap(study.getContainer());
-                    for (SortedSet<Integer> config : settings.values())
-                    {
-                        ReportContentEmailManager.NotifyOption option = ReportContentEmailManager.removeNotifyOption(config);
-                        notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
-                    }
-                });
-                Map<String, Integer> notificationMap = notifyOptionCounts.entrySet().stream()
-                    .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
-                metrics.put("reportAndDatasetNotificationOptions", notificationMap, "Users subscribed to report and dataset change notifications by option (NONE, ALL, CATEGORY, DATASET); a user counts once per study they subscribe in");
+                Supplier<Collection<? extends StudyImpl>> allStudies = Suppliers.memoize(() -> StudyManager.getInstance().getAllStudies());
+                metrics.put("reportAndDatasetNotificationOptions", () -> {
+                    Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
+                    allStudies.get().forEach(study -> {
+                        Map<Integer, SortedSet<Integer>> settings = ReportContentEmailManager.getUserCategoryMap(study.getContainer());
+                        for (SortedSet<Integer> config : settings.values())
+                        {
+                            ReportContentEmailManager.NotifyOption option = ReportContentEmailManager.removeNotifyOption(config);
+                            notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
+                        }
+                    });
+                    return notifyOptionCounts.entrySet().stream()
+                        .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
+                }, "Users subscribed to report and dataset change notifications by option (NONE, ALL, CATEGORY, DATASET); a user counts once per study they subscribe in");
 
-                long cloudBackedStudies = allStudies.stream()
+                metrics.put("cloudBackedStudies", () -> allStudies.get().stream()
                     .filter(s -> {
                         PipeRoot pr = PipelineService.get().findPipelineRoot(s.getContainer());
                         return pr != null && pr.isCloudRoot();
                     })
-                    .count();
-                metrics.put("cloudBackedStudies", cloudBackedStudies, "Studies whose pipeline root is in cloud storage");
+                    .count(), "Studies whose pipeline root is in cloud storage");
 
                 // Count the studies that have configured at least one group for per-dataset access control
-                long studiesWithAnyPerDatasetGroup = allStudies.stream()
+                metrics.put("perDatasetSecurityStudyCount", () -> allStudies.get().stream()
                     .filter(study -> study.getSecurityType().isSupportsPerDatasetPermissions())
                     .filter(study -> SecurityManager.getGroups(study.getContainer().getProject(), true).stream()
                         .anyMatch(group -> GroupSecurityType.getTypeForGroup(group, study) == GroupSecurityType.PER_DATASET))
-                    .count();
-                metrics.put("perDatasetSecurityStudyCount", studiesWithAnyPerDatasetGroup, "Studies with a security type supporting per-dataset permissions and at least one project group set to per-dataset access");
+                    .count(), "Studies with a security type supporting per-dataset permissions and at least one project group set to per-dataset access");
 
                 // Count the studies that use products and treatments
-                MutableInt hasProducts = new MutableInt(0);
-                MutableInt hasTreatments = new MutableInt(0);
+                record StudyDesignCounts(int products, int treatments) {}
+                Supplier<StudyDesignCounts> studyDesignCounts = Suppliers.memoize(() -> {
+                    MutableInt hasProducts = new MutableInt(0);
+                    MutableInt hasTreatments = new MutableInt(0);
 
-                allStudies.stream()
-                        .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
-                        .forEach(schema->{
-                            if (StudyDesignManager.get().isModuleActive(schema.getContainer()))
-                            {
-                                TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
-                                if (new TableSelector(products).exists())
-                                    hasProducts.increment();
+                    allStudies.get().stream()
+                            .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
+                            .forEach(schema->{
+                                if (StudyDesignManager.get().isModuleActive(schema.getContainer()))
+                                {
+                                    TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
+                                    if (new TableSelector(products).exists())
+                                        hasProducts.increment();
 
-                                TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
-                                if (new TableSelector(treatments).exists())
-                                    hasTreatments.increment();
-                            }
-                        });
+                                    TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
+                                    if (new TableSelector(treatments).exists())
+                                        hasTreatments.increment();
+                                }
+                            });
+                    return new StudyDesignCounts(hasProducts.intValue(), hasTreatments.intValue());
+                });
 
-                metrics.put("studyProducts", hasProducts.intValue(), "Studies with at least one study product, counted only in folders with the StudyDesign module active");
-                metrics.put("studyTreatments", hasTreatments.intValue(), "Studies with at least one treatment, counted only in folders with the StudyDesign module active");
+                metrics.put("studyProducts", () -> studyDesignCounts.get().products(), "Studies with at least one study product, counted only in folders with the StudyDesign module active");
+                metrics.put("studyTreatments", () -> studyDesignCounts.get().treatments(), "Studies with at least one treatment, counted only in folders with the StudyDesign module active");
 
                 return metrics;
             });

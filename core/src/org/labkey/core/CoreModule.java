@@ -1313,8 +1313,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
             sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
 
-            var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
-            metrics.put("databaseSchemaSize", schemaSizes, "Size in bytes of each database schema, including indexes; temp excluded");
+            metrics.put("databaseSchemaSize", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap(), "Size in bytes of each database schema, including indexes; temp excluded");
 
             metrics.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics(), "Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
             metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");

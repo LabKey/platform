@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import com.google.common.base.Suppliers;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -747,14 +748,14 @@ public class ExperimentModule extends SpringModule
                 metrics.put("autoLinkedSampleSetCount", () -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.materialsource WHERE autoLinkTargetContainer IS NOT NULL").getObject(Long.class), "Sample types with auto-link to a study configured");
                 metrics.put("sampleSetCount", () -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class), "Sample types");
 
-                Collection<Map<String, Object>> numSampleCounts = new SqlSelector(schema, """
+                Supplier<Collection<Map<String, Object>>> numSampleCounts = Suppliers.memoize(() -> new SqlSelector(schema, """
                         SELECT totalCount, numberNameCount FROM
                                     (SELECT cpastype, COUNT(*) AS totalCount from exp.material GROUP BY cpastype) t
                                 JOIN
                                     (SELECT cpastype, COUNT(*) AS numberNameCount FROM exp.material m WHERE m.name SIMILAR TO '[0-9.]*' GROUP BY cpastype) ns
-                                ON t.cpastype = ns.cpastype""").getMapCollection();
-                metrics.put("sampleSetWithNumberNamesCount", numSampleCounts.size(), "Sample types with at least one sample named only with digits and periods; untyped materials count as one more type");
-                metrics.put("sampleSetWithOnlyNumberNamesCount", numSampleCounts.stream().filter(
+                                ON t.cpastype = ns.cpastype""").getMapCollection());
+                metrics.put("sampleSetWithNumberNamesCount", () -> numSampleCounts.get().size(), "Sample types with at least one sample named only with digits and periods; untyped materials count as one more type");
+                metrics.put("sampleSetWithOnlyNumberNamesCount", () -> numSampleCounts.get().stream().filter(
                         map -> (Long) map.get("totalCount") > 0 && map.get("totalCount").equals(map.get("numberNameCount"))
                 ).count(), "Sample types whose sample names are all digits and periods");
 

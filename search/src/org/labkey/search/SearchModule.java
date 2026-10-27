@@ -180,16 +180,14 @@ public class SearchModule extends DefaultModule
 
         FolderManagement.addTab(FolderManagement.TYPE.FolderManagement, "Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
 
-        UsageMetricsService.get().registerUsageMetrics(getName(), metrics ->
+        UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> metrics.put("fullTextSearches", () ->
         {
             // Report the total number of search entries in the audit log
             User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.getUnsafeEverythingFilter());
-
-            long count = new TableSelector(auditTable).getRowCount();
-            return metrics.put("fullTextSearches", count, "Full-text search events in the audit log across all containers; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
-        });
+            return new TableSelector(auditTable).getRowCount();
+        }, "Full-text search events in the audit log across all containers; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE));
     }
 
     @Override

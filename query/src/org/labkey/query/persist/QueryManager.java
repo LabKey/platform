@@ -1077,9 +1077,7 @@ public class QueryManager
                 metrics.put("customViewWithLineageColumn", () -> getLineageCustomViewMetrics(), "Custom views with lineage (input, output, ancestor) columns, hidden and snapshot views excluded: view counts, plus total and min/percentile/max/avg columns per view when any exist");
                 metrics.put("queryDefWithCalculatedFieldsCounts", () -> getCalculatedFieldsCountsMetric(), "Query definitions whose metadata defines a calculated field, by schema (assay.* schemas grouped as assay)");
 
-                Map<String, Object> exportTypeCounts = getExportTypeCountsMetric();
-                if (exportTypeCounts != null)
-                    metrics.put("exportTypeCounts", exportTypeCounts, "Query export audit events by export type, from the audit log across all folders; \"Excel multi-tab\" approximates multi-tab Excel exports", UsageMetrics.Kind.CUMULATIVE);
+                metrics.put("exportTypeCounts", () -> getExportTypeCountsMetric(), "Query export audit events by export type, from the audit log across all folders; \"Excel multi-tab\" approximates multi-tab Excel exports", UsageMetrics.Kind.CUMULATIVE);
                 return metrics;
             });
         }
