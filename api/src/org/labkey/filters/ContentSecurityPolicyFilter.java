@@ -424,7 +424,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
     public static void registerMetricsProvider()
     {
-        UsageMetricsService.get().registerUsageMetrics("API", () -> Map.of("cspFilters", CSP_FILTERS.values().stream()
+        UsageMetricsService.get().registerUsageMetrics("API", metrics -> metrics.put("cspFilters", CSP_FILTERS.values().stream()
             .collect(Collectors.toMap(ContentSecurityPolicyFilter::getType,
                 filter -> {
                     StringExpression expression = filter.ensurePolicyExpression();
@@ -433,7 +433,8 @@ public class ContentSecurityPolicyFilter implements Filter
                         "csp", filter.getStashedTemplate(),
                         "cspSubstituted", expression.getSource()
                     );
-                }))
+                })),
+            "Content Security Policy filters by type (Enforce, Report): config version, the policy template, and the policy after substitutions"
             )
         );
     }

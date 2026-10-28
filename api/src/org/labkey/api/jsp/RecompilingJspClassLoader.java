@@ -22,6 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.JarScanner;
 import org.apache.tomcat.util.scan.StandardJarScanner;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
@@ -37,9 +39,11 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -86,6 +90,33 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
 
     @JavaRuntimeVersion  // Change CompilerTargetVM and CompilerSourceVM settings below
+    private static JspC createJspC(String uriRoot, String outputDir, String jspFile, String classPath)
+    {
+        JspC jasper = new JspC() {
+            // This override eliminates unnecessary TLD scanning during recompile
+            @Override
+            protected TldScanner newTldScanner(JspCServletContext context, boolean namespaceAware, boolean validate, boolean blockExternal)
+            {
+                StandardJarScanner scanner = new StandardJarScanner();
+                scanner.setJarScanFilter((_, _) -> false);
+                context.setAttribute(JarScanner.class.getName(), scanner);
+                return super.newTldScanner(context, namespaceAware, validate, blockExternal);
+            }
+        };
+        jasper.setUriroot(uriRoot);
+        jasper.setOutputDir(outputDir);
+        jasper.setPackage(JSP_PACKAGE);
+        jasper.setCompilerTargetVM("25");
+        jasper.setCompilerSourceVM("25");
+        jasper.setCompile(false);
+        jasper.setListErrors(true);
+        jasper.setJspFiles(jspFile);
+        jasper.setClassPath(classPath);
+
+        return jasper;
+    }
+
+
     private Class<?> getCompiledClassFile(File classFile, File jspJavaFileBuildDirectory, File jspClassesFileBuildDir, ResourceFinder finder, String jspFileName)
     {
         String relativePath = getSourceJspPath(jspFileName);
@@ -123,30 +154,9 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     cp.addDirectory(getModulesApiLib());
 
                     // Compile the .jsp file
-                    JspC jasper = new JspC() {
-                        // This override eliminates unnecessary TLD scanning during recompile
-                        @Override
-                        protected TldScanner newTldScanner(JspCServletContext context, boolean namespaceAware, boolean validate, boolean blockExternal)
-                        {
-                            StandardJarScanner scanner = new StandardJarScanner();
-                            scanner.setJarScanFilter((jarScanType, s) -> false);
-                            context.setAttribute(JarScanner.class.getName(), scanner);
-                            return super.newTldScanner(context, namespaceAware, validate, blockExternal);
-                        }
-                    };
-                    jasper.setUriroot(jspJavaFileBuildDirectory.getParentFile().getParent() + "/jspWebappDir/webapp/");
-                    jasper.setOutputDir(jspJavaFileBuildDirectory.getAbsolutePath());
-                    jasper.setPackage("org.labkey.jsp.compiled");
-                    jasper.setCompilerTargetVM("25");
-                    jasper.setCompilerSourceVM("25");
-                    jasper.setCompile(false);
-                    jasper.setListErrors(true);
-
                     if (relativePath.startsWith("/"))
                         relativePath = relativePath.substring(1);
-                    jasper.setJspFiles(relativePath);
-                    jasper.setClassPath(cp.getPath());
-                    jasper.execute();
+                    createJspC(jspJavaFileBuildDirectory.getParentFile().getParent() + "/jspWebappDir/webapp/", jspJavaFileBuildDirectory.getAbsolutePath(), relativePath, cp.getPath()).execute();
 
                     // Compile the _jsp.java file
                     String stagingJava = classFile.getAbsolutePath()
@@ -249,7 +259,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
     private static class ClassPath
     {
-        private final String SEP = System.getProperty("path.separator");
+        private final String SEP = File.pathSeparator;
         private final StringBuilder _path = new StringBuilder();
 
         private void addFile(String filePath)
@@ -292,5 +302,31 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private String getTomcatClassesDir()
     {
         return AppProps.getInstance().getProjectRoot() + "/build/jspRecompiling";
+    }
+
+    public static class TestCase extends Assert
+    {
+        // Catches Tomcat upgrades that make JspC reference Ant classes missing from our bootstrap stubs
+        @Test
+        public void testJspC() throws IOException
+        {
+            File root = Files.createTempDirectory("jspcTest").toFile();
+
+            try
+            {
+                File webapp = FileUtil.appendName(root, "webapp");
+                assertTrue(webapp.mkdir());
+                Files.writeString(FileUtil.appendName(webapp, "test.jsp").toPath(), "<%@ page contentType=\"text/html\" %>Hello <%= 1 + 1 %>");
+                File output = FileUtil.appendName(root, "output");
+
+                createJspC(webapp.getAbsolutePath() + "/", output.getAbsolutePath(), "test.jsp", "").execute();
+
+                assertTrue(FileUtil.appendPath(output, Path.parse(JSP_PACKAGE_PATH + "/test_jsp.java")).isFile());
+            }
+            finally
+            {
+                FileUtil.deleteDir(root);
+            }
+        }
     }
 }
