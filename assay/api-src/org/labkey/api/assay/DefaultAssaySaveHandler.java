@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.PreparedTransforms;
@@ -53,13 +54,13 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implements AssaySaveHandler
 {
@@ -232,7 +233,6 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
             if (!prepared.scriptInputsMatch(serializedRun == null ? null : readFromSerialization(runJson, serializedRun)))
                 throw new ValidationException("Run " + run.getRowId() + " changed while its transform scripts ran. Retry the save.");
 
-            prepared.addRunDataInputs(inputData);
             uploadContext.setPreparedTransform(prepared);
         }
 
@@ -274,18 +274,34 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
                 || getProvider().getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ALL).isEmpty())
             return preparedTransforms;
 
-        // A script's side effects can't be rolled back, so refuse the request before any of them runs
+        // A repeated run's later posts would save over what its scripts saw before the transaction
+        Set<Integer> runIds = new HashSet<>();
         for (JSONObject runJson : runJsons)
-            checkRun(context, protocol, runJson);
+        {
+            if (!runJson.isNull(ExperimentJSONConverter.ID) && !runIds.add(runJson.getInt(ExperimentJSONConverter.ID)))
+                throw new ApiUsageException("Run " + runJson.getInt(ExperimentJSONConverter.ID) + " appears more than once in the request");
+        }
+
+        // A script's side effects can't be rolled back, so refuse the request before any of them runs
+        List<PostedRun> postedRuns = new ArrayList<>();
+        for (JSONObject runJson : runJsons)
+        {
+            PostedRun posted = readPostedRun(context, protocol, runJson);
+            if (posted != null)
+            {
+                checkProtocolApplications(context, posted.existingRun(), posted.dataInputs(), posted.materialInputs(), posted.dataOutputs(), posted.materialOutputs());
+                postedRuns.add(posted);
+            }
+        }
 
         boolean success = false;
         try
         {
-            for (JSONObject runJson : runJsons)
+            for (PostedRun posted : postedRuns)
             {
-                PreparedTransform prepared = transformRun(context, protocol, runJson);
+                PreparedTransform prepared = runTransformScripts(context, protocol, posted);
                 if (prepared != null)
-                    preparedTransforms.put(runJson, prepared);
+                    preparedTransforms.put(posted.json(), prepared);
             }
             success = true;
         }
@@ -298,73 +314,61 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return preparedTransforms;
     }
 
-    private void checkRun(ViewContext context, ExpProtocol protocol, JSONObject runJson) throws ExperimentException, ValidationException
-    {
-        ExpRun existingRun = lookupRun(context, runJson, null);
-        if (!hasRunContent(runJson))
-            return;
+    /** A posted run with the arrays handleRun would save, read from the existing run where the client didn't post them. */
+    private record PostedRun(JSONObject json, @Nullable ExpRun existingRun, JSONArray dataRows, JSONArray dataInputs, JSONArray materialInputs,
+                             JSONArray dataOutputs, JSONArray materialOutputs, @Nullable JSONObject scriptInputs) {}
 
-        // An existing run's serialization stays cached for transformRun, which reads it next
-        checkProtocolApplications(context, existingRun,
-                existingRun != null ? serializeDataInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_INPUTS),
-                existingRun != null ? serializeMaterialInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.MATERIAL_INPUTS),
-                existingRun != null ? serializeDataOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_OUTPUTS),
-                existingRun != null ? serializeMaterialOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.MATERIAL_OUTPUTS));
-    }
-
-    /** Runs this run's transform scripts and records what they read from the existing run, for the save to check. */
-    private @Nullable PreparedTransform transformRun(ViewContext context, ExpProtocol protocol, JSONObject runJson) throws ExperimentException, ValidationException
+    /** Null when the post changes only the run's properties, which runs no scripts. */
+    private @Nullable PostedRun readPostedRun(ViewContext context, ExpProtocol protocol, JSONObject runJson)
     {
         ExpRun existingRun = lookupRun(context, runJson, null);
         if (!hasRunContent(runJson))
             return null;
 
+        if (existingRun == null)
+        {
+            return new PostedRun(runJson, null, postedArray(runJson, AssayJSONConverter.DATA_ROWS),
+                    postedArray(runJson, ExperimentJSONConverter.DATA_INPUTS), postedArray(runJson, ExperimentJSONConverter.MATERIAL_INPUTS),
+                    postedArray(runJson, ExperimentJSONConverter.DATA_OUTPUTS), postedArray(runJson, ExperimentJSONConverter.MATERIAL_OUTPUTS), null);
+        }
+
         try
         {
-            PreparedTransform prepared = runTransformScripts(context, protocol, runJson, existingRun);
-            JSONObject serializedRun = existingRun == null ? null : _serializedRuns.get(existingRun.getLSID());
-            if (prepared != null && serializedRun != null)
-                prepared.setScriptInputs(readFromSerialization(runJson, serializedRun));
-            return prepared;
+            JSONArray dataRows = serializeRunData(context, existingRun, runJson, protocol, null);
+            JSONArray dataInputs = serializeDataInputs(context, existingRun, runJson, protocol, null);
+            JSONArray materialInputs = serializeMaterialInputs(context, existingRun, runJson, protocol, null);
+            JSONArray dataOutputs = serializeDataOutputs(context, existingRun, runJson, protocol, null);
+            JSONArray materialOutputs = serializeMaterialOutputs(context, existingRun, runJson, protocol, null);
+            JSONObject serializedRun = _serializedRuns.get(existingRun.getLSID());
+            return new PostedRun(runJson, existingRun, dataRows, dataInputs, materialInputs, dataOutputs, materialOutputs,
+                    serializedRun == null ? null : readFromSerialization(runJson, serializedRun));
         }
         finally
         {
             // The save pass reads the run again inside its transaction
-            if (existingRun != null)
-                _serializedRuns.remove(existingRun.getLSID());
+            _serializedRuns.remove(existingRun.getLSID());
         }
     }
 
     /** Builds the upload context handleRun would build for this run, without writing anything, and runs its transform scripts. */
-    private @Nullable PreparedTransform runTransformScripts(ViewContext context, ExpProtocol protocol, JSONObject runJson, @Nullable ExpRun existingRun) throws ExperimentException, ValidationException
+    private @Nullable PreparedTransform runTransformScripts(ViewContext context, ExpProtocol protocol, PostedRun posted) throws ExperimentException, ValidationException
     {
-        JSONArray dataArray = existingRun != null ? serializeRunData(context, existingRun, runJson, protocol, null) : postedArray(runJson, AssayJSONConverter.DATA_ROWS);
-        JSONArray dataInputs = existingRun != null ? serializeDataInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_INPUTS);
-        JSONArray dataOutputs = existingRun != null ? serializeDataOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_OUTPUTS);
-
         // Unsaved data all have rowId 0 and can share an LSID, so key by file instead of ExpData equality
         Map<Object, ExpData> dataByKey = new HashMap<>();
         Map<ExpData, String> inputData = new IdentityHashMap<>();
-        for (JSONObject dataObject : JsonUtil.toJSONObjectList(dataInputs))
+        for (JSONObject dataObject : JsonUtil.toJSONObjectList(posted.dataInputs()))
             inputData.put(lookupData(context, dataObject, dataByKey), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
 
-        List<Map<String, Object>> dataRows = convertRunData(dataArray, context.getContainer(), protocol);
-        if (skipsAssayRun(dataRows, !dataOutputs.isEmpty()))
+        List<Map<String, Object>> dataRows = convertRunData(posted.dataRows(), context.getContainer(), protocol);
+        if (skipsAssayRun(dataRows, !posted.dataOutputs().isEmpty()))
             return null;
 
         // Scripts never see output data, so the outputs are only counted, not resolved
-        AssayRunUploadContext<?> uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
+        AssayRunUploadContext<?> uploadContext = createRunUploadContext(context, protocol, posted.json(), dataRows,
                 inputData, Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
-        AssayRunCreator runCreator = getProvider().getRunCreator();
-        PreparedTransform prepared = runCreator.prepareTransform(uploadContext);
-        if (prepared != null && prepared.getRunDataInputs() != null)
-        {
-            // saveExperimentRun adds the saved inputs back; keep only those the participant visit resolver added
-            Set<Object> postedKeys = inputData.keySet().stream().map(DefaultAssaySaveHandler::dataKey).collect(Collectors.toSet());
-            Map<ExpData, String> resolverInputs = new IdentityHashMap<>(prepared.getRunDataInputs());
-            resolverInputs.keySet().removeIf(data -> postedKeys.contains(dataKey(data)));
-            prepared.setRunDataInputs(resolverInputs);
-        }
+        PreparedTransform prepared = getProvider().getRunCreator().prepareTransform(uploadContext);
+        if (prepared != null && posted.scriptInputs() != null)
+            prepared.setScriptInputs(posted.scriptInputs());
         return prepared;
     }
 

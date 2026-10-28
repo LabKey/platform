@@ -152,22 +152,29 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         // Collecting the inputs saves posted files, whose audit events belong to the import transaction that isn't open yet
         List<PendingFileAudit> fileAudits = new ArrayList<>();
         context.setPendingFileAudits(fileAudits);
-        Map<ExpData, String> inputDatas = new HashMap<>();
-        PreparedTransform prepared = null;
+        Map<ExpData, String> resolverInputs = new HashMap<>();
+        PreparedTransform prepared;
         try
         {
-            addRunDataInputs(context, null, findResolverType(allProperties), inputDatas);
+            ParticipantVisitResolverType resolverType = findResolverType(allProperties);
+            if (resolverType != null)
+                resolverType.configureRun(context, null, resolverInputs);
+            Map<ExpData, String> inputDatas = new HashMap<>(resolverInputs);
+            addInputDatas(context, inputDatas);
             prepared = runTransformBeforeRun(context, inputDatas.keySet());
+        }
+        catch (Exception e)
+        {
+            PreparedTransform.addFileAuditEventsForRemainingFiles(context.getUser(), fileAudits);
+            throw e;
         }
         finally
         {
             context.setPendingFileAudits(null);
-            if (prepared == null)
-                PreparedTransform.addFileAuditEventsForRemainingFiles(context.getUser(), fileAudits);
         }
         prepared.holdFileAudits(context.getUser(), fileAudits);
-        // Run creation reuses these rather than collecting again, since a thaw list resolver writes a new file each time
-        prepared.setRunDataInputs(inputDatas);
+        // Run creation reuses these rather than resolving again, since a thaw list resolver writes a new file each time
+        prepared.setResolverDataInputs(resolverInputs);
         return prepared;
     }
 
@@ -178,18 +185,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             .findFirst()
             .map(entry -> AbstractAssayProvider.findType(entry.getValue(), getProvider().getParticipantVisitResolverTypes()))
             .orElse(null);
-    }
-
-    private void addRunDataInputs(
-        AssayRunUploadContext<ProviderType> context,
-        @Nullable ExpRun run,
-        @Nullable ParticipantVisitResolverType resolverType,
-        Map<ExpData, String> inputDatas
-    ) throws ExperimentException, ValidationException
-    {
-        if (resolverType != null)
-            resolverType.configureRun(context, run, inputDatas);
-        addInputDatas(context, inputDatas);
     }
 
     private boolean hasTransformBeforeRun(AssayRunUploadContext<ProviderType> context)
@@ -411,10 +406,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         ParticipantVisitResolverType resolverType = findResolverType(allProperties);
         PreparedTransform preparedBeforeRun = context.getPreparedTransform();
-        if (preparedBeforeRun != null && preparedBeforeRun.getRunDataInputs() != null)
-            inputDatas.putAll(preparedBeforeRun.getRunDataInputs());
-        else
-            addRunDataInputs(context, run, resolverType, inputDatas);
+        if (preparedBeforeRun != null && preparedBeforeRun.getResolverDataInputs() != null)
+            inputDatas.putAll(preparedBeforeRun.getResolverDataInputs());
+        else if (resolverType != null)
+            resolverType.configureRun(context, run, inputDatas);
+        addInputDatas(context, inputDatas);
 
         // TODO: Share these RemapCache and materialCache instances with AbstractAssayTsvDataHandler.checkData and ExpressionMatrixDataHandler.importFile
         // Cache of resolved alternate lookup keys -> rowId

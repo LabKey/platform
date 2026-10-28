@@ -44,7 +44,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +64,7 @@ public class PreparedTransform implements AutoCloseable
     private final @NotNull List<TransformScriptOutput> _scriptOutputs;
     private final @NotNull List<FileLike> _scriptDirs;
     private boolean _recorded;
-    private @Nullable Map<ExpData, String> _runDataInputs;
+    private @Nullable Map<ExpData, String> _resolverDataInputs;
     private @Nullable JSONObject _scriptInputs;
     private final @NotNull List<PendingFileAudit> _fileAudits = new ArrayList<>();
     private @Nullable User _fileAuditUser;
@@ -116,25 +115,15 @@ public class PreparedTransform implements AutoCloseable
         return files;
     }
 
-    /** The run's data inputs, when collected before the scripts ran; null otherwise. */
-    public @Nullable Map<ExpData, String> getRunDataInputs()
+    /** The data inputs the participant visit resolver added before the scripts ran; null when it didn't run then. */
+    public @Nullable Map<ExpData, String> getResolverDataInputs()
     {
-        return _runDataInputs;
+        return _resolverDataInputs;
     }
 
-    public void setRunDataInputs(@NotNull Map<ExpData, String> runDataInputs)
+    public void setResolverDataInputs(@NotNull Map<ExpData, String> resolverDataInputs)
     {
-        _runDataInputs = runDataInputs;
-    }
-
-    /** Adds inputs to those collected before the scripts ran; a no-op when none were collected. */
-    public void addRunDataInputs(@NotNull Map<ExpData, String> runDataInputs)
-    {
-        if (_runDataInputs == null)
-            return;
-        Map<ExpData, String> merged = new HashMap<>(_runDataInputs);
-        merged.putAll(runDataInputs);
-        _runDataInputs = merged;
+        _resolverDataInputs = resolverDataInputs;
     }
 
     /** What the scripts read from the existing run, for the save to compare once its transaction reads the run again. */
