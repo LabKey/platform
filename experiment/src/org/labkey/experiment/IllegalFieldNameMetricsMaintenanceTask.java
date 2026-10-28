@@ -261,8 +261,8 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             gwtDomain.setFields(_fields);
 
             // forCreate=false matters: SampleTypeDomainKind drops "Name" from the reserved set when creating, and the
-            // Domain-based overload would infer forCreate from our null domain. A null domain also skips the kind's
-            // ExpSampleType lookup, so the persisted parent aliases are unioned in below instead.
+            // Domain-based overload would infer forCreate from our null domain. The null domain also truncates kinds
+            // that derive reserved names from one (SimpleTableDomainKind, domain templates), so those under-report.
             Set<String> kindReserved = _kind.getReservedPropertyNames(null, null, false);
 
             // A field colliding with a parent alias header is counted once, as parentAliasConflict below, rather than

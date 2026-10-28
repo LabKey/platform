@@ -41,7 +41,8 @@ public class IllegalFieldNameMetricsProvider implements UsageMetricsProvider
     {
         metrics.group(METRIC_KEY, "Stored domains whose field names break a current naming rule, as of the last system maintenance run since startup. " +
             "Each rule maps to a count per domain kind. These configurations predate the rule that now forbids them, so they are not blocked at save time. " +
-            "parentAliasConflict counts affected sample types and data classes rather than individual conflicts, because parent alias validation stops at the first problem")
+            "parentAliasConflict counts affected sample types and data classes rather than individual conflicts, because parent alias validation stops at the first problem. " +
+            "Counts are a floor, not a total: the scan resolves each kind's reserved names without a Domain, so kinds that derive them from one (simple tables, domain templates) contribute nothing")
             .putAll(_metrics);
         return metrics;
     }

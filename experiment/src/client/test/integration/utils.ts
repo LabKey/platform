@@ -992,6 +992,10 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
         "Field 'A' has an import alias 'viaAlias' that conflicts with a parent alias header.",
         { viaAlias: parentOf(name) });
 
+    // Issue 52627: 'Parent' is blocked as a lineage parent alias header only; it is not a reserved field name.
+    if (isSampleType)
+        await createExpectError([{ name: 'A' }], 'Parent alias header is reserved: Parent', { Parent: parentOf(name) });
+
     // The same rules on update, against a design that already carries a field alias and a parent alias.
     const parentAlias = 'existingParent';
     const existingAliases = { [parentAlias]: parentOf(name) };
@@ -1048,4 +1052,17 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
         `An existing ${noun} property conflicts with parent alias header: ${parentAlias}`);
     await updateExpectError([...keeperFields, { name: 'Added', importAliases: parentAlias }], existingAliases,
         `Field 'Added' has an import alias '${parentAlias}' that conflicts with a parent alias header.`);
+
+    // Omitting options.importAliases clears the stored parent aliases rather than leaving them untouched, so the
+    // field name above is free by the time it is validated. Pinned because the other plausible behavior -- keeping
+    // them while skipping validateParentAlias -- would let a new field silently shadow a parent alias.
+    const omittedResp = await server.post('property', 'saveDomain', {
+        domainId,
+        domainDesign: { name, domainId, domainURI, fields: [...keeperFields, { name: parentAlias }] },
+        options: { rowId, name },
+    }, { ...folderOptions, ...userOptions });
+    expect(omittedResp['body']['success']).toBeTruthy();
+
+    const details = await server.post('property', 'getDomainDetails', { domainId }, { ...folderOptions, ...userOptions });
+    expect(Object.keys(details['body']?.['options']?.['importAliases'] ?? {})).toHaveLength(0);
 }

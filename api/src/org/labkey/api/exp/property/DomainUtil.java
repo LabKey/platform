@@ -147,7 +147,6 @@ public class DomainUtil
         reservedName,
         namingPatternConflict,
         duplicateName,
-        valueExpressionTooLong,
         duplicateImportAlias,
         importAliasVsFieldName,
         importAliasVsReservedName,
@@ -1632,7 +1631,6 @@ public class DomainUtil
     {
         Set<String> reservedNames = new CaseInsensitiveHashSet(reservedNameSet);
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
-        Map<String, String> altNameMap = new CaseInsensitiveHashMap<>();
         // GH Issue 1257: import alias -> the fields declaring it.
         Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
         // GH Issue 1589: effective label -> the fields carrying it. Only populated when tallying, since label collisions
@@ -1757,7 +1755,6 @@ public class DomainUtil
 
             if (field.getValueExpression() != null && field.getValueExpression().trim().length() > 4000)
             {
-                tally(tally, FieldNameRule.valueExpressionTooLong, field);
                 exception.addFieldError(name, getDomainErrorMessage(updates, "The value expression for '" + name
                         + "' is too long (" + field.getValueExpression().trim().length() + " characters). Please limit to 4000 characters."));
             }
