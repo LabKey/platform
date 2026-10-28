@@ -44,6 +44,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,7 @@ public class PreparedTransform implements AutoCloseable
     private final @NotNull List<FileLike> _scriptDirs;
     private boolean _recorded;
     private @Nullable Map<ExpData, String> _runDataInputs;
+    private @Nullable JSONObject _scriptInputs;
     private final @NotNull List<PendingFileAudit> _fileAudits = new ArrayList<>();
     private @Nullable User _fileAuditUser;
 
@@ -125,8 +127,27 @@ public class PreparedTransform implements AutoCloseable
         _runDataInputs = runDataInputs;
     }
 
-    /** The audit event of a file saved while preparing, held until the import transaction opens. */
-    public record PendingFileAudit(@NotNull FileSystemAuditProvider.FileSystemAuditEvent event, @NotNull FileLike file) {}
+    /** Adds inputs to those collected before the scripts ran; a no-op when none were collected. */
+    public void addRunDataInputs(@NotNull Map<ExpData, String> runDataInputs)
+    {
+        if (_runDataInputs == null)
+            return;
+        Map<ExpData, String> merged = new HashMap<>(_runDataInputs);
+        merged.putAll(runDataInputs);
+        _runDataInputs = merged;
+    }
+
+    /** What the scripts read from the existing run, for the save to compare once its transaction reads the run again. */
+    public void setScriptInputs(@NotNull JSONObject scriptInputs)
+    {
+        _scriptInputs = scriptInputs;
+    }
+
+    /** Whether the run, read again inside the transaction, still holds what the scripts read; true when they read nothing from it. */
+    public boolean scriptInputsMatch(@Nullable JSONObject current)
+    {
+        return _scriptInputs == null || (current != null && _scriptInputs.similar(current));
+    }
 
     /** Holds the audits of files saved while preparing, to record against the import transaction once it opens. */
     public void holdFileAudits(@Nullable User user, @NotNull List<PendingFileAudit> audits)

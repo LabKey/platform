@@ -29,6 +29,7 @@ import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.transform.DataTransformService;
+import org.labkey.api.assay.transform.PendingFileAudit;
 import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformDataHandler;
 import org.labkey.api.assay.transform.TransformResult;
@@ -149,7 +150,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         allProperties.putAll(context.getBatchProperties());
 
         // Collecting the inputs saves posted files, whose audit events belong to the import transaction that isn't open yet
-        List<PreparedTransform.PendingFileAudit> fileAudits = new ArrayList<>();
+        List<PendingFileAudit> fileAudits = new ArrayList<>();
         context.setPendingFileAudits(fileAudits);
         Map<ExpData, String> inputDatas = new HashMap<>();
         PreparedTransform prepared = null;

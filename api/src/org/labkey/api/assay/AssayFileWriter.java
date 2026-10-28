@@ -20,7 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.transform.PreparedTransform;
+import org.labkey.api.assay.transform.PendingFileAudit;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CollectionUtils;
@@ -263,9 +263,9 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                                 event.setProvidedFileName(fileName);
                                 event.setFile(file.getName());
                                 event.setDirectory(dir.toURI().getPath());
-                                List<PreparedTransform.PendingFileAudit> pending = context.getPendingFileAudits();
+                                List<PendingFileAudit> pending = context.getPendingFileAudits();
                                 if (pending != null)
-                                    pending.add(new PreparedTransform.PendingFileAudit(event, file));
+                                    pending.add(new PendingFileAudit(event, file));
                                 else
                                     AuditLogService.get().addEvent(context.getUser(), event);
                             }

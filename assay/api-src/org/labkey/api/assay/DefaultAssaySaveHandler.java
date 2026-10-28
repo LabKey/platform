@@ -67,9 +67,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     protected AssayProvider _provider;
     private PreparedTransforms _preparedTransforms = new PreparedTransforms();
     private final Map<String, JSONObject> _serializedRuns = new HashMap<>();
-    /** For each prepared run, the parts of its existing serialization its scripts read before the transaction. */
-    private final Map<JSONObject, JSONObject> _preparedSerializations = new IdentityHashMap<>();
-    private static final List<String> PREPARED_KEYS = List.of(AssayJSONConverter.DATA_ROWS, ExperimentJSONConverter.DATA_INPUTS, ExperimentJSONConverter.DATA_OUTPUTS);
+    private static final List<String> SCRIPT_INPUT_KEYS = List.of(AssayJSONConverter.DATA_ROWS, ExperimentJSONConverter.DATA_INPUTS, ExperimentJSONConverter.DATA_OUTPUTS);
 
     @Override
     public AssayProvider getProvider()
@@ -231,35 +229,21 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         if (prepared != null && uploadContext != null)
         {
             // Rerunning the scripts inside the transaction would reopen the deadlock they ran early to avoid
-            if (!matchesPrepared(runJson, serializedRun))
+            if (!prepared.scriptInputsMatch(serializedRun == null ? null : readFromSerialization(runJson, serializedRun)))
                 throw new ValidationException("Run " + run.getRowId() + " changed while its transform scripts ran. Retry the save.");
 
-            if (prepared.getRunDataInputs() != null)
-            {
-                Map<ExpData, String> runDataInputs = new HashMap<>(prepared.getRunDataInputs());
-                runDataInputs.putAll(inputData);
-                prepared.setRunDataInputs(runDataInputs);
-            }
+            prepared.addRunDataInputs(inputData);
             uploadContext.setPreparedTransform(prepared);
         }
 
         return saveAssayRun(uploadContext, batch, run, BaseViewAction.getTransactionAuditDetails(context));
     }
 
-    /** Whether the run, read inside the transaction, still holds what its scripts saw before it. */
-    private boolean matchesPrepared(JSONObject runJson, @Nullable JSONObject serializedRun)
-    {
-        JSONObject seen = _preparedSerializations.get(runJson);
-        if (seen == null)
-            return true;
-        return serializedRun != null && seen.similar(readFromSerialization(runJson, serializedRun));
-    }
-
     /** The arrays read from an existing run's serialization because the client didn't post them. */
     private static JSONObject readFromSerialization(JSONObject runJson, JSONObject serializedRun)
     {
         JSONObject read = new JSONObject();
-        for (String key : PREPARED_KEYS)
+        for (String key : SCRIPT_INPUT_KEYS)
         {
             if (!runJson.has(key))
                 read.put(key, serializedRun.getJSONArray(key));
@@ -299,7 +283,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         {
             for (JSONObject runJson : runJsons)
             {
-                PreparedTransform prepared = prepareTransform(context, protocol, runJson);
+                PreparedTransform prepared = transformRun(context, protocol, runJson);
                 if (prepared != null)
                     preparedTransforms.put(runJson, prepared);
             }
@@ -320,7 +304,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         if (!hasRunContent(runJson))
             return;
 
-        // An existing run's serialization stays cached for prepareTransform, which reads it next
+        // An existing run's serialization stays cached for transformRun, which reads it next
         checkProtocolApplications(context, existingRun,
                 existingRun != null ? serializeDataInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_INPUTS),
                 existingRun != null ? serializeMaterialInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.MATERIAL_INPUTS),
@@ -328,8 +312,8 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
                 existingRun != null ? serializeMaterialOutputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.MATERIAL_OUTPUTS));
     }
 
-    /** Builds the upload context handleRun would build for this run, without writing anything, and runs its transform scripts. */
-    private @Nullable PreparedTransform prepareTransform(ViewContext context, ExpProtocol protocol, JSONObject runJson) throws ExperimentException, ValidationException
+    /** Runs this run's transform scripts and records what they read from the existing run, for the save to check. */
+    private @Nullable PreparedTransform transformRun(ViewContext context, ExpProtocol protocol, JSONObject runJson) throws ExperimentException, ValidationException
     {
         ExpRun existingRun = lookupRun(context, runJson, null);
         if (!hasRunContent(runJson))
@@ -337,10 +321,10 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
 
         try
         {
-            PreparedTransform prepared = prepareTransform(context, protocol, runJson, existingRun);
+            PreparedTransform prepared = runTransformScripts(context, protocol, runJson, existingRun);
             JSONObject serializedRun = existingRun == null ? null : _serializedRuns.get(existingRun.getLSID());
             if (prepared != null && serializedRun != null)
-                _preparedSerializations.put(runJson, readFromSerialization(runJson, serializedRun));
+                prepared.setScriptInputs(readFromSerialization(runJson, serializedRun));
             return prepared;
         }
         finally
@@ -351,7 +335,8 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         }
     }
 
-    private @Nullable PreparedTransform prepareTransform(ViewContext context, ExpProtocol protocol, JSONObject runJson, @Nullable ExpRun existingRun) throws ExperimentException, ValidationException
+    /** Builds the upload context handleRun would build for this run, without writing anything, and runs its transform scripts. */
+    private @Nullable PreparedTransform runTransformScripts(ViewContext context, ExpProtocol protocol, JSONObject runJson, @Nullable ExpRun existingRun) throws ExperimentException, ValidationException
     {
         JSONArray dataArray = existingRun != null ? serializeRunData(context, existingRun, runJson, protocol, null) : postedArray(runJson, AssayJSONConverter.DATA_ROWS);
         JSONArray dataInputs = existingRun != null ? serializeDataInputs(context, existingRun, runJson, protocol, null) : postedArray(runJson, ExperimentJSONConverter.DATA_INPUTS);

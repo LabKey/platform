@@ -423,14 +423,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     // Disallow creating a run with inputs which are also outputs
-    private void checkForCycles(Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ExperimentException
+    private void checkForCycles(Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ValidationException
     {
         for (ExpRunItem input : inputs.keySet())
         {
             if (outputs.containsKey(input))
             {
                 String role = outputs.get(input);
-                throw new ExperimentException("Circular input/output '" + input.getName() + "' with role '" + role + "'");
+                throw new ValidationException("Circular input/output '" + input.getName() + "' with role '" + role + "'");
             }
         }
     }

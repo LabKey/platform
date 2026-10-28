@@ -28,6 +28,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.assay.transform.PendingFileAudit;
 import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.security.User;
@@ -190,13 +191,13 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     }
 
     /** Audits of files saved while a transform is prepared, or null to add each event as its file is saved. */
-    default @Nullable List<PreparedTransform.PendingFileAudit> getPendingFileAudits()
+    default @Nullable List<PendingFileAudit> getPendingFileAudits()
     {
         return null;
     }
 
     /** Contexts that can't hold audits ignore this and add each event as its file is saved. */
-    default void setPendingFileAudits(@Nullable List<PreparedTransform.PendingFileAudit> audits)
+    default void setPendingFileAudits(@Nullable List<PendingFileAudit> audits)
     {
     }
 
