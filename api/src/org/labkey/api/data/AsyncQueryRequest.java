@@ -349,17 +349,15 @@ public class AsyncQueryRequest<T>
                 return true;
             statement = _statement;
         }
-        // Outside the lock, since the driver opens a connection to send it. A no-op until the statement is executing; it can't reach another statement on the connection.
-        if (statement != null)
+
+        try
         {
-            try
-            {
-                statement.cancel();
-            }
-            catch (SQLException e)
-            {
-                _log.debug("Failed to resend cancel to a detached async statement", e);
-            }
+            if (statement != null && statement.getConnection() instanceof ConnectionWrapper connection)
+                connection.getScope().getSqlDialect().cancelQueriesViaOwningConnection(Set.of(connection));
+        }
+        catch (SQLException | RuntimeException e)
+        {
+            _log.debug("Failed to resend cancel to a detached async statement", e);
         }
         return false;
     }
@@ -668,7 +666,7 @@ public class AsyncQueryRequest<T>
             assertEquals("Stuck worker's session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, Set.of(workerSpid.get())));
         }
 
-        /** A statement that reaches the database only after its request stopped waiting, where the first cancel did nothing, must still be cancelled */
+        /** A query that reaches the database only after its request stopped waiting, where Statement.cancel() can't stop it, must still be cancelled */
         @Test
         public void testDetachedWorkerCancelled() throws Exception
         {
@@ -685,10 +683,11 @@ public class AsyncQueryRequest<T>
                 try
                 {
                     request.waitForResult(() -> {
-                        try (Connection conn = scope.getConnection(); Statement stmt = conn.createStatement())
+                        try (Connection conn = scope.getConnection(); Statement registeredStmt = conn.createStatement(); Statement stmt = conn.createStatement())
                         {
-                            // Like a worker starved of CPU between registering its statement and sending it
-                            request.setStatement(stmt);
+                            // Like a worker starved of CPU between registering its statement and sending it. Running the query on
+                            // another statement stands in for pgjdbc ignoring Statement.cancel() after the first, lost cancel.
+                            request.setStatement(registeredStmt);
                             registered.countDown();
                             requestDone.await();
                             long start = System.currentTimeMillis();
