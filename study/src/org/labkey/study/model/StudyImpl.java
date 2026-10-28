@@ -66,7 +66,6 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HTMLContentExtractor;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -77,6 +76,7 @@ import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.util.HTMLContentExtractor;
 
 import java.io.IOException;
 import java.math.BigDecimal;

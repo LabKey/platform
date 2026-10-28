@@ -110,7 +110,6 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyDatasetLinkedColumn;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -131,6 +130,7 @@ import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
+import org.labkey.study.query.PublishResultsQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.beans.MutablePropertyValues;
 

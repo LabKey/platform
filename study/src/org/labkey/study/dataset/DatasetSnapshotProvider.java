@@ -50,7 +50,6 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.query.snapshot.AbstractSnapshotProvider;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -82,6 +81,7 @@ import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.snapshot.AbstractSnapshotProvider;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.springframework.validation.BindException;
 

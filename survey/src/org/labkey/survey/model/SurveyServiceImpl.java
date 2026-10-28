@@ -19,11 +19,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.api.survey.SurveyService;
-import org.labkey.api.survey.model.Survey;
-import org.labkey.api.survey.model.SurveyDesign;
-import org.labkey.api.survey.model.SurveyListener;
 import org.labkey.survey.SurveyManager;
+import org.labkey.survey.SurveyService;
 
 /**
  * User: cnathe

@@ -16,7 +16,7 @@
 package org.labkey.core.project;
 
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.menu.FolderMenu;
+import org.labkey.core.view.menu.FolderMenu;
 
 /**
  * User: Nick

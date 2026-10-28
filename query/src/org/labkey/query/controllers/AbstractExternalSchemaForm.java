@@ -22,13 +22,13 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.util.IdentifierString;
 import org.springframework.validation.Errors;
 
 /**

@@ -57,9 +57,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.DirectoryPattern;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileListener;
-import org.labkey.api.files.FileRoot;
 import org.labkey.api.files.FilesAdminOptions;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.module.Module;
@@ -96,6 +94,8 @@ import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.filecontent.files.FileRoot;
+import org.labkey.filecontent.files.MissingRootDirectoryException;
 import org.labkey.vfs.FileLike;
 
 import java.beans.PropertyChangeEvent;

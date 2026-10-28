@@ -53,7 +53,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
-import org.labkey.api.data.ContainerServiceImpl;
 import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
@@ -85,8 +84,6 @@ import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
-import org.labkey.api.files.FileBrowserConfigImporter;
-import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
@@ -119,7 +116,6 @@ import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.FastaDataLoader;
-import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
@@ -155,9 +151,6 @@ import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache.FolderSettingsCacheListener;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.LookAndFeelPropertiesManager;
-import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
-import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
@@ -208,7 +201,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -258,8 +250,11 @@ import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentContainerListener;
 import org.labkey.core.attachment.AttachmentServiceImpl;
+import org.labkey.core.data.ContainerServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
+import org.labkey.core.files.FileBrowserConfigImporter;
+import org.labkey.core.files.FileBrowserConfigWriter;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.DbLoginManager;
@@ -291,16 +286,21 @@ import org.labkey.core.query.ReportsTable;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
+import org.labkey.core.reader.HTMLDataLoader;
 import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.script.RhinoService;
 import org.labkey.core.secrets.SecretServiceImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.ApiKeyViewProvider;
+import org.labkey.core.security.PasswordExpiration;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.SecurityPointcutServiceImpl;
 import org.labkey.core.security.validators.PermissionsValidatorFactory;
+import org.labkey.core.settings.LookAndFeelPropertiesManager;
+import org.labkey.core.settings.LookAndFeelPropertiesManager.ResourceType;
+import org.labkey.core.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
@@ -311,6 +311,7 @@ import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.TableViewFormTestCase;
 import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
+import org.labkey.core.view.menu.FolderMenu;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.PageTemplate;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
@@ -1550,7 +1551,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
         List<Supplier<Class<?>>> ret = new ArrayList<>(super.getIntegrationTestFactories());
-        ret.add(new JspTestCase("/org/labkey/api/data/ColumnInfoTests.jsp"));
+        ret.add(new JspTestCase("/org/labkey/core/data/ColumnInfoTests.jsp"));
         return ret;
     }
 
@@ -1565,6 +1566,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             LabKeyProxyServlet.TestCase.class,
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
+            PasswordExpiration.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             QuartzShutdown.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,

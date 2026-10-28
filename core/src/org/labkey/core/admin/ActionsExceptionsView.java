@@ -17,7 +17,6 @@ package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.util.CSRFException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;

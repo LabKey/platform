@@ -35,7 +35,6 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.suggestions.FilterSuggestion;
 import org.labkey.api.query.suggestions.FilterSuggestionContext;
 import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.query.suggestions.SuggestionColumn;

@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType" %>
+<%@ page import="org.labkey.core.settings.LookAndFeelPropertiesManager.ResourceType" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>

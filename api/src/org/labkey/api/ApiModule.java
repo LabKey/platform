@@ -55,7 +55,6 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AsyncQueryRequest;
-import org.labkey.api.data.AtomicDatabaseInteger;
 import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
@@ -74,7 +73,6 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JsonTest;
 import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MultiValuedRenderContext;
@@ -84,7 +82,6 @@ import org.labkey.api.data.RecordFactory;
 import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RepeatedCommitTaskMonitor;
 import org.labkey.api.data.ResultSetSelectorTestCase;
-import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutingSelector;
@@ -162,7 +159,6 @@ import org.labkey.api.security.EntropyPasswordValidator;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.NestedGroupsTest;
-import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
@@ -455,7 +451,6 @@ public class ApiModule extends CodeOnlyModule
             GUID.TestCase.class,
             HelpTopic.TestCase.class,
             ImpersonationTestCase.class,
-            InlineInClauseGenerator.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
             JSONDataLoader.RowTest.class,
@@ -479,7 +474,6 @@ public class ApiModule extends CodeOnlyModule
             NumberUtilsLabKey.TestCase.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
-            PasswordExpiration.TestCase.class,
             Path.TestCase.class,
             Query.TestCase.class,
             QueryProfiler.TestCase.class,
@@ -548,7 +542,6 @@ public class ApiModule extends CodeOnlyModule
             ApiQueryResponse.TestCase.class,
             AppPropsTestCase.class,
             AsyncQueryRequest.TestCase.class,
-            AtomicDatabaseInteger.TestCase.class,
             BindingTestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CompareType.TestCase.class,
@@ -599,7 +592,6 @@ public class ApiModule extends CodeOnlyModule
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
-            RowTrackingResultSetWrapper.TestCase.class,
             SearchScope.TestCase.class,
             SecurityManager.TestCase.class,
             SimpleQueryUpdateService.TestCase.class,
