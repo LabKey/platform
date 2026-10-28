@@ -253,8 +253,18 @@ public class UsageMetrics
             metrics.put("count", 1L, "Things");
             assertEquals(List.of(new Description("count", "Things", Kind.CURRENT)), metrics.getDescriptions());
 
-            assertThrows(IllegalStateException.class, () -> metrics.put("count", 1L, "Other things"));
-            assertThrows(IllegalStateException.class, () -> metrics.describe("count", "Things", Kind.CUMULATIVE));
+            if (AppProps.getInstance().isDevMode())
+            {
+                assertThrows(IllegalStateException.class, () -> metrics.put("count", 1L, "Other things"));
+                assertThrows(IllegalStateException.class, () -> metrics.describe("count", "Things", Kind.CUMULATIVE));
+            }
+            else
+            {
+                metrics.put("count", 2L, "Other things");
+                metrics.describe("count", "Things", Kind.CUMULATIVE);
+                assertEquals(Map.of("count", 2L), metrics.getValues());
+                assertEquals(List.of(new Description("count", "Things", Kind.CURRENT)), metrics.getDescriptions());
+            }
         }
 
         @Test
