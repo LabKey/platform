@@ -80,18 +80,18 @@ public class TransactionFilter implements Filter
     public static final String EXPORT_ATTRIBUTE_NAME = "ExportHttpRequest";
 
     /**
-     * @param tabId and requestId identify a request the client may cancel; read here, since another thread can't read a recycled request's headers
+     * @param tabId, requestId, and sessionId identify a request the client may cancel; read here, since another thread can't read a recycled request's headers
      * @param cancellation set once, by the first {@link RequestCancellation#requestCancelled}
      * @param cancelDeferrals open {@link #deferCancellation} scopes, changed under the tracker's lock
      * @param deferredCancel a cancel that arrived while deferred, applied when the last scope closes
      */
-    public record RequestTracker(HttpServletRequest request, long startTime, @Nullable String tabId, @Nullable String requestId, AtomicReference<RequestCancellation.Cancelled> cancellation,
-                                 AtomicInteger cancelDeferrals, AtomicReference<RequestCancellation.Source> deferredCancel)
+    public record RequestTracker(HttpServletRequest request, long startTime, @Nullable String tabId, @Nullable String requestId, @Nullable String sessionId,
+                                 AtomicReference<RequestCancellation.Cancelled> cancellation, AtomicInteger cancelDeferrals, AtomicReference<RequestCancellation.Source> deferredCancel)
     {
         private RequestTracker(HttpServletRequest request)
         {
-            this(request, System.currentTimeMillis(), request.getHeader(RequestCancellation.TAB_ID_HEADER),
-                request.getHeader(RequestCancellation.REQUEST_ID_HEADER), new AtomicReference<>(), new AtomicInteger(), new AtomicReference<>());
+            this(request, System.currentTimeMillis(), request.getHeader(RequestCancellation.TAB_ID_HEADER), request.getHeader(RequestCancellation.REQUEST_ID_HEADER),
+                request.getRequestedSessionId(), new AtomicReference<>(), new AtomicInteger(), new AtomicReference<>());
         }
 
         public String toLogString()
@@ -250,10 +250,11 @@ public class TransactionFilter implements Filter
 
     /**
      * Cancels a user's in-flight read-only requests from one browser tab, at the client's request
+     * @param sessionId the HTTP session the requests must have been sent with
      * @param requestIds null to cancel every request from the tab, e.g. when it closes
-     * @return what the cancel did to each request id
+     * @return what the cancel did to each request id, for logging only; sending it to the client would confirm another user's request exists
      */
-    public static Map<String, Outcome> cancelRequests(int userId, @NotNull String tabId, @Nullable Collection<String> requestIds, @NotNull RequestCancellation.Source source)
+    public static Map<String, Outcome> cancelRequests(int userId, @NotNull String sessionId, @NotNull String tabId, @Nullable Collection<String> requestIds, @NotNull RequestCancellation.Source source)
     {
         Map<Thread, RequestTracker> pending;
         synchronized (_pendingRequests)
@@ -264,7 +265,7 @@ public class TransactionFilter implements Filter
         Map<String, Outcome> outcomes = new LinkedHashMap<>();
         pending.forEach((thread, tracker) -> {
             String requestId = tracker.requestId();
-            if (requestId == null || !tabId.equals(tracker.tabId()) || (requestIds != null && !requestIds.contains(requestId)))
+            if (requestId == null || !tabId.equals(tracker.tabId()) || !sessionId.equals(tracker.sessionId()) || (requestIds != null && !requestIds.contains(requestId)))
                 return;
 
             Outcome outcome = getUncancellableOutcome(tracker, userId);
@@ -425,6 +426,8 @@ public class TransactionFilter implements Filter
 
     public static class TestCase extends Assert
     {
+        private static final String SESSION_ID = "TransactionFilterTestSession";
+
         @Test
         public void testIsTimedOut() throws Exception
         {
@@ -617,18 +620,19 @@ public class TransactionFilter implements Filter
                 Thread thread = Thread.currentThread();
 
                 RequestCancellation.TestCase.doRequest(cancellableRequest("GET", tabId, "r1"), null, () -> {
-                    assertEquals(Outcome.WRONG_USER, cancelRequests(userId + 1, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
-                    assertEquals("Other tab", Outcome.NOT_FOUND, cancelRequests(userId, GUID.makeGUID(), ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
+                    assertEquals(Outcome.WRONG_USER, cancelRequests(userId + 1, SESSION_ID, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
+                    assertEquals("Other tab", Outcome.NOT_FOUND, cancelRequests(userId, SESSION_ID, GUID.makeGUID(), ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
+                    assertEquals("Other session", Outcome.NOT_FOUND, cancelRequests(userId, "OtherSession", tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
                     getRequestSummary(thread).request().setAttribute(EXPORT_ATTRIBUTE_NAME, true);
-                    assertEquals(Outcome.EXPORT, cancelRequests(userId, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
+                    assertEquals(Outcome.EXPORT, cancelRequests(userId, SESSION_ID, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
                     assertNull("Refused cancel was applied", RequestCancellation.getSource(thread));
                 });
 
                 RequestCancellation.TestCase.doRequest(cancellableRequest("POST", tabId, "r1"), null, () ->
-                    assertEquals(Outcome.NOT_READ_ONLY, cancelRequests(userId, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1")));
+                    assertEquals(Outcome.NOT_READ_ONLY, cancelRequests(userId, SESSION_ID, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1")));
             });
 
-            assertEquals("Finished request", Outcome.NOT_FOUND, cancelRequests(userId, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
+            assertEquals("Finished request", Outcome.NOT_FOUND, cancelRequests(userId, SESSION_ID, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
         }
 
         /** A cancel by request id, or for the whole tab when its socket closes, stops a query that ignores an interrupt */
@@ -639,11 +643,11 @@ public class TransactionFilter implements Filter
             String tabId = GUID.makeGUID();
 
             assertCancelledWhileQuerying(cancellableRequest("GET", tabId, "r1"),
-                () -> cancelRequests(userId, tabId, List.of("r1", "r2"), RequestCancellation.Source.WS_MESSAGE),
+                () -> cancelRequests(userId, SESSION_ID, tabId, List.of("r1", "r2"), RequestCancellation.Source.WS_MESSAGE),
                 Map.of("r1", Outcome.CANCELLED, "r2", Outcome.NOT_FOUND), RequestCancellation.Source.WS_MESSAGE);
 
             assertCancelledWhileQuerying(cancellableRequest("GET", tabId, "r3"),
-                () -> cancelRequests(userId, tabId, null, RequestCancellation.Source.WS_CLOSE),
+                () -> cancelRequests(userId, SESSION_ID, tabId, null, RequestCancellation.Source.WS_CLOSE),
                 Map.of("r3", Outcome.CANCELLED), RequestCancellation.Source.WS_CLOSE);
         }
 
@@ -703,6 +707,7 @@ public class TransactionFilter implements Filter
         {
             MockHttpServletRequest request = new MockHttpServletRequest(method, "/test");
             request.setUserPrincipal(TestContext.get().getUser());
+            request.setRequestedSessionId(SESSION_ID);
             request.addHeader(RequestCancellation.TAB_ID_HEADER, tabId);
             request.addHeader(RequestCancellation.REQUEST_ID_HEADER, requestId);
             return request;

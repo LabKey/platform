@@ -67,6 +67,7 @@ public class NotificationEndpoint extends Endpoint
     private Session session;
     private int userId;
     private String tabId; // The page that opened this socket, which sends the same id with the requests it may cancel
+    private String sessionId; // The HTTP session the requests this socket may cancel must have been sent with
     private long openedAt;
     private boolean errored;
     private QuietCloser tracked;
@@ -87,6 +88,7 @@ public class NotificationEndpoint extends Endpoint
         Integer id = asInteger(endpointConfig.getUserProperties().get("userId"));
         this.userId = null==id ? 0 : id;
         this.tabId = Objects.toString(endpointConfig.getUserProperties().get("tabId"), "");
+        this.sessionId = endpointConfig.getUserProperties().get("httpSession") instanceof HttpSession httpSession ? httpSession.getId() : "";
         this.openedAt = System.currentTimeMillis();
 
         LOG.debug("{} onOpen", this);
@@ -141,7 +143,7 @@ public class NotificationEndpoint extends Endpoint
                     requestIds.add(requestId);
             }
             if (!requestIds.isEmpty())
-                TransactionFilter.cancelRequests(this.userId, this.tabId, requestIds, RequestCancellation.Source.WS_MESSAGE);
+                TransactionFilter.cancelRequests(this.userId, this.sessionId, this.tabId, requestIds, RequestCancellation.Source.WS_MESSAGE);
         }
         catch (JSONException e)
         {
@@ -151,7 +153,7 @@ public class NotificationEndpoint extends Endpoint
 
     private boolean canCancel()
     {
-        return this.userId > 0 && !this.tabId.isEmpty() && RequestCancellation.isCancelAbandonedRequestsEnabled();
+        return this.userId > 0 && !this.tabId.isEmpty() && !this.sessionId.isEmpty() && RequestCancellation.isCancelAbandonedRequestsEnabled();
     }
 
 
@@ -180,7 +182,7 @@ public class NotificationEndpoint extends Endpoint
             {
                 LOG.debug("websocket-close userId={} lifetimeMs={} code={} errored={} reason={}", this.userId, lifetimeMs, code, this.errored, closeReason.getReasonPhrase());
                 // The page is gone, so nobody is left to read its results
-                TransactionFilter.cancelRequests(this.userId, this.tabId, null, RequestCancellation.Source.WS_CLOSE);
+                TransactionFilter.cancelRequests(this.userId, this.sessionId, this.tabId, null, RequestCancellation.Source.WS_CLOSE);
             }
         }
         super.onClose(session, closeReason);
