@@ -1801,7 +1801,7 @@ public class SecurityController extends SpringActionController
         private String _verification = null;
 
         protected abstract SecurityMessage createMessage(UserForm form);
-        protected abstract Duration getLinkTimeout();
+        protected abstract @NotNull Duration getLinkTimeout();
 
         @Override
         public void validateCommand(UserForm form, Errors errors)
@@ -1894,7 +1894,7 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        protected Duration getLinkTimeout()
+        protected @NotNull Duration getLinkTimeout()
         {
             return LoginManager.SETUP_LINK_TIMEOUT;
         }
@@ -1911,7 +1911,7 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        protected Duration getLinkTimeout()
+        protected @NotNull Duration getLinkTimeout()
         {
             return LoginManager.RESET_LINK_TIMEOUT;
         }
