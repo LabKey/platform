@@ -15,6 +15,8 @@
  */
 package org.labkey.core.metrics;
 
+import jakarta.servlet.ServletContext;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
@@ -24,15 +26,18 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.usageMetrics.UsageMetricGroup;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.logging.LogHelper;
 
-import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +59,15 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
      * and automated tests that do so consider a lingering reference to be a memory leak.
      */
     private final Map<String, Map<String, Map<String, AtomicLong>>> _counts = new ConcurrentHashMap<>();
+
+    /** Feature area descriptions by module name, then feature area */
+    private final Map<String, Map<String, String>> _featureAreaDescriptions = new ConcurrentHashMap<>();
+
+    /** Feature areas counted without a description, already warned about or held until startup completes; also guards _startupComplete */
+    private final Set<FeatureArea> _undescribed = ConcurrentHashMap.newKeySet();
+    private boolean _startupComplete = ModuleLoader.getInstance().isStartupComplete();
+
+    private record FeatureArea(String moduleName, String featureArea) {}
 
     /** Timestamp when we last saved the counts to the DB */
     private Runnable _saver;
@@ -79,6 +93,36 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
                 save();
             }
         });
+        // Areas can be counted before their module's startup() describes them, so judge only once every module has started
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "Simple Metrics Service";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                synchronized (_undescribed)
+                {
+                    _startupComplete = true;
+                    _undescribed.removeIf(area -> isDescribed(area.moduleName(), area.featureArea()));
+                    _undescribed.forEach(SimpleMetricsServiceImpl::logUndescribed);
+                }
+            }
+        });
+    }
+
+    private boolean isDescribed(String moduleName, String featureArea)
+    {
+        return _featureAreaDescriptions.getOrDefault(moduleName, Map.of()).containsKey(featureArea);
+    }
+
+    private static void logUndescribed(FeatureArea area)
+    {
+        LOG.log(AppProps.getInstance().isDevMode() ? Level.ERROR : Level.WARN, "Simple metric feature area {}.{} has no description. Describe it via SimpleMetricsService.describeFeatureArea() or, for client-side metrics, ClientSideMetricDescriptions", area.moduleName(), area.featureArea());
     }
 
     private class SimpleMetricsProvider implements UsageMetricsProvider
@@ -91,9 +135,17 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         }
 
         @Override
-        public Map<String, Object> getUsageMetrics()
+        public UsageMetrics addUsageMetrics(UsageMetrics metrics)
         {
-            return Collections.singletonMap("simpleMetricCounts", _counts.get(_moduleName));
+            String groupDescription = "Counts of feature usage events by feature area, then by event name, as recorded by the module's code; persisted across restarts";
+            Map<String, Map<String, AtomicLong>> counts = _counts.get(_moduleName);
+            // A module whose feature areas were described but never counted reports nothing
+            UsageMetricGroup group = counts.isEmpty()
+                ? metrics.describeGroup("simpleMetricCounts", groupDescription, UsageMetrics.Kind.CUMULATIVE)
+                : metrics.group("simpleMetricCounts", groupDescription, UsageMetrics.Kind.CUMULATIVE).putAll(counts);
+            _featureAreaDescriptions.getOrDefault(_moduleName, Map.of())
+                .forEach((featureArea, description) -> group.describe(featureArea, description, UsageMetrics.Kind.CUMULATIVE));
+            return metrics;
         }
     }
 
@@ -154,6 +206,32 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         });
     }
 
+    private @NotNull Module getModule(String requestedModuleName)
+    {
+        Module module = ModuleLoader.getInstance().getModule(requestedModuleName);
+        if (null == module)
+        {
+            throw new IllegalArgumentException("Unknown module: " + requestedModuleName);
+        }
+        return module;
+    }
+
+    @Override
+    public void describeFeatureArea(@NotNull String requestedModuleName, @NotNull String featureArea, @NotNull String description)
+    {
+        // Checked here because the provider would only fail later, when reporting
+        if (featureArea.contains("."))
+        {
+            throw new IllegalArgumentException("Described feature area names can't contain '.': " + featureArea);
+        }
+
+        Module module = getModule(requestedModuleName);
+        getModuleMetrics(module); // Registers the provider so the description is reported before anything is counted
+        String existing = _featureAreaDescriptions.computeIfAbsent(module.getName(), k -> new ConcurrentHashMap<>()).putIfAbsent(featureArea, description);
+        if (existing != null && !existing.equals(description))
+            UsageMetrics.reportInconsistentDescription("Feature area " + module.getName() + "." + featureArea + " is described inconsistently: \"" + existing + "\" vs. \"" + description + "\"");
+    }
+
     @Override
     public long increment(@NotNull String requestedModuleName, @NotNull String featureArea, @NotNull String metricName)
     {
@@ -162,15 +240,21 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
             throw new IllegalArgumentException("Feature area names cannot contain commas");
         }
 
-        Module module = ModuleLoader.getInstance().getModule(requestedModuleName);
-        if (null == module)
-        {
-            throw new IllegalArgumentException("Unknown module: " + requestedModuleName);
-        }
+        Module module = getModule(requestedModuleName);
 
         String scoping = getScoping(module, featureArea);
         Map<String, Map<String, AtomicLong>> moduleMetrics = getModuleMetrics(module);
         String moduleName = module.getName();  // Use canonical name to ensure consistent casing
+
+        FeatureArea area = new FeatureArea(moduleName, featureArea);
+        if (!isDescribed(moduleName, featureArea) && !_undescribed.contains(area))
+        {
+            synchronized (_undescribed)
+            {
+                if (_undescribed.add(area) && _startupComplete)
+                    logUndescribed(area);
+            }
+        }
 
         Map<String, AtomicLong> counts = moduleMetrics.computeIfAbsent(featureArea, k ->
         {

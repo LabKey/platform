@@ -190,7 +190,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         UsageMetricsService svc = UsageMetricsService.get();
         if (svc != null)
         {
-            svc.registerUsageMetrics(NAME, () -> {
+            svc.registerUsageMetrics(NAME, metrics -> {
                 MultiSet<String> secure = new HashMultiSet<>();
                 MultiSet<String> moderator = new HashMultiSet<>();
                 CommSchema comm = CommSchema.getInstance();
@@ -208,14 +208,13 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                             boards.getAndIncrement();
                         });
                 }
-                return Map.of(
-                    "messageBoards", boards.get(),
-                    "messages", new TableSelector(comm.getTableInfoAnnouncements()).getRowCount(),
-                    "settings", Map.of(
+                return metrics
+                    .put("messageBoards", boards.get(), "Containers with at least one message")
+                    .put("messages", () -> new TableSelector(comm.getTableInfoAnnouncements()).getRowCount(), "Messages across all containers, including responses")
+                    .put("settings", Map.of(
                         "secure", MultiSetUtils.getOccurrenceMap(secure),
                         "moderatorReview", MultiSetUtils.getOccurrenceMap(moderator)
-                    )
-                );
+                    ), "Message boards counted in messageBoards, by their secure setting value and by their moderator review setting value");
             });
         }
     }

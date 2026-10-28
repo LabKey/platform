@@ -34,6 +34,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.usageMetrics.AssayMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.NetworkDrive;
@@ -46,7 +47,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.assay.AssayModule;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.MutablePropertyValues;
@@ -182,7 +182,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         if (form.isAllowCrossRunFileInputs())
             url.addParameter("allowCrossRunFileInputs", "true");
 
-        SimpleMetricsService.get().increment(AssayModule.NAME, "AssayDesigner", "ImportFromFile");
+        SimpleMetricsService.get().increment(AssayMetricArea.ASSAY_DESIGNER, "ImportFromFile");
         throw new RedirectException(url);
     }
 

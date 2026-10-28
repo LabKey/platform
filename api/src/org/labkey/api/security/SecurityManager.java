@@ -212,7 +212,7 @@ public class SecurityManager
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () -> {
+        return metrics -> {
             MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
             Set<Role> siteRoles = RoleManager.getSiteRoles();
             for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
@@ -234,7 +234,7 @@ public class SecurityManager
             Map<String, Integer> roleCounts = mvm.keySet().stream()
                 .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
 
-            return Map.of("SiteRoleUserCounts", roleCounts);
+            return metrics.put("SiteRoleUserCounts", roleCounts, "Active users holding each site-level role, directly or through group membership");
         };
     }
 
@@ -1203,12 +1203,6 @@ public class SecurityManager
             displayName += userId;
         }
         return displayName;
-    }
-
-    // Passes no timeout duration. Should be called only by MacCoss SignUpManager, which doesn't implement expiration.
-    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
-    {
-        sendEmail(c, fromUser, message, to, verificationURL, null);
     }
 
     public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout) throws ConfigurationException, MessagingException
