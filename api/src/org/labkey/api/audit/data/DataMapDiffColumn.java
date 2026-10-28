@@ -17,17 +17,19 @@
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlStringBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A column used to help render the changes between two encoded audit datamaps (primarily used to show record changes),
@@ -39,18 +41,15 @@ public class DataMapDiffColumn extends AliasedColumn
     {
         super(parent, name, oldValues);
 
-        setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new ChangesDisplayColumn(colInfo, newValues);
-            }
-        });
+        setDisplayColumnFactory(colInfo -> new ChangesDisplayColumn(colInfo, newValues));
     }
 
     private static class ChangesDisplayColumn extends DataColumn
     {
+        private static final HtmlString HTML_ARROW = HtmlString.unsafe("&nbsp;&raquo;&nbsp;");
+
+        private record Change(String field, String oldValue, String newValue) {}
+
         ColumnInfo _oldValues;
         ColumnInfo _newValues;
 
@@ -72,19 +71,19 @@ public class DataMapDiffColumn extends AliasedColumn
         @Override @NotNull
         public HtmlString getFormattedHtml(RenderContext ctx)
         {
-            return HtmlString.unsafe(formatColumn(ctx, true));
+            return formatHtml(ctx);
         }
 
         @Override
         public String getTsvFormattedValue(RenderContext ctx)
         {
-            return formatColumn(ctx, false);
+            return formatText(ctx);
         }
 
         @Override
         public Object getDisplayValue(RenderContext ctx)
         {
-            return formatColumn(ctx, false);
+            return formatText(ctx);
         }
 
         @Override
@@ -109,66 +108,42 @@ public class DataMapDiffColumn extends AliasedColumn
         }
 
         @NotNull
-        private String formatColumn(RenderContext ctx, boolean html)
+        private HtmlString formatHtml(RenderContext ctx)
         {
-            Object oldContent = ctx.get(_oldValues.getFieldKey());
-            Object newContent = ctx.get(_newValues.getFieldKey());
-            String arrow = html ? "&nbsp;&raquo;&nbsp;" : " > ";
-            String lineBreak = html ? "<br/>" : "\n";
+            return HtmlString.join(getChanges(ctx).stream()
+                .map(c -> HtmlStringBuilder.of(c.field()).append(": ").append(c.oldValue()).append(HTML_ARROW).append(c.newValue()).getHtmlString())
+                .toList(), HtmlString.BR);
+        }
 
-            if (oldContent != null || newContent != null)
+        @NotNull
+        private String formatText(RenderContext ctx)
+        {
+            return getChanges(ctx).stream()
+                .map(c -> c.field() + ": " + c.oldValue() + " > " + c.newValue())
+                .collect(Collectors.joining("\n"));
+        }
+
+        private List<Change> getChanges(RenderContext ctx)
+        {
+            Map<String, String> oldValues = DataMapColumn.decode(ctx, ctx.get(_oldValues.getFieldKey()));
+            Map<String, String> newValues = DataMapColumn.decode(ctx, ctx.get(_newValues.getFieldKey()));
+            List<Change> changes = new ArrayList<>();
+
+            for (Map.Entry<String, String> entry : oldValues.entrySet())
             {
-                String delim = "";
-                StringBuilder sb = new StringBuilder();
-
-                Map<String, String> oldValues = DataMapColumn.decode(ctx, oldContent);
-                Map<String, String> newValues = DataMapColumn.decode(ctx, newContent);
-
-                for (Map.Entry<String, String> entry : oldValues.entrySet())
-                {
-                    String oldValue = entry.getValue();
-                    if (oldValue == null)
-                        oldValue = "";
-
-                    String newValue = newValues.get(entry.getKey());
-                    if (newValue == null)
-                        newValue = "";
-
-                    if (!newValue.equals(oldValue))
-                    {
-                        sb.append(delim);
-                        sb.append(html ? PageFlowUtil.filter(entry.getKey()) : entry.getKey());
-                        sb.append(": ");
-                        sb.append(html ? PageFlowUtil.filter(oldValue) : oldValue);
-                        sb.append(arrow);
-                        sb.append(html ? PageFlowUtil.filter(newValue) : newValue);
-
-                        delim = lineBreak;
-                    }
-                }
-
-                for (Map.Entry<String, String> entry : newValues.entrySet())
-                {
-                    if (oldValues.containsKey(entry.getKey()))
-                        continue;
-
-                    sb.append(delim);
-                    sb.append(html ? PageFlowUtil.filter(entry.getKey()) : entry.getKey());
-                    sb.append(": ");
-
-                    String newValue = entry.getValue();
-                    if (newValue == null)
-                        newValue = "";
-
-                    sb.append(arrow);
-                    sb.append(html ? PageFlowUtil.filter(newValue) : newValue);
-
-                    delim = lineBreak;
-                }
-
-                return sb.toString();
+                String oldValue = Objects.toString(entry.getValue(), "");
+                String newValue = Objects.toString(newValues.get(entry.getKey()), "");
+                if (!newValue.equals(oldValue))
+                    changes.add(new Change(entry.getKey(), oldValue, newValue));
             }
-            return "";
+
+            for (Map.Entry<String, String> entry : newValues.entrySet())
+            {
+                if (!oldValues.containsKey(entry.getKey()))
+                    changes.add(new Change(entry.getKey(), "", Objects.toString(entry.getValue(), "")));
+            }
+
+            return changes;
         }
     }
 }

@@ -28,7 +28,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +38,7 @@ import java.util.Map;
 public class DataMapColumn extends DataColumn
 {
     private static final String DECODED_CACHE_KEY = DataMapColumn.class.getName() + ".decoded";
+    private static final int MAX_CACHED_DECODES = 8;
 
     public DataMapColumn(ColumnInfo col)
     {
@@ -100,10 +101,15 @@ public class DataMapColumn extends DataColumn
             return Collections.emptyMap();
 
         @SuppressWarnings("unchecked")
-        Map<String, Map<String, String>> cache = (Map<String, Map<String, String>>) ctx.computeIfAbsent(DECODED_CACHE_KEY, k -> new HashMap<>());
-        // Holds a couple of rows' worth; the render context lives for the whole export
-        if (cache.size() > 8)
-            cache.clear();
+        Map<String, Map<String, String>> cache = (Map<String, Map<String, String>>) ctx.computeIfAbsent(DECODED_CACHE_KEY, k -> new LinkedHashMap<String, Map<String, String>>(16, 0.75f, true)
+        {
+            // Holds a couple of rows' worth; the render context lives for the whole export
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, Map<String, String>> eldest)
+            {
+                return size() > MAX_CACHED_DECODES;
+            }
+        });
         return cache.computeIfAbsent(s, k -> Collections.unmodifiableMap(AbstractAuditTypeProvider.decodeFromDataMap(k)));
     }
 
