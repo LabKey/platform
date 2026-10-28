@@ -211,7 +211,7 @@ public class SecurityManager
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () -> {
+        return metrics -> {
             MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
             Set<Role> siteRoles = RoleManager.getSiteRoles();
             for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
@@ -233,7 +233,7 @@ public class SecurityManager
             Map<String, Integer> roleCounts = mvm.keySet().stream()
                 .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
 
-            return Map.of("SiteRoleUserCounts", roleCounts);
+            return metrics.put("SiteRoleUserCounts", roleCounts, "Active users holding each site-level role, directly or through group membership");
         };
     }
 
