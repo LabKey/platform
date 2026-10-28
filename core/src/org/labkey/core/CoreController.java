@@ -230,7 +230,7 @@ public class CoreController extends SpringActionController
     private static final Logger _log = LogHelper.getLogger(CoreController.class, "Attachment icon warnings");
     private static final ActionResolver _actionResolver = new DefaultActionResolver(
             CoreController.class,
-            DocumentationAssistantAgentAction.class
+            LabKeyAssistantAgentAction.class
     );
 
     public CoreController()
