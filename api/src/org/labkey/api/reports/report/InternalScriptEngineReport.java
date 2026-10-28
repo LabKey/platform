@@ -16,13 +16,12 @@
 package org.labkey.api.reports.report;
 
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.ApiModule;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
+import org.labkey.api.usageMetrics.ApiMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
@@ -123,7 +122,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 
                 bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).toNioPathForWrite().toString());
 
-                SimpleMetricsService.get().increment(ModuleLoader.getInstance().getModule(ApiModule.class).getName(), METRIC_FEATURE_AREA, "Internal-" + engine.getFactory().getEngineName());
+                SimpleMetricsService.get().increment(ApiMetricArea.REPORT_INVOCATION, "Internal-" + engine.getFactory().getEngineName());
 
                 Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
                 consolePw.flush();

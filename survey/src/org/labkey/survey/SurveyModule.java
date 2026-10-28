@@ -65,7 +65,6 @@ import org.springframework.validation.BindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -131,11 +130,10 @@ public class SurveyModule extends DefaultModule
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(NAME, () -> {
-                Map<String, Object> metric = new HashMap<>();
-                metric.put("surveyDesigns", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class));
-                metric.put("surveys", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class));
-                return metric;
+            svc.registerUsageMetrics(NAME, metrics -> {
+                metrics.put("surveyDesigns", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class), "Survey designs across all containers");
+                metrics.put("surveys", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class), "Survey responses across all containers, submitted or in progress");
+                return metrics;
             });
         }
     }

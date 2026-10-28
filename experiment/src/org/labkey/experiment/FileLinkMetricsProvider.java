@@ -15,12 +15,12 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetrics;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 
 import java.util.Map;
 
-public class FileLinkMetricsProvider implements DescribedUsageMetricsProvider
+public class FileLinkMetricsProvider implements UsageMetricsProvider
 {
     private final static FileLinkMetricsProvider _instance = new FileLinkMetricsProvider();
     private volatile Map<String, Object> _metrics = Map.of("Run time", "Not run yet.");
