@@ -172,7 +172,11 @@ import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.usageMetrics.ApiMetricArea;
+import org.labkey.api.usageMetrics.CoreMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.usageMetrics.UsageMetricGroup;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
@@ -261,6 +265,7 @@ import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.metrics.ClientSideMetricDescriptions;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.metrics.WebSocketMXBean;
@@ -1059,6 +1064,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContextListener.addShutdownListener(ShutdownListener.of("Temp file cleanup", null, this::deleteTempFiles));
 
         SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
+        ClientSideMetricDescriptions.register();
+        SimpleMetricsService.get().describeFeatureAreas(CoreMetricArea.values());
+        // API module counters, declared here because the API module starts before this service exists
+        SimpleMetricsService.get().describeFeatureAreas(ApiMetricArea.values());
+        SimpleMetricsService.get().describeFeatureArea("API", "rPackageUsage", "R packages loaded (including dependencies) by server-run R scripts that completed, by package name, once per run; base packages excluded, knitr reports count only knitr and rmarkdown, and ~~packageLimitReached~~ counts runs that loaded over 250 packages");
+        SimpleMetricsService.get().describeFeatureArea("API", "pythonPackageUsage", "Python packages imported directly by server-run Python scripts that completed, by package name, once per run; standard library excluded, and ~~packageLimitReached~~ counts runs that imported over 250 packages");
 
         // Export action stats on graceful shutdown
         ContextListener.addShutdownListener(new ShutdownListener() {
@@ -1242,62 +1253,59 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.populateSettingsWithStartupProps();
         AnalyticsServiceImpl.populateSettingsWithStartupProps();
 
-        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
-            Map<String, Object> results = new HashMap<>();
-            Map<String, Object> javaInfo = new HashMap<>();
-            javaInfo.put("java.vendor", System.getProperty("java.vendor"));
-            javaInfo.put("java.vm.name", System.getProperty("java.vm.name"));
-            results.put("javaRuntime", javaInfo);
-            results.put("distributionFilename", AppProps.getInstance().getDistributionFilename());
-            results.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode());
-            results.put("optionalFeatures", OptionalFeatureService.get().getOptionalFeatureFlags().stream()
+        UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> {
+            metrics.group("javaRuntime", "JVM vendor and VM name, keyed by Java system property")
+                .put("java.vendor", System.getProperty("java.vendor"))
+                .put("java.vm.name", System.getProperty("java.vm.name"));
+            metrics.put("distributionFilename", AppProps.getInstance().getDistributionFilename(), "Filename of the distribution the server was installed from; localBuild for developer builds");
+            metrics.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode(), "Site-level setting for when the application menu is shown");
+            metrics.put("optionalFeatures", OptionalFeatureService.get().getOptionalFeatureFlags().stream()
                 .collect(Collectors.groupingBy(optionalFeatureFlag -> optionalFeatureFlag.getType().name().toLowerCase(),
                     Collectors.mapping(flag -> flag, Collectors.toMap(OptionalFeatureFlag::getFlag, OptionalFeatureFlag::isEnabled))
-                ))
+                )),
+                "Optional feature flags by type (experimental, deprecated, etc.), each mapping flag name to whether it's enabled"
             );
-            results.put("productFeaturesEnabled", ProductRegistry.getProductFeatureSet());
-            results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
+            metrics.put("productFeaturesEnabled", ProductRegistry.getProductFeatureSet(), "Product features enabled by the server's license and installed modules");
+            metrics.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString(), "Web analytics tracking modes enabled; [] if none");
             String labkeyContextPath = AppProps.getInstance().getContextPath();
-            results.put("webappContextPath", labkeyContextPath);
-            results.put("embeddedTomcat", true);
+            metrics.put("webappContextPath", labkeyContextPath, "Context path LabKey is deployed under; empty when deployed at the root");
+            metrics.put("embeddedTomcat", true, "Always true; the server runs in embedded Tomcat");
             boolean customLog4JConfig = false;
             if (ModuleLoader.getServletContext() != null)
             {
                 customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
             }
-            results.put("customLog4JConfig", customLog4JConfig);
-            results.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production");
+            metrics.put("customLog4JConfig", customLog4JConfig, "Whether the server is configured with a custom Log4J configuration");
+            metrics.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production", "development or production mode");
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);
             if (labkeyContextPath.startsWith("/"))
             {
                 deployedApps.remove(labkeyContextPath.substring(1));
             }
-            results.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","));
+            metrics.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","), "Comma-separated names of other webapps deployed alongside LabKey");
 
-            // Report the total number of login entries in the audit log
-            results.put("totalLogins", UserManager.getAuthCount(null, false, false, false));
-            results.put("apiKeyLogins", UserManager.getAuthCount(null, false, true, false));
-            results.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout());
-            results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
-            results.put("systemUserCount", UserManager.getSystemUserCount());
+            metrics.put("totalLogins", () -> UserManager.getAuthCount(null, false, false, false), "Login events in the audit log; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
+            metrics.put("apiKeyLogins", () -> UserManager.getAuthCount(null, false, true, false), "Login events in the audit log that used an API key; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
+            metrics.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout(), "HTTP session timeout in minutes");
+            metrics.put("userLimits", new LimitActiveUsersSettings().getMetricsMap(), "Active user warning and limit settings: whether each is on, its user count threshold, and its message");
+            metrics.put("systemUserCount", UserManager.getSystemUserCount(), "Active users marked as system users, which don't count toward user limits");
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
-            results.put("uniqueRecentUserCount", UserManager.getAuthCount(cal.getTime(), false, false, true));
-            results.put("uniqueRecentNonSystemUserCount", UserManager.getAuthCount(cal.getTime(), true, false, true));
-            if (OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_EXTENDED_METRICS))
-            {
-                // Optionally include a list of active users, Issue #53050
-                results.put("activeUsers", UserManager.getActiveUsers().stream()
+            metrics.put("uniqueRecentUserCount", () -> UserManager.getAuthCount(cal.getTime(), false, false, true), "Distinct users who logged in during the last 30 days");
+            metrics.put("uniqueRecentNonSystemUserCount", () -> UserManager.getAuthCount(cal.getTime(), true, false, true), "Distinct non-system users who logged in during the last 30 days");
+            // Optionally include a list of active users, Issue #53050
+            metrics.reportedIf(OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_EXTENDED_METRICS))
+                .put("activeUsers", () -> UserManager.getActiveUsers().stream()
                     .filter(u -> !u.isSystem())
                     .map(User::getEmail)
-                    .toList()
+                    .toList(),
+                    "Emails of active non-system users; only reported when the extended metrics feature flag is on"
                 );
-            }
 
-            results.put("workbookCount", ContainerManager.getWorkbookCount());
-            results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
-            results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
+            metrics.put("workbookCount", () -> ContainerManager.getWorkbookCount(), "Workbooks across the server");
+            metrics.put("archivedFolderCount", () -> ContainerManager.getArchivedContainerCount(), "Archived folders across the server");
+            metrics.put("databaseSize", () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize(), "Size of the LabKey database in bytes");
 
             // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
             // Note that they can be non-trivial in size.
@@ -1305,26 +1313,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
             sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
 
-            var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
-            results.put("databaseSchemaSize", schemaSizes);
+            metrics.put("databaseSchemaSize", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap(), "Size in bytes of each database schema, including indexes; temp excluded");
 
-            results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
-            results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
-            Map<String, Long> roleAssignments = new HashMap<>();
+            metrics.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics(), "Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
+            metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
+            UsageMetricGroup roleAssignments = metrics.group("roleAssignments", "Direct assignments of designer roles to users or groups, by role, across all containers");
             final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
-            roleAssignments.put("assayDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
-            roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
-            roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
-            results.put("roleAssignments", roleAssignments);
+            roleAssignments.put("assayDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
+            roleAssignments.put("dataClassDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
+            roleAssignments.put("sampleTypeDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
 
-            Map<String, Integer> allowListCounts = new HashMap<>();
+            UsageMetricGroup allowListCounts = metrics.group("allowListCounts", "Entries in each site allow list, such as external redirect hosts and file extensions");
             for (AllowListType type : AllowListType.values())
             {
                 allowListCounts.put(type.name(), type.getValues().size());
             }
-            results.put("allowListCounts", allowListCounts);
 
-            return results;
+            return metrics;
         });
 
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());

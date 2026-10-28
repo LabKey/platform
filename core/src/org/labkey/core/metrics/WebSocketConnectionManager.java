@@ -15,6 +15,7 @@
  */
 package org.labkey.core.metrics;
 
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.websocket.WebSocketTracker;
 
@@ -69,14 +70,14 @@ public class WebSocketConnectionManager implements UsageMetricsProvider, WebSock
     }
 
     @Override
-    public Map<String, Object> getUsageMetrics()
+    public UsageMetrics addUsageMetrics(UsageMetrics metrics)
     {
-        return Map.of(
-            "webSocketConnections", Map.of(
-                    "success", successCounter.get(),
-                    "failure", failureCounter.get(),
-                    "open", WebSocketTracker.getOpenCount()
-                )
+        return metrics.put("webSocketConnections", Map.of(
+                "success", successCounter.get(),
+                "failure", failureCounter.get(),
+                "open", WebSocketTracker.getOpenCount()
+            ),
+            "WebSocket connections: successful and failed connection attempts since server startup, and connections currently open"
         );
     }
 }
