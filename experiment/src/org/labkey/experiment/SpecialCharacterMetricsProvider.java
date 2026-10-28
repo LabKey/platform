@@ -15,12 +15,12 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetrics;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 
 import java.util.Map;
 
-public class SpecialCharacterMetricsProvider implements DescribedUsageMetricsProvider
+public class SpecialCharacterMetricsProvider implements UsageMetricsProvider
 {
     public static final String METRIC_KEY = "specialCharacterFields";
 

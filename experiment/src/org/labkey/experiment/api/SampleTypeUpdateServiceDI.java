@@ -107,6 +107,7 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
@@ -635,7 +636,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 }
             }
 
-            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
+            SimpleMetricsService.get().increment(ExperimentMetricArea.MOVE_ENTITIES, "samples");
         }
         return new HashMap<>(allContainerResponse);
     }
