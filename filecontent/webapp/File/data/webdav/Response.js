@@ -115,6 +115,7 @@ Ext4.define('File.data.webdav.JSONResponse', {
             }
         },
         {name : 'lastmodified', type : 'date'},
+        {name : 'lastModifiedFormatted'},
         {name : 'leaf', type : 'boolean'},
         {name : 'size', type : 'int'},
         {name : 'name', mapping : 'text'},
