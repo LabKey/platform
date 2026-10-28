@@ -211,7 +211,7 @@ public class SecurityManager
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () -> {
+        return metrics -> {
             MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
             Set<Role> siteRoles = RoleManager.getSiteRoles();
             for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
@@ -233,7 +233,7 @@ public class SecurityManager
             Map<String, Integer> roleCounts = mvm.keySet().stream()
                 .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
 
-            return Map.of("SiteRoleUserCounts", roleCounts);
+            return metrics.put("SiteRoleUserCounts", roleCounts, "Active users holding each site-level role, directly or through group membership");
         };
     }
 
@@ -1204,25 +1204,19 @@ public class SecurityManager
         return displayName;
     }
 
-    // Passes no timeout duration. Should be called only by MacCoss SignUpManager, which doesn't implement expiration.
-    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
-    {
-        sendEmail(c, fromUser, message, to, verificationURL, null);
-    }
-
-    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout) throws ConfigurationException, MessagingException
+    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout) throws ConfigurationException, MessagingException
     {
         MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
         MailHelper.send(m, fromUser, c);
     }
 
-    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout, Writer out) throws MessagingException
+    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout, Writer out) throws MessagingException
     {
         MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
         MailHelper.renderHtml(m, message.getType(), out);
     }
 
-    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout) throws MessagingException
+    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout) throws MessagingException
     {
         try
         {
@@ -2684,7 +2678,7 @@ public class SecurityManager
         try
         {
             String verification;
-            Duration linkTimeout;
+            final Duration linkTimeout;
 
             if (loginExists)
             {
@@ -3110,6 +3104,9 @@ public class SecurityManager
             @Override
             boolean accept(/* Must be a sequential stream (NOT parallel) */ Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
             {
+                // Check invariants: stream must not be parallel and required.size() < 2 should route through ANY
+                assert !granted.isParallel() && required.size() > 1;
+
                 // Create a mutable copy to track missing elements
                 Set<Class<? extends Permission>> remainder = new HashSet<>(required.size());
                 remainder.addAll(required);

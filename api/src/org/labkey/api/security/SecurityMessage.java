@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -125,7 +126,7 @@ public class SecurityMessage
     {
         return _linkTimeout;
     }
-    public void setLinkTimeout(@Nullable Duration linkTimeout)
+    public void setLinkTimeout(@NotNull Duration linkTimeout)
     {
         _linkTimeout = linkTimeout;
     }

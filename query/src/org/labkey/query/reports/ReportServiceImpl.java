@@ -1090,7 +1090,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(moduleName, () -> {
+            svc.registerUsageMetrics(moduleName, metrics -> {
                 // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
                 MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
                 AtomicInteger genericChartWithTrendlineTypeCount = new AtomicInteger();
@@ -1123,12 +1123,11 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                         .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
                 }
 
-                return Map.of(
-                    "reportCountsByType", countsByType,
-                    "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType),
-                    "genericChartWithTrendlineTypeCount", genericChartWithTrendlineTypeCount,
-                    "genericChartWithErrorBarsCount", genericChartWithErrorBarsCount
-                );
+                return metrics
+                    .put("reportCountsByType", countsByType, "Saved reports in existing containers by report type")
+                    .put("genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType), "Saved charts (GenericChartReport) by render type (BAR_PLOT, BOX_PLOT, etc.)")
+                    .put("genericChartWithTrendlineTypeCount", genericChartWithTrendlineTypeCount, "Saved charts with a trendline type set")
+                    .put("genericChartWithErrorBarsCount", genericChartWithErrorBarsCount, "Saved charts with SD or SEM error bars");
             });
         }
     }
