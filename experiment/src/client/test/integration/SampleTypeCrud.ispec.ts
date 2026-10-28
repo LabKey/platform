@@ -14,6 +14,7 @@ import {
 import mock from 'mock-fs';
 import {
     checkDomainName,
+    checkDomainNameConflicts,
     checkLackDesignerOrReaderPerm,
     createSample,
     deleteSampleType,
@@ -161,6 +162,10 @@ describe('Sample Type Designer', () => {
     describe('Create/update/delete designs', () => {
         it('Sample type name and field name validation', async () => {
             await checkDomainName(server, 'SampleSet', true, topFolderOptions, designerReaderOptions);
+        });
+
+        it('Sample type field name and import alias conflict validation', async () => {
+            await checkDomainNameConflicts(server, 'SampleSet', topFolderOptions, designerReaderOptions);
         });
 
         it('Designer can create, update and delete empty design, reader and editors cannot create/update/delete design', async () => {

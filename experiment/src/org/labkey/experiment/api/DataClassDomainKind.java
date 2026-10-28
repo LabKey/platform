@@ -67,7 +67,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -234,22 +233,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
-        // GH Issue 1589: reserve the persisted parent alias headers, matching SampleTypeDomainKind. Without this a data
-        // class field can be named after an existing parent alias, which is ambiguous at import.
-        ExpDataClass dc = domain == null ? null : getDataClass(domain);
-        if (dc == null)
-            return RESERVED_NAMES;
-
-        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
-        try
-        {
-            reserved.addAll(dc.getImportAliases().keySet());
-        }
-        catch (IOException e)
-        {
-            LOG.error("Failed to parse DataClass parent aliases for [{}]", dc.getRowId(), e);
-        }
-        return reserved;
+        return RESERVED_NAMES;
     }
 
     @Override

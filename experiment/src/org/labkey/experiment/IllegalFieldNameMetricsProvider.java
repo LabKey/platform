@@ -15,12 +15,12 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetrics;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 
 import java.util.Map;
 
-public class IllegalFieldNameMetricsProvider implements DescribedUsageMetricsProvider
+public class IllegalFieldNameMetricsProvider implements UsageMetricsProvider
 {
     public static final String METRIC_KEY = "illegalFieldNames";
 
