@@ -64,6 +64,7 @@ import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -4385,6 +4386,48 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         deleteExperimentRuns(container, user, userComment, getExpRuns(runRowIds), transactionDetails);
     }
 
+    /**
+     * Queues the runs that a deleted run replaced for re-indexing, once per container rather than once per deleted run:
+     * a folder delete reaches this for every run it holds, and a lambda per run is a commit task per run.
+     */
+    private static class ReindexReplacedRunsTask extends AccumulatingCommitTask<Container, Long>
+    {
+        private ReindexReplacedRunsTask(@NotNull Container container)
+        {
+            super(container);
+        }
+
+        @Override
+        protected void process(@NotNull Container container, @NotNull Set<Long> replacedRunIds)
+        {
+            AssayService assayService = AssayService.get();
+            if (assayService == null)
+                return;
+
+            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified);
+            replacedRunIds.forEach(runId -> assayService.indexAssayRun(queue, runId));
+        }
+    }
+
+    /**
+     * Drops deleted items from the search index in one pass per transaction. Keyed by a constant rather than by
+     * container: the ids are search document ids, not container-scoped, and deleting a folder calls in once per sample
+     * type it holds. Taking no container also keeps the deletes running after the container itself is gone.
+     */
+    private static class DeleteSearchResourcesTask extends AccumulatingCommitTask<String, String>
+    {
+        private DeleteSearchResourcesTask()
+        {
+            super(DeleteSearchResourcesTask.class.getName());
+        }
+
+        @Override
+        protected void process(@NotNull String key, @NotNull Set<String> docIds)
+        {
+            SearchService.get().deleteResources(docIds);
+        }
+    }
+
     public void deleteExperimentRuns(Container container, final User user, @Nullable final String userComment, @NotNull Collection<ExpRunImpl> runs, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
     {
         if (runs.isEmpty())
@@ -4512,13 +4555,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Re-index replaced run if replacing run is deleted
                 if (assayService != null && run.getReplacesRuns() != null)
                 {
-                    List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
-                    transaction.addCommitTask(() ->
-                        replacedRuns.forEach(replacedRun ->
-                                assayService.indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
-                        ),
-                        DbScope.CommitTaskOption.POSTCOMMIT
-                    );
+                    new ReindexReplacedRunsTask(container).register(getExpSchema().getScope(),
+                        run.getReplacesRuns().stream().map(ExpRunImpl::getRowId).toList(),
+                        DbScope.CommitTaskOption.POSTCOMMIT);
                 }
                 deleteRun(run, datasToDelete, user, userComment);
 
@@ -5183,10 +5222,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterDelete(st, untrackedDeletes.contains(st.getLSID()) ? null : deletedRowIds.getOrDefault(st.getLSID(), Set.of()));
 
             // On successful commit, start task to remove items from search index
-            transaction.addCommitTask(
-                // Use null as container because we want deletes to run even if the container is deleted
-                () -> SearchService.get().deleteResources(docids),
-                POSTCOMMIT);
+            new DeleteSearchResourcesTask().register(getExpSchema().getScope(), docids, POSTCOMMIT);
 
             // Deletes don't go through onSamplesChanged, so sample count listeners and clients are notified here
             changedSampleTypeIds.forEach((changed, ids) -> new SampleChangeNotify.SampleDataChangedTask(changed).register(getExpSchema().getScope(), ids));
