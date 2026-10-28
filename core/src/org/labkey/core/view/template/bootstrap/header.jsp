@@ -214,7 +214,9 @@
                     <i class="fa fa-th-large" style="font-size: 18px; padding-top: 2px;"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <div id="headerProductDropdown-content"></div>
+                    <div id="headerProductDropdown-content">
+                        <div style="padding: 10px;"><i class="fa fa-spinner fa-pulse"></i> Loading...</div>
+                    </div>
                 </ul>
             </li>
 <%
