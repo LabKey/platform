@@ -36,7 +36,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.wiki.WikiService;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -163,7 +162,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
     {
         if (ModuleLoader.getInstance().isStartupComplete())
         {
-            WikiService service = WikiService.get();
+            TermsOfUseWikiSource service = TermsOfUseWikiSource.get();
 
             // Need the wiki service to do terms
             if (null != service)
@@ -195,7 +194,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         {
             // Check above guarantees that wiki service is present and getContainer is non-null
             @SuppressWarnings("DataFlowIssue")
-            HtmlString termsString = WikiService.get().getHtml(config.termsContainer(), TERMS_OF_USE_WIKI_NAME);
+            HtmlString termsString = TermsOfUseWikiSource.get().getHtml(config.termsContainer(), TERMS_OF_USE_WIKI_NAME);
             if (null != termsString)
             {
                 return new TermsOfUse(config.type(), termsString);

@@ -30,6 +30,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.study.StudyService;
 
 import java.util.Set;
 
@@ -69,7 +70,7 @@ public abstract class StudyDesignBaseTable extends FilteredTable<StudyDesignQuer
         if (perm.equals(ReadPermission.class))
             return hasPermissionOverridable(user, perm);
         // These are editable in Dataspace, but not in a folder within a Dataspace
-        if (null == getContainer() || null == getContainer().getProject() || (getContainer().getProject().isDataspace() && !getContainer().isDataspace()))
+        if (null == getContainer() || null == getContainer().getProject() || (StudyService.get().isDataspace(getContainer().getProject()) && !StudyService.get().isDataspace(getContainer())))
             return false;
         return hasPermissionOverridable(user, perm);
     }

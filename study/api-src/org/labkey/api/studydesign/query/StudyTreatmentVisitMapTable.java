@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.StudyService;
 
 /**
  * User: cnathe
@@ -73,7 +74,7 @@ public class StudyTreatmentVisitMapTable extends StudyDesignBaseTable
     {
         checkedPermissions.add(perm);
         // Most tables should not be editable in Dataspace
-        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
+        if (!perm.equals(ReadPermission.class) && StudyService.get().isDataspace(getContainer()))
             return false;
         return hasPermissionOverridable(user, perm);
     }

@@ -262,7 +262,7 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
         if (null != container)
         {
             Container project = container.getProject();
-            if (null != project && project.isDataspace())
+            if (null != project && StudyService.get().isDataspace(project))
                 return true;
         }
         return false;

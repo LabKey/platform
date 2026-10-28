@@ -260,6 +260,7 @@ import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
@@ -5483,10 +5484,12 @@ public class AdminController extends SpringActionController
             throw new RuntimeException();
         }
         Collection<FolderWriter> registeredWriters = registry.getRegisteredFolderWriters();
+        StudyService studyService = StudyService.get();
+        boolean isDataspace = null != studyService && studyService.isDataspace(sourceContainer);
         for (FolderWriter writer : registeredWriters)
         {
             String dataType = writer.getDataType();
-            boolean excludeForDataspace = sourceContainer.isDataspace() && "Study".equals(dataType);
+            boolean excludeForDataspace = isDataspace && "Study".equals(dataType);
             boolean excludeForTemplate = !writer.includeWithTemplate();
 
             if (dataType != null && writer.show(sourceContainer) && !excludeForDataspace && !excludeForTemplate)

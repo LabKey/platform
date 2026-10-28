@@ -98,7 +98,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.workflow.WorkflowService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
@@ -903,9 +902,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw errors;
 
         addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows, providedValues);
-        WorkflowService service = WorkflowService.get();
-        if (service != null && configParameters != null && configParameters.containsKey(WorkflowService.WorkflowConfigs.ActionId))
-            service.onActionComplete(container, user, (Long) configParameters.get(WorkflowService.WorkflowConfigs.ActionId), (String) configParameters.get(AuditUserComment));
+        QueryWorkflowHandler workflowHandler = QueryWorkflowHandler.get();
+        if (workflowHandler != null && configParameters != null)
+            workflowHandler.onUpdateComplete(container, user, configParameters);
 
         return result;
     }

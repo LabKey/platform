@@ -22,6 +22,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.StudyDocument.Study;
@@ -59,6 +60,6 @@ public abstract class AbstractStudyContext extends AbstractImportExportContext<S
     public boolean isDataspaceProject()
     {
         Container project = getProject();
-        return project.isDataspace();
+        return StudyService.get().isDataspace(project);
     }
 }
