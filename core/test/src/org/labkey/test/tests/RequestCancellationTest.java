@@ -209,9 +209,10 @@ public class RequestCancellationTest extends BaseWebDriverTest
             """, apiFunction, config);
     }
 
-    private void waitForCancelCount(String metric, long expected)
+    /** At least, since the counter is server-wide and other cancels can land meanwhile */
+    private void waitForCancelCount(String metric, long minimum)
     {
-        waitForEquals("Requests canceled (" + metric + ")", () -> expected, () -> getCancelCountUnchecked(metric), METRICS_TIMEOUT);
+        waitFor(() -> getCancelCountUnchecked(metric) >= minimum, "Requests canceled (" + metric + ") never reached " + minimum, METRICS_TIMEOUT);
     }
 
     private long getCancelCountUnchecked(String metric)

@@ -135,7 +135,14 @@ public class TransactionFilter implements Filter
                 Thread timeoutThread = new Thread(() -> {
                     while (!ContextListener.isShuttingDown())
                     {
-                        AsyncQueryRequest.resendCancelsToDetachedWorkers();
+                        try
+                        {
+                            AsyncQueryRequest.resendCancelsToDetachedWorkers();
+                        }
+                        catch (RuntimeException e)
+                        {
+                            _log.error("Failed to resend cancels to detached async workers", e);
+                        }
 
                         long timeout = TimeUnit.SECONDS.toMillis(AppProps.getInstance().getReadOnlyHttpRequestTimeout());
                         if (!_pendingRequests.isEmpty())
@@ -152,15 +159,22 @@ public class TransactionFilter implements Filter
                             {
                                 RequestTracker tracker = entry.getValue();
                                 Thread thread = entry.getKey();
-                                RequestCancellation.Cancelled cancelled = tracker.cancellation().get();
-
-                                // A cancel that lands after a statement is registered but before the database runs it does nothing
-                                if (cancelled != null)
-                                    cancelRequest(thread, tracker, cancelled.source());
-                                else if (timeout > 0 && isTimedOut(thread, tracker, cutoff))
+                                try
                                 {
-                                    _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
-                                    cancelRequest(thread, tracker, RequestCancellation.Source.TIMEOUT);
+                                    RequestCancellation.Cancelled cancelled = tracker.cancellation().get();
+
+                                    // A cancel that lands after a statement is registered but before the database runs it does nothing
+                                    if (cancelled != null)
+                                        cancelRequest(thread, tracker, cancelled.source());
+                                    else if (timeout > 0 && isTimedOut(thread, tracker, cutoff))
+                                    {
+                                        _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
+                                        cancelRequest(thread, tracker, RequestCancellation.Source.TIMEOUT);
+                                    }
+                                }
+                                catch (RuntimeException e)
+                                {
+                                    _log.error("Failed to cancel request on thread {}", thread, e);
                                 }
                             }
                         }
@@ -339,7 +353,9 @@ public class TransactionFilter implements Filter
 
             if (tracker.cancelDeferrals().get() > 0)
             {
-                tracker.deferredCancel().compareAndSet(null, source);
+                // A resend of a cancel already applied needs no replay; the sweep keeps resending once the deferral closes
+                if (first)
+                    tracker.deferredCancel().compareAndSet(null, source);
                 return true;
             }
 
@@ -357,10 +373,10 @@ public class TransactionFilter implements Filter
 
         // Connect outside the lock, but signal inside it, so the request can't finish and hand this thread's connections to its next request first
         RequestCancellation.cancelQueriesViaNewConnection(unsignalled, source, cancelled, first, signal -> {
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (tracker)
             {
-                if (_pendingRequests.get(thread) == tracker)
+                // A deferral may have started while connecting; the sweep resends once it closes
+                if (_pendingRequests.get(thread) == tracker && tracker.cancelDeferrals().get() == 0)
                     signal.run();
             }
         });
