@@ -154,14 +154,14 @@ public class TransactionFilter implements Filter
                                 Thread thread = entry.getKey();
                                 RequestCancellation.Cancelled cancelled = tracker.cancellation().get();
 
-                                if (timeout > 0 && isTimedOut(thread, tracker, cutoff))
+                                // A cancel that lands after a statement is registered but before the database runs it does nothing
+                                if (cancelled != null)
+                                    cancelRequest(thread, tracker, cancelled.source());
+                                else if (timeout > 0 && isTimedOut(thread, tracker, cutoff))
                                 {
                                     _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
                                     cancelRequest(thread, tracker, RequestCancellation.Source.TIMEOUT);
                                 }
-                                // A cancel that lands after a statement is registered but before the database runs it does nothing
-                                else if (cancelled != null)
-                                    cancelRequest(thread, tracker, cancelled.source());
                             }
                         }
                         try
@@ -334,15 +334,14 @@ public class TransactionFilter implements Filter
 
             first = RequestCancellation.requestCancelled(thread, tracker, source) || deferred;
             cancelled = tracker.cancellation().get();
+            if (!first)
+                RequestCancellation.cancelledRequestStillRunning(thread, tracker);
 
             if (tracker.cancelDeferrals().get() > 0)
             {
                 tracker.deferredCancel().compareAndSet(null, source);
                 return true;
             }
-
-            if (!first)
-                RequestCancellation.cancelledRequestStillRunning(thread, tracker);
 
             // Resent on later sweeps, since a cancel that arrives between statements does nothing
             Map<DbScope, Set<ConnectionWrapper>> connections = ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread);

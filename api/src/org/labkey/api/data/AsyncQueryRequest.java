@@ -370,7 +370,6 @@ public class AsyncQueryRequest<T>
             closeResult(result);
         _result = result;
         _finished = true;
-        _detached.remove(this);
         notify();
     }
 
@@ -378,7 +377,6 @@ public class AsyncQueryRequest<T>
     {
         _exception = exception;
         _finished = true;
-        _detached.remove(this);
         notify();
     }
 
