@@ -47,16 +47,16 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @RequiresPermission(ReadPermission.class)
 @RequiresLogin
-public class DocumentationAssistantAgentAction extends AbstractAgentAction<PromptForm>
+public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
 {
-    private static final Logger LOG = LogHelper.getLogger(DocumentationAssistantAgentAction.class, "Documentation Assistant interactions");
+    private static final Logger LOG = LogHelper.getLogger(LabKeyAssistantAgentAction.class, "Labkey Assistant interactions");
     private static final String UNEXPECTED_ERROR_MESSAGE = "Request failed. Please try again.";
-    private static final String PROMPT_RESOURCE = "org/labkey/core/prompts/DocumentationAssistant.md";
+    private static final String PROMPT_RESOURCE = "org/labkey/core/prompts/LabKeyAssistant.md";
 
     @Override
     protected String getAgentName()
     {
-        return DocumentationAssistantAgentAction.class.getName();
+        return LabKeyAssistantAgentAction.class.getName();
     }
 
     @Override
@@ -64,7 +64,7 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
     {
         try
         {
-            return IOUtils.resourceToString(PROMPT_RESOURCE, null, DocumentationAssistantAgentAction.class.getClassLoader()) +
+            return IOUtils.resourceToString(PROMPT_RESOURCE, null, LabKeyAssistantAgentAction.class.getClassLoader()) +
                     "\n## This server\n\nThis server is running LabKey version " + AppProps.getInstance().getReleaseVersion() + ".\n";
         }
         catch (IOException x)
@@ -221,7 +221,7 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.joining("\n"));
 
-        LOG.debug("Documentation assistant raw response:\n{}", text);
+        LOG.debug("LabKey assistant raw response:\n{}", text);
 
         // TODO: update this to handle SQL blocks like we do in the ExpressionAssistant
 
@@ -241,7 +241,7 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
 
     public static class TestCase extends Assert
     {
-        private static final String FOLDER_NAME = "DocumentationAssistantTestCase";
+        private static final String FOLDER_NAME = "LabKeyAssistantTestCase";
 
         private final User _user = TestContext.get().getUser();
         private final Container _junit = JunitUtil.getTestContainer();
