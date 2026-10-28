@@ -135,6 +135,8 @@ public class TransactionFilter implements Filter
                 Thread timeoutThread = new Thread(() -> {
                     while (!ContextListener.isShuttingDown())
                     {
+                        AsyncQueryRequest.resendCancelsToDetachedWorkers();
+
                         long timeout = TimeUnit.SECONDS.toMillis(AppProps.getInstance().getReadOnlyHttpRequestTimeout());
                         if (!_pendingRequests.isEmpty())
                         {

@@ -58,6 +58,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AsyncQueryRequest<T>
@@ -67,6 +68,9 @@ public class AsyncQueryRequest<T>
     private static final String CLIENT_DISCONNECTED_TAG = "labkey.client_disconnected";
     private static final String ELAPSED_TAG = "labkey.async_query.ms";
     private static final long WORKER_EXIT_TIMEOUT_MS = 10_000;
+
+    /** Cancelled workers whose requests stopped waiting for them, re-cancelled by the request timeout sweep until they finish */
+    private static final Set<AsyncQueryRequest<?>> _detached = ConcurrentHashMap.newKeySet();
 
     private static class CancelledException extends RuntimeException
     {
@@ -315,6 +319,7 @@ public class AsyncQueryRequest<T>
                 // discards it even if this request's cleanup releases it while the worker is still using it.
                 ConnectionWrapper.getConnectionsByScopeForEffectiveThread(Thread.currentThread()).values().forEach(c -> c.forEach(ConnectionWrapper::markCancelled));
                 DbScope.detachConnectionHolders(Thread.currentThread());
+                _detached.add(this);
                 return;
             }
             try
@@ -328,19 +333,52 @@ public class AsyncQueryRequest<T>
         }
     }
 
+    /** Called by the request timeout sweep */
+    static void resendCancelsToDetachedWorkers()
+    {
+        _detached.removeIf(AsyncQueryRequest::resendCancel);
+    }
+
+    /** @return true once the worker has finished */
+    private boolean resendCancel()
+    {
+        Statement statement;
+        synchronized (this)
+        {
+            if (_finished)
+                return true;
+            statement = _statement;
+        }
+        // Outside the lock, since the driver opens a connection to send it. A no-op until the statement is executing; it can't reach another statement on the connection.
+        if (statement != null)
+        {
+            try
+            {
+                statement.cancel();
+            }
+            catch (SQLException e)
+            {
+                _log.debug("Failed to resend cancel to a detached async statement", e);
+            }
+        }
+        return false;
+    }
+
     synchronized public void setResult(T result)
     {
         if (_cancelled)
             closeResult(result);
         _result = result;
         _finished = true;
+        _detached.remove(this);
         notify();
     }
-    
+
     synchronized public void setException(Throwable exception)
     {
         _exception = exception;
         _finished = true;
+        _detached.remove(this);
         notify();
     }
 
@@ -630,6 +668,71 @@ public class AsyncQueryRequest<T>
             assertTrue("Worker didn't finish", workerDone.await(10, TimeUnit.SECONDS));
             assertNull("Worker's connection release failed", workerFailure.get());
             assertEquals("Stuck worker's session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, Set.of(workerSpid.get())));
+        }
+
+        /** A statement that reaches the database only after its request stopped waiting, where the first cancel did nothing, must still be cancelled */
+        @Test
+        public void testDetachedWorkerCancelled() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            CountDownLatch registered = new CountDownLatch(1);
+            CountDownLatch requestDone = new CountDownLatch(1);
+            CountDownLatch workerDone = new CountDownLatch(1);
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            AtomicReference<Throwable> queryFailure = new AtomicReference<>();
+            AtomicLong queryMs = new AtomicLong();
+
+            Thread requestThread = new Thread(() -> {
+                AsyncQueryRequest<Object> request = new AsyncQueryRequest<>(new MockHttpServletResponse(), "testDetachedWorkerCancelled", Map.of());
+                try
+                {
+                    request.waitForResult(() -> {
+                        try (Connection conn = scope.getConnection(); Statement stmt = conn.createStatement())
+                        {
+                            // Like a worker starved of CPU between registering its statement and sending it
+                            request.setStatement(stmt);
+                            registered.countDown();
+                            requestDone.await();
+                            long start = System.currentTimeMillis();
+                            try
+                            {
+                                stmt.executeQuery("SELECT pg_sleep(30)");
+                            }
+                            catch (SQLException e)
+                            {
+                                queryFailure.set(e);
+                            }
+                            queryMs.set(System.currentTimeMillis() - start);
+                        }
+                        finally
+                        {
+                            workerDone.countDown();
+                        }
+                        return null;
+                    });
+                }
+                catch (Throwable t)
+                {
+                    failure.set(t);
+                }
+                finally
+                {
+                    requestDone.countDown();
+                    DbScope.finishedWithThread();
+                }
+            }, "AsyncQueryRequest detached worker test");
+
+            requestThread.start();
+            assertTrue("Worker never registered its statement", registered.await(10, TimeUnit.SECONDS));
+            requestThread.interrupt();
+            requestThread.join(WORKER_EXIT_TIMEOUT_MS + 10_000);
+            assertFalse("Request thread didn't exit", requestThread.isAlive());
+            assertTrue("Expected an aborted request, got " + failure.get(), failure.get() instanceof AbortedRequestException);
+
+            // The sweep's 5 s interval, with slack
+            assertTrue("Worker didn't finish", workerDone.await(20, TimeUnit.SECONDS));
+            assertTrue("Query wasn't cancelled: " + queryFailure.get(), queryFailure.get() instanceof SQLException e && SqlDialect.isCancelException(e));
+            assertTrue("Cancel took too long: " + queryMs.get() + " ms", queryMs.get() < 15_000);
         }
     }
 }
