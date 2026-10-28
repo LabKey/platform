@@ -45,7 +45,6 @@ import org.labkey.data.xml.TableType;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -221,10 +220,10 @@ public class DisplayFormatAnalyzer
     {
         // Collect the unique set of non-standard date display formats across the entire site
         Set<String> badFormats = new HashSet<>();
-        return () -> {
+        return metrics -> {
             DisplayFormatAnalyzer analyzer = new DisplayFormatAnalyzer();
             analyzer.handleAll(User.getAdminServiceUser(), (c, type, format, contextProvider) -> badFormats.add(format));
-            return Map.of("nonStandardDateDisplayFormats", badFormats);
+            return metrics.put("nonStandardDateDisplayFormats", badFormats, "Distinct non-standard date display formats used in folder defaults, query metadata, or field properties anywhere on the server");
         };
     }
 

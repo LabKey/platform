@@ -222,6 +222,6 @@ public class DbLoginManager implements DbLoginService
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () -> Map.of("databaseAuthentication", getProperties());
+        return metrics -> metrics.put("databaseAuthentication", getProperties(), "Database authentication settings, such as password strength and expiration; empty if never saved");
     }
 }

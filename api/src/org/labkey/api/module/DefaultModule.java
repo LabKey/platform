@@ -236,6 +236,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     final public void startup(ModuleContext moduleContext)
     {
         doStartup(moduleContext);
+        // After doStartup() because Core registers SimpleMetricsService there
+        if (!_controllerNameToClass.isEmpty())
+            SimpleMetricsService.get().describeFeatureArea(getName(), "controllerHits", "Requests handled by this module's controllers, by controller name");
     }
 
     protected abstract void doStartup(ModuleContext moduleContext);

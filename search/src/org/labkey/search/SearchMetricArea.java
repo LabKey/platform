@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.usageMetrics;
+package org.labkey.search;
 
-import java.util.Map;
+import org.labkey.api.usageMetrics.SimpleMetricArea;
 
-/** Reports metric values together with their descriptions. Prefer this over a plain {@link UsageMetricsProvider}. */
-@FunctionalInterface
-public interface DescribedUsageMetricsProvider extends UsageMetricsProvider
+public enum SearchMetricArea implements SimpleMetricArea
 {
-    UsageMetrics addUsageMetrics(UsageMetrics metrics);
+    DELETE("Delete", "Search index document deletes that failed because the index was already closed, other than for a full disk (IndexAlreadyClosed)");
 
-    @Override
-    default Map<String, Object> getUsageMetrics()
+    private final Definition _definition;
+
+    SearchMetricArea(String areaName, String description)
     {
-        return collectUsageMetrics().getValues();
+        _definition = new Definition(SearchModule.NAME, areaName, description);
     }
 
-    default UsageMetrics collectUsageMetrics()
+    @Override
+    public Definition getDefinition()
     {
-        UsageMetrics metrics = new UsageMetrics();
-        return addUsageMetrics(metrics);
+        return _definition;
     }
 }
