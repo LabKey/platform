@@ -27,11 +27,9 @@ import java.util.Map;
  *         UsageMetricsService svc = UsageMetricsService.get();
  *         if (null != svc)
  *         {
- *             svc.registerUsageMetrics(DataIntegrationModule.NAME, () -> {
- *                 Map<String, Object> metric = new HashMap<>();
- *                 metric.put("etlRunCount", new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class));
- *                 return metric;
- *             });
+ *             svc.registerUsageMetrics(DataIntegrationModule.NAME, metrics -> metrics.put("etlRunCount",
+ *                 new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class),
+ *                 "ETL runs"));
  *         }
  */
 public interface UsageMetricsService
@@ -52,36 +50,17 @@ public interface UsageMetricsService
     @Nullable Map<String, Map<String, Object>> getModuleUsageMetrics();
 
     /**
-     *  Switch to using the DescribedUsageMetricsProvider variant.
-     *
      *  Method to register a module's metrics. Call from doStartup() / startupAfterSpringConfiguration()
      *  Metrics can be included at UsageReportingLevel OFF or ON. Usage metrics will only be sent for ON.
      *
      * @param moduleName The name of the module
-     * @param metrics Implementation of the functional interface UsageMetricsProvider.getUsageMetrics() method. Typically,
-     *                this will return a map of metric name -> value pairs.
      * @throws IllegalArgumentException if moduleName doesn't correspond to an existing module
      */
-    @Deprecated
     void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
 
     /**
-     *
-     *  Method to register a module's metrics. Call from doStartup() / startupAfterSpringConfiguration()
-     *  Metrics can be included at UsageReportingLevel OFF or ON. Usage metrics will only be sent for ON.
-     *
-     * @param moduleName The name of the module
-     * @throws IllegalArgumentException if moduleName doesn't correspond to an existing module
-     */
-    default void registerUsageMetrics(String moduleName, DescribedUsageMetricsProvider metrics)
-    {
-        registerUsageMetrics(moduleName, (UsageMetricsProvider) metrics);
-    }
-
-    /**
      * Not included in the mothership report. Runs every provider, so it costs as much as generating a report.
-     * @return map of module name to its metric descriptions; top-level keys from providers that aren't
-     * {@link DescribedUsageMetricsProvider}s are included with a null description
+     * @return map of module name to its metric descriptions
      */
     Map<String, List<UsageMetrics.Description>> getModuleUsageMetricDescriptions();
 }

@@ -34,6 +34,7 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.usageMetrics.AssayMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -154,9 +155,9 @@ public class DataTransformService
                 }
 
                 if (operation == TransformOperation.UPDATE)
-                    SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForUpdate");
+                    SimpleMetricsService.get().increment(AssayMetricArea.TRANSFORM_SCRIPT, "executionCountForUpdate");
                 if (operation == TransformOperation.INSERT)
-                    SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForInsert");
+                    SimpleMetricsService.get().increment(AssayMetricArea.TRANSFORM_SCRIPT, "executionCountForInsert");
 
                 // TODO: don't bother slurping the contents of binary scripts
                 StringBuilder sb = new StringBuilder();

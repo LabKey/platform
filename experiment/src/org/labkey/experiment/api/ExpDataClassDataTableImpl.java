@@ -114,6 +114,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.PageFlowUtil;
@@ -1275,7 +1276,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     }
                 }
 
-                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "sources");
+                SimpleMetricsService.get().increment(ExperimentMetricArea.MOVE_ENTITIES, "sources");
             }
             return new HashMap<>(allContainerResponse);
         }
