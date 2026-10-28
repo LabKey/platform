@@ -14,6 +14,8 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.AbortedRequestException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.chat.client.ChatClient;
@@ -31,6 +33,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 public class DocumentationAssistantAgentAction extends AbstractAgentAction<PromptForm>
 {
     private static final Logger LOG = LogHelper.getLogger(DocumentationAssistantAgentAction.class, "Documentation Assistant interactions");
+    private static final String UNEXPECTED_ERROR_MESSAGE = "Request failed. Please try again.";
 
     @Override
     protected String getAgentName()
@@ -45,12 +48,25 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
     }
 
     @Override
+    protected boolean recordsHistory()
+    {
+        return true;
+    }
+
+    @Override
     public Object execute(PromptForm form, BindException errors) throws Exception
     {
         try (var _ = McpContext.withContext(getViewContext()))
         {
-            boolean firstTurn = isBlank(form.getConversationId());
+            McpContext.get().put(McpContext.AGENT_NAME_ATTR, getAgentName());
+
             String prompt = form.getPrompt();
+
+            JSONObject escapeResponse = escapeResponse(prompt);
+            if (null != escapeResponse)
+                return escapeResponse;
+
+            boolean firstTurn = isBlank(form.getConversationId());
             String composedPrompt = composePrompt(firstTurn, prompt);
 
             if (isBlank(composedPrompt))
@@ -58,35 +74,56 @@ public class DocumentationAssistantAgentAction extends AbstractAgentAction<Promp
                 return new JSONObject(Map.of(
                         "contentType", "text/plain",
                         "text", "🤷",
+                        "conversationId", getConversationId(),
                         "success", Boolean.TRUE));
             }
 
-            ChatClient chatSession = getChat(true);
-            List<McpService.MessageResponse> responses;
+            recordPrompt(prompt);
 
             try
             {
-                LOG.info("Documentation assistant prompt: {}", prompt);
-                responses = McpService.get().sendMessageEx(chatSession, composedPrompt);
+                return recordResponse(sendPrompt(composedPrompt));
             }
             catch (ChatException x)
             {
-                return new JSONObject(Map.of(
-                        "error", x.getMessage(),
-                        "text", "ERROR: " + x.getMessage(),
-                        "success", Boolean.FALSE));
+                return recordResponse(failureResponse(StringUtils.defaultIfBlank(x.getMessage(), UNEXPECTED_ERROR_MESSAGE)));
             }
+            catch (AbortedRequestException x)
+            {
+                throw x;
+            }
+            catch (RuntimeException x)
+            {
+                // Answered rather than thrown so the client shows the same text that history replays
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+                return recordResponse(failureResponse(UNEXPECTED_ERROR_MESSAGE));
+            }
+        }
+    }
 
-            JSONArray segments = buildSegments(responses);
-            return new JSONObject(Map.of(
-                    "success", Boolean.TRUE,
-                    "conversationId", getConversationId(),
-                    "segments", segments));
-        }
-        catch (ChatException x)
-        {
-            return errorResponse(x);
-        }
+    private JSONObject sendPrompt(String prompt)
+    {
+        ChatClient chatSession = getChat(true);
+
+        if (null == chatSession)
+            return failureResponse("Service is not ready yet");
+
+        List<McpService.MessageResponse> responses = McpService.get().sendMessageEx(chatSession, prompt);
+        JSONArray segments = buildSegments(responses);
+
+        return new JSONObject(Map.of(
+                "success", Boolean.TRUE,
+                "conversationId", getConversationId(),
+                "segments", segments));
+    }
+
+    private JSONObject failureResponse(String message)
+    {
+        return new JSONObject(Map.of(
+                "error", message,
+                "text", "ERROR: " + message,
+                "conversationId", getConversationId(),
+                "success", Boolean.FALSE));
     }
 
     /**
