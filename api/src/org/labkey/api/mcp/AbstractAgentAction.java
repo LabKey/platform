@@ -19,12 +19,18 @@ import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ReadOnlyApiAction;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -41,10 +47,12 @@ import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
  * First implement getServicePrompt() to tell your agent its mission. You can also listen in on the
  * conversation to help your user get the right results.
  */
-public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
+public abstract class AbstractAgentAction<F extends PromptForm> extends MutatingApiAction<F>
 {
     private static final int MAX_ISSUED_CONVERSATION_IDS = 16;
     private static final int MAX_PROMPT_CHAR_LENGTH = 4_000;
+    // Matches the client's fallback for a failure response without an error
+    private static final String DEFAULT_ERROR_MESSAGE = "Request failed.";
 
     protected GUID conversationId;
 
@@ -58,31 +66,17 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         return null;
     }
 
-    protected ChatClient getChat(boolean create)
+    /** Agents with a UI that reloads conversations return true to keep a display transcript in ChatHistoryService. */
+    protected boolean recordsHistory()
     {
-        String conversationName = getAgentName() + ":" + getConversationId();
-
-        HttpSession session = getViewContext().getSession();
-        ChatClient chatSession = McpService.get().getChat(session, conversationName, this::getServicePrompt, create, getToolNames());
-
-        return chatSession;
+        return false;
     }
 
-    protected String handleEscape(String prompt)
+    protected ChatClient getChat(boolean create)
     {
-        prompt = StringUtils.trimToEmpty(prompt);
-        switch (prompt)
-        {
-            case "/clear" ->
-            {
-                ChatClient chatSession = getChat(false); // CONSIDER: getChat(boolean ifStarted)
-                if (null != chatSession)
-                    McpService.get().close(getViewContext().getSession(), chatSession);
-                getIssuedConversationIds(getViewContext().getSession()).remove(conversationId);
-                return "OK, let's start over.";
-            }
-        }
-        return null;
+        HttpSession session = getViewContext().getSession();
+        String conversationName = getConversationName(getAgentName(), getConversationId());
+        return McpService.get().getChat(session, conversationName, this::getServicePrompt, create, getToolNames());
     }
 
     @Override
@@ -101,33 +95,21 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
             return;
         }
 
-        // Only honor a client-supplied conversationId if this agent previously issued this session that
-        // id. Otherwise, generate a fresh one. This prevents a same-session caller from splicing into
-        // another conversation by guessing or replaying a GUID.
-        Set<GUID> issued = getIssuedConversationIds(getViewContext().getSession());
         String supplied = form.getConversationId();
-        if (supplied != null)
+        if (supplied != null && !GUID.isGUID(supplied))
         {
-            GUID candidate;
-
-            try
-            {
-                candidate = new GUID(supplied);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.rejectValue("conversationId", ERROR_GENERIC, "Invalid conversationId");
-                return;
-            }
-
-            if (issued.contains(candidate))
-            {
-                conversationId = candidate;
-                return;
-            }
+            errors.rejectValue("conversationId", ERROR_GENERIC, "Invalid conversationId");
+            return;
         }
-        conversationId = new GUID();
-        issued.add(conversationId);
+
+        HttpSession session = getViewContext().getSession();
+        conversationId = resolveIssuedConversationId(session, getAgentName(), supplied);
+
+        if (null == conversationId)
+        {
+            conversationId = new GUID();
+            getIssuedConversationIds(session, getAgentName()).add(conversationId);
+        }
     }
 
     @Override
@@ -136,21 +118,24 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         try (var _ = McpContext.withContext(getViewContext()))
         {
             McpContext.get().put(McpContext.AGENT_NAME_ATTR, getAgentName());
-
             String prompt = form.getPrompt();
-
             JSONObject escapeResponse = escapeResponse(prompt);
+
             if (null != escapeResponse)
                 return escapeResponse;
+
+            recordPrompt(prompt);
 
             // call getChat() after handleEscape()
             ChatClient chatSession = getChat(true);
             if (null == chatSession)
             {
-                return new JSONObject(Map.of(
+                return recordResponse(new JSONObject(Map.of(
                         "contentType", "text/plain",
                         "response", "Service is not ready yet",
-                        "success", Boolean.FALSE));
+                        "error", "Service is not ready yet",
+                        "conversationId", conversationId,
+                        "success", Boolean.FALSE)));
             }
 
             McpService.MessageResponse response = McpService.get().sendMessage(chatSession, prompt);
@@ -170,36 +155,89 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
                 ret.put("contentType", "text/plain");
                 ret.put("response", "I got nothing");
             }
-            return ret;
+            return recordResponse(ret);
         }
         catch (ChatException x)
         {
-            return new JSONObject(Map.of(
-                    "error", x.getMessage(),
-                    "text", "ERROR: " + x.getMessage(),
-                    "success", Boolean.FALSE));
+            String message = StringUtils.defaultIfBlank(x.getMessage(), DEFAULT_ERROR_MESSAGE);
+            return recordResponse(new JSONObject(Map.of(
+                    "error", message,
+                    "text", "ERROR: " + message,
+                    "conversationId", conversationId,
+                    "success", Boolean.FALSE)));
         }
     }
 
     protected @NotNull JSONObject errorResponse(Exception ex)
     {
+        String message = StringUtils.defaultIfBlank(ex.getMessage(), DEFAULT_ERROR_MESSAGE);
         return new JSONObject(Map.of(
-                "text", ex.getMessage(),
+                "text", message,
+                "error", message,
                 "user", getViewContext().getUser().getName(),
+                "conversationId", conversationId,
                 "success", Boolean.FALSE));
     }
 
+    /** The response to an escape command such as {@code /clear}, or null when the prompt isn't one. */
     protected @Nullable JSONObject escapeResponse(String prompt)
     {
-        String escapeResponse = handleEscape(prompt);
-        if (null == escapeResponse)
+        if (!"/clear".equals(StringUtils.trimToEmpty(prompt)))
             return null;
 
+        closeConversation(getViewContext().getSession(), getUser(), getAgentName(), conversationId);
+
+        // No conversationId, since it was just closed; "reset" tells the client to clear its messages too
         return new JSONObject(Map.of(
                 "contentType", "text/plain",
-                "text", escapeResponse,
-                "conversationId", conversationId,
+                "text", "OK, let's start over.",
+                "reset", Boolean.TRUE,
                 "success", Boolean.TRUE));
+    }
+
+    /** Call before sending the prompt to the model, so the prompt is recorded even if the turn fails. */
+    protected void recordPrompt(String prompt)
+    {
+        if (recordsHistory())
+            addChatSnippet(ChatHistoryService.Role.user, StringUtils.defaultString(prompt));
+    }
+
+    /** Call with every response returned after recordPrompt(); returns the response for chaining. */
+    protected JSONObject recordResponse(JSONObject response)
+    {
+        if (recordsHistory())
+        {
+            Pair<ChatHistoryService.Role, String> snippet = toHistorySnippet(response);
+            addChatSnippet(snippet.first, snippet.second);
+        }
+        return response;
+    }
+
+    private void addChatSnippet(ChatHistoryService.Role role, String content)
+    {
+        ChatHistoryService.get().addChatSnippet(getViewContext().getSession(), getUser(), getContainer(), getAgentName(), conversationId, role, content);
+    }
+
+    /** Maps a response to what the client displays: segments for an answer, or the error text for a failure. */
+    static Pair<ChatHistoryService.Role, String> toHistorySnippet(JSONObject response)
+    {
+        if (!response.optBoolean("success"))
+            return new Pair<>(ChatHistoryService.Role.error, StringUtils.defaultIfBlank(response.optString("error", null), DEFAULT_ERROR_MESSAGE));
+
+        JSONArray segments = response.optJSONArray("segments");
+        if (null == segments)
+        {
+            segments = new JSONArray();
+            String body = StringUtils.defaultIfBlank(response.optString("response", null), response.optString("text", null));
+            if (isNotBlank(body))
+            {
+                if ("text/html".equals(response.optString("contentType")))
+                    segments.put(new JSONObject(Map.of("type", "html", "html", body)));
+                else
+                    segments.put(new JSONObject(Map.of("type", "text", "text", body)));
+            }
+        }
+        return new Pair<>(ChatHistoryService.Role.assistant, segments.toString());
     }
 
     protected GUID getConversationId()
@@ -207,14 +245,42 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
         return conversationId;
     }
 
-    private String getIssuedConversationIdsKey()
+    private static String getConversationName(String agentName, GUID conversationId)
     {
-        return getAgentName() + "#issuedConversationIds";
+        return agentName + ":" + conversationId;
     }
 
-    private Set<GUID> getIssuedConversationIds(HttpSession session)
+    /** The conversation id if this session was issued it by the named agent; never issues one. */
+    public static @Nullable GUID resolveIssuedConversationId(HttpSession session, String agentName, @Nullable String supplied)
     {
-        return SessionHelper.getAttribute(session, getIssuedConversationIdsKey(), AbstractAgentAction::newIssuedConversationIdSet);
+        if (!GUID.isGUID(supplied))
+            return null;
+
+        // Only honor an id this agent previously issued this session. This prevents a same-session caller from
+        // splicing into another conversation by guessing or replaying a GUID.
+        GUID candidate = new GUID(supplied);
+        return getIssuedConversationIds(session, agentName).contains(candidate) ? candidate : null;
+    }
+
+    /** True while the model still holds this conversation's memory. */
+    public static boolean isConversationOpen(HttpSession session, String agentName, GUID conversationId)
+    {
+        return null != McpService.get().getChat(session, getConversationName(agentName, conversationId), () -> "", false);
+    }
+
+    /** Clears the model's memory, the issued id, and the display transcript. */
+    private static void closeConversation(HttpSession session, User user, String agentName, GUID conversationId)
+    {
+        ChatClient chatSession = McpService.get().getChat(session, getConversationName(agentName, conversationId), () -> "", false);
+        if (null != chatSession)
+            McpService.get().close(session, chatSession);
+        getIssuedConversationIds(session, agentName).remove(conversationId);
+        ChatHistoryService.get().deleteChatHistory(session, user, conversationId);
+    }
+
+    private static Set<GUID> getIssuedConversationIds(HttpSession session, String agentName)
+    {
+        return SessionHelper.getAttribute(session, agentName + "#issuedConversationIds", AbstractAgentAction::newIssuedConversationIdSet);
     }
 
     private static Set<GUID> newIssuedConversationIdSet()
@@ -229,5 +295,52 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
                 }
             }
         ));
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final String AGENT = "TestAgent";
+
+        @Test
+        public void testResolveIssuedConversationId()
+        {
+            HttpSession session = new MockHttpSession();
+            GUID issued = new GUID();
+            getIssuedConversationIds(session, AGENT).add(issued);
+
+            assertEquals(issued, resolveIssuedConversationId(session, AGENT, issued.toString()));
+            assertNull("Another agent's id", resolveIssuedConversationId(session, "OtherAgent", issued.toString()));
+            assertNull("Unknown id", resolveIssuedConversationId(session, AGENT, new GUID().toString()));
+            assertNull("Invalid id", resolveIssuedConversationId(session, AGENT, "not-a-guid"));
+            assertNull("Missing id", resolveIssuedConversationId(session, AGENT, null));
+            assertEquals("Must never issue an id", Set.of(issued), getIssuedConversationIds(session, AGENT));
+        }
+
+        @Test
+        public void testToHistorySnippet()
+        {
+            JSONArray segments = new JSONArray().put(new JSONObject(Map.of("type", "html", "html", "<p>Hi</p>")));
+            assertSnippet(ChatHistoryService.Role.assistant, segments.toString(), Map.of("success", true, "segments", segments));
+
+            assertSnippet(ChatHistoryService.Role.assistant, "[{\"html\":\"<p>Hi</p>\",\"type\":\"html\"}]",
+                    Map.of("success", true, "contentType", "text/html", "response", "<p>Hi</p>"));
+            assertSnippet(ChatHistoryService.Role.assistant, "[{\"text\":\"Hi\",\"type\":\"text\"}]",
+                    Map.of("success", true, "contentType", "text/markdown", "response", "Hi"));
+            assertSnippet(ChatHistoryService.Role.assistant, "[{\"text\":\"Hi\",\"type\":\"text\"}]",
+                    Map.of("success", true, "contentType", "text/plain", "text", "Hi"));
+
+            assertSnippet(ChatHistoryService.Role.error, "Boom", Map.of("success", false, "error", "Boom", "text", "ERROR: Boom"));
+            assertSnippet(ChatHistoryService.Role.error, DEFAULT_ERROR_MESSAGE, Map.of("success", false, "text", "Boom"));
+        }
+
+        private static void assertSnippet(ChatHistoryService.Role role, String content, Map<String, Object> response)
+        {
+            Pair<ChatHistoryService.Role, String> snippet = toHistorySnippet(new JSONObject(response));
+            assertEquals(role, snippet.first);
+            if (role == ChatHistoryService.Role.assistant)
+                assertEquals(new JSONArray(content).toList(), new JSONArray(snippet.second).toList());
+            else
+                assertEquals(content, snippet.second);
+        }
     }
 }

@@ -126,6 +126,7 @@ import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.jsp.RecompilingJspClassLoader;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.OperationsMXBean;
+import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
@@ -414,6 +415,7 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            AbstractAgentAction.TestCase.class,
             Aggregate.TestCase.class,
             ApiResponseWriter.TestCase.class,
             ApiXmlWriter.TestCase.class,

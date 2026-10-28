@@ -80,6 +80,9 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.ChatHistoryService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -142,6 +145,7 @@ import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JsonUtil;
@@ -2827,6 +2831,69 @@ public class CoreController extends SpringActionController
         public void setMetricName(String metricName)
         {
             _metricName = metricName;
+        }
+    }
+
+    public static class ChatHistoryForm
+    {
+        private String _conversationId;
+
+        public String getConversationId()
+        {
+            return _conversationId;
+        }
+
+        public void setConversationId(String conversationId)
+        {
+            _conversationId = conversationId;
+        }
+    }
+
+    /** Matches the client's ChatMessage, which shows an error as an assistant message. */
+    private static JSONObject toChatMessage(ChatHistoryService.ChatSnippet snippet)
+    {
+        JSONObject message = new JSONObject()
+                .put("id", String.valueOf(snippet.rowId()))
+                .put("timestamp", snippet.created().getTime());
+        return switch (snippet.role())
+        {
+            case user -> message.put("role", "user").put("text", snippet.content());
+            case assistant -> message.put("role", "assistant").put("segments", new JSONArray(snippet.content()));
+            case error -> message.put("role", "assistant").put("error", snippet.content());
+        };
+    }
+
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    public static class GetChatHistoryAction extends ReadOnlyApiAction<ChatHistoryForm>
+    {
+        @Override
+        public void validateForm(ChatHistoryForm form, Errors errors)
+        {
+            if (!McpService.get().isAIFeaturesReady())
+                errors.reject(ERROR_MSG, "Agent actions are not available.");
+            else if (!GUID.isGUID(form.getConversationId()))
+                errors.rejectValue("conversationId", ERROR_MSG, "Invalid conversationId");
+        }
+
+        @Override
+        public Object execute(ChatHistoryForm form, BindException errors)
+        {
+            GUID conversationId = new GUID(form.getConversationId());
+            List<ChatHistoryService.ChatSnippet> snippets = ChatHistoryService.get().getChatHistory(getUser(), conversationId);
+            if (snippets.isEmpty())
+                throw new NotFoundException("Conversation not found");
+
+            // Stale rows are left to the session listener
+            String agentName = snippets.getFirst().agentName();
+            if (null == AbstractAgentAction.resolveIssuedConversationId(getViewContext().getSession(), agentName, form.getConversationId()) ||
+                    !AbstractAgentAction.isConversationOpen(getViewContext().getSession(), agentName, conversationId))
+                throw new NotFoundException("Conversation not found");
+
+            return new JSONObject()
+                    .put("success", true)
+                    .put("conversationId", conversationId)
+                    .put("messages", new JSONArray(snippets.stream().map(CoreController::toChatMessage).toList()));
         }
     }
 
