@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.docker.DockerService"%>
 <%@ page import="org.labkey.api.files.FileContentService"%>
 <%@ page import="org.labkey.api.premium.PremiumService" %>
+<%@ page import="org.labkey.api.remoterunner.RemoteRunnerService" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngine" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
 <%@ page import="org.labkey.api.reports.report.ExternalScriptEngineReport" %>
@@ -51,6 +52,10 @@
     }
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
     boolean baseServerUrlSet = !AppProps.getInstance().getBaseServerUrl().contains("localhost");
+    // Offered whenever the module supplying the runner is deployed; the form reports whether it is actually configured.
+    RemoteRunnerService remoteRunnerService = RemoteRunnerService.get();
+    boolean isRemoteRunnerAvailable = null != remoteRunnerService;
+    boolean isRemoteRunnerConfigured = null != remoteRunnerService && remoteRunnerService.isEnabled();
 %>
 <style type="text/css">
     #enginesGrid .x4-grid-body {
@@ -75,6 +80,8 @@
         var R_ENGINE_NAME = 'R Scripting Engine';
         var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
         var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
+        var R_RUNNER_ENGINE_NAME = 'R Remote Runner Scripting Engine';
+        var PYTHON_RUNNER_ENGINE_NAME = 'Python Remote Runner Scripting Engine';
         var JUPYTER_SERVICE_REPORT_NAME = 'Jupyter Report Engine';
 
         // Rserve file sharing constants (these should map to RserveScriptEngine.ModusOperandi enums
@@ -87,6 +94,7 @@
         let remoteEnabled = <%=isRemoteEnabled%>;
         let premiumServiceEnabled = <%=isPremiumServiceAvailable%>;
         let rDockerEnabled = <%=isRDockerAvailable%>;
+        let remoteRunnerAvailable = <%=isRemoteRunnerAvailable%>;
 
         var DockerImageFields = {
             imageName: {label: 'Docker Image Name', defaultVal: 'labkey/rsandbox', description: "Enter the Docker image name to use for R. Default is &apos;labkey/rsandbox&apos;, which includes Rlabkey.", allowBlank: false},
@@ -123,6 +131,9 @@
 
         var getEngineSpecificItems = function(record) {
             var items = [];
+            if (record.remoteRunner)
+                items = getRemoteRunnerConfigItems(items, record);
+
             if (record.extensions === R_EXTENSIONS) {
                 var isCurrentDefault = record.default && record.rowId;
 
@@ -175,6 +186,33 @@
                     value: record.remoteUrl
                 });
             }
+            return items;
+        };
+
+        // adds remote runner engine specific config form items. The runner's endpoint and staging bucket are site-wide
+        // rather than per-engine, so this shows their status and links out, the way the docker items do.
+        var getRemoteRunnerConfigItems = function(items, record) {
+            items = items.concat([{
+                name: 'remoteRunner',
+                xtype: 'hidden',
+                value: true
+            }]);
+
+            var conditionHtmlTpl = '<table><tr>' +
+                    '<td width="105"><label>?LABEL?:</label></td>' +
+                    '<td>?CONTENT?</td>' +
+                    '</tr></table>';
+            var configuredHtml = '<span style="color:green;" class="fa fa-check-circle"></span> configured';
+            var notConfiguredHtml = '<span style="color:red;" class="fa fa-times-circle"></span> not configured';
+
+            items = items.concat([{
+                xtype: 'box',
+                html: conditionHtmlTpl
+                        .replace('?LABEL?', 'Runner')
+                        .replace('?CONTENT?', (<%=isRemoteRunnerConfigured%> ? configuredHtml : notConfiguredHtml) +
+                                ' \<a href="cloudservices-configureRemoteRunner.view">settings</a>')
+            }]);
+
             return items;
         };
 
@@ -572,11 +610,11 @@
                             items.push(rec);
                         break;
                     case 'exePath':
-                        if (!record.docker && !record.remote)
+                        if (!record.docker && !record.remote && !record.remoteRunner)
                             items.push(rec);
                         break;
                     case 'exeCommand':
-                        if (!record.docker && !isJupyterReport)
+                        if (!record.docker && !isJupyterReport && !record.remoteRunner)
                             items.push(rec);
                         break;
                     default:
@@ -949,6 +987,64 @@
                 });
             }
 
+            // remote R runner engine
+            if (remoteRunnerAvailable) {
+                items.push({
+                    id: 'add_rRunnerEngine',
+                    text: 'New R Remote Runner Engine',
+                    listeners: {
+                        click: function (button, event) {
+                            var record = {
+                                name: R_RUNNER_ENGINE_NAME,
+                                extensions: R_EXTENSIONS,
+                                external: true,
+                                outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
+                                enabled: true,
+                                'default': !defaultR,
+                                remoteRunner: true,
+                                sandboxed: true,
+                                docker: false,
+                                remote: false,
+                                languageName: 'R',
+                                type: <%=q(ExternalScriptEngineDefinition.Type.R.name())%>
+                            };
+                            if (countR > 0 && !defaultR) {
+                                Ext4.Msg.confirm('Site default missing', "None of the existing R engine(s) has been set as 'Site Default'. A site default must be specified in order to add additional R engines.  Continue?", function (btn, text) {
+                                    if (btn === 'yes')
+                                        editRecord(button, grid, record);
+                                });
+                            }
+                            else
+                                editRecord(button, grid, record);
+                        }
+                    }
+                });
+            }
+
+            // remote Python runner engine
+            if (remoteRunnerAvailable) {
+                items.push({
+                    id: 'add_pythonRunnerEngine',
+                    text: 'New Python Remote Runner Engine',
+                    listeners: {
+                        click: function (button, event) {
+                            editRecord(button, grid, {
+                                name: PYTHON_RUNNER_ENGINE_NAME,
+                                extensions: 'py',
+                                external: true,
+                                outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".out") %>,
+                                enabled: true,
+                                remoteRunner: true,
+                                docker: false,
+                                remote: false,
+                                languageName: 'Python',
+                                type: <%=q(ExternalScriptEngineDefinition.Type.External.name())%>
+                            });
+                        }
+                    }
+                });
+            }
+
             // perl engine
             items.push({
                 id: 'add_perlEngine',
@@ -1013,6 +1109,7 @@
                     {name:'external', type:'boolean'},
                     {name:'remote', type:'boolean'},
                     {name:'docker', type:'boolean'},
+                    {name:'remoteRunner', type:'boolean'},
                     {name:'dockerImageRowId'},
                     {name:'dockerImageConfig'},
                     {name:'outputFileName'},
