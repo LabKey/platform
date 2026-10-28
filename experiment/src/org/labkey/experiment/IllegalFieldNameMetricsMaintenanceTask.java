@@ -265,8 +265,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             // that derive reserved names from one (SimpleTableDomainKind, domain templates), so those under-report.
             Set<String> kindReserved = _kind.getReservedPropertyNames(null, null, false);
 
-            // A field colliding with a parent alias header is counted once, as parentAliasConflict below, rather than
-            // also folding the headers into the reserved set here and reporting the same collision under two rules.
+            // A field colliding with a parent alias header is reported only as parentAliasConflict below.
             Map<String, Map<String, Object>> aliases = _parentAliases.get(_domainUri);
 
             DomainUtil.validateProperties(gwtDomain, kindReserved, _kind.getReservedPropertyNamePrefixes(),

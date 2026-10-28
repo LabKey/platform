@@ -262,9 +262,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 
-        // Parent alias headers are deliberately absent: validateParentAlias rejects any alias found in this set, so a
-        // type's own persisted aliases would reject themselves on re-save. It catches field/alias collisions itself.
-
         // Issue 48810: See SampleTypeService.createSampleType hasNameProperty. We are adding in a "name" col on the
         // client side right before calling the saveDomain API, so we need to "exclude" it from the reserved set in
         // this case.

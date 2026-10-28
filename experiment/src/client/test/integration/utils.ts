@@ -992,9 +992,11 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
         "Field 'A' has an import alias 'viaAlias' that conflicts with a parent alias header.",
         { viaAlias: parentOf(name) });
 
-    // Issue 52627: 'Parent' is blocked as a lineage parent alias header only; it is not a reserved field name.
-    if (isSampleType)
+    // Issue 52627: for sample types 'Parent' is reserved as a field name and blocked as a parent alias header.
+    if (isSampleType) {
+        await createExpectError([{ name: 'Parent' }], `'Parent' is a reserved field name in '${name}'.`);
         await createExpectError([{ name: 'A' }], 'Parent alias header is reserved: Parent', { Parent: parentOf(name) });
+    }
 
     // The same rules on update, against a design that already carries a field alias and a parent alias.
     const parentAlias = 'existingParent';

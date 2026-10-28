@@ -1633,7 +1633,7 @@ public class DomainUtil
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         // GH Issue 1257: import alias -> the fields declaring it.
         Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
-        // GH Issue 1589: effective label -> the fields carrying it. Only populated when tallying, since label collisions
+        // GH Issue 1589: explicit label -> the fields carrying it. Only populated when tallying, since label collisions
         // are counted but not rejected.
         Map<String, List<GWTPropertyDescriptor>> labelMap = new CaseInsensitiveLinkedHashMap<>();
         Set<String> fieldNames = new CaseInsensitiveHashSet();
@@ -1664,7 +1664,9 @@ public class DomainUtil
 
             if (tally != null)
             {
-                String label = effectiveLabel(field, name);
+                // Only an explicitly set label counts. A label derived from the field name is not something anyone
+                // chose, and the only way to resolve a collision on one is to rename the field.
+                String label = StringUtils.trimToNull(field.getLabel());
                 // A label repeating its own field's name is redundant but not ambiguous.
                 if (label != null && !label.equalsIgnoreCase(name))
                     labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
@@ -1813,13 +1815,6 @@ public class DomainUtil
     private static boolean isSameSingleField(List<GWTPropertyDescriptor> a, List<GWTPropertyDescriptor> b)
     {
         return a.size() == 1 && b.size() == 1 && a.get(0) == b.get(0);
-    }
-
-    /** The label createImportMap would use for a field: the explicit one, else the one derived from the name. */
-    private static String effectiveLabel(GWTPropertyDescriptor field, String name)
-    {
-        String label = field.getLabel();
-        return StringUtils.isNotBlank(label) ? label : ColumnInfo.labelFromName(name);
     }
 
     private static DbScope getDomainScope(DomainKind<?> kind)
