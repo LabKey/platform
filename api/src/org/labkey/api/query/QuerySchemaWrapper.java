@@ -22,7 +22,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.visualization.VisualizationProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,10 +31,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * User: matthewb
- * Date: Mar 31, 2009
- * Time: 10:14:40 AM
- *
  * Wrap a DbSchema, QUERY INTERNAL USE ONLY
  */
 public class QuerySchemaWrapper implements QuerySchema
@@ -146,12 +141,6 @@ public class QuerySchemaWrapper implements QuerySchema
     public String getDescription()
     {
         return "Contains data tables from the '" + _schema.getName() + "' database schema.";
-    }
-
-    @Override
-    public VisualizationProvider createVisualizationProvider()
-    {
-        return null;
     }
 
     @Override

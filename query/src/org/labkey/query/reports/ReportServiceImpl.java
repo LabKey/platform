@@ -18,8 +18,6 @@ package org.labkey.query.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections4.MultiSet;
-import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.MultiSetUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -53,6 +50,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.ReportService.ReportMetricsVisitor;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
@@ -94,8 +92,6 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -115,7 +111,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -127,6 +123,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
     private static final Map<String, UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
     private static final List<String> _globalItemFilterTypes = new CopyOnWriteArrayList<>();
+    private static final List<Supplier<ReportMetricsVisitor>> _metricsVisitorFactories = new CopyOnWriteArrayList<>();
 
     /**
      * maps descriptor types to providers
@@ -225,6 +222,12 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
 
         if (null != _reports.putIfAbsent(report.getType(), report.getClass()))
             _log.warn("Report type : {} has previously been registered.", report.getType());
+    }
+
+    @Override
+    public void registerReportMetricsVisitor(Supplier<ReportMetricsVisitor> factory)
+    {
+        _metricsVisitorFactories.add(factory);
     }
 
     @Override
@@ -1091,10 +1094,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         if (null != svc)
         {
             svc.registerUsageMetrics(moduleName, metrics -> {
-                // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
-                MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
-                AtomicInteger genericChartWithTrendlineTypeCount = new AtomicInteger();
-                AtomicInteger genericChartWithErrorBarsCount = new AtomicInteger();
+                List<ReportMetricsVisitor> visitors = _metricsVisitorFactories.stream().map(Supplier::get).toList();
                 // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
                 TableInfo table = getTable();
                 SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "r")
@@ -1106,28 +1106,13 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                     countsByType = rows
                         .map(reportService::_getInstance)
                         .filter(Objects::nonNull)
-                        .peek(report -> {
-                            if (report instanceof GenericChartReport chart)
-                            {
-                                chartCountsByRenderType.add(chart.getRenderType());
-                                if (chart.getDescriptor() instanceof VisualizationReportDescriptor descriptor)
-                                {
-                                    String configJson = descriptor.getJSON();
-                                    if (configJson.contains("\"trendlineType\":") && !configJson.contains("\"trendlineType\":\"\""))
-                                        genericChartWithTrendlineTypeCount.getAndIncrement();
-                                    if (configJson.contains("\"errorBars\":\"SD\"") || configJson.contains("\"errorBars\":\"SEM\""))
-                                        genericChartWithErrorBarsCount.getAndIncrement();
-                                }
-                            }
-                        })
+                        .peek(report -> visitors.forEach(visitor -> visitor.visit(report)))
                         .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
                 }
 
-                return metrics
-                    .put("reportCountsByType", countsByType, "Saved reports in existing containers by report type")
-                    .put("genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType), "Saved charts (GenericChartReport) by render type (BAR_PLOT, BOX_PLOT, etc.)")
-                    .put("genericChartWithTrendlineTypeCount", genericChartWithTrendlineTypeCount, "Saved charts with a trendline type set")
-                    .put("genericChartWithErrorBarsCount", genericChartWithErrorBarsCount, "Saved charts with SD or SEM error bars");
+                metrics.put("reportCountsByType", countsByType, "Saved reports in existing containers by report type");
+                visitors.forEach(visitor -> visitor.addMetrics(metrics));
+                return metrics;
             });
         }
     }

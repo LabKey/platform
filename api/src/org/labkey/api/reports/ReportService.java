@@ -31,6 +31,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlValidationException;
@@ -43,6 +44,7 @@ import org.labkey.api.writer.VirtualFile;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 public interface ReportService
 {
@@ -51,6 +53,8 @@ public interface ReportService
     Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());
 
     String LINK_REPORT_TYPE = "ReportService.linkReport";
+    String GENERIC_CHART_REPORT_TYPE = "ReportService.GenericChartReport";
+    String TIME_CHART_REPORT_TYPE = "ReportService.TimeChartReport";
 
     static ReportService get()
     {
@@ -66,6 +70,17 @@ public interface ReportService
      * Registers a report type, reports must be registered in order to be created.
      */
     void registerReport(Report report);
+
+    /** Sees every saved report during the single usage metrics pass, then adds its own metrics */
+    interface ReportMetricsVisitor
+    {
+        void visit(Report report);
+
+        void addMetrics(UsageMetrics metrics);
+    }
+
+    /** The factory supplies a fresh visitor for each usage metrics collection */
+    void registerReportMetricsVisitor(Supplier<ReportMetricsVisitor> factory);
 
     /**
      * A descriptor class must be registered with the service in order to be valid.

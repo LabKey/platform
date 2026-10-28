@@ -59,6 +59,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -102,7 +103,7 @@ import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_WRAP
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIAL_REQUEST_TABLE_NAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIAL_TABLE_NAME;
 
-public class StudyQuerySchema extends UserSchema implements UserSchema.HasContextualRoles
+public class StudyQuerySchema extends UserSchema implements UserSchema.HasContextualRoles, VisualizationSchema
 {
     public static final String EXPERIMENTAL_STUDY_SUBSCHEMAS = "StudySubSchemas";
 

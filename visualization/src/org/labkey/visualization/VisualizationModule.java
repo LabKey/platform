@@ -30,6 +30,7 @@ import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.api.visualization.VisualizationService;
+import org.labkey.visualization.report.ChartMetricsVisitor;
 import org.labkey.visualization.report.DimensionBarChartAnalyticsProvider;
 import org.labkey.visualization.report.DimensionPieChartAnalyticsProvider;
 import org.labkey.visualization.report.GenericChartReportImpl;
@@ -101,6 +102,7 @@ public class VisualizationModule extends CodeOnlyModule
 
         ReportService.get().addUIProvider(new VisualizationUIProvider());
         ReportService.get().addGlobalItemFilterType(GenericChartReport.TYPE);
+        ReportService.get().registerReportMetricsVisitor(ChartMetricsVisitor::new);
 
         VisualizationService.setInstance(new VisualizationServiceImpl());
     }

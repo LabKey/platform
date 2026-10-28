@@ -63,6 +63,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
+import org.labkey.api.query.ChartDesignerUrls;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -107,6 +108,7 @@ import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.visualization.sql.VisualizationCDSGenerator;
@@ -133,7 +135,7 @@ public class VisualizationController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
     private static final Logger _log = LogManager.getLogger(VisualizationController.class);
 
-    public static class VisualizationUrlsImpl implements VisualizationUrls
+    public static class VisualizationUrlsImpl implements VisualizationUrls, ChartDesignerUrls
     {
         private static final String VISUALIZATION_NAME_PARAM = "name";
         private static final String VISUALIZATION_FILTER_URL = "filterUrl";
@@ -199,6 +201,12 @@ public class VisualizationController extends SpringActionController
                 url.addParameter(QueryParam.schemaName, schemaName);
             url.addParameter(VISUALIZATION_ID_PARAM, report.getDescriptor().getReportId().toString());
             return url;
+        }
+
+        @Override
+        public ActionURL getGenericChartDesignerURL(Container container, User user, @Nullable QuerySettings settings)
+        {
+            return getGenericChartDesignerURL(container, user, settings, null);
         }
 
         @Override
@@ -530,7 +538,7 @@ public class VisualizationController extends SpringActionController
             Map<String, Object> extraProperties = new HashMap<>();
             extraProperties.put("measureToColumn", sqlGenerator.getColumnMapping());
             extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
-            sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
+            VisualizationSchema.getProvider(sqlGenerator.getPrimarySchema()).addExtraResponseProperties(extraProperties);
             String filterDescription = sqlGenerator.getFilterDescription();
             if (filterDescription != null && !filterDescription.isEmpty())
                 extraProperties.put("filterDescription", filterDescription);
@@ -613,7 +621,7 @@ public class VisualizationController extends SpringActionController
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
             Map<String, Object> extraProperties = new HashMap<>();
             extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
-            sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
+            VisualizationSchema.getProvider(sqlGenerator.getPrimarySchema()).addExtraResponseProperties(extraProperties);
 
             String filterDescription = sqlGenerator.getFilterDescription();
             if (!filterDescription.isEmpty())
@@ -1559,7 +1567,7 @@ public class VisualizationController extends SpringActionController
                 throw new IllegalArgumentException("No such schema: " + schemaName);
             }
 
-            VisualizationProvider<?> provider = userSchema.createVisualizationProvider();
+            VisualizationProvider<?> provider = VisualizationSchema.getProvider(userSchema);
             if (provider == null)
             {
                 throw new IllegalArgumentException("No provider available for schema: " + userSchema.getSchemaPath());

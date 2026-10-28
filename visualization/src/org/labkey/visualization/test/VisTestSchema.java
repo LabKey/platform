@@ -36,6 +36,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ import java.util.Set;
 /**
  * Created by matthew on 6/8/15.
  */
-public class VisTestSchema extends UserSchema
+public class VisTestSchema extends UserSchema implements VisualizationSchema
 {
     public VisTestSchema(User user, Container c)
     {

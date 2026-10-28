@@ -46,6 +46,7 @@ import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationAggregateColumn;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.VisualizationController;
 import org.labkey.visualization.test.VisTestSchema;
@@ -119,7 +120,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             {
                 throw new IllegalArgumentException("No such schema: " + schemaName);
             }
-            provider = userSchema.createVisualizationProvider();
+            provider = VisualizationSchema.getProvider(userSchema);
             if (provider == null)
             {
                 throw new IllegalArgumentException("No provider available for schema: " + userSchema.getSchemaPath());

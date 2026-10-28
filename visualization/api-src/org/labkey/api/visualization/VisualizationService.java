@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.VisualizationSqlGenerator;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -32,7 +33,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
-public interface VisualizationService
+public interface VisualizationService extends VisualizationSqlGenerator
 {
     static VisualizationService get()
     {
@@ -42,6 +43,7 @@ public interface VisualizationService
     static void setInstance(VisualizationService impl)
     {
         ServiceRegistry.get().registerService(VisualizationService.class, impl);
+        ServiceRegistry.get().registerService(VisualizationSqlGenerator.class, impl);
     }
 
     class SQLResponse
@@ -53,6 +55,32 @@ public interface VisualizationService
     SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, IOException;
 
     SQLResponse getDataCDSGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, SQLException, BindException, IOException;
+
+    @Override
+    default String getDataSql(Container c, User user, JSONObject json)
+    {
+        try
+        {
+            return getDataGenerateSQL(c, user, json).sql;
+        }
+        catch (SQLGenerationException | IOException e)
+        {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    @Override
+    default String getDataCDSSql(Container c, User user, JSONObject json)
+    {
+        try
+        {
+            return getDataCDSGenerateSQL(c, user, json).sql;
+        }
+        catch (SQLGenerationException | SQLException | BindException | IOException e)
+        {
+            throw new IllegalArgumentException(e);
+        }
+    }
 
     Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(Container c, User u, MeasureSetRequest measureRequest);
 
