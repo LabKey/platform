@@ -119,6 +119,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
+import org.labkey.api.jsp.RecompilingJspClassLoader;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.OperationsMXBean;
 import org.labkey.api.module.CodeOnlyModule;
@@ -483,6 +484,7 @@ public class ApiModule extends CodeOnlyModule
             Query.TestCase.class,
             QueryProfiler.TestCase.class,
             RReport.TestCase.class,
+            RecompilingJspClassLoader.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
             RepeatedCommitTaskMonitor.TestCase.class,
             ReplacedRunFilter.TestCase.class,
