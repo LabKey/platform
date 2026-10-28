@@ -46,7 +46,10 @@ LABKEY.WebSocket = new function ()
 
     function openWebsocket() {
         if (_websocket !== null || !('WebSocket' in window)) return;
-        _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications?tabId=" + encodeURIComponent(LABKEY.tabId));
+        const wsUrl = new URL(`${LABKEY.contextPath}/_websocket/notifications`, window.location.origin);
+        wsUrl.protocol = window.location.protocol === "http:" ? "ws:" : "wss:";
+        wsUrl.searchParams.set("tabId", LABKEY.tabId);
+        _websocket = new WebSocket(wsUrl.toString());
         _websocket.onmessage = websocketOnMessage;
         _websocket.onclose = websocketOnClose;
         _websocket.onerror = websocketConnectionFailure;
