@@ -1256,41 +1256,39 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> {
             metrics.group("javaRuntime", "JVM vendor and VM name, keyed by Java system property")
-                .put("java.vendor", System.getProperty("java.vendor"))
-                .put("java.vm.name", System.getProperty("java.vm.name"));
-            metrics.put("distributionFilename", AppProps.getInstance().getDistributionFilename(), "Filename of the distribution the server was installed from; localBuild for developer builds");
-            metrics.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode(), "Site-level setting for when the application menu is shown");
-            metrics.put("optionalFeatures", OptionalFeatureService.get().getOptionalFeatureFlags().stream()
+                .put("java.vendor", () -> System.getProperty("java.vendor"))
+                .put("java.vm.name", () -> System.getProperty("java.vm.name"));
+            metrics.put("distributionFilename", () -> AppProps.getInstance().getDistributionFilename(), "Filename of the distribution the server was installed from; localBuild for developer builds");
+            metrics.put("applicationMenuDisplayMode", () -> LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode(), "Site-level setting for when the application menu is shown");
+            metrics.put("optionalFeatures", () -> OptionalFeatureService.get().getOptionalFeatureFlags().stream()
                 .collect(Collectors.groupingBy(optionalFeatureFlag -> optionalFeatureFlag.getType().name().toLowerCase(),
                     Collectors.mapping(flag -> flag, Collectors.toMap(OptionalFeatureFlag::getFlag, OptionalFeatureFlag::isEnabled))
                 )),
                 "Optional feature flags by type (experimental, deprecated, etc.), each mapping flag name to whether it's enabled"
             );
-            metrics.put("productFeaturesEnabled", ProductRegistry.getProductFeatureSet(), "Product features enabled by the server's license and installed modules");
-            metrics.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString(), "Web analytics tracking modes enabled; [] if none");
+            metrics.put("productFeaturesEnabled", ProductRegistry::getProductFeatureSet, "Product features enabled by the server's license and installed modules");
+            metrics.put("analyticsTrackingStatus", () -> AnalyticsServiceImpl.get().getTrackingStatus().toString(), "Web analytics tracking modes enabled; [] if none");
             String labkeyContextPath = AppProps.getInstance().getContextPath();
-            metrics.put("webappContextPath", labkeyContextPath, "Context path LabKey is deployed under; empty when deployed at the root");
-            metrics.put("embeddedTomcat", true, "Always true; the server runs in embedded Tomcat");
-            boolean customLog4JConfig = false;
-            if (ModuleLoader.getServletContext() != null)
-            {
-                customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
-            }
-            metrics.put("customLog4JConfig", customLog4JConfig, "Whether the server is configured with a custom Log4J configuration");
-            metrics.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production", "development or production mode");
-            Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
-            deployedApps.remove(labkeyContextPath);
-            if (labkeyContextPath.startsWith("/"))
-            {
-                deployedApps.remove(labkeyContextPath.substring(1));
-            }
-            metrics.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","), "Comma-separated names of other webapps deployed alongside LabKey");
+            metrics.put("webappContextPath", () -> labkeyContextPath, "Context path LabKey is deployed under; empty when deployed at the root");
+            metrics.put("embeddedTomcat", () -> true, "Always true; the server runs in embedded Tomcat");
+            metrics.put("customLog4JConfig", () -> ModuleLoader.getServletContext() != null && Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig")),
+                "Whether the server is configured with a custom Log4J configuration");
+            metrics.put("runtimeMode", () -> AppProps.getInstance().isDevMode() ? "development" : "production", "development or production mode");
+            metrics.put("otherDeployedWebapps", () -> {
+                Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
+                deployedApps.remove(labkeyContextPath);
+                if (labkeyContextPath.startsWith("/"))
+                {
+                    deployedApps.remove(labkeyContextPath.substring(1));
+                }
+                return StringUtils.join(deployedApps, ",");
+            }, "Comma-separated names of other webapps deployed alongside LabKey");
 
             metrics.put("totalLogins", () -> UserManager.getAuthCount(null, false, false, false), "Login events in the audit log; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
             metrics.put("apiKeyLogins", () -> UserManager.getAuthCount(null, false, true, false), "Login events in the audit log that used an API key; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
-            metrics.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout(), "HTTP session timeout in minutes");
-            metrics.put("userLimits", new LimitActiveUsersSettings().getMetricsMap(), "Active user warning and limit settings: whether each is on, its user count threshold, and its message");
-            metrics.put("systemUserCount", UserManager.getSystemUserCount(), "Active users marked as system users, which don't count toward user limits");
+            metrics.put("sessionTimeout", () -> ModuleLoader.getServletContext().getSessionTimeout(), "HTTP session timeout in minutes");
+            metrics.put("userLimits", () -> new LimitActiveUsersSettings().getMetricsMap(), "Active user warning and limit settings: whether each is on, its user count threshold, and its message");
+            metrics.put("systemUserCount", UserManager::getSystemUserCount, "Active users marked as system users, which don't count toward user limits");
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
             metrics.put("uniqueRecentUserCount", () -> UserManager.getAuthCount(cal.getTime(), false, false, true), "Distinct users who logged in during the last 30 days");
@@ -1316,7 +1314,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
             metrics.put("databaseSchemaSize", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap(), "Size in bytes of each database schema, including indexes; temp excluded");
 
-            metrics.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics(), "Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
+            metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
             metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
             UsageMetricGroup roleAssignments = metrics.group("roleAssignments", "Direct assignments of designer roles to users or groups, by role, across all containers");
             final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
@@ -1327,7 +1325,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             UsageMetricGroup allowListCounts = metrics.group("allowListCounts", "Entries in each site allow list, such as external redirect hosts and file extensions");
             for (AllowListType type : AllowListType.values())
             {
-                allowListCounts.put(type.name(), type.getValues().size());
+                allowListCounts.put(type.name(), () -> type.getValues().size());
             }
 
             return metrics;

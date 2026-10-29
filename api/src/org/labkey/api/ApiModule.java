@@ -23,6 +23,7 @@ import org.apache.catalina.filters.CorsFilter;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.ConcurrencyLimiter;
 import org.labkey.api.action.SpringActionController;
@@ -30,6 +31,7 @@ import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.AssayResultsFileWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.assay.sample.MaterialInputRoleComparator;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ImageServlet;
 import org.labkey.api.attachments.LookAndFeelResourceType;
@@ -101,12 +103,14 @@ import org.labkey.api.data.dialect.PostgresSnapshot;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.data.queryprofiler.Query;
+import org.labkey.api.data.queryprofiler.QueryCounter;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.GenerateUniqueDataIterator;
+import org.labkey.api.dataiterator.LookAheadDataIterator;
 import org.labkey.api.dataiterator.QueryDataIteratorBuilder;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
@@ -407,6 +411,7 @@ public class ApiModule extends CodeOnlyModule
     {
         return Set.of(
             Aggregate.TestCase.class,
+            ApiResponseWriter.TestCase.class,
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
             AssayResultsFileWriter.TestCase.class,
@@ -461,6 +466,7 @@ public class ApiModule extends CodeOnlyModule
             JsonUtil.TestCase.class,
             KeySharingJSONTokener.TestCase.class,
             LimitedUser.TestCase.class,
+            LookAheadDataIterator.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,
@@ -582,7 +588,9 @@ public class ApiModule extends CodeOnlyModule
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,
             PostgresSnapshot.TestCase.class,
+            PreparedTransform.TestCase.class,
             PropertyManager.TestCase.class,
+            QueryCounter.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
             QueryProfiler.ExecutionPlanUnavailableTestCase.class,
             QueryView.TestCase.class,

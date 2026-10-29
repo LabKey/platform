@@ -218,13 +218,12 @@ public class DisplayFormatAnalyzer
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        // Collect the unique set of non-standard date display formats across the entire site
-        Set<String> badFormats = new HashSet<>();
-        return metrics -> {
-            DisplayFormatAnalyzer analyzer = new DisplayFormatAnalyzer();
-            analyzer.handleAll(User.getAdminServiceUser(), (c, type, format, contextProvider) -> badFormats.add(format));
-            return metrics.put("nonStandardDateDisplayFormats", badFormats, "Distinct non-standard date display formats used in folder defaults, query metadata, or field properties anywhere on the server");
-        };
+        return metrics -> metrics.put("nonStandardDateDisplayFormats", () -> {
+            // Collect the unique set of non-standard date display formats across the entire site
+            Set<String> badFormats = new HashSet<>();
+            new DisplayFormatAnalyzer().handleAll(User.getAdminServiceUser(), (c, type, format, contextProvider) -> badFormats.add(format));
+            return badFormats;
+        }, "Distinct non-standard date display formats used in folder defaults, query metadata, or field properties anywhere on the server");
     }
 
     private <P extends UrlProvider> @NotNull P urlProvider(Class<P> inter)

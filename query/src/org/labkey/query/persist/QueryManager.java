@@ -1056,14 +1056,14 @@ public class QueryManager
         if (null != svc)
         {
             svc.registerUsageMetrics(moduleName, metrics -> {
-                MultiSet<String> multiSet = DbScope.getDbScopes().stream()
-                    .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
-                    .collect(Collectors.toCollection(HashMultiSet::new));
+                metrics.put("externalDatasources", () -> {
+                    MultiSet<String> multiSet = DbScope.getDbScopes().stream()
+                        .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
+                        .collect(Collectors.toCollection(HashMultiSet::new));
 
-                Map<String, Object> statsMap = multiSet.uniqueSet().stream()
-                    .collect(Collectors.toMap(Function.identity(), multiSet::getCount));
-
-                metrics.put("externalDatasources", statsMap, "External (non-LabKey) data sources by database product name");
+                    return multiSet.uniqueSet().stream()
+                        .collect(Collectors.toMap(Function.identity(), multiSet::getCount));
+                }, "External (non-LabKey) data sources by database product name");
                 metrics.put(
                     "customViewCounts",
                     () -> Map.of(

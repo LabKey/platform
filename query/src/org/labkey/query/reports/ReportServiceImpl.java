@@ -16,6 +16,7 @@
 
 package org.labkey.query.reports;
 
+import com.google.common.base.Suppliers;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiSet;
@@ -116,6 +117,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1091,44 +1093,50 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         if (null != svc)
         {
             svc.registerUsageMetrics(moduleName, metrics -> {
-                // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
-                MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
-                AtomicInteger genericChartWithTrendlineTypeCount = new AtomicInteger();
-                AtomicInteger genericChartWithErrorBarsCount = new AtomicInteger();
-                // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
-                TableInfo table = getTable();
-                SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "r")
-                    .unsafeAppend(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(")");
-                ReportServiceImpl reportService = getInstance();
-                Map<String, Long> countsByType;
-                try (Stream<ReportDB> rows = new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class))
-                {
-                    countsByType = rows
-                        .map(reportService::_getInstance)
-                        .filter(Objects::nonNull)
-                        .peek(report -> {
-                            if (report instanceof GenericChartReport chart)
-                            {
-                                chartCountsByRenderType.add(chart.getRenderType());
-                                if (chart.getDescriptor() instanceof VisualizationReportDescriptor descriptor)
-                                {
-                                    String configJson = descriptor.getJSON();
-                                    if (configJson.contains("\"trendlineType\":") && !configJson.contains("\"trendlineType\":\"\""))
-                                        genericChartWithTrendlineTypeCount.getAndIncrement();
-                                    if (configJson.contains("\"errorBars\":\"SD\"") || configJson.contains("\"errorBars\":\"SEM\""))
-                                        genericChartWithErrorBarsCount.getAndIncrement();
-                                }
-                            }
-                        })
-                        .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
-                }
-
+                Supplier<ReportCounts> reportCounts = Suppliers.memoize(ReportServiceImpl::getReportCounts);
                 return metrics
-                    .put("reportCountsByType", countsByType, "Saved reports in existing containers by report type")
-                    .put("genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType), "Saved charts (GenericChartReport) by render type (BAR_PLOT, BOX_PLOT, etc.)")
-                    .put("genericChartWithTrendlineTypeCount", genericChartWithTrendlineTypeCount, "Saved charts with a trendline type set")
-                    .put("genericChartWithErrorBarsCount", genericChartWithErrorBarsCount, "Saved charts with SD or SEM error bars");
+                    .put("reportCountsByType", () -> reportCounts.get().countsByType(), "Saved reports in existing containers by report type")
+                    .put("genericChartCountsByRenderType", () -> reportCounts.get().chartCountsByRenderType(), "Saved charts (GenericChartReport) by render type (BAR_PLOT, BOX_PLOT, etc.)")
+                    .put("genericChartWithTrendlineTypeCount", () -> reportCounts.get().genericChartWithTrendlineTypeCount(), "Saved charts with a trendline type set")
+                    .put("genericChartWithErrorBarsCount", () -> reportCounts.get().genericChartWithErrorBarsCount(), "Saved charts with SD or SEM error bars");
             });
+        }
+    }
+
+    private record ReportCounts(Map<String, Long> countsByType, Map<GenericChartReport.RenderType, Integer> chartCountsByRenderType, int genericChartWithTrendlineTypeCount, int genericChartWithErrorBarsCount) {}
+
+    private static ReportCounts getReportCounts()
+    {
+        // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
+        MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
+        AtomicInteger genericChartWithTrendlineTypeCount = new AtomicInteger();
+        AtomicInteger genericChartWithErrorBarsCount = new AtomicInteger();
+        // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
+        TableInfo table = getTable();
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "r")
+            .unsafeAppend(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(")");
+        ReportServiceImpl reportService = getInstance();
+        try (Stream<ReportDB> rows = new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class))
+        {
+            Map<String, Long> countsByType = rows
+                .map(reportService::_getInstance)
+                .filter(Objects::nonNull)
+                .peek(report -> {
+                    if (report instanceof GenericChartReport chart)
+                    {
+                        chartCountsByRenderType.add(chart.getRenderType());
+                        if (chart.getDescriptor() instanceof VisualizationReportDescriptor descriptor)
+                        {
+                            String configJson = descriptor.getJSON();
+                            if (configJson.contains("\"trendlineType\":") && !configJson.contains("\"trendlineType\":\"\""))
+                                genericChartWithTrendlineTypeCount.getAndIncrement();
+                            if (configJson.contains("\"errorBars\":\"SD\"") || configJson.contains("\"errorBars\":\"SEM\""))
+                                genericChartWithErrorBarsCount.getAndIncrement();
+                        }
+                    }
+                })
+                .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
+            return new ReportCounts(countsByType, MultiSetUtils.getOccurrenceMap(chartCountsByRenderType), genericChartWithTrendlineTypeCount.get(), genericChartWithErrorBarsCount.get());
         }
     }
 }

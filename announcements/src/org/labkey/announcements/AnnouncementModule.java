@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements;
 
+import com.google.common.base.Suppliers;
 import org.apache.commons.collections4.MultiSet;
 import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.jetbrains.annotations.NotNull;
@@ -79,6 +80,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -89,6 +91,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 {
     public static final String WEB_PART_NAME = "Messages";
     public static final String NAME = "Announcements";
+
+    private record MessageBoardCounts(int boards, Map<String, Map<String, Integer>> settings) {}
 
     public AnnouncementModule()
     {
@@ -191,30 +195,33 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         if (svc != null)
         {
             svc.registerUsageMetrics(NAME, metrics -> {
-                MultiSet<String> secure = new HashMultiSet<>();
-                MultiSet<String> moderator = new HashMultiSet<>();
                 CommSchema comm = CommSchema.getInstance();
-                SqlSelector selector = new SqlSelector(comm.getSchema(), SQLFragment.unsafe("SELECT DISTINCT Container FROM ").append(comm.getTableInfoAnnouncements()));
-                AtomicInteger boards = new AtomicInteger();
-                try (Stream<String> ids = selector.uncachedStream(String.class))
-                {
-                    ids
-                        .map(ContainerManager::getForId)
-                        .filter(Objects::nonNull)
-                        .map(AnnouncementManager::getMessageBoardSettings)
-                        .forEach(settings -> {
-                            secure.add(settings.getSecure());
-                            moderator.add(settings.getModeratorReview());
-                            boards.getAndIncrement();
-                        });
-                }
-                return metrics
-                    .put("messageBoards", boards.get(), "Containers with at least one message")
-                    .put("messages", () -> new TableSelector(comm.getTableInfoAnnouncements()).getRowCount(), "Messages across all containers, including responses")
-                    .put("settings", Map.of(
+                Supplier<MessageBoardCounts> boardCounts = Suppliers.memoize(() -> {
+                    MultiSet<String> secure = new HashMultiSet<>();
+                    MultiSet<String> moderator = new HashMultiSet<>();
+                    SqlSelector selector = new SqlSelector(comm.getSchema(), SQLFragment.unsafe("SELECT DISTINCT Container FROM ").append(comm.getTableInfoAnnouncements()));
+                    AtomicInteger boards = new AtomicInteger();
+                    try (Stream<String> ids = selector.uncachedStream(String.class))
+                    {
+                        ids
+                            .map(ContainerManager::getForId)
+                            .filter(Objects::nonNull)
+                            .map(AnnouncementManager::getMessageBoardSettings)
+                            .forEach(settings -> {
+                                secure.add(settings.getSecure());
+                                moderator.add(settings.getModeratorReview());
+                                boards.getAndIncrement();
+                            });
+                    }
+                    return new MessageBoardCounts(boards.get(), Map.of(
                         "secure", MultiSetUtils.getOccurrenceMap(secure),
                         "moderatorReview", MultiSetUtils.getOccurrenceMap(moderator)
-                    ), "Message boards counted in messageBoards, by their secure setting value and by their moderator review setting value");
+                    ));
+                });
+                return metrics
+                    .put("messageBoards", () -> boardCounts.get().boards(), "Containers with at least one message")
+                    .put("messages", () -> new TableSelector(comm.getTableInfoAnnouncements()).getRowCount(), "Messages across all containers, including responses")
+                    .put("settings", () -> boardCounts.get().settings(), "Message boards counted in messageBoards, by their secure setting value and by their moderator review setting value");
             });
         }
     }
