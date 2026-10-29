@@ -23,6 +23,7 @@ import org.apache.catalina.filters.CorsFilter;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.ConcurrencyLimiter;
 import org.labkey.api.action.SpringActionController;
@@ -414,6 +415,7 @@ public class ApiModule extends CodeOnlyModule
     {
         return Set.of(
             Aggregate.TestCase.class,
+            ApiResponseWriter.TestCase.class,
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
             AssayResultsFileWriter.TestCase.class,
