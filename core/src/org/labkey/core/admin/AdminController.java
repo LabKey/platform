@@ -28,6 +28,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.io.FileUtils;
@@ -130,6 +131,7 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -271,12 +273,13 @@ import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.FolderDisplayMode;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.HttpsUtil;
+import org.labkey.api.util.HttpUtil;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.LinkBuilder;
@@ -372,6 +375,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -385,7 +389,6 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -413,6 +416,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -3629,6 +3633,122 @@ public class AdminController extends SpringActionController
             if (svc != null)
                 count = svc.logOrphanedAttachments();
             return Map.of("count", count);
+        }
+    }
+
+    // A temporary hidden action that admins (likely LabKey employees) can run on a server to get a sense for how
+    // long the de-duplicating migration is likely to take once we implement it post 26.11. We should remove this
+    // action once the migration code is in place.
+    @AdminConsoleAction
+    public static class HashAllAttachmentsAction extends ConfirmAction<Object>
+    {
+        // Matches GlobalAttachmentManager's property; labbook may not be deployed, so read it directly
+        private static final String ELN_PROPERTIES_KEY = "ELN";
+        private static final String ATTACHMENT_PARENT_KEY = "attachmentParentId";
+        private static final long PROGRESS_INTERVAL = TimeUnit.SECONDS.toMillis(30);
+
+        private record DocumentInfo(int rowId, String name, long size) {}
+
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors)
+        {
+            setTitle("Hash All Attachments");
+            return HtmlView.of("This will compute a SHA-256 hash of every non-global attachment in core.Documents on a background thread. Progress, counts, and timing will be written to the server log.");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            // This might take a while, so run it in the background and redirect immediately
+            JobRunner.getDefault().execute(HashAllAttachmentsAction::hashAllAttachments);
+            return true;
+        }
+
+        private static void hashAllAttachments()
+        {
+            DbScope scope = CoreSchema.getInstance().getScope();
+            TableInfo documents = CoreSchema.getInstance().getTableInfoDocuments();
+            String globalParentId = PropertyManager.getProperties(ELN_PROPERTIES_KEY).get(ATTACHMENT_PARENT_KEY);
+
+            // FileSystemSnapshot attachments live on the file system, not in core.Documents
+            SQLFragment listSql = SQLFragment.unsafe("SELECT RowId, DocumentName, DocumentSize FROM ").append(documents)
+                .unsafeAppend(" WHERE (ParentType IS NULL OR ParentType <> 'FileSystemSnapshot')");
+            if (globalParentId != null)
+                listSql.unsafeAppend(" AND (Parent IS NULL OR Parent <> ?)", globalParentId);
+            listSql.unsafeAppend(" ORDER BY RowId");
+
+            long start = System.currentTimeMillis();
+            List<DocumentInfo> docs = new ArrayList<>();
+            new SqlSelector(scope, listSql).forEach(rs -> docs.add(new DocumentInfo(rs.getInt("RowId"), rs.getString("DocumentName"), rs.getLong("DocumentSize"))));
+            long totalBytes = docs.stream().mapToLong(DocumentInfo::size).sum();
+            LOG.info("HashAllAttachments: enumerated {} documents ({} bytes) in {}", Formats.commaf0.format(docs.size()), Formats.commaf0.format(totalBytes), DateUtil.formatDuration(System.currentTimeMillis() - start));
+
+            long hashStart = System.currentTimeMillis();
+            long lastProgress = hashStart;
+            int hashed = 0;
+            int failed = 0;
+            long hashedBytes = 0;
+
+            for (DocumentInfo doc : docs)
+            {
+                try
+                {
+                    String[] hash = new String[1];
+                    new SqlSelector(scope, SQLFragment.unsafe("SELECT Document FROM ").append(documents).unsafeAppend(" WHERE RowId = ?", doc.rowId()))
+                        .forEach(rs -> {
+                            try (InputStream is = rs.getBinaryStream("Document"))
+                            {
+                                hash[0] = is == null ? null : DigestUtils.sha256Hex(is);
+                            }
+                            catch (IOException e)
+                            {
+                                throw new UncheckedIOException(e);
+                            }
+                        });
+
+                    if (hash[0] == null)
+                    {
+                        failed++;
+                        LOG.warn("HashAllAttachments: no content for document {} (\"{}\")", doc.rowId(), doc.name());
+                    }
+                    else
+                    {
+                        hashed++;
+                        hashedBytes += doc.size();
+                    }
+                }
+                catch (Exception e)
+                {
+                    failed++;
+                    LOG.error("HashAllAttachments: failed to hash document {} (\"{}\")", doc.rowId(), doc.name(), e);
+                }
+
+                long now = System.currentTimeMillis();
+                if (now - lastProgress >= PROGRESS_INTERVAL)
+                {
+                    lastProgress = now;
+                    LOG.info("HashAllAttachments: {} of {} documents hashed ({} of {} bytes), {} failed, elapsed {}, {} attachments per second", Formats.commaf0.format(hashed), Formats.commaf0.format(docs.size()), Formats.commaf0.format(hashedBytes), Formats.commaf0.format(totalBytes), Formats.commaf0.format(failed), DateUtil.formatDuration(now - hashStart), perSecond(hashed, now - hashStart));
+                }
+            }
+
+            long elapsed = System.currentTimeMillis() - hashStart;
+            LOG.info("HashAllAttachments: complete. Hashed {} documents ({} bytes), {} failed. Hashing took {}, {} attachments per second", Formats.commaf0.format(hashed), Formats.commaf0.format(hashedBytes), Formats.commaf0.format(failed), DateUtil.formatDuration(elapsed), perSecond(hashed, elapsed));
+        }
+
+        private static String perSecond(int count, long elapsedMillis)
+        {
+            return elapsedMillis > 0 ? Formats.commaf0.format(count * 1000.0 / elapsedMillis) : "n/a";
+        }
+
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return new ActionURL(AttachmentsAction.class, ContainerManager.getRoot());
         }
     }
 
