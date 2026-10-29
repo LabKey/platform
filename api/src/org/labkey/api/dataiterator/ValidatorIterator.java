@@ -217,14 +217,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
 
     protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data, @Nullable Object providedValue)
     {
-        String msg;
-        // CONSIDER: add validatorContext to ColumnValidator.validate() always
-        if (v instanceof PropertyValidator)
-            msg = v.validate(rowNum, value, validatorContext, providedValue);
-        else
-            msg = v.validate(rowNum, value);
-
-        return msg;
+        return v.validate(rowNum, value, validatorContext, providedValue);
     }
 
     @Override

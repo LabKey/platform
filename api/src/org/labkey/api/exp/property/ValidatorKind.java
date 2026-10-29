@@ -18,6 +18,7 @@ package org.labkey.api.exp.property;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.validator.PropertyValidator;
 import org.labkey.api.query.ValidationError;
 import org.labkey.data.xml.ValidatorPropertyType;
 import org.labkey.data.xml.ValidatorType;
@@ -42,6 +43,12 @@ public interface ValidatorKind
     PropertyValidatorDef createInstance();
     boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors);
     boolean validate(PropertyValidatorDef validator, ColumnRenderProperties field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue);
+
+    /** Must be cheap and must not throw: Table.insert/update create validators for every value they write */
+    default PropertyValidator bind(PropertyValidatorDef validator, ColumnRenderProperties field)
+    {
+        return new PropertyValidator(field, validator, this);
+    }
 
     // Standard save-validator-to-XML method. ValidatorKind implementations can customize this by overriding.
     default void convertToXml(PropertyValidatorDef v, ValidatorsType validatorsXml)

@@ -16,7 +16,9 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.validator.PropertyValidator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.ValidationError;
@@ -58,4 +60,11 @@ public interface PropertyValidatorDef
     PropertyValidatorDef save(User user, Container container) throws ValidationException;
 
     boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache);
+
+    /** A type URI with no registered kind still binds, to a validator that reports the missing kind */
+    default PropertyValidator bind(ColumnRenderProperties field)
+    {
+        ValidatorKind kind = getType();
+        return kind != null ? kind.bind(this, field) : new PropertyValidator(field, this, null);
+    }
 }

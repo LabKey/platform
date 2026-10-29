@@ -26,29 +26,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Wrapper around PropertyValidatorDef/ValidatorKind
+ * A PropertyValidatorDef bound to a column by {@link ValidatorKind#bind}
  */
 public class PropertyValidator implements ColumnValidator
 {
-    final String columnName;
-    final ValidatorKind kind;
+    final @Nullable ValidatorKind kind;
     final PropertyValidatorDef propertyValidator;
     private final ColumnRenderProperties _columnRenderProperties;
     final List<ValidationError> errors = new ArrayList<>(1);
 
-    public PropertyValidator(String columnName, ColumnRenderProperties crp, PropertyValidatorDef propertyValidator)
+    /** @param kind null when the definition's type URI has no registered kind */
+    public PropertyValidator(ColumnRenderProperties crp, PropertyValidatorDef propertyValidator, @Nullable ValidatorKind kind)
     {
-        this.columnName = columnName;
         this.propertyValidator = propertyValidator;
-        this.kind = propertyValidator.getType();
+        this.kind = kind;
         this._columnRenderProperties = crp;
     }
 
+    /**
+     * Always passes: a kind may need the ValidatorContext's user, container, and cache, so property validators are
+     * skipped, not enforced, by context-free callers such as Table.insert/update and {@link ColumnValidators#validate}.
+     * CONSIDER: have context-free callers exclude property validators explicitly, so a skipped check is never a silent pass.
+     */
     @Override
     public String validate(int rowNum, Object value)
     {
-        // CONSIDER: Add ValidatorContext parameter to the ColumnValidator.validate method.
-        throw new UnsupportedOperationException("Use validate(rowNum, value, validatorContext) instead");
+        return null;
     }
 
     @Override
@@ -57,6 +60,8 @@ public class PropertyValidator implements ColumnValidator
         // Don't validate null values, #15683, #19352
         if (null == value)
             return null;
+        if (null == kind)
+            return "Validator type : " + propertyValidator.getTypeURI() + " does not exist.";
         if (kind.validate(propertyValidator, _columnRenderProperties , value, errors, validatorContext, providedValue))
             return null;
         if (errors.isEmpty())
