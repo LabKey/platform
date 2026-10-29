@@ -113,9 +113,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AssayManager implements AssayService
 {
@@ -141,10 +144,13 @@ public class AssayManager implements AssayService
         }
     };
 
+    /** Holds the provider's name rather than the instance, since reloading module assays replaces the instances */
+    private record ProtocolProvider(ExpProtocol protocol, String providerName) {}
+
     /** Cache the protocols defined in a given container, which we can quickly compose to get the protocols in scope */
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(Container.class, ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, _) ->
+    private static final Cache<Container, List<ProtocolProvider>> PROTOCOL_CACHE = DatabaseCache.get(Container.class, ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, _) ->
     {
-        List<ExpProtocol> result = new ArrayList<>();
+        List<ProtocolProvider> result = new ArrayList<>();
 
         // Filter to just the ones that have an AssayProvider associated with them
         for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
@@ -154,7 +160,7 @@ public class AssayManager implements AssayService
             {
                 // We don't want anyone editing our cached object
                 protocol.lock();
-                result.add(protocol);
+                result.add(new ProtocolProvider(protocol, p.getName()));
             }
         }
         return result.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(result);
@@ -202,6 +208,7 @@ public class AssayManager implements AssayService
             throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
         }
         _providers.add(provider);
+        clearProtocolCache();
         PipelineProvider pipelineProvider = provider.getPipelineProvider();
         if (pipelineProvider != null)
         {
@@ -385,39 +392,39 @@ public class AssayManager implements AssayService
 
     private @NotNull List<ExpProtocol> getAssayProtocols(Container container, boolean currentOnly)
     {
-        List<ExpProtocol> allProtocols = new ArrayList<>();
+        return getProtocolProviders(container, currentOnly).map(ProtocolProvider::protocol).sorted().toList();
+    }
 
+    /** Unsorted */
+    private @NotNull Stream<ProtocolProvider> getProtocolProviders(Container container, boolean currentOnly)
+    {
         Collection<Container> containerScopes = currentOnly ? List.of(container) : container.getContainersFor(ContainerType.DataType.protocol);
-        for (Container containerInScope : containerScopes)
-        {
-            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
-            allProtocols.addAll(ids);
-        }
-
-        Collections.sort(allProtocols);
-        return Collections.unmodifiableList(allProtocols);
+        return containerScopes.stream().flatMap(c -> PROTOCOL_CACHE.get(c).stream());
     }
 
     @Override
     public @NotNull List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
     {
-        // Take the full list
-        List<ExpProtocol> allProtocols = getAssayProtocols(container);
         if (provider == null)
-        {
-            return allProtocols;
-        }
+            return getAssayProtocols(container);
 
-        // Filter it down to just ones that match the provider
-        List<ExpProtocol> result = new ArrayList<>();
-        for (ExpProtocol p : allProtocols)
-        {
-            if (provider.equals(getProvider(p)))
-            {
-                result.add(p);
-            }
-        }
-        return Collections.unmodifiableList(result);
+        return getProtocolProviders(container, false)
+                .filter(pp -> provider.getName().equals(pp.providerName()))
+                .map(ProtocolProvider::protocol)
+                .sorted()
+                .toList();
+    }
+
+    /** Providers of the assay protocols in scope, without resolving each protocol's provider again */
+    public @NotNull Set<AssayProvider> getAssayProvidersInScope(Container container)
+    {
+        Collection<AssayProvider> providers = getAssayProviders();
+        return getProtocolProviders(container, false)
+                .map(ProtocolProvider::providerName)
+                .distinct()
+                .map(name -> getProvider(name, providers))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     @Override

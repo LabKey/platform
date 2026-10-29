@@ -72,6 +72,8 @@ public class ModuleAssayCache
         {
             _moduleAssayCollections = null;
         }
+        // Cached protocols were matched to providers from the set being replaced
+        AssayManager.get().clearProtocolCache();
     }
 
     static class ModuleAssayCollections
