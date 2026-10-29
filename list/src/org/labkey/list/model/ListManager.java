@@ -629,9 +629,18 @@ public class ListManager implements SearchService.DocumentProvider
     // Delete a single list item from the index after item delete
     public void deleteItemIndex(final ListDefinition list, @NotNull final String entityId)
     {
+        deleteItemIndex(list, List.of(entityId));
+    }
+
+    // Delete list items from the index after item delete
+    public void deleteItemIndex(final ListDefinition list, @NotNull final Collection<String> entityIds)
+    {
+        if (entityIds.isEmpty())
+            return;
+
         // Transaction-aware is good practice. But it happens to be critical in the case of calling indexEntireList()
         // because it turns off JDBC caching, using a non-transacted connection (bad news if we call it mid-transaction).
-        new DeleteItemIndexTask(list).register(getListMetadataSchema().getScope(), List.of(entityId), DbScope.CommitTaskOption.POSTCOMMIT);
+        new DeleteItemIndexTask(list).register(getListMetadataSchema().getScope(), entityIds, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     private record ListKey(Container container, int listId) {}
