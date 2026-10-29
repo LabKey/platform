@@ -331,17 +331,15 @@ public class WikiManager implements WikiService
             // Table.insert() provides no way to conditionalize the insert, resulting in constraint violation exceptions
             // that kill the current transaction on PostgreSQL. We want "best effort" inserts here, so execute custom
             // INSERT SQL instead.
-            SQLFragment sql = new SQLFragment("INSERT INTO ")
-                .append(CommSchema.getInstance().getTableInfoPageAliases())
-                .unsafeAppend(" (Container, Alias, PageRowId) SELECT ?, ?, ?\n")
-                .add(wiki.getContainerId())
-                .add(alias)
-                .add(wiki.getRowId())
-                .unsafeAppend("WHERE NOT EXISTS (SELECT * FROM ")
-                .append(CommSchema.getInstance().getTableInfoPageAliases())
-                .unsafeAppend(" WHERE Container = ? AND LOWER(Alias) = LOWER(?))")
-                .add(wiki.getContainerId())
-                .add(alias);
+            SQLFragment sql = new SQLFragment()
+                .INSERT_INTO().append(CommSchema.getInstance().getTableInfoPageAliases()).unsafeAppend(" (Container, Alias, PageRowId)")
+                .SELECT().unsafeAppend("?, ?, ?").add(wiki.getContainerId()).add(alias).add(wiki.getRowId())
+                .WHERE().unsafeAppend("NOT EXISTS (")
+                    .SELECT().unsafeAppend("*")
+                    .FROM().append(CommSchema.getInstance().getTableInfoPageAliases())
+                    .WHERE().unsafeAppend("Container = ?").add(wiki.getContainerId())
+                        .AND().unsafeAppend("LOWER(Alias) = LOWER(?)").add(alias)
+                .unsafeAppend(")");
             int rows = executor.execute(sql);
 
             if (0 == rows)

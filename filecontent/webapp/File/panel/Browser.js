@@ -38,14 +38,6 @@ Ext4.define('File.panel.Browser', {
     bufferFiles : true,
 
     /**
-     * @cfg {Ext4.util.Format.dateRenderer} dateRenderer
-     */
-    dateRenderer : function(value) {
-        var formattedVal = Ext4.util.Format.date(value, LABKEY.extDefaultDateTimeFormat || 'Y-m-d H:i:s');
-        return LABKEY.Utils.encodeHtml(formattedVal);
-    },
-
-    /**
      * Size renderer used in the details panel.
      * @cfg {Ext4.util.Format.fileSize} fileSize
      */
@@ -270,6 +262,13 @@ Ext4.define('File.panel.Browser', {
     useServerFileProperties: true,
 
     statics : {
+        /**
+         * Prefers the string the server formatted; formatting the raw instant here renders in the viewer's time zone.
+         */
+        renderTimestamp : function(value, formattedValue) {
+            return LABKEY.Utils.encodeHtml(formattedValue || Ext4.util.Format.date(value, LABKEY.extDefaultDateTimeFormat || 'Y-m-d H:i:s'));
+        },
+
         /**
          * Requests the set of actions available for the given containerPath
          * @private
@@ -1024,7 +1023,9 @@ Ext4.define('File.panel.Browser', {
                 sortable: true,
                 hidden: false,
                 height: 20,
-                renderer: this.dateRenderer
+                renderer: function(value, metaData, record) {
+                    return File.panel.Browser.renderTimestamp(value, record && record.get('lastModifiedFormatted'));
+                }
             },
             size: {
                 header: "Size",
@@ -2740,7 +2741,7 @@ Ext4.define('File.panel.Browser', {
                     '<tr><th>Description:</td><td>{description:htmlEncode}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="lastmodified != undefined">' +
-                    '<tr><th>Modified:</th><td>{lastmodified:this.renderDate}</td></tr>' +
+                    '<tr><th>Modified:</th><td>{[this.renderLastModified(values)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="createdby != undefined && createdby.length">' +
                     '<tr><th>Created By:</th><td>{createdby:htmlEncode}</td></tr>' +
@@ -2754,14 +2755,13 @@ Ext4.define('File.panel.Browser', {
                 '</tpl>' +
            '</table>',
         {
-            renderDate : function(d) {
-                return this.dateRenderer(d);
+            renderLastModified : function(values) {
+                return File.panel.Browser.renderTimestamp(values.lastmodified, values.lastModifiedFormatted);
             },
             renderSize : function(d) {
                 return this.detailsSizeRenderer(d);
             }
         },{
-            dateRenderer : this.dateRenderer,
             detailsSizeRenderer : this.detailsSizeRenderer
         });
 
