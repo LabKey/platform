@@ -222,6 +222,6 @@ public class DbLoginManager implements DbLoginService
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return metrics -> metrics.put("databaseAuthentication", getProperties(), "Database authentication settings, such as password strength and expiration; empty if never saved");
+        return metrics -> metrics.put("databaseAuthentication", DbLoginManager::getProperties, "Database authentication settings, such as password strength and expiration; empty if never saved");
     }
 }
