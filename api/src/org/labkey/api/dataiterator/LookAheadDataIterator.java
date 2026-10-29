@@ -191,10 +191,9 @@ public abstract class LookAheadDataIterator extends CachingDataIterator
             assertFalse(DataIteratorUtil.wrapScrollable(new RecordingIterator(data(3), 2)) instanceof LookAheadDataIterator);
         }
 
-        @Test
-        public void inputFailureSurfacesAtItsRow() throws Exception
+        private static DataIterator failsOnRow3()
         {
-            DataIterator failsOnRow3 = new WrapperDataIterator(data(5))
+            return new WrapperDataIterator(data(5))
             {
                 @Override
                 public boolean next() throws BatchValidationException
@@ -205,18 +204,26 @@ public abstract class LookAheadDataIterator extends CachingDataIterator
                     return ret;
                 }
             };
+        }
 
-            RecordingIterator it = new RecordingIterator(failsOnRow3, 10);
-            try
+        @Test
+        public void inputFailureSurfacesAtItsRow() throws Exception
+        {
+            // Window size 10 fails mid-window; window size 2 fails reading ahead the second window
+            for (int windowSize : List.of(10, 2))
             {
-                it.readAll();
-                fail("Expected the input's failure");
+                RecordingIterator it = new RecordingIterator(failsOnRow3(), windowSize);
+                try
+                {
+                    it.readAll();
+                    fail("Expected the input's failure with window size " + windowSize);
+                }
+                catch (IllegalStateException e)
+                {
+                    assertEquals("bad row 3", e.getMessage());
+                }
+                assertEquals("Window size " + windowSize, List.of("prefetch [1, 2]", "row 1", "row 2"), it.events);
             }
-            catch (IllegalStateException e)
-            {
-                assertEquals("bad row 3", e.getMessage());
-            }
-            assertEquals(List.of("prefetch [1, 2]", "row 1", "row 2"), it.events);
         }
     }
 }
