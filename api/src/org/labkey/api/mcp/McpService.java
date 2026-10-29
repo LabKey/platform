@@ -110,6 +110,7 @@ public interface McpService extends ToolCallbackProvider
     Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
     String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
     String ENABLE_AI_FEATURES = "enableAIFeatures";
+    String ENABLE_LABKEY_ASSISTANT = "enableLabKeyAssistant";
 
     // Interface for MCP classes that we will "ingest" using Spring annotations. Provides a few helper methods.
     interface McpImpl
