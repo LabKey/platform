@@ -25,7 +25,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.markdown.MarkdownService;
-import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -291,9 +290,10 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
 
         var validateErrors = new ArrayList<String>();
         PageFlowUtil.validateHtml(html, validateErrors, validateErrors);
+        // Model output can contain markup we won't render; show it as plain text rather than failing the turn
         if (!validateErrors.isEmpty())
-            throw new RuntimeValidationException("Invalid HTML markup. " + String.join("\n", validateErrors));
-
-        segments.put(new JSONObject(Map.of("type", "html", "html", html)));
+            segments.put(new JSONObject(Map.of("type", "text", "text", raw)));
+        else
+            segments.put(new JSONObject(Map.of("type", "html", "html", html)));
     }
 }
