@@ -35,6 +35,7 @@ import java.util.Objects;
 public class RemapCache
 {
     Map<Key, SimpleTranslator.RemapConverter> remaps = new HashMap<>();
+    private final Map<Container, ContainerFilter.Type> _findContainerFilterTypes = new HashMap<>();
     private final boolean _allowBulkLoads;
 
     public RemapCache()
@@ -180,6 +181,27 @@ public class RemapCache
     public <V> V remap(TableInfo lookupTable, String value, boolean includePkLookup)
     {
         return remap(key(lookupTable), value, includePkLookup);
+    }
+
+    /**
+     * Memoized {@link #computeContainerFilterTypeForFind(Container)}, which resolves the container's active modules on every call.
+     */
+    @NotNull
+    public ContainerFilter.Type getContainerFilterTypeForFind(Container c)
+    {
+        return _findContainerFilterTypes.computeIfAbsent(c, RemapCache::computeContainerFilterTypeForFind);
+    }
+
+    /**
+     * Container filter type for resolving values from the given container.
+     */
+    @NotNull
+    public static ContainerFilter.Type computeContainerFilterTypeForFind(Container c)
+    {
+        ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(c);
+        if (type == null)
+            return ContainerFilter.Type.CurrentPlusProjectAndShared;
+        return type;
     }
 
 }
