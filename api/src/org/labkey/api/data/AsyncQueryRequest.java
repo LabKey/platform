@@ -353,7 +353,12 @@ public class AsyncQueryRequest<T>
         try
         {
             if (statement != null && statement.getConnection() instanceof ConnectionWrapper connection)
-                connection.getScope().getSqlDialect().cancelQueriesViaOwningConnection(Set.of(connection));
+            {
+                SqlDialect dialect = connection.getScope().getSqlDialect();
+                dialect.cancelQueriesViaOwningConnection(Set.of(connection));
+                // pgjdbc reports a cancel request it failed to deliver as sent, so also signal through a new connection
+                dialect.cancelQueries(connection.getScope(), Set.of(connection), false, Runnable::run);
+            }
         }
         catch (SQLException | RuntimeException e)
         {

@@ -362,6 +362,9 @@ public class TransactionFilter implements Filter
             // Resent on later sweeps, since a cancel that arrives between statements does nothing
             Map<DbScope, Set<ConnectionWrapper>> connections = ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread);
             unsignalled = RequestCancellation.cancelQueriesViaOwningConnection(connections, source, cancelled, first);
+            // pgjdbc reports a cancel request it failed to deliver as sent, so a resend also signals through a new connection
+            if (!first)
+                unsignalled = connections;
 
             // Never close the thread's connections from here: the pool would hand one out while the thread is still mid-call on it.
             // A deferred cancel lands between statements, where only the ban stops the request's next one.
