@@ -229,28 +229,22 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             return null;
 
         // Child folder roots default to a matching subdirectory, so walk the path's segments down the container tree
-        List<Container> candidates = new ArrayList<>(List.of(anchor));
-        Container next = anchor;
+        Container owner = anchor;
 
         for (java.nio.file.Path segment : anchorPath.relativize(path))
         {
-            next = next.getChild(segment.toString());
-            if (next == null)
+            Container child = owner.getChild(segment.toString());
+            if (child == null)
                 break;
-            candidates.add(next);
+            owner = child;
         }
 
-        // A folder may have its own root elsewhere, so take the deepest candidate whose actual root holds the path
-        for (Container c : candidates.reversed())
-        {
-            if (c.isRoot())
-                continue;
-            java.nio.file.Path fileRoot = getExistingFileRootPath(c);
-            if (fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), path.toUri()))
-                return c;
-        }
+        // A child's default root sits beside the parent's @files, so a moved child's old location belongs to no folder
+        if (owner.isRoot())
+            return null;
 
-        return null;
+        java.nio.file.Path fileRoot = getExistingFileRootPath(owner);
+        return fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), path.toUri()) ? owner : null;
     }
 
     private @Nullable java.nio.file.Path getExistingFileRootPath(@NotNull Container c)
@@ -1886,6 +1880,14 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
             java.nio.file.Path unmanaged = svc.getSiteDefaultRoot().toPath().resolve(FILE_ROOT_SUFFIX + "Unmanaged").resolve(TXT_FILE);
             Assert.assertNull("Unmanaged path", svc.getContainerForFilePath(unmanaged));
+
+            File subfolderRoot = new File(testRoot, "CustomSubfolder");
+            subfolderRoot.mkdirs();
+            svc.setFileRoot(subfolder1, subfolderRoot);
+
+            java.nio.file.Path movedSubfolderFile = svc.getFileRootPath(subfolder1, ContentType.files).resolve(TXT_FILE);
+            Assert.assertEquals("Moved custom root path", subfolder1, svc.getContainerForFilePath(movedSubfolderFile));
+            Assert.assertNull("Stale default root path", svc.getContainerForFilePath(subfolderFile));
         }
 
         private void assertPathsEqual(String msg, File expected, File actual)
