@@ -22,12 +22,15 @@ import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.query.ExecuteSqlCommand;
+import org.labkey.remoteapi.query.Filter;
+import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestProperties;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ext4.Window;
+import org.labkey.test.util.ArtifactCollector;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.core.admin.ServerUsageUtils;
@@ -35,11 +38,13 @@ import org.labkey.test.util.core.admin.ServerUsageUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 
 /**
@@ -55,6 +60,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
     private static final String SLOW_STATS = "SlowStats";
     private static final double SLOW_STATS_ROWS = 3e7;
     private static final int METRICS_TIMEOUT = 180_000;
+    private static final int CANCEL_EXIT_TIMEOUT = 5_000;
     private static final String WS_MESSAGE = "wsMessage";
     private static final String WS_CLOSE = "wsClose";
     private static final String FEATURE_DISABLE_CANCELLING = "disableCancelAbandonedRequests";
@@ -127,6 +133,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
         // SummaryStatisticsDialog waits for the stats, which never arrive
         new Window<>("Summary Statistics", getDriver()).clickButton("Cancel", true);
 
+        waitForSlowQueriesToStop();
         waitForCancelCount(WS_MESSAGE, before + 1);
     }
 
@@ -143,6 +150,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
             return null;
         });
 
+        waitForSlowQueriesToStop();
         waitForCancelCount(WS_CLOSE, before + 1);
     }
 
@@ -177,7 +185,42 @@ public class RequestCancellationTest extends BaseWebDriverTest
 
         waitForEquals("Wrong request outcome", () -> "aborted",
             () -> executeScript("return window.requestCancelTest.outcome;"), WAIT_FOR_JAVASCRIPT);
+        waitForSlowQueriesToStop();
         waitForCancelCount(WS_MESSAGE, before + 1);
+    }
+
+    /** The cancel count only shows a cancel was sent, not that the query stopped */
+    private void waitForSlowQueriesToStop()
+    {
+        if (WebTestHelper.getDatabaseType() != WebTestHelper.DatabaseType.PostgreSQL)
+            return;
+
+        AtomicReference<List<Map<String, Object>>> running = new AtomicReference<>();
+        if (!waitFor(() -> {
+            running.set(getRunningSlowQueries());
+            return running.get().isEmpty();
+        }, CANCEL_EXIT_TIMEOUT))
+        {
+            ArtifactCollector.dumpThreads();
+            fail("Canceled query still running " + CANCEL_EXIT_TIMEOUT + " ms later: " + running.get());
+        }
+    }
+
+    /** Every slow query here cross joins core.Modules */
+    private List<Map<String, Object>> getRunningSlowQueries()
+    {
+        SelectRowsCommand command = new SelectRowsCommand("postgres", "pg_stat_activity");
+        command.setColumns(List.of("pid", "state", "wait_event", "running_time_ms", "query"));
+        command.addFilter("state", "idle", Filter.Operator.NEQ);
+        command.addFilter("query", "modules", Filter.Operator.CONTAINS);
+        try
+        {
+            return command.execute(createDefaultConnection(), "/").getRows();
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     private boolean isCancellingEnabledOnPage()
