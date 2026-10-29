@@ -1755,7 +1755,7 @@ public class DomainUtil
 
         for (GWTPropertyDescriptor field : updates.getFields(true))
         {
-            if (field.getLookupSchema() == null || field.getLookupQuery() == null || !isLookupChanged(field, origFields.get(field.getPropertyId())))
+            if (StringUtils.isBlank(field.getLookupSchema()) || StringUtils.isBlank(field.getLookupQuery()) || !isLookupChanged(field, origFields.get(field.getPropertyId())))
                 continue;
 
             QuerySchema schema = resolveLookupSchema(user, c, field, defaultSchemaMap);
@@ -2039,6 +2039,8 @@ public class DomainUtil
         public void incompleteOrUnresolvableLookupIsSkipped()
         {
             assertEquals(List.of(), validate(lookup(0, "core", null), null, OTHER_SCOPE));
+            // Some UIs (e.g. SND's package editor) send "" for fields without a lookup
+            assertEquals(List.of(), validate(lookup(0, "", ""), null, OTHER_SCOPE));
             assertEquals(List.of(), validate(lookup(0, "noSuchSchema", "Users"), null, OTHER_SCOPE));
         }
     }
