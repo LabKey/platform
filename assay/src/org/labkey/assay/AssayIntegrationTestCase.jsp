@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+<%@ page import="org.apache.commons.beanutils.ConversionException" %>
 <%@ page import="org.apache.commons.collections.MapUtils" %>
 <%@ page import="org.apache.logging.log4j.LogManager" %>
 <%@ page import="org.apache.logging.log4j.Logger" %>
@@ -32,14 +33,18 @@
 <%@ page import="org.labkey.api.assay.PipelineDataCollector" %>
 <%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.data.BatchSize" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.data.queryprofiler.QueryCounter" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.OntologyObject" %>
@@ -51,6 +56,7 @@
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.exp.api.ProvenanceService" %>
 <%@ page import="org.labkey.api.exp.api.SampleTypeService" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
@@ -71,6 +77,7 @@
 <%@ page import="org.labkey.api.query.ValidationException" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
+<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
@@ -90,9 +97,11 @@
 <%@ page import="static java.util.Collections.emptyList" %>
 <%@ page import="java.nio.file.Files" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
@@ -135,6 +144,11 @@
     }
 
     private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups) throws Exception
+    {
+        return createAssay(context, editableRunsAndResults, includeSampleTypeLookups, emptyList());
+    }
+
+    private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups, List<GWTPropertyDescriptor> extraResultFields) throws Exception
     {
         // create assay design
         AssayDomainService assayDomainService = new AssayDomainServiceImpl(context.getUser(), context.getContainer());
@@ -184,6 +198,8 @@
             resultFields.add(expMaterialsSampleTypeLookup);
         }
 
+        resultFields.addAll(extraResultFields);
+
         // clear the batch domain fields
         GWTDomain<GWTPropertyDescriptor> batchDomain = domains.stream().filter(d -> "Batch Fields".equals(d.getName())).findFirst().orElseThrow();
         batchDomain.setFields(Collections.emptyList());
@@ -224,24 +240,54 @@
 
     private ExpSampleType createSampleType() throws Exception
     {
+        return createSampleType(SAMPLE_TYPE_NAME, "S-${genId}");
+    }
+
+    private ExpSampleType createSampleType(String sampleTypeName, String nameExpression) throws Exception
+    {
+        return createSampleType(c, sampleTypeName, nameExpression);
+    }
+
+    private ExpSampleType createSampleType(Container container, String sampleTypeName, String nameExpression) throws Exception
+    {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
 
-        return SampleTypeService.get().createSampleType(c, user, SAMPLE_TYPE_NAME, null, props, emptyList(), -1, -1, -1, -1, "S-${genId}", null);
+        return SampleTypeService.get().createSampleType(container, user, sampleTypeName, null, props, emptyList(), -1, -1, -1, -1, nameExpression, null);
     }
 
     private List<ExpMaterial> createSamples(int numSamples) throws Exception
+    {
+        return createSamples(SAMPLE_TYPE_NAME, numSamples);
+    }
+
+    private List<ExpMaterial> createSamples(String sampleTypeName, int numSamples) throws Exception
     {
         List<Map<String, Object>> rows = new ArrayList<>();
 
         for (int i = 0; i < numSamples; i++)
             rows.add(CaseInsensitiveHashMap.of());
 
-        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, SAMPLE_TYPE_NAME);
-        TableInfo table = QueryService.get().getUserSchema(user, c, SCHEMA_SAMPLES).getTable(sampleType.getName());
+        return insertSamples(sampleTypeName, rows);
+    }
+
+    private ExpMaterial createNamedSample(String sampleTypeName, String name) throws Exception
+    {
+        return insertSamples(sampleTypeName, List.of(CaseInsensitiveHashMap.of("name", name))).getFirst();
+    }
+
+    private List<ExpMaterial> insertSamples(String sampleTypeName, List<Map<String, Object>> rows) throws Exception
+    {
+        return insertSamples(c, sampleTypeName, rows);
+    }
+
+    private List<ExpMaterial> insertSamples(Container container, String sampleTypeName, List<Map<String, Object>> rows) throws Exception
+    {
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, sampleTypeName);
+        TableInfo table = QueryService.get().getUserSchema(user, container, SCHEMA_SAMPLES).getTable(sampleType.getName());
 
         var errors = new BatchValidationException();
-        var insertedRows = table.getUpdateService().insertRows(user, c, rows, errors, null, null);
+        var insertedRows = table.getUpdateService().insertRows(user, container, rows, errors, null, null);
         if (errors.hasErrors())
             throw errors;
 
@@ -257,6 +303,20 @@
         File file,
         boolean allowCrossRunFileInputs,
         @Nullable Map<String, Object> requestParameters
+    ) throws ExperimentException, ValidationException
+    {
+        return assayImportFile(c, user, provider, assayProtocol, file, allowCrossRunFileInputs, requestParameters, true);
+    }
+
+    private ExpRun assayImportFile(
+        Container c,
+        User user,
+        AssayProvider provider,
+        ExpProtocol assayProtocol,
+        File file,
+        boolean allowCrossRunFileInputs,
+        @Nullable Map<String, Object> requestParameters,
+        boolean allowLookupByAlternateKey
     ) throws ExperimentException, ValidationException
     {
         HttpSession session = TestContext.get().getRequest().getSession();
@@ -279,7 +339,14 @@
         mockContext.setContainer(c);
         mockContext.setUser(user);
 
-        var uploadForm = new AssayRunUploadForm<TsvAssayProvider>();
+        var uploadForm = new AssayRunUploadForm<TsvAssayProvider>()
+        {
+            @Override
+            public boolean isAllowLookupByAlternateKey()
+            {
+                return allowLookupByAlternateKey;
+            }
+        };
         uploadForm.setViewContext(new ViewContext(mockRequest, null, null));
         uploadForm.setContainer(c);
         uploadForm.setUser(user);
@@ -712,6 +779,288 @@
         assertNotNull(updatedRun);
 
         assertEquals(0, updatedRun.getMaterialInputs().size());
+    }
+
+    @Test // GH Issue 1781
+    public void testSampleLookupRowIdFallbackHonorsSampleType() throws Exception
+    {
+        createSampleType("XSampleType", "X-${genId}");
+        createSampleType("YSampleType", "Y-${genId}");
+        var xSample = createSamples("XSampleType", 1).getFirst();
+        var ySample = createSamples("YSampleType", 1).getFirst();
+
+        var xLookup = new GWTPropertyDescriptor("XLookup", "string");
+        xLookup.setLookupSchema(SamplesSchema.SCHEMA_NAME);
+        xLookup.setLookupQuery("XSampleType");
+
+        var yLookup = new GWTPropertyDescriptor("YLookup", "int");
+        yLookup.setLookupSchema(ExpSchema.SCHEMA_EXP_MATERIALS.toString());
+        yLookup.setLookupQuery("YSampleType");
+
+        var assayPair = createAssay(context, false, false, List.of(xLookup, yLookup));
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        // Mixing a name into YLookup keeps the column as text, so the X row ID reaches findExpMaterial's row ID fallback
+        String expectedError = importErrorMessage(provider, assayProtocol, String.format(
+            "YLookup\n%s\n%d\n",
+            ySample.getName(),
+            xSample.getRowId()
+        ));
+        assertTrue(expectedError, expectedError.contains("not found in the current context"));
+
+        // XLookup resolving xSample first must not let YLookup's fallback return it from XLookup's material cache
+        String actualError = importErrorMessage(provider, assayProtocol, String.format(
+            "XLookup\tYLookup\n%s\t%s\n\t%d\n",
+            xSample.getName(), ySample.getName(),
+            xSample.getRowId()
+        ));
+        assertEquals(expectedError, actualError);
+    }
+
+    @Test
+    public void testSampleLookupByIdHonorsContainerScope() throws Exception
+    {
+        // Without a lookup container filter, by-ID lookups once resolved samples from any container
+        assertNull(QueryService.get().getContainerFilterTypeForLookups(c));
+
+        createSampleType("LocalScope", "Local-${genId}");
+        var local = createSamples("LocalScope", 1).getFirst();
+
+        // The test container is /Shared/_junit, so a child folder is outside CurrentPlusProjectAndShared
+        Container child = ContainerManager.createContainer(c, "OutOfScope", user);
+        createSampleType(child, "ChildScope", "Child-${genId}");
+        var outOfScope = insertSamples(child, "ChildScope", List.of(CaseInsensitiveHashMap.of())).getFirst();
+
+        Container shared = ContainerManager.getSharedContainer();
+        ExpSampleType sharedType = createSampleType(shared, "SharedScope" + GUID.makeHash(), "Shared-${genId}");
+        List<ExpRun> runs = new ArrayList<>();
+        try
+        {
+            var sharedSample = insertSamples(shared, sharedType.getName(), List.of(CaseInsensitiveHashMap.of())).getFirst();
+
+            var assayPair = createAssay(context, false, false);
+            String fileContents = String.format("ResultExpMaterialsLookup\n%d\n%d\n%d\n", local.getRowId(), sharedSample.getRowId(), outOfScope.getRowId());
+
+            for (boolean allowLookupByAlternateKey : List.of(true, false))
+            {
+                ExpRun run = assayImportFile(c, user, assayPair.first, assayPair.second, createAssayDataFile(fileContents), false, null, allowLookupByAlternateKey);
+                runs.add(run);
+
+                Set<Long> inputIds = new HashSet<>();
+                run.getMaterialInputs().keySet().forEach(m -> inputIds.add(m.getRowId()));
+                assertEquals("allowLookupByAlternateKey " + allowLookupByAlternateKey, Set.of(local.getRowId(), sharedSample.getRowId()), inputIds);
+            }
+        }
+        finally
+        {
+            runs.forEach(run -> run.delete(user));
+            sharedType.delete(user);
+        }
+    }
+
+    private String importErrorMessage(AssayProvider provider, ExpProtocol assayProtocol, String fileContents) throws Exception
+    {
+        try
+        {
+            assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, null);
+        }
+        catch (ExperimentException | ValidationException e)
+        {
+            return e.getMessage();
+        }
+        fail("Expected the import to fail");
+        return null;
+    }
+
+    @Test // GH Issue 1746
+    public void testSampleLookupQueriesDoNotScaleWithDistinctSamples() throws Exception
+    {
+        var assayPair = createAssay(context, false, true);
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        final int rowCount = 20;
+        final int fewerSamples = 10;
+        Iterator<ExpMaterial> unusedSamples = createSamples(1 + 4 * (fewerSamples + rowCount)).iterator();
+
+        // Pay one-time costs, such as loading the assay design and lookup tables, outside the counted imports
+        var warmUpSample = unusedSamples.next();
+        assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(String.format(
+            "SampleTypeLookup\tExpMaterialSampleTypeLookup\n%s\t%d\n",
+            warmUpSample.getName(), warmUpSample.getRowId()
+        )), false, null);
+
+        // The provenance callback looks up each distinct input sample on its own
+        int allowedQueriesPerSample = 1;
+        if (ProvenanceService.get().isProvenanceSupported())
+            allowedQueriesPerSample = 2;
+
+        List<String> failures = new ArrayList<>();
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
+        {
+            // Without alternate keys, by-ID values skip findExpMaterial
+            for (boolean allowLookupByAlternateKey : List.of(true, false))
+            {
+                for (String column : List.of("SampleTypeLookup", "ExpMaterialSampleTypeLookup"))
+                {
+                    // Same row count in both imports, so per-row costs such as result inserts cancel out; each import gets its own samples so neither warms the other
+                    List<String> repeatedValues = new ArrayList<>();
+                    for (int i = 0; i < fewerSamples; i++)
+                    {
+                        String value = sampleLookupValue(column, unusedSamples.next());
+                        repeatedValues.add(value);
+                        repeatedValues.add(value);
+                    }
+
+                    List<String> distinctValues = new ArrayList<>();
+                    for (int i = 0; i < rowCount; i++)
+                        distinctValues.add(sampleLookupValue(column, unusedSamples.next()));
+
+                    int repeatedQueries = countImportQueries(provider, assayProtocol, column, repeatedValues, allowLookupByAlternateKey);
+                    int distinctQueries = countImportQueries(provider, assayProtocol, column, distinctValues, allowLookupByAlternateKey);
+                    String counts = String.format("%s (allowLookupByAlternateKey %s): %d queries for %d distinct samples, %d queries for %d distinct samples",
+                        column, allowLookupByAlternateKey, repeatedQueries, fewerSamples, distinctQueries, rowCount);
+                    log.info(counts);
+
+                    if (distinctQueries - repeatedQueries >= allowedQueriesPerSample * (rowCount - fewerSamples))
+                        failures.add(counts);
+                }
+            }
+        }
+
+        assertTrue(String.join("; ", failures), failures.isEmpty());
+    }
+
+    @Test // GH Issue 1746
+    public void testSampleLookupsResolveAcrossLookAheadWindows() throws Exception
+    {
+        var assayPair = createAssay(context, false, true);
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        List<ExpMaterial> s = createSamples(6);
+        // Issue 47509: a name that is another sample's row ID resolves by name, in both columns
+        ExpMaterial integerNamed = createNamedSample(SAMPLE_TYPE_NAME, String.valueOf(s.get(5).getRowId()));
+
+        // Windows of 3 rows: [1-3], [4-6], [7]; s0, s1 and s3 repeat in later windows
+        String fileContents = String.format(
+            "SampleTypeLookup\tExpMaterialSampleTypeLookup\n%s\t%d\n%s\t%d\n%s\t\n%s\t%d\n%s\t%d\n%s\t%d\n%s\t%d\n",
+            s.get(0).getName(), s.get(1).getRowId(),
+            s.get(1).getName(), s.get(2).getRowId(),
+            integerNamed.getName(),
+            "NoSuchSample", s.get(3).getRowId(),
+            s.get(0).getName(), s.get(0).getRowId(),
+            s.get(2).getName(), s.get(5).getRowId(),
+            s.get(3).getName(), s.get(1).getRowId()
+        );
+
+        ExpRun run;
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
+        {
+            run = assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, null);
+        }
+
+        assertEquals(
+            Set.of(s.get(0), s.get(1), s.get(2), s.get(3), integerNamed),
+            run.getMaterialInputs().keySet()
+        );
+
+        TableInfo resultsTable = provider.createProtocolSchema(user, c, assayProtocol, null).getTable("Data");
+        List<Long> storedIds = new TableSelector(resultsTable.getColumn("ExpMaterialSampleTypeLookup"), null, new Sort("RowId")).getArrayList(Long.class);
+        assertEquals(
+            Arrays.asList(s.get(1).getRowId(), s.get(2).getRowId(), null, s.get(3).getRowId(), s.get(0).getRowId(), integerNamed.getRowId(), s.get(1).getRowId()),
+            storedIds
+        );
+    }
+
+    @Test // GH Issue 1746
+    public void testSampleLookupErrorsMatchAcrossLookAheadWindows() throws Exception
+    {
+        var anySampleLookup = new GWTPropertyDescriptor("AnySampleLookup", "string");
+        anySampleLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
+        anySampleLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
+
+        var assayPair = createAssay(context, false, true, List.of(anySampleLookup));
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        List<ExpMaterial> s = createSamples(5);
+        createSampleType("OtherSampleType", "O-${genId}");
+        // Ambiguous in exp.Materials: two sample types hold this name
+        String sharedName = createNamedSample("OtherSampleType", s.get(0).getName()).getName();
+
+        List<String> validRows = List.of(
+            String.format("%s\t%d\t", s.get(1).getName(), s.get(1).getRowId()),
+            String.format("%s\t%d\t", s.get(2).getName(), s.get(2).getRowId()),
+            String.format("%s\t%d\t", s.get(3).getName(), s.get(3).getRowId()),
+            String.format("%s\t%d\t", s.get(4).getName(), s.get(4).getRowId())
+        );
+        String header = "SampleTypeLookup\tExpMaterialSampleTypeLookup\tAnySampleLookup\n";
+        // A missing row ID in an all-numeric column isn't reported, so use a missing name, which keeps the value a string
+        String missingSample = String.format("%s\tNoSuchSample\t", s.get(1).getName());
+        String ambiguousName = String.format("%s\t%d\t%s", s.get(1).getName(), s.get(1).getRowId(), sharedName);
+
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
+        {
+            // The fifth row is the second row of the second window
+            String precedingRows = header + String.join("\n", validRows) + "\n";
+
+            Exception alone = importFailure(provider, assayProtocol, header + missingSample + "\n");
+            Exception fifth = importFailure(provider, assayProtocol, precedingRows + missingSample + "\n");
+            assertEquals(alone.getMessage(), fifth.getMessage());
+            assertEquals(fifth.getMessage(), 1, failedRow(alone));
+            assertEquals(fifth.getMessage(), 5, failedRow(fifth));
+
+            // remappableLookup's remap rejects an ambiguous name with a bare ConversionException, so there's no row number
+            alone = importFailure(provider, assayProtocol, header + ambiguousName + "\n");
+            fifth = importFailure(provider, assayProtocol, precedingRows + ambiguousName + "\n");
+            assertEquals(alone.getMessage(), fifth.getMessage());
+            assertTrue(fifth.getMessage(), fifth.getMessage().contains("Found 2 values matching: " + sharedName));
+        }
+    }
+
+    private Exception importFailure(AssayProvider provider, ExpProtocol assayProtocol, String fileContents) throws Exception
+    {
+        try
+        {
+            assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, null);
+        }
+        catch (ExperimentException | ValidationException | ConversionException e)
+        {
+            return e;
+        }
+        fail("Expected the import to fail: " + fileContents);
+        return null;
+    }
+
+    private static int failedRow(Throwable e)
+    {
+        for (Throwable t = e; t != null; t = t.getCause())
+        {
+            if (t instanceof BatchValidationException bve && bve.getLastRowError() != null)
+                return bve.getLastRowError().getRowNumber();
+            if (t instanceof ValidationException ve && ve.getRowNumber() != -1)
+                return ve.getRowNumber();
+        }
+        return -1;
+    }
+
+    private String sampleLookupValue(String column, ExpMaterial sample)
+    {
+        if ("SampleTypeLookup".equals(column))
+            return sample.getName();
+        return String.valueOf(sample.getRowId());
+    }
+
+    private int countImportQueries(AssayProvider provider, ExpProtocol assayProtocol, String column, List<String> values, boolean allowLookupByAlternateKey) throws Exception
+    {
+        var file = createAssayDataFile(column + "\n" + String.join("\n", values) + "\n");
+        try (QueryCounter counter = new QueryCounter())
+        {
+            assayImportFile(c, user, provider, assayProtocol, file, false, null, allowLookupByAlternateKey);
+            return counter.getCount();
+        }
     }
 
     @Test
