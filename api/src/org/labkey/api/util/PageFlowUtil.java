@@ -68,6 +68,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.settings.Theme;
@@ -2172,7 +2173,7 @@ public class PageFlowUtil
         // Note: If you update this set of flags please update enum on client in @labkey/api
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", true);
-        experimental.put(AppProps.OPTIONAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS));
+        experimental.put(AppProps.OPTIONAL_NO_GUESTS, OptionalFeatureService.get().isFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);
@@ -2246,7 +2247,7 @@ public class PageFlowUtil
         json.put("helpLinkPrefix", HelpTopic.getHelpLinkPrefix());
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
-        if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU) && user != null)
+        if (OptionalFeatureService.get().isFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU) && user != null)
             json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
 
         json.put("mcpReady", McpService.get().isAIFeaturesReady());

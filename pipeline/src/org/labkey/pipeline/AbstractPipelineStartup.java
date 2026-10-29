@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
@@ -93,6 +94,7 @@ public abstract class AbstractPipelineStartup
 
         // Set up the PipelineJobService so that Spring can configure it
         PipelineJobServiceImpl.initDefaults(locationType);
+        OptionalFeatureService.setInstance(new RemoteOptionalFeatureService());
 
         for (final Module module : modules)
         {

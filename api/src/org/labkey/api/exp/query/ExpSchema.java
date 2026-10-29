@@ -48,7 +48,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -234,7 +234,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public boolean includeTable()
             {
-                return AppProps.getInstance().isOptionalFeatureEnabled(SAMPLE_FILES_TABLE);
+                return OptionalFeatureService.get().isFeatureEnabled(SAMPLE_FILES_TABLE);
             }
         },
         SampleStatus

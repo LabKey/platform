@@ -66,8 +66,6 @@ public interface AppProps
 
     boolean isMailRecorderEnabled();
 
-    boolean isOptionalFeatureEnabled(String feature);
-
     boolean isDevMode();
 
     @Nullable

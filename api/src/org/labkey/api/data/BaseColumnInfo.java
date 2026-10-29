@@ -1354,15 +1354,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return name;
 
         // NOTE: This is just for testing (let the DataRegion/DataColumn do this)
-        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
+        // Hot during table construction, so test the name before the comparatively costly flag lookup
+        var index = name.indexOf("__");
+        if (index > 0 && OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
         {
-            var index = name.indexOf("__");
-            if (index > 0)
-            {
-                String unit = name.substring(index + 2);
-                if (null != org.labkey.api.ontology.Unit.fromName(unit))
-                    name = name.substring(0, index);
-            }
+            String unit = name.substring(index + 2);
+            if (null != org.labkey.api.ontology.Unit.fromName(unit))
+                name = name.substring(0, index);
         }
 
         StringBuilder buf = new StringBuilder(name.length() + 10);

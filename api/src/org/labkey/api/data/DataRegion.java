@@ -48,6 +48,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM;
@@ -1461,7 +1462,7 @@ public class DataRegion extends DisplayElement
         dataRegionJSON.put("rowCount", _rowCount);
         dataRegionJSON.put("showPagination", getShowPagination());
         dataRegionJSON.put("showPaginationCount", getShowPaginationCount());
-        if (getShowPaginationCount() && AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
+        if (getShowPaginationCount() && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
         {
             // Issue 51036: load totalRows count async for DataRegions
             dataRegionJSON.put("showPaginationCount", false);
@@ -1646,7 +1647,7 @@ public class DataRegion extends DisplayElement
     private void renderAggregatesTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
     {
         // Issue 51036: load totalRows count async for DataRegions
-        boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
+        boolean asyncTotalRows = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
         boolean showPaginationCount = getShowPaginationCount() && !asyncTotalRows;
 
         Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx, showPaginationCount);

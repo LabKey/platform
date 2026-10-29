@@ -438,8 +438,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupBooleanValue(mailRecorderEnabled, false);
     }
 
-    @Override
-    public boolean isOptionalFeatureEnabled(String feature)
+    boolean lookupOptionalFeature(String feature)
     {
         feature = OPTIONAL_FEATURE_PREFIX + feature;
         if (null != System.getProperty(feature))

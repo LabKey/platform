@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.rstudio.RStudioService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -43,7 +44,7 @@
     boolean isRemoteEnabled = PremiumService.get().isRemoteREnabled();
     boolean isRDockerAvailable = false;
     boolean isPremiumServiceAvailable = PremiumService.get().isEnabled();
-    if (AppProps.getInstance().isOptionalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
+    if (OptionalFeatureService.get().isFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
     {
         DockerService ds = DockerService.get();
         if (null != ds)
