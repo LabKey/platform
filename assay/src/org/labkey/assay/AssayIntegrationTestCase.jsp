@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.data.BatchSize" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
@@ -76,6 +77,7 @@
 <%@ page import="org.labkey.api.query.ValidationException" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
+<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
@@ -243,10 +245,15 @@
 
     private ExpSampleType createSampleType(String sampleTypeName, String nameExpression) throws Exception
     {
+        return createSampleType(c, sampleTypeName, nameExpression);
+    }
+
+    private ExpSampleType createSampleType(Container container, String sampleTypeName, String nameExpression) throws Exception
+    {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
 
-        return SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, emptyList(), -1, -1, -1, -1, nameExpression, null);
+        return SampleTypeService.get().createSampleType(container, user, sampleTypeName, null, props, emptyList(), -1, -1, -1, -1, nameExpression, null);
     }
 
     private List<ExpMaterial> createSamples(int numSamples) throws Exception
@@ -271,11 +278,16 @@
 
     private List<ExpMaterial> insertSamples(String sampleTypeName, List<Map<String, Object>> rows) throws Exception
     {
-        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, sampleTypeName);
-        TableInfo table = QueryService.get().getUserSchema(user, c, SCHEMA_SAMPLES).getTable(sampleType.getName());
+        return insertSamples(c, sampleTypeName, rows);
+    }
+
+    private List<ExpMaterial> insertSamples(Container container, String sampleTypeName, List<Map<String, Object>> rows) throws Exception
+    {
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, sampleTypeName);
+        TableInfo table = QueryService.get().getUserSchema(user, container, SCHEMA_SAMPLES).getTable(sampleType.getName());
 
         var errors = new BatchValidationException();
-        var insertedRows = table.getUpdateService().insertRows(user, c, rows, errors, null, null);
+        var insertedRows = table.getUpdateService().insertRows(user, container, rows, errors, null, null);
         if (errors.hasErrors())
             throw errors;
 
@@ -804,6 +816,47 @@
             xSample.getRowId()
         ));
         assertEquals(expectedError, actualError);
+    }
+
+    @Test
+    public void testSampleLookupByIdHonorsContainerScope() throws Exception
+    {
+        // Without a lookup container filter, by-ID lookups once resolved samples from any container
+        assertNull(QueryService.get().getContainerFilterTypeForLookups(c));
+
+        createSampleType("LocalScope", "Local-${genId}");
+        var local = createSamples("LocalScope", 1).getFirst();
+
+        // The test container is /Shared/_junit, so a child folder is outside CurrentPlusProjectAndShared
+        Container child = ContainerManager.createContainer(c, "OutOfScope", user);
+        createSampleType(child, "ChildScope", "Child-${genId}");
+        var outOfScope = insertSamples(child, "ChildScope", List.of(CaseInsensitiveHashMap.of())).getFirst();
+
+        Container shared = ContainerManager.getSharedContainer();
+        ExpSampleType sharedType = createSampleType(shared, "SharedScope" + GUID.makeHash(), "Shared-${genId}");
+        List<ExpRun> runs = new ArrayList<>();
+        try
+        {
+            var sharedSample = insertSamples(shared, sharedType.getName(), List.of(CaseInsensitiveHashMap.of())).getFirst();
+
+            var assayPair = createAssay(context, false, false);
+            String fileContents = String.format("ResultExpMaterialsLookup\n%d\n%d\n%d\n", local.getRowId(), sharedSample.getRowId(), outOfScope.getRowId());
+
+            for (boolean allowLookupByAlternateKey : List.of(true, false))
+            {
+                ExpRun run = assayImportFile(c, user, assayPair.first, assayPair.second, createAssayDataFile(fileContents), false, null, allowLookupByAlternateKey);
+                runs.add(run);
+
+                Set<Long> inputIds = new HashSet<>();
+                run.getMaterialInputs().keySet().forEach(m -> inputIds.add(m.getRowId()));
+                assertEquals("allowLookupByAlternateKey " + allowLookupByAlternateKey, Set.of(local.getRowId(), sharedSample.getRowId()), inputIds);
+            }
+        }
+        finally
+        {
+            runs.forEach(run -> run.delete(user));
+            sharedType.delete(user);
+        }
     }
 
     private String importErrorMessage(AssayProvider provider, ExpProtocol assayProtocol, String fileContents) throws Exception

@@ -393,8 +393,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpMaterial getExpMaterial(long rowId);
 
-    @Nullable ExpMaterial getExpMaterial(long rowId, ContainerFilter containerFilter);
-
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
      *
@@ -406,8 +404,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable ExpMaterial getExpMaterial(Container c, User u, long rowId, @Nullable ExpSampleType sampleType);
 
     @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Long> rowIds);
-
-    @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Long> rowIds, @Nullable ContainerFilter containerFilter);
 
     @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
 

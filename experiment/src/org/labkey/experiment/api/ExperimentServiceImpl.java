@@ -970,16 +970,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @Nullable ExpMaterialImpl getExpMaterial(long rowId, ContainerFilter containerFilter)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowId);
-        if (containerFilter != null)
-            filter.addClause(containerFilter.createFilterClause(getExpSchema(), FieldKey.fromParts("Container")));
-
-        return getExpMaterial(filter);
-    }
-
-    @Override
     public @Nullable ExpMaterialImpl getExpMaterial(Container c, User u, long rowId, @Nullable ExpSampleType sampleType)
     {
         List<ExpMaterialImpl> materials = getExpMaterials(c, u, List.of(rowId), sampleType);
@@ -1051,20 +1041,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return emptyList();
 
         return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds));
-    }
-
-    @Override
-    @NotNull
-    public List<ExpMaterialImpl> getExpMaterials(Collection<Long> rowIds, @Nullable ContainerFilter containerFilter)
-    {
-        if (rowIds.isEmpty())
-            return emptyList();
-
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds);
-        if (containerFilter != null)
-            filter.addClause(containerFilter.createFilterClause(getExpSchema(), FieldKey.fromParts("Container")));
-
-        return getExpMaterials(filter);
     }
 
     @Override
