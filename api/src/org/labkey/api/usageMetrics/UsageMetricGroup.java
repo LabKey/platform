@@ -29,28 +29,21 @@ public class UsageMetricGroup extends UsageMetrics
         super(path, values, descriptions);
     }
 
-    public UsageMetricGroup put(@NotNull String key, @Nullable Object value)
+    /** Skips the supplier on a describe-only group. A null supplier reports a null value. */
+    public UsageMetricGroup put(@NotNull String key, @Nullable Supplier<?> supplier)
     {
         Map<String, Object> values = getMutableValues();
         if (values != null)
-            values.put(key, value);
+            values.put(key, supplier == null ? null : supplier.get());
         return this;
     }
 
-    /** Skips the supplier on a describe-only group. Java binds {@code put(key, null)} to this overload. */
-    public UsageMetricGroup put(@NotNull String key, @Nullable Supplier<?> value)
-    {
-        Map<String, Object> values = getMutableValues();
-        if (values != null)
-            values.put(key, value == null ? null : value.get());
-        return this;
-    }
-
-    public UsageMetricGroup putAll(@NotNull Map<String, ?> values)
+    /** Skips the supplier on a describe-only group */
+    public UsageMetricGroup putAll(@NotNull Supplier<? extends Map<String, ?>> mapSupplier)
     {
         Map<String, Object> mutable = getMutableValues();
         if (mutable != null)
-            mutable.putAll(values);
+            mutable.putAll(mapSupplier.get());
         return this;
     }
 

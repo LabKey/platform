@@ -72,7 +72,7 @@ public class WebSocketConnectionManager implements UsageMetricsProvider, WebSock
     @Override
     public UsageMetrics addUsageMetrics(UsageMetrics metrics)
     {
-        return metrics.put("webSocketConnections", Map.of(
+        return metrics.put("webSocketConnections", () -> Map.of(
                 "success", successCounter.get(),
                 "failure", failureCounter.get(),
                 "open", WebSocketTracker.getOpenCount()

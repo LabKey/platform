@@ -9570,13 +9570,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public UsageMetrics addDomainMetrics(UsageMetrics metrics)
     {
         metrics.group("nameexpression", "Naming patterns by data type, counting patterns that use each substitution, format, grandparent input, or withCounter; zero counts omitted")
-            .putAll(getNameExpressionMetrics());
+            .putAll(this::getNameExpressionMetrics);
         metrics.group("parentalias", "Required parent import aliases on sample types and data classes, by parent kind; counts aliases, not types. Source parents are any data class parent")
-            .putAll(getParentAliasMetrics());
+            .putAll(this::getParentAliasMetrics);
         metrics.group("importTemplates", "Query metadata overrides that define import templates, by sample types, data classes, and Standard assays; counts overrides, not templates")
-            .putAll(getImportTemplatesMetrics());
+            .putAll(this::getImportTemplatesMetrics);
         metrics.group("auditLevelOverride", "Query metadata overrides that set audit logging to none or summary, by sample types, data classes, and Standard assays")
-            .putAll(getAuditLevelOverrideMetrics());
+            .putAll(this::getAuditLevelOverrideMetrics);
         return metrics;
     }
 
