@@ -22,8 +22,14 @@ import org.labkey.api.assay.DefaultAssaySaveHandler;
  * User: kevink
  * Date: 8/10/14
  */
-public class TsvAssaySaveHandler extends DefaultAssaySaveHandler
+public final class TsvAssaySaveHandler extends DefaultAssaySaveHandler
 {
+    @Override
+    protected boolean isPrepareTransformsSupported()
+    {
+        return true;
+    }
+
     @Override
     public void setProvider(AssayProvider provider)
     {

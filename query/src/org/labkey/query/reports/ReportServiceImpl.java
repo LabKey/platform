@@ -16,6 +16,7 @@
 
 package org.labkey.query.reports;
 
+import com.google.common.base.Suppliers;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
@@ -1095,25 +1096,29 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         {
             svc.registerUsageMetrics(moduleName, metrics -> {
                 List<ReportMetricsVisitor> visitors = _metricsVisitorFactories.stream().map(Supplier::get).toList();
-                // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
-                TableInfo table = getTable();
-                SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "r")
-                    .unsafeAppend(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(")");
-                ReportServiceImpl reportService = getInstance();
-                Map<String, Long> countsByType;
-                try (Stream<ReportDB> rows = new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class))
-                {
-                    countsByType = rows
-                        .map(reportService::_getInstance)
-                        .filter(Objects::nonNull)
-                        .peek(report -> visitors.forEach(visitor -> visitor.visit(report)))
-                        .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
-                }
-
+                Supplier<Map<String, Long>> countsByType = Suppliers.memoize(() -> visitReports(visitors));
                 metrics.put("reportCountsByType", countsByType, "Saved reports in existing containers by report type");
-                visitors.forEach(visitor -> visitor.addMetrics(metrics));
+                visitors.forEach(visitor -> visitor.addMetrics(metrics, countsByType::get));
                 return metrics;
             });
+        }
+    }
+
+    /** Visits every saved report in an existing container and counts them by type */
+    private static Map<String, Long> visitReports(List<ReportMetricsVisitor> visitors)
+    {
+        // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
+        TableInfo table = getTable();
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "r")
+            .unsafeAppend(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(")");
+        ReportServiceImpl reportService = getInstance();
+        try (Stream<ReportDB> rows = new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class))
+        {
+            return rows
+                .map(reportService::_getInstance)
+                .filter(Objects::nonNull)
+                .peek(report -> visitors.forEach(visitor -> visitor.visit(report)))
+                .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
         }
     }
 }

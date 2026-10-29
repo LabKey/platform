@@ -76,7 +76,8 @@ public interface ReportService
     {
         void visit(Report report);
 
-        void addMetrics(UsageMetrics metrics);
+        /** Each supplier must call visitAll first; it runs the single pass on demand, so describing the metrics visits nothing */
+        void addMetrics(UsageMetrics metrics, Runnable visitAll);
     }
 
     /** The factory supplies a fresh visitor for each usage metrics collection */

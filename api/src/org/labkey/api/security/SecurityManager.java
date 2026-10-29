@@ -148,6 +148,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -212,28 +213,31 @@ public class SecurityManager
     public static UsageMetricsProvider getMetricsProvider()
     {
         return metrics -> {
-            MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
-            Set<Role> siteRoles = RoleManager.getSiteRoles();
-            for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
-            {
-                Role role = assignment.getRole();
-                if (siteRoles.contains(role))
+            Supplier<Map<String, Integer>> supplier = () -> {
+                MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
+                Set<Role> siteRoles = RoleManager.getSiteRoles();
+                for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
                 {
-                    UserPrincipal principal = getPrincipal(assignment.getUserId());
-                    if (principal != null && principal.isActive())
+                    Role role = assignment.getRole();
+                    if (siteRoles.contains(role))
                     {
-                        switch (principal.getPrincipalType())
+                        UserPrincipal principal = getPrincipal(assignment.getUserId());
+                        if (principal != null && principal.isActive())
                         {
-                            case USER -> mvm.put(role, principal);
-                            case GROUP -> mvm.putAll(role, getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS));
+                            switch (principal.getPrincipalType())
+                            {
+                                case USER -> mvm.put(role, principal);
+                                case GROUP ->
+                                        mvm.putAll(role, getAllGroupMembers((Group) principal, MemberType.ACTIVE_USERS));
+                            }
                         }
                     }
                 }
-            }
-            Map<String, Integer> roleCounts = mvm.keySet().stream()
-                .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
+                return mvm.keySet().stream()
+                    .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
+            };
 
-            return metrics.put("SiteRoleUserCounts", roleCounts, "Active users holding each site-level role, directly or through group membership");
+            return metrics.put("SiteRoleUserCounts", supplier, "Active users holding each site-level role, directly or through group membership");
         };
     }
 

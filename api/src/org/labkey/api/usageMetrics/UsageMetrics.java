@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -72,30 +73,17 @@ public class UsageMetrics
         _descriptions = descriptions;
     }
 
-    public UsageMetrics put(@NotNull String key, @Nullable Object value, @NotNull String description)
+    /** Skips the supplier on a describe-only instance, such as one from {@code reportedIf(false)}. A null supplier reports a null value. */
+    public UsageMetrics put(@NotNull String key, @Nullable Supplier<?> supplier, @NotNull String description)
     {
-        return put(key, value, description, Kind.CURRENT);
+        return put(key, supplier, description, Kind.CURRENT);
     }
 
-    public UsageMetrics put(@NotNull String key, @Nullable Object value, @NotNull String description, @NotNull Kind kind)
+    public UsageMetrics put(@NotNull String key, @Nullable Supplier<?> supplier, @NotNull String description, @NotNull Kind kind)
     {
         describe(key, description, kind);
         if (_values != null)
-            _values.put(key, value);
-        return this;
-    }
-
-    /** Skips the supplier on a describe-only instance from {@code reportedIf(false)}. Java binds {@code put(key, null, description)} to this overload. */
-    public UsageMetrics put(@NotNull String key, @Nullable Supplier<?> value, @NotNull String description)
-    {
-        return put(key, value, description, Kind.CURRENT);
-    }
-
-    public UsageMetrics put(@NotNull String key, @Nullable Supplier<?> value, @NotNull String description, @NotNull Kind kind)
-    {
-        describe(key, description, kind);
-        if (_values != null)
-            _values.put(key, value == null ? null : value.get());
+            _values.put(key, supplier == null ? null : supplier.get());
         return this;
     }
 
@@ -103,6 +91,12 @@ public class UsageMetrics
     public UsageMetrics reportedIf(boolean reported)
     {
         return reported ? this : new UsageMetrics(_path, null, _descriptions);
+    }
+
+    /** Skips the condition on a describe-only instance, for conditions that depend on an expensive value */
+    public UsageMetrics reportedIf(@NotNull BooleanSupplier supplier)
+    {
+        return _values == null ? this : reportedIf(supplier.getAsBoolean());
     }
 
     /** Describes a key without reporting it, for keys this server omits, such as ones only reported under some condition */
@@ -196,12 +190,13 @@ public class UsageMetrics
         public void testValuesAndDescriptions()
         {
             UsageMetrics metrics = new UsageMetrics();
-            metrics.put("jobCount", 3L, "Jobs");
-            metrics.put("clicks", 7L, "Clicks", Kind.CUMULATIVE);
+            metrics.put("jobCount", () -> 3L, "Jobs");
+            metrics.put("clicks", () -> 7L, "Clicks", Kind.CUMULATIVE);
             UsageMetricGroup actions = metrics.group("actionTypes", "Actions by type");
-            actions.put("AssayImport", 2L);
-            actions.group("nested").put("leaf", 1L);
-            actions.put("described", 5L, "Overrides the group's description");
+            actions.put("AssayImport", () -> 2L);
+            actions.group("nested").put("leaf", () -> 1L);
+            actions.putAll(() -> Map.of("Lazy", 4L));
+            actions.put("described", () -> 5L, "Overrides the group's description");
 
             assertEquals(Map.of(
                 "jobCount", 3L,
@@ -209,6 +204,7 @@ public class UsageMetrics
                 "actionTypes", Map.of(
                     "AssayImport", 2L,
                     "nested", Map.of("leaf", 1L),
+                    "Lazy", 4L,
                     "described", 5L)),
                 metrics.getValues());
 
@@ -224,10 +220,10 @@ public class UsageMetrics
         public void testRejectsDottedKeys()
         {
             UsageMetrics metrics = new UsageMetrics();
-            assertThrows(IllegalArgumentException.class, () -> metrics.put("a.b", 1L, "Dotted"));
+            assertThrows(IllegalArgumentException.class, () -> metrics.put("a.b", () -> 1L, "Dotted"));
             assertThrows(IllegalArgumentException.class, () -> metrics.group("a.b", "Dotted"));
             assertThrows(IllegalArgumentException.class, () -> metrics.describe("a.b", "Dotted"));
-            metrics.group("files", "Files by name").put("report.xlsx", 1L);
+            metrics.group("files", "Files by name").put("report.xlsx", () -> 1L);
         }
 
         @Test
@@ -250,11 +246,21 @@ public class UsageMetrics
         {
             UsageMetrics metrics = new UsageMetrics();
             metrics.describe("count", "Things");
-            metrics.put("count", 1L, "Things");
+            metrics.put("count", () -> 1L, "Things");
             assertEquals(List.of(new Description("count", "Things", Kind.CURRENT)), metrics.getDescriptions());
 
-            assertThrows(IllegalStateException.class, () -> metrics.put("count", 1L, "Other things"));
-            assertThrows(IllegalStateException.class, () -> metrics.describe("count", "Things", Kind.CUMULATIVE));
+            if (AppProps.getInstance().isDevMode())
+            {
+                assertThrows(IllegalStateException.class, () -> metrics.put("count", () -> 1L, "Other things"));
+                assertThrows(IllegalStateException.class, () -> metrics.describe("count", "Things", Kind.CUMULATIVE));
+            }
+            else
+            {
+                metrics.put("count", () -> 2L, "Other things");
+                metrics.describe("count", "Things", Kind.CUMULATIVE);
+                assertEquals(Map.of("count", 2L), metrics.getValues());
+                assertEquals(List.of(new Description("count", "Things", Kind.CURRENT)), metrics.getDescriptions());
+            }
         }
 
         @Test
@@ -269,8 +275,8 @@ public class UsageMetrics
                 new Description("perFolder", "Folder counts", Kind.CURRENT),
                 new Description("perFolder.runs", "Runs", Kind.CURRENT)),
                 metrics.getDescriptions());
-            absent.put("runs", 1L);
-            absent.put("runs", 1L, "Runs");
+            absent.put("runs", () -> 1L);
+            absent.put("runs", () -> 1L, "Runs");
             assertEquals(Map.of(), metrics.getValues());
         }
 
@@ -281,13 +287,16 @@ public class UsageMetrics
             metrics.put("count", () -> { throw new AssertionError("Supplier called while only describing"); }, "Count");
             UsageMetricGroup group = metrics.group("byType", "Counts by type");
             group.put("lazy", () -> { throw new AssertionError("Supplier called while only describing"); });
-            group.put("eager", 1L, "Eager value");
+            group.putAll(() -> { throw new AssertionError("Supplier called while only describing"); });
+            group.put("eager", () -> 1L, "Eager value");
+            metrics.reportedIf(() -> { throw new AssertionError("Condition called while only describing"); }).put("conditional", () -> 1L, "Conditional");
 
             assertEquals(Map.of(), metrics.getValues());
             assertEquals(List.of(
                 new Description("count", "Count", Kind.CURRENT),
                 new Description("byType", "Counts by type", Kind.CURRENT),
-                new Description("byType.eager", "Eager value", Kind.CURRENT)),
+                new Description("byType.eager", "Eager value", Kind.CURRENT),
+                new Description("conditional", "Conditional", Kind.CURRENT)),
                 metrics.getDescriptions());
         }
 
@@ -299,17 +308,20 @@ public class UsageMetrics
             metrics.reportedIf(true).put("shown", () -> 1L, "Shown");
             metrics.reportedIf(false).put("hidden", () -> { throw new AssertionError("Supplier called for unreported key"); }, "Hidden", Kind.CUMULATIVE);
             UsageMetricGroup colors = metrics.group("colors", "Colors");
-            colors.put("count", 0L, "Colors defined");
+            colors.put("count", () -> 0L, "Colors defined");
             colors.reportedIf(false).put("archived", () -> 2L, "Archived colors");
             UsageMetricGroup absent = metrics.reportedIf(false).group("absent", "Absent group");
             absent.group("child", "Absent child").describe("leaf", "Leaf");
-            absent.put("x", 1L);
-            metrics.reportedIf(false).put("plain", 3L, "Plain value");
+            absent.put("x", () -> 1L);
+            metrics.reportedIf(false).put("plain", () -> 3L, "Plain value");
+            metrics.reportedIf(() -> true).put("lazyShown", () -> 4L, "Lazily shown");
+            metrics.reportedIf(() -> false).put("lazyHidden", () -> 5L, "Lazily hidden");
             metrics.put("none", null, "Null value");
 
             Map<String, Object> expected = new LinkedHashMap<>();
             expected.put("shown", 1L);
             expected.put("colors", Map.of("count", 0L));
+            expected.put("lazyShown", 4L);
             expected.put("none", null);
             assertEquals(expected, metrics.getValues());
             assertEquals(List.of(
@@ -322,6 +334,8 @@ public class UsageMetrics
                 new Description("absent.child", "Absent child", Kind.CURRENT),
                 new Description("absent.child.leaf", "Leaf", Kind.CURRENT),
                 new Description("plain", "Plain value", Kind.CURRENT),
+                new Description("lazyShown", "Lazily shown", Kind.CURRENT),
+                new Description("lazyHidden", "Lazily hidden", Kind.CURRENT),
                 new Description("none", "Null value", Kind.CURRENT)),
                 metrics.getDescriptions());
         }

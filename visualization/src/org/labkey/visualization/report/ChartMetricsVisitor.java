@@ -48,11 +48,11 @@ public class ChartMetricsVisitor implements ReportMetricsVisitor
     }
 
     @Override
-    public void addMetrics(UsageMetrics metrics)
+    public void addMetrics(UsageMetrics metrics, Runnable visitAll)
     {
         metrics
-            .put("genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(_chartCountsByRenderType), "Saved charts (GenericChartReport) by render type (BAR_PLOT, BOX_PLOT, etc.)")
-            .put("genericChartWithTrendlineTypeCount", _trendlineTypeCount, "Saved charts with a trendline type set")
-            .put("genericChartWithErrorBarsCount", _errorBarsCount, "Saved charts with SD or SEM error bars");
+            .put("genericChartCountsByRenderType", () -> { visitAll.run(); return MultiSetUtils.getOccurrenceMap(_chartCountsByRenderType); }, "Saved charts (GenericChartReport) by render type (BAR_PLOT, BOX_PLOT, etc.)")
+            .put("genericChartWithTrendlineTypeCount", () -> { visitAll.run(); return _trendlineTypeCount; }, "Saved charts with a trendline type set")
+            .put("genericChartWithErrorBarsCount", () -> { visitAll.run(); return _errorBarsCount; }, "Saved charts with SD or SEM error bars");
     }
 }
