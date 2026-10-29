@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -36,6 +37,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.util.List;
@@ -44,6 +46,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 @RequiresPermission(ReadPermission.class)
 @RequiresLogin
@@ -102,6 +105,18 @@ public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
     protected boolean recordsHistory()
     {
         return true;
+    }
+
+    @Override
+    public void validateForm(PromptForm form, Errors errors)
+    {
+        if (!OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT))
+        {
+            errors.reject(ERROR_GENERIC, "LabKey Assistant is not enabled.");
+            return;
+        }
+
+        super.validateForm(form, errors);
     }
 
     @Override
