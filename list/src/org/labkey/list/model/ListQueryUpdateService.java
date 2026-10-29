@@ -56,7 +56,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -613,7 +613,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != value)
         {
-            for (IPropertyValidator validator : prop.getValidators())
+            for (PropertyValidatorDef validator : prop.getValidators())
             {
                 if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache))
                     return false;

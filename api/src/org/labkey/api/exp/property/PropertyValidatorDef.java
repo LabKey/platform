@@ -16,7 +16,9 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.validator.PropertyValidator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.ValidationError;
@@ -26,12 +28,14 @@ import org.labkey.api.security.User;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: Karl Lum
-* Date: Aug 8, 2008
-* Time: 9:17:09 AM
-*/
-public interface IPropertyValidator
+/**
+ * A {@link ValidatorKind} configured for one property: name, expression, properties, and error message, persisted in
+ * exp.PropertyValidator. Columns validate through {@link #bind}; {@link #validate} serves callers with only a
+ * {@link PropertyDescriptor}, such as OntologyManager.
+ * <p>
+ * The provided-data column ({@link #setColumnNameProvidedData}) is runtime-only and never saved.
+ */
+public interface PropertyValidatorDef
 {
     int getPropertyId();
     long getRowId();
@@ -55,7 +59,14 @@ public interface IPropertyValidator
     void setColumnNameProvidedData(String columnNameProvidedData);
     @Nullable Object getProvidedDataValue(DataIterator dataIterator);
 
-    IPropertyValidator save(User user, Container container) throws ValidationException;
+    PropertyValidatorDef save(User user, Container container) throws ValidationException;
 
     boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache);
+
+    /** A type URI with no registered kind still binds, to a validator that reports the missing kind */
+    default PropertyValidator bind(ColumnRenderProperties field)
+    {
+        ValidatorKind kind = getType();
+        return kind != null ? kind.bind(this, field) : new PropertyValidator(field, this, null);
+    }
 }

@@ -1258,7 +1258,7 @@ public class DomainImpl implements Domain
 
         private static String renderValidators(PropertyDescriptor prop)
         {
-            Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
+            Collection<PropertyValidatorBean> validators = DomainPropertyManager.get().getValidators(prop);
             return getPropertyValidatorStringVal(validators);
         }
 
@@ -1270,7 +1270,7 @@ public class DomainImpl implements Domain
 
     }
 
-    public static String getPropertyValidatorStringVal(Collection<PropertyValidator> validators)
+    public static String getPropertyValidatorStringVal(Collection<PropertyValidatorBean> validators)
     {
         if (validators == null || validators.isEmpty())
             return null;

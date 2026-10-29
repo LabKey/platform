@@ -26,8 +26,8 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.DefaultPropertyValidator;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.DefaultValidatorKind;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -44,10 +44,10 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * User: jeckels
- * Date: Jan 26, 2010
+ * Requires a value to exist as the lookup target's key, or as a sample's Name for a text lookup to a sample type.
+ * Loads the target's keys once per {@link ValidatorContext}.
  */
-public class LookupValidator extends DefaultPropertyValidator implements ValidatorKind
+public class LookupValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {
     @Override
     public String getName()
@@ -56,9 +56,9 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
     }
 
     @Override
-    public IPropertyValidator createInstance()
+    public PropertyValidatorDef createInstance()
     {
-        PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
+        PropertyValidatorDefImpl validator = new PropertyValidatorDefImpl(new PropertyValidatorBean());
         validator.setTypeURI(getTypeURI());
 
         return validator;
@@ -77,7 +77,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
     }
 
     @Override
-    public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
+    public boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors)
     {
         return true;
     }
@@ -222,7 +222,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
     }
 
     @Override
-    public boolean validate(IPropertyValidator validator,
+    public boolean validate(PropertyValidatorDef validator,
                             ColumnRenderProperties crpField,
                             @NotNull Object value,
                             List<ValidationError> errors,
@@ -241,7 +241,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
             {
                 LookupKey key = new LookupKey(field);
 
-                LookupValues validValues = (LookupValues) validatorCache.get(LookupValidator.class, key);
+                LookupValues validValues = (LookupValues) validatorCache.get(LookupValidatorKind.class, key);
                 if (validValues == null)
                 {
                     validValues = new LookupValues(field, validatorCache.getContainer(), validatorCache.getUser(), errors);
@@ -255,7 +255,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
             if (field.getFk() != null)
             {
                 LookupKey key = new LookupKey(field.getFk(), field.getJdbcType());
-                LookupValues validValues = (LookupValues) validatorCache.get(LookupValidator.class, key);
+                LookupValues validValues = (LookupValues) validatorCache.get(LookupValidatorKind.class, key);
 
                 if (validValues == null)
                 {
@@ -282,7 +282,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                                   String label,
                                   LookupValues validValues)
     {
-        validatorCache.put(LookupValidator.class, key, validValues);
+        validatorCache.put(LookupValidatorKind.class, key, validValues);
 
         if (validValues.contains(value))
         {

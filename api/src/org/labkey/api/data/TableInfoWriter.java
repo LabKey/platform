@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.ontology.OntologyService;
@@ -243,7 +243,7 @@ public class TableInfoWriter
 
         ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml, parentTableName);
 
-        List<? extends IPropertyValidator> validators = column.getValidators();
+        List<? extends PropertyValidatorDef> validators = column.getValidators();
 
         if (!validators.isEmpty())
         {
