@@ -17,7 +17,7 @@ package org.labkey.api.data.validator;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.query.ValidationError;
@@ -26,17 +26,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Wrapper around IPropertyValidator/ValidatorKind
+ * Wrapper around PropertyValidatorDef/ValidatorKind
  */
 public class PropertyValidator implements ColumnValidator
 {
     final String columnName;
     final ValidatorKind kind;
-    final IPropertyValidator propertyValidator;
+    final PropertyValidatorDef propertyValidator;
     private final ColumnRenderProperties _columnRenderProperties;
     final List<ValidationError> errors = new ArrayList<>(1);
 
-    public PropertyValidator(String columnName, ColumnRenderProperties crp, IPropertyValidator propertyValidator)
+    public PropertyValidator(String columnName, ColumnRenderProperties crp, PropertyValidatorDef propertyValidator)
     {
         this.columnName = columnName;
         this.propertyValidator = propertyValidator;
@@ -66,7 +66,7 @@ public class PropertyValidator implements ColumnValidator
         return msg;
     }
 
-    public IPropertyValidator getPropertyValidator()
+    public PropertyValidatorDef getPropertyValidator()
     {
         return propertyValidator;
     }

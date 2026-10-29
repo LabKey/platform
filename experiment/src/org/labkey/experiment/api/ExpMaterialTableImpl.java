@@ -81,12 +81,12 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.DefaultPropertyValidator;
+import org.labkey.api.exp.property.DefaultValidatorKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -243,12 +243,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     boolean _supportTableRules = true;
 
     private static final Set<String> MATERIAL_ALT_KEYS;
-    private static final List<IPropertyValidator> AMOUNT_RANGE_VALIDATORS = new ArrayList<>();
+    private static final List<PropertyValidatorDef> AMOUNT_RANGE_VALIDATORS = new ArrayList<>();
     static {
         MATERIAL_ALT_KEYS = CaseInsensitiveHashSet.of(MaterialSourceId.name(), Name.name());
 
-        Lsid rangeValidatorLsid = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);
-        IPropertyValidator amountValidator = PropertyService.get().createValidator(rangeValidatorLsid.toString());
+        Lsid rangeValidatorLsid = DefaultValidatorKind.createValidatorURI(PropertyValidatorType.Range);
+        PropertyValidatorDef amountValidator = PropertyService.get().createValidator(rangeValidatorLsid.toString());
         amountValidator.setName("SampleAmountNonNegative");
         amountValidator.setExpressionValue("~gte=0");
         amountValidator.setErrorMessage("Amounts must be non-negative.");

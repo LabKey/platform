@@ -21,7 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.query.ValidationException;
 
 import java.util.ArrayList;
@@ -125,7 +125,7 @@ public class ColumnValidators
     @Nullable
     public static List<? extends ColumnValidator> createPropertyValidators(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
-        List<? extends IPropertyValidator> validators;
+        List<? extends PropertyValidatorDef> validators;
         List<PropertyValidator> ret = null;
 
         // Fix for Issue 36011: Column validator from XML metadata does not trigger during an insert.
@@ -135,7 +135,7 @@ public class ColumnValidators
         {
             validators = col.getValidators();
             ret = new ArrayList<>(validators.size());
-            for (IPropertyValidator pv : validators)
+            for (PropertyValidatorDef pv : validators)
             {
                 ret.add(new PropertyValidator(col.getColumnName(), col, pv)
                 {
@@ -154,7 +154,7 @@ public class ColumnValidators
         {
             validators = dp.getValidators();
             ret = new ArrayList<>(validators.size());
-            for (IPropertyValidator pv : validators)
+            for (PropertyValidatorDef pv : validators)
             {
                 ret.add(new PropertyValidator(dp.getName(), dp.getPropertyDescriptor(), pv));
             }

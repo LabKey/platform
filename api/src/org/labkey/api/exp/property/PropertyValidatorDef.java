@@ -31,7 +31,7 @@ import java.util.Map;
 * Date: Aug 8, 2008
 * Time: 9:17:09 AM
 */
-public interface IPropertyValidator
+public interface PropertyValidatorDef
 {
     int getPropertyId();
     long getRowId();
@@ -55,7 +55,7 @@ public interface IPropertyValidator
     void setColumnNameProvidedData(String columnNameProvidedData);
     @Nullable Object getProvidedDataValue(DataIterator dataIterator);
 
-    IPropertyValidator save(User user, Container container) throws ValidationException;
+    PropertyValidatorDef save(User user, Container container) throws ValidationException;
 
     boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache);
 }

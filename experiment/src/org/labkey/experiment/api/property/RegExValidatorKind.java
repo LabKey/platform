@@ -19,8 +19,8 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
-import org.labkey.api.exp.property.DefaultPropertyValidator;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.DefaultValidatorKind;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -37,7 +37,7 @@ import java.util.regex.PatternSyntaxException;
 * Date: Aug 11, 2008
 * Time: 10:52:22 AM
 */
-public class RegExValidator extends DefaultPropertyValidator implements ValidatorKind
+public class RegExValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {
     public static final String FAIL_ON_MATCH = "failOnMatch";
 
@@ -60,16 +60,16 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
     }
 
     @Override
-    public IPropertyValidator createInstance()
+    public PropertyValidatorDef createInstance()
     {
-        PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
+        PropertyValidatorDefImpl validator = new PropertyValidatorDefImpl(new PropertyValidatorBean());
         validator.setTypeURI(getTypeURI());
 
         return validator;
     }
 
     @Override
-    public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
+    public boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors)
     {
         try
         {
@@ -92,19 +92,19 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
     }
 
     @Override
-    public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
+    public boolean validate(PropertyValidatorDef validator, ColumnRenderProperties field, @NotNull Object value,
                             List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue)
     {
         assert value != null : "Shouldn't be validating a null value";
 
         try
         {
-            Pattern expression = (Pattern)validatorCache.get(RegExValidator.class, validator.getExpressionValue());
+            Pattern expression = (Pattern)validatorCache.get(RegExValidatorKind.class, validator.getExpressionValue());
             if (expression == null)
             {
                 expression = Pattern.compile(validator.getExpressionValue());
                 // Cache the pattern so that it can be reused
-                validatorCache.put(RegExValidator.class, validator.getExpressionValue(), expression);
+                validatorCache.put(RegExValidatorKind.class, validator.getExpressionValue(), expression);
             }
             Matcher matcher = expression.matcher(String.valueOf(value));
             boolean failOnMatch = BooleanUtils.toBoolean(validator.getProperties().get(FAIL_ON_MATCH));

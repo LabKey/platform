@@ -119,9 +119,9 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     void setConditionalFormats(List<ConditionalFormat> formats);
 
     @NotNull
-    List<? extends IPropertyValidator> getValidators();
-    void addValidator(IPropertyValidator validator);
-    void removeValidator(IPropertyValidator validator);
+    List<? extends PropertyValidatorDef> getValidators();
+    void addValidator(PropertyValidatorDef validator);
+    void removeValidator(PropertyValidatorDef validator);
     void removeValidator(long validatorId);
 
     void copyFrom(DomainProperty propSrc, Container targetContainer);

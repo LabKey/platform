@@ -19,8 +19,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
-import org.labkey.api.exp.property.DefaultPropertyValidator;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.DefaultValidatorKind;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -37,7 +37,7 @@ import java.util.List;
 * Date: Aug 17, 2008
 * Time: 12:43:30 PM
 */
-public class RangeValidator extends DefaultPropertyValidator implements ValidatorKind
+public class RangeValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {
     @Override
     public String getName()
@@ -58,22 +58,22 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
     }
 
     @Override
-    public IPropertyValidator createInstance()
+    public PropertyValidatorDef createInstance()
     {
-        PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
+        PropertyValidatorDefImpl validator = new PropertyValidatorDefImpl(new PropertyValidatorBean());
         validator.setTypeURI(getTypeURI());
 
         return validator;
     }
 
     @Override
-    public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
+    public boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors)
     {
         return true;
     }
 
     @Override
-    public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
+    public boolean validate(PropertyValidatorDef validator, ColumnRenderProperties field, @NotNull Object value,
                             List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue)
     {
         //noinspection ConstantConditions

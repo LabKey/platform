@@ -29,14 +29,14 @@ import java.util.List;
 * Date: Aug 15, 2008
 * Time: 5:12:50 PM
 */
-public abstract class DefaultPropertyValidator implements ValidatorKind
+public abstract class DefaultValidatorKind implements ValidatorKind
 {
     public static Lsid createValidatorURI(PropertyValidatorType type)
     {
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + type.getTypeName());
     }
 
-    protected void createErrorMessage(IPropertyValidator validator, ColumnRenderProperties field, Object value, List<ValidationError> errors)
+    protected void createErrorMessage(PropertyValidatorDef validator, ColumnRenderProperties field, Object value, List<ValidationError> errors)
     {
         StringBuilder sb = new StringBuilder();
 

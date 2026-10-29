@@ -565,7 +565,7 @@ public class DomainUtil
         gwtProp.setScannable(prop.isScannable());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
-        for (IPropertyValidator pv : prop.getValidators())
+        for (PropertyValidatorDef pv : prop.getValidators())
         {
             GWTPropertyValidator gpv = new GWTPropertyValidator();
             Lsid lsid = new Lsid(pv.getTypeURI());
@@ -1361,8 +1361,8 @@ public class DomainUtil
                 newProps.put(v.getRowId(), v);
             else
             {
-                Lsid lsid = DefaultPropertyValidator.createValidatorURI(v.getType());
-                IPropertyValidator pv = PropertyService.get().createValidator(lsid.toString());
+                Lsid lsid = DefaultValidatorKind.createValidatorURI(v.getType());
+                PropertyValidatorDef pv = PropertyService.get().createValidator(lsid.toString());
 
                 _copyValidator(pv, v);
                 dp.addValidator(pv);
@@ -1392,7 +1392,7 @@ public class DomainUtil
             }
 
             // update any new or changed
-            for (IPropertyValidator pv : dp.getValidators())
+            for (PropertyValidatorDef pv : dp.getValidators())
             {
                 var gpv = newProps.get(pv.getRowId());
                 if (gpv == null)
@@ -1512,7 +1512,7 @@ public class DomainUtil
         }
     }
 
-    private static boolean _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
+    private static boolean _copyValidator(PropertyValidatorDef pv, GWTPropertyValidator gpv)
     {
         boolean hasChange = false;
         if (pv != null && gpv != null)

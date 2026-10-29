@@ -41,10 +41,10 @@
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
-<%@ page import="org.labkey.api.exp.property.DefaultPropertyValidator" %>
+<%@ page import="org.labkey.api.exp.property.DefaultValidatorKind" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
-<%@ page import="org.labkey.api.exp.property.IPropertyValidator" %>
+<%@ page import="org.labkey.api.exp.property.PropertyValidatorDef" %>
 <%@ page import="org.labkey.api.exp.property.PropertyService" %>
 <%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
 <%@ page import="org.labkey.api.gwt.client.model.PropertyValidatorType" %>
@@ -201,8 +201,8 @@ Dataset createDataset(Study study, String name, DatasetType type) throws Excepti
     StudyManager.getInstance().updateDatasetDefinition(_context.getUser(), dd);
 
     // validator
-    Lsid lsidValidator = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);
-    IPropertyValidator pvLessThan100 = PropertyService.get().createValidator(lsidValidator.toString());
+    Lsid lsidValidator = DefaultValidatorKind.createValidatorURI(PropertyValidatorType.Range);
+    PropertyValidatorDef pvLessThan100 = PropertyService.get().createValidator(lsidValidator.toString());
     pvLessThan100.setName("lessThan100");
     pvLessThan100.setExpressionValue("~lte=100.0");
 

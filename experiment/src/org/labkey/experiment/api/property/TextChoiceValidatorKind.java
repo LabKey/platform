@@ -18,7 +18,7 @@ package org.labkey.experiment.api.property;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public class TextChoiceValidator extends RegExValidator implements ValidatorKind
+public class TextChoiceValidatorKind extends RegExValidatorKind implements ValidatorKind
 {
     @Override
     public String getName()
@@ -47,23 +47,23 @@ public class TextChoiceValidator extends RegExValidator implements ValidatorKind
     }
 
     @Override
-    public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
+    public boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors)
     {
         return true;
     }
 
     @Override
-    public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
+    public boolean validate(PropertyValidatorDef validator, ColumnRenderProperties field, @NotNull Object value,
                             List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue)
     {
         assert value != null : "Shouldn't be validating a null value";
 
-        Set<String> validValues = (Set<String>)validatorCache.get(TextChoiceValidator.class, validator.getExpressionValue());
+        Set<String> validValues = (Set<String>)validatorCache.get(TextChoiceValidatorKind.class, validator.getExpressionValue());
         if (validValues == null)
         {
             validValues = new LinkedHashSet<>(PropertyService.get().getTextChoiceValidatorOptions(validator));
             // Cache the validValues so that it can be reused
-            validatorCache.put(TextChoiceValidator.class, validator.getExpressionValue(), validValues);
+            validatorCache.put(TextChoiceValidatorKind.class, validator.getExpressionValue(), validValues);
         }
 
         Object errorValue = null;

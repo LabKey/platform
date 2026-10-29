@@ -17,7 +17,7 @@ package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PropertyValidator implements Serializable, Cloneable
+public class PropertyValidatorBean implements Serializable, Cloneable
 {
     private long _rowId;
     private String _name;
@@ -39,7 +39,7 @@ public class PropertyValidator implements Serializable, Cloneable
     private String _errorMessage;
     private int _propertyId;
 
-    public void copy(IPropertyValidator v)
+    public void copy(PropertyValidatorDef v)
     {
         _rowId = v.getRowId();
         _name = v.getName();
@@ -144,11 +144,11 @@ public class PropertyValidator implements Serializable, Cloneable
     }
 
     @Override
-    public final PropertyValidator clone()
+    public final PropertyValidatorBean clone()
     {
         try
         {
-            return (PropertyValidator) super.clone();
+            return (PropertyValidatorBean) super.clone();
         }
         catch (CloneNotSupportedException cnse)
         {

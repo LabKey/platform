@@ -39,12 +39,12 @@ public interface ValidatorKind
     String getTypeURI();
     String getDescription();
 
-    IPropertyValidator createInstance();
-    boolean isValid(IPropertyValidator validator, List<ValidationError> errors);
-    boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue);
+    PropertyValidatorDef createInstance();
+    boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors);
+    boolean validate(PropertyValidatorDef validator, ColumnRenderProperties field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue);
 
     // Standard save-validator-to-XML method. ValidatorKind implementations can customize this by overriding.
-    default void convertToXml(IPropertyValidator v, ValidatorsType validatorsXml)
+    default void convertToXml(PropertyValidatorDef v, ValidatorsType validatorsXml)
     {
         ValidatorType validatorType = validatorsXml.addNewValidator();
         validatorType.setTypeURI(v.getTypeURI());
@@ -64,9 +64,9 @@ public interface ValidatorKind
         });
     }
 
-    static List<? extends IPropertyValidator> convertFromXML(ValidatorsType validatorsXml)
+    static List<? extends PropertyValidatorDef> convertFromXML(ValidatorsType validatorsXml)
     {
-        List<IPropertyValidator> list = new LinkedList<>();
+        List<PropertyValidatorDef> list = new LinkedList<>();
 
         if (null != validatorsXml)
         {
@@ -74,7 +74,7 @@ public interface ValidatorKind
 
             for (ValidatorType v : validators)
             {
-                IPropertyValidator pv = PropertyService.get().createValidator(v.getTypeURI());
+                PropertyValidatorDef pv = PropertyService.get().createValidator(v.getTypeURI());
                 pv.setName(v.getName());
 
                 if (null != v.getDescription())
