@@ -32,11 +32,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/*
-* User: Karl Lum
-* Date: Aug 17, 2008
-* Time: 12:43:30 PM
-*/
+/**
+ * Compares a numeric or date value against "&"-joined constraints such as "~gte=1&~lte=10"; any other value fails
+ */
 public class RangeValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {
     @Override

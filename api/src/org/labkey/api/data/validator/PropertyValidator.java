@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A PropertyValidatorDef bound to a column by {@link ValidatorKind#bind}
+ * A {@link PropertyValidatorDef} bound to a column by {@link ValidatorKind#bind}; unlike {@link AbstractColumnValidator},
+ * it enforces nothing without a {@link ValidatorContext}
  */
 public class PropertyValidator implements ColumnValidator
 {

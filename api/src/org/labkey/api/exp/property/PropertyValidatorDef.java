@@ -28,11 +28,13 @@ import org.labkey.api.security.User;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: Karl Lum
-* Date: Aug 8, 2008
-* Time: 9:17:09 AM
-*/
+/**
+ * A {@link ValidatorKind} configured for one property: name, expression, properties, and error message, persisted in
+ * exp.PropertyValidator. Columns validate through {@link #bind}; {@link #validate} serves callers with only a
+ * {@link PropertyDescriptor}, such as OntologyManager.
+ * <p>
+ * The provided-data column ({@link #setColumnNameProvidedData}) is runtime-only and never saved.
+ */
 public interface PropertyValidatorDef
 {
     int getPropertyId();

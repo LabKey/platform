@@ -32,11 +32,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-/*
-* User: Karl Lum
-* Date: Aug 11, 2008
-* Time: 10:52:22 AM
-*/
+/**
+ * Matches the whole value against the expression's pattern; the {@link #FAIL_ON_MATCH} property inverts the result
+ */
 public class RegExValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {
     public static final String FAIL_ON_MATCH = "failOnMatch";

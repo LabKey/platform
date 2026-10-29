@@ -36,6 +36,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Wraps a {@link PropertyValidatorBean}; the first edit of a saved bean clones it, keeping the original so
+ * {@link #isDirty} knows a save is needed
+ */
 public class PropertyValidatorDefImpl implements PropertyValidatorDef
 {
     private PropertyValidatorBean _validator;

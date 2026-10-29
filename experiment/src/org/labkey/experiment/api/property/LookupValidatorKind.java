@@ -44,8 +44,8 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * User: jeckels
- * Date: Jan 26, 2010
+ * Requires a value to exist as the lookup target's key, or as a sample's Name for a text lookup to a sample type.
+ * Loads the target's keys once per {@link ValidatorContext}.
  */
 public class LookupValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {

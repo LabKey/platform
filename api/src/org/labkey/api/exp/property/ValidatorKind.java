@@ -27,11 +27,15 @@ import org.labkey.data.xml.ValidatorsType;
 import java.util.LinkedList;
 import java.util.List;
 
-/*
-* User: Karl Lum
-* Date: Aug 8, 2008
-* Time: 10:45:38 AM
-*/
+/**
+ * The rule behind one type of property validator, registered once per type URI via
+ * {@link PropertyService#registerValidatorKind}. Kinds are shared singletons, so per-operation caches belong in the
+ * {@link ValidatorContext}, not in the ValidatorKind.
+ * <p>
+ * A {@link PropertyValidatorDef} configures a kind for one property and is persisted using PropertyValidatorBean;
+ * {@link #bind} turns a definition into the {@link org.labkey.api.data.validator.PropertyValidator} that checks a
+ * column's values.
+ */
 public interface ValidatorKind
 {
     String NAMESPACE = "PropertyValidator";

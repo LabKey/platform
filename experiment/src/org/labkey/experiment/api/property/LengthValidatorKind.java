@@ -29,8 +29,8 @@ import org.labkey.data.xml.ValidatorsType;
 import java.util.List;
 
 /**
- * Created by davebradlee on 8/31/15.
- *
+ * Compares a text value's length to the field's scale using the expression's operator, e.g. "~lte="; it isn't
+ * exported to XML because scale already conveys it
  */
 public class LengthValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {

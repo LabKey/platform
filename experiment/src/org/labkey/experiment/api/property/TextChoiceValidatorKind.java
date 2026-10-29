@@ -32,6 +32,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Accepts only the "|"-separated choices in the expression, for a single value or a collection of at most 10.
+ * Extends {@link RegExValidatorKind} only to inherit {@link #createInstance}.
+ */
 public class TextChoiceValidatorKind extends RegExValidatorKind implements ValidatorKind
 {
     @Override

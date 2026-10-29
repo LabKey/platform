@@ -41,7 +41,8 @@ import java.util.function.Supplier;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
- * This is a pass-through iterator, it does not change any of the data, it only creates errors
+ * This is a pass-through iterator, it does not change any of the data, it only creates errors.
+ * It owns the {@link ValidatorContext} for the whole import, which property validators need in order to run.
  */
 public class ValidatorIterator extends AbstractDataIterator implements DataIterator
 {

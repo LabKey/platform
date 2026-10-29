@@ -24,11 +24,10 @@ import org.labkey.api.query.ValidationError;
 
 import java.util.List;
 
-/*
-* User: Karl Lum
-* Date: Aug 15, 2008
-* Time: 5:12:50 PM
-*/
+/**
+ * Base for the built-in {@link ValidatorKind}s: error-message formatting, comparison operators, and
+ * {@link #createValidatorURI}, which other modules use to build type URIs.
+ */
 public abstract class DefaultValidatorKind implements ValidatorKind
 {
     public static Lsid createValidatorURI(PropertyValidatorType type)

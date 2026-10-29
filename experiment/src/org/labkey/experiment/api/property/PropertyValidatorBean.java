@@ -27,6 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * One row of exp.PropertyValidator, with Properties stored as a query string. Only this package touches it; other code
+ * uses {@link org.labkey.api.exp.property.PropertyValidatorDef}.
+ */
 public class PropertyValidatorBean implements Serializable, Cloneable
 {
     private long _rowId;
