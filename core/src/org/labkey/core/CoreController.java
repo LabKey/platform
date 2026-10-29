@@ -138,6 +138,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelProvider;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
@@ -2881,7 +2882,9 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(ChatHistoryForm form, Errors errors)
         {
-            if (!McpService.get().isAIFeaturesReady())
+            if (!OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT))
+                errors.reject(ERROR_GENERIC, "LabKey Assistant is not enabled.");
+            else if (!McpService.get().isAIFeaturesReady())
                 errors.reject(ERROR_MSG, "Agent actions are not available.");
             else if (!GUID.isGUID(form.getConversationId()))
                 errors.rejectValue("conversationId", ERROR_MSG, "Invalid conversationId");
