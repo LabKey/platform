@@ -15,16 +15,24 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.validator.PrefetchingValidator;
+import org.labkey.api.data.validator.PropertyValidator;
+import org.labkey.api.dataiterator.SimpleTranslator.RemapConverter;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DefaultValidatorKind;
 import org.labkey.api.exp.property.PropertyValidatorDef;
@@ -39,13 +47,18 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.User;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Requires a value to exist as the lookup target's key, or as a sample's Name for a text lookup to a sample type.
- * Loads the target's keys once per {@link ValidatorContext}.
+ * Remembers which values exist per {@link ValidatorContext}, querying a batch at a time instead of loading the target.
  */
 public class LookupValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {
@@ -80,6 +93,54 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
     public boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors)
     {
         return true;
+    }
+
+    @Override
+    public PropertyValidator bind(PropertyValidatorDef validator, ColumnRenderProperties field)
+    {
+        return new BoundLookupValidator(field, validator, this);
+    }
+
+    /** Lets ValidatorIterator prefetch a window of values; the lookup's answers live in the ValidatorContext, not here */
+    private static class BoundLookupValidator extends PropertyValidator implements PrefetchingValidator
+    {
+        private final ColumnRenderProperties _field;
+        private final LookupValidatorKind _kind;
+
+        BoundLookupValidator(ColumnRenderProperties field, PropertyValidatorDef validator, LookupValidatorKind kind)
+        {
+            super(field, validator, kind);
+            _field = field;
+            _kind = kind;
+        }
+
+        @Override
+        public String validate(int rowNum, Object value, ValidatorContext validatorContext, @Nullable Object providedValue)
+        {
+            return super.validate(rowNum, value, validatorContext, providedValue);
+        }
+
+        @Override
+        public void prefetch(Collection<?> values, ValidatorContext validatorContext)
+        {
+            LookupValues validValues = _kind.getLookupValues(_field, validatorContext);
+            if (validValues == null)
+                return;
+
+            List<Object> converted = new ArrayList<>(values.size());
+            for (Object value : values)
+            {
+                try
+                {
+                    converted.add(_field.convert(value));
+                }
+                catch (ConversionException e)
+                {
+                    // validate() reports it
+                }
+            }
+            validValues.prefetch(converted);
+        }
     }
 
     private static class LookupKey
@@ -130,63 +191,59 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
         }
     }
 
-    private static class LookupValues extends HashSet<Object>
+    /** Remembers which values exist in a lookup target, querying a batch at a time instead of loading the whole target */
+    private static class LookupValues
     {
-        final private Container _container;
+        private final String _schemaName;
+        private final String _queryName;
+        private final List<ValidationError> _setupErrors = new ArrayList<>();
+        private ColumnInfo _keyCol;
+        private boolean _caseInsensitive;
+        // GH Issue 1561: bounded, so a large lookup target is never held in memory
+        private final Map<Object, Boolean> _found = RemapConverter.lruMap();
 
-        public LookupValues(ColumnInfo field, Container defaultContainer, List<ValidationError> errors)
+        public LookupValues(ColumnInfo field)
         {
-            if (field.getFk().getLookupContainer() != null)
-            {
-                _container = field.getFk().getLookupContainer();
-            }
-            else
-            {
-                _container = defaultContainer;
-            }
-
-            processTableInfo(field.getFk().getLookupTableInfo(), field.getJdbcType(), field.getFk().getLookupTableName(), field.getNonBlankCaption(), errors);
+            _schemaName = field.getFk().getLookupSchemaName();
+            _queryName = field.getFk().getLookupTableName();
+            processTableInfo(field.getFk().getLookupTableInfo(), field.getJdbcType(), field.getNonBlankCaption());
         }
 
-        public LookupValues(PropertyDescriptor field, Container defaultContainer, User user, List<ValidationError> errors)
+        public LookupValues(PropertyDescriptor field, Container defaultContainer, User user)
         {
-            if (field.getLookupContainer() != null)
-            {
-                _container = ContainerManager.getForId(field.getLookupContainer());
-            }
-            else
-            {
-                _container = defaultContainer;
-            }
+            _schemaName = field.getLookupSchema();
+            _queryName = field.getLookupQuery();
+
+            Container container = field.getLookupContainer() != null ? ContainerManager.getForId(field.getLookupContainer()) : defaultContainer;
 
             if (user == null)
             {
                 throw new IllegalArgumentException("Must supply a user");
             }
 
-            if (_container == null)
+            if (container == null)
             {
-                errors.add(new SimpleValidationError("Could not find the lookup's target folder for field '" + field.getNonBlankCaption() + "'"));
+                _setupErrors.add(new SimpleValidationError("Could not find the lookup's target folder for field '" + field.getNonBlankCaption() + "'"));
             }
             else
             {
-                QuerySchema userSchema = QueryService.get().getUserSchema(user, _container, field.getLookupSchema());
+                QuerySchema userSchema = QueryService.get().getUserSchema(user, container, _schemaName);
                 if (userSchema == null)
                 {
-                    errors.add(new SimpleValidationError("Could not find the lookup's target schema ('" + field.getLookupSchema() + "') for field '" + field.getNonBlankCaption() + "'"));
+                    _setupErrors.add(new SimpleValidationError("Could not find the lookup's target schema ('" + _schemaName + "') for field '" + field.getNonBlankCaption() + "'"));
                 }
                 else
                 {
-                    processTableInfo(userSchema.getTableForInsert(field.getLookupQuery()), field.getJdbcType(), field.getLookupQuery(), field.getNonBlankCaption(), errors);
+                    processTableInfo(userSchema.getTableForInsert(_queryName), field.getJdbcType(), field.getNonBlankCaption());
                 }
             }
         }
 
-        private void processTableInfo(TableInfo tableInfo, JdbcType jdbcType, String queryName, String label, List<ValidationError> errors)
+        private void processTableInfo(TableInfo tableInfo, JdbcType jdbcType, String label)
         {
             if (tableInfo == null)
             {
-                errors.add(new SimpleValidationError("Could not find the lookup's target query ('" + queryName + "') for field '" + label + "'"));
+                _setupErrors.add(new SimpleValidationError("Could not find the lookup's target query ('" + _queryName + "') for field '" + label + "'"));
             }
             else
             {
@@ -194,7 +251,7 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
 
                 if (keyCols.size() != 1)
                 {
-                    errors.add(new SimpleValidationError("Could not validate target query ('" + queryName + "') because it has " + keyCols.size() + " columns instead of one for the field '" + label + "'"));
+                    _setupErrors.add(new SimpleValidationError("Could not validate target query ('" + _queryName + "') because it has " + keyCols.size() + " columns instead of one for the field '" + label + "'"));
                 }
                 else
                 {
@@ -209,15 +266,64 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
                             lookupTargetCol = nameCol;
                         }
                     }
-                    Collection<?> keys = new TableSelector(lookupTargetCol).getCollection(lookupTargetCol.getJavaObjectClass());
-                    addAll(keys);
+                    _keyCol = lookupTargetCol;
+                    _caseInsensitive = !tableInfo.getSqlDialect().isCaseSensitive();
                 }
             }
         }
 
-        public Container getContainer()
+        public List<ValidationError> getSetupErrors()
         {
-            return _container;
+            return _setupErrors;
+        }
+
+        public void prefetch(Collection<?> values)
+        {
+            if (_keyCol == null)
+                return;
+
+            List<Object> uncached = values.stream()
+                .map(this::normalize)
+                .filter(k -> k != null && !_found.containsKey(k))
+                .distinct()
+                .toList();
+
+            for (List<Object> batch : ListUtils.partition(uncached, BatchSize.get(BatchSize.Kind.ROWS)))
+            {
+                Set<Object> existing = new HashSet<>();
+                new TableSelector(_keyCol, new SimpleFilter(_keyCol.getFieldKey(), batch, CompareType.IN), null)
+                    .forEach(_keyCol.getJavaObjectClass(), v -> existing.add(normalize(v)));
+                for (Object k : batch)
+                    _found.put(k, existing.contains(k));
+            }
+        }
+
+        public boolean contains(Object value)
+        {
+            if (_keyCol == null)
+                return false;
+
+            Object k = normalize(value);
+            if (k == null)
+                return false;
+
+            if (!_found.containsKey(k))
+                prefetch(List.of(value));
+            return Boolean.TRUE.equals(_found.get(k));
+        }
+
+        // Matches the key's type and the database's case sensitivity, so a cached answer agrees with what a query returns
+        private @Nullable Object normalize(@Nullable Object value)
+        {
+            try
+            {
+                Object k = _keyCol.getJdbcType().convert(value);
+                return _caseInsensitive && k instanceof String str ? str.toLowerCase(Locale.ROOT) : k;
+            }
+            catch (ConversionException e)
+            {
+                return null;
+            }
         }
     }
 
@@ -232,66 +338,57 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
         //noinspection ConstantConditions
         assert value != null : "Shouldn't be validating a null value";
 
-        if (value != null)
-            value = crpField.convert(value);
+        LookupValues validValues = getLookupValues(crpField, validatorCache);
+        if (validValues == null)
+            return true;
 
+        if (!validValues.getSetupErrors().isEmpty())
+        {
+            errors.addAll(validValues.getSetupErrors());
+            return false;
+        }
+
+        value = crpField.convert(value);
+        // Queries this one value unless ValidatorIterator already prefetched its window
+        if (validValues.contains(value))
+            return true;
+
+        String label = crpField.getNonBlankCaption();
+        errors.add(new PropertyValidationError("Value '" + value + "' was not present in lookup target '" +
+                validValues._schemaName + "." + validValues._queryName + "' for field '" + label + "'", label));
+
+        return false;
+    }
+
+    private @Nullable LookupValues getLookupValues(ColumnRenderProperties crpField, ValidatorContext validatorCache)
+    {
+        LookupKey key;
+        Supplier<LookupValues> factory;
         if (crpField instanceof PropertyDescriptor field)
         {
-            if (field.getLookupQuery() != null && field.getLookupSchema() != null)
-            {
-                LookupKey key = new LookupKey(field);
-
-                LookupValues validValues = (LookupValues) validatorCache.get(LookupValidatorKind.class, key);
-                if (validValues == null)
-                {
-                    validValues = new LookupValues(field, validatorCache.getContainer(), validatorCache.getUser(), errors);
-                }
-                return isLookupValid(value, errors, validatorCache, key, field.getLookupSchema(),
-                        field.getLookupQuery(), field.getNonBlankCaption(), validValues);
-            }
+            if (field.getLookupQuery() == null || field.getLookupSchema() == null)
+                return null;
+            key = new LookupKey(field);
+            factory = () -> new LookupValues(field, validatorCache.getContainer(), validatorCache.getUser());
         }
         else if (crpField instanceof ColumnInfo field)
         {
-            if (field.getFk() != null)
-            {
-                LookupKey key = new LookupKey(field.getFk(), field.getJdbcType());
-                LookupValues validValues = (LookupValues) validatorCache.get(LookupValidatorKind.class, key);
-
-                if (validValues == null)
-                {
-                    validValues = new LookupValues(field, validatorCache.getContainer(), errors);
-                }
-                return isLookupValid(value, errors, validatorCache, key, field.getFk().getLookupSchemaName(),
-                        field.getFk().getLookupTableName(), field.getNonBlankCaption(), validValues);
-            }
+            if (field.getFk() == null)
+                return null;
+            key = new LookupKey(field.getFk(), field.getJdbcType());
+            factory = () -> new LookupValues(field);
         }
         else
         {
             throw new IllegalArgumentException("Unknown column type : '" + crpField.getClass() + "'");
         }
 
-        return true;
-    }
-
-    private boolean isLookupValid(@NotNull Object value,
-                                  List<ValidationError> errors,
-                                  ValidatorContext validatorCache,
-                                  LookupKey key,
-                                  String schemaName,
-                                  String queryName,
-                                  String label,
-                                  LookupValues validValues)
-    {
-        validatorCache.put(LookupValidatorKind.class, key, validValues);
-
-        if (validValues.contains(value))
+        LookupValues validValues = (LookupValues) validatorCache.get(LookupValidatorKind.class, key);
+        if (validValues == null)
         {
-            return true;
+            validValues = factory.get();
+            validatorCache.put(LookupValidatorKind.class, key, validValues);
         }
-
-        errors.add(new PropertyValidationError("Value '" + value + "' was not present in lookup target '" +
-                schemaName + "." + queryName + "' for field '" + label + "'",label));
-
-        return false;
+        return validValues;
     }
 }

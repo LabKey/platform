@@ -40,6 +40,12 @@
 <%@ page import="org.labkey.api.data.queryprofiler.QueryCounter" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
+<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
+<%@ page import="org.labkey.api.dataiterator.ValidatorIterator" %>
+<%@ page import="org.labkey.api.data.validator.PropertyValidator" %>
+<%@ page import="org.labkey.api.exp.PropertyType" %>
+<%@ page import="org.labkey.api.exp.property.ValidatorContext" %>
+<%@ page import="org.labkey.experiment.api.property.LookupValidatorKind" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
@@ -91,6 +97,7 @@
 <%@ page import="org.labkey.api.exp.api.ExpLineageService" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
 <%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
@@ -1546,6 +1553,79 @@ public void testPrefetchExpMaterialsMatchesFindExpMaterial() throws Exception
 
         // One query per batch of 3 for each of the LSID map, the Name map, and the sample load
         assertTrue(label + ": prefetch ran " + prefetchQueries + " queries", prefetchQueries <= 3 * 3);
+    }
+}
+
+@Test // GH Issue 1561
+public void testLookupValidatorQueriesPerWindow() throws Exception
+{
+    String sampleType = createSampleType(generateSampleTypeName(), List.of(new GWTPropertyDescriptor("name", "string")), null).getName();
+    String prefix = sampleType + "-";
+    List<Map<String, Object>> samples = insertSampleRows(sampleType, List.of(
+        CaseInsensitiveHashMap.of("name", prefix + "1"),
+        CaseInsensitiveHashMap.of("name", prefix + "2"),
+        CaseInsensitiveHashMap.of("name", prefix + "3")
+    ));
+    Object id1 = samples.get(0).get("rowid");
+    Object id2 = samples.get(1).get("rowid");
+    long id3 = ((Number) samples.get(2).get("rowid")).longValue();
+
+    // An INTEGER field matches the key however the value is typed, so the last window is all cached; a text field validates against the sample Name
+    assertLookupValidation(lookupField(sampleType, PropertyType.INTEGER), List.of(id1, id2, id1, -1561L, id3, String.valueOf(id2), (int) id3), Set.of(4), 3);
+    assertLookupValidation(lookupField(sampleType, PropertyType.STRING), List.of(prefix + "1", prefix + "2", prefix + "Missing", prefix + "3", prefix + "1"), Set.of(3), 2);
+}
+
+private PropertyDescriptor lookupField(String sampleType, PropertyType type)
+{
+    PropertyDescriptor field = new PropertyDescriptor("urn:lsid:labkey.com:LookupValidatorTest:" + type.name(), type, "Lookup", c);
+    field.setLookupSchema(SamplesSchema.SCHEMA_SAMPLES.toString());
+    field.setLookupQuery(sampleType);
+    return field;
+}
+
+private PropertyValidator lookupValidator(PropertyDescriptor field)
+{
+    LookupValidatorKind kind = new LookupValidatorKind();
+    return kind.bind(kind.createInstance(), field);
+}
+
+private Set<Integer> validateLookups(PropertyDescriptor field, List<Object> values) throws Exception
+{
+    List<Map<String, Object>> rows = values.stream().map(v -> (Map<String, Object>) CaseInsensitiveHashMap.of(field.getName(), v)).toList();
+    DataIteratorContext context = new DataIteratorContext();
+    context.setFailFast(false);
+    ValidatorIterator validate = new ValidatorIterator(new ListofMapsDataIterator(Set.of(field.getName()), rows), context, c, _user);
+    validate.addValidator(1, lookupValidator(field));
+    while (validate.next())
+    {
+    }
+    return context.getErrors().getRowErrors().stream().map(ValidationException::getRowNumber).collect(Collectors.toSet());
+}
+
+/** @param expectedQueries windows of two rows holding a value not already cached; one query each, never one for the whole target */
+private void assertLookupValidation(PropertyDescriptor field, List<Object> values, Set<Integer> expectedErrorRows, int expectedQueries) throws Exception
+{
+    String label = field.getPropertyType().name();
+
+    assertEquals(label, expectedErrorRows, validateLookups(field, values));
+
+    // Building the lookup table runs queries of its own once per import, so count only those against the target
+    String lookupTarget = "\"exp\".\"material\"";
+    int windowSize = 2;
+    try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, windowSize); QueryCounter counter = new QueryCounter(lookupTarget))
+    {
+        assertEquals(label, expectedErrorRows, validateLookups(field, values));
+        assertEquals(label + ": " + counter.getSql(), expectedQueries, counter.getCount());
+    }
+
+    // Outside a data iterator, an uncached value is queried by itself and then remembered
+    ValidatorContext validatorContext = new ValidatorContext(c, _user);
+    PropertyValidator validator = lookupValidator(field);
+    try (QueryCounter counter = new QueryCounter(lookupTarget))
+    {
+        assertNull(validator.validate(1, values.getFirst(), validatorContext, null));
+        assertNull(validator.validate(2, values.getFirst(), validatorContext, null));
+        assertEquals(label + ": " + counter.getSql(), 1, counter.getCount());
     }
 }
 
