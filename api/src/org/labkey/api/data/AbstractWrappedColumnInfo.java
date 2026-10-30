@@ -21,7 +21,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -449,7 +449,7 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
 
     @Override
     @NotNull
-    public List<? extends IPropertyValidator> getValidators()
+    public List<? extends PropertyValidatorDef> getValidators()
     {
         return delegate.getValidators();
     }

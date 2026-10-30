@@ -23,7 +23,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -357,7 +357,7 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     @NotNull List<ConditionalFormat> getConditionalFormats();
 
-    @NotNull List<? extends IPropertyValidator> getValidators();
+    @NotNull List<? extends PropertyValidatorDef> getValidators();
 
     /**
      * Unfortunately we cannot differentiate cases shownInInsertView is not set (it defaults to true) from cases where it is explicitly set to true

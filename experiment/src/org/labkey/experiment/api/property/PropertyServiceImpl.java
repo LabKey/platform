@@ -66,7 +66,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorKind;
@@ -104,7 +104,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidatorURI;
+import static org.labkey.api.exp.property.DefaultValidatorKind.createValidatorURI;
 
 public class PropertyServiceImpl implements PropertyService, UsageMetricsProvider
 {
@@ -365,7 +365,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public IPropertyValidator createValidator(String typeURI)
+    public PropertyValidatorDef createValidator(String typeURI)
     {
         ValidatorKind kind = getValidatorKind(typeURI);
         if (kind != null)
@@ -374,13 +374,13 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public @NotNull List<IPropertyValidator> getPropertyValidators(PropertyDescriptor desc)
+    public @NotNull List<PropertyValidatorDef> getPropertyValidators(PropertyDescriptor desc)
     {
-        List<IPropertyValidator> validators = new ArrayList<>();
+        List<PropertyValidatorDef> validators = new ArrayList<>();
 
-        for (PropertyValidator v : DomainPropertyManager.get().getValidators(desc))
+        for (PropertyValidatorBean v : DomainPropertyManager.get().getValidators(desc))
         {
-            validators.add(new PropertyValidatorImpl(v));            
+            validators.add(new PropertyValidatorDefImpl(v));
         }
         return validators;
     }
@@ -399,14 +399,14 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public IPropertyValidator getValidatorForColumn(ColumnInfo col, org.labkey.api.gwt.client.model.PropertyValidatorType type)
+    public PropertyValidatorDef getValidatorForColumn(ColumnInfo col, org.labkey.api.gwt.client.model.PropertyValidatorType type)
     {
-        List<? extends IPropertyValidator> validators = col.getValidators();
+        List<? extends PropertyValidatorDef> validators = col.getValidators();
         if (!validators.isEmpty())
         {
             String typeURI = createValidatorURI(type).toString();
 
-            for (IPropertyValidator validator : validators)
+            for (PropertyValidatorDef validator : validators)
             {
                 if (validator.getTypeURI().equals(typeURI))
                     return validator;
@@ -416,7 +416,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public List<String> getTextChoiceValidatorOptions(IPropertyValidator validator)
+    public List<String> getTextChoiceValidatorOptions(PropertyValidatorDef validator)
     {
         String expression = "";
         if (validator != null && validator.getExpressionValue() != null)
@@ -617,7 +617,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         {
             for (PropertyValidatorType xValidator : xProp.getPropertyValidatorArray())
             {
-                PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
+                PropertyValidatorDefImpl validator = new PropertyValidatorDefImpl(new PropertyValidatorBean());
                 validator.setContainer(prop.getContainer().getId());
                 validator.setName(xValidator.getName());
                 validator.setTypeURI(xValidator.getTypeURI());
@@ -868,8 +868,8 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         public void testTextChoiceValidatorOptions()
         {
             PropertyServiceImpl service = new PropertyServiceImpl();
-            TextChoiceValidator validator = new TextChoiceValidator();
-            IPropertyValidator instance = validator.createInstance();
+            TextChoiceValidatorKind validator = new TextChoiceValidatorKind();
+            PropertyValidatorDef instance = validator.createInstance();
 
             // empty expression
             instance.setExpressionValue("");

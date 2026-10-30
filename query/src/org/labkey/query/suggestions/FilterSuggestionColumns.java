@@ -27,7 +27,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -190,7 +190,7 @@ public class FilterSuggestionColumns
 
     private static @Nullable List<String> getValidValues(ColumnInfo column)
     {
-        IPropertyValidator validator = PropertyService.get().getValidatorForColumn(column, PropertyValidatorType.TextChoice);
+        PropertyValidatorDef validator = PropertyService.get().getValidatorForColumn(column, PropertyValidatorType.TextChoice);
         return validator == null ? null : PropertyService.get().getTextChoiceValidatorOptions(validator);
     }
 

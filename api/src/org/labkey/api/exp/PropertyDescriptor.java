@@ -37,7 +37,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -480,7 +480,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     }
 
     @Transient
-    public @NotNull Collection<? extends IPropertyValidator> getValidators()
+    public @NotNull Collection<? extends PropertyValidatorDef> getValidators()
     {
         return PropertyService.get().getPropertyValidators(this);
     }

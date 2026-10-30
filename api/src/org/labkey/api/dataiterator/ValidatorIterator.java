@@ -19,10 +19,12 @@ package org.labkey.api.dataiterator;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.data.validator.PrefetchingValidator;
 import org.labkey.api.data.validator.PropertyValidator;
 import org.labkey.api.data.validator.RowValidator;
 import org.labkey.api.exp.property.DomainProperty;
@@ -35,18 +37,24 @@ import org.labkey.api.util.GUID;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
- * This is a pass-through iterator, it does not change any of the data, it only creates errors
+ * This is a pass-through iterator, it does not change any of the data, it only creates errors.
+ * It owns the {@link ValidatorContext} for the whole import, which property validators need in order to run.
  */
 public class ValidatorIterator extends AbstractDataIterator implements DataIterator
 {
-    final DataIterator _data;
+    DataIterator _data;
     final ValidatorContext validatorContext;
+    private boolean _started = false;
     final ArrayList<RowValidator> _rowValidators = new ArrayList<>();
     final ArrayList<ArrayList<ColumnValidator>> _validators = new ArrayList<>();
 
@@ -151,6 +159,12 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         boolean validRow = true;
         boolean hasValidationErrors = false;
 
+        if (!_started)
+        {
+            _started = true;
+            _data = lookAhead(_data);
+        }
+
         do
         {
             if (!_data.next())
@@ -215,16 +229,48 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         return true;
     }
 
+    /** GH Issue 1561: when validators resolve values in bulk, prefetch a window of rows before validating them one at a time */
+    private DataIterator lookAhead(DataIterator data)
+    {
+        Map<Integer, List<PrefetchingValidator>> prefetching = new HashMap<>();
+        for (int i = 1; i < _validators.size(); i++)
+        {
+            for (ColumnValidator v : _validators.get(i))
+            {
+                if (v instanceof PrefetchingValidator pv)
+                    prefetching.computeIfAbsent(i, k -> new ArrayList<>()).add(pv);
+            }
+        }
+        if (prefetching.isEmpty())
+            return data;
+
+        return LookAheadDataIterator.of(data, BatchSize.get(BatchSize.Kind.ROWS), new LookAheadDataIterator.LookAheadCallback()
+        {
+            private final Map<Integer, Set<Object>> _windowValues = new HashMap<>();
+
+            @Override
+            public void collectRow(DataIterator lookAhead)
+            {
+                for (Integer i : prefetching.keySet())
+                {
+                    Object value = lookAhead.get(i);
+                    if (value != null)
+                        _windowValues.computeIfAbsent(i, k -> new LinkedHashSet<>()).add(value);
+                }
+            }
+
+            @Override
+            public void prefetch()
+            {
+                _windowValues.forEach((i, values) -> prefetching.get(i).forEach(pv -> pv.prefetch(values, validatorContext)));
+                _windowValues.clear();
+            }
+        });
+    }
+
     protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data, @Nullable Object providedValue)
     {
-        String msg;
-        // CONSIDER: add validatorContext to ColumnValidator.validate() always
-        if (v instanceof PropertyValidator)
-            msg = v.validate(rowNum, value, validatorContext, providedValue);
-        else
-            msg = v.validate(rowNum, value);
-
-        return msg;
+        return v.validate(rowNum, value, validatorContext, providedValue);
     }
 
     @Override
@@ -237,7 +283,8 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
     @Override
     public Supplier<Object> getSupplier(int i)
     {
-        return _data.getSupplier(i);
+        // _data is replaced by a look-ahead on the first next(), so don't bind to the original input's supplier
+        return () -> _data.get(i);
     }
 
 
