@@ -43,6 +43,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.ModuleLoader;
@@ -190,7 +191,8 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             }
         }
 
-        try (var ignored = SpringActionController.ignoreSqlUpdates())
+        // A cancel of the logged query would lose the audit row, not stop a query
+        try (var ignored = SpringActionController.ignoreSqlUpdates(); var ignored2 = TransactionFilter.deferCancellation())
         {
             /*
               This is necessary because audit log service needs to be registered in the constructor
