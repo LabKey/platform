@@ -16,10 +16,8 @@
 package org.labkey.api.visualization;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -323,16 +321,5 @@ public abstract class GenericChartReport extends AbstractReport
         ActionURL url = super.getRunReportURL(context);
         url.addParameter("edit", true);
         return url;
-    }
-
-    @Override
-    public void afterImport(Container container, User user)
-    {
-        GenericChartReportDescriptor descriptor = (GenericChartReportDescriptor) getDescriptor();
-
-        if (descriptor.getJSON() != null)
-        {
-            descriptor.updateSaveConfig();
-        }
     }
 }

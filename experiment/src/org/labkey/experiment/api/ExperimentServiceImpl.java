@@ -64,6 +64,7 @@ import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -967,16 +968,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public @Nullable ExpMaterialImpl getExpMaterial(String lsid)
     {
         return getExpMaterial(new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsid));
-    }
-
-    @Override
-    public @Nullable ExpMaterialImpl getExpMaterial(long rowId, ContainerFilter containerFilter)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowId);
-        if (containerFilter != null)
-            filter.addClause(containerFilter.createFilterClause(getExpSchema(), FieldKey.fromParts("Container")));
-
-        return getExpMaterial(filter);
     }
 
     @Override
@@ -2139,6 +2130,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         StringBuilder errors = new StringBuilder();
         String sampleTypeName = sampleType == null ? null : sampleType.getName();
+        Pair<SchemaKey, String> remapQuery = sampleRemapQuery(sampleType);
 
         // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
         // First attempt to resolve by name.
@@ -2146,9 +2138,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // TODO, rowId is not found for samples newly created in the same import.
             // This is causing name patterns containing lineage lookup to fail to generate the correct names if the child samples and their parents are created from the same import file
-            Object remap = (sampleTypeName == null) ?
-                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, container, getContainerFilterTypeForFind(container), sampleName) :
-                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, container, getContainerFilterTypeForFind(container), sampleName);
+            Object remap = cache.remap(remapQuery.first, remapQuery.second, user, container, getContainerFilterTypeForFind(container), sampleName);
             Long rowId = asLong(remap);
 
             if (rowId != null)
@@ -2181,6 +2171,63 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             throw new ValidationException(errors.toString());
 
         return null;
+    }
+
+    @Override
+    public void prefetchExpMaterials(
+        Container container,
+        User user,
+        Collection<String> sampleNames,
+        @Nullable ExpSampleType sampleType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Long, ExpMaterial> materialCache
+    )
+    {
+        Pair<SchemaKey, String> remapQuery = sampleRemapQuery(sampleType);
+        ContainerFilter.Type containerFilterType = getContainerFilterTypeForFind(container);
+        cache.prefetch(remapQuery.first, remapQuery.second, user, container, containerFilterType, sampleNames);
+
+        Set<Long> rowIds = new LinkedHashSet<>();
+        for (String sampleName : sampleNames)
+        {
+            if (StringUtils.isEmpty(sampleName))
+                continue;
+
+            Long rowId = null;
+            try
+            {
+                rowId = asLong(cache.remap(remapQuery.first, remapQuery.second, user, container, containerFilterType, sampleName));
+            }
+            catch (ConversionException e)
+            {
+                // Like findExpMaterial, an ambiguous name falls back to resolving by rowId
+            }
+
+            if (rowId == null)
+            {
+                try
+                {
+                    rowId = ConvertHelper.convert(sampleName, Long.class);
+                }
+                catch (ConversionException e)
+                {
+                    // not a rowId
+                }
+            }
+
+            if (rowId != null && !materialCache.containsKey(rowId))
+                rowIds.add(rowId);
+        }
+
+        for (List<Long> batch : ListUtils.partition(new ArrayList<>(rowIds), BatchSize.get(ROWS)))
+            getExpMaterials(container, user, batch, sampleType).forEach(m -> materialCache.putIfAbsent(m.getRowId(), m));
+    }
+
+    private Pair<SchemaKey, String> sampleRemapQuery(@Nullable ExpSampleType sampleType)
+    {
+        if (sampleType == null)
+            return Pair.of(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name());
+        return Pair.of(SamplesSchema.SCHEMA_SAMPLES, sampleType.getName());
     }
 
     @Override
@@ -4385,6 +4432,48 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         deleteExperimentRuns(container, user, userComment, getExpRuns(runRowIds), transactionDetails);
     }
 
+    /**
+     * Queues the runs that a deleted run replaced for re-indexing, once per container rather than once per deleted run:
+     * a folder delete reaches this for every run it holds, and a lambda per run is a commit task per run.
+     */
+    private static class ReindexReplacedRunsTask extends AccumulatingCommitTask<Container, Long>
+    {
+        private ReindexReplacedRunsTask(@NotNull Container container)
+        {
+            super(container);
+        }
+
+        @Override
+        protected void process(@NotNull Container container, @NotNull Set<Long> replacedRunIds)
+        {
+            AssayService assayService = AssayService.get();
+            if (assayService == null)
+                return;
+
+            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified);
+            replacedRunIds.forEach(runId -> assayService.indexAssayRun(queue, runId));
+        }
+    }
+
+    /**
+     * Drops deleted items from the search index in one pass per transaction. Keyed by a constant rather than by
+     * container: the ids are search document ids, not container-scoped, and deleting a folder calls in once per sample
+     * type it holds. Taking no container also keeps the deletes running after the container itself is gone.
+     */
+    private static class DeleteSearchResourcesTask extends AccumulatingCommitTask<String, String>
+    {
+        private DeleteSearchResourcesTask()
+        {
+            super(DeleteSearchResourcesTask.class.getName());
+        }
+
+        @Override
+        protected void process(@NotNull String key, @NotNull Set<String> docIds)
+        {
+            SearchService.get().deleteResources(docIds);
+        }
+    }
+
     public void deleteExperimentRuns(Container container, final User user, @Nullable final String userComment, @NotNull Collection<ExpRunImpl> runs, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
     {
         if (runs.isEmpty())
@@ -4512,13 +4601,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Re-index replaced run if replacing run is deleted
                 if (assayService != null && run.getReplacesRuns() != null)
                 {
-                    List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
-                    transaction.addCommitTask(() ->
-                        replacedRuns.forEach(replacedRun ->
-                                assayService.indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
-                        ),
-                        DbScope.CommitTaskOption.POSTCOMMIT
-                    );
+                    new ReindexReplacedRunsTask(container).register(getExpSchema().getScope(),
+                        run.getReplacesRuns().stream().map(ExpRunImpl::getRowId).toList(),
+                        DbScope.CommitTaskOption.POSTCOMMIT);
                 }
                 deleteRun(run, datasToDelete, user, userComment);
 
@@ -4960,6 +5045,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // Deleted rowIds by sample type LSID, so materialized views can drop just those rows; too many to track forces a full pass.
             Map<String, Set<Long>> deletedRowIds = new HashMap<>();
+            Map<Container, Set<Long>> changedSampleTypeIds = new HashMap<>();
             Set<String> untrackedDeletes = new HashSet<>();
 
             // Document IDs to tell the search indexer should be deleted. Do this at the end to make sure the transaction
@@ -4989,6 +5075,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
 
                     docids.add(material.getDocumentId());
+                    ExpSampleType materialSampleType = stDeleteFrom != null ? stDeleteFrom : material.getSampleType();
+                    Set<Long> containerSampleTypeIds = changedSampleTypeIds.computeIfAbsent(material.getContainer(), _ -> new HashSet<>());
+                    if (materialSampleType != null)
+                        containerSampleTypeIds.add(materialSampleType.getRowId());
 
                     if (null == stDeleteFrom)
                     {
@@ -5178,14 +5268,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterDelete(st, untrackedDeletes.contains(st.getLSID()) ? null : deletedRowIds.getOrDefault(st.getLSID(), Set.of()));
 
             // On successful commit, start task to remove items from search index
-            transaction.addCommitTask(
-                // Use null as container because we want deletes to run even if the container is deleted
-                () -> SearchService.get().deleteResources(docids),
-                POSTCOMMIT);
+            new DeleteSearchResourcesTask().register(getExpSchema().getScope(), docids, POSTCOMMIT);
 
-            // Notify connected clients that sample data changed so cached "insights" counts can be flagged stale.
-            // Deletes don't go through onSamplesChanged, so the notification is fired here.
-            transaction.addCommitTask(new SampleChangeNotify.FireSampleDataChangedTask(container), POSTCOMMIT);
+            // Deletes don't go through onSamplesChanged, so sample count listeners and clients are notified here
+            changedSampleTypeIds.forEach((changed, ids) -> new SampleChangeNotify.SampleDataChangedTask(changed).register(getExpSchema().getScope(), ids));
 
             transaction.commit();
             return deletedCount;
@@ -9570,13 +9656,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public UsageMetrics addDomainMetrics(UsageMetrics metrics)
     {
         metrics.group("nameexpression", "Naming patterns by data type, counting patterns that use each substitution, format, grandparent input, or withCounter; zero counts omitted")
-            .putAll(getNameExpressionMetrics());
+            .putAll(this::getNameExpressionMetrics);
         metrics.group("parentalias", "Required parent import aliases on sample types and data classes, by parent kind; counts aliases, not types. Source parents are any data class parent")
-            .putAll(getParentAliasMetrics());
+            .putAll(this::getParentAliasMetrics);
         metrics.group("importTemplates", "Query metadata overrides that define import templates, by sample types, data classes, and Standard assays; counts overrides, not templates")
-            .putAll(getImportTemplatesMetrics());
+            .putAll(this::getImportTemplatesMetrics);
         metrics.group("auditLevelOverride", "Query metadata overrides that set audit logging to none or summary, by sample types, data classes, and Standard assays")
-            .putAll(getAuditLevelOverrideMetrics());
+            .putAll(this::getAuditLevelOverrideMetrics);
         return metrics;
     }
 

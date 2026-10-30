@@ -37,7 +37,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -116,10 +115,10 @@ public interface FileLike extends Comparable<FileLike>
     default FileLike resolveChild(String name)
     {
         if (".".equals(name) || "..".equals(name))
-            throw new InvalidPathException(name, "Cannot resolve child");
+            throw new FileUtil.InvalidPathReferenceException(name, "Cannot resolve child");
         Path path = Path.parse(name);
         if (1 != path.size())
-            throw new InvalidPathException(name, "Cannot resolve child");
+            throw new FileUtil.InvalidPathReferenceException(name, "Cannot resolve child");
         return resolveFile(path);
     }
 

@@ -39,19 +39,19 @@
 <%@ page import="org.labkey.api.view.HtmlView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.view.PopupAdminView" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
-<%@ page import="org.labkey.api.view.PopupUserView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.core.view.PopupAdminView" %>
+<%@ page import="org.labkey.core.view.PopupUserView" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
-<%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
-<%@ page import="static org.labkey.api.util.DOM.IMG" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.src" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.alt" %>
 <%@ page import="static org.labkey.api.util.DOM.A" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.alt" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.href" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.src" %>
+<%@ page import="static org.labkey.api.util.DOM.IMG" %>
+<%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -214,7 +214,9 @@
                     <i class="fa fa-th-large" style="font-size: 18px; padding-top: 2px;"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <div id="headerProductDropdown-content"></div>
+                    <li id="headerProductDropdown-content">
+                        <div role="status" style="padding: 10px;"><i aria-hidden="true" class="fa fa-spinner fa-pulse"></i> Loading...</div>
+                    </li>
                 </ul>
             </li>
 <%

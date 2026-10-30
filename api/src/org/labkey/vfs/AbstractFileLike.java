@@ -18,6 +18,7 @@ package org.labkey.vfs;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.UnauthorizedException;
 
@@ -117,7 +118,7 @@ abstract public class AbstractFileLike implements FileLike
         var resolved = base.resolve(path);
         resolved = resolved.normalize();
         if (null == resolved)
-            throw new IllegalArgumentException("Illegal path " + path + " in " + base);
+            throw new FileUtil.InvalidPathReferenceException(path.toString(), "Illegal path in " + base);
         assert resolved.isAbsolute();
         return resolved;
     }
