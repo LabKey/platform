@@ -600,6 +600,9 @@ public class OntologyManager
             if (insert)
             {
                 parameterMap = StatementUtils.insertStatement(conn, table, c, user, !batch, autoFillDefaultColumns);
+                // The Spring default would bypass the RuntimeSQLException catch that unwraps a failed batch
+                if (batch)
+                    parameterMap.setExceptionFramework(ExceptionFramework.JDBC);
             }
             else
             {
