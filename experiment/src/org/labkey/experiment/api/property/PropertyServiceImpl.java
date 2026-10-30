@@ -79,8 +79,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetrics;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
@@ -106,7 +106,7 @@ import java.util.stream.Stream;
 
 import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidatorURI;
 
-public class PropertyServiceImpl implements PropertyService, DescribedUsageMetricsProvider
+public class PropertyServiceImpl implements PropertyService, UsageMetricsProvider
 {
     private final List<DomainKind<?>> _domainTypes = new CopyOnWriteArrayList<>();
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
@@ -700,17 +700,14 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
         DbSchema schema = ExperimentService.get().getSchema();
         String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
 
-        TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTableOrThrow(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
-        long storageColumnNameMismatches = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
-
         metrics.group("propertyValidators", "Field validators")
-                .put("byType", new SqlSelector(schema,
+                .put("byType", () -> new SqlSelector(schema,
                                 new SQLFragment("SELECT typeuri, COUNT(*) AS count FROM exp.propertyvalidator GROUP BY typeuri")
                         ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
                             x.put(m.get("typeuri").toString(), m.get("count"));
                             return x;
                         }), "Validators by type URI; a Text Choice field's choices are one validator")
-                .put("textChoiceValues", new SqlSelector(schema,
+                .put("textChoiceValues", () -> new SqlSelector(schema,
                                 new SQLFragment("SELECT MIN(NumValues) AS min, MAX(NumValues) AS max, AVG(NumValues) AS avg FROM (")
                                         .append(String.format("SELECT (%s(expression) - %s(replace(expression, '|', '')) + 1) AS NumValues FROM exp.propertyvalidator WHERE typeuri = ?", lengthFn, lengthFn))
                                         .unsafeAppend(") AS X")
@@ -722,18 +719,21 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
                                 return x;
                             }), "Choices per Text Choice validator: min, max, and avg");
         metrics.group("propertyCountsByRange", "Fields across all domains by data type (range URI after # or xsd:); 'null' for none")
-                .putAll(stripUriPrefixes(new SqlSelector(schema,
+                .putAll(() -> stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN RangeURI IS NULL THEN 'null' ELSE RangeURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY RangeURI")
                 ).getValueMap(String.class)));
         metrics.group("propertyCountsByConcept", "Fields across all domains by concept URI (after # or xsd:); 'null' for none")
-                .putAll(stripUriPrefixes(new SqlSelector(schema,
+                .putAll(() -> stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
                 ).getValueMap(String.class)));
         metrics.group("defaultValuePropertyCounts", "Fields with a saved folder- or user-level default value, by default value type and by owning domain's LSID namespace; counts fields, not saved values")
-                .put("folder", savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "%.Folder-%"))
-                .put("user", savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + ".Folder-%"));
-        metrics.put("conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class), "Fields with conditional formatting");
-        metrics.put("storageColumnNameMismatches", storageColumnNameMismatches, "Fields in provisioned domains whose database column name differs from the field name");
+                .put("folder", () -> savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "%.Folder-%"))
+                .put("user", () -> savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + ".Folder-%"));
+        metrics.put("conditionalFormattingFields", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class), "Fields with conditional formatting");
+        metrics.put("storageColumnNameMismatches", () -> {
+            TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTableOrThrow(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
+            return new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
+        }, "Fields in provisioned domains whose database column name differs from the field name");
         return metrics;
     }
 

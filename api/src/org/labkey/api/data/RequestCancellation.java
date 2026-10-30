@@ -26,8 +26,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.CoreMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -57,7 +57,6 @@ public final class RequestCancellation
 {
     private static final Logger LOG = LogHelper.getLogger(RequestCancellation.class, "Cancellation of in-flight requests and their queries");
     // statementCancelled and backendCancelled overlap when a timeout cancels an async query, so they don't add up
-    private static final String METRIC_AREA = "requestCancel";
     private static final long STUCK_AFTER_MS = 10_000;
 
     /** Tests set this to make the driver's cancel signal nothing, forcing the pg_cancel_backend fallback */
@@ -312,7 +311,7 @@ public final class RequestCancellation
     {
         try
         {
-            SimpleMetricsService.get().increment(DefaultModule.CORE_MODULE_NAME, METRIC_AREA, metricName);
+            SimpleMetricsService.get().increment(CoreMetricArea.REQUEST_CANCEL, metricName);
         }
         catch (RuntimeException e)
         {

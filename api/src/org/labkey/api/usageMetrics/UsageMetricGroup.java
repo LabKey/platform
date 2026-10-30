@@ -18,26 +18,32 @@ package org.labkey.api.usageMetrics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /** A described nested object; its children may omit descriptions because they inherit the group's */
 public class UsageMetricGroup extends UsageMetrics
 {
-    UsageMetricGroup(@NotNull String path, Map<String, Object> values, List<Description> descriptions)
+    UsageMetricGroup(@NotNull String path, @Nullable Map<String, Object> values, Map<String, Description> descriptions)
     {
         super(path, values, descriptions);
     }
 
-    public UsageMetricGroup put(@NotNull String key, @Nullable Object value)
+    /** Skips the supplier on a describe-only group. A null supplier reports a null value. */
+    public UsageMetricGroup put(@NotNull String key, @Nullable Supplier<?> supplier)
     {
-        getMutableValues().put(key, value);
+        Map<String, Object> values = getMutableValues();
+        if (values != null)
+            values.put(key, supplier == null ? null : supplier.get());
         return this;
     }
 
-    public UsageMetricGroup putAll(@NotNull Map<String, ?> values)
+    /** Skips the supplier on a describe-only group */
+    public UsageMetricGroup putAll(@NotNull Supplier<? extends Map<String, ?>> mapSupplier)
     {
-        getMutableValues().putAll(values);
+        Map<String, Object> mutable = getMutableValues();
+        if (mutable != null)
+            mutable.putAll(mapSupplier.get());
         return this;
     }
 

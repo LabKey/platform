@@ -60,7 +60,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
@@ -107,6 +106,7 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
@@ -117,6 +117,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.workflow.WorkflowService;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
+import org.labkey.experiment.dataiterator.DropColumnsDataIterator;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -635,7 +636,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 }
             }
 
-            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
+            SimpleMetricsService.get().increment(ExperimentMetricArea.MOVE_ENTITIES, "samples");
         }
         return new HashMap<>(allContainerResponse);
     }

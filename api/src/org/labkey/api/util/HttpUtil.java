@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.module.DefaultModule;
+import org.labkey.api.usageMetrics.CoreMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -255,7 +255,7 @@ public class HttpUtil
     {
         String clientLibrary = getClientLibrary(request);
         if (null != clientLibrary)
-            SimpleMetricsService.get().increment(DefaultModule.CORE_MODULE_NAME, "clientApiRequests", clientLibrary);
+            SimpleMetricsService.get().increment(CoreMetricArea.CLIENT_API_REQUESTS, clientLibrary);
     }
 
     public static @Nullable String getClientLibrary(HttpServletRequest request)

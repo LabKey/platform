@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.usageMetrics.ApiMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -74,7 +75,7 @@ public class FileServlet extends HttpServlet
             request.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, helper);
         }
 
-        SimpleMetricsService.get().increment("API", "FileServlet", "urlsDispatched");
+        SimpleMetricsService.get().increment(ApiMetricArea.FILE_SERVLET, "urlsDispatched");
         String dispatchUrl = containerPath + "/filecontent-sendFile.view?" + (null == fileNameParam ? "fileName=" + PageFlowUtil.encodeURIComponent(fileName) : "");
         _log.info("FileServlet dispatching {} to {}", request.getRequestURL(), dispatchUrl);
         // NOTE other parameters seem to get magically propagated...

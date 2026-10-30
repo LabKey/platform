@@ -57,6 +57,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.usageMetrics.AssayMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
@@ -1646,7 +1647,7 @@ public class PlateController extends SpringActionController
                 String fullFileName = plateSetSource.getName() + " - " + plateSetDestination.getName();
 
                 PlateManager.get().getPlateSetExportFile(fullFileName, exportColumns, plateDataRows, form.getFileType(), getViewContext().getResponse());
-                SimpleMetricsService.get().increment(AssayModule.NAME, "plateSet", "exportWorklist");
+                SimpleMetricsService.get().increment(AssayMetricArea.PLATE_SET, "exportWorklist");
             }
             catch (Exception e)
             {
@@ -1816,19 +1817,19 @@ public class PlateController extends SpringActionController
 
             if (form.getExportType() == PlateExportType.CSV)
             {
-                metricsService.increment(AssayModule.NAME, "plate", "exportCSV");
+                metricsService.increment(AssayMetricArea.PLATE, "exportCSV");
                 fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.COMMA);
                 fileExtension = TSVWriter.DELIM.COMMA.extension;
             }
             else if (form.getExportType() == PlateExportType.TSV)
             {
-                metricsService.increment(AssayModule.NAME, "plate", "exportTSV");
+                metricsService.increment(AssayMetricArea.PLATE, "exportTSV");
                 fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
                 fileExtension = TSVWriter.DELIM.TAB.extension;
             }
             else
             {
-                metricsService.increment(AssayModule.NAME, "plate", "exportMAP");
+                metricsService.increment(AssayMetricArea.PLATE, "exportMAP");
                 fileBytes = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds());
                 fileExtension = "xlsx";
             }

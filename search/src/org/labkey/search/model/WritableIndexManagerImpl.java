@@ -36,7 +36,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.search.SearchModule;
+import org.labkey.search.SearchMetricArea;
 import org.quartz.DateBuilder;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
@@ -207,7 +207,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             else
             {
                 _log.error("Indexing error deleting {} indexer is already closed", StringUtils.trimToEmpty(currentId), e);
-                SimpleMetricsService.get().increment(SearchModule.NAME,"Delete", "IndexAlreadyClosed");
+                SimpleMetricsService.get().increment(SearchMetricArea.DELETE, "IndexAlreadyClosed");
             }
         }
         catch (Throwable e)

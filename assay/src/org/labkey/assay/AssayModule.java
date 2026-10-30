@@ -71,6 +71,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.usageMetrics.AssayMetricArea;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
@@ -217,6 +219,9 @@ public class AssayModule extends SpringModule
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
+        SimpleMetricsService simpleMetrics = SimpleMetricsService.get();
+        simpleMetrics.describeFeatureAreas(AssayMetricArea.values());
+
         FolderTypeManager.get().registerFolderType(this, new AssayFolderType(this));
 
         PipelineJobService.get().registerTaskFactoryFactory(AssayImportRunTaskType.type, new AssayImportRunTask.FactoryFactory());

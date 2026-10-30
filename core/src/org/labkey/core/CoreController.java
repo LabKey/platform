@@ -2796,14 +2796,13 @@ public class CoreController extends SpringActionController
             String metricName = form.getMetricName();
             response.put("featureArea", featureArea);
             response.put("metricName", metricName);
-            response.put("count", SimpleMetricsService.get().increment(form.getModuleName(), featureArea, metricName));
+            response.put("count", SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, featureArea, metricName));
             return response;
         }
     }
 
     public static class ClientSideMetricForm
     {
-        private String _moduleName = CoreModule.CORE_MODULE_NAME;
         private String _featureArea;
         private String _metricName;
 
@@ -2825,16 +2824,6 @@ public class CoreController extends SpringActionController
         public void setMetricName(String metricName)
         {
             _metricName = metricName;
-        }
-
-        public String getModuleName()
-        {
-            return _moduleName;
-        }
-
-        public void setModuleName(String moduleName)
-        {
-            _moduleName = moduleName;
         }
     }
 

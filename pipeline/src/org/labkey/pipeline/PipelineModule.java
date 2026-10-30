@@ -225,49 +225,52 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
 
-        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
+        UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> {
             DbSchema pipelineSchema =  PipelineSchema.getInstance().getSchema();
             SqlDialect dialect = PipelineSchema.getInstance().getSchema().getSqlDialect();
-            Map<String, Object> result = new HashMap<>();
 
-            Map<String, Long> jobCounts = new HashMap<>();
-            SQLFragment jobSQL = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
-            jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
-            jobSQL.unsafeAppend(" GROUP BY Provider");
+            metrics.put("jobCounts", () -> {
+                Map<String, Long> jobCounts = new HashMap<>();
+                SQLFragment jobSQL = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
+                jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+                jobSQL.unsafeAppend(" GROUP BY Provider");
 
-            new SqlSelector(pipelineSchema, jobSQL).forEach(rs ->
-                    jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
-            result.put("jobCounts", jobCounts);
+                new SqlSelector(pipelineSchema, jobSQL).forEach(rs ->
+                        jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
+                return jobCounts;
+            }, "Pipeline jobs in the job status table across all containers, by provider; Unknown if no provider; jobs whose status rows were deleted aren't counted");
 
-            Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
-            SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Enabled, ");
-            triggerSQL.unsafeAppend("SUM(CASE WHEN Enabled != ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Disabled, ");
-            triggerSQL.unsafeAppend("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
-            triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");
-            triggerSQL.unsafeAppend(" LEFT OUTER JOIN \n");
-            triggerSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
-            triggerSQL.unsafeAppend(" ON tc.PipelineId = sf.TaskPipelineId\n");
-            triggerSQL.unsafeAppend(" GROUP BY PipelineId");
+            metrics.put("triggerCounts", () -> {
+                Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
+                SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Enabled, ");
+                triggerSQL.unsafeAppend("SUM(CASE WHEN Enabled != ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Disabled, ");
+                triggerSQL.unsafeAppend("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
+                triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");
+                triggerSQL.unsafeAppend(" LEFT OUTER JOIN \n");
+                triggerSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+                triggerSQL.unsafeAppend(" ON tc.PipelineId = sf.TaskPipelineId\n");
+                triggerSQL.unsafeAppend(" GROUP BY PipelineId");
 
-            new SqlSelector(pipelineSchema, triggerSQL).forEach((rs) ->
-                {
-                    String pipelineId = rs.getString("PipelineId");
-                    if (pipelineId.contains(":"))
+                new SqlSelector(pipelineSchema, triggerSQL).forEach((rs) ->
                     {
-                        pipelineId = pipelineId.split(":")[1];
-                    }
-                    Map<String, Long> m = triggerCounts.computeIfAbsent(pipelineId, x -> new HashMap<>());
-                    m.put("Enabled", rs.getLong("Enabled"));
-                    m.put("Disabled", rs.getLong("Disabled"));
-                    m.put("Jobs", rs.getLong("Jobs"));
-                });
-            result.put("triggerCounts", triggerCounts);
-            result.put("jmsType", PipelineService.get().getJmsType().toString());
+                        String pipelineId = rs.getString("PipelineId");
+                        if (pipelineId.contains(":"))
+                        {
+                            pipelineId = pipelineId.split(":")[1];
+                        }
+                        Map<String, Long> m = triggerCounts.computeIfAbsent(pipelineId, x -> new HashMap<>());
+                        m.put("Enabled", rs.getLong("Enabled"));
+                        m.put("Disabled", rs.getLong("Disabled"));
+                        m.put("Jobs", rs.getLong("Jobs"));
+                    });
+                return triggerCounts;
+            }, "Pipeline trigger configurations across all containers, by task pipeline: Enabled, Disabled, and Jobs run by that pipeline; computed over config-job join rows, so Enabled/Disabled are inflated when jobs exist");
+            metrics.put("jmsType", () -> PipelineService.get().getJmsType().toString(),"JMS queue type for pipeline jobs: none, inProcess, external, or unknown");
 
-            result.put("pipelineRootCount", PipelineService.get().getAllPipelineRoots().size());
-            result.put("supplementalDirectories", new TableSelector(PipelineSchema.getInstance().getTableInfoPipelineRoots(), new SimpleFilter("SupplementalPath", null, CompareType.NONBLANK), null).getRowCount());
+            metrics.put("pipelineRootCount", () -> PipelineService.get().getAllPipelineRoots().size(), "Containers with an explicitly configured primary pipeline root");
+            metrics.put("supplementalDirectories", () -> new TableSelector(PipelineSchema.getInstance().getTableInfoPipelineRoots(), new SimpleFilter("SupplementalPath", null, CompareType.NONBLANK), null).getRowCount(), "Configured pipeline roots that have a supplemental directory");
 
-            return result;
+            return metrics;
         });
     }
 
