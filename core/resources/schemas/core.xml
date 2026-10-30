@@ -70,11 +70,13 @@
     <columns>
       <column columnName="UserId"/>
       <column columnName="Crypt"/>
-      <column columnName="Verification"/>
+      <column columnName="PasswordVerification"/>
       <column columnName="LastChanged"/>
       <column columnName="PreviousCrypts"/>
       <column columnName="RequestedEmail"/>
-      <column columnName="VerificationTimeout"/>
+      <column columnName="PasswordVerificationTimeout"/>
+      <column columnName="EmailVerification"/>
+      <column columnName="EmailVerificationTimeout"/>
     </columns>
   </table>
   <table tableName="Members" tableDbType="TABLE">
