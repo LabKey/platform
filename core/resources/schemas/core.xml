@@ -71,10 +71,10 @@
       <column columnName="UserId"/>
       <column columnName="Crypt"/>
       <column columnName="PasswordVerification"/>
-      <column columnName="LastChanged"/>
+      <column columnName="PasswordVerificationTimeout"/>
+      <column columnName="PasswordLastChanged"/>
       <column columnName="PreviousCrypts"/>
       <column columnName="RequestedEmail"/>
-      <column columnName="PasswordVerificationTimeout"/>
       <column columnName="EmailVerification"/>
       <column columnName="EmailVerificationTimeout"/>
     </columns>
