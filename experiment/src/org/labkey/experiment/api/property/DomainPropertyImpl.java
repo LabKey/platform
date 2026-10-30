@@ -47,7 +47,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
@@ -80,7 +80,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     private boolean _schemaChanged;
     private boolean _schemaImport;
-    private List<PropertyValidatorImpl> _validators;
+    private List<PropertyValidatorDefImpl> _validators;
     private List<ConditionalFormat> _formats;
     private String _defaultValue;
 
@@ -794,7 +794,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (_pdOld != null) return true;
 
-        for (PropertyValidatorImpl v : ensureValidators())
+        for (PropertyValidatorDefImpl v : ensureValidators())
         {
             if (v.isDirty() || v.isNew())
                 return true;
@@ -973,7 +973,7 @@ public class DomainPropertyImpl implements DomainProperty
         _schemaChanged = false;
         _schemaImport = false;
 
-        for (PropertyValidatorImpl validator : ensureValidators())
+        for (PropertyValidatorDefImpl validator : ensureValidators())
         {
             if (validator.isDeleted())
                 DomainPropertyManager.get().removePropertyValidator(this, validator);
@@ -1012,13 +1012,13 @@ public class DomainPropertyImpl implements DomainProperty
 
     @Override
     @NotNull
-    public List<PropertyValidatorImpl> getValidators()
+    public List<PropertyValidatorDefImpl> getValidators()
     {
         return Collections.unmodifiableList(ensureValidators());
     }
 
     @Override
-    public void addValidator(IPropertyValidator validator)
+    public void addValidator(PropertyValidatorDef validator)
     {
         if (validator != null)
         {
@@ -1028,21 +1028,21 @@ public class DomainPropertyImpl implements DomainProperty
             // Ensure validator is a valid kind (ex. urn:lsid:labkey.com:PropertyValidator:length is no longer valid)
             if ( null != PropertyService.get().getValidatorKind(validator.getTypeURI()) )
             {
-                PropertyValidator impl = new PropertyValidator();
+                PropertyValidatorBean impl = new PropertyValidatorBean();
                 impl.copy(validator);
                 impl.setPropertyId(getPropertyId());
-                ensureValidators().add(new PropertyValidatorImpl(impl));
+                ensureValidators().add(new PropertyValidatorDefImpl(impl));
             }
         }
     }
 
     @Override
-    public void removeValidator(IPropertyValidator validator)
+    public void removeValidator(PropertyValidatorDef validator)
     {
         int idx = ensureValidators().indexOf(validator);
         if (idx != -1)
         {
-            PropertyValidatorImpl impl = ensureValidators().get(idx);
+            PropertyValidatorDefImpl impl = ensureValidators().get(idx);
             impl.delete();
         }
     }
@@ -1052,7 +1052,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (validatorId == 0) return;
 
-        for (PropertyValidatorImpl imp : ensureValidators())
+        for (PropertyValidatorDefImpl imp : ensureValidators())
         {
             if (imp.getRowId() == validatorId)
             {
@@ -1125,14 +1125,14 @@ public class DomainPropertyImpl implements DomainProperty
         _formats = formats;
     }
 
-    private List<PropertyValidatorImpl> ensureValidators()
+    private List<PropertyValidatorDefImpl> ensureValidators()
     {
         if (_validators == null)
         {
             _validators = new ArrayList<>();
-            for (PropertyValidator validator : DomainPropertyManager.get().getValidators(this))
+            for (PropertyValidatorBean validator : DomainPropertyManager.get().getValidators(this))
             {
-                _validators.add(new PropertyValidatorImpl(validator));
+                _validators.add(new PropertyValidatorDefImpl(validator));
             }
         }
         return _validators;

@@ -21,7 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -960,7 +960,7 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setValidators(List<? extends IPropertyValidator> validators)
+        public void setValidators(List<? extends PropertyValidatorDef> validators)
         {
             checkLocked();
             throw new UnsupportedOperationException();

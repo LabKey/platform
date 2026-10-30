@@ -75,7 +75,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
@@ -397,12 +397,12 @@ public class OntologyManager
                 objInsert.setOwnerObjectId(ownerObjectId);
 
             List<ValidationError> errors = new ArrayList<>();
-            Map<Integer, List<? extends IPropertyValidator>> validatorMap = new IntHashMap<>();
+            Map<Integer, List<? extends PropertyValidatorDef>> validatorMap = new IntHashMap<>();
 
             // cache all the property validators for this upload
             for (PropertyDescriptor pd : descriptors)
             {
-                List<? extends IPropertyValidator> validators = PropertyService.get().getPropertyValidators(pd);
+                List<? extends PropertyValidatorDef> validators = PropertyService.get().getPropertyValidators(pd);
                 if (!validators.isEmpty())
                     validatorMap.put(pd.getPropertyId(), validators);
             }
@@ -603,14 +603,14 @@ public class OntologyManager
             }
             List<ValidationError> errors = new ArrayList<>();
 
-            Map<String, List<? extends IPropertyValidator>> validatorMap = new HashMap<>();
+            Map<String, List<? extends PropertyValidatorDef>> validatorMap = new HashMap<>();
             Map<String, DomainProperty> propertiesMap = new HashMap<>();
 
             // cache all the property validators for this upload
             for (DomainProperty dp : properties)
             {
                 propertiesMap.put(dp.getPropertyURI(), dp);
-                List<? extends IPropertyValidator> validators = dp.getValidators();
+                List<? extends PropertyValidatorDef> validators = dp.getValidators();
                 if (!validators.isEmpty())
                     validatorMap.put(dp.getPropertyURI(), validators);
             }
@@ -782,7 +782,7 @@ public class OntologyManager
     }
 
     // TODO: Consolidate with ColumnValidator
-    public static boolean validateProperty(List<? extends IPropertyValidator> validators, PropertyDescriptor prop, ObjectProperty objectProperty,
+    public static boolean validateProperty(List<? extends PropertyValidatorDef> validators, PropertyDescriptor prop, ObjectProperty objectProperty,
                                            List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
@@ -820,7 +820,7 @@ public class OntologyManager
         // Don't validate null values, #15683
         if (null != value && validators != null)
         {
-            for (IPropertyValidator validator : validators)
+            for (PropertyValidatorDef validator : validators)
                 if (!validator.validate(prop, value, errors, validatorCache)) ret = false;
         }
         return ret;
@@ -3043,11 +3043,11 @@ public class OntologyManager
         public final String domainName;
         public final String domainURI;
         public final PropertyDescriptor pd;
-        public final List<? extends IPropertyValidator> validators;
+        public final List<? extends PropertyValidatorDef> validators;
         public final List<ConditionalFormat> formats;
         public final String defaultValue;
 
-        private ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
+        private ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends PropertyValidatorDef> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
         {
             this.domainName = domainName;
             this.domainURI = domainURI;
@@ -3063,7 +3063,7 @@ public class OntologyManager
     {
         public final ArrayList<ImportPropertyDescriptor> properties = new ArrayList<>();
 
-        void add(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
+        void add(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends PropertyValidatorDef> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
         {
             properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd, validators, formats, defaultValue));
         }
