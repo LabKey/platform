@@ -18,7 +18,7 @@
   "devDependencies": {
     "@labkey/build": "10.1.4",
     "@labkey/eslint-config": "1.2.5",
-    "@labkey/test": "1.14.6-fb-labkey-test-properties-escapes.0",
+    "@labkey/test": "1.14.6",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
