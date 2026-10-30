@@ -29,9 +29,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.util.CountLimiter;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.core.util.CountLimiter;
 
 import java.util.concurrent.TimeUnit;
 

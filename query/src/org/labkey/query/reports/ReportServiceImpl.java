@@ -60,7 +60,6 @@ import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
-import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.ReportDB;
@@ -69,7 +68,6 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
-import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -100,6 +98,8 @@ import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.query.reports.report.ModuleJavaScriptReportDescriptor;
+import org.labkey.query.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 
@@ -388,6 +388,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     public boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors)
     {
         final ReportDescriptor descriptor = report.getDescriptor();
+        Report stored = null;
 
         if (descriptor.isNew())
         {
@@ -396,7 +397,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         }
         else
         {
-            Report stored = getStoredReport(descriptor.getReportId());
+            stored = getStoredReport(descriptor.getReportId());
             if (null != stored && !context.getContainer().getId().equals(stored.getContainerId()))
             {
                 errors.add(new SimpleValidationError("A report can only be saved from the folder that it belongs to."));
@@ -411,6 +412,10 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                     toCheck.canShare(context.getUser(), context.getContainer(), errors);
             }
         }
+
+        // GH Issue 1649: generic report actions, such as study-reports-saveReport, can write a chart's config too
+        if (descriptor instanceof VisualizationReportDescriptor vizDescriptor)
+            vizDescriptor.validatePointClickFn(context.getUser(), vizDescriptor.getJSON(), null != stored ? stored.getDescriptor() : null, errors);
 
         return errors.isEmpty();
     }
