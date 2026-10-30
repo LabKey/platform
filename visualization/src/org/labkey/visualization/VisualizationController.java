@@ -102,7 +102,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SQLGenerationException;
-import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;

@@ -23,6 +23,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NotFoundException;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -163,6 +164,14 @@ public class RemapCache
     public <V> V remap(SchemaKey schemaName, String queryName, User user, Container c, ContainerFilter.Type filterType, String value)
     {
         return remap(key(schemaName, queryName, user, c, filterType), value, false);
+    }
+
+    /**
+     * Resolve many values in bulk, so {@link #remap(SchemaKey, String, User, Container, ContainerFilter.Type, String)} for them runs no queries.
+     */
+    public void prefetch(SchemaKey schemaName, String queryName, User user, Container c, ContainerFilter.Type filterType, Collection<String> values)
+    {
+        remapper(key(schemaName, queryName, user, c, filterType), remaps, false).prefetch(values);
     }
 
     /**

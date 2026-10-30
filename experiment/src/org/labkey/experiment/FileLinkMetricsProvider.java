@@ -38,7 +38,7 @@ public class FileLinkMetricsProvider implements UsageMetricsProvider
     public UsageMetrics addUsageMetrics(UsageMetrics metrics)
     {
         metrics.group(FileLinkMetricsMaintenanceTask.NAME, "File field files as of the last system maintenance run since startup: run time, missing files, and valid files by schema (assay batch and run files under exp)")
-            .putAll(_metrics);
+            .putAll(() -> _metrics);
         return metrics;
     }
 
