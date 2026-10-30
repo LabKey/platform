@@ -354,6 +354,17 @@ public class ReportUtil
      */
     public static boolean canCreateScript(ContainerUser context, String extension)
     {
+        LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
+        ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
+
+        return canCreateScript(context, engine);
+    }
+
+    /**
+     * Helper to determine if the user can create a script report.
+     */
+    public static boolean canCreateScript(ContainerUser context, ScriptEngine engine)
+    {
         User u = context.getUser();
 
         if (!context.getContainer().hasPermission(u, InsertPermission.class))
@@ -367,8 +378,6 @@ public class ReportUtil
         {
             // trusted analysts can only create reports on sandboxed engine instances
             // TODO can this differ from the engine returned by the instantiated report?
-            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
             return engine instanceof LabKeyScriptEngine && ((LabKeyScriptEngine)engine).isSandboxed();
         }
 

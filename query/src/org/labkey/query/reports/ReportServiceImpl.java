@@ -47,12 +47,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
-import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -426,31 +426,26 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         if (!(report instanceof ScriptReport))
             return;
 
-        String extension = null;
+        ScriptEngine engine = null;
         if (report instanceof ScriptEngineReport scriptEngineReport)
         {
-            try
-            {
-                ScriptEngine engine = scriptEngineReport.getScriptEngine(context.getContainer());
-                if (engine == null)
-                {
-                    errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
-                    return;
-                }
-                extension = engine.getFactory().getExtensions().getFirst();
-            }
-            catch (PremiumFeatureNotEnabledException e)
-            {
-                errors.add(new SimpleValidationError(e.getMessage()));
-                return;
-            }
+            engine = scriptEngineReport.getScriptEngine(context.getContainer());
         }
-        else if (report instanceof JavaScriptReport)
-            extension = "js";
-        else if (report instanceof IpynbReport)
-            extension = IpynbReport.EXTENSION;
+        else if (report instanceof JavaScriptReport || report instanceof IpynbReport)
+        {
+            String extension = (report instanceof JavaScriptReport) ? "js" : IpynbReport.EXTENSION;
 
-        if (!ReportUtil.canCreateScript(context, extension))
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
+            engine = svc.getEngineByExtension(context.getContainer(), extension);
+        }
+
+        if (engine == null)
+        {
+            errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
+            return;
+        }
+
+        if (!ReportUtil.canCreateScript(context, engine))
             errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or TrustedAnalyst to create a script report."));
     }
 
