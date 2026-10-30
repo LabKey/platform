@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  *     <javaCustomizer class="org.labkey.experiment.api.CountOfUniqueValueTableCustomizer">                 // Name of this customizer
  *         <properties>
  *             <property name="counterName">SampleCounter</property>                                        // Name of counter (required)
- *             <property name="counterType">org.labkey.api.data.UniqueValueCounterDefinition</property>     // Name of implementation of CounterDefinition (required)
+ *             <property name="counterType">org.labkey.experiment.data.UniqueValueCounterDefinition</property>     // Name of implementation of CounterDefinition (required)
  *
  *             <property name="pairedColumn">vessel</property>                                              // Zero or more pairedColumns (whose values are used to uniquify the DB sequence)
  * 	     	   <property name="pairedColumn">one</property>
