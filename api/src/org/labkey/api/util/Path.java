@@ -395,6 +395,11 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return _parent.get();
     }
 
+
+    /**
+     * Create a path that does not contain parts "." or "..".
+     * NOTE: returns null if the normalized path would need to start with "../"
+     */
     public Path normalize()
     {
         for (int i = 0; i < _length; i++)
