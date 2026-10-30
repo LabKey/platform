@@ -1353,6 +1353,9 @@ public abstract class Method
                 User user = (User) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
+                // Role impersonation and LimitedUser have no groups; "IN ()" is a syntax error
+                if (user.getGroups().size() == 0)
+                    return new SQLFragment("1=0");
                 SQLFragment ret = new SQLFragment();
                 ret.append("(").append(groupArg).append(") IN (").append(
                         user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
