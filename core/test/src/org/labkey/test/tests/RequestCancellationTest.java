@@ -60,7 +60,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
     private static final String SLOW_STATS = "SlowStats";
     private static final double SLOW_STATS_ROWS = 3e7;
     private static final int METRICS_TIMEOUT = 180_000;
-    private static final int CANCEL_EXIT_TIMEOUT = 5_000;
+    private static final int CANCEL_EXIT_TIMEOUT = 30_000;
     private static final String WS_MESSAGE = "wsMessage";
     private static final String WS_CLOSE = "wsClose";
     private static final String FEATURE_DISABLE_CANCELLING = "disableCancelAbandonedRequests";

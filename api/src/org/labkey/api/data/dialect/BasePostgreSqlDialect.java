@@ -130,7 +130,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                     // may have handed that physical connection, and this SPID, straight back out to someone else
                     if (!connection.isAllocated())
                     {
-                        LOG.info("Skipping {}({}); the thread released that connection first", function, spid);
+                        LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
                         continue;
                     }
 
@@ -139,8 +139,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                         // Reports an already-exited backend by returning false, not by throwing
                         boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
 
-                        // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
-                        LOG.log(!signalled && terminate ? Level.WARN : Level.INFO, "{}({}) returned {}", function, spid, signalled);
+                        if (!signalled)
+                        {
+                            // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
+                            LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                        }
                     }
                     catch (RuntimeSQLException e)
                     {
