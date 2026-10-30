@@ -16,6 +16,7 @@
 package org.labkey.api.visualization;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.view.ActionURL;
@@ -31,9 +32,9 @@ import org.labkey.api.view.ViewContext;
  */
 public abstract class GenericChartReport extends AbstractReport
 {
-    public static final String TYPE = "ReportService.GenericChartReport";
+    public static final String TYPE = ReportService.GENERIC_CHART_REPORT_TYPE;
 
-    public enum RenderType
+    public enum     RenderType
     {
         BAR_PLOT()
         {

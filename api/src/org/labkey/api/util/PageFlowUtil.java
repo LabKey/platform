@@ -53,10 +53,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Project;
-import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.products.ProductMenuProvider;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryParam;
@@ -2246,10 +2244,10 @@ public class PageFlowUtil
         json.put("helpLinkPrefix", HelpTopic.getHelpLinkPrefix());
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
-        if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU) && user != null)
+        if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU) && user != null)
             json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
 
-        json.put("mcpReady", McpService.get().isAIFeaturesReady());
+        json.put("mcpReady", AIFeaturesStatus.isReady());
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");

@@ -761,7 +761,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     {
         checkedPermissions.add(perm);
         // Most tables should not be editable in Dataspace
-        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
+        if (!perm.equals(ReadPermission.class) && StudyService.get().isDataspace(getContainer()))
             return false;
         return hasPermissionOverridable(user, perm);
     }

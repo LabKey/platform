@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.notification;
+package org.labkey.core.notification;
 
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -28,8 +29,6 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class NotificationMenuView extends JspView<Object>
 {
-    public static final String EXPERIMENTAL_NOTIFICATION_MENU = "experimental-notificationmenu";
-
     public static HttpView<Object> createView(ViewContext context)
     {
         if (context.getUser().isGuest())
@@ -42,7 +41,7 @@ public class NotificationMenuView extends JspView<Object>
 
     public NotificationMenuView()
     {
-        super("/org/labkey/api/notification/notificationpanel.jsp", null);
+        super("/org/labkey/core/notification/notificationpanel.jsp", null);
         setFrame(FrameType.NONE);
     }
 
@@ -50,7 +49,7 @@ public class NotificationMenuView extends JspView<Object>
     @Override
     protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        if (!AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_NOTIFICATION_MENU))
+        if (!AppProps.getInstance().isOptionalFeatureEnabled(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU))
             return;
         if (getViewContext().getUser().isGuest())
             return;

@@ -26,6 +26,7 @@ import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.StudyService;
 
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME;
@@ -106,7 +107,7 @@ public class AssaySpecimenTable extends StudyDesignBaseTable
     {
         checkedPermissions.add(perm);
         // Most tables should not be editable in Dataspace
-        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
+        if (!perm.equals(ReadPermission.class) && StudyService.get().isDataspace(getContainer()))
             return false;
         return hasPermissionOverridable(user, perm);
     }
