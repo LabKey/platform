@@ -66,7 +66,7 @@ public class LoginManager
         try
         {
             SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(CORE.getTableInfoLogins())
-                .unsafeAppend(" (UserId, Crypt, LastChanged, PasswordVerification, PasswordVerificationTimeout, PreviousCrypts) VALUES (?, ?, ?, ?, ?, ?)",
+                .unsafeAppend(" (UserId, Crypt, PasswordLastChanged, PasswordVerification, PasswordVerificationTimeout, PreviousCrypts) VALUES (?, ?, ?, ?, ?, ?)",
                     userId, crypt, new Date(), hashVerification(verification), Date.from(Instant.now().plus(SETUP_LINK_TIMEOUT)), crypt);
             int rowCount = new SqlExecutor(CORE.getSchema()).execute(sql);
             if (1 != rowCount)
@@ -95,7 +95,7 @@ public class LoginManager
         String cryptHistory = StringUtils.join(history, ",");
 
         SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoLogins())
-            .unsafeAppend(" SET Crypt = ?, LastChanged = ?, PreviousCrypts = ? WHERE UserId = ?", crypt, new Date(), cryptHistory, user.getUserId());
+            .unsafeAppend(" SET Crypt = ?, PasswordLastChanged = ?, PreviousCrypts = ? WHERE UserId = ?", crypt, new Date(), cryptHistory, user.getUserId());
         int rows = new SqlExecutor(CORE.getSchema()).execute(sql);
         if (1 != rows)
             throw new SecurityManager.UserManagementException(user.getEmail(), "Password update statement affected " + rows + " rows.");
@@ -132,9 +132,9 @@ public class LoginManager
         return false;
     }
 
-    public static Date getLastChanged(User user)
+    public static Date getPasswordLastChanged(User user)
     {
-        SqlSelector selector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT LastChanged FROM ").append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId()));
+        SqlSelector selector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT PasswordLastChanged FROM ").append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId()));
         return selector.getObject(Date.class);
     }
 
