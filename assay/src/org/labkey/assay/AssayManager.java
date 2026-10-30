@@ -19,6 +19,10 @@ package org.labkey.assay;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayDomainService;
@@ -83,10 +87,12 @@ import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -1106,5 +1112,76 @@ public class AssayManager implements AssayService
     public AssayDomainService createAssayDomainService(User user, Container container)
     {
         return new AssayDomainServiceImpl(user, container);
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static Container _container;
+        private static ExpProtocol _protocol;
+
+        @BeforeClass
+        public static void setup() throws Exception
+        {
+            JunitUtil.deleteTestContainer();
+            _container = JunitUtil.getTestContainer();
+
+            AssayDomainService domainService = new AssayDomainServiceImpl(TestContext.get().getUser(), _container);
+            GWTProtocol template = domainService.getAssayTemplate("General");
+            template.setName("ProtocolCacheTestAssay");
+            GWTProtocol saved = domainService.saveChanges(template, true);
+            _protocol = ExperimentService.get().getExpProtocol(saved.getProtocolId());
+            assertNotNull(_protocol);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            JunitUtil.deleteTestContainer();
+            _container = null;
+            _protocol = null;
+        }
+
+        @Test
+        public void testProviderFilterMatchesResolvedProvider()
+        {
+            AssayManager mgr = AssayManager.get();
+            List<ExpProtocol> all = mgr.getAssayProtocols(_container);
+            assertTrue(all.contains(_protocol));
+
+            for (AssayProvider provider : mgr.getAssayProviders())
+            {
+                List<ExpProtocol> expected = all.stream().filter(p -> provider.equals(mgr.getProvider(p))).toList();
+                assertEquals("Protocols for provider " + provider.getName(), expected, mgr.getAssayProtocols(_container, provider));
+            }
+
+            assertTrue(mgr.getAssayProtocols(_container, mgr.getProvider(_protocol)).contains(_protocol));
+        }
+
+        @Test
+        public void testProvidersInScopeMatchResolvedProviders()
+        {
+            AssayManager mgr = AssayManager.get();
+            Set<AssayProvider> expected = mgr.getAssayProtocols(_container).stream()
+                    .map(mgr::getProvider)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            assertEquals(expected, mgr.getAssayProvidersInScope(_container));
+            assertTrue(expected.contains(mgr.getProvider(_protocol)));
+        }
+
+        @Test
+        public void testModuleAssayReloadClearsProtocolCache()
+        {
+            AssayManager mgr = AssayManager.get();
+            mgr.getAssayProtocols(_container);
+            assertTrue(PROTOCOL_CACHE.getKeys().anyMatch(_container::equals));
+
+            ModuleAssayCache.get().clearModuleAssayCollections();
+            assertFalse(PROTOCOL_CACHE.getKeys().anyMatch(_container::equals));
+
+            assertTrue(mgr.getAssayProtocols(_container, mgr.getProvider(_protocol)).contains(_protocol));
+            assertTrue(PROTOCOL_CACHE.getKeys().anyMatch(_container::equals));
+        }
     }
 }

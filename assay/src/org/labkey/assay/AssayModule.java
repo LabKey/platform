@@ -382,6 +382,7 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            AssayManager.TestCase.class,
             ModuleAssayCache.TestCase.class,
             PlateManagerTest.class,
             PlateSchemaTest.class
