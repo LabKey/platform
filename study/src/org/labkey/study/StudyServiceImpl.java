@@ -155,6 +155,12 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     }
 
     @Override
+    public boolean isDataspace(Container container)
+    {
+        return DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(container.getFolderType().getName());
+    }
+
+    @Override
     public StudyImpl createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets)
     {
         // Needed for study creation from VISC module. We might want to remove this when we don't need the old study design tool.

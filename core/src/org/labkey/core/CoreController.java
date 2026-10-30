@@ -1434,7 +1434,8 @@ public class CoreController extends SpringActionController
             props.put("id", c.getRowId());
             props.put("title", c.getTitle());
             props.put("path", c.getPath());
-            props.put("isDataspace", c.isDataspace());
+            StudyService studyService = StudyService.get();
+            props.put("isDataspace", null != studyService && studyService.isDataspace(c));
             return props;
         }
     }

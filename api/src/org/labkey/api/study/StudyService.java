@@ -76,6 +76,8 @@ public interface StudyService
     @Nullable
     Study getStudy(Container container);
 
+    boolean isDataspace(Container container);
+
     Study createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets);
 
     /**

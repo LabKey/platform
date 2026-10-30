@@ -31,6 +31,7 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.ResourceURL;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -39,10 +40,6 @@ import org.labkey.query.ModuleCustomView;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: klum
- * Date: 3/17/13
- */
 public abstract class AbstractQueryDataViewProvider implements DataViewProvider
 {
     @Override
@@ -80,7 +77,8 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
                     if (null == vc && !context.getContainer().isProject())
                     {
                         Container project = context.getContainer().getProject();
-                        if (null != project && project.isDataspace())
+                        StudyService studyService = StudyService.get();
+                        if (null != project && null != studyService && studyService.isDataspace(project))
                             vc = ViewCategoryManager.getInstance().getCategory(project, parts);
                     }
                 }
