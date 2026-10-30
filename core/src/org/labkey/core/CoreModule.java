@@ -87,6 +87,7 @@ import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.mcp.ChatHistoryService;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -475,6 +476,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
+        ChatHistoryService.setInstance(new ChatHistoryManager());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
@@ -1507,11 +1509,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.RevertFolderScopingTestCase.class,
             AllowListType.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
+            ChatHistoryManager.TestCase.class,
             CoreController.TestCase.class,
             CoreController.MoveContainerTestCase.class,
             DataRegion.TestCase.class,
             DavController.TestCase.class,
             DavController.MoveActionContainerScopingTestCase.class,
+            LabKeyAssistantAgentAction.TestCase.class,
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
             HealthCheckTestCase.class,

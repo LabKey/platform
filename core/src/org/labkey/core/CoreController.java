@@ -80,6 +80,8 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.mcp.ChatHistoryService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -136,12 +138,14 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelProvider;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JsonUtil;
@@ -225,7 +229,10 @@ public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
     private static final Logger _log = LogHelper.getLogger(CoreController.class, "Attachment icon warnings");
-    private static final ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
+    private static final ActionResolver _actionResolver = new DefaultActionResolver(
+            CoreController.class,
+            LabKeyAssistantAgentAction.class
+    );
 
     public CoreController()
     {
@@ -2824,6 +2831,83 @@ public class CoreController extends SpringActionController
         public void setMetricName(String metricName)
         {
             _metricName = metricName;
+        }
+    }
+
+    public static class ChatHistoryForm
+    {
+        private String _conversationId;
+
+        public String getConversationId()
+        {
+            return _conversationId;
+        }
+
+        public void setConversationId(String conversationId)
+        {
+            _conversationId = conversationId;
+        }
+    }
+
+    private static final String HIDDEN_CHAT_MESSAGE = "This message was sent from a folder you no longer have permission to see.";
+
+    /** Matches the client's ChatMessage, which shows an error as an assistant message. */
+    private static JSONObject toChatMessage(ChatHistoryService.ChatSnippet snippet)
+    {
+        JSONObject message = new JSONObject()
+                .put("id", String.valueOf(snippet.rowId()))
+                .put("timestamp", snippet.created().getTime());
+        if (snippet.hidden())
+        {
+            message.put("hidden", true);
+            return switch (snippet.role())
+            {
+                case user -> message.put("role", "user").put("text", HIDDEN_CHAT_MESSAGE);
+                case assistant -> message.put("role", "assistant").put("segments", new JSONArray().put(new JSONObject(Map.of("type", "html", "html", "<p>" + HIDDEN_CHAT_MESSAGE + "</p>"))));
+                case error -> message.put("role", "assistant").put("error", HIDDEN_CHAT_MESSAGE);
+            };
+        }
+        return switch (snippet.role())
+        {
+            case user -> message.put("role", "user").put("text", snippet.content());
+            case assistant -> message.put("role", "assistant").put("segments", new JSONArray(snippet.content()));
+            case error -> message.put("role", "assistant").put("error", snippet.content());
+        };
+    }
+
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    public static class GetChatHistoryAction extends ReadOnlyApiAction<ChatHistoryForm>
+    {
+        @Override
+        public void validateForm(ChatHistoryForm form, Errors errors)
+        {
+            if (!OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT))
+                errors.reject(ERROR_GENERIC, "LabKey Assistant is not enabled.");
+            else if (!McpService.get().isAIFeaturesReady())
+                errors.reject(ERROR_MSG, "Agent actions are not available.");
+            else if (!GUID.isGUID(form.getConversationId()))
+                errors.rejectValue("conversationId", ERROR_MSG, "Invalid conversationId");
+        }
+
+        @Override
+        public Object execute(ChatHistoryForm form, BindException errors)
+        {
+            HttpSession session = getViewContext().getSession();
+            GUID conversationId = new GUID(form.getConversationId());
+            String agentName = McpService.get().getIssuingAgentName(session, conversationId);
+            // Stale rows are left to the session listener
+            if (null == agentName || !McpService.get().isConversationOpen(session, agentName, conversationId))
+                throw new NotFoundException("Conversation not found");
+
+            List<ChatHistoryService.ChatSnippet> snippets = ChatHistoryService.get().getChatHistory(getUser(), conversationId);
+            if (snippets.isEmpty())
+                throw new NotFoundException("Conversation not found");
+
+            return new JSONObject()
+                    .put("success", true)
+                    .put("conversationId", conversationId)
+                    .put("messages", new JSONArray(snippets.stream().map(CoreController::toChatMessage).toList()));
         }
     }
 

@@ -32,12 +32,10 @@ import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
-import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.controllers.QueryController.ParseForm;
@@ -606,34 +604,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         return new Fence(tag, body.toString(), terminated ? j + 1 : lines.length, terminated);
     }
 
-    private static void flushHtmlSegment(JSONArray segments, StringBuilder buf, MarkdownService md)
-    {
-        if (buf.isEmpty())
-            return;
-
-        String raw = buf.toString().strip();
-        buf.setLength(0);
-        if (raw.isEmpty())
-            return;
-
-        String html;
-        try
-        {
-            html = md != null ? md.toHtml(raw) : raw;
-        }
-        catch (Exception x)
-        {
-            html = raw;
-        }
-
-        var validateErrors = new ArrayList<String>();
-        PageFlowUtil.validateHtml(html, validateErrors, validateErrors);
-        if (!validateErrors.isEmpty())
-            throw new RuntimeValidationException("Invalid HTML markup. " + String.join("\n", validateErrors));
-
-        segments.put(new JSONObject(Map.of("type", "html", "html", html)));
-    }
-
     public static class TestCase extends Assert
     {
         private static McpService.MessageResponse markdownResponse(String md)
@@ -1156,15 +1126,16 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         }
 
         @Test
-        public void flushHtmlSegmentRejectsScriptTag()
+        public void flushHtmlSegmentFallsBackToTextForScriptTag()
         {
             JSONArray segments = new JSONArray();
-            StringBuilder buf = new StringBuilder("<div>Here is a greeting:</div><script>alert('xss')</script>");
-            RuntimeValidationException ex = assertThrows(RuntimeValidationException.class,
-                    () -> flushHtmlSegment(segments, buf, null));
-            assertTrue("expected validation error message, got: " + ex.getMessage(),
-                    ex.getMessage().contains("Illegal element <script>"));
-            assertEquals("no segment should be emitted when validation fails", 0, segments.length());
+            String raw = "<div>Here is a greeting:</div><script>alert('xss')</script>";
+            flushHtmlSegment(segments, new StringBuilder(raw), null);
+            assertEquals(1, segments.length());
+            JSONObject segment = segments.getJSONObject(0);
+            assertEquals("text", segment.getString("type"));
+            assertEquals(raw, segment.getString("text"));
+            assertFalse("no html should be emitted when validation fails", segment.has("html"));
         }
 
         @Test

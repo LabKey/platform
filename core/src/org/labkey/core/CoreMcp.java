@@ -29,8 +29,12 @@ import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
@@ -46,8 +50,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CoreMcp implements McpService.McpImpl
@@ -117,6 +121,40 @@ public class CoreMcp implements McpService.McpImpl
             "currentFolder", folderObj,
             "site", siteObj
         )).toString();
+    }
+
+    @Tool(description = "List the current user's own roles and permissions in the current container, plus their site-wide roles. " +
+        "Use this to tell whether the user can do something that requires a specific role or permission, such as administering the folder or editing data.")
+    @RequiresPermission(ReadPermission.class)
+    String getMyPermissions(ToolContext context)
+    {
+        var cu = getContext(context);
+        User user = cu.getUser();
+        Container container = cu.getContainer();
+
+        List<String> permissions = SecurityManager.getPermissions(container, user, Set.of())
+            .map(RoleManager::getPermission)
+            .filter(Objects::nonNull)
+            .map(Permission::getName)
+            .distinct()
+            .sorted()
+            .toList();
+
+        return new JSONObject(Map.of(
+            "folder", container.getPath(),
+            "roles", roleNames(container, user),
+            "permissions", permissions,
+            "siteRoles", roleNames(ContainerManager.getRoot(), user)
+        )).toString();
+    }
+
+    private static List<String> roleNames(Container container, User user)
+    {
+        return SecurityManager.getEffectiveRoles(container, user)
+            .map(Role::getName)
+            .distinct()
+            .sorted()
+            .toList();
     }
 
     @Tool(description = "List the hierarchical path for every container in the server where the user has read permissions.")
