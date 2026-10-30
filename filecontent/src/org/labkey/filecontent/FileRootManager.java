@@ -25,8 +25,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.files.FileRoot;
 import org.labkey.api.security.User;
+import org.labkey.filecontent.files.FileRoot;
 
 import java.util.Collections;
 import java.util.HashMap;
