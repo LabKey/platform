@@ -35,6 +35,8 @@ import java.util.function.Consumer;
  */
 public interface NotificationService
 {
+    String EXPERIMENTAL_NOTIFICATION_MENU = "experimental-notificationmenu";
+
     static void setInstance(NotificationService serviceImpl)
     {
         ServiceRegistry.get().registerService(NotificationService.class, serviceImpl);

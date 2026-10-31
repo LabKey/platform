@@ -108,8 +108,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
@@ -1820,8 +1818,8 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null)
-                    && !report.getType().equals(TimeChartReport.TYPE)
-                    && !report.getType().equals(GenericChartReport.TYPE))
+                    && !report.getType().equals(ReportService.TIME_CHART_REPORT_TYPE)
+                    && !report.getType().equals(ReportService.GENERIC_CHART_REPORT_TYPE))
             {
                 if (canViewReport(getUser(), getContainer(), report) && !report.getDescriptor().isHidden())
                 {
@@ -1879,7 +1877,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null) &&
-                    (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE)))
+                    (report.getType().equals(ReportService.TIME_CHART_REPORT_TYPE) || report.getType().equals(ReportService.GENERIC_CHART_REPORT_TYPE)))
             {
                 if (canViewReport(getUser(), getContainer(), report))
                 {

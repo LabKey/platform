@@ -49,7 +49,6 @@ import org.labkey.api.webdav.AbstractWebdavResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.webdav.WebdavResourceReadOnly;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.vfs.FileLike;
 

@@ -74,7 +74,7 @@ public class UniqueValueCounterTestCase
             "    <javaCustomizer class=\"org.labkey.experiment.api.CountOfUniqueValueTableCustomizer\">\n" +
             "        <properties>\n" +
             "            <property name=\"counterName\">" + counterName + "</property>\n" +
-            "            <property name=\"counterType\">org.labkey.api.data.UniqueValueCounterDefinition</property>\n" +
+            "            <property name=\"counterType\">org.labkey.experiment.data.UniqueValueCounterDefinition</property>\n" +
             "            <property name=\"pairedColumn\">vessel</property>     <!-- one or more -->\n" +
             "            <property name=\"pairedColumn\">one</property>\n" +
             "            <property name=\"pairedColumn\">two</property>\n" +
@@ -219,7 +219,7 @@ public class UniqueValueCounterTestCase
             "    <javaCustomizer class=\"org.labkey.experiment.api.CountOfUniqueValueTableCustomizer\">\n" +
             "        <properties>\n" +
             "            <property name=\"counterName\">" + counterName + "</property>\n" +
-            "            <property name=\"counterType\">org.labkey.api.data.UniqueValueCounterDefinition</property>\n" +
+            "            <property name=\"counterType\">org.labkey.experiment.data.UniqueValueCounterDefinition</property>\n" +
             "            <property name=\"pairedColumn\">one</property>     <!-- one or more -->\n" +
             "            <property name=\"pairedColumn\">two</property>" +
 
