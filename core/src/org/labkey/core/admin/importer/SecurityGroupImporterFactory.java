@@ -22,9 +22,12 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.core.security.SecurityController;
+import org.labkey.security.xml.GroupEnumType;
 import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
 
@@ -81,7 +84,11 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
             // now populate the groups with their members
             for (GroupType xmlGroupType : groups.getGroupArray())
             {
-                GroupManager.importGroupMembers(GroupManager.getGroup(ctx.getContainer(), xmlGroupType.getName(), xmlGroupType.getType()), xmlGroupType, ctx.getLogger(), ctx.getContainer());
+                // Ignore the archive's group type; it would otherwise let the archive target a site group
+                Group group = GroupManager.getGroup(ctx.getContainer(), xmlGroupType.getName(), GroupEnumType.PROJECT);
+                if (group != null)
+                    SecurityController.verifyUserCanModifyGroup(group, ctx.getContainer(), ctx.getUser());
+                GroupManager.importGroupMembers(group, xmlGroupType, ctx.getLogger(), ctx.getContainer());
             }
 
             ctx.getUser().refreshGroups(); // The import user's own groups may have changed as the result of this import, Issue #45273

@@ -27,6 +27,8 @@ import org.graphper.parser.DotParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -43,6 +45,8 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportPermission;
+import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -98,6 +102,7 @@ import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -135,6 +140,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HtmlView;
@@ -147,10 +153,14 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.core.admin.importer.SecurityGroupImporterFactory;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.user.SecurityAccessView;
 import org.labkey.core.user.UserController;
 import org.labkey.core.user.UserController.AccessDetailRow;
+import org.labkey.folder.xml.FolderDocument;
+import org.labkey.security.xml.GroupEnumType;
+import org.labkey.security.xml.GroupType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -775,7 +785,7 @@ public class SecurityController extends SpringActionController
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, container));
 
-            verifyUserCanModifyGroup(_group, getUser());
+            verifyUserCanModifyGroup(_group, getContainer(), getUser());
 
             _messages = new ArrayList<>();
 
@@ -918,18 +928,18 @@ public class SecurityController extends SpringActionController
     /**
      * Throws UnauthorizedException if user is not allowed to modify this group
      * @param group the Group being modified
+     * @param c the current container, which must own the group
      * @param user the current admin user
      */
-    public static void verifyUserCanModifyGroup(Group group, User user)
+    public static void verifyUserCanModifyGroup(Group group, Container c, User user)
     {
-        if (!user.hasSiteAdminPermission())
-        {
-            if (group.isSystemGroup())
-                throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+        ensureGroupInContainer(group, c);
 
-            if (group.hasPrivilegedRole())
-                throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + group.getName());
-        }
+        if (group.isSystemGroup())
+            throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+
+        if (!user.hasSiteAdminPermission() && group.hasPrivilegedRole())
+            throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + group.getName());
     }
 
     public static class CompleteMemberForm
@@ -2534,6 +2544,115 @@ public class SecurityController extends SpringActionController
                 FolderExportPermission.class,
                 QCAnalystPermission.class
             );
+        }
+    }
+
+    /**
+     * GH Issue 1695 regression tests.
+     */
+    public static class GroupMembershipScopingTestCase extends AbstractContainerScopingTest
+    {
+        // ProjectAdminRole only applies to projects, so these fixtures are projects rather than /_junit children
+        private static final String PROJECT_NAME = "GroupMembershipScopingProject";
+        private static final String SITE_GROUP_NAME = "GroupMembershipScopingSiteGroup";
+
+        private Container _project;
+        private Group _siteGroup;
+        private User _siteGroupMember;
+        private User _projectAdmin;
+
+        @Before
+        public void setup() throws Exception
+        {
+            cleanup();
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, getAdmin());
+            _siteGroup = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_NAME, getAdmin());
+            _siteGroupMember = createUserInRole(_project, ReaderRole.class);
+            SecurityManager.addMember(_siteGroup, _siteGroupMember);
+            _projectAdmin = createUserInRole(_project, ProjectAdminRole.class);
+        }
+
+        @After
+        public void cleanup()
+        {
+            Container project = ContainerManager.getForPath("/" + PROJECT_NAME);
+            if (project != null)
+                ContainerManager.deleteAll(project, getAdmin());
+
+            Integer siteGroupId = SecurityManager.getGroupId(null, SITE_GROUP_NAME, false);
+            if (siteGroupId != null)
+                SecurityManager.deleteGroup(SecurityManager.getGroup(siteGroupId), getAdmin());
+        }
+
+        @Test
+        public void projectAdminCannotJoinSiteGroup() throws Exception
+        {
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(addMemberUrl(_project, _siteGroup, _projectAdmin), _projectAdmin));
+            assertFalse(isMember(_siteGroup, _projectAdmin));
+
+            // Positive control: a site admin can change the site group's membership from the root
+            assertStatus(HttpServletResponse.SC_FOUND, post(addMemberUrl(ContainerManager.getRoot(), _siteGroup, _projectAdmin), getAdmin()));
+            assertTrue(isMember(_siteGroup, _projectAdmin));
+        }
+
+        @Test
+        public void subfolderAdminCannotModifyProjectGroup() throws Exception
+        {
+            Container subfolder = ContainerManager.createContainer(_project, "sub", getAdmin());
+            User subfolderAdmin = createUserInRole(subfolder, FolderAdminRole.class);
+            Group projectGroup = SecurityManager.createGroup(_project, "ProjectGroup", getAdmin());
+
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(addMemberUrl(subfolder, projectGroup, subfolderAdmin), subfolderAdmin));
+            assertFalse(isMember(projectGroup, subfolderAdmin));
+
+            // Positive control: the project admin can change the project group's membership from the project
+            assertStatus(HttpServletResponse.SC_FOUND, post(addMemberUrl(_project, projectGroup, subfolderAdmin), _projectAdmin));
+            assertTrue(isMember(projectGroup, subfolderAdmin));
+        }
+
+        @Test
+        public void siteAdminCannotModifySystemGroups() throws Exception
+        {
+            Group siteUsers = SecurityManager.getGroup(Group.groupUsers);
+            ActionURL url = new ActionURL(GroupAction.class, ContainerManager.getRoot())
+                .addParameter("id", siteUsers.getUserId())
+                .addParameter("delete", _siteGroupMember.getEmail());
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, getAdmin()));
+
+            assertThrows(IllegalArgumentException.class, () -> SecurityManager.deleteMember(siteUsers, _siteGroupMember));
+        }
+
+        @Test
+        public void folderImportCannotTargetSiteGroup() throws Exception
+        {
+            FolderDocument doc = FolderDocument.Factory.newInstance();
+            GroupType xmlGroup = doc.addNewFolder().addNewGroups().addNewGroup();
+            xmlGroup.setName(SITE_GROUP_NAME);
+            xmlGroup.setType(GroupEnumType.SITE);
+            xmlGroup.addNewUsers().addNewUser().setName(_projectAdmin.getEmail());
+
+            FolderImportContext ctx = new FolderImportContext(_projectAdmin, _project, doc, null,
+                new StaticLoggerGetter(LogHelper.getLogger(GroupMembershipScopingTestCase.class, "Folder import test")), null);
+            new SecurityGroupImporterFactory.SecurityGroupImporter().process(null, ctx, null);
+
+            assertTrue(isMember(_siteGroup, _siteGroupMember));
+            assertFalse(isMember(_siteGroup, _projectAdmin));
+
+            // The archive's group lands as a project group of the same name instead
+            Group projectGroup = SecurityManager.getGroup(SecurityManager.getGroupId(_project, SITE_GROUP_NAME));
+            assertTrue(isMember(projectGroup, _projectAdmin));
+        }
+
+        private ActionURL addMemberUrl(Container c, Group group, User newMember)
+        {
+            return new ActionURL(GroupAction.class, c)
+                .addParameter("id", group.getUserId())
+                .addParameter("names", newMember.getEmail());
+        }
+
+        private boolean isMember(Group group, User user)
+        {
+            return SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS).contains(user);
         }
     }
 }
