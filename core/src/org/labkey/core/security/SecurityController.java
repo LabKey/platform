@@ -771,7 +771,6 @@ public class SecurityController extends SpringActionController
         @Override
         public boolean handlePost(UpdateMembersForm form, BindException errors) throws Exception
         {
-            // 0 - only site admins can modify members of system groups
             // 1 - only site admins can modify groups that are assigned a privileged role
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
