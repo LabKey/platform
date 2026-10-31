@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileListener;
 import org.labkey.api.files.TableUpdaterFileListener;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
@@ -194,6 +195,9 @@ public class FileLinkFileListener implements FileListener
         new SqlSelector(OntologyManager.getExpSchema(), sql).forEachMap(row -> {
             // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
             String storageSchemaName = row.get("StorageSchemaName").toString();
+            // Domains can outlive the module that provisioned them, and DbSchema.get() throws for unclaimed schemas
+            if (null == ModuleLoader.getInstance().getModule(OntologyManager.getExpSchema().getScope(), storageSchemaName))
+                return;
             DbSchema schema = DbSchema.get(storageSchemaName, DbSchemaType.Provisioned);
             Domain domain = PropertyService.get().getDomain((Integer) row.get("DomainId"));
             // Issue 50781: LKSM: File fields in Sample Types sometimes showing as Text Fields
