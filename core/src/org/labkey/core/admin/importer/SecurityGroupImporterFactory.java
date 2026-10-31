@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.core.security.SecurityController;
 import org.labkey.security.xml.GroupEnumType;
@@ -87,7 +88,17 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
                 // Ignore the archive's group type; it would otherwise let the archive target a site group
                 Group group = GroupManager.getGroup(ctx.getContainer(), xmlGroupType.getName(), GroupEnumType.PROJECT);
                 if (group != null)
-                    SecurityController.verifyUserCanModifyGroup(group, ctx.getContainer(), ctx.getUser());
+                {
+                    try
+                    {
+                        SecurityController.verifyUserCanModifyGroup(group, ctx.getContainer(), ctx.getUser());
+                    }
+                    catch (UnauthorizedException e)
+                    {
+                        ctx.getLogger().warn("Skipping members of group \"{}\": {}", group.getName(), e.getMessage());
+                        continue;
+                    }
+                }
                 GroupManager.importGroupMembers(group, xmlGroupType, ctx.getLogger(), ctx.getContainer());
             }
 
