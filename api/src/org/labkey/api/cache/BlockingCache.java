@@ -160,7 +160,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                     throw new IllegalStateException("cache loader was not provided");
 
                 V value = load(key, argument, loader);
-                CacheManager.validate("BlockingCache over \"" + _cache + "\" cache", value);
+                CacheManager.validate("BlockingCache over \"" + _cache + "\" cache", key, value);
 
                 synchronized (w.getLockObject())
                 {
