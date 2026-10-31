@@ -18,7 +18,6 @@ package org.labkey.api.exp.api;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -62,15 +61,12 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,7 +77,6 @@ import java.util.stream.Collectors;
 
 public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
 {
-    private static final Logger logger = LogHelper.getLogger(SampleTypeDomainKind.class, "Sample type domain kind");
     public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
     public static final String SAMPLE_TYPE_FILE_DIRECTORY_NAME = "sampletype";
@@ -127,7 +122,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 "SampleID", // alias for Name
                 "Status",
                 "Amount", // alias for storedAmount
-                "RunId"
+                "RunId",
+                "Parent" // Issue 52627: Don't allow "Parent" to be used for lineage parent import alias
         ));
         names.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
         RESERVED_NAMES = DomainUtil.getNamesAndLabels(names);
@@ -266,30 +262,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 
-        if (domain == null)
-        {
-            // Issue 48810: See SampleTypeService.createSampleType hasNameProperty. We are adding in a "name" col on the
-            // client side right before calling the saveDomain API, so we need to "exclude" it from the reserved set in
-            // this case.
-            if (forCreate)
-                reserved.remove("Name");
+        // Issue 48810: See SampleTypeService.createSampleType hasNameProperty. We are adding in a "name" col on the
+        // client side right before calling the saveDomain API, so we need to "exclude" it from the reserved set in
+        // this case.
+        if (domain == null && forCreate)
+            reserved.remove("Name");
 
-            return reserved;
-        }
-
-        ExpSampleType st = getSampleType(domain);
-        if (st == null)
-            return reserved;
-
-        try
-        {
-            Map<String, String> aliases = st.getImportAliases();
-            reserved.addAll(aliases.keySet());
-        }
-        catch (IOException e)
-        {
-            logger.error("Failed to parse SampleType parent aliases for [{}]", st.getRowId(), e);
-        }
         return reserved;
     }
 
@@ -472,22 +450,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             SampleTypeService ss = SampleTypeService.get();
             ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
             Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
-            Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
-            reservedNames.add("Parent"); // Issue 52627: Don't allow "Parent" to be used for lineage parent import alias
-            Set<String> existingAliases = new CaseInsensitiveHashSet();
-
-            try
-            {
-                if (sampleType != null)
-                    existingAliases = new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
-            }
-            catch (IOException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
-
-            final Set<String> finalExistingAliases = existingAliases;
-            ExperimentService.validateParentAlias(aliasMap, reservedNames, finalExistingAliases, updatedDomainDesign, "sample type");
+            ExperimentService.validateParentAlias(aliasMap, this.getReservedPropertyNames(stDomain, user), updatedDomainDesign, "sample type");
         }
 
         List<? extends GWTPropertyDescriptor> properties = updatedDomainDesign.getFields();

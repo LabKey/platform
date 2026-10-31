@@ -246,6 +246,8 @@ public class ExperimentModule extends SpringModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), SpecialCharacterMetricsProvider.getInstance());
 
+        UsageMetricsService.get().registerUsageMetrics(getName(), IllegalFieldNameMetricsProvider.getInstance());
+
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);
@@ -597,6 +599,7 @@ public class ExperimentModule extends SpringModule
 
         SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
         SystemMaintenance.addTask(new SpecialCharacterMetricsMaintenanceTask());
+        SystemMaintenance.addTask(new IllegalFieldNameMetricsMaintenanceTask());
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
@@ -1129,6 +1132,7 @@ public class ExperimentModule extends SpringModule
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
+            IllegalFieldNameMetricsMaintenanceTask.TestCase.class,
             ImportAbortResourceTestCase.class,
             LineagePerfTest.class,
             LineageTest.class,

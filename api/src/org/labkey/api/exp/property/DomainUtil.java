@@ -119,6 +119,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -135,6 +136,25 @@ public class DomainUtil
     private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
     public static final String ILLEGAL_DOMAIN_NAME_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
     public static final Set<String> ILLEGAL_PROPERTY_NAMES = Set.of("*"); // Issue 53416
+
+    /** The field-naming rules enforced by {@link #validateProperties}, named so callers can tally them. GH Issue 1589. */
+    public enum FieldNameRule
+    {
+        starName,
+        substitutionToken,
+        newlineInName,
+        reservedPrefix,
+        reservedName,
+        namingPatternConflict,
+        duplicateName,
+        duplicateImportAlias,
+        importAliasVsFieldName,
+        importAliasVsReservedName,
+        duplicateLabel,
+        labelVsFieldName,
+        labelVsImportAlias,
+        labelVsReservedName
+    }
 
     private DomainUtil()
     {
@@ -1590,18 +1610,35 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain<?> updates, @Nullable DomainKind domainKind, @Nullable GWTDomain<?> orig, @Nullable User user)
     {
-        Set<String> reservedNames = null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user, domain == null))
-                : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
+        Set<String> reservedNames = null != domainKind ? domainKind.getReservedPropertyNames(domain, user, domain == null)
+                : updates.getReservedFieldNames();
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
+        boolean allowMultiChoice = domainKind != null ? allowMultiChoice(domainKind) : updates.isAllowMultiChoiceProperties();
+        boolean supportsNamingPattern = domainKind != null && domainKind.supportsNamingPattern();
+
+        return validateProperties(updates, reservedNames, reservedPrefixes, allowMultiChoice, supportsNamingPattern,
+                getOriginalFieldPropertyIdNameMap(orig), null);
+    }
+
+    /**
+     * Applies the field-naming rules to an already-resolved rule set, so a caller that has no {@link Domain} can run
+     * them. GH Issue 1589: the nightly scan over stored domains resolves the reserved names itself and passes a
+     * {@code tally} to count violations by {@link FieldNameRule}; {@code tally} is null on the save path.
+     */
+    public static ValidationException validateProperties(@NotNull GWTDomain<?> updates, @NotNull Set<String> reservedNameSet,
+            @NotNull Set<String> reservedPrefixes, boolean allowMultiChoice, boolean supportsNamingPattern,
+            @Nullable Map<Integer, String> propertyIdNameMap, @Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally)
+    {
+        Set<String> reservedNames = new CaseInsensitiveHashSet(reservedNameSet);
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
-        Map<String, String> altNameMap = new CaseInsensitiveHashMap<>();
         // GH Issue 1257: import alias -> the fields declaring it.
         Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
+        // GH Issue 1589: explicit label -> the fields carrying it. Only populated when tallying, since label collisions
+        // are counted but not rejected.
+        Map<String, List<GWTPropertyDescriptor>> labelMap = new CaseInsensitiveLinkedHashMap<>();
         Set<String> fieldNames = new CaseInsensitiveHashSet();
         ValidationException exception = new ValidationException();
-        Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
-        boolean allowMultiChoice = domainKind != null ? allowMultiChoice(domainKind) : updates.isAllowMultiChoiceProperties();
         for (GWTPropertyDescriptor field : updates.getFields(true))
         {
             String name = field.getName();
@@ -1625,8 +1662,19 @@ public class DomainUtil
                     importAliasMap.computeIfAbsent(alias, k -> new ArrayList<>()).add(field);
             }
 
+            if (tally != null)
+            {
+                // Only an explicitly set label counts. A label derived from the field name is not something anyone
+                // chose, and the only way to resolve a collision on one is to rename the field.
+                String label = StringUtils.trimToNull(field.getLabel());
+                // A label repeating its own field's name is redundant but not ambiguous.
+                if (label != null && !label.equalsIgnoreCase(name))
+                    labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
+            }
+
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
             {
+                tally(tally, FieldNameRule.starName, field);
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field name '" + name + "' is not allowed.")));
             }
 
@@ -1649,6 +1697,7 @@ public class DomainUtil
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
             if (expMatcher.find())
             {
+                tally(tally, FieldNameRule.substitutionToken, field);
                 exception.addFieldError(name, getDomainErrorMessage(updates, "The '${}' substitution token is reserved for system use."));
                 continue;
             }
@@ -1656,6 +1705,7 @@ public class DomainUtil
             // Issue 52746: SM Import: Newlines in field names on import
             if (StringUtils.containsAny(name, "\t\n\r"))
             {
+                tally(tally, FieldNameRule.newlineInName, field);
                 exception.addFieldError(name, getDomainErrorMessage(updates, "Field name may not contain 'tab', 'new line', or 'return' characters."));
                 continue;
             }
@@ -1666,6 +1716,7 @@ public class DomainUtil
                 Optional<String> reservedPrefix = reservedPrefixes.stream().filter(prefix -> lcName.startsWith(prefix.toLowerCase())).findAny();
                 if (reservedPrefix.isPresent())
                 {
+                    tally(tally, FieldNameRule.reservedPrefix, field);
                     exception.addFieldError(name, getDomainErrorMessage(updates, "The prefix '" + reservedPrefix.get() + "' is reserved for system use."));
                     continue;
                 }
@@ -1677,16 +1728,18 @@ public class DomainUtil
                 String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
+                    tally(tally, FieldNameRule.reservedName, field);
                     exception.addFieldError(name, getDomainErrorMessage(updates, ("'" + name + "' is a reserved field name in '" + updates.getName() + "'.")));
                 }
                 continue;
             }
 
-            if (domainKind != null && domainKind.supportsNamingPattern())
+            if (supportsNamingPattern)
             {
                 String nameSyntaxError = NameGenerator.validateFieldKeyConflict(name);
                 if (nameSyntaxError != null)
                 {
+                    tally(tally, FieldNameRule.namingPatternConflict, field);
                     exception.addFieldError(name, nameSyntaxError);
                     continue;
                 }
@@ -1694,26 +1747,13 @@ public class DomainUtil
 
             if (namePropertyIdMap.containsKey(name))
             {
+                tally(tally, FieldNameRule.duplicateName, field);
                 String errorMsg = getDomainErrorMessage(updates, "The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
             }
             else
-            {
                 namePropertyIdMap.put(name, field.getPropertyId());
-
-                // Issue 52827: File/attachment fields with special characters
-                if (altNameMap.containsKey(name))
-                {
-                    String errorMsg = getDomainErrorMessage(updates, "The field name '" + name + "' cannot be used with another field '" + altNameMap.get(name) + "'. Please provide a different name for the field.");
-                    PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
-                    exception.addError(propertyValidationError);
-                }
-                else
-                {
-                    altNameMap.put(name, name);
-                }
-            }
 
             if (field.getValueExpression() != null && field.getValueExpression().trim().length() > 4000)
             {
@@ -1728,17 +1768,53 @@ public class DomainUtil
             String names = "'" + fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
 
             if (fields.size() > 1)
+            {
+                fields.forEach(f -> tally(tally, FieldNameRule.duplicateImportAlias, f));
                 addImportAliasErrors(exception, updates, fields, "Duplicate import alias '" + alias + "' for fields " + names + ".");
+            }
 
             if (fieldNames.contains(alias))
+            {
+                fields.forEach(f -> tally(tally, FieldNameRule.importAliasVsFieldName, f));
                 addImportAliasErrors(exception, updates, fields, "Import alias '" + alias + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a field name.");
+            }
 
             // GH Issue 1474: 'Container' should not be allowed as valid Import Alias
             if (reservedNames.contains(alias))
+            {
+                fields.forEach(f -> tally(tally, FieldNameRule.importAliasVsReservedName, f));
                 addImportAliasErrors(exception, updates, fields, "Import alias '" + alias + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a reserved field name.");
+            }
+        });
+
+        // GH Issue 1589: tally-only. ImportAliasable.Helper.createImportMap resolves propertyURI, name, label and import
+        // alias into one case-insensitive map at precedence propertyURI < propName < alias < label < name, so a label
+        // that ties with any of them silently loses the token or steals it. Counted, not rejected: these configurations
+        // save successfully today and blocking them would break existing domains.
+        labelMap.forEach((label, fields) -> {
+            if (fields.size() > 1)
+                fields.forEach(f -> tally(tally, FieldNameRule.duplicateLabel, f));
+
+            // A name outranks a label, so these fields' labels are unreachable at import.
+            if (fieldNames.contains(label))
+                fields.forEach(f -> tally(tally, FieldNameRule.labelVsFieldName, f));
+
+            // A label outranks an alias, so here the colliding alias is the unreachable one. One field owning both its
+            // own label and the matching alias resolves to that field either way, so it is redundant, not ambiguous.
+            List<GWTPropertyDescriptor> aliasFields = importAliasMap.get(label);
+            if (aliasFields != null && !isSameSingleField(fields, aliasFields))
+                fields.forEach(f -> tally(tally, FieldNameRule.labelVsImportAlias, f));
+
+            if (reservedNames.contains(label))
+                fields.forEach(f -> tally(tally, FieldNameRule.labelVsReservedName, f));
         });
 
         return exception;
+    }
+
+    private static boolean isSameSingleField(List<GWTPropertyDescriptor> a, List<GWTPropertyDescriptor> b)
+    {
+        return a.size() == 1 && b.size() == 1 && a.get(0) == b.get(0);
     }
 
     private static DbScope getDomainScope(DomainKind<?> kind)
@@ -1770,6 +1846,12 @@ public class DomainUtil
             || !Strings.CI.equals(field.getLookupContainer(), origField.getLookupContainer())
             || !Strings.CI.equals(field.getLookupSchema(), origField.getLookupSchema())
             || !Strings.CI.equals(field.getLookupQuery(), origField.getLookupQuery());
+    }
+
+    private static void tally(@Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally, FieldNameRule rule, GWTPropertyDescriptor field)
+    {
+        if (tally != null)
+            tally.accept(rule, field);
     }
 
     /** Anchor an import alias error on every field that declares the offending alias so the designer can highlight them. */
