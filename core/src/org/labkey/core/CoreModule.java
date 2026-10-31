@@ -248,6 +248,7 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentContainerListener;
+import org.labkey.core.attachment.AttachmentHashingMaintenanceTask;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.data.ContainerServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
@@ -1336,6 +1337,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), AttachmentHashingMaintenanceTask.getMetricsProvider());
+        SystemMaintenance.addTask(new AttachmentHashingMaintenanceTask());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
