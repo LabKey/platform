@@ -43,7 +43,7 @@ public class IllegalFieldNameMetricsProvider implements UsageMetricsProvider
             "Each rule maps to a count per domain kind. These configurations predate the rule that now forbids them, so they are not blocked at save time. " +
             "parentAliasConflict counts affected sample types and data classes rather than individual conflicts, because parent alias validation stops at the first problem. " +
             "Counts are a floor, not a total: the scan resolves each kind's reserved names without a Domain, so kinds that derive them from one (simple tables, domain templates) contribute nothing, and the label rules see only explicitly set labels, not the ones derived from field names")
-            .putAll(_metrics);
+            .putAll(() -> _metrics);
         return metrics;
     }
 
