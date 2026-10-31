@@ -188,9 +188,12 @@ public class FileLinkFileListener implements FileListener
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
         sql.unsafeAppend(", ");
         sql.append(OntologyManager.getTinfoPropertyDomain(), "m");
+        // Domains can outlive their physical tables, which getSchemaTableInfo() can't load. GH Issue 1756.
+        sql.unsafeAppend(", information_schema.tables it");
         sql.unsafeAppend(" WHERE dd.DomainId = m.DomainId AND pd.PropertyId = m.PropertyId AND pd.RangeURI = ? ");
         sql.add(PropertyType.FILE_LINK.getTypeUri());
         sql.unsafeAppend(" AND dd.StorageTableName IS NOT NULL AND dd.StorageSchemaName IS NOT NULL AND pd.Name IS NOT NULL");
+        sql.unsafeAppend(" AND it.table_schema = lower(dd.StorageSchemaName) AND it.table_name = lower(dd.StorageTableName)");
 
         new SqlSelector(OntologyManager.getExpSchema(), sql).forEachMap(row -> {
             // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
