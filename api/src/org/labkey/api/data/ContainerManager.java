@@ -3000,8 +3000,10 @@ public class ContainerManager
             User user = TestContext.get().getUser();
             Container c = createContainer(_testRoot, "missesInTx", user);
             int rowId = c.getRowId();
-            GUID entityId = c.getEntityId();
             assertTrue(delete(c, user));
+            // Cache a miss using a GUID no one else knows about, not c.getEntityId(). Background search work queued at
+            // create (e.g., indexer) can look up the deleted container's EntityId and legitimately cache the miss.
+            GUID entityId = new GUID();
 
             try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction())
             {
