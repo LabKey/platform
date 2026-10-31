@@ -589,13 +589,20 @@ public class OntologyManager
 
         Map<String, Object> currentRow = null;
 
+        // Only the row callback reads a row's RowId or LSID, so without one, inserts skip both and run in batches
+        boolean batch = insert && rowCallback == NO_OP_ROW_CALLBACK;
+        int batchSize = BatchSize.get(BatchSize.Kind.ROWS);
+
         MapDataIterator rows = DataIteratorUtil.wrapMap(in, false);
         try
         {
             conn = scope.getConnection();
             if (insert)
             {
-                parameterMap = StatementUtils.insertStatement(conn, table, c, user, true, autoFillDefaultColumns);
+                parameterMap = StatementUtils.insertStatement(conn, table, c, user, !batch, autoFillDefaultColumns);
+                // The Spring default would bypass the RuntimeSQLException catch that unwraps a failed batch
+                if (batch)
+                    parameterMap.setExceptionFramework(ExceptionFramework.JDBC);
             }
             else
             {
@@ -733,21 +740,32 @@ public class OntologyManager
                 }
 
                 helper.bindAdditionalParameters(currentRow, parameterMap);
-                parameterMap.execute();
-                if (insert)
+                if (batch)
                 {
-                    long rowId = parameterMap.getRowId();
-                    currentRow.put("rowId", rowId);
+                    parameterMap.addBatch();
+                    if (++rowCount % batchSize == 0)
+                        parameterMap.executeBatch();
                 }
-                lsid = helper.afterImportObject(currentRow);
-                if (lsid == null)
+                else
                 {
-                    throw new IllegalStateException("No LSID available");
+                    parameterMap.execute();
+                    if (insert)
+                    {
+                        long rowId = parameterMap.getRowId();
+                        currentRow.put("rowId", rowId);
+                    }
+                    lsid = helper.afterImportObject(currentRow);
+                    if (lsid == null)
+                    {
+                        throw new IllegalStateException("No LSID available");
+                    }
+                    rowCallback.rowProcessed(currentRow, lsid);
+                    rowCount++;
                 }
-                rowCallback.rowProcessed(currentRow, lsid);
-                rowCount++;
             }
 
+            if (batch && rowCount % batchSize != 0)
+                parameterMap.executeBatch();
 
             if (!errors.isEmpty())
                 throw new BatchValidationException(new ValidationException(errors));
@@ -761,6 +779,13 @@ public class OntologyManager
         catch (ValidationException e)
         {
             throw new BatchValidationException(e);
+        }
+        catch (RuntimeSQLException x)
+        {
+            // A failed batch's message embeds the statement and its parameter values, so surface the row's own error
+            if (x.getSQLException() instanceof java.sql.BatchUpdateException b && null != b.getNextException())
+                throw new RuntimeSQLException(b.getNextException());
+            throw x;
         }
         catch (SQLException x)
         {
@@ -845,6 +870,7 @@ public class OntologyManager
     {
         /**
          * may be used to process attachments, for auditing, etc
+         * Called only when rows insert one at a time, i.e. with a row callback; batched inserts skip it.
          * @return the LSID of the inserted row
          */
         String afterImportObject(Map<String, Object> map);
