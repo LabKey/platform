@@ -886,7 +886,8 @@ public class UserManager
 
             if (LoginManager.loginExists(userToChange))
             {
-                LoginManager.clearVerification(userToChange);  // so we don't let user use this link again
+                LoginManager.clearEmailVerification(userToChange);  // so we don't let user use this link again
+                LoginManager.clearVerification(userToChange);  // links sent to the old address must not outlive it
             }
 
             transaction.commit();
