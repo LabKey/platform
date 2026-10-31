@@ -94,8 +94,10 @@ public class LoginManager
         }
         String cryptHistory = StringUtils.join(history, ",");
 
+        // A new password also cancels any pending email change, which may have been requested by whoever held the old one
         SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoLogins())
-            .unsafeAppend(" SET Crypt = ?, PasswordLastChanged = ?, PreviousCrypts = ? WHERE UserId = ?", crypt, new Date(), cryptHistory, user.getUserId());
+            .unsafeAppend(" SET Crypt = ?, PasswordLastChanged = ?, PreviousCrypts = ?, RequestedEmail = NULL, EmailVerification = NULL, EmailVerificationTimeout = NULL WHERE UserId = ?",
+                crypt, new Date(), cryptHistory, user.getUserId());
         int rows = new SqlExecutor(CORE.getSchema()).execute(sql);
         if (1 != rows)
             throw new SecurityManager.UserManagementException(user.getEmail(), "Password update statement affected " + rows + " rows.");

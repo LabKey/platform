@@ -3396,6 +3396,12 @@ public class SecurityManager
 
                 emailChange = LoginManager.createTempPassword();
                 LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                LoginManager.setPassword(user, generateStrongPassword(user));
+                assertFalse("Setting a password left the pending email change usable", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+
+                emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
                 try
                 {
                     UserManager.changeEmail(user, user, false, newEmail.getEmailAddress(), reset);
