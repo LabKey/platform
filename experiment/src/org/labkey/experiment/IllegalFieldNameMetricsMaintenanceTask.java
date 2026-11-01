@@ -32,6 +32,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.DomainUtil.FieldNameRule;
@@ -263,7 +264,13 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             // forCreate=false matters: SampleTypeDomainKind drops "Name" from the reserved set when creating, and the
             // Domain-based overload would infer forCreate from our null domain. The null domain also truncates kinds
             // that derive reserved names from one (SimpleTableDomainKind, domain templates), so those under-report.
-            Set<String> kindReserved = _kind.getReservedPropertyNames(null, null, false);
+            Set<String> kindReserved = new CaseInsensitiveHashSet(_kind.getReservedPropertyNames(null, null, false));
+
+            // Some kinds materialize their own required properties as real domain properties whose names they also
+            // reserve -- PlateMetadataDomainKind.ensureDomainProperties and IssueListDef.ensureDomainProperties both do
+            // this -- so every such domain would otherwise report a violation per required field. The kind put those
+            // fields there, so they are not user-chosen names.
+            kindReserved.removeAll(DomainUtil.getNamesAndLabels(_kind.getMandatoryPropertyNames(null)));
 
             // A field colliding with a parent alias header is reported only as parentAliasConflict below.
             Map<String, Map<String, Object>> aliases = _parentAliases.get(_domainUri);

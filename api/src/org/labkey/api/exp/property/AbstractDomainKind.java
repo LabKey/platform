@@ -282,9 +282,9 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     }
 
     @Nullable
-    protected DomainTemplate getDomainTemplate(Domain domain)
+    protected DomainTemplate getDomainTemplate(@Nullable Domain domain)
     {
-        return DomainTemplate.findTemplate(domain.getTemplateInfo(), getKindName());
+        return domain == null ? null : DomainTemplate.findTemplate(domain.getTemplateInfo(), getKindName());
     }
 
     @Override
