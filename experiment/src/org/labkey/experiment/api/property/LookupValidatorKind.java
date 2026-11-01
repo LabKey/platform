@@ -320,8 +320,9 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
                 Object k = _keyCol.getJdbcType().convert(value);
                 return _caseInsensitive && k instanceof String str ? str.toLowerCase(Locale.ROOT) : k;
             }
-            catch (ConversionException e)
+            catch (ConversionException | ArithmeticException e)
             {
+                // JdbcType.INTEGER throws ArithmeticException for fractional or out-of-range strings like "1.5"
                 return null;
             }
         }

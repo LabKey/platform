@@ -1594,8 +1594,7 @@ private Set<Integer> validateLookups(PropertyDescriptor field, List<Object> valu
     List<Map<String, Object>> rows = values.stream().map(v -> (Map<String, Object>) CaseInsensitiveHashMap.of(field.getName(), v)).toList();
     DataIteratorContext context = new DataIteratorContext();
     context.setFailFast(false);
-    ValidatorIterator validate = new ValidatorIterator(new ListofMapsDataIterator(Set.of(field.getName()), rows), context, c, _user);
-    validate.addValidator(1, lookupValidator(field));
+    ValidatorIterator validate = new ValidatorIterator(new ListofMapsDataIterator(Set.of(field.getName()), rows), context, c, _user, Map.of(1, List.of(lookupValidator(field))));
     while (validate.next())
     {
     }
