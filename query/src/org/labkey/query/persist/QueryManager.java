@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -1056,14 +1057,15 @@ public class QueryManager
         if (null != svc)
         {
             svc.registerUsageMetrics(moduleName, metrics -> {
-                metrics.put("externalDatasources", () -> {
+                String name = "externalDatasources";
+                metrics.put(name, NightlyRecalculatingSuppliers.get(name, () -> {
                     MultiSet<String> multiSet = DbScope.getDbScopes().stream()
                         .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
                         .collect(Collectors.toCollection(HashMultiSet::new));
 
-                    return multiSet.uniqueSet().stream()
-                        .collect(Collectors.toMap(Function.identity(), multiSet::getCount));
-                }, "External (non-LabKey) data sources by database product name");
+                    return Collections.unmodifiableMap(multiSet.uniqueSet().stream()
+                        .collect(Collectors.toMap(Function.identity(), multiSet::getCount)));
+                }), "External (non-LabKey) data sources by database product name");
                 metrics.put(
                     "customViewCounts",
                     () -> Map.of(
@@ -1074,10 +1076,10 @@ public class QueryManager
                     ),
                     "Saved custom views across all containers by schema area (DataClasses, SampleTypes, Assays, Inventory): defaultOverrides (unnamed) and namedViews exclude hidden and snapshot views, inheritable likewise, shared (no owner) and identifyingFieldsViews count all"
                 );
-                metrics.put("customViewWithLineageColumn", () -> getLineageCustomViewMetrics(), "Custom views with lineage (input, output, ancestor) columns, hidden and snapshot views excluded: view counts, plus total and min/percentile/max/avg columns per view when any exist");
-                metrics.put("queryDefWithCalculatedFieldsCounts", () -> getCalculatedFieldsCountsMetric(), "Query definitions whose metadata defines a calculated field, by schema (assay.* schemas grouped as assay)");
+                metrics.put("customViewWithLineageColumn", QueryManager::getLineageCustomViewMetrics, "Custom views with lineage (input, output, ancestor) columns, hidden and snapshot views excluded: view counts, plus total and min/percentile/max/avg columns per view when any exist");
+                metrics.put("queryDefWithCalculatedFieldsCounts", QueryManager::getCalculatedFieldsCountsMetric, "Query definitions whose metadata defines a calculated field, by schema (assay.* schemas grouped as assay)");
 
-                metrics.put("exportTypeCounts", () -> getExportTypeCountsMetric(), "Query export audit events by export type, from the audit log across all folders; \"Excel multi-tab\" approximates multi-tab Excel exports", UsageMetrics.Kind.CUMULATIVE);
+                metrics.put("exportTypeCounts", QueryManager::getExportTypeCountsMetric, "Query export audit events by export type, from the audit log across all folders; \"Excel multi-tab\" approximates multi-tab Excel exports", UsageMetrics.Kind.CUMULATIVE);
                 return metrics;
             });
         }
