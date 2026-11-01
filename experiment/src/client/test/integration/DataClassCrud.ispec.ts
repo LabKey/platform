@@ -15,6 +15,7 @@ import {
 import mock from 'mock-fs';
 import {
     checkDomainName,
+    checkDomainNameConflicts,
     checkLackDesignerOrReaderPerm,
     createSource,
     deleteSourceType,
@@ -128,6 +129,10 @@ describe('Data Class Designer', () => {
 
     it('Data class name and field name validation', async () => {
         await checkDomainName(server, 'DataClass', true, topFolderOptions, designerReaderOptions);
+    });
+
+    it('Data class field name and import alias conflict validation', async () => {
+        await checkDomainNameConflicts(server, 'DataClass', topFolderOptions, designerReaderOptions);
     });
 
     describe('Create/update/delete designs', () => {

@@ -175,6 +175,20 @@ abstract public class DomainKind<T> implements Handler<String>
     }
 
     /**
+     * Names this kind creates as real domain properties itself, even though it also reserves them, so they must not be
+     * reported as illegal user-chosen names. Override when the kind materializes its own required properties into every
+     * domain -- see PlateMetadataDomainKind.ensureDomainProperties and IssueListDef.ensureDomainProperties.
+     *
+     * GH Issue 1589. Deliberately takes no Domain: it is called by the nightly name scan, which has no Domain and must
+     * not build one, so a kind that could only answer from a live Domain simply does not participate.
+     */
+    @NotNull
+    public Set<String> getReservedNameExemptions()
+    {
+        return Collections.emptySet();
+    }
+
+    /**
      * Return the set of names that are always required and cannot subsequently
      * be deleted.
      * @return set of strings containing the names. This will be compared ignoring case

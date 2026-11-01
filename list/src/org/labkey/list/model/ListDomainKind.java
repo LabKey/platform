@@ -253,6 +253,14 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
+    public @NotNull Set<String> getReservedNameExemptions()
+    {
+        // createDomain renames a colliding field to "_<name>" and keeps the original as its label, so lists routinely
+        // carry a base property name as a label by design rather than by misconfiguration.
+        return BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
+    }
+
+    @Override
     public String getStorageSchemaName()
     {
         return ListSchema.getInstance().getSchemaName();
