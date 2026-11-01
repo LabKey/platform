@@ -29,8 +29,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.visualization.SvgThumbnailGenerator;
 import org.labkey.visualization.VisualizationController;
 
 /**

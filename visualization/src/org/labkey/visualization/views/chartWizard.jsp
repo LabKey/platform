@@ -57,7 +57,7 @@
     String numberFormatFn = numberFormat != null ? ExtUtil.toExtNumberFormatFn(numberFormat) : null;
 
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
-    boolean isDeveloper = user.isBrowserDev();
+    boolean isDeveloper = user.isTrustedBrowserDev();
     boolean allowEditMode = !user.isGuest() && form.allowToggleMode();
     boolean allowInherit = user.hasRootAdminPermission() || ReportUtil.isInRole(user, c, ProjectAdminRole.class);
     boolean canEdit = false;

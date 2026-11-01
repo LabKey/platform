@@ -60,7 +60,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
@@ -118,6 +117,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.workflow.WorkflowService;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
+import org.labkey.experiment.dataiterator.DropColumnsDataIterator;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -1251,6 +1251,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         var backgroundRecalcKeys = useBackgroundRecalc && !skipRecalc ? parentKeys : null;
         var change = new SampleChange(_sampleType, getUser(), container, reason, changedSince, backgroundRecalcKeys);
+        // The container the rows were written to, which is what the counts are keyed on; it can differ from the
+        // update service's own container
+        SampleChangeNotify.recordSampleDataChange(scope, container, _sampleType == null ? null : Set.of(_sampleType.getRowId()));
         new SamplesChangedTask(getContainer()).register(scope, List.of(change), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
@@ -1310,7 +1313,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .collect(Collectors.groupingBy(change -> change.sampleType().getLSID(), LinkedHashMap::new, Collectors.toList()))
                 .values()
                 .forEach(SamplesChangedTask::processSampleType);
-            SampleChangeNotify.fireSampleDataChanged(container);
+            SampleChangeNotify.fireSampleDataChanged(container, changes.stream()
+                .filter(change -> change.sampleType() != null)
+                .map(change -> change.sampleType().getRowId())
+                .collect(Collectors.toSet()));
         }
 
         private static void processSampleType(List<SampleChange> changes)

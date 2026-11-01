@@ -21,9 +21,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheListener;
-import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.assay.module.ModuleResourceLoadException;
 import org.labkey.study.assay.xml.ProviderDocument;
 import org.labkey.study.assay.xml.ProviderType;
 

@@ -1908,7 +1908,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 runIncremental("update", materialized.incrementalUpdateCheck, _ -> executeIncrementalUpdate(materialized.counters));
                 String rolledUpAfter = materialized.incrementalRollupCheck.snapshot();
                 runIncremental("rollup", materialized.incrementalRollupCheck, token -> executeIncrementalRollup(materialized.counters, rolledUpAfter, token));
-                runIncremental("insert", materialized.incrementalInsertCheck, _ -> executeIncrementalInsert());
+                runIncremental("insert", materialized.incrementalInsertCheck, _ -> executeIncrementalInsert(materialized));
             }
             catch (RuntimeException|InterruptedException ex)
             {
@@ -1957,17 +1957,41 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _scope.executeWithRetryReadOnly((_) -> upsert(sql));
         }
 
-        /** Copy every sample missing from the view, including any committed after a higher rowid was already copied. */
-        void executeIncrementalInsert()
+        void upsertWithRetry(Materialized m, SQLFragment sql)
         {
-            // CTE is preferred over filtering the view's query directly as it can read from the (cpastype, rowid) index alone
-            var d = CoreSchema.getInstance().getSchema().getSqlDialect();
-            SQLFragment incremental = new SQLFragment()
-                    .unsafeAppend("WITH added AS (SELECT rowid FROM exp.material em WHERE em.cpastype = ").appendValue(_lsid, d)
-                    .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM temp.${NAME} t WHERE t.rowid = em.rowid))\n")
+            _scope.executeWithRetryReadOnly((_) -> upsert(m, sql));
+        }
+
+        /** Copy every sample missing from the view, including any committed after a higher rowid was already copied. */
+        void executeIncrementalInsert(Materialized materialized)
+        {
+            // Bound by the view's max rowid as a value: given a subquery instead, the planner can't estimate the range
+            // and scans the whole provisioned table. The caller's lock keeps the max stable across both statements, so
+            // all three must target that locked view rather than whichever one upsert(SQLFragment) would look up.
+            SQLFragment maxSql = resolveTableName(materialized, new SQLFragment().unsafeAppend("SELECT COALESCE(MAX(rowid), 0) FROM temp.${NAME}"));
+            long maxRowId = new SqlSelector(_scope, maxSql).getObject(Long.class);
+
+            // Anti-join only up to the max: against a view analyzed while empty, the planner rescans it per new row,
+            // quadratic in the rows added. CTE is preferred over filtering the view's query directly as it can read
+            // from the (cpastype, rowid) index alone.
+            if (maxRowId > 0)
+            {
+                var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+                SQLFragment lateCommits = new SQLFragment()
+                        .unsafeAppend("WITH added AS (SELECT rowid FROM exp.material em WHERE em.cpastype = ").appendValue(_lsid, d)
+                        .unsafeAppend(" AND em.rowid <= ?").add(maxRowId)
+                        .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM temp.${NAME} t WHERE t.rowid = em.rowid))\n")
+                        .unsafeAppend("INSERT INTO temp.${NAME}\n")
+                        .append(getViewSourceSql())
+                        .unsafeAppend(" AND m.rowId IN (SELECT rowid FROM added)");
+                upsertWithRetry(materialized, lateCommits);
+            }
+
+            SQLFragment newRows = new SQLFragment()
                     .unsafeAppend("INSERT INTO temp.${NAME}\n")
-                    .append(getViewSourceSql()).unsafeAppend(" AND m.rowId IN (SELECT rowid FROM added)");
-            upsertWithRetry(incremental);
+                    .append(getViewSourceSql())
+                    .unsafeAppend(" AND m.rowId > ?").add(maxRowId);
+            upsertWithRetry(materialized, newRows);
         }
 
         /** Delete the rows removed between two delete-counter tokens, falling back to a full pass if they weren't all logged. */

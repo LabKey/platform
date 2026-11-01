@@ -64,6 +64,7 @@ import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -1085,7 +1086,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
 
         // SampleType may live in different container
-        ContainerFilter containerFilter = getContainerFilterTypeForFind(container).create(container, user);
+        ContainerFilter containerFilter = RemapCache.computeContainerFilterTypeForFind(container).create(container, user);
         filter.addClause(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container")));
 
         return getExpMaterials(filter);
@@ -2050,13 +2051,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return null;
     }
 
-    @NotNull
-    private ContainerFilter.Type getContainerFilterTypeForFind(Container container)
-    {
-        ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(container);
-        return type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
-    }
-
     @Override
     @Nullable
     public ExpData findExpData(
@@ -2074,7 +2068,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // Attempt to resolve by name first.
         try
         {
-            Long rowId = asLong(cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, getContainerFilterTypeForFind(c), dataName));
+            Long rowId = asLong(cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, cache.getContainerFilterTypeForFind(c), dataName));
             if (rowId != null)
                 return dataCache.computeIfAbsent(rowId, (_) -> getExpData(dataClass, rowId));
         }
@@ -2137,7 +2131,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // TODO, rowId is not found for samples newly created in the same import.
             // This is causing name patterns containing lineage lookup to fail to generate the correct names if the child samples and their parents are created from the same import file
-            Object remap = cache.remap(remapQuery.first, remapQuery.second, user, container, getContainerFilterTypeForFind(container), sampleName);
+            Object remap = cache.remap(remapQuery.first, remapQuery.second, user, container, cache.getContainerFilterTypeForFind(container), sampleName);
             Long rowId = asLong(remap);
 
             if (rowId != null)
@@ -2183,7 +2177,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     )
     {
         Pair<SchemaKey, String> remapQuery = sampleRemapQuery(sampleType);
-        ContainerFilter.Type containerFilterType = getContainerFilterTypeForFind(container);
+        ContainerFilter.Type containerFilterType = cache.getContainerFilterTypeForFind(container);
         cache.prefetch(remapQuery.first, remapQuery.second, user, container, containerFilterType, sampleNames);
 
         Set<Long> rowIds = new LinkedHashSet<>();
@@ -4431,6 +4425,48 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         deleteExperimentRuns(container, user, userComment, getExpRuns(runRowIds), transactionDetails);
     }
 
+    /**
+     * Queues the runs that a deleted run replaced for re-indexing, once per container rather than once per deleted run:
+     * a folder delete reaches this for every run it holds, and a lambda per run is a commit task per run.
+     */
+    private static class ReindexReplacedRunsTask extends AccumulatingCommitTask<Container, Long>
+    {
+        private ReindexReplacedRunsTask(@NotNull Container container)
+        {
+            super(container);
+        }
+
+        @Override
+        protected void process(@NotNull Container container, @NotNull Set<Long> replacedRunIds)
+        {
+            AssayService assayService = AssayService.get();
+            if (assayService == null)
+                return;
+
+            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified);
+            replacedRunIds.forEach(runId -> assayService.indexAssayRun(queue, runId));
+        }
+    }
+
+    /**
+     * Drops deleted items from the search index in one pass per transaction. Keyed by a constant rather than by
+     * container: the ids are search document ids, not container-scoped, and deleting a folder calls in once per sample
+     * type it holds. Taking no container also keeps the deletes running after the container itself is gone.
+     */
+    private static class DeleteSearchResourcesTask extends AccumulatingCommitTask<String, String>
+    {
+        private DeleteSearchResourcesTask()
+        {
+            super(DeleteSearchResourcesTask.class.getName());
+        }
+
+        @Override
+        protected void process(@NotNull String key, @NotNull Set<String> docIds)
+        {
+            SearchService.get().deleteResources(docIds);
+        }
+    }
+
     public void deleteExperimentRuns(Container container, final User user, @Nullable final String userComment, @NotNull Collection<ExpRunImpl> runs, @Nullable Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
     {
         if (runs.isEmpty())
@@ -4558,13 +4594,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Re-index replaced run if replacing run is deleted
                 if (assayService != null && run.getReplacesRuns() != null)
                 {
-                    List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
-                    transaction.addCommitTask(() ->
-                        replacedRuns.forEach(replacedRun ->
-                                assayService.indexAssayRun(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), replacedRun.getRowId())
-                        ),
-                        DbScope.CommitTaskOption.POSTCOMMIT
-                    );
+                    new ReindexReplacedRunsTask(container).register(getExpSchema().getScope(),
+                        run.getReplacesRuns().stream().map(ExpRunImpl::getRowId).toList(),
+                        DbScope.CommitTaskOption.POSTCOMMIT);
                 }
                 deleteRun(run, datasToDelete, user, userComment);
 
@@ -5006,6 +5038,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // Deleted rowIds by sample type LSID, so materialized views can drop just those rows; too many to track forces a full pass.
             Map<String, Set<Long>> deletedRowIds = new HashMap<>();
+            Map<Container, Set<Long>> changedSampleTypeIds = new HashMap<>();
             Set<String> untrackedDeletes = new HashSet<>();
 
             // Document IDs to tell the search indexer should be deleted. Do this at the end to make sure the transaction
@@ -5035,6 +5068,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
 
                     docids.add(material.getDocumentId());
+                    ExpSampleType materialSampleType = stDeleteFrom != null ? stDeleteFrom : material.getSampleType();
+                    Set<Long> containerSampleTypeIds = changedSampleTypeIds.computeIfAbsent(material.getContainer(), _ -> new HashSet<>());
+                    if (materialSampleType != null)
+                        containerSampleTypeIds.add(materialSampleType.getRowId());
 
                     if (null == stDeleteFrom)
                     {
@@ -5224,14 +5261,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterDelete(st, untrackedDeletes.contains(st.getLSID()) ? null : deletedRowIds.getOrDefault(st.getLSID(), Set.of()));
 
             // On successful commit, start task to remove items from search index
-            transaction.addCommitTask(
-                // Use null as container because we want deletes to run even if the container is deleted
-                () -> SearchService.get().deleteResources(docids),
-                POSTCOMMIT);
+            new DeleteSearchResourcesTask().register(getExpSchema().getScope(), docids, POSTCOMMIT);
 
-            // Notify connected clients that sample data changed so cached "insights" counts can be flagged stale.
-            // Deletes don't go through onSamplesChanged, so the notification is fired here.
-            transaction.addCommitTask(new SampleChangeNotify.FireSampleDataChangedTask(container), POSTCOMMIT);
+            // Deletes don't go through onSamplesChanged, so sample count listeners and clients are notified here
+            changedSampleTypeIds.forEach((changed, ids) -> new SampleChangeNotify.SampleDataChangedTask(changed).register(getExpSchema().getScope(), ids));
 
             transaction.commit();
             return deletedCount;
