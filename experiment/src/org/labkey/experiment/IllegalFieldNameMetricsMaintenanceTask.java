@@ -32,6 +32,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainUtil;
@@ -149,7 +150,11 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             "FROM exp.domaindescriptor dd\n" +
             "JOIN exp.propertydomain pdm ON pdm.domainid = dd.domainid\n" +
             "JOIN exp.propertydescriptor pd ON pd.propertyid = pdm.propertyid\n" +
-            "ORDER BY dd.domainid, pdm.sortorder, pd.propertyid");
+            // Audit domains are entirely code-defined, so every field name in them is ours, not a user's. Excluded here
+            // rather than in Java so their rows never transfer. The IS NULL arm keeps non-provisioned domains, which a
+            // bare inequality would drop, since lower(NULL) <> 'audit' is NULL rather than true.
+            "WHERE dd.storageschemaname IS NULL OR lower(dd.storageschemaname) <> ?\n" +
+            "ORDER BY dd.domainid, pdm.sortorder, pd.propertyid").add(AbstractAuditTypeProvider.SCHEMA_NAME);
 
         DomainAccumulator acc = new DomainAccumulator(parentAliases, counts, log);
         new SqlSelector(scope, sql).forEach(rs -> {
@@ -270,7 +275,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             // reserve -- PlateMetadataDomainKind.ensureDomainProperties and IssueListDef.ensureDomainProperties both do
             // this -- so every such domain would otherwise report a violation per required field. The kind put those
             // fields there, so they are not user-chosen names.
-            kindReserved.removeAll(DomainUtil.getNamesAndLabels(_kind.getMandatoryPropertyNames(null)));
+            kindReserved.removeAll(DomainUtil.getNamesAndLabels(_kind.getReservedNameExemptions()));
 
             // A field colliding with a parent alias header is reported only as parentAliasConflict below.
             Map<String, Map<String, Object>> aliases = _parentAliases.get(_domainUri);
