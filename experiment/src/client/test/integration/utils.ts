@@ -992,9 +992,9 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
         "Field 'A' has an import alias 'viaAlias' that conflicts with a parent alias header.",
         { viaAlias: parentOf(name) });
 
-    // Issue 52627: for sample types 'Parent' is reserved as a field name and blocked as a parent alias header.
+    // Issue 52627: for sample types 'Parent' is blocked as a parent alias header. It stays legal as a field name --
+    // the todolist domain template ships one, and existing sample types would fail to save if it were reserved.
     if (isSampleType) {
-        await createExpectError([{ name: 'Parent' }], `'Parent' is a reserved field name in '${name}'.`);
         await createExpectError([{ name: 'A' }], 'Parent alias header is reserved: Parent', { Parent: parentOf(name) });
     }
 
