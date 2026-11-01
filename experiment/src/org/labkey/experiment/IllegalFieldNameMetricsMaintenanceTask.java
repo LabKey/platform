@@ -119,7 +119,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
     private void loadParentAliases(DbScope scope, String table, String aliasColumn,
             Map<String, Map<String, Map<String, Object>>> byDomainUri, Logger log)
     {
-        SQLFragment sql = new SQLFragment("SELECT lsid, ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT lsid, ");
         sql.unsafeAppend(aliasColumn).unsafeAppend(" AS aliases FROM ").unsafeAppend(table)
             .unsafeAppend(" WHERE ").unsafeAppend(aliasColumn).unsafeAppend(" IS NOT NULL");
 
@@ -133,7 +133,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             }
             catch (Exception e)
             {
-                log.error("Unable to parse parent import aliases for [{}].", lsid, e);
+                log.warn("Unable to parse parent import aliases for [{}].", lsid, e);
             }
         });
     }
@@ -144,7 +144,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
      */
     private int[] scanDomains(DbScope scope, Map<String, Map<String, Map<String, Object>>> parentAliases, Counts counts, Logger log)
     {
-        SQLFragment sql = new SQLFragment(
+        SQLFragment sql = SQLFragment.unsafe(
             "SELECT dd.domainid, dd.domainuri, dd.name AS domainname,\n" +
             "       pd.propertyid, pd.name, pd.label, pd.importaliases, pd.rangeuri, pd.concepturi\n" +
             "FROM exp.domaindescriptor dd\n" +
@@ -252,7 +252,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             }
             catch (Exception e)
             {
-                _log.error("Illegal field name scan failed for domain [{}] {}.", _domainId, _domainUri, e);
+                _log.warn("Illegal field name scan failed for domain [{}] {}.", _domainId, _domainUri, e);
             }
             _fields.clear();
         }
@@ -490,7 +490,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             // A parent alias header that collides with a field name. Saving this through the designer is blocked, so
             // write it directly to reproduce a pre-validation configuration.
             DbScope scope = ExperimentService.get().getSchema().getScope();
-            new SqlExecutor(scope).execute(new SQLFragment(
+            new SqlExecutor(scope).execute(SQLFragment.unsafe(
                 "UPDATE exp.materialsource SET materialparentimportaliasmap = ? WHERE lsid = ?")
                 .add("{\"Collision\":\"materialInputs/Whatever\"}").add(st.getLSID()));
 
@@ -501,7 +501,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
 
         private static void update(SqlExecutor executor, int domainId, String fieldName, String column, String value)
         {
-            SQLFragment sql = new SQLFragment("UPDATE exp.propertydescriptor SET ");
+            SQLFragment sql = SQLFragment.unsafe("UPDATE exp.propertydescriptor SET ");
             sql.unsafeAppend(column).unsafeAppend(" = ?").add(value);
             sql.unsafeAppend(" WHERE name = ? AND propertyid IN (SELECT propertyid FROM exp.propertydomain WHERE domainid = ?)")
                 .add(fieldName).add(domainId);
