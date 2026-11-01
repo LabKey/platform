@@ -52,37 +52,47 @@ import static org.labkey.api.util.IntegerUtils.asInteger;
  */
 public class ValidatorIterator extends AbstractDataIterator implements DataIterator
 {
-    DataIterator _data;
+    final DataIterator _in;
+    final DataIterator _data;
     final ValidatorContext validatorContext;
-    private boolean _started = false;
     final ArrayList<RowValidator> _rowValidators = new ArrayList<>();
     final ArrayList<ArrayList<ColumnValidator>> _validators = new ArrayList<>();
 
     public ValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
     {
+        this(data, context, c, user, Map.of());
+    }
+
+    /** {@link PrefetchingValidator}s must be passed here, since the look-ahead they need is chosen at construction */
+    public ValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user, Map<Integer, ? extends List<? extends ColumnValidator>> validators)
+    {
         super(context);
-        _data = data;
+        _in = data;
         validatorContext = new ValidatorContext(c, user);
+        validators.forEach(this::putValidators);
+        _data = lookAhead(data);
+    }
+
+    private void putValidators(int i, List<? extends ColumnValidator> vs)
+    {
+        while (_validators.size() <= i)
+            _validators.add(new ArrayList<>());
+        _validators.get(i).addAll(vs);
     }
 
     public void addValidators(int i, List<? extends ColumnValidator> vs)
     {
         if (vs != null)
         {
-            while (_validators.size() <= i)
-                _validators.add(new ArrayList<>());
-            _validators.get(i).addAll(vs);
+            assert vs.stream().noneMatch(v -> v instanceof PrefetchingValidator) : "Pass PrefetchingValidators to the constructor";
+            putValidators(i, vs);
         }
     }
 
     public void addValidator(int i, ColumnValidator v)
     {
         if (v != null)
-        {
-            while (_validators.size() <= i)
-                _validators.add(new ArrayList<>());
-            _validators.get(i).add(v);
-        }
+            addValidators(i, List.of(v));
     }
 
 
@@ -158,12 +168,6 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
     {
         boolean validRow = true;
         boolean hasValidationErrors = false;
-
-        if (!_started)
-        {
-            _started = true;
-            _data = lookAhead(_data);
-        }
 
         do
         {
@@ -283,8 +287,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
     @Override
     public Supplier<Object> getSupplier(int i)
     {
-        // _data is replaced by a look-ahead on the first next(), so don't bind to the original input's supplier
-        return () -> _data.get(i);
+        return _data.getSupplier(i);
     }
 
 
@@ -298,14 +301,15 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
     @Override
     public boolean isConstant(int i)
     {
-        return _data.isConstant(i);
+        // The look-ahead caches rows and doesn't report constants
+        return _in.isConstant(i);
     }
 
 
     @Override
     public Object getConstantValue(int i)
     {
-        return _data.getConstantValue(i);
+        return _in.getConstantValue(i);
     }
 
     @Override
