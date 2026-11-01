@@ -164,7 +164,9 @@ public class DbSchema
         if (null != module)
             fullyQualifiedSchemaName = module.getDatabaseSchemaName(fullyQualifiedSchemaName);
 
-        String schemaName = DbSchema.getDbScopeAndSchemaName(fullyQualifiedSchemaName).second;
+        // Strip the known prefix; getDbScopeAndSchemaName() can't resolve a display name and mis-splits dotted schema names
+        String prefix = DbSchema.getDisplayName(scope, "");
+        String schemaName = fullyQualifiedSchemaName.startsWith(prefix) ? fullyQualifiedSchemaName.substring(prefix.length()) : fullyQualifiedSchemaName;
         Map<String, String> schemaNameMap = SchemaNameCache.get().getSchemaNameMap(scope);
         String metaDataName = schemaNameMap.get(schemaName);
 
