@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileListener;
 import org.labkey.api.files.TableUpdaterFileListener;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
@@ -187,13 +188,19 @@ public class FileLinkFileListener implements FileListener
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
         sql.unsafeAppend(", ");
         sql.append(OntologyManager.getTinfoPropertyDomain(), "m");
+        // Domains can outlive their physical tables, which getSchemaTableInfo() can't load. GH Issue 1756.
+        sql.unsafeAppend(", information_schema.tables it");
         sql.unsafeAppend(" WHERE dd.DomainId = m.DomainId AND pd.PropertyId = m.PropertyId AND pd.RangeURI = ? ");
         sql.add(PropertyType.FILE_LINK.getTypeUri());
         sql.unsafeAppend(" AND dd.StorageTableName IS NOT NULL AND dd.StorageSchemaName IS NOT NULL AND pd.Name IS NOT NULL");
+        sql.unsafeAppend(" AND it.table_schema = lower(dd.StorageSchemaName) AND it.table_name = lower(dd.StorageTableName)");
 
         new SqlSelector(OntologyManager.getExpSchema(), sql).forEachMap(row -> {
             // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
             String storageSchemaName = row.get("StorageSchemaName").toString();
+            // Domains can outlive the module that provisioned them, and DbSchema.get() throws for unclaimed schemas
+            if (null == ModuleLoader.getInstance().getModule(OntologyManager.getExpSchema().getScope(), storageSchemaName))
+                return;
             DbSchema schema = DbSchema.get(storageSchemaName, DbSchemaType.Provisioned);
             Domain domain = PropertyService.get().getDomain((Integer) row.get("DomainId"));
             // Issue 50781: LKSM: File fields in Sample Types sometimes showing as Text Fields
