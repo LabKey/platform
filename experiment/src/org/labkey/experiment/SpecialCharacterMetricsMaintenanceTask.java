@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -120,12 +121,12 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
 
     private void collectChoiceFieldMetrics(DbScope scope, Map<String, Map<String, Long>> counts)
     {
-        SQLFragment sql = new SQLFragment("SELECT pd.rangeuri AS rangeuri");
+        SQLFragment sql = SQLFragment.unsafe("SELECT pd.rangeuri AS rangeuri");
         for (String ck : CHAR_KEYS)
         {
             sql.unsafeAppend(", SUM(CASE WHEN (");
-            appendBoolExpr(sql, ck, new SQLFragment("pv.expression"));
-            sql.unsafeAppend(") THEN 1 ELSE 0 END) AS ").append(ck.toLowerCase());
+            appendBoolExpr(sql, ck, SQLFragment.unsafe("pv.expression"));
+            sql.unsafeAppend(") THEN 1 ELSE 0 END) AS ").appendIdentifier(ck.toLowerCase());
         }
         sql.unsafeAppend(" FROM exp.propertyvalidator pv");
         sql.unsafeAppend(" JOIN exp.propertydescriptor pd ON pv.propertyid = pd.propertyid");
@@ -154,15 +155,16 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
 
     private void collectObjectPropertyMetrics(DbScope scope, Map<String, Map<String, Long>> counts)
     {
-        SQLFragment sql = new SQLFragment("SELECT");
+        SQLFragment sql = SQLFragment.unsafe("SELECT ");
         boolean first = true;
         for (String ck : CHAR_KEYS)
         {
-            sql.append(first ? " " : ", ");
+            if (!first)
+                sql.unsafeAppend(", ");
             first = false;
             sql.unsafeAppend("COUNT(DISTINCT CASE WHEN (");
-            appendBoolExpr(sql, ck, new SQLFragment("stringvalue"));
-            sql.unsafeAppend(") THEN propertyid END) AS ").append(ck.toLowerCase());
+            appendBoolExpr(sql, ck, SQLFragment.unsafe("stringvalue"));
+            sql.unsafeAppend(") THEN propertyid END) AS ").appendIdentifier(ck.toLowerCase());
         }
         sql.unsafeAppend(" FROM exp.objectproperty WHERE stringvalue IS NOT NULL");
 
@@ -180,12 +182,25 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
 
     private void collectTextFieldMetrics(DbScope scope, SqlDialect dialect, Map<String, Map<String, Long>> counts, Logger log)
     {
+        for (Map.Entry<TableKey, List<Col>> entry : getScanTargets(scope).entrySet())
+            scanTable(scope, dialect, entry.getKey(), entry.getValue(), counts, log);
+    }
+
+    // Domain metadata can outlive its physical table or column, so scan only what the catalog confirms exists. GH Issue 1756.
+    // Unquoted and illegal storage names both resolve to lowercase physical names (see PropertyDescriptor.getLegalSelectNameFromStorageName).
+    private static final String PHYSICAL_TABLE_JOIN = "JOIN information_schema.columns ic ON ic.table_schema = lower(dd.storageschemaname)" +
+        " AND ic.table_name = lower(dd.storagetablename)\n";
+
+    private Map<TableKey, List<Col>> getScanTargets(DbScope scope)
+    {
         // Enumerate provisioned Text/Multiline columns, excluding Text Choice fields.
-        SQLFragment enumSql = new SQLFragment(
+        SQLFragment enumSql = SQLFragment.unsafe(
             "SELECT dd.storageschemaname, dd.storagetablename, pd.storagecolumnname, pd.rangeuri AS rangeuri\n" +
             "FROM exp.propertydescriptor pd\n" +
             "JOIN exp.propertydomain pdm ON pd.propertyid = pdm.propertyid\n" +
             "JOIN exp.domaindescriptor dd ON pdm.domainid = dd.domainid\n" +
+            PHYSICAL_TABLE_JOIN +
+            "AND ic.column_name = lower(pd.storagecolumnname)\n" +
             "WHERE dd.storagetablename IS NOT NULL\n" +
             "AND pd.storagecolumnname IS NOT NULL\n" +
             "AND pd.rangeuri IN (?, ?)\n").add(PropertyType.STRING.getTypeUri()).add(PropertyType.MULTI_LINE.getTypeUri());
@@ -205,8 +220,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         // is absent from exp.propertydescriptor); include it as a Text field. GitHub Issue 1086.
         addBaseNameColumns(scope, byTable);
 
-        for (Map.Entry<TableKey, List<Col>> entry : byTable.entrySet())
-            scanTable(scope, dialect, entry.getKey(), entry.getValue(), counts, log);
+        return byTable;
     }
 
     /**
@@ -215,11 +229,13 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
      */
     private void addBaseNameColumns(DbScope scope, Map<TableKey, List<Col>> byTable)
     {
-        SQLFragment sql = new SQLFragment(
+        SQLFragment sql = SQLFragment.unsafe(
             "SELECT dd.storageschemaname, dd.storagetablename\n" +
             "FROM exp.domaindescriptor dd\n" +
+            PHYSICAL_TABLE_JOIN +
+            "AND ic.column_name = ?\n" +
             "WHERE dd.storagetablename IS NOT NULL AND dd.storageschemaname IN (?, ?)")
-            .add(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).add(DataClassDomainKind.PROVISIONED_SCHEMA_NAME);
+            .add("name").add(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).add(DataClassDomainKind.PROVISIONED_SCHEMA_NAME);
 
         new SqlSelector(scope, sql).forEach(rs -> {
             TableKey key = new TableKey(rs.getString("storageschemaname"), rs.getString("storagetablename"));
@@ -231,7 +247,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
 
     private void scanTable(DbScope scope, SqlDialect dialect, TableKey table, List<Col> cols, Map<String, Map<String, Long>> counts, Logger log)
     {
-        SQLFragment sql = new SQLFragment("SELECT ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT ");
         Map<String, String[]> aliasMeta = new LinkedHashMap<>();
         boolean first = true;
         for (int i = 0; i < cols.size(); i++)
@@ -245,7 +261,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
                 first = false;
                 sql.unsafeAppend("bool_or(");
                 appendBoolExpr(sql, ck, colRef);
-                sql.unsafeAppend(") AS ").append(alias);
+                sql.unsafeAppend(") AS ").appendIdentifier(alias);
                 aliasMeta.put(alias, new String[]{cols.get(i).fieldType(), ck});
             }
         }
@@ -268,7 +284,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         }
         catch (Exception e)
         {
-            log.error("Special character scan failed for provisioned table {}.{}.", table.schema(), table.table(), e);
+            log.warn("Special character scan failed for provisioned table {}.{}.", table.schema(), table.table(), e);
         }
     }
 
@@ -377,6 +393,49 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
             assertEquals("dataName comma", baseDataNameComma + 1, count(metrics, TYPE_DATA_NAME, "comma"));
             assertEquals("dataName semicolon", baseDataNameSemicolon + 1, count(metrics, TYPE_DATA_NAME, "semicolon"));
             assertEquals("dataName doubleQuote unchanged", baseDataNameDquote, count(metrics, TYPE_DATA_NAME, "doubleQuote"));
+        }
+
+        @Test
+        public void testMissingPhysicalTableSkipped() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("Name", PropertyType.STRING.getTypeUri()));
+            props.add(new GWTPropertyDescriptor("Prop", PropertyType.STRING.getTypeUri()));
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, user, ST_NAME, null, props,
+                Collections.emptyList(), -1, -1, -1, -1, null);
+
+            DbScope scope = ExperimentService.get().getSchema().getScope();
+            String tableName = st.getDomain().getStorageTableName();
+            TableKey key = new TableKey(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, tableName);
+            String movedName = tableName + "_moved";
+
+            List<Col> cols = new SpecialCharacterMetricsMaintenanceTask().getScanTargets(scope).get(key);
+            assertNotNull("existing table should be scanned", cols);
+            assertTrue("domain property should be scanned", cols.stream().anyMatch(col -> "prop".equalsIgnoreCase(col.storageName())));
+            assertTrue("base name column should be scanned", cols.stream().anyMatch(col -> TYPE_DATA_NAME.equals(col.fieldType())));
+
+            // Move the table aside, rather than dropping it, so container cleanup can still drop it
+            renameTable(scope, tableName, movedName);
+            try
+            {
+                assertFalse("missing table should not be scanned", new SpecialCharacterMetricsMaintenanceTask().getScanTargets(scope).containsKey(key));
+            }
+            finally
+            {
+                renameTable(scope, movedName, tableName);
+            }
+        }
+
+        private static void renameTable(DbScope scope, String from, String to)
+        {
+            SqlDialect dialect = scope.getSqlDialect();
+            new SqlExecutor(scope).execute(SQLFragment.unsafe("ALTER TABLE ")
+                .appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME)).unsafeAppend(".")
+                .appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, from))
+                .unsafeAppend(" RENAME TO ")
+                .appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, to)));
         }
 
         @SuppressWarnings("unchecked")

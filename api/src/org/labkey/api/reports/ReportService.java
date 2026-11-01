@@ -71,17 +71,17 @@ public interface ReportService
      */
     void registerReport(Report report);
 
-    /** Sees every saved report during the single usage metrics pass, then adds its own metrics */
-    interface ReportMetricsVisitor
+    /** Sees every saved report during the nightly pass, then adds its own metrics */
+    interface ReportMetricsVisitor<V extends ReportMetricsVisitor<V>>
     {
         void visit(Report report);
 
-        /** Each supplier must call visitAll first; it runs the single pass on demand, so describing the metrics visits nothing */
-        void addMetrics(UsageMetrics metrics, Runnable visitAll);
+        /** Suppliers must read results from visited.get(), the cached instance that saw every report, not from this one. Calling it runs the pass on demand, so describing the metrics visits nothing. */
+        void addMetrics(UsageMetrics metrics, Supplier<V> visited);
     }
 
-    /** The factory supplies a fresh visitor for each usage metrics collection */
-    void registerReportMetricsVisitor(Supplier<ReportMetricsVisitor> factory);
+    /** The factory supplies a fresh visitor for each pass, plus one per usage metrics collection to add the metrics */
+    void registerReportMetricsVisitor(Supplier<? extends ReportMetricsVisitor<?>> factory);
 
     /**
      * A descriptor class must be registered with the service in order to be valid.

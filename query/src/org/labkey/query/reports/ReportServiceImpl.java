@@ -16,7 +16,6 @@
 
 package org.labkey.query.reports;
 
-import com.google.common.base.Suppliers;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
@@ -31,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -51,7 +51,6 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.ReportService.ReportMetricsVisitor;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
@@ -77,6 +76,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.GUID;
@@ -124,7 +124,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
     private static final Map<String, UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
     private static final List<String> _globalItemFilterTypes = new CopyOnWriteArrayList<>();
-    private static final List<Supplier<ReportMetricsVisitor>> _metricsVisitorFactories = new CopyOnWriteArrayList<>();
+    private static final List<Supplier<? extends ReportMetricsVisitor<?>>> _metricsVisitorFactories = new CopyOnWriteArrayList<>();
 
     /**
      * maps descriptor types to providers
@@ -226,7 +226,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     }
 
     @Override
-    public void registerReportMetricsVisitor(Supplier<ReportMetricsVisitor> factory)
+    public void registerReportMetricsVisitor(Supplier<? extends ReportMetricsVisitor<?>> factory)
     {
         _metricsVisitorFactories.add(factory);
     }
@@ -1099,18 +1099,29 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         if (null != svc)
         {
             svc.registerUsageMetrics(moduleName, metrics -> {
-                List<ReportMetricsVisitor> visitors = _metricsVisitorFactories.stream().map(Supplier::get).toList();
-                Supplier<Map<String, Long>> countsByType = Suppliers.memoize(() -> visitReports(visitors));
-                metrics.put("reportCountsByType", countsByType, "Saved reports in existing containers by report type");
-                visitors.forEach(visitor -> visitor.addMetrics(metrics, countsByType::get));
+                Supplier<ReportMetricsPass> pass = NightlyRecalculatingSuppliers.get("reportMetricsPass", ReportServiceImpl::visitReports);
+                metrics.put("reportCountsByType", () -> pass.get().countsByType(), "Saved reports in existing containers by report type");
+                for (int i = 0; i < _metricsVisitorFactories.size(); i++)
+                    addVisitorMetrics(metrics, _metricsVisitorFactories.get(i).get(), pass, i);
                 return metrics;
             });
         }
     }
 
-    /** Visits every saved report in an existing container and counts them by type */
-    private static Map<String, Long> visitReports(List<ReportMetricsVisitor> visitors)
+    /** The visitors are in factory order */
+    private record ReportMetricsPass(Map<String, Long> countsByType, List<ReportMetricsVisitor<?>> visitors) {}
+
+    @SuppressWarnings("unchecked")
+    private static <V extends ReportMetricsVisitor<V>> void addVisitorMetrics(UsageMetrics metrics, ReportMetricsVisitor<V> visitor, Supplier<ReportMetricsPass> pass, int index)
     {
+        visitor.addMetrics(metrics, () -> (V) pass.get().visitors().get(index));
+    }
+
+    /** Visits every saved report in an existing container with fresh visitors and counts them by type */
+    private static ReportMetricsPass visitReports()
+    {
+        List<ReportMetricsVisitor<?>> visitors = _metricsVisitorFactories.stream().<ReportMetricsVisitor<?>>map(Supplier::get).toList();
+
         // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
         TableInfo table = getTable();
         SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "r")
@@ -1118,11 +1129,12 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         ReportServiceImpl reportService = getInstance();
         try (Stream<ReportDB> rows = new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class))
         {
-            return rows
+            Map<String, Long> countsByType = rows
                 .map(reportService::_getInstance)
                 .filter(Objects::nonNull)
                 .peek(report -> visitors.forEach(visitor -> visitor.visit(report)))
                 .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
+            return new ReportMetricsPass(Collections.unmodifiableMap(countsByType), visitors);
         }
     }
 }

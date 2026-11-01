@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.PropertyManager;
@@ -44,6 +45,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -218,12 +220,13 @@ public class DisplayFormatAnalyzer
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return metrics -> metrics.put("nonStandardDateDisplayFormats", () -> {
+        String name = "nonStandardDateDisplayFormats";
+        return metrics -> metrics.put(name, NightlyRecalculatingSuppliers.get(name, () -> {
             // Collect the unique set of non-standard date display formats across the entire site
             Set<String> badFormats = new HashSet<>();
             new DisplayFormatAnalyzer().handleAll(User.getAdminServiceUser(), (c, type, format, contextProvider) -> badFormats.add(format));
-            return badFormats;
-        }, "Distinct non-standard date display formats used in folder defaults, query metadata, or field properties anywhere on the server");
+            return Collections.unmodifiableSet(badFormats);
+        }), "Distinct non-standard date display formats used in folder defaults, query metadata, or field properties anywhere on the server");
     }
 
     private <P extends UrlProvider> @NotNull P urlProvider(Class<P> inter)
