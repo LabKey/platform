@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
@@ -773,6 +774,11 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     public boolean isNew()
     {
         return getReportId() == null;
+    }
+
+    /** Adds errors if this user may not save this descriptor's content; stored is the saved version, null if new */
+    public void validateContent(User user, @Nullable ReportDescriptor stored, List<ValidationError> errors)
+    {
     }
 
     public boolean isInherited(Container c)

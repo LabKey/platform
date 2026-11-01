@@ -32,7 +32,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
 
 import java.util.HashMap;
@@ -342,9 +341,10 @@ public class QueryImportPipelineJob extends PipelineJob
 
             DataIteratorContext diContext = createDataIteratorContext(ve, getContainer());
 
-            if (_importContextBuilder.getWorkflowParams() != null && WorkflowService.get() != null)
+            QueryWorkflowHandler workflowHandler = QueryWorkflowHandler.get();
+            if (_importContextBuilder.getWorkflowParams() != null && workflowHandler != null)
             {
-                WorkflowService.get().populateConfigParams(_importContextBuilder.getWorkflowParams(), diContext.getConfigParameters());
+                workflowHandler.populateConfigParams(_importContextBuilder.getWorkflowParams(), diContext.getConfigParameters());
             }
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))

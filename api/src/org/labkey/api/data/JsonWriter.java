@@ -23,7 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -281,7 +281,7 @@ public class JsonWriter
             if (cinfo.getNameExpression() != null)
                 props.put("nameExpression", cinfo.getNameExpression());
 
-            IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(cinfo, PropertyValidatorType.TextChoice);
+            PropertyValidatorDef textChoiceValidator = PropertyService.get().getValidatorForColumn(cinfo, PropertyValidatorType.TextChoice);
             if (textChoiceValidator != null)
                 props.put("validValues", PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator));
         }

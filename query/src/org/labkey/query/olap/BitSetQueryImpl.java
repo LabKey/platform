@@ -30,14 +30,13 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.VisualizationSqlGenerator;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
-import org.labkey.api.visualization.SQLGenerationException;
-import org.labkey.api.visualization.VisualizationService;
 import org.labkey.query.olap.metadata.CachedCube;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.CellSet;
@@ -53,9 +52,7 @@ import org.olap4j.metadata.Member;
 import org.olap4j.metadata.MetadataElement;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
-import org.springframework.validation.BindException;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -748,26 +745,13 @@ public class BitSetQueryImpl
                 String sql = expr.sql;
                 if (null != expr.getData || null != expr.getDataCDS)
                 {
-                    VisualizationService vs = VisualizationService.get();
-                    if (null == vs)
+                    VisualizationSqlGenerator generator = VisualizationSqlGenerator.get();
+                    if (null == generator)
                         throw new UnsupportedOperationException("VisualizationService not registered");
-                    try
-                    {
-                        if (null != expr.getData)
-                        {
-                            VisualizationService.SQLResponse r = vs.getDataGenerateSQL(container, user, expr.getData);
-                            sql = r.sql;
-                        }
-                        else
-                        {
-                            VisualizationService.SQLResponse r = vs.getDataCDSGenerateSQL(container, user, expr.getDataCDS);
-                            sql = r.sql;
-                        }
-                    }
-                    catch (SQLGenerationException|IOException|SQLException|BindException ex)
-                    {
-                        throw new IllegalArgumentException(ex);
-                    }
+                    if (null != expr.getData)
+                        sql = generator.getDataSql(container, user, expr.getData);
+                    else
+                        sql = generator.getDataCDSSql(container, user, expr.getDataCDS);
                 }
 
                 MemberSet set = ((SqlDataSourceHelper)_dataSourceHelper).sqlMembersQuery(expr.level, sql);

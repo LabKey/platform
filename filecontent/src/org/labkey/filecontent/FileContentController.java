@@ -53,7 +53,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -1034,7 +1034,7 @@ public class FileContentController extends SpringActionController
 
             boolean ret = true;
 
-            for (IPropertyValidator validator : prop.getValidators())
+            for (PropertyValidatorDef validator : prop.getValidators())
             {
                 if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
             }

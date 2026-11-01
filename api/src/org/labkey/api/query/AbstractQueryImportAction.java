@@ -72,7 +72,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindException;
@@ -749,9 +748,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 .setAllowLineageColumns(allowLineageColumns())
                 .setJobDescription(getQueryImportDescription())
                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
-        if (WorkflowService.get() != null)
+        QueryWorkflowHandler workflowHandler = QueryWorkflowHandler.get();
+        if (workflowHandler != null)
         {
-            Map<String, Object> workflowParams = WorkflowService.get().getConfigParameters(getViewContext().getRequest());
+            Map<String, Object> workflowParams = workflowHandler.getConfigParameters(getViewContext().getRequest());
             importContextBuilder.setWorkflowParams(workflowParams);
         }
 

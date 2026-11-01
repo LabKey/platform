@@ -56,7 +56,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ProductFeature;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -1770,11 +1769,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return new ContainerFilter.CurrentPlusProjectAndShared(this, user);
 
         return ContainerFilter.current(this, user);
-    }
-
-    public boolean isDataspace()
-    {
-        return StudyService.DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(getFolderType().getName());
     }
 
     public boolean hasActiveModuleByName(@NotNull String moduleName)

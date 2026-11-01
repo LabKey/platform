@@ -1086,7 +1086,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
 
         // SampleType may live in different container
-        ContainerFilter containerFilter = getContainerFilterTypeForFind(container).create(container, user);
+        ContainerFilter containerFilter = RemapCache.computeContainerFilterTypeForFind(container).create(container, user);
         filter.addClause(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container")));
 
         return getExpMaterials(filter);
@@ -2051,13 +2051,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return null;
     }
 
-    @NotNull
-    private ContainerFilter.Type getContainerFilterTypeForFind(Container container)
-    {
-        ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(container);
-        return type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
-    }
-
     @Override
     @Nullable
     public ExpData findExpData(
@@ -2075,7 +2068,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // Attempt to resolve by name first.
         try
         {
-            Long rowId = asLong(cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, getContainerFilterTypeForFind(c), dataName));
+            Long rowId = asLong(cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, cache.getContainerFilterTypeForFind(c), dataName));
             if (rowId != null)
                 return dataCache.computeIfAbsent(rowId, (_) -> getExpData(dataClass, rowId));
         }
@@ -2138,7 +2131,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // TODO, rowId is not found for samples newly created in the same import.
             // This is causing name patterns containing lineage lookup to fail to generate the correct names if the child samples and their parents are created from the same import file
-            Object remap = cache.remap(remapQuery.first, remapQuery.second, user, container, getContainerFilterTypeForFind(container), sampleName);
+            Object remap = cache.remap(remapQuery.first, remapQuery.second, user, container, cache.getContainerFilterTypeForFind(container), sampleName);
             Long rowId = asLong(remap);
 
             if (rowId != null)
@@ -2184,7 +2177,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     )
     {
         Pair<SchemaKey, String> remapQuery = sampleRemapQuery(sampleType);
-        ContainerFilter.Type containerFilterType = getContainerFilterTypeForFind(container);
+        ContainerFilter.Type containerFilterType = cache.getContainerFilterTypeForFind(container);
         cache.prefetch(remapQuery.first, remapQuery.second, user, container, containerFilterType, sampleNames);
 
         Set<Long> rowIds = new LinkedHashSet<>();

@@ -24,19 +24,18 @@ import org.labkey.api.query.ValidationError;
 
 import java.util.List;
 
-/*
-* User: Karl Lum
-* Date: Aug 15, 2008
-* Time: 5:12:50 PM
-*/
-public abstract class DefaultPropertyValidator implements ValidatorKind
+/**
+ * Base for the built-in {@link ValidatorKind}s: error-message formatting, comparison operators, and
+ * {@link #createValidatorURI}, which other modules use to build type URIs.
+ */
+public abstract class DefaultValidatorKind implements ValidatorKind
 {
     public static Lsid createValidatorURI(PropertyValidatorType type)
     {
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + type.getTypeName());
     }
 
-    protected void createErrorMessage(IPropertyValidator validator, ColumnRenderProperties field, Object value, List<ValidationError> errors)
+    protected void createErrorMessage(PropertyValidatorDef validator, ColumnRenderProperties field, Object value, List<ValidationError> errors)
     {
         StringBuilder sb = new StringBuilder();
 

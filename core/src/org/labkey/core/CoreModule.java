@@ -100,7 +100,6 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
-import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.products.ProductRegistry;
@@ -249,6 +248,7 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentContainerListener;
+import org.labkey.core.attachment.AttachmentHashingMaintenanceTask;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.data.ContainerServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
@@ -546,7 +546,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
+        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
             "Allow script authentication via legacy substitution parameters",
@@ -1337,6 +1337,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), AttachmentHashingMaintenanceTask.getMetricsProvider());
+        SystemMaintenance.addTask(new AttachmentHashingMaintenanceTask());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());

@@ -31,7 +31,7 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -331,7 +331,7 @@ public class ImportTypesHelper
 
         // not part of PropertyDescriptors, this class could eventually become a builder for DomainProperty
         private String _domainName;
-        private List<? extends IPropertyValidator> _validators;
+        private List<? extends PropertyValidatorDef> _validators;
         private List<ConditionalFormat> _formats;
         private String _defaultValue;
 
@@ -655,12 +655,12 @@ public class ImportTypesHelper
             _domainName = domainName;
         }
 
-        public List<? extends IPropertyValidator> getValidators()
+        public List<? extends PropertyValidatorDef> getValidators()
         {
             return _validators;
         }
 
-        public void setValidators(List<? extends IPropertyValidator> validators)
+        public void setValidators(List<? extends PropertyValidatorDef> validators)
         {
             _validators = validators;
         }
