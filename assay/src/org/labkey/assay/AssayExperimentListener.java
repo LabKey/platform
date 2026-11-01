@@ -15,6 +15,8 @@
  */
 package org.labkey.assay;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.CommitTaskOption;
@@ -26,16 +28,51 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 
 import java.util.List;
+import java.util.Set;
 
 public class AssayExperimentListener implements ExperimentListener
 {
+    /*
+     * Both deletes below fire once per item, so a folder delete reaches them once per batch or run it holds. Collecting
+     * the items and de-indexing them together keeps that to one commit task, which is also what the deindex calls want
+     * -- each resolves its items to document ids and deletes them in a single search request.
+     *
+     * Keyed by a constant rather than by container: a document id is not container-scoped, and taking no container is
+     * what lets these run after the container itself is gone.
+     */
+
+    private static class DeindexAssayBatchesTask extends AccumulatingCommitTask<String, ExpExperiment>
+    {
+        private DeindexAssayBatchesTask()
+        {
+            super(DeindexAssayBatchesTask.class.getName());
+        }
+
+        @Override
+        protected void process(@NotNull String key, @NotNull Set<ExpExperiment> batches)
+        {
+            AssayManager.get().deindexAssayBatches(batches);
+        }
+    }
+
+    private static class DeindexAssayRunsTask extends AccumulatingCommitTask<String, ExpRun>
+    {
+        private DeindexAssayRunsTask()
+        {
+            super(DeindexAssayRunsTask.class.getName());
+        }
+
+        @Override
+        protected void process(@NotNull String key, @NotNull Set<ExpRun> runs)
+        {
+            AssayManager.get().deindexAssayRuns(runs);
+        }
+    }
+
     @Override
     public void afterExperimentDeleted(Container c, User user, ExpExperiment experiment)
     {
-        DbScope.getLabKeyScope().addCommitTask(() ->
-            AssayManager.get().deindexAssayBatches(List.of(experiment)),
-            CommitTaskOption.POSTCOMMIT
-        );
+        new DeindexAssayBatchesTask().register(DbScope.getLabKeyScope(), List.of(experiment), CommitTaskOption.POSTCOMMIT);
     }
 
     @Override
@@ -47,10 +84,7 @@ public class AssayExperimentListener implements ExperimentListener
     @Override
     public void afterRunDelete(ExpProtocol protocol, ExpRun run, User user)
     {
-        DbScope.getLabKeyScope().addCommitTask(() ->
-            AssayManager.get().deindexAssayRuns(List.of(run)),
-            CommitTaskOption.POSTCOMMIT
-        );
+        new DeindexAssayRunsTask().register(DbScope.getLabKeyScope(), List.of(run), CommitTaskOption.POSTCOMMIT);
     }
 
     @Override

@@ -20,6 +20,7 @@ import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.study.controllers.StudyController;
@@ -57,7 +58,7 @@ public class StudyImportInitialTask
         {
             StudyDocument.Study studyXml = ctx.getXml();
 
-            if (ctx.getContainer().isDataspace() && !studyXml.getAllowDataspace())
+            if (StudyService.get().isDataspace(ctx.getContainer()) && !studyXml.getAllowDataspace())
             {
                 throw new PipelineJobException("Can't import study into a Dataspace folder.");
             }

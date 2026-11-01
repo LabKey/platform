@@ -35,7 +35,6 @@ import org.labkey.api.issues.Issue;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.RestrictedIssueProvider;
-import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -437,7 +436,7 @@ public class ChangeSummary
     private static Notification createNotification(User notifyUser, MailHelper.MultipartMessage m, String linkText,
                                                    String linkURL, String id, String type) throws MessagingException
     {
-        if (!AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+        if (!AppProps.getInstance().isOptionalFeatureEnabled(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU))
             return null;
 
         Notification notification = new Notification();

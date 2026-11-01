@@ -28,10 +28,10 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.visualization.SvgThumbnailGenerator;
 import org.labkey.visualization.VisualizationController;
 
 /*

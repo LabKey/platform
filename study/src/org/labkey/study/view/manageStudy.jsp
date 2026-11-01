@@ -321,7 +321,7 @@
 <%
     }
 
-    if (c.hasPermission(user, AdminPermission.class) && !c.isDataspace())
+    if (c.hasPermission(user, AdminPermission.class) && !StudyService.get().isDataspace(c))
     {
 %>
         <%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>
