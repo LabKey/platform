@@ -47,7 +47,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.generator.DataGeneratorRegistry;
 import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.migration.AssaySkipContainers;
@@ -292,17 +291,12 @@ public class AssayModule extends SpringModule
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {
+                // Every active-modules lookup runs this, so use the provider recorded with each cached protocol rather than matching it again
                 ContainerManager.registerModuleDependencyProvider((dependencies, c) -> {
-                    AssayService svc = AssayService.get();
-                    List<ExpProtocol> activeProtocols = svc.getAssayProtocols(c);
-                    for (ExpProtocol p : activeProtocols)
+                    for (AssayProvider ap : AssayManager.get().getAssayProvidersInScope(c))
                     {
-                        AssayProvider ap = svc.getProvider(p);
-                        if (ap != null)
-                        {
-                            for (Module m : ap.getRequiredModules())
-                                dependencies.add(m);
-                        }
+                        for (Module m : ap.getRequiredModules())
+                            dependencies.add(m);
                     }
                 });
             }
@@ -388,6 +382,7 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            AssayManager.TestCase.class,
             ModuleAssayCache.TestCase.class,
             PlateManagerTest.class,
             PlateSchemaTest.class

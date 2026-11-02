@@ -48,6 +48,7 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -100,7 +101,6 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
-import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.products.ProductRegistry;
@@ -249,6 +249,7 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentContainerListener;
+import org.labkey.core.attachment.AttachmentHashingMaintenanceTask;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.data.ContainerServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
@@ -546,7 +547,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
+        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
             "Allow script authentication via legacy substitution parameters",
@@ -1302,17 +1303,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     "Emails of active non-system users; only reported when the extended metrics feature flag is on"
                 );
 
-            metrics.put("workbookCount", () -> ContainerManager.getWorkbookCount(), "Workbooks across the server");
-            metrics.put("archivedFolderCount", () -> ContainerManager.getArchivedContainerCount(), "Archived folders across the server");
-            metrics.put("databaseSize", () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize(), "Size of the LabKey database in bytes");
+            metrics.put("workbookCount", ContainerManager::getWorkbookCount, "Workbooks across the server");
+            metrics.put("archivedFolderCount", ContainerManager::getArchivedContainerCount, "Archived folders across the server");
+            String dbSize = "databaseSize";
+            metrics.put(dbSize, NightlyRecalculatingSuppliers.get(dbSize, () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize()), "Size of the LabKey database in bytes");
 
-            // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
-            // Note that they can be non-trivial in size.
-            SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
-            sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
-            sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
-
-            metrics.put("databaseSchemaSize", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap(), "Size in bytes of each database schema, including indexes; temp excluded");
+            String schemaSize = "databaseSchemaSize";
+            metrics.put(schemaSize, NightlyRecalculatingSuppliers.get(schemaSize, () -> {
+                // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
+                // Note that they can be non-trivial in size.
+                SQLFragment sql = SQLFragment.unsafe("SELECT table_schema, SUM(total_size) FROM ");
+                sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
+                sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
+                return Collections.unmodifiableMap(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap());
+            }), "Size in bytes of each database schema, including indexes; temp excluded");
 
             metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
             metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
@@ -1337,6 +1341,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), AttachmentHashingMaintenanceTask.getMetricsProvider());
+        SystemMaintenance.addTask(new AttachmentHashingMaintenanceTask());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());

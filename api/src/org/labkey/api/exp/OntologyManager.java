@@ -75,7 +75,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
@@ -397,12 +397,12 @@ public class OntologyManager
                 objInsert.setOwnerObjectId(ownerObjectId);
 
             List<ValidationError> errors = new ArrayList<>();
-            Map<Integer, List<? extends IPropertyValidator>> validatorMap = new IntHashMap<>();
+            Map<Integer, List<? extends PropertyValidatorDef>> validatorMap = new IntHashMap<>();
 
             // cache all the property validators for this upload
             for (PropertyDescriptor pd : descriptors)
             {
-                List<? extends IPropertyValidator> validators = PropertyService.get().getPropertyValidators(pd);
+                List<? extends PropertyValidatorDef> validators = PropertyService.get().getPropertyValidators(pd);
                 if (!validators.isEmpty())
                     validatorMap.put(pd.getPropertyId(), validators);
             }
@@ -589,13 +589,20 @@ public class OntologyManager
 
         Map<String, Object> currentRow = null;
 
+        // Only the row callback reads a row's RowId or LSID, so without one, inserts skip both and run in batches
+        boolean batch = insert && rowCallback == NO_OP_ROW_CALLBACK;
+        int batchSize = BatchSize.get(BatchSize.Kind.ROWS);
+
         MapDataIterator rows = DataIteratorUtil.wrapMap(in, false);
         try
         {
             conn = scope.getConnection();
             if (insert)
             {
-                parameterMap = StatementUtils.insertStatement(conn, table, c, user, true, autoFillDefaultColumns);
+                parameterMap = StatementUtils.insertStatement(conn, table, c, user, !batch, autoFillDefaultColumns);
+                // The Spring default would bypass the RuntimeSQLException catch that unwraps a failed batch
+                if (batch)
+                    parameterMap.setExceptionFramework(ExceptionFramework.JDBC);
             }
             else
             {
@@ -603,14 +610,14 @@ public class OntologyManager
             }
             List<ValidationError> errors = new ArrayList<>();
 
-            Map<String, List<? extends IPropertyValidator>> validatorMap = new HashMap<>();
+            Map<String, List<? extends PropertyValidatorDef>> validatorMap = new HashMap<>();
             Map<String, DomainProperty> propertiesMap = new HashMap<>();
 
             // cache all the property validators for this upload
             for (DomainProperty dp : properties)
             {
                 propertiesMap.put(dp.getPropertyURI(), dp);
-                List<? extends IPropertyValidator> validators = dp.getValidators();
+                List<? extends PropertyValidatorDef> validators = dp.getValidators();
                 if (!validators.isEmpty())
                     validatorMap.put(dp.getPropertyURI(), validators);
             }
@@ -733,21 +740,32 @@ public class OntologyManager
                 }
 
                 helper.bindAdditionalParameters(currentRow, parameterMap);
-                parameterMap.execute();
-                if (insert)
+                if (batch)
                 {
-                    long rowId = parameterMap.getRowId();
-                    currentRow.put("rowId", rowId);
+                    parameterMap.addBatch();
+                    if (++rowCount % batchSize == 0)
+                        parameterMap.executeBatch();
                 }
-                lsid = helper.afterImportObject(currentRow);
-                if (lsid == null)
+                else
                 {
-                    throw new IllegalStateException("No LSID available");
+                    parameterMap.execute();
+                    if (insert)
+                    {
+                        long rowId = parameterMap.getRowId();
+                        currentRow.put("rowId", rowId);
+                    }
+                    lsid = helper.afterImportObject(currentRow);
+                    if (lsid == null)
+                    {
+                        throw new IllegalStateException("No LSID available");
+                    }
+                    rowCallback.rowProcessed(currentRow, lsid);
+                    rowCount++;
                 }
-                rowCallback.rowProcessed(currentRow, lsid);
-                rowCount++;
             }
 
+            if (batch && rowCount % batchSize != 0)
+                parameterMap.executeBatch();
 
             if (!errors.isEmpty())
                 throw new BatchValidationException(new ValidationException(errors));
@@ -761,6 +779,13 @@ public class OntologyManager
         catch (ValidationException e)
         {
             throw new BatchValidationException(e);
+        }
+        catch (RuntimeSQLException x)
+        {
+            // A failed batch's message embeds the statement and its parameter values, so surface the row's own error
+            if (x.getSQLException() instanceof java.sql.BatchUpdateException b && null != b.getNextException())
+                throw new RuntimeSQLException(b.getNextException());
+            throw x;
         }
         catch (SQLException x)
         {
@@ -782,7 +807,7 @@ public class OntologyManager
     }
 
     // TODO: Consolidate with ColumnValidator
-    public static boolean validateProperty(List<? extends IPropertyValidator> validators, PropertyDescriptor prop, ObjectProperty objectProperty,
+    public static boolean validateProperty(List<? extends PropertyValidatorDef> validators, PropertyDescriptor prop, ObjectProperty objectProperty,
                                            List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
@@ -820,7 +845,7 @@ public class OntologyManager
         // Don't validate null values, #15683
         if (null != value && validators != null)
         {
-            for (IPropertyValidator validator : validators)
+            for (PropertyValidatorDef validator : validators)
                 if (!validator.validate(prop, value, errors, validatorCache)) ret = false;
         }
         return ret;
@@ -845,6 +870,7 @@ public class OntologyManager
     {
         /**
          * may be used to process attachments, for auditing, etc
+         * Called only when rows insert one at a time, i.e. with a row callback; batched inserts skip it.
          * @return the LSID of the inserted row
          */
         String afterImportObject(Map<String, Object> map);
@@ -3043,11 +3069,11 @@ public class OntologyManager
         public final String domainName;
         public final String domainURI;
         public final PropertyDescriptor pd;
-        public final List<? extends IPropertyValidator> validators;
+        public final List<? extends PropertyValidatorDef> validators;
         public final List<ConditionalFormat> formats;
         public final String defaultValue;
 
-        private ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
+        private ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends PropertyValidatorDef> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
         {
             this.domainName = domainName;
             this.domainURI = domainURI;
@@ -3063,7 +3089,7 @@ public class OntologyManager
     {
         public final ArrayList<ImportPropertyDescriptor> properties = new ArrayList<>();
 
-        void add(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends IPropertyValidator> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
+        void add(String domainName, String domainURI, PropertyDescriptor pd, @Nullable List<? extends PropertyValidatorDef> validators, @Nullable List<ConditionalFormat> formats, String defaultValue)
         {
             properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd, validators, formats, defaultValue));
         }

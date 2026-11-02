@@ -28,6 +28,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.StudyService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -120,7 +121,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable<StudyDesig
         if (perm.equals(ReadPermission.class))
             return hasPermissionOverridable(user, perm);
         // This is editable in Dataspace, but not in a folder within a Dataspace
-        if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())
+        if (StudyService.get().isDataspace(getContainer().getProject()) && !StudyService.get().isDataspace(getContainer()))
             return false;
         return hasPermissionOverridable(user, perm);
     }

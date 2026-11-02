@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.ontology.Unit;
@@ -117,7 +117,7 @@ public class MultiChoice
             boolean disabledInput = isDisabledInput(ctx);
             String formFieldName = getFormFieldName(ctx);
             ColumnInfo boundColumn = getBoundColumn();
-            IPropertyValidator textChoiceValidator = null==boundColumn ? null : PropertyService.get().getValidatorForColumn(boundColumn, PropertyValidatorType.TextChoice);
+            PropertyValidatorDef textChoiceValidator = null==boundColumn ? null : PropertyService.get().getValidatorForColumn(boundColumn, PropertyValidatorType.TextChoice);
 
             if (textChoiceValidator != null)
             {

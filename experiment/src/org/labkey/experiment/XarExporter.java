@@ -59,7 +59,7 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -892,7 +892,7 @@ public class XarExporter
         xProp.setShownInLookupView(domainProp.isShownInLookupView());
         xProp.setMvEnabled(domainProp.isMvEnabled());
 
-        for (IPropertyValidator validator : domainProp.getValidators())
+        for (PropertyValidatorDef validator : domainProp.getValidators())
         {
             addPropertyValidator(xProp, validator);
         }
@@ -920,7 +920,7 @@ public class XarExporter
         }
     }
 
-    private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, IPropertyValidator validator)
+    private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, PropertyValidatorDef validator)
     {
         PropertyValidatorType xValidator = xProp.addNewPropertyValidator();
         xValidator.setName(validator.getName());

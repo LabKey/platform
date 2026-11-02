@@ -41,6 +41,7 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.ContainerKeySimpleCache;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.cache.SimpleKeyMappingCache;
 import org.labkey.api.cache.UserKeySimpleCache;
 import org.labkey.api.collections.ArrayListMap;
@@ -300,6 +301,7 @@ public class ApiModule extends CodeOnlyModule
     protected void doStartup(ModuleContext moduleContext)
     {
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
+        SystemMaintenance.addTask(new NightlyRecalculatingSuppliers.RecalculationMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();

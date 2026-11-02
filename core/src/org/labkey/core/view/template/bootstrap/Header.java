@@ -15,10 +15,11 @@
  */
 package org.labkey.core.view.template.bootstrap;
 
-import org.labkey.api.notification.NotificationMenuView;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.core.notification.NotificationMenuView;
 
 
 /**
@@ -35,7 +36,7 @@ public class Header extends JspView<PageConfig>
 
     private void displayNotifications()
     {
-        if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+        if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU))
         {
             this.setView("notifications", NotificationMenuView.createView(getViewContext()));
         }

@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.util.AIFeaturesStatus;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
@@ -97,7 +98,7 @@ import java.util.function.Supplier;
 ///
 /// CoreMcp and QueryMcp have examples of resource declarations.
 ///
-public interface McpService extends ToolCallbackProvider
+public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
 {
     String VECTOR_SCHEMA = "vector_indexes"; // for pgvector extension, see core-26.005-26.006.sql
 
@@ -140,6 +141,7 @@ public interface McpService extends ToolCallbackProvider
     static void setInstance(McpService service)
     {
         ServiceRegistry.get().registerService(McpService.class, service);
+        ServiceRegistry.get().registerService(AIFeaturesStatus.class, service);
     }
 
     default boolean isEnabled()
@@ -157,6 +159,7 @@ public interface McpService extends ToolCallbackProvider
     boolean isModelReady();
 
     // Convenience for in-product AI features: the AI feature flag is on, the service is ready, and the model is ready.
+    @Override
     default boolean isAIFeaturesReady()
     {
         return isAIFeaturesEnabled() && isReady() && isModelReady();
