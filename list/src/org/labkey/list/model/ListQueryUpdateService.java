@@ -87,6 +87,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
@@ -137,8 +138,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     /** Non-null while a multi-row operation is in flight; see {@link RowAuditBatch}. */
     private RowAuditBatch _auditBatch;
 
-    /** Container ids by entity id for the rows a per-row delete is about to remove, since {@link #getRow} leaves them out */
-    private Map<String, String> _deleteRowContainerIds = Map.of();
+    /** Container ids by entity id for the rows a per-row update or delete is about to change, since {@link #getRow} leaves them out */
+    private Map<String, String> _rowContainerIds = Map.of();
 
     public ListQueryUpdateService(ListTable queryTable, TableInfo dbTable, @NotNull ListDefinition list)
     {
@@ -219,7 +220,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         for (Map<String, Object> rowKeys : keys)
             keyValues.add(null == rowKeys ? null : getKeyValue(rowKeys));
 
-        Map<String, ListRowMatch> rowsByKey = selectRowsByKey(keyValues.stream().filter(Objects::nonNull).distinct().toList());
+        Map<String, ListRowMatch> rowsByKey = selectRowsByKey(keyValues.stream().filter(Objects::nonNull).distinct().toList(), true);
 
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Object keyValue : keyValues)
@@ -235,13 +236,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     /** A selected list row, its key value as the key column returned it, and the id of the container that holds it */
     private record ListRowMatch(Object key, String containerId, Map<String, Object> row) {}
 
-    /** Selects the rows for the given distinct keys in batches, keyed by string because the request may carry a Long where the column returns an Integer */
-    private Map<String, ListRowMatch> selectRowsByKey(List<Object> distinctKeys)
-    {
-        return selectRowsByKey(distinctKeys, true);
-    }
-
-    /** @param fullRows false selects only the key, entity id, and container, so each match's row holds just the entity id */
+    /**
+     * Selects the rows for the given distinct keys in batches, keyed by string because the request may carry a Long where the column returns an Integer
+     * @param fullRows false selects only the key, entity id, and container, so each match's row holds just the entity id
+     */
     private Map<String, ListRowMatch> selectRowsByKey(List<Object> distinctKeys, boolean fullRows)
     {
         TableInfo queryTable = getQueryTable();
@@ -497,7 +495,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         // updateRow() audits as the list user, so the batch must format and log as that user too
         try (RowAuditBatch ignored = beginAuditBatch(listUser))
         {
-            result = super.updateRows(listUser, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+            // Check every row's container before any row is updated
+            List<Map<String, Object>> keys = null == oldKeys ? rows : oldKeys;
+            _rowContainerIds = verifyRowContainers(user, container, selectRowsByKey(getDistinctKeyValues(keys, new BatchValidationException()), false).values(), UpdatePermission.class);
+            try
+            {
+                result = super.updateRows(listUser, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+            }
+            finally
+            {
+                _rowContainerIds = Map.of();
+            }
         }
 
         if (!result.isEmpty())
@@ -579,7 +587,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (null == newRowKey && null != oldRowKey)
             rowCopy.put(_list.getKeyName(), oldRowKey);
 
-        Map<String, Object> result = super.updateRow(getListUser(user, container), container, rowCopy, oldRow, true, false);
+        // Without the row's own container, DefaultQueryUpdateService would move a workbook row into the request container
+        Map<String, Object> oldRowWithContainer = oldRow;
+        String rowContainerId = _rowContainerIds.get((String) oldRow.get(ID));
+        if (null != rowContainerId)
+        {
+            oldRowWithContainer = new CaseInsensitiveHashMap<>(oldRow);
+            oldRowWithContainer.put("container", rowContainerId);
+            rowCopy.putIfAbsent("container", rowContainerId);
+        }
+
+        Map<String, Object> result = super.updateRow(getListUser(user, container), container, rowCopy, oldRowWithContainer, true, false);
 
         if (null != result)
         {
@@ -930,24 +948,50 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             if (getQueryTable().hasTriggers(container))
             {
                 // Check every row's container before any row reaches a trigger
-                Collection<ListRowMatch> rows = selectRowsByKey(getDistinctKeyValues(keys, new BatchValidationException()), false).values();
-                verifyRowContainers(user, container, rows);
-
-                Map<String, String> containerIds = new HashMap<>();
-                rows.forEach(row -> containerIds.put((String) row.row().get(ID), row.containerId()));
-                _deleteRowContainerIds = containerIds;
+                _rowContainerIds = verifyRowContainers(user, container, selectRowsByKey(getDistinctKeyValues(keys, new BatchValidationException()), false).values(), DeletePermission.class);
                 try
                 {
                     return super.deleteRows(user, container, keys, configParameters, extraScriptContext);
                 }
                 finally
                 {
-                    _deleteRowContainerIds = Map.of();
+                    _rowContainerIds = Map.of();
                 }
             }
 
             return deleteRowsInBatches(user, container, keys, configParameters);
         }
+    }
+
+    /**
+     * Throws unless every other container holding one of the rows allows changes from this one (Issue 15301: workbooks only) and grants the user the permission
+     * @return each row's container id by entity id
+     */
+    private Map<String, String> verifyRowContainers(User user, Container container, Collection<ListRowMatch> rows, Class<? extends Permission> perm)
+    {
+        Map<String, String> containerIds = new HashMap<>();
+        Set<String> verifiedContainerIds = new HashSet<>();
+        for (ListRowMatch row : rows)
+        {
+            if (null == row.containerId())
+                throw new IllegalStateException("No container for list row " + row.key());
+
+            if (!container.getId().equals(row.containerId()) && verifiedContainerIds.add(row.containerId()))
+            {
+                Container rowContainer = UserSchema.translateRowSuppliedContainer(row.containerId(), container, user, getQueryTable(), perm, null);
+                if (null != rowContainer && !container.allowRowMutationForContainer(rowContainer))
+                {
+                    // Same messages as DefaultQueryUpdateService.deleteRow() and updateRow()
+                    throw new UnauthorizedException(DeletePermission.class.equals(perm)
+                            ? "The row is from the container: " + rowContainer.getId() + " which does not allow deletes from the container: " + container.getPath()
+                            : "The row is from the wrong container.");
+                }
+            }
+
+            containerIds.put((String) row.row().get(ID), row.containerId());
+        }
+
+        return containerIds;
     }
 
     /** Key values for the given key maps, once each in request order; an invalid key adds a row error instead */
@@ -973,24 +1017,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return distinctKeys;
     }
 
-    /** Throws unless every other container holding one of the rows allows deletes from this one (Issue 15301: workbooks only) and grants the user delete permission */
-    private void verifyRowContainers(User user, Container container, Collection<ListRowMatch> rows)
-    {
-        Set<String> verifiedContainerIds = new HashSet<>();
-        for (ListRowMatch row : rows)
-        {
-            if (null == row.containerId())
-                throw new IllegalStateException("No container for list row " + row.key());
-
-            if (!container.getId().equals(row.containerId()) && verifiedContainerIds.add(row.containerId()))
-            {
-                Container rowContainer = UserSchema.translateRowSuppliedContainer(row.containerId(), container, user, getQueryTable(), DeletePermission.class, null);
-                if (null != rowContainer && !container.allowRowMutationForContainer(rowContainer))
-                    throw new UnauthorizedException("The row is from the container: " + rowContainer.getId() + " which does not allow deletes from the container: " + container.getPath());
-            }
-        }
-    }
-
     /** The per-row path's effects, but batched SELECTs and DELETEs instead of one of each per row; every row's container is checked before the first DELETE */
     private List<Map<String, Object>> deleteRowsInBatches(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters)
             throws BatchValidationException
@@ -1000,10 +1026,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (errors.hasErrors())
             throw errors;
 
-        // Keys of rows outside this list's container scope were never selected, so they aren't deleted
-        Map<String, ListRowMatch> rowsByKey = selectRowsByKey(distinctKeys);
+        Map<String, ListRowMatch> rowsByKey = selectRowsByKey(distinctKeys, true);
         List<ListRowMatch> found = distinctKeys.stream().map(k -> rowsByKey.get(String.valueOf(k))).filter(Objects::nonNull).toList();
-        verifyRowContainers(user, container, found);
+        verifyRowContainers(user, container, found, DeletePermission.class);
 
         ColumnInfo pkColumn = getDbTable().getPkColumns().getFirst();
         boolean hasAttachments = hasAttachmentProperties();
@@ -1054,7 +1079,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
 
         // Restores the container for DefaultQueryUpdateService's per-row container check
-        String rowContainerId = null == oldRowMap ? null : _deleteRowContainerIds.get((String) oldRowMap.get(ID));
+        String rowContainerId = null == oldRowMap ? null : _rowContainerIds.get((String) oldRowMap.get(ID));
         if (null != rowContainerId)
             oldRowMap.put("container", rowContainerId);
 
@@ -1504,14 +1529,15 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     /**
-     * A delete reaching rows in other containers, through a wider container filter, may only remove rows in the request container's workbooks.
+     * An update or delete reaching rows in other containers, through a wider container filter, may only change rows in the request container's workbooks.
      * The user is an Editor in the project and in the editable subfolder, so rejecting that subfolder's rows can only come from the container rule.
      */
     @TestTimeout(TestTimeout.DEFAULT * 5)
-    public static class DeleteContainerCheckTestCase extends ListTestSupport
+    public static class RowContainerCheckTestCase extends ListTestSupport
     {
-        private static final String PROJECT_NAME = "ListDeleteContainerCheckTest Project";
-        private static final String EMAIL = "listdeletecontainercheck@listdelete.test";
+        private static final String PROJECT_NAME = "ListRowContainerCheckTest Project";
+        private static final String EMAIL = "listrowcontainercheck@listdelete.test";
+        private static final String UPDATED = "updated";
 
         private static User _admin;
         private static User _user;
@@ -1533,7 +1559,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             projectPolicy.addRoleAssignment(_user, EditorRole.class);
             SecurityPolicyManager.savePolicyForTests(projectPolicy, _admin);
 
-            // Readable, so the wider filter selects its rows, but not deletable
+            // Readable, so the wider filter selects its rows, but not editable
             _readOnlyFolder = ContainerManager.createContainer(_project, "Read only", _admin);
             MutableSecurityPolicy readOnlyPolicy = new MutableSecurityPolicy(_readOnlyFolder);
             readOnlyPolicy.addRoleAssignment(_user, ReaderRole.class);
@@ -1587,80 +1613,104 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         /** The list from the project, with a filter that reaches subfolder rows; a trigger moves deletes onto the per-row path */
-        private TableInfo projectTable(User user, @Nullable Trigger trigger)
+        private TableInfo projectTable(@Nullable Trigger trigger)
         {
-            ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(_project, user);
+            ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(_project, _user);
             if (null == trigger)
-                return _list.getTable(user, _project, cf);
+                return _list.getTable(_user, _project, cf);
 
             // Cached tables are locked, so only one built for write accepts another trigger factory
-            AbstractTableInfo table = (AbstractTableInfo) new ListQuerySchema(user, _project).getTable(_list.getName(), cf, true, true);
+            AbstractTableInfo table = (AbstractTableInfo) new ListQuerySchema(_user, _project).getTable(_list.getName(), cf, true, true);
             table.addTriggerFactory((_, _, _) -> List.of(trigger));
             table.resetTriggers(_project);
 
             return table;
         }
 
-        private List<Map<String, Object>> deleteFromProject(User user, Object key, @Nullable Trigger trigger) throws Exception
+        /** The row as the project's wider filter sees it, or null if it is gone */
+        private @Nullable Map<String, Object> selectRow(Object key)
         {
-            TableInfo table = projectTable(user, trigger);
+            TableInfo table = projectTable(null);
+            assertNotNull(table);
+            return new TableSelector(table, new SimpleFilter(FieldKey.fromParts(KEY_NAME), key), null).getMap();
+        }
+
+        private void deleteFromProject(List<Object> keys, @Nullable Trigger trigger) throws Exception
+        {
+            TableInfo table = projectTable(trigger);
             assertNotNull("expected the list table to resolve in the project", table);
 
             try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
             {
-                List<Map<String, Object>> deleted = table.getUpdateService().deleteRows(user, _project, List.of(keyMap(key)), null, null);
+                table.getUpdateService().deleteRows(_user, _project, keys.stream().map(ListTestSupport::keyMap).toList(), null, null);
                 tx.commit();
-                return deleted;
             }
         }
 
-        private boolean rowExists(Container folder, Object key)
+        private void updateFromProject(List<Object> keys) throws Exception
         {
-            TableInfo table = _list.getTable(_admin, folder);
-            assertNotNull(table);
-            return new TableSelector(table, new SimpleFilter(FieldKey.fromParts(KEY_NAME), key), null).exists();
+            TableInfo table = projectTable(null);
+            assertNotNull("expected the list table to resolve in the project", table);
+
+            List<Map<String, Object>> rows = keys.stream().map(key -> (Map<String, Object>) CaseInsensitiveHashMap.of(KEY_NAME, key, VALUE_FIELD, UPDATED)).toList();
+            try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+            {
+                BatchValidationException errors = new BatchValidationException();
+                table.getUpdateService().updateRows(_user, _project, rows, null, errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+                tx.commit();
+            }
         }
 
-        private void assertRejected(Container folder, @Nullable Trigger trigger) throws Exception
+        private interface Mutation
         {
-            Object key = insertRow(folder);
+            void apply(List<Object> keys) throws Exception;
+        }
+
+        /** The project row comes first, so a check that ran per batch or per row would already have changed it */
+        private void assertRejected(Container folder, Mutation mutation) throws Exception
+        {
+            Object projectKey = insertRow(_project);
+            Object otherKey = insertRow(folder);
+            assertNotNull("the filter should reach the " + folder.getName() + " row", selectRow(otherKey));
+
             try
             {
-                deleteFromProject(_user, key, trigger);
-                fail("expected the delete of a row in " + folder.getName() + " to be rejected");
+                mutation.apply(List.of(projectKey, otherKey));
+                fail("expected the change to a row in " + folder.getName() + " to be rejected");
             }
             catch (UnauthorizedException expected)
             {
                 // expected
             }
 
-            assertTrue("the " + folder.getName() + " row should remain", rowExists(folder, key));
-        }
-
-        private void assertWorkbookRowDeleted(@Nullable Trigger trigger) throws Exception
-        {
-            Object key = insertRow(_workbook);
-
-            assertEquals("expected the workbook row to be deleted", 1, deleteFromProject(_user, key, trigger).size());
-            assertFalse("the workbook row should be gone", rowExists(_workbook, key));
+            for (Object key : List.of(projectKey, otherKey))
+            {
+                Map<String, Object> row = selectRow(key);
+                assertNotNull("row " + key + " should remain", row);
+                assertNotEquals("row " + key + " should be unchanged", UPDATED, row.get(VALUE_FIELD));
+            }
         }
 
         @Test
-        public void rejectsRowsInFolderWithoutDeletePermission() throws Exception
+        public void deleteRejectsRowsInFolderWithoutDeletePermission() throws Exception
         {
-            assertRejected(_readOnlyFolder, null);
+            assertRejected(_readOnlyFolder, keys -> deleteFromProject(keys, null));
         }
 
         @Test
-        public void rejectsRowsInSubfolderWithDeletePermission() throws Exception
+        public void deleteRejectsRowsInSubfolderWithDeletePermission() throws Exception
         {
-            assertRejected(_editableFolder, null);
+            assertRejected(_editableFolder, keys -> deleteFromProject(keys, null));
         }
 
         @Test
         public void deletesRowsInWorkbook() throws Exception
         {
-            assertWorkbookRowDeleted(null);
+            Object key = insertRow(_workbook);
+            deleteFromProject(List.of(key), null);
+            assertNull("the workbook row should be gone", selectRow(key));
         }
 
         @Test
@@ -1668,7 +1718,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             DeleteCountingTrigger trigger = new DeleteCountingTrigger();
 
-            assertRejected(_readOnlyFolder, trigger);
+            assertRejected(_readOnlyFolder, keys -> deleteFromProject(keys, trigger));
             assertEquals("the check should run before any row reaches the trigger", 0, trigger._deletes.get());
         }
 
@@ -1677,7 +1727,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             DeleteCountingTrigger trigger = new DeleteCountingTrigger();
 
-            assertRejected(_editableFolder, trigger);
+            assertRejected(_editableFolder, keys -> deleteFromProject(keys, trigger));
             assertEquals("the check should run before any row reaches the trigger", 0, trigger._deletes.get());
         }
 
@@ -1685,9 +1735,35 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         public void triggerPathDeletesRowsInWorkbook() throws Exception
         {
             DeleteCountingTrigger trigger = new DeleteCountingTrigger();
+            Object key = insertRow(_workbook);
 
-            assertWorkbookRowDeleted(trigger);
+            deleteFromProject(List.of(key), trigger);
+            assertNull("the workbook row should be gone", selectRow(key));
             assertEquals("expected the per-row path to hand the row to the trigger", 1, trigger._deletes.get());
+        }
+
+        @Test
+        public void updateRejectsRowsInFolderWithoutUpdatePermission() throws Exception
+        {
+            assertRejected(_readOnlyFolder, this::updateFromProject);
+        }
+
+        @Test
+        public void updateRejectsRowsInSubfolderWithUpdatePermission() throws Exception
+        {
+            assertRejected(_editableFolder, this::updateFromProject);
+        }
+
+        @Test
+        public void updatesRowsInWorkbookInPlace() throws Exception
+        {
+            Object key = insertRow(_workbook);
+            updateFromProject(List.of(key));
+
+            Map<String, Object> row = selectRow(key);
+            assertNotNull("the workbook row should remain", row);
+            assertEquals("the workbook row should be updated", UPDATED, row.get(VALUE_FIELD));
+            assertEquals("the workbook row should stay in the workbook", _workbook.getId(), String.valueOf(row.get("container")));
         }
     }
 }
