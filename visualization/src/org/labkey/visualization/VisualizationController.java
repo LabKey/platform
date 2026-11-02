@@ -1838,7 +1838,7 @@ public class VisualizationController extends SpringActionController
                     Pair.of(ReportDescriptor.Prop.schemaName.name(), "core"),
                     Pair.of(ReportDescriptor.Prop.queryName.name(), "Users"),
                     Pair.of(GenericChartReportDescriptor.Prop.renderType.name(), "scatter_plot")));
-            ActionURL url = new ActionURL("study-reports", "saveReport", folder)
+            ActionURL url = new ActionURL("study-reports", "saveReportView", folder)
                     .addParameter("reportType", GenericChartReport.TYPE)
                     .addParameter("label", label)
                     .addParameter("params", params);

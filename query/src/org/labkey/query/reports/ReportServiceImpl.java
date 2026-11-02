@@ -412,6 +412,10 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                 return false;
             }
 
+            // canEdit checks the stored report, so a save that changes the type must pass the new type's creation check
+            if (null == stored || !stored.getType().equals(report.getType()))
+                validateScriptCreation(context, report, errors);
+
             Report toCheck = null != stored ? stored : report;
 
             if (toCheck.canEdit(context.getUser(), context.getContainer(), errors))
@@ -421,7 +425,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             }
         }
 
-        // GH Issue 1649: generic report actions, such as study-reports-saveReport, can write a chart's config too
+        // GH Issue 1649: generic report actions, such as study-reports-saveReportView, can write a chart's config too
         descriptor.validateContent(context.getUser(), null != stored ? stored.getDescriptor() : null, errors);
 
         return errors.isEmpty();
