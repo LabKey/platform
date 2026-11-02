@@ -58,10 +58,20 @@ import java.util.function.Supplier;
 
 /**
  * Requires a value to exist as the lookup target's key, or as a sample's Name for a text lookup to a sample type.
- * Remembers which values exist per {@link ValidatorContext}, querying a batch at a time instead of loading the target.
+ * Remembers which values exist per {@link ValidatorContext}, querying prefetched values a batch at a time; without a prefetching caller, a target under the preload cap loads whole.
  */
 public class LookupValidatorKind extends DefaultValidatorKind implements ValidatorKind
 {
+    private static volatile int preloadMaxRows = 10_000;
+
+    /** Lowers the preload cap so a test can exercise a target too large to preload */
+    public static AutoCloseable overridePreloadMaxRows(int maxRows)
+    {
+        int previous = preloadMaxRows;
+        preloadMaxRows = maxRows;
+        return () -> preloadMaxRows = previous;
+    }
+
     @Override
     public String getName()
     {
@@ -139,7 +149,7 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
                     // validate() reports it
                 }
             }
-            validValues.prefetch(converted);
+            validValues.prefetchBatch(converted);
         }
     }
 
@@ -191,7 +201,7 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
         }
     }
 
-    /** Remembers which values exist in a lookup target, querying a batch at a time instead of loading the whole target */
+    /** Remembers which values exist in one lookup target */
     private static class LookupValues
     {
         private final String _schemaName;
@@ -199,8 +209,11 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
         private final List<ValidationError> _setupErrors = new ArrayList<>();
         private ColumnInfo _keyCol;
         private boolean _caseInsensitive;
-        // GH Issue 1561: bounded, so a large lookup target is never held in memory
+        // GH Issue 1561: bounded, so a large lookup target is never held in memory; keys are already folded by normalize(), so no case-insensitive map
         private final Map<Object, Boolean> _found = RemapConverter.lruMap();
+        private boolean _batched;
+        // _found holds every key in the target, so a miss needs no query
+        private boolean _complete;
 
         public LookupValues(ColumnInfo field)
         {
@@ -277,9 +290,15 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
             return _setupErrors;
         }
 
-        public void prefetch(Collection<?> values)
+        public void prefetchBatch(Collection<?> values)
         {
-            if (_keyCol == null)
+            _batched = true;
+            prefetch(values);
+        }
+
+        private void prefetch(Collection<?> values)
+        {
+            if (_keyCol == null || _complete)
                 return;
 
             List<Object> uncached = values.stream()
@@ -307,9 +326,22 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
             if (k == null)
                 return false;
 
-            if (!_found.containsKey(k))
+            if (!_batched)
+                preload();
+            if (!_complete && !_found.containsKey(k))
                 prefetch(List.of(value));
             return Boolean.TRUE.equals(_found.get(k));
+        }
+
+        // Without a caller prefetching batches, load a small target whole so its misses need no query
+        private void preload()
+        {
+            _batched = true;
+            int maxRows = preloadMaxRows;
+            int rows = new TableSelector(_keyCol).setMaxRows(maxRows + 1)
+                .forEach(_keyCol.getJavaObjectClass(), v -> _found.put(normalize(v), true));
+            // Counts rows, not keys: a key column can repeat, e.g. exp.Materials' Name across sample types
+            _complete = rows <= maxRows;
         }
 
         // Matches the key's type and the database's case sensitivity, so a cached answer agrees with what a query returns
@@ -350,7 +382,7 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
         }
 
         value = crpField.convert(value);
-        // Queries this one value unless ValidatorIterator already prefetched its window
+        // Without a prefetched window, the first lookup loads a target under the preload cap; a larger one queries each uncached value
         if (validValues.contains(value))
             return true;
 

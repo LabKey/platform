@@ -608,7 +608,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         if (tableInfo instanceof UpdateableTableInfo uti)
         {
-            OntologyManager.insertTabDelimited(uti, container, user, importHelper, fileData, autoFillDefaultColumns, LOG, rowCallback);
+            // checkData() already ran the property validators
+            OntologyManager.insertTabDelimited(uti, container, user, importHelper, fileData, autoFillDefaultColumns, false, LOG, rowCallback);
         }
         else
         {
@@ -674,6 +675,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     builder.append(".  ");
             }
             throw new BatchValidationException(new ValidationException(builder.toString()));
+        }
+    }
+
+    private static void validate(Map<DomainProperty, List<ColumnValidator>> validatorMap, DomainProperty pd, int rowNum, Object value, ValidatorContext validatorContext, Collection<ValidationError> errors)
+    {
+        for (ColumnValidator validator : validatorMap.getOrDefault(pd, List.of()))
+        {
+            try
+            {
+                String error = validator.validate(rowNum, value, validatorContext, null);
+                if (error != null)
+                    errors.add(new PropertyValidationError(error, pd.getName()));
+            }
+            catch (ConversionException e)
+            {
+                errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
+            }
         }
     }
 
@@ -1002,22 +1020,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                     // validate the data value for the non-sample lookup fields
                     // note that sample lookup mapping and validation will happen separately below in the code which handles populating materialInputs
-                    if (validatorMap.containsKey(pd) && !isSampleLookupById && !isSampleLookupByName)
-                    {
-                        for (ColumnValidator validator : validatorMap.get(pd))
-                        {
-                            try
-                            {
-                                String error = validator.validate(rowNum, o, validatorContext, null);
-                                if (error != null)
-                                    errors.add(new PropertyValidationError(error, pd.getName()));
-                            }
-                            catch (ConversionException e)
-                            {
-                                errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
-                            }
-                        }
-                    }
+                    if (!isSampleLookupById && !isSampleLookupByName)
+                        validate(validatorMap, pd, rowNum, o, validatorContext, errors);
 
                     if (participantPD == pd)
                     {
@@ -1125,6 +1129,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
                         // If allowLookupByAlternateKey is false, we will only try resolving by the rowId.
                         ExpMaterial material = null;
+                        boolean notFound = false;
                         if (settings.getLookupResolutionType().useAlternateKey() || isSampleLookupByName)
                         {
                             String materialName = o.toString();
@@ -1167,17 +1172,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         else if (o instanceof String && isSampleLookupById)
                         {
                             errors.add(new PropertyValidationError(o + " not found in the current context.", pd.getName()));
+                            notFound = true;
                         }
-                        // check for sample Lookup Validator
-                        else if (validatorMap.containsKey(pd))
-                        {
-                            for (ColumnValidator validator : validatorMap.get(pd))
-                            {
-                                String error = validator.validate(rowNum, o, validatorContext, null);
-                                if (error != null)
-                                    errors.add(new PropertyValidationError(error, pd.getName()));
-                            }
-                        }
+
+                        // A resolved material can still be outside the lookup target (run input of another sample type, sample outside the lookup folder)
+                        if (!notFound)
+                            validate(validatorMap, pd, rowNum, map.get(pd.getName()), validatorContext, errors);
                     }
                 }
 
@@ -1229,24 +1229,35 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 try
                 {
                     ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
+                    List<DomainProperty> resolved = new ArrayList<>();
                     if (participantPD != null && map.get(participantPD.getName()) == null)
                     {
                         map.put(participantPD.getName(), participantVisit.getParticipantID());
+                        resolved.add(participantPD);
                     }
                     if (visitPD != null && map.get(visitPD.getName()) == null)
                     {
                         map.put(visitPD.getName(), participantVisit.getVisitID());
+                        resolved.add(visitPD);
                     }
                     if (datePD != null && map.get(datePD.getName()) == null)
                     {
                         map.put(datePD.getName(), participantVisit.getDate());
+                        resolved.add(datePD);
                     }
                     if (targetStudyPD != null && participantVisit.getStudyContainer() != null)
                     {
                         // Original TargetStudy value may have been a container id, container path, or a study label.
                         // Store all TargetStudy values as Container ID string.
                         map.put(targetStudyPD.getName(), participantVisit.getStudyContainer().getId());
+                        resolved.add(targetStudyPD);
                     }
+
+                    // The resolver fills these after the column loop validated them
+                    for (DomainProperty pd : resolved)
+                        validate(validatorMap, pd, rowNum, map.get(pd.getName()), validatorContext, errors);
+                    if (!errors.isEmpty())
+                        throw new RuntimeValidationException(new ValidationException(errors, rowNum));
 
                     if (resolveMaterials)
                     {

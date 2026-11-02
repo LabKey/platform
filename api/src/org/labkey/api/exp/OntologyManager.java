@@ -540,7 +540,23 @@ public class OntologyManager
                                           RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
-        saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, rowCallback);
+        insertTabDelimited(tableInsert, c, user, helper, rows, autoFillDefaultColumns, true, logger, rowCallback);
+    }
+
+    /** @param validate false when the caller already ran the domain's property validators */
+    @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
+    public static void insertTabDelimited(TableInfo tableInsert,
+                                          Container c,
+                                          User user,
+                                          UpdateableTableImportHelper helper,
+                                          DataIterator rows,
+                                          boolean autoFillDefaultColumns,
+                                          boolean validate,
+                                          Logger logger,
+                                          RowCallback rowCallback)
+            throws SQLException, BatchValidationException
+    {
+        saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, validate, rowCallback);
     }
 
     @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
@@ -553,7 +569,7 @@ public class OntologyManager
                                           Logger logger)
             throws SQLException, BatchValidationException
     {
-        saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns, NO_OP_ROW_CALLBACK);
+        saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns, true, NO_OP_ROW_CALLBACK);
     }
 
     private static void saveTabDelimited(TableInfo table,
@@ -564,6 +580,7 @@ public class OntologyManager
                                          Logger logger,
                                          boolean insert,
                                          boolean autoFillDefaultColumns,
+                                         boolean validate,
                                          @Nullable RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
@@ -681,7 +698,7 @@ public class OntologyManager
                             {
                                 // Use an ObjectProperty to unwrap MvFieldWrapper, do type conversion, etc
                                 ObjectProperty objectProperty = new ObjectProperty(lsid, c, pd, value);
-                                if (!validateProperty(validatorMap.get(propertyURI), pd, objectProperty, errors, validatorCache))
+                                if (validate && !validateProperty(validatorMap.get(propertyURI), pd, objectProperty, errors, validatorCache))
                                 {
                                     throw new BatchValidationException(new ValidationException(errors));
                                 }

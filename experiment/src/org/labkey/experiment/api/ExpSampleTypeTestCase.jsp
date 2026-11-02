@@ -42,6 +42,7 @@
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
 <%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
 <%@ page import="org.labkey.api.dataiterator.ValidatorIterator" %>
+<%@ page import="org.labkey.api.data.validator.PrefetchingValidator" %>
 <%@ page import="org.labkey.api.data.validator.PropertyValidator" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
 <%@ page import="org.labkey.api.exp.property.ValidatorContext" %>
@@ -1575,6 +1576,33 @@ public void testLookupValidatorQueriesPerWindow() throws Exception
     assertLookupValidation(lookupField(sampleType, PropertyType.STRING), List.of(prefix + "1", prefix + "2", prefix + "Missing", prefix + "3", prefix + "1"), Set.of(3), 2);
 }
 
+@Test // GH Issue 1561
+public void testLookupValidatorPreloadWithDuplicateKeys() throws Exception
+{
+    // exp.Materials spans every sample type in the folder, so isolate this test's samples
+    c = ContainerManager.ensureContainer(c, "LookupValidatorDuplicateKeys", _user);
+    String prefix = generateSampleTypeName() + "-";
+    String dup = prefix + "dup";
+    String oldest = prefix + "oldest";
+    // The preload sorts by RowId descending, so it reads the three newest rows: the duplicated name
+    for (String name : List.of(oldest, dup, dup, dup))
+    {
+        String sampleType = createSampleType(generateSampleTypeName(), List.of(new GWTPropertyDescriptor("name", "string")), null).getName();
+        insertSampleRows(sampleType, List.of(CaseInsensitiveHashMap.of("name", name)));
+    }
+
+    PropertyDescriptor field = new PropertyDescriptor("urn:lsid:labkey.com:LookupValidatorTest:Materials", PropertyType.STRING, "Lookup", c);
+    field.setLookupSchema(ExpSchema.SCHEMA_EXP.toString());
+    field.setLookupQuery(ExpSchema.TableType.Materials.name());
+
+    // Three rows hold one distinct key, but the target has a fourth row, so the oldest name needs its own query
+    try (AutoCloseable ignored = LookupValidatorKind.overridePreloadMaxRows(2); QueryCounter counter = new QueryCounter("\"exp\".\"material\""))
+    {
+        assertNull(lookupValidator(field).validate(1, oldest, new ValidatorContext(c, _user), null));
+        assertEquals(String.valueOf(counter.getSql()), 2, counter.getCount());
+    }
+}
+
 private PropertyDescriptor lookupField(String sampleType, PropertyType type)
 {
     PropertyDescriptor field = new PropertyDescriptor("urn:lsid:labkey.com:LookupValidatorTest:" + type.name(), type, "Lookup", c);
@@ -1617,14 +1645,30 @@ private void assertLookupValidation(PropertyDescriptor field, List<Object> value
         assertEquals(label + ": " + counter.getSql(), expectedQueries, counter.getCount());
     }
 
-    // Outside a data iterator, an uncached value is queried by itself and then remembered
+    // Outside a data iterator, the first lookup loads a target under the preload cap, so a missing value needs no query
+    Object missing = values.get(expectedErrorRows.iterator().next() - 1);
+    assertUnbatchedLookups(field, values.getFirst(), missing, 1);
+
+    // A target over the preload cap queries each uncached value by itself
+    try (AutoCloseable ignored = LookupValidatorKind.overridePreloadMaxRows(windowSize))
+    {
+        assertUnbatchedLookups(field, values.getFirst(), missing, 2);
+    }
+}
+
+private void assertUnbatchedLookups(PropertyDescriptor field, Object present, Object missing, int expectedQueries)
+{
+    String label = field.getPropertyType().name();
     ValidatorContext validatorContext = new ValidatorContext(c, _user);
     PropertyValidator validator = lookupValidator(field);
-    try (QueryCounter counter = new QueryCounter(lookupTarget))
+    try (QueryCounter counter = new QueryCounter("\"exp\".\"material\""))
     {
-        assertNull(validator.validate(1, values.getFirst(), validatorContext, null));
-        assertNull(validator.validate(2, values.getFirst(), validatorContext, null));
-        assertEquals(label + ": " + counter.getSql(), 1, counter.getCount());
+        assertNull(validator.validate(1, present, validatorContext, null));
+        assertNull(validator.validate(2, present, validatorContext, null));
+        assertNotNull(validator.validate(3, missing, validatorContext, null));
+        // A complete preload doesn't cache misses, so only the _complete check keeps this from querying
+        ((PrefetchingValidator) validator).prefetch(List.of(missing), validatorContext);
+        assertEquals(label + ": " + counter.getSql(), expectedQueries, counter.getCount());
     }
 }
 

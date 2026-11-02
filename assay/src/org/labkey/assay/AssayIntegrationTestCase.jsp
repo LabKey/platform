@@ -22,6 +22,7 @@
 <%@ page import="org.junit.After" %>
 <%@ page import="org.junit.Before" %>
 <%@ page import="org.junit.Test" %>
+<%@ page import="org.labkey.api.assay.AbstractAssayProvider" %>
 <%@ page import="org.labkey.api.assay.AssayDataCollector" %>
 <%@ page import="org.labkey.api.assay.AssayDomainService" %>
 <%@ page import="org.labkey.api.assay.AssayProtocolSchema" %>
@@ -58,6 +59,9 @@
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="org.labkey.api.exp.api.ProvenanceService" %>
 <%@ page import="org.labkey.api.exp.api.SampleTypeService" %>
+<%@ page import="org.labkey.api.exp.list.ListDefinition" %>
+<%@ page import="org.labkey.api.exp.list.ListItem" %>
+<%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.exp.property.PropertyService" %>
@@ -68,6 +72,8 @@
 <%@ page import="org.labkey.api.gwt.client.assay.model.GWTProtocol" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTDomain" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
+<%@ page import="org.labkey.api.gwt.client.model.GWTPropertyValidator" %>
+<%@ page import="org.labkey.api.gwt.client.model.PropertyValidatorType" %>
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
@@ -76,6 +82,7 @@
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.query.ValidationException" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.assay.ThawListResolverType" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>
@@ -150,6 +157,11 @@
 
     private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups, List<GWTPropertyDescriptor> extraResultFields) throws Exception
     {
+        return createAssay(context, editableRunsAndResults, includeSampleTypeLookups, extraResultFields, false);
+    }
+
+    private Pair<AssayProvider, ExpProtocol> createAssay(ViewContext context, boolean editableRunsAndResults, boolean includeSampleTypeLookups, List<GWTPropertyDescriptor> extraResultFields, boolean keepParticipantVisitResolver) throws Exception
+    {
         // create assay design
         AssayDomainService assayDomainService = new AssayDomainServiceImpl(context.getUser(), context.getContainer());
         GWTProtocol assayTemplate = assayDomainService.getAssayTemplate("General");
@@ -200,9 +212,10 @@
 
         resultFields.addAll(extraResultFields);
 
-        // clear the batch domain fields
         GWTDomain<GWTPropertyDescriptor> batchDomain = domains.stream().filter(d -> "Batch Fields".equals(d.getName())).findFirst().orElseThrow();
-        batchDomain.setFields(Collections.emptyList());
+        batchDomain.setFields(new ArrayList<>(batchDomain.getFields().stream()
+            .filter(f -> keepParticipantVisitResolver && AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(f.getName()))
+            .toList()));
 
         // set the run domain fields
         GWTDomain<GWTPropertyDescriptor> runDomain = domains.stream().filter(d -> "Run Fields".equals(d.getName())).findFirst().orElseThrow();
@@ -859,6 +872,169 @@
         }
     }
 
+    @Test // GH Issue 1561
+    public void testSampleLookupValidatorRejectsRunInputOfOtherSampleType() throws Exception
+    {
+        createSampleType("TypeA", "A-${genId}");
+        createSampleType("TypeB", "B-${genId}");
+        ExpMaterial aSample = createSamples("TypeA", 1).getFirst();
+        ExpMaterial bSample = createNamedSample("TypeB", "OnlyInTypeB");
+
+        var assayPair = createAssay(context, false, false, List.of(validatedLookup("ALookup", SamplesSchema.SCHEMA_NAME, "TypeA", null)));
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+        Map<String, Object> runInput = Map.of("RunExpMaterialsLookup", bSample.getName());
+
+        // Controls: a TypeA name imports, and a name in no sample type fails the lookup validator
+        assayImportFile(c, user, provider, assayProtocol, createAssayDataFile("ALookup\n" + aSample.getName() + "\n"), false, runInput);
+        Exception missing = importFailure(provider, assayProtocol, "ALookup\nNoSuchSample\n", runInput);
+        assertTrue(missing.getMessage(), missing.getMessage().contains("was not present in lookup target"));
+
+        // A run input matches result values by name alone, so a TypeB run input must not satisfy a TypeA lookup
+        Exception otherType = importFailure(provider, assayProtocol, "ALookup\n" + bSample.getName() + "\n", runInput);
+        assertTrue(otherType.getMessage(), otherType.getMessage().contains("was not present in lookup target"));
+    }
+
+    @Test // GH Issue 1561
+    public void testSampleLookupValidatorHonorsExplicitLookupContainer() throws Exception
+    {
+        // The test container is /Shared/_junit, so sample lookups from it also find samples in /Shared
+        Container shared = ContainerManager.getSharedContainer();
+        ExpSampleType sharedType = createSampleType(shared, "SharedLookup" + GUID.makeHash(), "SharedLookup-${genId}");
+        try
+        {
+            ExpMaterial sharedSample = insertSamples(shared, sharedType.getName(), List.of(CaseInsensitiveHashMap.of())).getFirst();
+
+            var assayPair = createAssay(context, false, false, List.of(validatedLookup("SharedLookup", SamplesSchema.SCHEMA_NAME, sharedType.getName(), c)));
+            var provider = assayPair.first;
+            var assayProtocol = assayPair.second;
+
+            // Control: a name in no folder fails the lookup validator
+            Exception missing = importFailure(provider, assayProtocol, "SharedLookup\nNoSuchSample\n", null);
+            assertTrue(missing.getMessage(), missing.getMessage().contains("was not present in lookup target"));
+
+            // The lookup names this folder explicitly, so a sample that lives only in /Shared must be rejected
+            Exception outside = importFailure(provider, assayProtocol, "SharedLookup\n" + sharedSample.getName() + "\n", null);
+            assertTrue(outside.getMessage(), outside.getMessage().contains("was not present in lookup target"));
+        }
+        finally
+        {
+            sharedType.delete(user);
+        }
+    }
+
+    @Test // GH Issue 1561
+    public void testSampleLookupValidatorRejectsRowIdOutsideExplicitLookupContainer() throws Exception
+    {
+        // The test container is /Shared/_junit, so by-ID lookups from it also resolve samples in /Shared
+        Container shared = ContainerManager.getSharedContainer();
+        ExpSampleType sharedType = createSampleType(shared, "SharedById" + GUID.makeHash(), "SharedById-${genId}");
+        try
+        {
+            ExpMaterial sharedSample = insertSamples(shared, sharedType.getName(), List.of(CaseInsensitiveHashMap.of())).getFirst();
+
+            var assayPair = createAssay(context, false, false, List.of(validatedLookup("SharedById", "int", ExpSchema.SCHEMA_EXP_MATERIALS.toString(), sharedType.getName(), c)));
+            var provider = assayPair.first;
+            var assayProtocol = assayPair.second;
+
+            for (boolean allowLookupByAlternateKey : List.of(true, false))
+            {
+                // Control: a row ID in no sample type fails the lookup validator
+                Exception missing = importFailure(provider, assayProtocol, "SharedById\n-1\n", null, allowLookupByAlternateKey);
+                assertTrue(missing.getMessage(), missing.getMessage().contains("was not present in lookup target"));
+
+                // The sample resolves by row ID, but the lookup names this folder explicitly
+                Exception outside = importFailure(provider, assayProtocol, "SharedById\n" + sharedSample.getRowId() + "\n", null, allowLookupByAlternateKey);
+                assertTrue(outside.getMessage(), outside.getMessage().contains("was not present in lookup target"));
+            }
+        }
+        finally
+        {
+            sharedType.delete(user);
+        }
+    }
+
+    @Test // GH Issue 1561
+    public void testParticipantFromResolverIsValidated() throws Exception
+    {
+        var participant = new GWTPropertyDescriptor(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME, "string");
+        var validator = new GWTPropertyValidator();
+        validator.setName("Participant pattern");
+        validator.setType(PropertyValidatorType.RegEx);
+        validator.setExpression("P-\\d+");
+        validator.setErrorMessage("Participant must look like P-<number>");
+        participant.getPropertyValidators().add(validator);
+        var specimen = new GWTPropertyDescriptor(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME, "string");
+
+        var assayPair = createAssay(context, false, false, List.of(participant, specimen), true);
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        // The data file has no ParticipantID column, so the thaw list resolver fills it from the SpecimenID's Index row
+        Map<String, Object> thawList = Map.of(
+            AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, ThawListResolverType.NAME,
+            ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME, ThawListResolverType.TEXT_NAMESPACE_SUFFIX,
+            ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME,
+                "Index\tSpecimenID\tParticipantID\tVisitID\tDate\n" +
+                "1\tS1\tP-1\t1\t2026-01-01\n" +
+                "2\tS2\tBad-2\t1\t2026-01-01\n"
+        );
+
+        ExpRun run = assayImportFile(c, user, provider, assayProtocol, createAssayDataFile("SpecimenID\n1\n"), false, thawList);
+        TableInfo resultsTable = provider.createProtocolSchema(user, c, assayProtocol, null).getTable("Data");
+        SimpleFilter runFilter = new SimpleFilter(FieldKey.fromParts("Run"), run.getRowId());
+        assertEquals("P-1", new TableSelector(resultsTable.getColumn(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME), runFilter, null).getObject(String.class));
+
+        Exception invalid = importFailure(provider, assayProtocol, "SpecimenID\n2\n", thawList);
+        assertTrue(invalid.getMessage(), invalid.getMessage().contains("Participant must look like P-<number>"));
+    }
+
+    @Test // GH Issue 1561
+    public void testLookupValidatorRunsOncePerImport() throws Exception
+    {
+        ListDefinition list = ListService.get().createList(c, "ValidatedTarget", ListDefinition.KeyType.Integer);
+        list.setKeyName("Key");
+        list.getDomain().addProperty(new PropertyStorageSpec("Key", JdbcType.INTEGER));
+        list.save(user);
+        List<ListItem> items = new ArrayList<>();
+        for (int key : List.of(1, 2))
+        {
+            ListItem item = list.createListItem();
+            item.setProperty(list.getDomain().getPropertyByName("Key"), key);
+            items.add(item);
+        }
+        list.insertListItems(user, c, items);
+
+        var assayPair = createAssay(context, false, false, List.of(validatedLookup("ListLookup", "int", "lists", list.getName(), null)));
+
+        // Alternate-key remapping would also read the list, so import by key alone; the validator then loads the whole list in one query
+        try (QueryCounter counter = new QueryCounter(list.getDomain().getStorageTableName()))
+        {
+            assayImportFile(c, user, assayPair.first, assayPair.second, createAssayDataFile("ListLookup\n1\n2\n"), false, null, false);
+            assertEquals(String.valueOf(counter.getSql()), 1, counter.getCount());
+        }
+    }
+
+    private GWTPropertyDescriptor validatedLookup(String name, String schema, String query, @Nullable Container lookupContainer)
+    {
+        return validatedLookup(name, "string", schema, query, lookupContainer);
+    }
+
+    private GWTPropertyDescriptor validatedLookup(String name, String rangeURI, String schema, String query, @Nullable Container lookupContainer)
+    {
+        var field = new GWTPropertyDescriptor(name, rangeURI);
+        field.setLookupSchema(schema);
+        field.setLookupQuery(query);
+        if (lookupContainer != null)
+            field.setLookupContainer(lookupContainer.getId());
+
+        var validator = new GWTPropertyValidator();
+        validator.setName("Lookup validator");
+        validator.setType(PropertyValidatorType.Lookup);
+        field.getPropertyValidators().add(validator);
+        return field;
+    }
+
     private String importErrorMessage(AssayProvider provider, ExpProtocol assayProtocol, String fileContents) throws Exception
     {
         try
@@ -1053,9 +1229,19 @@
 
     private Exception importFailure(AssayProvider provider, ExpProtocol assayProtocol, String fileContents) throws Exception
     {
+        return importFailure(provider, assayProtocol, fileContents, null);
+    }
+
+    private Exception importFailure(AssayProvider provider, ExpProtocol assayProtocol, String fileContents, @Nullable Map<String, Object> requestParameters) throws Exception
+    {
+        return importFailure(provider, assayProtocol, fileContents, requestParameters, true);
+    }
+
+    private Exception importFailure(AssayProvider provider, ExpProtocol assayProtocol, String fileContents, @Nullable Map<String, Object> requestParameters, boolean allowLookupByAlternateKey) throws Exception
+    {
         try
         {
-            assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, null);
+            assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents), false, requestParameters, allowLookupByAlternateKey);
         }
         catch (ExperimentException | ValidationException | ConversionException e)
         {
