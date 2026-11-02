@@ -87,8 +87,6 @@ public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
                 "getMyPermissions",
                 "listModules",
                 "listContainers",
-                "siteSearch",
-                "listSearchCategories",
                 "searchDocumentation",
                 "retrieveDocument",
                 "listResources",
