@@ -54,7 +54,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.RequestCancellation;
-import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.products.ProductMenuProvider;
