@@ -983,6 +983,24 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
     await createExpectError([{ name: 'A', importAliases: reservedName }],
         `Import alias '${reservedName}' on field 'A' conflicts with a reserved field name.`);
 
+    // GH Issue 1783: labels resolve into the same import map as names and aliases, so a label matching a column the
+    // server writes on every insert and update leaves the field holding the server's value.
+    await createExpectError([{ name: 'A', label: reservedName }],
+        `Label '${reservedName}' on field 'A' conflicts with a system field name.`);
+    await createExpectError([{ name: 'A', label: 'Created By' }],
+        "Label 'Created By' on field 'A' conflicts with a system field name.");
+    await createExpectError([{ name: 'B', label: reservedName }, { name: 'A', label: reservedName }],
+        `Label '${reservedName}' on fields 'A', 'B' conflicts with a system field name.`);
+
+    // 'Folder' is deliberately NOT a system field name: it is the container column's own name, which outranks any
+    // label at import, and reserved-name validation already covers it.
+    const folderLabelName = name + 'FolderLabel';
+    await server.post('property', 'createDomain', {
+        kind: domainType,
+        domainDesign: { name: folderLabelName, fields: [...baseFields, { name: 'A', label: 'Folder' }] },
+        options: { name: folderLabelName },
+    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+
     // Parent alias headers are validated against the same field names and field aliases.
     await createExpectError([{ name: 'A' }], `Parent alias header is reserved: ${reservedName}`,
         { [reservedName]: parentOf(name) });
@@ -1042,6 +1060,10 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
         "Duplicate import alias 'keeperAlias' for fields 'Added', 'Keeper'.");
     await updateExpectError([...keeperFields, { name: 'Added', importAliases: 'Keeper' }], existingAliases,
         "Import alias 'Keeper' on field 'Added' conflicts with a field name.");
+    // Only a new or changed label is rejected. A label stored before this check is grandfathered, which this test
+    // cannot set up: the API now refuses to save one.
+    await updateExpectError([...keeperFields, { name: 'Added', label: reservedName }], existingAliases,
+        `Label '${reservedName}' on field 'Added' conflicts with a system field name.`);
     await updateExpectError(keeperFields, { ...existingAliases, Keeper: parentOf(name) },
         `An existing ${noun} property conflicts with parent alias header: Keeper`);
     await updateExpectError(keeperFields, { ...existingAliases, keeperAlias: parentOf(name) },

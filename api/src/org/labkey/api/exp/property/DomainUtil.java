@@ -153,8 +153,13 @@ public class DomainUtil
         duplicateLabel,
         labelVsFieldName,
         labelVsImportAlias,
-        labelVsReservedName
+        labelVsReservedName,
+        labelVsSystemField
     }
+
+    // GH Issue 1783: the server writes these on every insert and update, so a field labeled with one is overwritten with the server's value.
+    public static final Set<String> SYSTEM_FIELD_NAMES = Collections.unmodifiableSet(getNamesAndLabels(
+        List.of("Container", "Created", "CreatedBy", "Modified", "ModifiedBy")));
 
     private DomainUtil()
     {
@@ -1617,7 +1622,7 @@ public class DomainUtil
         boolean supportsNamingPattern = domainKind != null && domainKind.supportsNamingPattern();
 
         return validateProperties(updates, reservedNames, reservedPrefixes, allowMultiChoice, supportsNamingPattern,
-                getOriginalFieldPropertyIdNameMap(orig), null);
+                getOriginalFieldsById(orig), null);
     }
 
     /**
@@ -1627,14 +1632,13 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@NotNull GWTDomain<?> updates, @NotNull Set<String> reservedNameSet,
             @NotNull Set<String> reservedPrefixes, boolean allowMultiChoice, boolean supportsNamingPattern,
-            @Nullable Map<Integer, String> propertyIdNameMap, @Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally)
+            @Nullable Map<Integer, GWTPropertyDescriptor> origFieldsById, @Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally)
     {
         Set<String> reservedNames = new CaseInsensitiveHashSet(reservedNameSet);
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         // GH Issue 1257: import alias -> the fields declaring it.
         Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
-        // GH Issue 1589: explicit label -> the fields carrying it. Only populated when tallying, since label collisions
-        // are counted but not rejected.
+        // GH Issue 1589: explicit label -> the fields carrying it.
         Map<String, List<GWTPropertyDescriptor>> labelMap = new CaseInsensitiveLinkedHashMap<>();
         Set<String> fieldNames = new CaseInsensitiveHashSet();
         ValidationException exception = new ValidationException();
@@ -1662,15 +1666,12 @@ public class DomainUtil
                     importAliasMap.computeIfAbsent(alias, k -> new ArrayList<>()).add(field);
             }
 
-            if (tally != null)
-            {
-                // Only an explicitly set label counts. A label derived from the field name is not something anyone
-                // chose, and the only way to resolve a collision on one is to rename the field.
-                String label = StringUtils.trimToNull(field.getLabel());
-                // A label repeating its own field's name is redundant but not ambiguous.
-                if (label != null && !label.equalsIgnoreCase(name))
-                    labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
-            }
+            // Only an explicitly set label counts. A label derived from the field name is not something anyone chose,
+            // and the only way to resolve a collision on one is to rename the field.
+            String label = StringUtils.trimToNull(field.getLabel());
+            // A label repeating its own field's name is redundant but not ambiguous.
+            if (label != null && !label.equalsIgnoreCase(name))
+                labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
 
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
             {
@@ -1725,7 +1726,8 @@ public class DomainUtil
             if (reservedNames.contains(name))
             {
                 //check if a new field is a reserved field or an existing field is updated to a reserved field
-                String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
+                GWTPropertyDescriptor origField = (null != origFieldsById ? origFieldsById.get(field.getPropertyId()) : null);
+                String origFieldName = (null != origField ? origField.getName() : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
                     tally(tally, FieldNameRule.reservedName, field);
@@ -1787,10 +1789,10 @@ public class DomainUtil
             }
         });
 
-        // GH Issue 1589: tally-only. ImportAliasable.Helper.createImportMap resolves propertyURI, name, label and import
-        // alias into one case-insensitive map at precedence propertyURI < propName < alias < label < name, so a label
-        // that ties with any of them silently loses the token or steals it. Counted, not rejected: these configurations
-        // save successfully today and blocking them would break existing domains.
+        // GH Issue 1589: ImportAliasable.Helper.createImportMap resolves propertyURI, name, label and import alias into
+        // one case-insensitive map at precedence propertyURI < propName < alias < label < name, so a label that ties with
+        // any of them silently loses the token or steals it. Only the system-field collision below is rejected; the rest
+        // are counted, since those configurations save successfully today and blocking them would break existing domains.
         labelMap.forEach((label, fields) -> {
             if (fields.size() > 1)
                 fields.forEach(f -> tally(tally, FieldNameRule.duplicateLabel, f));
@@ -1807,6 +1809,18 @@ public class DomainUtil
 
             if (reservedNames.contains(label))
                 fields.forEach(f -> tally(tally, FieldNameRule.labelVsReservedName, f));
+
+            // GH Issue 1783: only a new or changed label is rejected, so a domain configured before this check can still be edited.
+            if (SYSTEM_FIELD_NAMES.contains(label))
+            {
+                List<GWTPropertyDescriptor> changed = fields.stream().filter(f -> isLabelChanged(f, origFieldsById)).toList();
+                if (!changed.isEmpty())
+                {
+                    changed.forEach(f -> tally(tally, FieldNameRule.labelVsSystemField, f));
+                    String changedNames = "'" + changed.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
+                    addFieldErrors(exception, updates, changed, "Label '" + label + "' on field" + (changed.size() == 1 ? " " : "s ") + changedNames + " conflicts with a system field name.");
+                }
+            }
         });
 
         return exception;
@@ -1857,20 +1871,36 @@ public class DomainUtil
     /** Anchor an import alias error on every field that declares the offending alias so the designer can highlight them. */
     private static void addImportAliasErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
     {
+        addFieldErrors(exception, updates, fields, message);
+    }
+
+    /** Anchor the error on every field named in it so the designer can highlight each one. */
+    private static void addFieldErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
+    {
         for (GWTPropertyDescriptor field : fields)
             exception.addError(new PropertyValidationError(getDomainErrorMessage(updates, message), field.getName(), field.getPropertyId()));
     }
 
+    /** True for a new field, or one whose label this save is changing. GH Issue 1783: grandfathers stored labels. */
+    private static boolean isLabelChanged(GWTPropertyDescriptor field, @Nullable Map<Integer, GWTPropertyDescriptor> origFieldsById)
+    {
+        if (field.getPropertyId() <= 0 || null == origFieldsById)
+            return true;
+
+        GWTPropertyDescriptor orig = origFieldsById.get(field.getPropertyId());
+        return null == orig || !StringUtils.equalsIgnoreCase(StringUtils.trimToNull(orig.getLabel()), StringUtils.trimToNull(field.getLabel()));
+    }
+
     @Nullable
-    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(@Nullable GWTDomain<?> orig)
+    private static Map<Integer, GWTPropertyDescriptor> getOriginalFieldsById(@Nullable GWTDomain<?> orig)
     {
         if (null != orig)
         {
-            IntHashMap<String> propertyIdMap = new IntHashMap<>();
+            IntHashMap<GWTPropertyDescriptor> propertyIdMap = new IntHashMap<>();
 
             for (GWTPropertyDescriptor origField : orig.getFields())
             {
-                propertyIdMap.put(origField.getPropertyId(), origField.getName());
+                propertyIdMap.put(origField.getPropertyId(), origField);
             }
             return propertyIdMap;
         }
