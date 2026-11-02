@@ -120,8 +120,8 @@ public class ChatHistoryManager implements ChatHistoryService
     @Override
     public void deleteChatHistory(HttpSession session, User user, GUID conversationId)
     {
+        // Rows will get deleted via SessionBinding::valueUnbound below
         session.removeAttribute(getSessionKey(user.getUserId(), conversationId));
-        deleteRows(user.getUserId(), conversationId);
     }
 
     private static boolean canRead(User user, String containerId)
