@@ -766,6 +766,8 @@ public class ReportsController extends BaseStudyController
                 ReportDescriptor descriptor = report.getDescriptor();
                 descriptor.setReportName(label);
                 descriptor.initFromQueryString(params);
+                // params can carry a reportType, which would load the saved row as a different report class
+                descriptor.setReportType(reportType);
                 descriptor.setProperty("showWithDataset", String.valueOf(showWithDataset));
                 descriptor.setReportDescription(description);
                 descriptor.setProperty(ReportDescriptor.Prop.dataRegionName, dataRegionName);

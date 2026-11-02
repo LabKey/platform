@@ -413,7 +413,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             }
 
             // canEdit checks the stored report, so a save that changes the type must pass the new type's creation check
-            if (null == stored || !stored.getType().equals(report.getType()))
+            if (descriptor.getReportId() instanceof DbReportIdentifier && (null == stored || !stored.getType().equals(report.getType())))
                 validateScriptCreation(context, report, errors);
 
             Report toCheck = null != stored ? stored : report;
