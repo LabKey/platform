@@ -74,7 +74,7 @@ public class ChatHistoryManager implements ChatHistoryService
             TempTableInfo table = ensureTable();
             execute(table, SQLFragment.unsafe("INSERT INTO ").append(sqlName(table))
                     .unsafeAppend(" (Container, CreatedBy, Created, AgentName, ConversationId, Role, Content) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?)",
-                            c.getId(), user.getUserId(), agentName, conversationId.toString(), role.name(), content));
+                            c, user, agentName, conversationId.toString(), role.name(), content));
         }
         catch (RuntimeException x)
         {
