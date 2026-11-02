@@ -44,9 +44,11 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.mock.web.MockHttpSession;
 
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -227,35 +229,39 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
         return getChat(session, agentName + ":" + conversationId, systemPromptSupplier, createIfNotExists, toolNames);
     }
 
-    /** Issues a new conversation id to this session for the named agent. */
-    default @NotNull GUID issueConversationId(HttpSession session, String agentName)
+    /**
+     * Issues a new conversation id to this session for the named agent, closing that agent's oldest conversation past
+     * the limit.
+     */
+    default @NotNull GUID issueConversationId(HttpSession session, User user, String agentName)
     {
         GUID conversationId = new GUID();
-        Map<GUID, String> issued = getIssuedConversationIds(session);
+        GUID evicted = null;
+        Map<String, SequencedSet<GUID>> issued = getIssuedConversationIds(session);
         synchronized (issued)
         {
-            issued.put(conversationId, agentName);
-            // Evict this agent's oldest ids so one agent can't push out another's
-            long count = issued.values().stream().filter(agentName::equals).count();
-            for (var it = issued.values().iterator(); count > MAX_ISSUED_CONVERSATION_IDS && it.hasNext(); )
-            {
-                if (agentName.equals(it.next()))
-                {
-                    it.remove();
-                    count--;
-                }
-            }
+            SequencedSet<GUID> ids = issued.computeIfAbsent(agentName, _ -> new LinkedHashSet<>());
+            ids.add(conversationId);
+            if (ids.size() > MAX_ISSUED_CONVERSATION_IDS)
+                evicted = ids.removeFirst();
         }
+
+        if (null != evicted)
+            closeConversation(session, user, agentName, evicted);
         return conversationId;
     }
 
     /** The agent that issued this conversation id to this session, or null if none did. */
     default @Nullable String getIssuingAgentName(HttpSession session, GUID conversationId)
     {
-        Map<GUID, String> issued = getIssuedConversationIds(session);
+        Map<String, SequencedSet<GUID>> issued = getIssuedConversationIds(session);
         synchronized (issued)
         {
-            return issued.get(conversationId);
+            return issued.entrySet().stream()
+                    .filter(e -> e.getValue().contains(conversationId))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(null);
         }
     }
 
@@ -268,7 +274,12 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
         // Only honor an id this agent previously issued this session. This prevents a same-session caller from
         // splicing into another conversation by guessing or replaying a GUID.
         GUID candidate = new GUID(supplied);
-        return agentName.equals(getIssuingAgentName(session, candidate)) ? candidate : null;
+        Map<String, SequencedSet<GUID>> issued = getIssuedConversationIds(session);
+        synchronized (issued)
+        {
+            SequencedSet<GUID> ids = issued.get(agentName);
+            return null != ids && ids.contains(candidate) ? candidate : null;
+        }
     }
 
     /** True while the model still holds this conversation's memory. */
@@ -283,18 +294,20 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
         ChatClient chat = getConversationChat(session, agentName, conversationId, () -> "", false, null);
         if (null != chat)
             close(session, chat);
-        Map<GUID, String> issued = getIssuedConversationIds(session);
+        Map<String, SequencedSet<GUID>> issued = getIssuedConversationIds(session);
         synchronized (issued)
         {
-            issued.remove(conversationId, agentName);
+            SequencedSet<GUID> ids = issued.get(agentName);
+            if (null != ids)
+                ids.remove(conversationId);
         }
         ChatHistoryService.get().deleteChatHistory(session, user, conversationId);
     }
 
-    /** Conversation id to issuing agent name, in issue order; synchronize on it. */
-    private static Map<GUID, String> getIssuedConversationIds(HttpSession session)
+    /** Agent name to the conversation ids it issued, oldest first; synchronize on it. */
+    private static Map<String, SequencedSet<GUID>> getIssuedConversationIds(HttpSession session)
     {
-        return SessionHelper.getAttribute(session, "issuedConversationIds", LinkedHashMap::new);
+        return SessionHelper.getAttribute(session, "issuedConversationIds", HashMap::new);
     }
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
@@ -359,7 +372,7 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
         {
             McpService svc = NoopMcpService.get();
             HttpSession session = new MockHttpSession();
-            GUID issued = svc.issueConversationId(session, AGENT);
+            GUID issued = svc.issueConversationId(session, User.guest, AGENT);
             GUID unknown = new GUID();
 
             assertEquals(issued, svc.resolveIssuedConversationId(session, AGENT, issued.toString()));
@@ -378,11 +391,11 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
         {
             McpService svc = NoopMcpService.get();
             HttpSession session = new MockHttpSession();
-            GUID oldest = svc.issueConversationId(session, AGENT);
-            GUID otherAgent = svc.issueConversationId(session, "OtherAgent");
+            GUID oldest = svc.issueConversationId(session, User.guest, AGENT);
+            GUID otherAgent = svc.issueConversationId(session, User.guest, "OtherAgent");
             for (int i = 0; i < MAX_ISSUED_CONVERSATION_IDS - 1; i++)
-                svc.issueConversationId(session, AGENT);
-            GUID newest = svc.issueConversationId(session, AGENT);
+                svc.issueConversationId(session, User.guest, AGENT);
+            GUID newest = svc.issueConversationId(session, User.guest, AGENT);
 
             assertNull("Oldest id evicted", svc.resolveIssuedConversationId(session, AGENT, oldest.toString()));
             assertNotNull("Newer id kept", svc.resolveIssuedConversationId(session, AGENT, newest.toString()));

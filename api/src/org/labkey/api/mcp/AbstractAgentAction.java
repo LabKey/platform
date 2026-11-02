@@ -102,7 +102,7 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
         conversationId = McpService.get().resolveIssuedConversationId(session, getAgentName(), supplied);
 
         if (null == conversationId)
-            conversationId = McpService.get().issueConversationId(session, getAgentName());
+            conversationId = McpService.get().issueConversationId(session, getUser(), getAgentName());
     }
 
     @Override
