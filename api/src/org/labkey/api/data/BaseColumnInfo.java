@@ -34,7 +34,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -109,7 +109,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     protected ColumnInfo _displayField;
     private List<FieldKey> _sortFieldKeys = null;
     private List<ConditionalFormat> _conditionalFormats = List.of();
-    private List<? extends IPropertyValidator> _validators = List.of();
+    private List<? extends PropertyValidatorDef> _validators = List.of();
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _shouldLog = true;
     private boolean _lockName = false;
@@ -2168,13 +2168,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     @Override
     @NotNull
-    public List<? extends IPropertyValidator> getValidators()
+    public List<? extends PropertyValidatorDef> getValidators()
     {
         return _validators;
     }
 
     @Override
-    public void setValidators(List<? extends IPropertyValidator> validators)
+    public void setValidators(List<? extends PropertyValidatorDef> validators)
     {
         checkLocked();
         _validators = copyFixedList(validators);

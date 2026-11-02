@@ -22,7 +22,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Table;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
@@ -36,14 +36,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class PropertyValidatorImpl implements IPropertyValidator
+/**
+ * Wraps a {@link PropertyValidatorBean}; the first edit of a saved bean clones it, keeping the original so
+ * {@link #isDirty} knows a save is needed
+ */
+public class PropertyValidatorDefImpl implements PropertyValidatorDef
 {
-    private PropertyValidator _validator;
-    private PropertyValidator _validatorOld;
+    private PropertyValidatorBean _validator;
+    private PropertyValidatorBean _validatorOld;
     private boolean _deleted;
     private String columnNameProvidedData;
 
-    public PropertyValidatorImpl(PropertyValidator validator)
+    public PropertyValidatorDefImpl(PropertyValidatorBean validator)
     {
         _validator = validator;
     }
@@ -205,7 +209,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
     }
 
     @Override
-    public IPropertyValidator save(User user, Container container) throws ValidationException
+    public PropertyValidatorDef save(User user, Container container) throws ValidationException
     {
         ValidatorKind kind = getType();
         List<ValidationError> errors = new ArrayList<>();
@@ -220,14 +224,14 @@ public class PropertyValidatorImpl implements IPropertyValidator
             if (0 == _validator.getPropertyId())
                 throw new IllegalStateException("Validator requires a valid propertyId");
             setContainer(container.getId());
-            return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.getTinfoValidator(), _validator));
+            return new PropertyValidatorDefImpl(Table.insert(user, DomainPropertyManager.getTinfoValidator(), _validator));
         }
         else
         {
             String cid = _validator.getContainer();
             int propid = _validator.getPropertyId();
             long rowid = _validator.getRowId();
-            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.getTinfoValidator(), _validator, new Object[] {cid, propid, rowid}));
+            return new PropertyValidatorDefImpl(Table.update(user, DomainPropertyManager.getTinfoValidator(), _validator, new Object[] {cid, propid, rowid}));
         }
     }
 
@@ -268,7 +272,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
         return _validatorOld != null || _deleted;
     }
 
-    private PropertyValidator edit()
+    private PropertyValidatorBean edit()
     {
         if (getRowId() == 0)
             return _validator;
