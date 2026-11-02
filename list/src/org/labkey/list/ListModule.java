@@ -242,7 +242,7 @@ public class ListModule extends SpringModule
             ListQueryUpdateService.AuditBatchTestCase.class,
             ListQueryUpdateService.GetRowsTestCase.class,
             ListQueryUpdateService.BatchedDeleteTestCase.class,
-            ListQueryUpdateService.DeleteContainerCheckTestCase.class
+            ListQueryUpdateService.RowContainerCheckTestCase.class
         );
     }
 }
