@@ -987,18 +987,18 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
     // server writes on every insert and update leaves the field holding the server's value.
     await createExpectError([{ name: 'A', label: reservedName }],
         `Label '${reservedName}' on field 'A' conflicts with a system field name.`);
-    await createExpectError([{ name: 'A', label: 'Created By' }],
-        "Label 'Created By' on field 'A' conflicts with a system field name.");
+    await createExpectError([{ name: 'A', label: reservedName.toLowerCase() }],
+        `Label '${reservedName.toLowerCase()}' on field 'A' conflicts with a system field name.`);
     await createExpectError([{ name: 'B', label: reservedName }, { name: 'A', label: reservedName }],
         `Label '${reservedName}' on fields 'A', 'B' conflicts with a system field name.`);
 
-    // 'Folder' is deliberately NOT a system field name: it is the container column's own name, which outranks any
-    // label at import, and reserved-name validation already covers it.
-    const folderLabelName = name + 'FolderLabel';
+    // Only 'Container' is a system field name. 'Folder' and the audit columns are real column names, which outrank any
+    // label at import, so a field wearing one as its label is unreachable rather than overwritten.
+    const otherLabelsName = name + 'OtherLabels';
     await server.post('property', 'createDomain', {
         kind: domainType,
-        domainDesign: { name: folderLabelName, fields: [...baseFields, { name: 'A', label: 'Folder' }] },
-        options: { name: folderLabelName },
+        domainDesign: { name: otherLabelsName, fields: [...baseFields, { name: 'A', label: 'Folder' }, { name: 'B', label: 'Created By' }] },
+        options: { name: otherLabelsName },
     }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
 
     // Parent alias headers are validated against the same field names and field aliases.

@@ -157,9 +157,8 @@ public class DomainUtil
         labelVsSystemField
     }
 
-    // GH Issue 1783: the server writes these on every insert and update, so a field labeled with one is overwritten with the server's value.
-    public static final Set<String> SYSTEM_FIELD_NAMES = Collections.unmodifiableSet(getNamesAndLabels(
-        List.of("Container", "Created", "CreatedBy", "Modified", "ModifiedBy")));
+    // GH Issue 1783: Sample Types surface this column as "Folder", leaving "Container" claimed only by a system import alias, so a field labeled "Container" outranks it and is overwritten with the row's container.
+    public static final Set<String> SYSTEM_FIELD_NAMES = Collections.unmodifiableSet(getNamesAndLabels(List.of("Container")));
 
     private DomainUtil()
     {
@@ -2079,6 +2078,75 @@ public class DomainUtil
                     errors.getGlobalErrorStrings());
             assertTrue("Only one named field declares the alias, so it is not a duplicate: " + errors.getAllErrors(),
                     errors.getFieldErrors(FIELD_ONE).isEmpty());
+        }
+    }
+
+    /**
+     * GH Issue 1783: the grandfathering half of the system-field label rule. Rejection itself is covered by the
+     * checkDomainNameConflicts integration test, which cannot reach these cases -- setting up a stored system-field
+     * label needs a save the API now refuses.
+     */
+    public static class SystemFieldLabelTestCase extends Assert
+    {
+        private static final String FIELD_ONE = "LabelFieldOne";
+        private static final String FIELD_TWO = "LabelFieldTwo";
+        private static final int STORED_ID = 7;
+
+        private static GWTPropertyDescriptor field(String name, @Nullable String label, int propertyId)
+        {
+            GWTPropertyDescriptor pd = new GWTPropertyDescriptor(name, PropertyType.STRING.getTypeUri());
+            pd.setLabel(label);
+            pd.setPropertyId(propertyId);
+            return pd;
+        }
+
+        private static GWTDomain<GWTPropertyDescriptor> domain(GWTPropertyDescriptor... fields)
+        {
+            GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
+            domain.setFields(Arrays.asList(fields));
+            return domain;
+        }
+
+        /** No reserved names or prefixes, so only the label rules are in play. */
+        private static ValidationException validate(GWTDomain<GWTPropertyDescriptor> orig, GWTPropertyDescriptor... fields)
+        {
+            return validateProperties(domain(fields), Set.of(), Set.of(), true, false, getOriginalFieldsById(orig), null);
+        }
+
+        @Test
+        public void storedLabelIsGrandfathered()
+        {
+            // Configured before this check existed; an unrelated edit to the domain must still save
+            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Container", STORED_ID));
+            ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID), field(FIELD_TWO, null, 0));
+            assertFalse("An unchanged stored label should not block the save: " + errors.getAllErrors(), errors.hasErrors());
+        }
+
+        @Test
+        public void caseOnlyLabelEditStaysGrandfathered()
+        {
+            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "container", STORED_ID));
+            ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID));
+            assertFalse("Recasing a stored label introduces no new collision: " + errors.getAllErrors(), errors.hasErrors());
+        }
+
+        @Test
+        public void changingAnExistingFieldToASystemLabelIsRejected()
+        {
+            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Harmless", STORED_ID));
+            ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID));
+            assertEquals(List.of("Label 'Container' on field '" + FIELD_ONE + "' conflicts with a system field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void onlyTheFieldChangingItsLabelIsReported()
+        {
+            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Container", STORED_ID));
+            ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID), field(FIELD_TWO, "Container", 0));
+            assertEquals(List.of("Label 'Container' on field '" + FIELD_TWO + "' conflicts with a system field name."),
+                    errors.getFieldErrors(FIELD_TWO));
+            assertTrue("The grandfathered field keeps its label: " + errors.getAllErrors(), errors.getFieldErrors(FIELD_ONE).isEmpty());
         }
     }
 
