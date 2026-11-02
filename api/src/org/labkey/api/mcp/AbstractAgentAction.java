@@ -238,6 +238,15 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
         return conversationId;
     }
 
+    protected JSONObject failureResponse(String message)
+    {
+        return new JSONObject(Map.of(
+                "error", message,
+                "text", "ERROR: " + message,
+                "conversationId", getConversationId(),
+                "success", Boolean.FALSE));
+    }
+
     public static class TestCase extends Assert
     {
         @Test

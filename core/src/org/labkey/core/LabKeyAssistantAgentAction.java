@@ -182,15 +182,6 @@ public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
                 "segments", segments));
     }
 
-    private JSONObject failureResponse(String message)
-    {
-        return new JSONObject(Map.of(
-                "error", message,
-                "text", "ERROR: " + message,
-                "conversationId", getConversationId(),
-                "success", Boolean.FALSE));
-    }
-
     private String composePrompt(String prompt, boolean firstTurn)
     {
         String previousContainerId = firstTurn ? null : ChatHistoryService.get().getLastPromptContainerId(getUser(), getConversationId());
