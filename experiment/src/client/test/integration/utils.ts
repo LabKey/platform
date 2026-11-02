@@ -1060,8 +1060,6 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
         "Duplicate import alias 'keeperAlias' for fields 'Added', 'Keeper'.");
     await updateExpectError([...keeperFields, { name: 'Added', importAliases: 'Keeper' }], existingAliases,
         "Import alias 'Keeper' on field 'Added' conflicts with a field name.");
-    // Only a new or changed label is rejected. A label stored before this check is grandfathered, which this test
-    // cannot set up: the API now refuses to save one.
     await updateExpectError([...keeperFields, { name: 'Added', label: reservedName }], existingAliases,
         `Label '${reservedName}' on field 'Added' conflicts with a system field name.`);
     await updateExpectError(keeperFields, { ...existingAliases, Keeper: parentOf(name) },

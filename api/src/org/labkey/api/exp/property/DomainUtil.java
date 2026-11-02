@@ -1621,7 +1621,7 @@ public class DomainUtil
         boolean supportsNamingPattern = domainKind != null && domainKind.supportsNamingPattern();
 
         return validateProperties(updates, reservedNames, reservedPrefixes, allowMultiChoice, supportsNamingPattern,
-                getOriginalFieldsById(orig), null);
+                getOriginalFieldPropertyIdNameMap(orig), null);
     }
 
     /**
@@ -1631,7 +1631,7 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@NotNull GWTDomain<?> updates, @NotNull Set<String> reservedNameSet,
             @NotNull Set<String> reservedPrefixes, boolean allowMultiChoice, boolean supportsNamingPattern,
-            @Nullable Map<Integer, GWTPropertyDescriptor> origFieldsById, @Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally)
+            @Nullable Map<Integer, String> propertyIdNameMap, @Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally)
     {
         Set<String> reservedNames = new CaseInsensitiveHashSet(reservedNameSet);
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
@@ -1725,8 +1725,7 @@ public class DomainUtil
             if (reservedNames.contains(name))
             {
                 //check if a new field is a reserved field or an existing field is updated to a reserved field
-                GWTPropertyDescriptor origField = (null != origFieldsById ? origFieldsById.get(field.getPropertyId()) : null);
-                String origFieldName = (null != origField ? origField.getName() : null);
+                String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
                     tally(tally, FieldNameRule.reservedName, field);
@@ -1809,16 +1808,12 @@ public class DomainUtil
             if (reservedNames.contains(label))
                 fields.forEach(f -> tally(tally, FieldNameRule.labelVsReservedName, f));
 
-            // GH Issue 1783: only a new or changed label is rejected, so a domain configured before this check can still be edited.
+            // GH Issue 1783
             if (SYSTEM_FIELD_NAMES.contains(label))
             {
-                List<GWTPropertyDescriptor> changed = fields.stream().filter(f -> isLabelChanged(f, origFieldsById)).toList();
-                if (!changed.isEmpty())
-                {
-                    changed.forEach(f -> tally(tally, FieldNameRule.labelVsSystemField, f));
-                    String changedNames = "'" + changed.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
-                    addFieldErrors(exception, updates, changed, "Label '" + label + "' on field" + (changed.size() == 1 ? " " : "s ") + changedNames + " conflicts with a system field name.");
-                }
+                fields.forEach(f -> tally(tally, FieldNameRule.labelVsSystemField, f));
+                String names = "'" + fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
+                addFieldErrors(exception, updates, fields, "Label '" + label + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a system field name.");
             }
         });
 
@@ -1880,26 +1875,16 @@ public class DomainUtil
             exception.addError(new PropertyValidationError(getDomainErrorMessage(updates, message), field.getName(), field.getPropertyId()));
     }
 
-    /** True for a new field, or one whose label this save is changing. GH Issue 1783: grandfathers stored labels. */
-    private static boolean isLabelChanged(GWTPropertyDescriptor field, @Nullable Map<Integer, GWTPropertyDescriptor> origFieldsById)
-    {
-        if (field.getPropertyId() <= 0 || null == origFieldsById)
-            return true;
-
-        GWTPropertyDescriptor orig = origFieldsById.get(field.getPropertyId());
-        return null == orig || !StringUtils.equalsIgnoreCase(StringUtils.trimToNull(orig.getLabel()), StringUtils.trimToNull(field.getLabel()));
-    }
-
     @Nullable
-    private static Map<Integer, GWTPropertyDescriptor> getOriginalFieldsById(@Nullable GWTDomain<?> orig)
+    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(@Nullable GWTDomain<?> orig)
     {
         if (null != orig)
         {
-            IntHashMap<GWTPropertyDescriptor> propertyIdMap = new IntHashMap<>();
+            IntHashMap<String> propertyIdMap = new IntHashMap<>();
 
             for (GWTPropertyDescriptor origField : orig.getFields())
             {
-                propertyIdMap.put(origField.getPropertyId(), origField);
+                propertyIdMap.put(origField.getPropertyId(), origField.getName());
             }
             return propertyIdMap;
         }
@@ -2082,9 +2067,9 @@ public class DomainUtil
     }
 
     /**
-     * GH Issue 1783: the grandfathering half of the system-field label rule. Rejection itself is covered by the
-     * checkDomainNameConflicts integration test, which cannot reach these cases -- setting up a stored system-field
-     * label needs a save the API now refuses.
+     * GH Issue 1783: a stored system-field label is rejected too, so an affected domain cannot be saved again until the
+     * label is fixed. The integration test covers the rest of the rule but cannot reach these cases -- it would have to
+     * save a label the API refuses.
      */
     public static class SystemFieldLabelTestCase extends Assert
     {
@@ -2110,43 +2095,27 @@ public class DomainUtil
         /** No reserved names or prefixes, so only the label rules are in play. */
         private static ValidationException validate(GWTDomain<GWTPropertyDescriptor> orig, GWTPropertyDescriptor... fields)
         {
-            return validateProperties(domain(fields), Set.of(), Set.of(), true, false, getOriginalFieldsById(orig), null);
+            return validateProperties(domain(fields), Set.of(), Set.of(), true, false, getOriginalFieldPropertyIdNameMap(orig), null);
         }
 
         @Test
-        public void storedLabelIsGrandfathered()
+        public void storedLabelIsStillRejected()
         {
-            // Configured before this check existed; an unrelated edit to the domain must still save
+            // Re-saving a domain configured before this check is refused: the field is losing its value on every write
             GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Container", STORED_ID));
             ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID), field(FIELD_TWO, null, 0));
-            assertFalse("An unchanged stored label should not block the save: " + errors.getAllErrors(), errors.hasErrors());
-        }
-
-        @Test
-        public void caseOnlyLabelEditStaysGrandfathered()
-        {
-            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "container", STORED_ID));
-            ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID));
-            assertFalse("Recasing a stored label introduces no new collision: " + errors.getAllErrors(), errors.hasErrors());
-        }
-
-        @Test
-        public void changingAnExistingFieldToASystemLabelIsRejected()
-        {
-            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Harmless", STORED_ID));
-            ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID));
             assertEquals(List.of("Label 'Container' on field '" + FIELD_ONE + "' conflicts with a system field name."),
                     errors.getFieldErrors(FIELD_ONE));
         }
 
         @Test
-        public void onlyTheFieldChangingItsLabelIsReported()
+        public void storedAndNewFieldsWithTheLabelAreBothReported()
         {
             GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Container", STORED_ID));
             ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID), field(FIELD_TWO, "Container", 0));
-            assertEquals(List.of("Label 'Container' on field '" + FIELD_TWO + "' conflicts with a system field name."),
-                    errors.getFieldErrors(FIELD_TWO));
-            assertTrue("The grandfathered field keeps its label: " + errors.getAllErrors(), errors.getFieldErrors(FIELD_ONE).isEmpty());
+            String expected = "Label 'Container' on fields '" + FIELD_ONE + "', '" + FIELD_TWO + "' conflicts with a system field name.";
+            assertEquals(expected, errors.getFieldErrors(FIELD_ONE).get(0));
+            assertEquals(expected, errors.getFieldErrors(FIELD_TWO).get(0));
         }
     }
 
