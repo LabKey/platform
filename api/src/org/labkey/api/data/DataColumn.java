@@ -24,7 +24,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -708,7 +708,7 @@ public class DataColumn extends DisplayColumn
             }
             else
             {
-                IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
+                PropertyValidatorDef textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
                 if (textChoiceValidator != null)
                     renderTextChoiceFormInput(out, formFieldName, value, toListForRender(strVal), disabledInput, textChoiceValidator);
                 else
@@ -787,7 +787,7 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(out, formFieldName, value);
     }
 
-    protected void renderTextChoiceFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, IPropertyValidator textChoiceValidator)
+    protected void renderTextChoiceFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, PropertyValidatorDef textChoiceValidator)
     {
         LinkedHashSet<String> choices = new LinkedHashSet<>(PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator));
 
@@ -1008,7 +1008,7 @@ public class DataColumn extends DisplayColumn
                         {
                             helpLines.add(HtmlString.of("Description: " + _boundColumn.getDescription()));
                         }
-                        for (IPropertyValidator validator : _boundColumn.getValidators())
+                        for (PropertyValidatorDef validator : _boundColumn.getValidators())
                             helpLines.add(HtmlString.of("Validator: " + validator));
                         if (renderRequiredIndicators() && _boundColumn.isRequired() && !_boundColumn.isBooleanType())
                         {

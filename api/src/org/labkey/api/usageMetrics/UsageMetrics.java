@@ -21,12 +21,15 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -37,7 +40,8 @@ import java.util.function.Supplier;
  */
 public class UsageMetrics
 {
-    private static final Logger LOG = LogHelper.getLogger(UsageMetrics.class, "Usage metric descriptions");
+    private static final Logger LOG = LogHelper.getLogger(UsageMetrics.class, "Usage metric collection and descriptions");
+    private static final long SLOW_SUPPLIER_MS = 1000;
 
     public enum Kind
     {
@@ -83,8 +87,37 @@ public class UsageMetrics
     {
         describe(key, description, kind);
         if (_values != null)
-            _values.put(key, supplier == null ? null : supplier.get());
+        {
+            Object value = supplier == null ? null : supply(childPath(key), supplier);
+            _values.put(key, value);
+        }
         return this;
+    }
+
+    /** Logs slow suppliers in dev mode. A throwing supplier reports null and goes to mothership, so one broken metric doesn't drop the rest. */
+    static @Nullable <T> T supply(@NotNull String path, @NotNull Supplier<T> supplier)
+    {
+        boolean timed = AppProps.getInstance().isDevMode();
+        long start = timed ? System.nanoTime() : 0;
+        try
+        {
+            return supplier.get();
+        }
+        catch (Exception e)
+        {
+            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, "Usage metric: " + path, true);
+            ExceptionUtil.logExceptionToMothership(null, e);
+            return null;
+        }
+        finally
+        {
+            if (timed)
+            {
+                long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+                if (elapsed > SLOW_SUPPLIER_MS)
+                    LOG.warn("Usage metric {} took {} ms", path, Formats.commaf0.format(elapsed));
+            }
+        }
     }
 
     /** @return this, or if not reported, a describe-only instance at the same path: it records descriptions of what's put into it, groups included, but drops the values */
@@ -166,6 +199,12 @@ public class UsageMetrics
     String childPath(String key)
     {
         return _path == null ? key : _path + "." + key;
+    }
+
+    /** @return null for the top level */
+    @Nullable String getPath()
+    {
+        return _path;
     }
 
     /** @return null for a describe-only instance */

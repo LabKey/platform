@@ -1110,8 +1110,8 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     {
         Container c = getContainer();
         boolean userHasPerm = c.hasPermission(user, AdminPermission.class);
-        boolean allowForNonDataspace = !c.isDataspace();
-        boolean allowForDataspace = c.isProject() && c.isDataspace() && getTimepointType() == TimepointType.VISIT
+        boolean allowForNonDataspace = !StudyService.get().isDataspace(c);
+        boolean allowForDataspace = c.isProject() && StudyService.get().isDataspace(c) && getTimepointType() == TimepointType.VISIT
                                         && getShareDatasetDefinitions() && getShareVisitDefinitions();
         
         return userHasPerm && (allowForNonDataspace || allowForDataspace);

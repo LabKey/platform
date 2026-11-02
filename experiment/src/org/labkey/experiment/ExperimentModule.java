@@ -148,14 +148,14 @@ import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.data.ParentOfMethod;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
-import org.labkey.experiment.api.property.LengthValidator;
-import org.labkey.experiment.api.property.LookupValidator;
+import org.labkey.experiment.api.property.LengthValidatorKind;
+import org.labkey.experiment.api.property.LookupValidatorKind;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
-import org.labkey.experiment.api.property.RangeValidator;
-import org.labkey.experiment.api.property.RegExValidator;
+import org.labkey.experiment.api.property.RangeValidatorKind;
+import org.labkey.experiment.api.property.RegExValidatorKind;
 import org.labkey.experiment.api.property.StorageNameGenerator;
 import org.labkey.experiment.api.property.StorageProvisionerImpl;
-import org.labkey.experiment.api.property.TextChoiceValidator;
+import org.labkey.experiment.api.property.TextChoiceValidatorKind;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
@@ -246,6 +246,8 @@ public class ExperimentModule extends SpringModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), SpecialCharacterMetricsProvider.getInstance());
 
+        UsageMetricsService.get().registerUsageMetrics(getName(), IllegalFieldNameMetricsProvider.getInstance());
+
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);
@@ -263,11 +265,11 @@ public class ExperimentModule extends SpringModule
         QueryService.get().addQueryListener(new PropertyQueryChangeListener());
         QueryService.get().registerFilterSuggestionProvider(new SampleTypeFilterSuggestionProvider());
 
-        PropertyService.get().registerValidatorKind(new RegExValidator());
-        PropertyService.get().registerValidatorKind(new RangeValidator());
-        PropertyService.get().registerValidatorKind(new LookupValidator());
-        PropertyService.get().registerValidatorKind(new LengthValidator());
-        PropertyService.get().registerValidatorKind(new TextChoiceValidator());
+        PropertyService.get().registerValidatorKind(new RegExValidatorKind());
+        PropertyService.get().registerValidatorKind(new RangeValidatorKind());
+        PropertyService.get().registerValidatorKind(new LookupValidatorKind());
+        PropertyService.get().registerValidatorKind(new LengthValidatorKind());
+        PropertyService.get().registerValidatorKind(new TextChoiceValidatorKind());
 
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
@@ -597,6 +599,7 @@ public class ExperimentModule extends SpringModule
 
         SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
         SystemMaintenance.addTask(new SpecialCharacterMetricsMaintenanceTask());
+        SystemMaintenance.addTask(new IllegalFieldNameMetricsMaintenanceTask());
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
@@ -1129,6 +1132,7 @@ public class ExperimentModule extends SpringModule
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
+            IllegalFieldNameMetricsMaintenanceTask.TestCase.class,
             ImportAbortResourceTestCase.class,
             LineagePerfTest.class,
             LineageTest.class,

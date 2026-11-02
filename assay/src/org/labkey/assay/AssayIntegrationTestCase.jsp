@@ -1020,6 +1020,37 @@
         }
     }
 
+    @Test // GH Issue 1746
+    public void testResultInsertsAreBatched() throws Exception
+    {
+        var assayPair = createAssay(context, false, true);
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        List<ExpMaterial> s = createSamples(7);
+        List<ExpMaterial> fileOrder = List.of(s.get(3), s.get(0), s.get(6), s.get(1), s.get(5), s.get(2), s.get(4));
+        StringBuilder fileContents = new StringBuilder("ExpMaterialSampleTypeLookup\n");
+        fileOrder.forEach(sample -> fileContents.append(sample.getRowId()).append("\n"));
+
+        int resultInserts;
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3);
+             QueryCounter counter = new QueryCounter("INSERT INTO \"assayresult\""))
+        {
+            assayImportFile(c, user, provider, assayProtocol, createAssayDataFile(fileContents.toString()), false, null);
+            resultInserts = counter.getCount();
+        }
+
+        // Provenance needs each row's RowId, so its rows insert one at a time; otherwise batches of 3: [1-3], [4-6], [7]
+        int expectedInserts = 3;
+        if (ProvenanceService.get().isProvenanceSupported())
+            expectedInserts = fileOrder.size();
+        assertEquals(expectedInserts, resultInserts);
+
+        TableInfo resultsTable = provider.createProtocolSchema(user, c, assayProtocol, null).getTable("Data");
+        List<Long> storedSampleIds = new TableSelector(resultsTable.getColumn("ExpMaterialSampleTypeLookup"), null, new Sort("RowId")).getArrayList(Long.class);
+        assertEquals(fileOrder.stream().map(ExpMaterial::getRowId).toList(), storedSampleIds);
+    }
+
     private Exception importFailure(AssayProvider provider, ExpProtocol assayProtocol, String fileContents) throws Exception
     {
         try

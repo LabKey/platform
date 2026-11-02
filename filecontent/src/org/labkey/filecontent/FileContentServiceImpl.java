@@ -193,57 +193,63 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     @Override
-    @NotNull
-    public List<Container> getContainersForFilePath(java.nio.file.Path path)
+    public @Nullable Container getContainerForFilePath(java.nio.file.Path path)
     {
         // Ignore cloud files for now
         if (FileUtil.hasCloudScheme(path))
-            return Collections.emptyList();
+            return null;
 
-        // If the path is under the default root, do optimistic simple match for containers under the default root
-        File defaultRoot = getSiteDefaultRoot();
-        java.nio.file.Path defaultRootPath = defaultRoot.toPath();
-        if (path.startsWith(defaultRootPath))
+        // Anchor on the most specific root holding the path: the site default root or a custom file root
+        Container anchor = null;
+        java.nio.file.Path anchorPath = null;
+        java.nio.file.Path defaultRootPath = getSiteDefaultRoot().toPath();
+        if (URIUtil.isDescendant(defaultRootPath.toUri(), path.toUri()))
         {
-            java.nio.file.Path rel = defaultRootPath.relativize(path);
-            if (rel.getNameCount() > 0)
+            anchor = ContainerManager.getRoot();
+            anchorPath = defaultRootPath;
+        }
+
+        for (FileRoot root : FileRootManager.get().getFileRoots())
+        {
+            // Skip cloud roots before resolving: resolution goes through CloudStoreService, which may be absent or misconfigured
+            if (isCloudFileRoot(root.getPath()))
+                continue;
+            Container c = ContainerManager.getForId(root.getContainer());
+            if (c == null || c.isRoot() || isUseDefaultRoot(c))
+                continue;
+            java.nio.file.Path rootPath = getExistingFileRootPath(c);
+            if (rootPath != null && URIUtil.isDescendant(rootPath.toUri(), path.toUri()) && (anchorPath == null || URIUtil.isDescendant(anchorPath.toUri(), rootPath.toUri())))
             {
-                Container root = ContainerManager.getRoot();
-                Container next = root;
-                while (rel.getNameCount() > 0)
-                {
-                    // check if there exists a child container that matches the next path segment
-                    java.nio.file.Path top = rel.subpath(0, 1);
-                    assert top != null;
-                    Container child = next.getChild(top.getFileName().toString());
-                    if (child == null)
-                        break;
-
-                    next = child;
-
-                    if(rel.getNameCount() > 1)
-                    {
-                        rel = rel.subpath(1, rel.getNameCount());
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                if (next != null && !next.equals(root))
-                {
-                    // verify our naive file path is correct for the container -- it may have a file root other than the default
-                    java.nio.file.Path fileRoot = getFileRootPath(next);
-                    if (fileRoot != null && path.startsWith(fileRoot))
-                        return Collections.singletonList(next);
-                }
+                anchor = c;
+                anchorPath = rootPath;
             }
         }
 
-        // TODO: Create cache of file root and pipeline root paths -> list of containers
+        if (anchor == null)
+            return null;
 
-        return Collections.emptyList();
+        // Child folder roots default to a matching subdirectory, so walk the path's segments down the container tree
+        Container owner = anchor;
+
+        for (java.nio.file.Path segment : anchorPath.relativize(path))
+        {
+            Container child = owner.getChild(segment.toString());
+            if (child == null)
+                break;
+            owner = child;
+        }
+
+        // A child's default root sits beside the parent's @files, so a moved child's old location belongs to no folder
+        if (owner.isRoot())
+            return null;
+
+        java.nio.file.Path fileRoot = getExistingFileRootPath(owner);
+        return fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), path.toUri()) ? owner : null;
+    }
+
+    private @Nullable java.nio.file.Path getExistingFileRootPath(@NotNull Container c)
+    {
+        return isFileRootDisabled(c) ? null : resolveFileRootPath(c, false);
     }
 
     @Override
@@ -1847,6 +1853,41 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             assertPathsEqual("Subfolder1 has incorrect root", _expectedPaths.get(subfolder1), svc.getFileRoot(subfolder1));
             assertPathsEqual("SubSubfolder has incorrect root", new File(_expectedPaths.get(subfolder1), subsubfolder.getName()), svc.getFileRoot(subsubfolder));
 
+        }
+
+        @Test
+        public void testContainerForFilePath()
+        {
+            //pre-clean
+            cleanup();
+
+            FileContentService svc = FileContentService.get();
+            Assert.assertNotNull(svc);
+
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1, TestContext.get().getUser());
+            Container subfolder1 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER1, TestContext.get().getUser());
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT2, TestContext.get().getUser());
+
+            java.nio.file.Path project2File = svc.getFileRootPath(project2, ContentType.files).resolve(TXT_FILE);
+            Assert.assertEquals("Default root path", project2, svc.getContainerForFilePath(project2File));
+
+            File testRoot = getTestRoot();
+            svc.setFileRoot(project1, testRoot);
+
+            java.nio.file.Path subfolderFile = svc.getFileRootPath(subfolder1, ContentType.files).resolve(TXT_FILE);
+            Assert.assertEquals("Inherited custom root path", subfolder1, svc.getContainerForFilePath(subfolderFile));
+            Assert.assertEquals("Custom root path", project1, svc.getContainerForFilePath(testRoot.toPath().resolve("unmatched").resolve(TXT_FILE)));
+
+            java.nio.file.Path unmanaged = svc.getSiteDefaultRoot().toPath().resolve(FILE_ROOT_SUFFIX + "Unmanaged").resolve(TXT_FILE);
+            Assert.assertNull("Unmanaged path", svc.getContainerForFilePath(unmanaged));
+
+            File subfolderRoot = new File(testRoot, "CustomSubfolder");
+            subfolderRoot.mkdirs();
+            svc.setFileRoot(subfolder1, subfolderRoot);
+
+            java.nio.file.Path movedSubfolderFile = svc.getFileRootPath(subfolder1, ContentType.files).resolve(TXT_FILE);
+            Assert.assertEquals("Moved custom root path", subfolder1, svc.getContainerForFilePath(movedSubfolderFile));
+            Assert.assertNull("Stale default root path", svc.getContainerForFilePath(subfolderFile));
         }
 
         private void assertPathsEqual(String msg, File expected, File actual)

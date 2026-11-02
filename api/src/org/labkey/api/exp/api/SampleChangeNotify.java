@@ -16,9 +16,12 @@
 package org.labkey.api.exp.api;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -26,31 +29,149 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public enum SampleChangeNotify
 {
     SampleDataChanged;
 
     private static final Logger LOG = LogHelper.getLogger(SampleChangeNotify.class, "Sample data change WebSocket notifications");
+    private static final List<SampleCountsListener> LISTENERS = new CopyOnWriteArrayList<>();
 
-    /** Commit task that dedupes per container, so repeated registrations in one transaction notify once. */
-    public record FireSampleDataChangedTask(@Nullable Container container) implements Runnable
+    // Stands for "any sample type"; sample type row ids are positive
+    private static final Long ANY_SAMPLE_TYPE = -1L;
+
+    /** Told which sample types' samples changed in a container. Empty sampleTypeIds means any sample type may have. */
+    public interface SampleCountsListener
     {
-        @Override
-        public void run()
+        /** Called inside the changing transaction just before it commits, or right away when there is no transaction */
+        void samplesChanging(@NotNull Container container, @NotNull Set<Long> sampleTypeIds);
+
+        /**
+         * Called after the change commits
+         * @return true if the listener will send {@link #sendSampleDataChangedEvent} itself once its counts are current
+         */
+        boolean samplesChanged(@NotNull Container container, @NotNull Set<Long> sampleTypeIds);
+    }
+
+    public static void addListener(SampleCountsListener listener)
+    {
+        LISTENERS.add(listener);
+    }
+
+    /*
+     * The commit tasks below are AccumulatingCommitTasks: every registration in a transaction contributes its "values"
+     * to one set per container, which the task then processes once. Here a value is a sample type row id, and callers
+     * and listeners both speak in those ids, with an empty set meaning "any sample type in this folder may have
+     * changed". The two methods below convert between that vocabulary and what the task accumulates, because an empty
+     * set contributes nothing to accumulate and so would vanish instead of widening the set -- ANY_SAMPLE_TYPE carries
+     * it as a value that does accumulate. It exists only between these two methods; no caller or listener sees it.
+     */
+
+    /** Caller's ids -> values to accumulate. Nothing nameable becomes the sentinel, so it survives accumulation. */
+    private static Collection<Long> sampleTypeIdsToTaskValues(@Nullable Collection<Long> sampleTypeIds)
+    {
+        return sampleTypeIds == null || sampleTypeIds.isEmpty() ? Set.of(ANY_SAMPLE_TYPE) : sampleTypeIds;
+    }
+
+    /**
+     * Accumulated values -> ids for the listener. One sentinel widens the whole set: once some registration in the
+     * transaction couldn't name its types, the ids the others contributed are no longer a complete list, so the
+     * listener is told "any type here" rather than a subset it would otherwise trust.
+     */
+    private static Set<Long> taskValuesToSampleTypeIds(Set<Long> values)
+    {
+        return values.contains(ANY_SAMPLE_TYPE) ? Set.of() : values;
+    }
+
+    /**
+     * Tells listeners about a change inside the current transaction, once per container. Use this alone only when the
+     * caller also arranges a post-commit {@link #fireSampleDataChanged}; otherwise use {@link SampleDataChangedTask}.
+     */
+    public static void recordSampleDataChange(@NotNull DbScope scope, @NotNull Container container, @Nullable Collection<Long> sampleTypeIds)
+    {
+        new SampleDataChangingTask(container).register(scope, sampleTypeIdsToTaskValues(sampleTypeIds), DbScope.CommitTaskOption.PRECOMMIT);
+    }
+
+    private static class SampleDataChangingTask extends AccumulatingCommitTask<Container, Long>
+    {
+        SampleDataChangingTask(@NotNull Container container)
         {
-            fireSampleDataChanged(container);
+            super(container);
+        }
+
+        /**
+         * Deliberately lets a listener failure out. This runs inside the changing transaction, so a failed write has
+         * already aborted it and every later statement in it will fail too -- there is no version of carrying on that
+         * commits the sample change and merely loses the bookkeeping. Failing here rolls the whole thing back, which
+         * the caller can report, rather than committing and leaving counts that silently disagree with the samples.
+         */
+        @Override
+        protected void process(@NotNull Container container, @NotNull Set<Long> values)
+        {
+            for (SampleCountsListener listener : LISTENERS)
+                listener.samplesChanging(container, taskValuesToSampleTypeIds(values));
         }
     }
 
-    public static void fireSampleDataChanged(@Nullable Container container)
+    /** Commit task that collects the changed sample type ids per container, so a transaction notifies once per container. */
+    public static class SampleDataChangedTask extends AccumulatingCommitTask<Container, Long>
+    {
+        private final Container _container;
+
+        public SampleDataChangedTask(@NotNull Container container)
+        {
+            super(container);
+            _container = container;
+        }
+
+        /** Records the change in the current transaction and notifies after it commits; null or empty sampleTypeIds means any sample type in the container. */
+        public void register(@NotNull DbScope scope, @Nullable Collection<Long> sampleTypeIds)
+        {
+            recordSampleDataChange(scope, _container, sampleTypeIds);
+            register(scope, sampleTypeIdsToTaskValues(sampleTypeIds), DbScope.CommitTaskOption.POSTCOMMIT);
+        }
+
+        @Override
+        protected void process(@NotNull Container container, @NotNull Set<Long> sampleTypeIds)
+        {
+            fireSampleDataChanged(container, taskValuesToSampleTypeIds(sampleTypeIds));
+        }
+    }
+
+    /** After a change commits, tells listeners which sample types changed, then notifies clients unless a listener will once its counts are current. */
+    public static void fireSampleDataChanged(@Nullable Container container, @Nullable Collection<Long> sampleTypeIds)
     {
         if (container == null)
             return;
 
+        Set<Long> ids = sampleTypeIds == null ? Set.of() : Set.copyOf(sampleTypeIds);
+        boolean deferred = false;
+        for (SampleCountsListener listener : LISTENERS)
+        {
+            // Unlike samplesChanging, this is past the commit: a failure here costs a refresh notification and
+            // nothing else, so it mustn't stop the other listeners being told
+            try
+            {
+                deferred |= listener.samplesChanged(container, ids);
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Sample counts listener failed to handle a change in " + container.getPath(), e);
+            }
+        }
+
+        if (!deferred)
+            sendSampleDataChangedEvent(container);
+    }
+
+    /** Sends the SampleDataChanged WebSocket event to every user who can read the container */
+    public static void sendSampleDataChangedEvent(@NotNull Container container)
+    {
         try
         {
             Set<Class<? extends Permission>> read = Collections.singleton(ReadPermission.class);

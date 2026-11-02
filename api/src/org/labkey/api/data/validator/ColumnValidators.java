@@ -21,7 +21,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.query.ValidationException;
 
 import java.util.ArrayList;
@@ -33,6 +32,7 @@ import java.util.List;
  */
 public class ColumnValidators
 {
+    /** Enforces only the column's built-in checks; with no ValidatorContext, its property validators are skipped */
     public static void validate(@Nullable ColumnInfo col, @Nullable DomainProperty dp, int rowNum, Object value)
             throws ValidationException
     {
@@ -125,42 +125,14 @@ public class ColumnValidators
     @Nullable
     public static List<? extends ColumnValidator> createPropertyValidators(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
-        List<? extends IPropertyValidator> validators;
-        List<PropertyValidator> ret = null;
-
         // Fix for Issue 36011: Column validator from XML metadata does not trigger during an insert.
         // Previously, the code was only looking for a Validator that existed in the database, and was bypassing the
         // Validator that was added via XML Metadata. Below change should recognize the Validator added via XML Metadata.
         if (null != col)
-        {
-            validators = col.getValidators();
-            ret = new ArrayList<>(validators.size());
-            for (IPropertyValidator pv : validators)
-            {
-                ret.add(new PropertyValidator(col.getColumnName(), col, pv)
-                {
-                    @Override
-                    // a hack so that it does not throw UnsupportedOperationException for not using validate(int rowNum, Object value, ValidatorContext validatorContext)
-                    //  esp. from Table.insert (line 710), where it is "hard" to create a validatorContext object which requires a user, and in Table.insert user maybe null.
-                    public String validate(int rowNum, Object value)
-                    {
-                        return null;
-                    }
-                }) ;
-
-            }
-        }
-        else if (null != dp)
-        {
-            validators = dp.getValidators();
-            ret = new ArrayList<>(validators.size());
-            for (IPropertyValidator pv : validators)
-            {
-                ret.add(new PropertyValidator(dp.getName(), dp.getPropertyDescriptor(), pv));
-            }
-        }
-
-        return ret;
+            return col.getValidators().stream().map(pv -> pv.bind(col)).toList();
+        if (null != dp)
+            return dp.getValidators().stream().map(pv -> pv.bind(dp.getPropertyDescriptor())).toList();
+        return null;
     }
 
     @Nullable
