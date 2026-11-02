@@ -12,7 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.ChatException;
 import org.labkey.api.mcp.ChatHistoryService;
@@ -43,7 +42,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
@@ -172,7 +170,7 @@ public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
             return failureResponse("Service is not ready yet");
 
         List<McpService.MessageResponse> responses = McpService.get().sendMessageEx(chatSession, prompt);
-        JSONArray segments = buildSegments(responses);
+        JSONArray segments = buildSegments(responses, LOG);
 
         return new JSONObject(Map.of(
                 "success", Boolean.TRUE,
@@ -201,46 +199,6 @@ public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
         return "[The user has moved from " + from + " to the folder \"" + current.getPath() +
                 "\" since their last message. Their questions are now about \"" + current.getPath() +
                 "\". Call whereAmIWhoAmITalkingTo again if you need its details.]\n\n" + userPrompt;
-    }
-
-    /**
-     * Walks the markdown of each MessageResponse and produces an ordered list of segments.
-     * Each segment is either a rendered-HTML span or a fenced SQL block. SQL blocks fenced as
-     * `expression` are tagged "expression" (the model's assertion that this SQL has been validated
-     * and is safe to apply); blocks fenced as `sql` are tagged "sql" (illustrative / unvalidated).
-     * For `expression` blocks the body is expected to be the JSON returned by
-     * validateCalculatedColumnExpression — at minimum {@code {"expression": "..."}}, optionally
-     * with {@code "jdbcType"}.
-     */
-    private static JSONArray buildSegments(List<McpService.MessageResponse> responses)
-    {
-        JSONArray segments = new JSONArray();
-        MarkdownService md = MarkdownService.get();
-        StringBuilder htmlBuf = new StringBuilder();
-
-        // Scan the turns as one document: tool calling can split a single assistant turn so that a
-        // fence opens in one MessageResponse and closes in the next.
-        String text = responses.stream()
-                .map(McpService.MessageResponse::text)
-                .filter(StringUtils::isNotBlank)
-                .collect(Collectors.joining("\n"));
-
-        LOG.debug("LabKey assistant raw response:\n{}", text);
-
-        // TODO: update this to handle SQL blocks like we do in the ExpressionAssistant
-
-        String[] lines = text.split("\n", -1);
-        int i = 0;
-        while (i < lines.length)
-        {
-            if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
-            htmlBuf.append(lines[i]);
-            i++;
-        }
-
-        flushHtmlSegment(segments, htmlBuf, md);
-
-        return segments;
     }
 
     public static class TestCase extends Assert
