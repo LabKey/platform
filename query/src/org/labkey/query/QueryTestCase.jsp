@@ -769,7 +769,7 @@ d,seven,twelve,day,month,date,duration,guid
         // javaConstant() always return VARCHAR currently, would like to fix
         new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
         new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT NOT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT CASE WHEN NOT ISMEMBEROF(-2) THEN 1 ELSE 0 END FROM R WHERE rowid=1", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LEAST(0, 2, 1)", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
         new MethodSqlTest("SELECT LEFT('FRED', 2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
@@ -1387,7 +1387,7 @@ d,seven,twelve,day,month,date,duration,guid
         {
             QueryService.get().setEnvironment(QueryService.Environment.USER, new LimitedUser(user));
             new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false).validate(null);
-            new MethodSqlTest("SELECT NOT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true).validate(null);
+            new MethodSqlTest("SELECT CASE WHEN NOT ISMEMBEROF(-2) THEN 1 ELSE 0 END FROM R WHERE rowid=1", JdbcType.INTEGER, 1).validate(null);
         }
         finally
         {
