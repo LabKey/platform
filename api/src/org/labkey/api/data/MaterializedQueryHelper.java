@@ -575,9 +575,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     public synchronized void uncache(final Container c)
     {
         assert null == c;
+        materializeLock.lock();
         try
         {
-            materializeLock.lock();
             final String txCacheKey = makeKey(_scope.getCurrentTransaction());
             _map.remove(txCacheKey);
             if (_scope.isTransactionActive())

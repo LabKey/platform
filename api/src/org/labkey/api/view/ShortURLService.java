@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -29,6 +30,7 @@ import java.util.List;
  * User: jeckels
  * Date: 1/23/14
  */
+@NullMarked
 public interface ShortURLService
 {
     static ShortURLService get()
@@ -64,8 +66,9 @@ public interface ShortURLService
      */
     void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user) throws ValidationException;
 
-    String validateShortURL(String shortURL) throws ValidationException;
+    String validateShortURL(@Nullable String shortURL) throws ValidationException;
 
+    @Nullable
     ShortURLRecord getForEntityId(@NotNull String entityId);
 
     void addListener(ShortURLListener listener);

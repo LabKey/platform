@@ -104,6 +104,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -3688,7 +3689,7 @@ public class DbScope
 
         private void attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier, Class<? extends Throwable> expectedException)
         {
-            final Object notifier = new Object();
+            final CountDownLatch bkgHasLock2 = new CountDownLatch(1);
             final List<Throwable> result = new ArrayList<>();
 
             // let's try to intentionally cause a deadlock
@@ -3702,10 +3703,7 @@ public class DbScope
 
                     try (Transaction txBg = CoreSchema.getInstance().getScope().ensureTransaction(lock2))
                     {
-                        synchronized (notifier)
-                        {
-                            notifier.notify();
-                        }
+                        bkgHasLock2.countDown();
                         // should block on fg thread, but we're not deadlocked yet
                         try (Transaction inner = CoreSchema.getInstance().getScope().ensureTransaction(lock1))
                         {
@@ -3729,12 +3727,9 @@ public class DbScope
                 try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(lock1))
                 {
                     // wait for background to acquire first locks
-                    synchronized (notifier)
-                    {
-                        bkg.start();
-                        // wait for bkg to acquire lock2
-                        notifier.wait(60 * 1000);
-                    }
+                    bkg.start();
+                    // wait for bkg to acquire lock2
+                    bkgHasLock2.await(60, TimeUnit.SECONDS);
                     // try to acquire my second lock
                     // this should cause a deadlock
                     try (Transaction inner = CoreSchema.getInstance().getScope().ensureTransaction(lock2))

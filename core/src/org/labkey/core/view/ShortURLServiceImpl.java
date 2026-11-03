@@ -17,6 +17,7 @@ package org.labkey.core.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -47,6 +48,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@NullMarked
 public class ShortURLServiceImpl implements ShortURLService
 {
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
@@ -165,7 +167,7 @@ public class ShortURLServiceImpl implements ShortURLService
     }
 
     @Override
-    public String validateShortURL(String shortURL) throws ValidationException
+    public String validateShortURL(@Nullable String shortURL) throws ValidationException
     {
         if (shortURL == null || shortURL.trim().isEmpty())
         {
@@ -180,6 +182,7 @@ public class ShortURLServiceImpl implements ShortURLService
     }
 
     @Override
+    @Nullable
     public ShortURLRecord getForEntityId(@NotNull String entityId)
     {
         return new TableSelector(CoreSchema.getInstance().getTableInfoShortURL(),
