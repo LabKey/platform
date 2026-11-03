@@ -104,6 +104,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
+import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
@@ -279,7 +280,10 @@ public class ReportsController extends BaseStudyController
         @Override
         public void validateCommand(SaveReportViewForm form, Errors errors)
         {
-            if (ReportService.get().reportNameExists(getViewContext(), form.getLabel(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName())))
+            // Saves crosstab reports from the participantCrosstab designer
+            if (!StudyCrosstabReport.TYPE.equals(form.getReportType()))
+                errors.reject(ERROR_MSG, "Unsupported report type: " + form.getReportType());
+            else if (ReportService.get().reportNameExists(getViewContext(), form.getLabel(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName())))
                 errors.reject("saveReportView", "There is already a report with the name of: '" + form.getLabel() +
                         "'. Please specify a different name.");
         }
@@ -1354,10 +1358,10 @@ public class ReportsController extends BaseStudyController
         @Test
         public void testOverwritingSavedReports() throws Exception
         {
-            assertReportNotStolen(SaveReportAction.class, FolderAdminRole.class, false);
+            assertReportNotStolen(SaveReportAction.class, StudyQueryReport.TYPE, FolderAdminRole.class, false);
             // shareReport leaves the descriptor's owner null, so the save is checked as a shared report and the
             // caller's Editor role in their own folder satisfies the only permission the save path consults.
-            assertReportNotStolen(SaveReportViewAction.class, EditorRole.class, true);
+            assertReportNotStolen(SaveReportViewAction.class, StudyCrosstabReport.TYPE, EditorRole.class, true);
         }
 
         @Test
@@ -1389,7 +1393,7 @@ public class ReportsController extends BaseStudyController
          * verbatim into its property map -- reportId included -- so the save targets a row of the caller's choosing.
          * The shared path then authorizes against the request container and updates by primary key alone.
          */
-        private void assertReportNotStolen(Class<? extends Controller> action, Class<? extends Role> attackerRole, boolean shareReport) throws Exception
+        private void assertReportNotStolen(Class<? extends Controller> action, String reportType, Class<? extends Role> attackerRole, boolean shareReport) throws Exception
         {
             Container attackerFolder = createContainer("A");
             Container victimFolder = createContainer("B");
@@ -1404,7 +1408,7 @@ public class ReportsController extends BaseStudyController
             User attacker = createUserInRole(attackerFolder, attackerRole);
 
             ActionURL url = new ActionURL(action, attackerFolder)
-                    .addParameter("reportType", StudyQueryReport.TYPE)
+                    .addParameter("reportType", reportType)
                     .addParameter("label", "scoping-stolen-report")
                     .addParameter("params", "reportId=db%3A" + victimRowId);
             if (shareReport)
