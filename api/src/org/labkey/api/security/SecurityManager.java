@@ -1443,6 +1443,9 @@ public class SecurityManager
 
         if (membersToDelete != null && !membersToDelete.isEmpty())
         {
+            if (group.isSystemGroup())
+                throw new IllegalArgumentException("Can't remove a member from the " + group.getName() + " group");
+
             SQLFragment sql = new SQLFragment(
             "DELETE FROM " + core.getTableInfoMembers() + "\nWHERE GroupId = ? AND UserId ");
             sql.add(groupId);
