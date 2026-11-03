@@ -2630,9 +2630,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         /**
          * GH Issue 1584: the container column is surfaced as "Folder", so "Container" is left to a framework import
-         * alias, which a user field's own alias or label used to outrank. Both designs are built here rather than
-         * through the API because validation now refuses them -- Domain.save() runs none of those checks, which is
-         * how the domains in the field came to carry them.
+         * alias, which a user field's own alias or label used to outrank. Built through Domain.save(), which runs no
+         * field-name validation: the alias design is refused by the API as a reserved name, and that is how the domains
+         * in the field came to carry either one. The label design would save normally.
          */
         private ExpSampleType createTypeStealingContainerToken(Container c, User user, String name) throws Exception
         {
@@ -2696,10 +2696,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         @Test
-        public void testStoredContainerLabelBlocksAnyFurtherSave() throws Exception
+        public void testStoredContainerLabelDoesNotBlockFurtherSaves() throws Exception
         {
-            // GH Issue 1783: rejected even though the label was already stored, so the design has to be corrected
-            // before the domain can be saved again. Nothing is grandfathered.
+            // GH Issue 1783: the label loses the token to the container column rather than overwriting the field, so it
+            // is counted and never refused -- an unrelated edit to such a domain still saves.
             final User user = TestContext.get().getUser();
             Container c = null;
             try
@@ -2717,9 +2717,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 updateGwt.setFields(fields);
 
                 ValidationException ve = DomainUtil.updateDomainDescriptor(origGwt, updateGwt, c, user);
-                assertTrue("An unrelated edit must be refused while the stored label stands", ve.hasErrors());
-                assertTrue("Expected the system field label error, got: " + ve.getMessage(),
-                        ve.getMessage().contains("Label 'Container' on field 'LabelStealer' conflicts with a system field name."));
+                assertFalse("A stored system field label must not block an unrelated edit: " + ve.getMessage(),
+                        ve.getMessage().contains("conflicts with a system field name"));
+                // hasErrors() is no use here: the fixture's other field carries "Container" as an import alias, which
+                // GH Issue 1474 refuses on a stored field too. Only the label rule changed.
+                assertTrue("Expected the stored alias to still be refused: " + ve.getMessage(),
+                        ve.getMessage().contains("Import alias 'Container' on field 'AliasStealer' conflicts with a reserved field name."));
             }
             finally
             {

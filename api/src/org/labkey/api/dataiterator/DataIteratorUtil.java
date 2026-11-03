@@ -138,6 +138,14 @@ public class DataIteratorUtil
     }
 
 
+    /**
+     * GH Issue 1585: a token two fields claim at alias or label rank is absent from this map, so a caller resolving
+     * through it drops the column instead of picking a winner. Only matchColumns reports one, from TableMap.ambiguous;
+     * callers that never reach it -- DefaultQueryUpdateService.updateRow, StudyManager's dataset snapshot mapping --
+     * drop it with no error. Insert does not come through here at all: DefaultQueryUpdateService._insert matches each
+     * PropertyDescriptor's own name, label and aliases, so an ambiguous label is still consumed there, by every field
+     * claiming it. Erroring on those paths needs an error channel they do not have.
+     */
     public static Map<String,ColumnInfo> createTableMap(TableInfo target, boolean useImportAliases)
     {
         Map<String,Pair<ColumnInfo,MatchType>> targetAliasesMapWithMatchType = buildTableMap(target, useImportAliases).map;
@@ -260,10 +268,11 @@ public class DataIteratorUtil
             String tsvQueryColumnName = col.getFieldKey().toDisplayString();
             putToken(ranked, ambiguous, tsvQueryColumnName, col, TokenRank.tsvFieldKey);
 
-            // GH Issue 1584: unconditional, so "container", "comment", "ptid" and "participantid" still resolve when the
-            // caller turns user aliases off -- useImportAliases is about what the designer configured, not about whether
-            // the framework's own headers work. Before this, only the folder column got that treatment, via the name
-            // check still used for its user aliases below.
+            // GH Issue 1584: unconditional -- useImportAliases is about what the designer configured, not about whether
+            // the framework's own headers work. For "container" and "comment" this preserves the old behavior, which the
+            // folder-name check below still provides for that column's user aliases. For the dataset subject column it is
+            // a deliberate widening: "ptid" and "participantid" were user aliases, so an import that turns those off
+            // (DatasetDefinition passes useImportAliases=false for a managed key) did not resolve them before and now does.
             for (String alias : col.getSystemImportAliasSet())
                 putToken(ranked, ambiguous, alias, col, TokenRank.systemAlias);
 
@@ -281,8 +290,10 @@ public class DataIteratorUtil
             putToken(ranked, ambiguous, col.getName(), col, TokenRank.name);
         }
 
+        // Debug, not warn: this runs on every coerce step and every cached-map miss, so a single broken design would
+        // repeat the same line for the life of the deployment. matchColumns raises the user-visible error.
         if (!ambiguous.isEmpty())
-            LOG.warn("Ambiguous import columns in '{}': {}", target.getName(), ambiguous);
+            LOG.debug("Ambiguous import columns in '{}': {}", target.getName(), ambiguous);
 
         // GH Issue 1585: an ambiguous token resolves to nothing at all. A caller that renames the source column to the
         // winner -- the sample type coerce step does, through createTableMap -- would otherwise consume the token before
@@ -730,6 +741,19 @@ public class DataIteratorUtil
             col("UserField").setLabel("container");
             col("Folder").setSystemImportAliasesSet(Set.of("container"));
             assertEquals("Folder", resolve(build(true), "container"));
+        }
+
+        @Test
+        public void aSystemAliasOutranksALabelWithUserAliasesOff()
+        {
+            // The dataset shape: with user aliases off, a field labeled "ptid" used to win the token by default because
+            // the subject column's aliases were skipped entirely. The framework's claim now outranks it.
+            col("Labeled").setLabel("ptid");
+            col("ParticipantId").setSystemImportAliasesSet(Set.of("ptid", "participantid"));
+
+            TableMap map = build(false);
+            assertEquals("ParticipantId", resolve(map, "ptid"));
+            assertEquals("ParticipantId", resolve(map, "participantid"));
         }
 
         @Test

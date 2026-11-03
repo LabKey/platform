@@ -1018,7 +1018,6 @@ export async function checkImportColumnResolution(server: IntegrationTestServer,
 
     const importExpectError = async (text: string, insertOption: string, error: string) => {
         const resp = await ExperimentCRUDUtils.importData(server, text, name, insertOption, folderOptions, userOptions, false, false, isSampleType, true);
-        console.log(JSON.parse(resp.text))
         expect(JSON.parse(resp.text).exception).toContain(error);
     };
 
@@ -1114,25 +1113,18 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
     await createExpectError([{ name: 'A', importAliases: reservedName }],
         `Import alias '${reservedName}' on field 'A' conflicts with a reserved field name.`);
 
-    // GH Issue 1783: labels resolve into the same import map as names and aliases, so a label matching a column the
-    // server writes on every insert and update leaves the field holding the server's value.
-    await createExpectError([{ name: 'A', label: reservedName }],
-        `Label '${reservedName}' on field 'A' conflicts with a system field name.`);
-    await createExpectError([{ name: 'A', label: reservedName.toLowerCase() }],
-        `Label '${reservedName.toLowerCase()}' on field 'A' conflicts with a system field name.`);
-    await createExpectError([{ name: 'B', label: reservedName }, { name: 'A', label: reservedName }],
-        `Label '${reservedName}' on fields 'A', 'B' conflicts with a system field name.`);
-
-    // Both kinds also claim 'comment', for the built-in column shown as 'Flag'.
-    await createExpectError([{ name: 'A', label: 'Comment' }],
-        `Label 'Comment' on field 'A' conflicts with a system field name.`);
-
-    // The kind claims only the tokens no column of its table reclaims by name. 'Folder', 'Flag' and the audit columns
-    // are real column names, which outrank any label at import, so a field wearing one is unreachable, not overwritten.
+    // GH Issue 1783: a label is never refused. A framework alias outranks it, so the label is unreachable at import
+    // rather than overwritten -- the same outcome as colliding with a column name, which has always been allowed. The
+    // nightly scan counts these as labelVsSystemField instead.
     const otherLabelsName = name + 'OtherLabels';
     await server.post('property', 'createDomain', {
         kind: domainType,
-        domainDesign: { name: otherLabelsName, fields: [...baseFields, { name: 'A', label: 'Folder' }, { name: 'B', label: 'Created By' }, { name: 'C', label: 'Flag' }] },
+        domainDesign: { name: otherLabelsName, fields: [...baseFields,
+            { name: 'A', label: reservedName },            // a token the kind claims for the column shown as 'Folder'
+            { name: 'B', label: 'Comment' },               // ...and for the one shown as 'Flag'
+            { name: 'C', label: 'Folder' },                // a real column name
+            { name: 'D', label: 'Created By' },
+        ] },
         options: { name: otherLabelsName },
     }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
 
@@ -1195,8 +1187,6 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
         "Duplicate import alias 'keeperAlias' for fields 'Added', 'Keeper'.");
     await updateExpectError([...keeperFields, { name: 'Added', importAliases: 'Keeper' }], existingAliases,
         "Import alias 'Keeper' on field 'Added' conflicts with a field name.");
-    await updateExpectError([...keeperFields, { name: 'Added', label: reservedName }], existingAliases,
-        `Label '${reservedName}' on field 'Added' conflicts with a system field name.`);
     await updateExpectError(keeperFields, { ...existingAliases, Keeper: parentOf(name) },
         `An existing ${noun} property conflicts with parent alias header: Keeper`);
     await updateExpectError(keeperFields, { ...existingAliases, keeperAlias: parentOf(name) },

@@ -42,8 +42,10 @@ import org.labkey.api.util.ExtUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: tgaluhn
@@ -153,9 +155,12 @@ public class ReportingWriter
 
         if (cinfo != null)
         {
-            if (!cinfo.getImportAliasSet().isEmpty())
+            // GH Issue 1584: reports the framework's aliases alongside the designer's, as JsonWriter.getMetaData does
+            if (!cinfo.getImportAliasSet().isEmpty() || !cinfo.getSystemImportAliasSet().isEmpty())
             {
-                props.put("importAliases", new ArrayList<>(cinfo.getImportAliasSet()));
+                Set<String> aliases = new LinkedHashSet<>(cinfo.getImportAliasSet());
+                aliases.addAll(cinfo.getSystemImportAliasSet());
+                props.put("importAliases", new ArrayList<>(aliases));
             }
 
             if (dc.getTsvFormatString() != null)
