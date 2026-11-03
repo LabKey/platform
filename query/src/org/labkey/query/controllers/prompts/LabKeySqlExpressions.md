@@ -15,14 +15,14 @@ LabKey SQL rejects these common PostgreSQL and ANSI forms. Write the replacement
 - `POSITION(a IN b)`: use `LOCATE(a, b)`.
 - `TRIM(BOTH ' ' FROM x)`: use `LTRIM(RTRIM(x))`.
 - `x ILIKE 'a%'`: use `LOWER(x) LIKE 'a%'`.
-- `x ~ 'regex'`, `x SIMILAR TO p`: use `similar_to(x, pattern)`.
+- `x ~ 'regex'`, `x SIMILAR TO p`: use `similar_to(x, pattern)` (PostgreSQL only).
 - `a < b < c`: comparisons do not chain. Use `a < b AND b < c`.
 - `CASE WHEN c THEN a = b END`: a bare comparison cannot be a THEN or ELSE result. Parenthesize it: `THEN (a = b)`.
 
 ### Identifiers and Literals
 
-- Double-quote a column name that contains spaces or special characters, or that is a reserved word:
-  `"Physical Exam"`. Escape an embedded `"` by doubling it.
+- Double-quote a column name or alias that contains spaces or special characters, or that is a reserved word:
+  `"Physical Exam"`, `COUNT(*) AS "Count"`. Escape an embedded `"` by doubling it.
 - String literals use single quotes. Escape `'` by doubling it: `'Jim''s Item'`. There are no backslash escapes.
 - Date and time literals: `{d '2001-02-03'}` and `{ts '2001-02-03 04:05:06'}`.
 - Booleans are `TRUE` and `FALSE`. Special doubles: `CAST('Infinity' AS DOUBLE)`, `CAST('-Infinity' AS DOUBLE)`,
@@ -50,8 +50,9 @@ String: `concat(a, b, ...)` (same as `||`: NULL if any argument is NULL), `lcase
 `repeat(s, count)`, `startswith(s, prefix)`, `substring(s, start[, length])` (1-based)
 
 Date and time:
-- `TIMESTAMPDIFF(interval, start, end)` returns `end - start` as a decimal. Use it only for hours, minutes, or
-  seconds: `'SQL_TSI_HOUR'`, `'SQL_TSI_MINUTE'`, `'SQL_TSI_SECOND'`. Any other interval fails when the query runs.
+- `TIMESTAMPDIFF(interval, start, end)` returns `end - start`. On PostgreSQL only `'SQL_TSI_SECOND'`,
+  `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, and `'SQL_TSI_DAY'` work; any other interval fails when the query runs.
+  - `'SQL_TSI_DAY'` counts elapsed 24-hour periods, so 23:59 to 00:01 the next day is 0. Use AGE_IN_DAYS for days.
   - Fails when both values are dates without a time, such as Date columns or CURDATE().
 - `AGE(start, end, interval)` allows only `'SQL_TSI_DAY'`, `'SQL_TSI_MONTH'`, `'SQL_TSI_YEAR'`. Without an interval it
   returns years.
@@ -64,7 +65,7 @@ Date and time:
   - Months: `AGE_IN_MONTHS(a, b)`
   - Quarters: `AGE_IN_MONTHS(a, b) / 3`
   - Weeks: `AGE_IN_DAYS(a, b) / 7`
-  - Days: `AGE_IN_DAYS(a, b)`. Never use `TIMESTAMPDIFF` for days.
+  - Days: `AGE_IN_DAYS(a, b)`, not `TIMESTAMPDIFF`.
   - Hours, minutes, or seconds: `TIMESTAMPDIFF`
 - `curdate()`, `curtime()`, `now()`, `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP`
 - `year(d)`, `quarter(d)`, `month(d)`, `monthname(d)`, `week(d)`, `dayofyear(d)`, `dayofmonth(d)`, `dayofweek(d)`,
@@ -111,4 +112,4 @@ value is computed. Cast proactively, for example a date stored as VARCHAR before
 
 - If the error includes a suggestion, apply it directly.
 - "Unknown method X": the function does not exist in LabKey SQL. Use one from the function lists above.
-- "Syntax error near" a column name such as `Count` or `User`: the name is a reserved word. Double-quote it.
+- "Syntax error near" a column name or alias such as `Count` or `User`: the name is a reserved word. Double-quote it.

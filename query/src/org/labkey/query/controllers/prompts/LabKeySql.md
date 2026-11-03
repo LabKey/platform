@@ -299,10 +299,10 @@ Not available on MS SQL Server.
 
 Most LabKey servers run PostgreSQL; some premium deployments run MS SQL Server. If the target may be MSSQL:
 
-* Avoid PostgreSQL-only features: JSON functions (§16), arrays (§17), `similar_to`/`regexp_replace`/`to_char`-family (§7), `overlaps()`, and the PG-only aggregates (§5).
+* Avoid PostgreSQL-only features: JSON functions (§16), arrays (§17), `similar_to`/`regexp_replace`/`to_char`-family (see the expression reference), `overlaps()`, and the PG-only aggregates (§5).
 * `GROUP_CONCAT` on MSSQL requires a separately-installed function and cannot appear in a sub-select; when missing, it returns a literal `'<GROUP_CONCAT function not supported...>'` string instead of data.
 * String comparison and grouping are case-sensitive on PostgreSQL, case-insensitive on MSSQL.
-* `timestampdiff` interval limits differ (see the expression reference) — the `age*` functions are portable.
+* `timestampdiff` supports only SECOND, MINUTE, HOUR, and DAY on PostgreSQL but every interval on MSSQL — the `age*` functions are portable.
 
 -----
 
