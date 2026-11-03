@@ -53,6 +53,16 @@ public interface ImportAliasable
 
     String getLabel();
 
+    /**
+     * The label as the designer set it, or null when this implementation derives one from the name instead. ColumnInfo
+     * derives, so getLabel() alone cannot tell a chosen label from a generated one.
+     */
+    @Nullable
+    default String getLabelValue()
+    {
+        return getLabel();
+    }
+
     String getPropertyURI();
 
     class Helper
@@ -147,10 +157,21 @@ public interface ImportAliasable
             }
             // Only a tie on a token the designer controls is worth reporting; a tie on a propertyURI or name is a bug elsewhere.
             else if (null != ambiguousTokens && rank == existing.second && existing.first != property
-                    && (rank == Rank.userAlias || rank == Rank.label))
+                    && isDesignerToken(rank, existing.first, property))
             {
                 ambiguousTokens.add(token);
             }
+        }
+
+        /**
+         * GH Issue 1585: a label this property derived from its own name is not a token anyone chose, so two of those
+         * colliding is a field-naming coincidence with no label to correct. One explicit label makes it a design problem.
+         */
+        private static <T extends ImportAliasable> boolean isDesignerToken(Rank rank, T existing, T incoming)
+        {
+            if (rank == Rank.userAlias)
+                return true;
+            return rank == Rank.label && (null != existing.getLabelValue() || null != incoming.getLabelValue());
         }
     }
 }

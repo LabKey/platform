@@ -195,6 +195,18 @@ public class DataIteratorUtil
         }
     }
 
+    /**
+     * GH Issue 1585: whether a tie at this rank is something the designer can fix. ColumnInfo.getLabel() falls back to a
+     * label derived from the field name, so two fields with no label at all can tie at the label rank -- a naming
+     * coincidence with no label to correct, not a design problem. One explicit label is enough to make it one.
+     */
+    private static boolean isDesignerToken(TokenRank rank, ColumnInfo existing, ColumnInfo incoming)
+    {
+        if (rank == TokenRank.userAlias)
+            return true;
+        return rank == TokenRank.label && (null != existing.getLabelValue() || null != incoming.getLabelValue());
+    }
+
     private static void putToken(Map<String, Pair<ColumnInfo, TokenRank>> ranked, Map<String, Set<FieldKey>> ambiguous,
             String token, ColumnInfo col, TokenRank rank)
     {
@@ -213,7 +225,7 @@ public class DataIteratorUtil
         {
             // Only a tie on a token the designer controls is a design problem worth refusing the import over. A tie on a
             // fieldKey or propertyURI is a framework bug, and erroring on one would break imports that work today.
-            if (rank == TokenRank.userAlias || rank == TokenRank.label)
+            if (isDesignerToken(rank, existing.first, col))
             {
                 ambiguous.computeIfAbsent(token, k -> new LinkedHashSet<>()).add(existing.first.getFieldKey());
                 ambiguous.get(token).add(col.getFieldKey());
@@ -248,11 +260,14 @@ public class DataIteratorUtil
             String tsvQueryColumnName = col.getFieldKey().toDisplayString();
             putToken(ranked, ambiguous, tsvQueryColumnName, col, TokenRank.tsvFieldKey);
 
-            // GH Issue 1584: unconditional, so a framework alias still applies when the caller turns user aliases off
+            // GH Issue 1584: unconditional, so "container", "comment", "ptid" and "participantid" still resolve when the
+            // caller turns user aliases off -- useImportAliases is about what the designer configured, not about whether
+            // the framework's own headers work. Before this, only the folder column got that treatment, via the name
+            // check still used for its user aliases below.
             for (String alias : col.getSystemImportAliasSet())
                 putToken(ranked, ambiguous, alias, col, TokenRank.systemAlias);
 
-            if (useImportAliases)
+            if (useImportAliases || "folder".equalsIgnoreCase(col.getName()))
             {
                 for (String alias : col.getImportAliasSet())
                     putToken(ranked, ambiguous, alias, col, TokenRank.userAlias);
@@ -754,6 +769,35 @@ public class DataIteratorUtil
             assertEquals(Set.of(FieldKey.fromParts("First"), FieldKey.fromParts("Second")), map.ambiguous.get("dup"));
             assertNull("An ambiguous token must not resolve, or a caller that renames the column to the winner "
                     + "consumes it before matchColumns can refuse the import", resolve(map, "dup"));
+        }
+
+        @Test
+        public void aFolderColumnKeepsItsUserAliasesWhenUserAliasesAreOff()
+        {
+            col("Folder").setImportAliasesSet(Set.of("legacyFolder"));
+            assertEquals("Folder", resolve(build(false), "legacyFolder"));
+        }
+
+        @Test
+        public void twoGeneratedLabelsAreNotAmbiguous()
+        {
+            // Neither field carries a label; both generate "Sample Id", so there is no label for anyone to correct
+            col("sample_id");
+            col("sampleId");
+
+            TableMap map = build(true);
+            assertFalse("A collision between two generated labels is a field-naming coincidence", map.ambiguous.containsKey("Sample Id"));
+            assertEquals("sampleId", resolve(map, "Sample Id"));
+        }
+
+        @Test
+        public void anExplicitLabelMeetingAGeneratedOneIsAmbiguous()
+        {
+            col("sample_id");
+            col("Other").setLabel("Sample Id");
+
+            TableMap map = build(true);
+            assertEquals(Set.of(FieldKey.fromParts("sample_id"), FieldKey.fromParts("Other")), map.ambiguous.get("Sample Id"));
         }
 
         @Test

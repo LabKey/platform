@@ -189,6 +189,22 @@ abstract public class DomainKind<T> implements Handler<String>
     }
 
     /**
+     * Import tokens this kind's table claims for a built-in column that it surfaces under some other name, so no column
+     * name outranks them -- "container" on the column shown as "Folder", "comment" on the one shown as "Flag". A field
+     * label matching one is silently overwritten on every write, so {@link DomainUtil#validateProperties} rejects it.
+     *
+     * A kind abstains by returning nothing: when the built-in column also carries the token as its own name, the name
+     * outranks any label and the label is merely unreachable, which is not worth refusing a save over.
+     *
+     * GH Issue 1783. Deliberately takes no Domain, like {@link #getReservedNameExemptions()}.
+     */
+    @NotNull
+    public Set<String> getSystemImportAliases()
+    {
+        return Collections.emptySet();
+    }
+
+    /**
      * Return the set of names that are always required and cannot subsequently
      * be deleted.
      * @return set of strings containing the names. This will be compared ignoring case

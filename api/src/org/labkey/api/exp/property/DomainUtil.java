@@ -157,9 +157,6 @@ public class DomainUtil
         labelVsSystemField
     }
 
-    // GH Issue 1783: Sample Types surface this column as "Folder", leaving "Container" claimed only by a system import alias, so a field labeled "Container" outranks it and is overwritten with the row's container.
-    public static final Set<String> SYSTEM_FIELD_NAMES = Collections.unmodifiableSet(getNamesAndLabels(List.of("Container")));
-
     private DomainUtil()
     {
     }
@@ -1620,7 +1617,9 @@ public class DomainUtil
         boolean allowMultiChoice = domainKind != null ? allowMultiChoice(domainKind) : updates.isAllowMultiChoiceProperties();
         boolean supportsNamingPattern = domainKind != null && domainKind.supportsNamingPattern();
 
-        return validateProperties(updates, reservedNames, reservedPrefixes, allowMultiChoice, supportsNamingPattern,
+        Set<String> systemFieldNames = null != domainKind ? getNamesAndLabels(domainKind.getSystemImportAliases()) : Set.of();
+
+        return validateProperties(updates, reservedNames, reservedPrefixes, systemFieldNames, allowMultiChoice, supportsNamingPattern,
                 getOriginalFieldPropertyIdNameMap(orig), null);
     }
 
@@ -1628,9 +1627,12 @@ public class DomainUtil
      * Applies the field-naming rules to an already-resolved rule set, so a caller that has no {@link Domain} can run
      * them. GH Issue 1589: the nightly scan over stored domains resolves the reserved names itself and passes a
      * {@code tally} to count violations by {@link FieldNameRule}; {@code tally} is null on the save path.
+     *
+     * GH Issue 1783: {@code systemFieldNames} is {@link DomainKind#getSystemImportAliases()} run through
+     * {@link #getNamesAndLabels}, so it is empty for a kind whose built-in columns claim their own tokens by name.
      */
     public static ValidationException validateProperties(@NotNull GWTDomain<?> updates, @NotNull Set<String> reservedNameSet,
-            @NotNull Set<String> reservedPrefixes, boolean allowMultiChoice, boolean supportsNamingPattern,
+            @NotNull Set<String> reservedPrefixes, @NotNull Set<String> systemFieldNames, boolean allowMultiChoice, boolean supportsNamingPattern,
             @Nullable Map<Integer, String> propertyIdNameMap, @Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally)
     {
         Set<String> reservedNames = new CaseInsensitiveHashSet(reservedNameSet);
@@ -1809,7 +1811,7 @@ public class DomainUtil
                 fields.forEach(f -> tally(tally, FieldNameRule.labelVsReservedName, f));
 
             // GH Issue 1783
-            if (SYSTEM_FIELD_NAMES.contains(label))
+            if (systemFieldNames.contains(label))
             {
                 fields.forEach(f -> tally(tally, FieldNameRule.labelVsSystemField, f));
                 String names = "'" + fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
@@ -2095,7 +2097,14 @@ public class DomainUtil
         /** No reserved names or prefixes, so only the label rules are in play. */
         private static ValidationException validate(GWTDomain<GWTPropertyDescriptor> orig, GWTPropertyDescriptor... fields)
         {
-            return validateProperties(domain(fields), Set.of(), Set.of(), true, false, getOriginalFieldPropertyIdNameMap(orig), null);
+            return validateWith(getNamesAndLabels(List.of("Container")), orig, fields);
+        }
+
+        private static ValidationException validateWith(Set<String> systemFieldNames, @Nullable GWTDomain<GWTPropertyDescriptor> orig,
+                GWTPropertyDescriptor... fields)
+        {
+            return validateProperties(domain(fields), Set.of(), Set.of(), systemFieldNames, true, false,
+                    getOriginalFieldPropertyIdNameMap(orig), null);
         }
 
         @Test
@@ -2116,6 +2125,23 @@ public class DomainUtil
             String expected = "Label 'Container' on fields '" + FIELD_ONE + "', '" + FIELD_TWO + "' conflicts with a system field name.";
             assertEquals(expected, errors.getFieldErrors(FIELD_ONE).get(0));
             assertEquals(expected, errors.getFieldErrors(FIELD_TWO).get(0));
+        }
+
+        @Test
+        public void everyAliasTheKindSuppliesIsRejected()
+        {
+            // The sample type and data class kinds supply "comment" too, for the column shown as "Flag"
+            ValidationException errors = validateWith(getNamesAndLabels(List.of("container", "comment")), null, field(FIELD_ONE, "Comment", 0));
+            assertEquals(List.of("Label 'Comment' on field '" + FIELD_ONE + "' conflicts with a system field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void aKindSupplyingNoAliasesRejectsNothing()
+        {
+            // Lists, datasets and assay domains name the column "Container" outright, so the name outranks the label and
+            // the label is merely unreachable -- not worth refusing a save that works today
+            assertFalse(validateWith(Set.of(), null, field(FIELD_ONE, "Container", 0)).hasErrors());
         }
     }
 

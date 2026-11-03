@@ -1123,12 +1123,16 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
     await createExpectError([{ name: 'B', label: reservedName }, { name: 'A', label: reservedName }],
         `Label '${reservedName}' on fields 'A', 'B' conflicts with a system field name.`);
 
-    // Only 'Container' is a system field name. 'Folder' and the audit columns are real column names, which outrank any
-    // label at import, so a field wearing one as its label is unreachable rather than overwritten.
+    // Both kinds also claim 'comment', for the built-in column shown as 'Flag'.
+    await createExpectError([{ name: 'A', label: 'Comment' }],
+        `Label 'Comment' on field 'A' conflicts with a system field name.`);
+
+    // The kind claims only the tokens no column of its table reclaims by name. 'Folder', 'Flag' and the audit columns
+    // are real column names, which outrank any label at import, so a field wearing one is unreachable, not overwritten.
     const otherLabelsName = name + 'OtherLabels';
     await server.post('property', 'createDomain', {
         kind: domainType,
-        domainDesign: { name: otherLabelsName, fields: [...baseFields, { name: 'A', label: 'Folder' }, { name: 'B', label: 'Created By' }] },
+        domainDesign: { name: otherLabelsName, fields: [...baseFields, { name: 'A', label: 'Folder' }, { name: 'B', label: 'Created By' }, { name: 'C', label: 'Flag' }] },
         options: { name: otherLabelsName },
     }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
 
