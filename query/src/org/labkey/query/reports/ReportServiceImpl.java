@@ -49,6 +49,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -57,6 +58,7 @@ import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.ReportDB;
@@ -64,7 +66,9 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
+import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
+import org.labkey.api.reports.report.python.IpynbReport;
 import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -99,6 +103,7 @@ import org.labkey.query.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 
+import javax.script.ScriptEngine;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -394,6 +399,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
 
         if (descriptor.isNew())
         {
+            validateScriptCreation(context, report, errors);
             if (descriptor.isShared())
                 report.canShare(context.getUser(), context.getContainer(), errors);
         }
@@ -406,6 +412,10 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                 return false;
             }
 
+            // canEdit checks the stored report, so a save that changes the type must pass the new type's creation check
+            if (descriptor.getReportId() instanceof DbReportIdentifier && (null == stored || !stored.getType().equals(report.getType())))
+                validateScriptCreation(context, report, errors);
+
             Report toCheck = null != stored ? stored : report;
 
             if (toCheck.canEdit(context.getUser(), context.getContainer(), errors))
@@ -415,10 +425,38 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             }
         }
 
-        // GH Issue 1649: generic report actions, such as study-reports-saveReport, can write a chart's config too
+        // GH Issue 1649: generic report actions, such as study-reports-saveReportView, can write a chart's config too
         descriptor.validateContent(context.getUser(), null != stored ? stored.getDescriptor() : null, errors);
 
         return errors.isEmpty();
+    }
+
+    private void validateScriptCreation(ContainerUser context, Report report, List<ValidationError> errors)
+    {
+        if (!(report instanceof ScriptReport))
+            return;
+
+        ScriptEngine engine = null;
+        if (report instanceof ScriptEngineReport scriptEngineReport)
+        {
+            engine = scriptEngineReport.getScriptEngine(context.getContainer());
+        }
+        else if (report instanceof JavaScriptReport || report instanceof IpynbReport)
+        {
+            String extension = (report instanceof JavaScriptReport) ? "js" : IpynbReport.EXTENSION;
+
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
+            engine = svc.getEngineByExtension(context.getContainer(), extension);
+        }
+
+        if (engine == null)
+        {
+            errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
+            return;
+        }
+
+        if (!ReportUtil.canCreateScript(context, engine))
+            errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or TrustedAnalyst to create a script report."));
     }
 
     private ReportDB _saveDbReport(ContainerUser context, String key, Report report, boolean skipValidation)
