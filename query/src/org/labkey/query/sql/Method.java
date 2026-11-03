@@ -797,6 +797,8 @@ public abstract class Method
          */
         String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
+            if (typeSqlFragment.hasError())
+                throw new IllegalArgumentException("Invalid CAST type");
             String typeName = typeSqlFragment.getRawSQL();
             if (typeName.startsWith("SQL_"))
                 typeName = typeName.substring(4);
@@ -1603,6 +1605,8 @@ public abstract class Method
      */
     public static boolean isSimpleString(SQLFragment f)
     {
+        if (f.hasError())
+            return false;
         String s = f.getSQL();
         // am I a simple bound parameter?
         if ("?".equals(s) && f.getParams().size() == 1)

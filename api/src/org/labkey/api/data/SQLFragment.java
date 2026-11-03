@@ -203,19 +203,13 @@ public class SQLFragment
     }
 
 
-    /* same as getSQL() but without CTE handling */
+    /* same as getSQL() but without CTE handling, and doesn't throw for an error fragment; for inspecting or rewriting SQL text, not executing it */
     public String getRawSQL()
-    {
-        checkError();
-        return _getRawSQL();
-    }
-
-    private String _getRawSQL()
     {
         return null != sb ? sb.toString() : null != sql ? sql : "";
     }
 
-    /** Marks this SQL as never to be executed (e.g. generated after a parse error); getSQL() and getRawSQL() then throw */
+    /** Marks this SQL as never to be executed (e.g. generated after a parse error); getSQL() then throws */
     public SQLFragment appendError()
     {
         unsafeAppend(ERROR_MARKER);
@@ -410,8 +404,8 @@ public class SQLFragment
     /* This is not an exhaustive .equals() test, but it give pretty good confidence that these statements are the same */
     static boolean debugCompareSQL(SQLFragment sql1, SQLFragment sql2)
     {
-        String select1 = sql1._getRawSQL();
-        String select2 = sql2._getRawSQL();
+        String select1 = sql1.getRawSQL();
+        String select2 = sql2.getRawSQL();
 
         if ((null == sql1.commonTableExpressionsMap || sql1.commonTableExpressionsMap.isEmpty()) &&
                 (null == sql2.commonTableExpressionsMap || sql2.commonTableExpressionsMap.isEmpty()))
@@ -423,10 +417,10 @@ public class SQLFragment
             return false;
 
         Set<String> ctes1 = sql1.commonTableExpressionsMap.values().stream()
-                .map(cte -> markerPattern.matcher(cte.sqlf._getRawSQL()).replaceAll("CTE"))
+                .map(cte -> markerPattern.matcher(cte.sqlf.getRawSQL()).replaceAll("CTE"))
                 .collect(Collectors.toSet());
         Set<String> ctes2 = sql2.commonTableExpressionsMap.values().stream()
-                .map(cte -> markerPattern.matcher(cte.sqlf._getRawSQL()).replaceAll("CTE"))
+                .map(cte -> markerPattern.matcher(cte.sqlf.getRawSQL()).replaceAll("CTE"))
                 .collect(Collectors.toSet());
         return ctes1.equals(ctes2);
     }
@@ -1080,7 +1074,7 @@ public class SQLFragment
         {
             throw new IllegalArgumentException("Not supported for SQLFragments with CTEs - they must be inserted/merged separately");
         }
-        getStringBuilder().insert(index, sql._getRawSQL());
+        getStringBuilder().insert(index, sql.getRawSQL());
         tempTokens.addAll(sql.tempTokens);
         hasError |= sql.hasError;
     }
@@ -1361,7 +1355,7 @@ public class SQLFragment
             SQLFragment bad = SQLFragment.unsafe("SELECT 1 AS x, ").appendError();
             assertTrue(bad.hasError());
             assertThrows(IllegalStateException.class, bad::getSQL);
-            assertThrows(IllegalStateException.class, bad::getRawSQL);
+            assertTrue(bad.getRawSQL().contains(ERROR_MARKER));
             assertTrue(bad.toString().contains(ERROR_MARKER));
             assertEquals(bad, new SQLFragment(bad));
             assertEquals(bad.hashCode(), new SQLFragment(bad).hashCode());
@@ -1388,7 +1382,7 @@ public class SQLFragment
             assertEquals("SELECT * FROM " + pendingToken, pendingCte.getRawSQL());
 
             // The marker must fail on the database too, for SQL that lost the flag through a string round trip
-            SQLFragment roundTrip = new SQLFragment().setSqlUnsafe(bad._getRawSQL());
+            SQLFragment roundTrip = new SQLFragment().setSqlUnsafe(bad.getRawSQL());
             assertFalse(roundTrip.hasError());
             assertThrows(RuntimeException.class, () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roundTrip).getObject(Integer.class));
         }

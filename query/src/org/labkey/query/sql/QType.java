@@ -57,7 +57,11 @@ public class QType extends QExpr
         String typeName = builder.getDialect().getSqlTypeName(jdbcType);
         if (null == typeName)
         {
-            query.getParseErrors().add(new QueryParseException("Unsupported CAST type: " + jdbcType.name(), null, getLine(), getColumn()));
+            QueryParseException e = new QueryParseException("Unsupported CAST type: " + jdbcType.name(), null, getLine(), getColumn());
+            if (null != query)
+                query.getParseErrors().add(e);
+            else
+                throw e;
             builder.appendError();
             return;
         }
