@@ -17,8 +17,8 @@ package org.labkey.query.reports.getdata;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ReportingApiQueryResponse;
 import org.labkey.api.query.QueryView;
+import org.labkey.query.action.ReportingApiQueryResponse;
 
 /**
  * Writes a JSON response containing the column metadata and actual data rows back to the client

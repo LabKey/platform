@@ -31,6 +31,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlValidationException;
@@ -43,6 +44,7 @@ import org.labkey.api.writer.VirtualFile;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 public interface ReportService
 {
@@ -51,6 +53,8 @@ public interface ReportService
     Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());
 
     String LINK_REPORT_TYPE = "ReportService.linkReport";
+    String GENERIC_CHART_REPORT_TYPE = "ReportService.GenericChartReport";
+    String TIME_CHART_REPORT_TYPE = "ReportService.TimeChartReport";
 
     static ReportService get()
     {
@@ -66,6 +70,18 @@ public interface ReportService
      * Registers a report type, reports must be registered in order to be created.
      */
     void registerReport(Report report);
+
+    /** Sees every saved report during the nightly pass, then adds its own metrics */
+    interface ReportMetricsVisitor<V extends ReportMetricsVisitor<V>>
+    {
+        void visit(Report report);
+
+        /** Suppliers must read results from visited.get(), the cached instance that saw every report, not from this one. Calling it runs the pass on demand, so describing the metrics visits nothing. */
+        void addMetrics(UsageMetrics metrics, Supplier<V> visited);
+    }
+
+    /** The factory supplies a fresh visitor for each pass, plus one per usage metrics collection to add the metrics */
+    void registerReportMetricsVisitor(Supplier<? extends ReportMetricsVisitor<?>> factory);
 
     /**
      * A descriptor class must be registered with the service in order to be valid.

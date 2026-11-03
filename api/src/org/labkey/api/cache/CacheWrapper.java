@@ -66,7 +66,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
                 value = _nullMarker;
 
             _cache.put(key, value);
-            trackPut(value);
+            trackPut(key, value);
         }
         catch (IllegalStateException ise)
         {
@@ -84,7 +84,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
                 value = _nullMarker;
 
             _cache.put(key, value, timeToLive);
-            trackPut(value);
+            trackPut(key, value);
         }
         catch (IllegalStateException ise)
         {
@@ -260,10 +260,10 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         return value;
     }
 
-    private void trackPut(V value)
+    private void trackPut(K key, V value)
     {
         assert null != value : "Attempt to cache null into " + getDebugName() + "; must use marker for null instead.";
-        CacheManager.validate("\"" + getDebugName() + "\" cache", value);
+        CacheManager.validate("\"" + getDebugName() + "\" cache", key, value);
 
         _stats.puts.incrementAndGet();
 

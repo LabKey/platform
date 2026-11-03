@@ -120,6 +120,13 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     }
 
     @Override
+    public @NotNull Set<String> getReservedNameExemptions()
+    {
+        // IssueListDef.ensureDomainProperties adds these to every issue definition domain.
+        return MANDATORY_PROPERTIES;
+    }
+
+    @Override
     public Set<PropertyStorageSpec> getRequiredProperties()
     {
         return REQUIRED_PROPERTIES;

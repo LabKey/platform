@@ -49,7 +49,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.suggestions.FilterSuggestion;
 import org.labkey.api.query.suggestions.FilterSuggestionContext;
 import org.labkey.api.query.suggestions.SuggestionColumn;
 import org.labkey.api.security.User;

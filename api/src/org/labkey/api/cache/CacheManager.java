@@ -182,16 +182,16 @@ public class CacheManager
     private static final Set<Class<?>> CLASSES = new HashSet<>();
 
     // Validate a cached value. Log errors for mutable collections/arrays and for values holding Container or User objects.
-    public static <V> void validate(String debugName, @Nullable V value)
+    public static <K, V> void validate(String debugName, K key, @Nullable V value)
     {
         if (value instanceof Wrapper<?>)
             return;
 
-        String description = CollectionUtils.getModifiableCollectionMapOrArrayType(value);
+        String valueDescription = CollectionUtils.getModifiableCollectionMapOrArrayType(value);
 
-        if (null != description)
+        if (null != valueDescription)
         {
-            LOG.error("{} attempted to cache {}, which could be mutated by callers!", debugName, description);
+            LOG.error("{} attempted to cache {}, which could be mutated by callers, at key {}", debugName, valueDescription, key);
         }
 
         // Flag values that hold a Container or User object

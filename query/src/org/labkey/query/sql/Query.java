@@ -37,7 +37,6 @@ import org.labkey.api.query.QueryNotFoundException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QuerySchemaWrapper;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -51,6 +50,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.QueryDefinitionImpl;
+import org.labkey.query.QuerySchemaWrapper;
 import org.labkey.query.controllers.QueryController;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 

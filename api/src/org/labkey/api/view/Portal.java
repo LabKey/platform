@@ -205,13 +205,13 @@ public class Portal implements ModuleChangeListener
     /** Issue 51727 - metrics to track web part usage */
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () ->
+        return metrics ->
         {
             SQLFragment sql = new SQLFragment("SELECT Name, COUNT(*) AS C FROM ").
                     append(getTableInfoPortalWebParts(), "pwp").
                     unsafeAppend(" GROUP BY Name");
 
-            return Map.of("webPartCounts", new SqlSelector(getSchema(), sql).getValueMap(String.class));
+            return metrics.put("webPartCounts", () -> new SqlSelector(getSchema(), sql).getValueMap(String.class), "Web parts on portal pages across the server, by web part name");
         };
     }
 

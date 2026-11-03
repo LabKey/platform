@@ -946,3 +946,125 @@ export function generateFieldNameForImport(length: number = 10, charset?: string
     }
     return fieldName;
 }
+
+/**
+ * Field/alias collision rules shared by sample types and data classes. A "parent alias" is the data type level
+ * lineage header (options.importAliases); a "field alias" is a field's own importAliases string.
+ */
+export async function checkDomainNameConflicts(server: IntegrationTestServer, domainType: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    const isSampleType = domainType === SAMPLE_TYPE_DOMAIN_KIND;
+    const baseFields = isSampleType ? [{ name: 'Name' }] : [];
+    const reservedName = 'Container'; // reserved by both kinds
+    const noun = isSampleType ? 'sample type' : 'data class';
+    const parentOf = (typeName: string) => (isSampleType ? 'materialInputs/' : 'dataInputs/') + typeName;
+
+    const name = 'NameAndAliasConflicts';
+
+    const createExpectError = async (fields: any[], error: string, importAliases?: Record<string, any>) => {
+        const options = { name };
+        if (importAliases)
+            options['importAliases'] = importAliases;
+        const resp = await server.post('property', 'createDomain', {
+            kind: domainType,
+            domainDesign: { name, fields: [...baseFields, ...fields] },
+            options,
+        }, { ...folderOptions, ...userOptions });
+
+        expect(resp['body']['success']).toBeFalsy();
+        expect(resp['body']['exception']).toContain(error);
+    };
+
+    await createExpectError([{ name: reservedName }], `'${reservedName}' is a reserved field name in '${name}'.`);
+    await createExpectError([{ name: 'Dupe' }, { name: 'Dupe' }], "The field name 'Dupe' is already taken.");
+    await createExpectError([{ name: 'A', importAliases: 'shared' }, { name: 'B', importAliases: 'shared' }],
+        "Duplicate import alias 'shared' for fields 'A', 'B'.");
+    await createExpectError([{ name: 'A' }, { name: 'B', importAliases: 'A' }],
+        "Import alias 'A' on field 'B' conflicts with a field name.");
+    await createExpectError([{ name: 'A', importAliases: reservedName }],
+        `Import alias '${reservedName}' on field 'A' conflicts with a reserved field name.`);
+
+    // Parent alias headers are validated against the same field names and field aliases.
+    await createExpectError([{ name: 'A' }], `Parent alias header is reserved: ${reservedName}`,
+        { [reservedName]: parentOf(name) });
+    await createExpectError([{ name: 'A' }], `An existing ${noun} property conflicts with parent alias header: A`,
+        { A: parentOf(name) });
+    await createExpectError([{ name: 'A', importAliases: 'viaAlias' }],
+        "Field 'A' has an import alias 'viaAlias' that conflicts with a parent alias header.",
+        { viaAlias: parentOf(name) });
+
+    // Issue 52627: for sample types 'Parent' is blocked as a parent alias header. It stays legal as a field name --
+    // the todolist domain template ships one, and existing sample types would fail to save if it were reserved.
+    if (isSampleType) {
+        await createExpectError([{ name: 'A' }], 'Parent alias header is reserved: Parent', { Parent: parentOf(name) });
+    }
+
+    // The same rules on update, against a design that already carries a field alias and a parent alias.
+    const parentAlias = 'existingParent';
+    const existingAliases = { [parentAlias]: parentOf(name) };
+    let domainId, domainURI, keeperFields;
+    await server.post('property', 'createDomain', {
+        kind: domainType,
+        domainDesign: { name, fields: [...baseFields, { name: 'Keeper', importAliases: 'keeperAlias' }] },
+        options: { name, importAliases: existingAliases },
+    }, { ...folderOptions, ...userOptions }).expect((result) => {
+        const domain = JSON.parse(result.text);
+        domainId = domain.domainId;
+        domainURI = domain.domainURI;
+        keeperFields = domain.fields; // carry the propertyIds so a re-save updates rather than recreates
+        return true;
+    });
+
+    expect(keeperFields?.length).toBe(1); // the update cases below rely on Keeper round-tripping with its propertyId
+
+    const rowId = isSampleType
+        ? await getSampleTypeRowIdByName(server, name, folderOptions)
+        : await getDataClassRowIdByName(server, name, folderOptions);
+
+    const saveDomain = (fields: any[], importAliases: Record<string, any>) =>
+        server.post('property', 'saveDomain', {
+            domainId,
+            domainDesign: { name, domainId, domainURI, fields },
+            options: { rowId, name, importAliases },
+        }, { ...folderOptions, ...userOptions });
+
+    const updateExpectError = async (fields: any[], importAliases: Record<string, any>, error: string) => {
+        const resp = await saveDomain(fields, importAliases);
+        expect(resp['body']['success']).toBeFalsy();
+        expect(resp['body']['exception']).toContain(error);
+    };
+
+    // A type's own persisted parent aliases must not reject themselves when the design is re-saved unchanged.
+    await saveDomain(keeperFields, existingAliases).expect(successfulResponse);
+
+    await updateExpectError([...keeperFields, { name: reservedName }], existingAliases,
+        `'${reservedName}' is a reserved field name in '${name}'.`);
+    await updateExpectError([...keeperFields, { name: 'Added', importAliases: 'keeperAlias' }], existingAliases,
+        "Duplicate import alias 'keeperAlias' for fields 'Added', 'Keeper'.");
+    await updateExpectError([...keeperFields, { name: 'Added', importAliases: 'Keeper' }], existingAliases,
+        "Import alias 'Keeper' on field 'Added' conflicts with a field name.");
+    await updateExpectError(keeperFields, { ...existingAliases, Keeper: parentOf(name) },
+        `An existing ${noun} property conflicts with parent alias header: Keeper`);
+    await updateExpectError(keeperFields, { ...existingAliases, keeperAlias: parentOf(name) },
+        "Field 'Keeper' has an import alias 'keeperAlias' that conflicts with a parent alias header.");
+    await updateExpectError(keeperFields, { ...existingAliases, [reservedName]: parentOf(name) },
+        `Parent alias header is reserved: ${reservedName}`);
+
+    // ...and the same two collisions approached from the field side, against the already-persisted parent alias.
+    await updateExpectError([...keeperFields, { name: parentAlias }], existingAliases,
+        `An existing ${noun} property conflicts with parent alias header: ${parentAlias}`);
+    await updateExpectError([...keeperFields, { name: 'Added', importAliases: parentAlias }], existingAliases,
+        `Field 'Added' has an import alias '${parentAlias}' that conflicts with a parent alias header.`);
+
+    // Omitting options.importAliases clears the stored parent aliases rather than leaving them untouched, so the
+    // field name above is free by the time it is validated. Pinned because the other plausible behavior -- keeping
+    // them while skipping validateParentAlias -- would let a new field silently shadow a parent alias.
+    const omittedResp = await server.post('property', 'saveDomain', {
+        domainId,
+        domainDesign: { name, domainId, domainURI, fields: [...keeperFields, { name: parentAlias }] },
+        options: { rowId, name },
+    }, { ...folderOptions, ...userOptions });
+    expect(omittedResp['body']['success']).toBeTruthy();
+
+    const details = await server.post('property', 'getDomainDetails', { domainId }, { ...folderOptions, ...userOptions });
+    expect(Object.keys(details['body']?.['options']?.['importAliases'] ?? {})).toHaveLength(0);
+}

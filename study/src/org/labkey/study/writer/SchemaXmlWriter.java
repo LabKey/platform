@@ -16,7 +16,6 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.IndexInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
@@ -33,6 +32,7 @@ import org.labkey.data.xml.IndicesType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.study.data.IndexInfo;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;

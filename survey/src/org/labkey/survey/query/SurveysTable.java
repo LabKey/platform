@@ -35,10 +35,10 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.survey.model.Survey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.survey.SurveyController;
 import org.labkey.survey.SurveyManager;
+import org.labkey.survey.model.Survey;
 
 import java.sql.SQLException;
 import java.util.ArrayList;

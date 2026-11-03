@@ -185,8 +185,26 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         return getHost() == null
             || currentContext == null
             || currentContext.getActionURL() == null
-                // Scheme check is here for test SAML redirect, which is to the same host ("localhost") but a different scheme
-            || (getHost().equalsIgnoreCase(currentContext.getActionURL().getHost()) && getScheme().equalsIgnoreCase(currentContext.getActionURL().getScheme()));
+            || isSameOrigin(currentContext.getActionURL());
+    }
+
+    // Scheme check is here for test SAML redirect, which is to the same host ("localhost") but a different scheme
+    private boolean isSameOrigin(URLHelper other)
+    {
+        return getHost().equalsIgnoreCase(other.getHost()) && getScheme().equalsIgnoreCase(other.getScheme()) && getEffectivePort() == other.getEffectivePort();
+    }
+
+    private int getEffectivePort()
+    {
+        if (_port != -1)
+            return _port;
+
+        return switch (StringUtils.lowerCase(getScheme()))
+        {
+            case "http", "ws" -> 80;
+            case "https", "wss" -> 443;
+            case null, default -> -1;
+        };
     }
 
     public String getURIString()
@@ -991,6 +1009,21 @@ public class URLHelper implements Cloneable, Serializable, JSONString
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testSameOrigin() throws URISyntaxException
+        {
+            URLHelper server = new URLHelper("http://localhost:8111/project/begin.view");
+            assertTrue(new URLHelper("http://LOCALHOST:8111/other").isSameOrigin(server));
+            assertFalse(new URLHelper("http://localhost:51999/callback").isSameOrigin(server));
+            assertFalse(new URLHelper("https://localhost:8111/callback").isSameOrigin(server));
+            assertFalse(new URLHelper("http://127.0.0.1:8111/callback").isSameOrigin(server));
+
+            URLHelper defaultPort = new URLHelper("https://www.labkey.org/home");
+            assertTrue(new URLHelper("https://www.labkey.org:443/other").isSameOrigin(defaultPort));
+            assertFalse(new URLHelper("https://www.labkey.org:8443/other").isSameOrigin(defaultPort));
+            assertTrue(new URLHelper("http://www.labkey.org:80/other").isSameOrigin(new URLHelper("http://www.labkey.org/home")));
+        }
+
         @Test
         public void testHtmlSafety() throws URISyntaxException
         {

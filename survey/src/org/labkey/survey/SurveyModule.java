@@ -39,9 +39,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.survey.SurveyService;
-import org.labkey.api.survey.model.Survey;
-import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ReturnURLString;
@@ -55,6 +52,8 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.survey.model.Survey;
+import org.labkey.survey.model.SurveyDesign;
 import org.labkey.survey.model.SurveyServiceImpl;
 import org.labkey.survey.query.SurveyQuerySchema;
 import org.labkey.survey.query.SurveyQuerySettings;
@@ -65,7 +64,6 @@ import org.springframework.validation.BindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -131,11 +129,10 @@ public class SurveyModule extends DefaultModule
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(NAME, () -> {
-                Map<String, Object> metric = new HashMap<>();
-                metric.put("surveyDesigns", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class));
-                metric.put("surveys", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class));
-                return metric;
+            svc.registerUsageMetrics(NAME, metrics -> {
+                metrics.put("surveyDesigns", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class), "Survey designs across all containers");
+                metrics.put("surveys", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class), "Survey responses across all containers, submitted or in progress");
+                return metrics;
             });
         }
     }

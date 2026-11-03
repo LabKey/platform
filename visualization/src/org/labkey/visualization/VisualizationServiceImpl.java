@@ -43,6 +43,7 @@ import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationProvider.MeasureFilter;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.sql.VisualizationCDSGenerator;
@@ -179,7 +180,7 @@ public class VisualizationServiceImpl implements VisualizationService
         DefaultSchema defaultSchema = DefaultSchema.get(u, c);
         for (QuerySchema querySchema : defaultSchema.getSchemas(showHidden))
         {
-            VisualizationProvider<?> provider = querySchema.createVisualizationProvider();
+            VisualizationProvider<?> provider = VisualizationSchema.getProvider(querySchema);
             if (provider != null)
             {
                 result.put(querySchema.getName(), provider);
@@ -212,7 +213,7 @@ public class VisualizationServiceImpl implements VisualizationService
             throw new IllegalArgumentException("No measure schema found for " + schema);
         }
 
-        VisualizationProvider<?> provider = userSchema.createVisualizationProvider();
+        VisualizationProvider<?> provider = VisualizationSchema.getProvider(userSchema);
         if (provider == null)
         {
             throw new IllegalArgumentException("No measure provider found for schema " + userSchema.getSchemaPath());
@@ -258,7 +259,7 @@ public class VisualizationServiceImpl implements VisualizationService
                 _tableInfoMap.put(query, tableInfo);
 
             if (!_schemaVisualizationProviderMap.containsKey(query.getSchema().getName()))
-                _schemaVisualizationProviderMap.put(query.getSchema().getName(), query.getSchema().createVisualizationProvider());
+                _schemaVisualizationProviderMap.put(query.getSchema().getName(), VisualizationSchema.getProvider(query.getSchema()));
 
             // add measure properties
             FieldKey fieldKey = entry.getKey().first;

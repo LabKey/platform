@@ -2716,7 +2716,10 @@ public class DavController extends SpringActionController
             {
                 long lastModified = resource.getLastModified();
                 if (Long.MIN_VALUE != lastModified)
+                {
                     json.key("lastmodified").value(getISOCreationDate(lastModified));
+                    json.key("lastModifiedFormatted").value(getDisplayDate(resource, lastModified));
+                }
                 long length = resource.getContentLength();
                 json.key("contentlength").value(length);
                 if (length >= 0)
@@ -5834,6 +5837,15 @@ public class DavController extends SpringActionController
     private String getISOCreationDate(long creationDate)
     {
         return creationDateFormat.format(new Date(creationDate));
+    }
+
+    // Clients display this rather than the ISO timestamp, which is an instant a browser renders in the viewer's time zone.
+    // Takes the display format from the resource's own container; a _webdav request's ViewContext container doesn't resolve.
+    private String getDisplayDate(WebdavResource resource, long date)
+    {
+        GUID containerId = resource.getContainerId();
+        Container c = null != containerId ? ContainerManager.getForId(containerId) : null;
+        return DateUtil.formatDateTime(null != c ? c : ContainerManager.getRoot(), new Date(date));
     }
 
     private static final FastDateFormat httpDateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);

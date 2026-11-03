@@ -80,7 +80,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpSchema;
@@ -107,6 +106,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.experiment.exp.property.DomainPropertyAuditProvider;
 
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -1258,7 +1258,7 @@ public class DomainImpl implements Domain
 
         private static String renderValidators(PropertyDescriptor prop)
         {
-            Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
+            Collection<PropertyValidatorBean> validators = DomainPropertyManager.get().getValidators(prop);
             return getPropertyValidatorStringVal(validators);
         }
 
@@ -1270,7 +1270,7 @@ public class DomainImpl implements Domain
 
     }
 
-    public static String getPropertyValidatorStringVal(Collection<PropertyValidator> validators)
+    public static String getPropertyValidatorStringVal(Collection<PropertyValidatorBean> validators)
     {
         if (validators == null || validators.isEmpty())
             return null;

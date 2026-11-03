@@ -66,7 +66,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorKind;
@@ -79,8 +79,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetrics;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
@@ -104,9 +104,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidatorURI;
+import static org.labkey.api.exp.property.DefaultValidatorKind.createValidatorURI;
 
-public class PropertyServiceImpl implements PropertyService, DescribedUsageMetricsProvider
+public class PropertyServiceImpl implements PropertyService, UsageMetricsProvider
 {
     private final List<DomainKind<?>> _domainTypes = new CopyOnWriteArrayList<>();
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
@@ -365,7 +365,7 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
     }
 
     @Override
-    public IPropertyValidator createValidator(String typeURI)
+    public PropertyValidatorDef createValidator(String typeURI)
     {
         ValidatorKind kind = getValidatorKind(typeURI);
         if (kind != null)
@@ -374,13 +374,13 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
     }
 
     @Override
-    public @NotNull List<IPropertyValidator> getPropertyValidators(PropertyDescriptor desc)
+    public @NotNull List<PropertyValidatorDef> getPropertyValidators(PropertyDescriptor desc)
     {
-        List<IPropertyValidator> validators = new ArrayList<>();
+        List<PropertyValidatorDef> validators = new ArrayList<>();
 
-        for (PropertyValidator v : DomainPropertyManager.get().getValidators(desc))
+        for (PropertyValidatorBean v : DomainPropertyManager.get().getValidators(desc))
         {
-            validators.add(new PropertyValidatorImpl(v));            
+            validators.add(new PropertyValidatorDefImpl(v));
         }
         return validators;
     }
@@ -399,14 +399,14 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
     }
 
     @Override
-    public IPropertyValidator getValidatorForColumn(ColumnInfo col, org.labkey.api.gwt.client.model.PropertyValidatorType type)
+    public PropertyValidatorDef getValidatorForColumn(ColumnInfo col, org.labkey.api.gwt.client.model.PropertyValidatorType type)
     {
-        List<? extends IPropertyValidator> validators = col.getValidators();
+        List<? extends PropertyValidatorDef> validators = col.getValidators();
         if (!validators.isEmpty())
         {
             String typeURI = createValidatorURI(type).toString();
 
-            for (IPropertyValidator validator : validators)
+            for (PropertyValidatorDef validator : validators)
             {
                 if (validator.getTypeURI().equals(typeURI))
                     return validator;
@@ -416,7 +416,7 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
     }
 
     @Override
-    public List<String> getTextChoiceValidatorOptions(IPropertyValidator validator)
+    public List<String> getTextChoiceValidatorOptions(PropertyValidatorDef validator)
     {
         String expression = "";
         if (validator != null && validator.getExpressionValue() != null)
@@ -617,7 +617,7 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
         {
             for (PropertyValidatorType xValidator : xProp.getPropertyValidatorArray())
             {
-                PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
+                PropertyValidatorDefImpl validator = new PropertyValidatorDefImpl(new PropertyValidatorBean());
                 validator.setContainer(prop.getContainer().getId());
                 validator.setName(xValidator.getName());
                 validator.setTypeURI(xValidator.getTypeURI());
@@ -700,17 +700,14 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
         DbSchema schema = ExperimentService.get().getSchema();
         String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
 
-        TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTableOrThrow(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
-        long storageColumnNameMismatches = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
-
         metrics.group("propertyValidators", "Field validators")
-                .put("byType", new SqlSelector(schema,
+                .put("byType", () -> new SqlSelector(schema,
                                 new SQLFragment("SELECT typeuri, COUNT(*) AS count FROM exp.propertyvalidator GROUP BY typeuri")
                         ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
                             x.put(m.get("typeuri").toString(), m.get("count"));
                             return x;
                         }), "Validators by type URI; a Text Choice field's choices are one validator")
-                .put("textChoiceValues", new SqlSelector(schema,
+                .put("textChoiceValues", () -> new SqlSelector(schema,
                                 new SQLFragment("SELECT MIN(NumValues) AS min, MAX(NumValues) AS max, AVG(NumValues) AS avg FROM (")
                                         .append(String.format("SELECT (%s(expression) - %s(replace(expression, '|', '')) + 1) AS NumValues FROM exp.propertyvalidator WHERE typeuri = ?", lengthFn, lengthFn))
                                         .unsafeAppend(") AS X")
@@ -722,18 +719,21 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
                                 return x;
                             }), "Choices per Text Choice validator: min, max, and avg");
         metrics.group("propertyCountsByRange", "Fields across all domains by data type (range URI after # or xsd:); 'null' for none")
-                .putAll(stripUriPrefixes(new SqlSelector(schema,
+                .putAll(() -> stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN RangeURI IS NULL THEN 'null' ELSE RangeURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY RangeURI")
                 ).getValueMap(String.class)));
         metrics.group("propertyCountsByConcept", "Fields across all domains by concept URI (after # or xsd:); 'null' for none")
-                .putAll(stripUriPrefixes(new SqlSelector(schema,
+                .putAll(() -> stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
                 ).getValueMap(String.class)));
         metrics.group("defaultValuePropertyCounts", "Fields with a saved folder- or user-level default value, by default value type and by owning domain's LSID namespace; counts fields, not saved values")
-                .put("folder", savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "%.Folder-%"))
-                .put("user", savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + ".Folder-%"));
-        metrics.put("conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class), "Fields with conditional formatting");
-        metrics.put("storageColumnNameMismatches", storageColumnNameMismatches, "Fields in provisioned domains whose database column name differs from the field name");
+                .put("folder", () -> savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "%.Folder-%"))
+                .put("user", () -> savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + ".Folder-%"));
+        metrics.put("conditionalFormattingFields", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class), "Fields with conditional formatting");
+        metrics.put("storageColumnNameMismatches", () -> {
+            TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTableOrThrow(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
+            return new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
+        }, "Fields in provisioned domains whose database column name differs from the field name");
         return metrics;
     }
 
@@ -868,8 +868,8 @@ public class PropertyServiceImpl implements PropertyService, DescribedUsageMetri
         public void testTextChoiceValidatorOptions()
         {
             PropertyServiceImpl service = new PropertyServiceImpl();
-            TextChoiceValidator validator = new TextChoiceValidator();
-            IPropertyValidator instance = validator.createInstance();
+            TextChoiceValidatorKind validator = new TextChoiceValidatorKind();
+            PropertyValidatorDef instance = validator.createInstance();
 
             // empty expression
             instance.setExpressionValue("");

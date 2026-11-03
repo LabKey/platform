@@ -18,7 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
@@ -106,7 +106,7 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
 
     void setConditionalFormats(@NotNull List<ConditionalFormat> formats);
 
-    void setValidators(List<? extends IPropertyValidator> validators);
+    void setValidators(List<? extends PropertyValidatorDef> validators);
 
     void checkLocked();
 

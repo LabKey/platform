@@ -44,7 +44,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.BatchValidationException;
@@ -625,7 +625,7 @@ public class SqlController extends SpringActionController
 
             DomainProperty tagsProp = list.getDomain().addProperty(new PropertyStorageSpec("Tags", JdbcType.VARCHAR));
             tagsProp.setRangeURI(PropertyType.MULTI_CHOICE.getTypeUri());
-            IPropertyValidator tcValidator = PropertyService.get().createValidator("urn:lsid:labkey.com:PropertyValidator:textchoice");
+            PropertyValidatorDef tcValidator = PropertyService.get().createValidator("urn:lsid:labkey.com:PropertyValidator:textchoice");
             tcValidator.setName("Text Choice Validator");
             tcValidator.setExpressionValue("Red|Green|Blue");
             tagsProp.addValidator(tcValidator);

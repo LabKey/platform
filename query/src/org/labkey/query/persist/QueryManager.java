@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -63,6 +64,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
@@ -1054,31 +1056,30 @@ public class QueryManager
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(moduleName, () -> {
-                MultiSet<String> multiSet = DbScope.getDbScopes().stream()
-                    .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
-                    .collect(Collectors.toCollection(HashMultiSet::new));
+            svc.registerUsageMetrics(moduleName, metrics -> {
+                String name = "externalDatasources";
+                metrics.put(name, NightlyRecalculatingSuppliers.get(name, () -> {
+                    MultiSet<String> multiSet = DbScope.getDbScopes().stream()
+                        .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
+                        .collect(Collectors.toCollection(HashMultiSet::new));
 
-                Map<String, Object> statsMap = multiSet.uniqueSet().stream()
-                    .collect(Collectors.toMap(Function.identity(), multiSet::getCount));
-
-                Map<String, Object> metrics = new HashMap<>();
-                metrics.put("externalDatasources", statsMap);
+                    return Collections.unmodifiableMap(multiSet.uniqueSet().stream()
+                        .collect(Collectors.toMap(Function.identity(), multiSet::getCount)));
+                }), "External (non-LabKey) data sources by database product name");
                 metrics.put(
                     "customViewCounts",
-                    Map.of(
+                    () -> Map.of(
                         "DataClasses", getSchemaCustomViewCounts("exp.data"),
                         "SampleTypes", getSchemaCustomViewCounts("samples"),
                         "Assays", getSchemaCustomViewCounts("assay"),
                         "Inventory", getSchemaCustomViewCounts("inventory")
-                    )
+                    ),
+                    "Saved custom views across all containers by schema area (DataClasses, SampleTypes, Assays, Inventory): defaultOverrides (unnamed) and namedViews exclude hidden and snapshot views, inheritable likewise, shared (no owner) and identifyingFieldsViews count all"
                 );
-                metrics.put("customViewWithLineageColumn", getLineageCustomViewMetrics());
-                metrics.put("queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric());
+                metrics.put("customViewWithLineageColumn", QueryManager::getLineageCustomViewMetrics, "Custom views with lineage (input, output, ancestor) columns, hidden and snapshot views excluded: view counts, plus total and min/percentile/max/avg columns per view when any exist");
+                metrics.put("queryDefWithCalculatedFieldsCounts", QueryManager::getCalculatedFieldsCountsMetric, "Query definitions whose metadata defines a calculated field, by schema (assay.* schemas grouped as assay)");
 
-                Map<String, Object> exportTypeCounts = getExportTypeCountsMetric();
-                if (exportTypeCounts != null)
-                    metrics.put("exportTypeCounts", exportTypeCounts);
+                metrics.put("exportTypeCounts", QueryManager::getExportTypeCountsMetric, "Query export audit events by export type, from the audit log across all folders; \"Excel multi-tab\" approximates multi-tab Excel exports", UsageMetrics.Kind.CUMULATIVE);
                 return metrics;
             });
         }

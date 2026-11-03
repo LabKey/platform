@@ -91,7 +91,6 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TSVJSONWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -100,7 +99,6 @@ import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ExperimentRunForm;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Identifiable;
@@ -214,6 +212,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.DOM;
@@ -300,6 +299,8 @@ import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
+import org.labkey.experiment.data.TSVJSONWriter;
+import org.labkey.experiment.exp.ExperimentRunForm;
 import org.labkey.experiment.lineage.ExpLineageServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.types.TypesController;
@@ -2452,8 +2453,8 @@ public class ExperimentController extends SpringActionController
                 if (!underFileRoot)
                 {
                     // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
-                    List<Container> containers = fileSvc.getContainersForFilePath(dataPath);
-                    if (containers.isEmpty() || containers.stream().noneMatch(c -> c.hasPermission(getUser(), ReadPermission.class)))
+                    Container fileContainer = fileSvc.getContainerForFilePath(dataPath);
+                    if (fileContainer == null || !fileContainer.hasPermission(getUser(), ReadPermission.class))
                         throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
                 }
             }
@@ -2748,7 +2749,7 @@ public class ExperimentController extends SpringActionController
                                 qInfo.getString("query"), getViewContext().getActionURL(),
                                 rootObject.getString("auditMessage") + filename,
                                 null);
-                        SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "convertTable", "asExcel");
+                        SimpleMetricsService.get().increment(ExperimentMetricArea.CONVERT_TABLE, "asExcel");
                     }
                 }
             }
@@ -2814,7 +2815,7 @@ public class ExperimentController extends SpringActionController
                             getViewContext().getActionURL(),
                             rootObject.getString("auditMessage") + filename,
                             rowsArray.length());
-                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "convertTable", "asDelimited");
+                    SimpleMetricsService.get().increment(ExperimentMetricArea.CONVERT_TABLE, "asDelimited");
                 }
             }
             catch (JSONException e)
@@ -4447,11 +4448,11 @@ public class ExperimentController extends SpringActionController
 
             if (getOptionParamValue(Params.crossTypeImport))
             {
-                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeImport");
+                SimpleMetricsService.get().increment(ExperimentMetricArea.SAMPLE_IMPORT, "crossTypeImport");
                 if (_context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
-                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeUpdate");
+                    SimpleMetricsService.get().increment(ExperimentMetricArea.SAMPLE_IMPORT, "crossTypeUpdate");
                 else if (_context.getInsertOption() == QueryUpdateService.InsertOption.MERGE)
-                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeMerge");
+                    SimpleMetricsService.get().increment(ExperimentMetricArea.SAMPLE_IMPORT, "crossTypeMerge");
             }
 
             return count;

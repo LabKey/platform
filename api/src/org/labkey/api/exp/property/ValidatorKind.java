@@ -18,6 +18,7 @@ package org.labkey.api.exp.property;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.validator.PropertyValidator;
 import org.labkey.api.query.ValidationError;
 import org.labkey.data.xml.ValidatorPropertyType;
 import org.labkey.data.xml.ValidatorType;
@@ -26,11 +27,15 @@ import org.labkey.data.xml.ValidatorsType;
 import java.util.LinkedList;
 import java.util.List;
 
-/*
-* User: Karl Lum
-* Date: Aug 8, 2008
-* Time: 10:45:38 AM
-*/
+/**
+ * The rule behind one type of property validator, registered once per type URI via
+ * {@link PropertyService#registerValidatorKind}. Kinds are shared singletons, so per-operation caches belong in the
+ * {@link ValidatorContext}, not in the ValidatorKind.
+ * <p>
+ * A {@link PropertyValidatorDef} configures a kind for one property and is persisted using PropertyValidatorBean;
+ * {@link #bind} turns a definition into the {@link org.labkey.api.data.validator.PropertyValidator} that checks a
+ * column's values.
+ */
 public interface ValidatorKind
 {
     String NAMESPACE = "PropertyValidator";
@@ -39,12 +44,18 @@ public interface ValidatorKind
     String getTypeURI();
     String getDescription();
 
-    IPropertyValidator createInstance();
-    boolean isValid(IPropertyValidator validator, List<ValidationError> errors);
-    boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue);
+    PropertyValidatorDef createInstance();
+    boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors);
+    boolean validate(PropertyValidatorDef validator, ColumnRenderProperties field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue);
+
+    /** Must be cheap and must not throw: Table.insert/update create validators for every value they write */
+    default PropertyValidator bind(PropertyValidatorDef validator, ColumnRenderProperties field)
+    {
+        return new PropertyValidator(field, validator, this);
+    }
 
     // Standard save-validator-to-XML method. ValidatorKind implementations can customize this by overriding.
-    default void convertToXml(IPropertyValidator v, ValidatorsType validatorsXml)
+    default void convertToXml(PropertyValidatorDef v, ValidatorsType validatorsXml)
     {
         ValidatorType validatorType = validatorsXml.addNewValidator();
         validatorType.setTypeURI(v.getTypeURI());
@@ -64,9 +75,9 @@ public interface ValidatorKind
         });
     }
 
-    static List<? extends IPropertyValidator> convertFromXML(ValidatorsType validatorsXml)
+    static List<? extends PropertyValidatorDef> convertFromXML(ValidatorsType validatorsXml)
     {
-        List<IPropertyValidator> list = new LinkedList<>();
+        List<PropertyValidatorDef> list = new LinkedList<>();
 
         if (null != validatorsXml)
         {
@@ -74,7 +85,7 @@ public interface ValidatorKind
 
             for (ValidatorType v : validators)
             {
-                IPropertyValidator pv = PropertyService.get().createValidator(v.getTypeURI());
+                PropertyValidatorDef pv = PropertyService.get().createValidator(v.getTypeURI());
                 pv.setName(v.getName());
 
                 if (null != v.getDescription())

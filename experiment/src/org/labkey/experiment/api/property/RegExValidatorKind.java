@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 2008-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.experiment.api.property;
+
+import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.exp.property.DefaultValidatorKind;
+import org.labkey.api.exp.property.PropertyValidatorDef;
+import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.exp.property.ValidatorKind;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
+
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
+/**
+ * Matches the whole value against the expression's pattern; the {@link #FAIL_ON_MATCH} property inverts the result
+ */
+public class RegExValidatorKind extends DefaultValidatorKind implements ValidatorKind
+{
+    public static final String FAIL_ON_MATCH = "failOnMatch";
+
+    @Override
+    public String getName()
+    {
+        return "Regular Expression Property Validator";
+    }
+
+    @Override
+    public String getTypeURI()
+    {
+        return createValidatorURI(PropertyValidatorType.RegEx).toString();
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return null;
+    }
+
+    @Override
+    public PropertyValidatorDef createInstance()
+    {
+        PropertyValidatorDefImpl validator = new PropertyValidatorDefImpl(new PropertyValidatorBean());
+        validator.setTypeURI(getTypeURI());
+
+        return validator;
+    }
+
+    @Override
+    public boolean isValid(PropertyValidatorDef validator, List<ValidationError> errors)
+    {
+        try
+        {
+            //noinspection ResultOfMethodCallIgnored
+            Pattern.compile(validator.getExpressionValue());
+            return true;
+        }
+        catch (PatternSyntaxException se)
+        {
+            String sb = "The " +
+                getName() +
+                ": '" +
+                validator.getName() +
+                "' has a syntax error : " +
+                se.getMessage();
+
+            errors.add(new SimpleValidationError(sb));
+        }
+        return false;
+    }
+
+    @Override
+    public boolean validate(PropertyValidatorDef validator, ColumnRenderProperties field, @NotNull Object value,
+                            List<ValidationError> errors, ValidatorContext validatorCache, @Nullable Object providedValue)
+    {
+        assert value != null : "Shouldn't be validating a null value";
+
+        try
+        {
+            Pattern expression = (Pattern)validatorCache.get(RegExValidatorKind.class, validator.getExpressionValue());
+            if (expression == null)
+            {
+                expression = Pattern.compile(validator.getExpressionValue());
+                // Cache the pattern so that it can be reused
+                validatorCache.put(RegExValidatorKind.class, validator.getExpressionValue(), expression);
+            }
+            Matcher matcher = expression.matcher(String.valueOf(value));
+            boolean failOnMatch = BooleanUtils.toBoolean(validator.getProperties().get(FAIL_ON_MATCH));
+            boolean matched = matcher.matches();
+
+            if ((matched && failOnMatch) || (!matched && !failOnMatch))
+            {
+                createErrorMessage(validator, field, value, errors);
+                return false;
+            }
+            return true;
+        }
+        catch (PatternSyntaxException se)
+        {
+            errors.add(new SimpleValidationError(se.getMessage()));
+        }
+        return false;
+    }
+}

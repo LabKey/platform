@@ -63,10 +63,8 @@ import org.labkey.issue.view.IssuesWebPartFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.issues.IssuesSchema.ISSUE_DEF_SCHEMA_NAME;
@@ -153,13 +151,11 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         UsageMetricsService svc = UsageMetricsService.get();
         if (svc != null)
         {
-            svc.registerUsageMetrics(getName(), () -> {
-                Map<String, Object> metric = new HashMap<>();
+            svc.registerUsageMetrics(getName(), metrics -> {
+                metrics.put("issueDefCount", () -> new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issueListDef").getObject(Long.class), "Issue list definitions across all containers");
+                metrics.put("issuesCount", () -> new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issues").getObject(Long.class), "Issues across all containers and issue lists, open and closed");
 
-                metric.put("issueDefCount", new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issueListDef").getObject(Long.class));
-                metric.put("issuesCount", new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issues").getObject(Long.class));
-
-                return metric;
+                return metrics;
             });
         }
     }
