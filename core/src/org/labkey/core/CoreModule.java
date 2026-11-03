@@ -1540,6 +1540,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             RhinoService.TestCase.class,
             SchemaXMLTestCase.class,
             SecurityApiActions.TestCase.class,
+            SecurityController.GroupMembershipScopingTestCase.class,
             SecurityController.TestCase.class,
             SiteSettingsUpdater.TestCase.class,
             SqlDialect.DialectTestCase.class,
