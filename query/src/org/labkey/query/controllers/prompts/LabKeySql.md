@@ -6,51 +6,34 @@ Core facts:
 * **SELECT only.** No INSERT/UPDATE/DELETE, no DDL. A statement is: `[PARAMETERS(...)] [WITH ...] SELECT ... [set ops] [ORDER BY ...] [LIMIT n]`.
 * Keywords, function names, schema/table/column names are **case-insensitive**.
 * Comments: `-- line` and `/* block */`.
+* Quoting, literals, reserved words, and scalar functions are in the **LabKey SQL Expression Reference** at the end of this document.
 * If a `validateSQL` tool is available, use it to check syntax before saving or executing a query. Note that parse-time errors are descriptive, but type errors and dialect issues may only surface at execution time as an unhelpful generic message — apply the rules below proactively.
 
 -----
 
 ### **1. NOT SUPPORTED — Write This Instead**
 
-LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Check generated SQL against this table first.**
+LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Check generated SQL against this table first**, and against the expression-level list in the expression reference.
 
 | Do NOT write | Why | Write instead |
 | --- | --- | --- |
 | `ROW_NUMBER() OVER (...)`, `RANK`, `LAG`, `SUM(x) OVER (...)` | No window functions, no `OVER` | Self-join or correlated subquery |
 | `LIMIT 10 OFFSET 20`, `FETCH FIRST n ROWS`, `TOP n` | Only `LIMIT <integer literal>` exists; no OFFSET | `LIMIT 10`; page via client API `maxRows`/`offset` |
 | `GROUP BY 1` | Ordinals/constants rejected in GROUP BY (error: "Expression in Group By clause must not be a constant") | Repeat the expression: `GROUP BY YEAR(Date)`. (`ORDER BY 1` **is** allowed.) |
-| `EXTRACT(YEAR FROM d)` | Not supported | `YEAR(d)`, `MONTH(d)`, `DAYOFMONTH(d)`, `HOUR(d)`, … |
-| `col::integer` | No `::` cast | `CAST(col AS INTEGER)` |
 | `SUM(DISTINCT x)`, `AVG(DISTINCT x)` | `DISTINCT` only inside `COUNT()` and `GROUP_CONCAT()` | Aggregate over a `SELECT DISTINCT` subquery |
-| `x ILIKE 'a%'`, `x ~ 'regex'`, `x SIMILAR TO p` | Operators not supported | `LOWER(x) LIKE 'a%'`; PostgreSQL only: `similar_to(x, pattern[, escape])` |
 | `ORDER BY x NULLS LAST` | Not supported | `ORDER BY x IS NULL, x` |
-| `d + INTERVAL '1 day'` | No INTERVAL literals | `TIMESTAMPADD('SQL_TSI_DAY', 1, d)` |
-| `POSITION(a IN b)` | Unknown method | `LOCATE(a, b[, startIndex])` |
-| `TRIM(BOTH ' ' FROM x)` | Not supported | `LTRIM(RTRIM(x))`; PostgreSQL only: `btrim(x)` |
 | `COUNT(*) FILTER (WHERE c)` | No FILTER clause | `SUM(CASE WHEN c THEN 1 ELSE 0 END)` |
 | `JOIN b USING (id)`, `NATURAL JOIN` | Every non-CROSS join requires `ON` | `JOIN b ON a.id = b.id` |
 | `SUM(a \|\| b)`, `MIN(a & b)` | Aggregate arguments cannot directly contain `\|\|` or bitwise operators | Add parentheses: `SUM((a \|\| b))` |
-| `DATE '2001-02-03'` | No typed literals | `{d '2001-02-03'}` or `CAST('2001-02-03' AS DATE)` |
-| `{d'2001-02-03'}` (no space) | Parse error — the space after `{d`/`{ts` is part of the token | `{d '2001-02-03'}`, `{ts '2001-02-03 04:05:06'}` |
 | `WITH cte (col1, col2) AS (...)` | No CTE column lists | Alias inside: `WITH cte AS (SELECT x AS col1 ...)` |
-| `a < b < c` | Comparisons don't chain | `a < b AND b < c` |
-| `CASE WHEN c THEN a = b END` | A bare comparison (`=`, `<`, `IS [NOT] NULL`, `IS [NOT] DISTINCT FROM`, …) is not allowed as a THEN/ELSE result — "Syntax error near '=', expected 'END'" | Parenthesize it: `THEN (a = b)` |
 | `PARAMETERS (D DATE)` | DATE/TIME/BOOLEAN not parameter types | Use `TIMESTAMP` (or `BIT` for boolean) |
 | `GROUPING SETS / ROLLUP / CUBE / LATERAL / TABLESAMPLE` | Not supported | Restructure (UNION of grouped queries, etc.) |
 
 -----
 
-### **2. Identifiers, Literals, and Reserved Words**
+### **2. Schema Names and Statements**
 
-* **Identifiers**: double-quote names containing spaces/special characters or matching reserved words: `"Physical Exam"`. Escape an embedded `"` by doubling it.
 * **Schema names** can have several parts, each quoted separately as needed: `FROM assay.General."My.Assay".Data`. `listSchemas` returns this form as `quotedName`.
-* **String literals**: single quotes; escape `'` by doubling: `'Jim''s Item'`. No backslash escapes.
-* **Date/time literals**: `{d '2001-02-03'}` and `{ts '2001-02-03 04:05:06'}` — JDBC escape syntax, **space after `{d`/`{ts` required**.
-* **Booleans**: `TRUE`, `FALSE`. Special doubles: `CAST('Infinity' AS DOUBLE)`, `CAST('-Infinity' AS DOUBLE)`, `CAST('NaN' AS DOUBLE)`.
-* **Reserved words** — these cannot be used as bare identifiers/aliases; double-quote them (`SELECT COUNT(*) AS "Count"`):
-
-  `all, any, and, as, asc, avg, between, both, case, class, count, current_date, current_time, current_timestamp, delete, desc, distinct, elements, else, empty, end, escape, except, exists, false, fetch, from, full, group, having, in, indices, inner, insert, intersect, into, is, join, leading, left, like, limit, max, member, min, new, not, null, of, on, or, order, outer, right, select, set, some, stddev, sum, trailing, then, true, union, update, user, versioned, when, where`
-
 * Do not end statements with `;` (produces a warning) and do not submit multiple statements.
 
 -----
@@ -64,7 +47,6 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 * **ORDER BY**: column names, aliases, expressions, or ordinals (`ORDER BY 1`); `ASC`/`DESC`. **When a query is used as a subquery or saved and wrapped by the server (common), its ORDER BY is IGNORED unless LIMIT is also present.** Prefer sorting via the client API / grid view; if SQL sorting is needed, add `LIMIT`. To sort by an expression, put it in the SELECT list (optionally `@hidden`) and sort by its alias.
 * **LIMIT**: `LIMIT <integer literal>` only, placed after ORDER BY. Applies to the whole UNION when used at the end of one.
 * **Set operations**: `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT`. All terms need the same column count and compatible types; result column names come from the first term. A trailing ORDER BY may reference only output column names or ordinals. Parenthesized sub-statements are allowed.
-* **Division**: `/` warns unless the divisor is guarded — write `dividend / NULLIF(divisor, 0)`. Integer ÷ integer truncates; cast one operand: `CAST(a AS DOUBLE) / b`.
 
 -----
 
@@ -114,34 +96,19 @@ Rules: `DISTINCT` is allowed only in `COUNT` and `GROUP_CONCAT`. No `FILTER` cla
 
 -----
 
-### **6. Scalar Functions (Both Databases)**
+### **6. LabKey Extension Functions**
 
-#### Mathematical
-`abs(v)`, `acos(v)`, `asin(v)`, `atan(v)`, `atan2(v1,v2)`, `ceiling(v)`, `cos(r)`, `cot(r)`, `degrees(r)`, `exp(n)`, `floor(v)`, `log(n)` (natural), `log10(n)`, `mod(dividend, divider)`, `pi()`, `power(base, exp)`, `radians(d)`, `rand([seed])`, `round(v[, precision])`, `sign(v)`, `sin(v)`, `sqrt(v)`, `tan(v)`, `truncate(v, precision)` (may require `CAST(v AS NUMERIC)`)
+Mathematical, string, date and time, and conditional functions are in the expression reference. LabKey also provides:
 
-#### String
-`concat(a, b, ...)` (same as `||`: NULL if any argument is NULL), `lcase(s)`/`lower(s)`, `ucase(s)`/`upper(s)`, `left(s, n)`, `right(s, n)`, `length(s)`, `locate(substr, s[, start])`, `ltrim(s)`, `rtrim(s)`, `repeat(s, count)`, `startswith(s, prefix)`, `substring(s, start[, length])` (1-based)
-
-#### Date and Time
-* `curdate()`, `curtime()`, `now()` — and the SQL-standard forms `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP` (parentheses optional)
-* `year(d)`, `quarter(d)`, `month(d)`, `monthname(d)`, `week(d)`, `dayofyear(d)`, `dayofmonth(d)`, `dayofweek(d)`, `hour(t)`, `minute(t)`, `second(t)`
-* `timestampadd(interval, n, ts)` — interval is a quoted constant, one of `'SQL_TSI_FRAC_SECOND'`, `'SQL_TSI_SECOND'`, `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, `'SQL_TSI_DAY'`, `'SQL_TSI_WEEK'`, `'SQL_TSI_MONTH'`, `'SQL_TSI_QUARTER'`, `'SQL_TSI_YEAR'` (the `SQL_TSI_` prefix may be omitted: `'DAY'`).
-* `timestampdiff(interval, ts1, ts2)` — same constants, **but on PostgreSQL only `'SQL_TSI_SECOND'`, `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, `'SQL_TSI_DAY'` work**; YEAR/MONTH/WEEK/QUARTER fail at execution time. For those use:
-* `age(d1, d2)` (years), `age(d1, d2, interval)` with `'SQL_TSI_DAY' | 'SQL_TSI_MONTH' | 'SQL_TSI_YEAR'`, `age_in_years(d1, d2)`, `age_in_months(d1, d2)`, `age_in_days(d1, d2)`
-
-#### Conditional and Utility
-`coalesce(v1, ..., vN)`, `nullif(a, b)` (NULL if a=b, else a — use for divide-by-zero guards), `ifnull(test, default)`, `isequal(a, b)` (true when equal or both NULL, but NULL — not false — when only one side is NULL; prefer `a IS NOT DISTINCT FROM b`, which always returns true/false), `greatest(a, b, ...)`, `least(a, b, ...)`, `isnumeric(expr)`, `ifdefined(col)`, `CASE [operand] WHEN ... THEN ... [ELSE ...] END`
-
-#### LabKey Extensions
 `userid()`, `username()`, `ismemberof(groupid)`, `contextPath()`, `folderName()`, `folderPath()`, `moduleProperty('module','property')`, `javaConstant('class.FIELD')`, `version()`, `overlaps(start1, end1, start2, end2)` (PostgreSQL only)
 
 -----
 
 ### **7. PostgreSQL-Only Scalar Functions**
 
-Only when the server runs PostgreSQL (the common case). Passed through natively:
+Only when the server runs PostgreSQL (the common case). In addition to the PostgreSQL-only functions in the expression reference, these are passed through natively:
 
-`ascii`, `btrim(s[,chars])`, `char_length`, `character_length`, `chr(code)`, `concat_ws(sep, v1, ...)` (variadic, skips NULLs), `decode`, `encode`, `initcap`, `lpad(s,n[,fill])`, `rpad(s,n[,fill])`, `md5`, `octet_length`, `quote_ident`, `quote_literal`, `regexp_replace(s, pattern, replacement[, flags])`, `replace(s, match, replacement)`, `similar_to(s, pattern[, escape])`, `split_part(s, delim, n)`, `strpos(s, sub)`, `substr(s, from[, count])`, `to_ascii`, `to_hex`, `translate(s, from, to)`, `to_char(v, format)`, `to_date(text, format)`, `to_timestamp(text, format)`, `to_number(text, format)`, `string_to_array`, `unnest`
+`character_length`, `decode`, `encode`, `octet_length`, `quote_ident`, `quote_literal`, `to_ascii`, `to_hex`, `string_to_array`, `unnest`
 
 (MS SQL Server-only equivalents exist — `charindex`, `len`, `patindex`, `replicate`, `stuff`, etc. — only relevant for premium MSSQL deployments.)
 
@@ -266,10 +233,7 @@ Recognized: `@title`, `@format`, `@hidden`, `@concept`, `@nolookup`, `@preservet
 
 ### **15. CAST**
 
-`CAST(expression AS type)`. LabKey SQL does **not** reliably check argument types at parse time — type errors surface at execution as a generic error, so cast proactively (e.g., a date stored as VARCHAR passed to a date function).
-
-* Target types: `TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL, BOOLEAN, BIT, CHAR, VARCHAR, LONGVARCHAR, DATE, TIME, TIMESTAMP, GUID, BINARY, VARBINARY, LONGVARBINARY`. Precision/scale on NUMERIC/DECIMAL: `CAST(n AS NUMERIC(10,2))`; length on CHAR/VARCHAR.
-* Common patterns: `CAST(stringCol AS TIMESTAMP)`, `CAST(numericCol AS VARCHAR) || ' units'`, `CAST(numerator AS DOUBLE) / denominator` (avoid integer-division truncation).
+CAST is covered in the expression reference. Queries can also cast to `BINARY`, `VARBINARY`, and `LONGVARBINARY`, and give CHAR/VARCHAR a length.
 
 -----
 
@@ -338,7 +302,7 @@ Most LabKey servers run PostgreSQL; some premium deployments run MS SQL Server. 
 * Avoid PostgreSQL-only features: JSON functions (§16), arrays (§17), `similar_to`/`regexp_replace`/`to_char`-family (§7), `overlaps()`, and the PG-only aggregates (§5).
 * `GROUP_CONCAT` on MSSQL requires a separately-installed function and cannot appear in a sub-select; when missing, it returns a literal `'<GROUP_CONCAT function not supported...>'` string instead of data.
 * String comparison and grouping are case-sensitive on PostgreSQL, case-insensitive on MSSQL.
-* `timestampdiff` interval limits differ (§6) — the `age*` functions are portable.
+* `timestampdiff` interval limits differ (see the expression reference) — the `age*` functions are portable.
 
 -----
 
@@ -351,8 +315,7 @@ Many parse errors now include an inline suggestion (e.g. `Syntax error near 'OFF
 | `Syntax error near 'OFFSET'` / near `'('` after OVER | Unsupported OFFSET / window function — see §1 |
 | `Expression in Group By clause must not be a constant` | `GROUP BY 1` — repeat the expression instead |
 | `Syntax error near 'DISTINCT'` | `SUM(DISTINCT ...)` — DISTINCT only works inside COUNT() and GROUP_CONCAT(); see §1 |
-| `Unknown method X` | Function doesn't exist in LabKey SQL (check §6-§7) or is dialect-specific |
-| `Syntax error near 'Count'` (or other keyword) | Reserved word used as alias — double-quote it |
+| `Unknown method X` | Function doesn't exist in LabKey SQL (check the expression reference and §6-§7) or is dialect-specific |
 | `HAVING requires an aggregate in the SELECT list` | Add the aggregate to the SELECT list or add GROUP BY |
 | `Duplicate column 'x'` | Two select items produce the same name — alias one |
 | `Ambiguous field: x` | Column exists in multiple FROM tables — qualify it |
@@ -363,4 +326,4 @@ Many parse errors now include an inline suggestion (e.g. `Syntax error near 'OFF
 | `The underlying database does not support nested ORDER BY unless LIMIT...` (warning) | ORDER BY is being dropped — add `LIMIT` or sort via the API |
 | `ExecutingSelector; bad SQL grammar []` | Runtime (database-level) failure with no detail — usually a type mismatch (add CASTs) or a dialect-specific function limit (e.g. `timestampdiff` YEAR on PostgreSQL, `sum` over text) |
 
-For any LabKey SQL topic not covered above, call `searchDocumentation`.
+For any LabKey SQL topic not covered in this document, call `searchDocumentation`.
