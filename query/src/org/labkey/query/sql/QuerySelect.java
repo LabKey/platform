@@ -2202,7 +2202,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                     ((QIfDefined)node).setQuerySelect(QuerySelect.this);
                 _field = (QExpr) node;
                 FieldKey fk = _field.getFieldKey();
-                if (null != fk && !fk.getName().startsWith("@@"))
+                if (null != fk)
                     sourceFieldKey = new FieldKey(null, fk.getName());
             }
             _sourceColumnFieldKey = sourceFieldKey;
