@@ -2997,12 +2997,8 @@ public class ContainerManager
         @Test
         public void testMissesNotCachedInTransaction()
         {
-            User user = TestContext.get().getUser();
-            Container c = createContainer(_testRoot, "missesInTx", user);
-            int rowId = c.getRowId();
-            assertTrue(delete(c, user));
-            // Cache a miss using a GUID no one else knows about, not c.getEntityId(). Background search work queued at
-            // create (e.g., indexer) can look up the deleted container's EntityId and legitimately cache the miss.
+            // Made-up ids, since background work (e.g., indexer) can legitimately cache misses for a real deleted container
+            int rowId = Integer.MIN_VALUE;
             GUID entityId = new GUID();
 
             try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction())
