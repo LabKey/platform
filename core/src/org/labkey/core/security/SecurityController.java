@@ -2501,7 +2501,7 @@ public class SecurityController extends SpringActionController
                 new FolderAccessAction()
             );
 
-            // @RequiresPermission(UserManagementPermission.class)
+            // @RequiresPermission(AddUserPermission.class) or @RequiresPermission(UpdateUserPermission.class)
             assertForUserPermissions(user,
                 controller.new AddUsersAction(),
                 new ShowResetEmailAction(),

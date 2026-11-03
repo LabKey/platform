@@ -76,7 +76,7 @@
 <labkey:form action="<%=urlFor(AddUsersAction.class)%>" method="POST">
     <table>
         <%
-            if (getErrors("form").hasErrors());
+            if (getErrors("form").hasErrors())
             {
         %>
         <tr><td><labkey:errors /></td></tr>
