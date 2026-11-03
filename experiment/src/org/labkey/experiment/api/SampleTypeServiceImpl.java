@@ -36,6 +36,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
@@ -112,6 +113,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
@@ -2623,6 +2625,106 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     ContainerManager.deleteAll(projA, user);
                 if (projB != null)
                     ContainerManager.deleteAll(projB, user);
+            }
+        }
+
+        /**
+         * GH Issue 1584: the container column is surfaced as "Folder", so "Container" is left to a framework import
+         * alias, which a user field's own alias or label used to outrank. Both designs are built here rather than
+         * through the API because validation now refuses them -- Domain.save() runs none of those checks, which is
+         * how the domains in the field came to carry them.
+         */
+        private ExpSampleType createTypeStealingContainerToken(Container c, User user, String name) throws Exception
+        {
+            List<GWTPropertyDescriptor> props = nameProp();
+            props.add(new GWTPropertyDescriptor("AliasStealer", "http://www.w3.org/2001/XMLSchema#string"));
+            props.add(new GWTPropertyDescriptor("LabelStealer", "http://www.w3.org/2001/XMLSchema#string"));
+            ExpSampleType st = get().createSampleType(c, user, name, null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+
+            // ExpSampleType hands back a read-only instance; forUpdate gives one that can be saved
+            Domain domain = PropertyService.get().getDomain(c, st.getDomain().getTypeURI(), true);
+            domain.getPropertyByName("AliasStealer").setImportAliasSet(Set.of("Container"));
+            domain.getPropertyByName("LabelStealer").setLabel("Container");
+            domain.save(user);
+
+            return st;
+        }
+
+        @Test
+        public void testContainerTokenStaysWithTheContainerColumn() throws Exception
+        {
+            final User user = TestContext.get().getUser();
+            Container c = null;
+            try
+            {
+                c = ContainerManager.createContainer(ContainerManager.getRoot(), "ContainerToken" + GUID.makeHash(), user);
+                ExpSampleType st = createTypeStealingContainerToken(c, user, "ContainerTokenTheft");
+
+                UserSchema schema = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_NAME);
+                TableInfo table = schema.getTable(st.getName());
+                QueryUpdateService qus = table.getUpdateService();
+
+                Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                row.put("name", "S1");
+                row.put("AliasStealer", "keepAlias");
+                row.put("LabelStealer", "keepLabel");
+
+                BatchValidationException errors = new BatchValidationException();
+                List<Map<String, Object>> inserted = qus.insertRows(user, c, List.of(row), errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+                Object rowId = inserted.get(0).get("rowId");
+
+                // An edit that touches neither field: the update pipeline supplies a Container column of its own here
+                Map<String, Object> update = new CaseInsensitiveHashMap<>();
+                update.put("rowId", rowId);
+                update.put("description", "touched");
+                errors = new BatchValidationException();
+                qus.updateRows(user, c, List.of(update), null, errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+
+                Map<String, Object> stored = new TableSelector(table, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null).getMap();
+                assertEquals("A field aliased Container kept its own value", "keepAlias", stored.get("AliasStealer"));
+                assertEquals("A field labeled Container kept its own value", "keepLabel", stored.get("LabelStealer"));
+            }
+            finally
+            {
+                if (c != null)
+                    ContainerManager.deleteAll(c, user);
+            }
+        }
+
+        @Test
+        public void testStoredContainerLabelBlocksAnyFurtherSave() throws Exception
+        {
+            // GH Issue 1783: rejected even though the label was already stored, so the design has to be corrected
+            // before the domain can be saved again. Nothing is grandfathered.
+            final User user = TestContext.get().getUser();
+            Container c = null;
+            try
+            {
+                c = ContainerManager.createContainer(ContainerManager.getRoot(), "ContainerLabel" + GUID.makeHash(), user);
+                ExpSampleType st = createTypeStealingContainerToken(c, user, "ContainerLabelBlocks");
+
+                // Re-read: the ExpSampleType was captured before the label was written
+                Domain stored = PropertyService.get().getDomain(c, st.getDomain().getTypeURI());
+                assertEquals("Fixture did not take", "Container", stored.getPropertyByName("LabelStealer").getLabel());
+                GWTDomain<GWTPropertyDescriptor> origGwt = DomainUtil.getDomainDescriptor(user, stored);
+                GWTDomain<GWTPropertyDescriptor> updateGwt = new GWTDomain<>(origGwt);
+                List<GWTPropertyDescriptor> fields = new ArrayList<>(updateGwt.getFields());
+                fields.add(new GWTPropertyDescriptor("Unrelated", "http://www.w3.org/2001/XMLSchema#string"));
+                updateGwt.setFields(fields);
+
+                ValidationException ve = DomainUtil.updateDomainDescriptor(origGwt, updateGwt, c, user);
+                assertTrue("An unrelated edit must be refused while the stored label stands", ve.hasErrors());
+                assertTrue("Expected the system field label error, got: " + ve.getMessage(),
+                        ve.getMessage().contains("Label 'Container' on field 'LabelStealer' conflicts with a system field name."));
+            }
+            finally
+            {
+                if (c != null)
+                    ContainerManager.deleteAll(c, user);
             }
         }
 

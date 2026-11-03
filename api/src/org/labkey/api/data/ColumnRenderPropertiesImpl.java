@@ -91,6 +91,8 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _onClick;
     // methods use Set<>, but I'm using a List<> here because it is simpler and more thread safe and explicitly preserves order
     protected List<String> _importAliases = List.of();
+    // GH Issue 1584: kept apart from _importAliases so import column resolution can rank a framework-supplied alias above anything a user can configure on a field.
+    protected List<String> _systemImportAliases = List.of();
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType _facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
     protected PHI _phi = PHI.NotPHI;
@@ -159,6 +161,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._url = _url;
         to._urlTarget = _urlTarget;
         to._importAliases = copyFixedList(_importAliases);
+        to._systemImportAliases = copyFixedList(_systemImportAliases);
         to._facetingBehaviorType = _facetingBehaviorType;
         to._crosstabColumnMember = _crosstabColumnMember;
         to._phi = _phi;
@@ -656,6 +659,34 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         assert _checkLocked();
         assert importAliases != null;
         _importAliases = copyFixedList(importAliases);
+    }
+
+    @Override
+    @NotNull
+    public Set<String> getSystemImportAliasSet()
+    {
+        if (_systemImportAliases.isEmpty())
+            return Set.of();
+        return Collections.unmodifiableSet(new LinkedHashSet<>(_systemImportAliases));
+    }
+
+    @NotNull
+    @JsonGetter("_systemImportAliases")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @SuppressWarnings("unused")
+    public Set<String> getSystemImportAliasSet_for_jackson_do_not_use()
+    {
+        // Jackson does not like immutable sets
+        return new HashSet<>(_systemImportAliases);
+    }
+
+    @Override
+    @JsonSetter("_systemImportAliases")
+    public void setSystemImportAliasesSet(Set<String> importAliases)
+    {
+        assert _checkLocked();
+        assert importAliases != null;
+        _systemImportAliases = copyFixedList(importAliases);
     }
 
     public static String convertToString(Set<String> set)

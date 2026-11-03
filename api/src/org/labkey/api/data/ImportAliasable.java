@@ -15,12 +15,13 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.PageConfig;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,15 @@ public interface ImportAliasable
     boolean isMvEnabled();
 
     Set<String> getImportAliasSet();
+
+    /**
+     * GH Issue 1584: aliases the framework puts on a built-in column, such as "container" on the Sample Type "Folder"
+     * column. They outrank every user-configurable token so a field alias or label can never steal one.
+     */
+    default Set<String> getSystemImportAliasSet()
+    {
+        return Set.of();
+    }
 
     String getName();
 
@@ -61,6 +71,7 @@ public interface ImportAliasable
                 aliases.add(property.getLabel());
             if (!property.getImportAliasSet().isEmpty())
                 aliases.addAll(property.getImportAliasSet());
+            aliases.addAll(property.getSystemImportAliasSet());
             return aliases;
         }
 
@@ -70,56 +81,76 @@ public interface ImportAliasable
          */
         public static <T extends ImportAliasable> Map<String, T> createImportMap(List<T> properties, boolean includeMVIndicators)
         {
-            Map<String, T> m = new CaseInsensitiveHashMap<>(properties.size() * 3);
-            List<T> reversedProperties = new ArrayList<>(properties.size());
+            return createImportMap(properties, includeMVIndicators, null);
+        }
 
-            // Reverse the order of the descriptors so that we can preserve the right priority for resolving by names, aliases, etc
-            for (T prop : properties)
-            {
-                reversedProperties.addFirst(prop);
-            }
+        /**
+         * GH Issue 1585: {@code ambiguousTokens}, when supplied, collects every token two properties tie for. Which one
+         * such a token resolves to is arbitrary, so a caller that cares can refuse to act on it.
+         */
+        public static <T extends ImportAliasable> Map<String, T> createImportMap(List<T> properties, boolean includeMVIndicators, @Nullable Set<String> ambiguousTokens)
+        {
+            Map<String, Pair<T, Rank>> ranked = new CaseInsensitiveHashMap<>(properties.size() * 3);
 
-            // PropertyURI is lowest priority, so put it in the map first so it will be overwritten by higher priority usages
-            for (T property : reversedProperties)
+            for (T property : properties)
             {
-                m.put(property.getPropertyURI(), property);
-            }
-            // Then propName variant of name, kept for backwards compatibility
-            for (T property : reversedProperties)
-            {
-                m.put(PageConfig.makeIdFromName(property.getName()), property);
-            }
-            // Then aliases
-            for (T property : reversedProperties)
-            {
+                put(ranked, ambiguousTokens, property.getPropertyURI(), property, Rank.propertyUri);
+                // The decapitalized legal-identifier form of the name, kept for backwards compatibility
+                put(ranked, ambiguousTokens, PageConfig.makeIdFromName(property.getName()), property, Rank.idFromName);
+
                 for (String alias : property.getImportAliasSet())
-                {
-                    m.put(alias, property);
-                }
+                    put(ranked, ambiguousTokens, alias, property, Rank.userAlias);
+
+                // If no label, columns will create one for captions
+                put(ranked, ambiguousTokens, null != property.getLabel() ? property.getLabel() : ColumnInfo.labelFromName(property.getName()), property, Rank.label);
+
+                if (includeMVIndicators && property.isMvEnabled())
+                    put(ranked, ambiguousTokens, property.getName() + MvColumn.MV_INDICATOR_SUFFIX, property, Rank.mvIndicator);
+
+                for (String alias : property.getSystemImportAliasSet())
+                    put(ranked, ambiguousTokens, alias, property, Rank.systemAlias);
+
+                put(ranked, ambiguousTokens, property.getName(), property, Rank.name);
             }
-            // Then labels
-            for (T property : reversedProperties)
-            {
-                if (null != property.getLabel())
-                    m.put(property.getLabel(), property);
-                else
-                    m.put(ColumnInfo.labelFromName(property.getName()), property); // If no label, columns will create one for captions
-            }
-            if (includeMVIndicators)
-            {
-                // Then missing value-specific columns
-                for (T property : reversedProperties)
-                {
-                    if (property.isMvEnabled())
-                        m.put(property.getName() + MvColumn.MV_INDICATOR_SUFFIX, property);
-                }
-            }
-            // Finally, names have the highest priority
-            for (T property : reversedProperties)
-            {
-                m.put(property.getName(), property);
-            }
+
+            Map<String, T> m = new CaseInsensitiveHashMap<>(ranked.size());
+            ranked.forEach((token, pair) -> m.put(token, pair.first));
             return m;
+        }
+
+        /** Precedence for resolving an incoming token to a property, lowest first. GH Issue 1584. */
+        private enum Rank
+        {
+            propertyUri,
+            idFromName,
+            userAlias,
+            label,
+            mvIndicator,
+            systemAlias,
+            name
+        }
+
+        private static <T extends ImportAliasable> void put(Map<String, Pair<T, Rank>> ranked, @Nullable Set<String> ambiguousTokens,
+                String token, T property, Rank rank)
+        {
+            if (null == token)
+                return;
+
+            Pair<T, Rank> existing = ranked.get(token);
+
+            if (null == existing || rank.compareTo(existing.second) > 0)
+            {
+                ranked.put(token, new Pair<>(property, rank));
+                // A higher-ranked claim settles a tie recorded earlier, so the token is no longer ambiguous.
+                if (null != ambiguousTokens)
+                    ambiguousTokens.remove(token);
+            }
+            // Only a tie on a token the designer controls is worth reporting; a tie on a propertyURI or name is a bug elsewhere.
+            else if (null != ambiguousTokens && rank == existing.second && existing.first != property
+                    && (rank == Rank.userAlias || rank == Rank.label))
+            {
+                ambiguousTokens.add(token);
+            }
         }
     }
 }

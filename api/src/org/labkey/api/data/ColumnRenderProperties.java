@@ -113,6 +113,9 @@ public interface ColumnRenderProperties extends ImportAliasable, SimpleConvert
     @Override
     @NotNull Set<String> getImportAliasSet();
 
+    @Override
+    @NotNull Set<String> getSystemImportAliasSet();
+
     @Nullable PropertyType getPropertyType();
 
     @Override

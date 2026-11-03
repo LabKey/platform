@@ -133,6 +133,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
+    private CaseInsensitiveHashSet _ambiguousImportTokens = null;
     private VirtualFile _att = null;
 
     /* AbstractQueryUpdateService is generally responsible for some shared functionality
@@ -685,7 +686,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         if(_columnImportMap == null)
         {
-            _columnImportMap = (CaseInsensitiveHashMap<ColumnInfo>)ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false);
+            _ambiguousImportTokens = new CaseInsensitiveHashSet();
+            _columnImportMap = (CaseInsensitiveHashMap<ColumnInfo>)ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false, _ambiguousImportTokens);
         }
 
         Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
@@ -695,7 +697,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         String newName;
         for(String key : row.keySet())
         {
-            if(_columnImportMap.containsKey(key))
+            // GH Issue 1585: which field an ambiguous token resolves to is arbitrary, so leave the key alone and let
+            // the import pipeline report it rather than renaming the value onto a field picked by chance.
+            if(_columnImportMap.containsKey(key) && !_ambiguousImportTokens.contains(key))
             {
                 //it is possible for a normalized name to conflict with an existing property.  if so, defer to the original
                 newName = _columnImportMap.get(key).getName();
