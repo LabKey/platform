@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="com.google.errorprone.annotations.CompileTimeConstant" %>
 <%@ page import="org.apache.commons.io.IOUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
@@ -2019,9 +2020,9 @@ d,seven,twelve,day,month,date,duration,guid
         return new SqlSelector(DbScope.getLabKeyScope(), select).getObject(Boolean.class);
     }
 
-    SQLFragment array(String... strings)
+    SQLFragment array(@CompileTimeConstant String... strings)
     {
-        var args = Arrays.stream(strings).map(SQLFragment::unsafe).toList().toArray(new SQLFragment[0]);
+        var args = Arrays.stream(strings).map(s -> new SQLFragment().setSqlUnsafe(s)).toList().toArray(new SQLFragment[0]);
         return dialect.array_construct(args);
     }
 

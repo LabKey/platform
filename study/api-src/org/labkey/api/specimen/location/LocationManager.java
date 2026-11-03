@@ -157,13 +157,10 @@ public class LocationManager
             sql.unsafeAppend("Container = ").appendValue(loc.getContainer()).unsafeAppend(" AND ");
         }
 
-        String or = "(";
+        var or = SQLFragment.sep("(", " OR ", ")");
         for (String columnName : columnNames)
-        {
-            sql.unsafeAppend(or).appendIdentifier(columnName).unsafeAppend(" = ").appendValue(loc.getRowId());
-            or = " OR ";
-        }
-        sql.unsafeAppend(")");
+            sql.append(or.next()).appendIdentifier(columnName).unsafeAppend(" = ").appendValue(loc.getRowId());
+        sql.append(or.last());
 
         return new SqlSelector(table.getSchema(), sql).exists();
     }

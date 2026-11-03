@@ -135,9 +135,8 @@ public class SequenceVisitManager extends VisitManager
                     .append(sequencenum.getValueSql(alias)).unsafeAppend(" = SVM.SequenceNum AND ")
                     .append(container.getValueSql(alias)).unsafeAppend(" = SVM.container");
 
-            String where = "\nWHERE ";
             if (null != qcStates)
-                sql.unsafeAppend(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+                sql.WHERE().append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
             sql.unsafeAppend("\nGROUP BY ").append(keyCols);
             sql.unsafeAppend("\nORDER BY 1, 2");
         }
@@ -157,9 +156,8 @@ public class SequenceVisitManager extends VisitManager
                     sql.unsafeAppend(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).unsafeAppend(") AS SVM ON ")
                             .append(sequencenum.getValueSql(alias)).unsafeAppend(" = SVM.SequenceNum AND ")
                             .append(container.getValueSql(alias)).unsafeAppend(" = SVM.container");
-                    String where = "\nWHERE ";
                     if (qcStates != null)
-                        sql.unsafeAppend(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+                        sql.WHERE().append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
                     sql.unsafeAppend("\nGROUP BY ").append(keyCols);
                     sql.unsafeAppend("\nORDER BY 1, 2");
                     break;
@@ -175,9 +173,8 @@ public class SequenceVisitManager extends VisitManager
                     sql.unsafeAppend(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).unsafeAppend(") AS SVM ON ")
                             .append(sequencenum.getValueSql(alias)).unsafeAppend(" = SVM.SequenceNum AND ")
                             .append(container.getValueSql(alias)).unsafeAppend(" = SVM.container");
-                    String where = "\nWHERE ";
                     if (qcStates != null)
-                        sql.unsafeAppend(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+                        sql.WHERE().append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
                     sql.unsafeAppend("\nGROUP BY ").append(keyCols);
                     sql.unsafeAppend("\nORDER BY 1, 2");
                     break;
@@ -644,6 +641,8 @@ public class SequenceVisitManager extends VisitManager
 
     private void _indent(SQLFragment sql, int indent)
     {
-        sql.unsafeAppend("\n                                             ".substring(0, indent));
+        sql.NL();
+        for (int i = 1; i < indent; i++)
+            sql.SP();
     }
 }
