@@ -1470,6 +1470,8 @@ public class SecurityController extends SpringActionController
                     userToClone = UserManager.getUser(emailToClone);
                     if (userToClone == null)
                         errors.addError(new LabKeyError("Failed to clone user permissions " + emailToClone + ": User email does not exist in the system"));
+                    else if (userToClone.hasPrivilegedRole() && !getUser().hasSiteAdminPermission())
+                        errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users assigned a privileged role."));
                 }
                 catch (InvalidEmailException e)
                 {
@@ -1519,19 +1521,12 @@ public class SecurityController extends SpringActionController
                     }
                     else if (userToClone != null)
                     {
-                        if (userToClone.hasPrivilegedRole() && !getUser().hasSiteAdminPermission())
+                        try (Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
                         {
-                            errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users assigned a privileged role."));
-                        }
-                        else
-                        {
-                            try (Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
-                            {
-                                audit(newUser, "New user " + newUser.getEmail() + " had group memberships and role assignments cloned from user " + userToClone.getEmail());
-                                clonePermissions(userToClone, UserManager.getUser(email), getUser().hasSiteAdminPermission());
-                                result = HtmlStringBuilder.of(result).append(" Group memberships and role assignments were cloned from " + userToClone.getEmail() + ".").getHtmlString();
-                                transaction.commit();
-                            }
+                            audit(newUser, "New user " + newUser.getEmail() + " had group memberships and role assignments cloned from user " + userToClone.getEmail());
+                            clonePermissions(userToClone, UserManager.getUser(email), getUser().hasSiteAdminPermission());
+                            result = HtmlStringBuilder.of(result).append(" Group memberships and role assignments were cloned from " + userToClone.getEmail() + ".").getHtmlString();
+                            transaction.commit();
                         }
                     }
                     form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, newUser.getUserId(), h(newUser.getEmail()))));
