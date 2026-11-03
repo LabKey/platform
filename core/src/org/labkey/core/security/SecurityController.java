@@ -1460,6 +1460,10 @@ public class SecurityController extends SpringActionController
             final String sourceUser = form.getCloneUser();
             if (sourceUser != null && !sourceUser.isEmpty())
             {
+                // Cloning copies assignments in every container, so require site-wide user management (site & app admins)
+                if (!getUser().hasRootPermission(UserManagementPermission.class))
+                    throw new UnauthorizedException("Only site and application administrators can clone permissions");
+
                 try
                 {
                     final ValidEmail emailToClone = new ValidEmail(sourceUser);

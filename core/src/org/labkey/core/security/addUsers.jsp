@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.security.permissions.UserManagementPermission" %>
 <%@ page import="org.labkey.api.util.ButtonBuilder" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -38,6 +39,11 @@
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
     LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
     boolean excludeSiteAdmins = !getUser().hasSiteAdminPermission(); // App admins can't clone permissions from site admins
+    boolean canClone = getUser().hasRootPermission(UserManagementPermission.class);
+%>
+<%
+    if (canClone)
+    {
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
@@ -63,6 +69,9 @@
         createCloneUserField(true, false, <%=excludeSiteAdmins%>)
     });
 </script>
+<%
+    }
+%>
 
 <labkey:form action="<%=urlFor(AddUsersAction.class)%>" method="POST">
     <table>
@@ -94,6 +103,10 @@
                 <textarea name="newUsers" id="newUsers" cols=70 rows=20></textarea><br/><br/>
             </td>
         </tr>
+        <%
+            if (canClone)
+            {
+        %>
         <tr>
             <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck">Clone permissions from user:<span id="auto-completion-div"></span>
             <span id=permissions><a id="showUserAccessLink" href="#" class="labkey-button" style="display:none">permissions</a></span></td>
@@ -102,6 +115,9 @@
                 addHandler("showUserAccessLink", "click", "showUserAccess();");
             %>
         </tr>
+        <%
+            }
+        %>
         <tr><td>
             <br><input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail"><%=AuthenticationManager.getStandardSendVerificationEmailsMessage()%></label><br><br>
         </td></tr>
