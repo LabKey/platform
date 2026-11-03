@@ -65,7 +65,9 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -102,6 +104,8 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
+import org.labkey.study.reports.StudyCrosstabReport;
+import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -180,18 +184,17 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresLogin
-    @RequiresPermission(ReadPermission.class)
-    /*
-      Action for non-query based views (static, xls export)
-     */
+    // Saves dataset grid views from createQueryReport.jsp
+    @RequiresPermission(AdminPermission.class)
     public class SaveReportAction extends FormHandlerAction<SaveReportForm>
     {
         private ActionURL _successURL;
 
         @Override
-        public void validateCommand(SaveReportForm target, Errors errors)
+        public void validateCommand(SaveReportForm form, Errors errors)
         {
+            if (!StudyQueryReport.TYPE.equals(form.getReportType()))
+                errors.reject(ERROR_MSG,"Unsupported report type: " + form.getReportType());
         }
 
         @Override
@@ -277,7 +280,10 @@ public class ReportsController extends BaseStudyController
         @Override
         public void validateCommand(SaveReportViewForm form, Errors errors)
         {
-            if (ReportService.get().reportNameExists(getViewContext(), form.getLabel(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName())))
+            // Saves crosstab reports from the participantCrosstab designer
+            if (!StudyCrosstabReport.TYPE.equals(form.getReportType()))
+                errors.reject(ERROR_MSG, "Unsupported report type: " + form.getReportType());
+            else if (ReportService.get().reportNameExists(getViewContext(), form.getLabel(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName())))
                 errors.reject("saveReportView", "There is already a report with the name of: '" + form.getLabel() +
                         "'. Please specify a different name.");
         }
@@ -771,6 +777,8 @@ public class ReportsController extends BaseStudyController
                 ReportDescriptor descriptor = report.getDescriptor();
                 descriptor.setReportName(label);
                 descriptor.initFromQueryString(params);
+                // params can carry a reportType, which would load the saved row as a different report class
+                descriptor.setReportType(reportType);
                 descriptor.setProperty("showWithDataset", String.valueOf(showWithDataset));
                 descriptor.setReportDescription(description);
                 descriptor.setProperty(ReportDescriptor.Prop.dataRegionName, dataRegionName);
@@ -1357,10 +1365,34 @@ public class ReportsController extends BaseStudyController
         @Test
         public void testOverwritingSavedReports() throws Exception
         {
-            assertReportNotStolen(SaveReportAction.class, false);
+            assertReportNotStolen(SaveReportAction.class, StudyQueryReport.TYPE, FolderAdminRole.class, false);
             // shareReport leaves the descriptor's owner null, so the save is checked as a shared report and the
             // caller's Editor role in their own folder satisfies the only permission the save path consults.
-            assertReportNotStolen(SaveReportViewAction.class, true);
+            assertReportNotStolen(SaveReportViewAction.class, StudyCrosstabReport.TYPE, EditorRole.class, true);
+        }
+
+        @Test
+        public void testUpdateCannotConvertToScriptReport() throws Exception
+        {
+            Container folder = createContainer("A");
+
+            Report gridReport = ReportService.get().createReportInstance(QueryReport.TYPE);
+            gridReport.getDescriptor().setReportName("grid-to-script-report");
+            int rowId = ReportService.get()
+                    .saveReportEx(new DefaultContainerUser(folder, getAdmin()), "grid-to-script-key", gridReport)
+                    .getRowId();
+
+            User editor = createUserInRole(folder, EditorRole.class);
+            ActionURL url = new ActionURL(SaveReportViewAction.class, folder)
+                    .addParameter("reportType", "Study.rReport")
+                    .addParameter("label", "grid-to-script-report")
+                    .addParameter("shareReport", "true")
+                    .addParameter("params", "reportId=db%3A" + rowId + "&script=print%281%29");
+            post(url, editor);
+
+            Report stored = ReportService.get().getReport(folder, rowId);
+            assertNotNull(stored);
+            assertEquals("An Editor converted a grid report into a script report", QueryReport.TYPE, stored.getType());
         }
 
         /**
@@ -1368,7 +1400,7 @@ public class ReportsController extends BaseStudyController
          * verbatim into its property map -- reportId included -- so the save targets a row of the caller's choosing.
          * The shared path then authorizes against the request container and updates by primary key alone.
          */
-        private void assertReportNotStolen(Class<? extends Controller> action, boolean shareReport) throws Exception
+        private void assertReportNotStolen(Class<? extends Controller> action, String reportType, Class<? extends Role> attackerRole, boolean shareReport) throws Exception
         {
             Container attackerFolder = createContainer("A");
             Container victimFolder = createContainer("B");
@@ -1380,10 +1412,10 @@ public class ReportsController extends BaseStudyController
                     .saveReportEx(new DefaultContainerUser(victimFolder, getAdmin()), "scoping-victim-key", victimReport)
                     .getRowId();
 
-            User attacker = createUserInRole(attackerFolder, EditorRole.class);
+            User attacker = createUserInRole(attackerFolder, attackerRole);
 
             ActionURL url = new ActionURL(action, attackerFolder)
-                    .addParameter("reportType", QueryReport.TYPE)
+                    .addParameter("reportType", reportType)
                     .addParameter("label", "scoping-stolen-report")
                     .addParameter("params", "reportId=db%3A" + victimRowId);
             if (shareReport)
@@ -1419,7 +1451,6 @@ public class ReportsController extends BaseStudyController
             assertForReadPermission(user, false,
                 controller.new BeginAction(),
                 new StreamFileAction(),
-                controller.new SaveReportAction(),
                 controller.new SaveReportViewAction(),
                 new ShowReportAction(),
                 new ParticipantCrosstabAction(),
@@ -1431,7 +1462,8 @@ public class ReportsController extends BaseStudyController
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new CreateQueryReportAction()
+                controller.new CreateQueryReportAction(),
+                controller.new SaveReportAction()
             );
         }
 

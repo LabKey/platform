@@ -79,6 +79,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.Errors;
 
 import javax.script.ScriptEngine;
@@ -351,7 +352,18 @@ public class ReportUtil
     /**
      * Helper to determine if the user can create a script report.
      */
-    public static boolean canCreateScript(ViewContext context, String extension)
+    public static boolean canCreateScript(ContainerUser context, String extension)
+    {
+        LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
+        ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
+
+        return canCreateScript(context, engine);
+    }
+
+    /**
+     * Helper to determine if the user can create a script report.
+     */
+    public static boolean canCreateScript(ContainerUser context, ScriptEngine engine)
     {
         User u = context.getUser();
 
@@ -366,8 +378,6 @@ public class ReportUtil
         {
             // trusted analysts can only create reports on sandboxed engine instances
             // TODO can this differ from the engine returned by the instantiated report?
-            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
             return engine instanceof LabKeyScriptEngine && ((LabKeyScriptEngine)engine).isSandboxed();
         }
 
