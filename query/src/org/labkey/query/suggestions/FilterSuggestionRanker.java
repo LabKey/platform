@@ -22,15 +22,14 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.suggestions.FilterSuggestion;
-import org.labkey.api.query.suggestions.FilterSuggestion.ColumnMatch;
-import org.labkey.api.query.suggestions.FilterSuggestion.ComposeField;
-import org.labkey.api.query.suggestions.FilterSuggestion.Match;
 import org.labkey.api.query.suggestions.SuggestionColumn;
 import org.labkey.api.util.DateUtil.MonthDayOption;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.query.QueryModule;
+import org.labkey.query.suggestions.FilterSuggestion.ColumnMatch;
+import org.labkey.query.suggestions.FilterSuggestion.ComposeField;
+import org.labkey.query.suggestions.FilterSuggestion.Match;
 import org.labkey.query.suggestions.SuggestionTerm.DateSpan;
 
 import java.io.File;

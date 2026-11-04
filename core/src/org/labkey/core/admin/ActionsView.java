@@ -18,7 +18,6 @@ package org.labkey.core.admin;
 
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.Formats;

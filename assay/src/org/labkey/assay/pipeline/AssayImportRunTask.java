@@ -808,7 +808,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             AssayRunUploadContext<?> uploadContext = factory.create();
 
             // GH Issue 1707: run transform scripts before the transaction so their callbacks into the server can't deadlock with it
-            try (PreparedTransform ignored = provider.getRunCreator().prepareTransform(uploadContext, false);
+            try (PreparedTransform ignored = provider.getRunCreator().prepareTransform(uploadContext);
                  DbScope.Transaction tx = scope.ensureTransaction())
             {
                 String fileWatcherDescription = getJob().getDescription();

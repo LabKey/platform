@@ -142,7 +142,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
             // A module whose feature areas were described but never counted reports nothing
             UsageMetricGroup group = counts.isEmpty()
                 ? metrics.describeGroup("simpleMetricCounts", groupDescription, UsageMetrics.Kind.CUMULATIVE)
-                : metrics.group("simpleMetricCounts", groupDescription, UsageMetrics.Kind.CUMULATIVE).putAll(counts);
+                : metrics.group("simpleMetricCounts", groupDescription, UsageMetrics.Kind.CUMULATIVE).putAll(() -> counts);
             _featureAreaDescriptions.getOrDefault(_moduleName, Map.of())
                 .forEach((featureArea, description) -> group.describe(featureArea, description, UsageMetrics.Kind.CUMULATIVE));
             return metrics;

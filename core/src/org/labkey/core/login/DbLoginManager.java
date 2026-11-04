@@ -34,7 +34,6 @@ import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.LoginManager;
-import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -48,6 +47,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
+import org.labkey.core.security.PasswordExpiration;
 import org.springframework.validation.BindException;
 
 import java.util.Arrays;
@@ -222,6 +222,6 @@ public class DbLoginManager implements DbLoginService
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return metrics -> metrics.put("databaseAuthentication", getProperties(), "Database authentication settings, such as password strength and expiration; empty if never saved");
+        return metrics -> metrics.put("databaseAuthentication", DbLoginManager::getProperties, "Database authentication settings, such as password strength and expiration; empty if never saved");
     }
 }

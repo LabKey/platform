@@ -16,6 +16,7 @@
 
 package org.labkey.filecontent;
 
+import com.google.common.base.Suppliers;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,6 +62,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -216,35 +218,36 @@ public class FileContentModule extends DefaultModule
             // During system maintenance, FileRootMaintenanceTask populates FileRootSize and FileRootLastCrawled for every container (subject to a timeout)
             TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
             String select = "SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl, COUNT(*) AS AllFileRoots, COUNT(FileRootLastCrawled) AS FileRootsCrawled FROM ";
-            Map<String, Object> map = new SqlSelector(containers.getSchema(), select + containers.getSelectName())
-                .getMap();
-            metrics.put("fileRootsTotalSize", map.get("TotalSize"), "Sum of all containers' file root sizes in bytes, as of each one's last system maintenance crawl; null if none crawled");
-            metrics.put("fileRootsEarliestCrawlTime", map.get("EarliestCrawl"), "Oldest last-crawled time across containers' file roots, showing how stale fileRootsTotalSize may be; null if none crawled");
-            long crawled = ((Number)map.get("FileRootsCrawled")).longValue();
-            metrics.put("fileRootsCrawled", crawled, "Containers whose file root has been crawled for size at least once, including invalid or missing roots");
-            metrics.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled, "Containers whose file root has never been crawled for size");
+            Supplier<Map<String, Object>> map = Suppliers.memoize(() -> new SqlSelector(containers.getSchema(), select + containers.getSelectName())
+                .getMap());
+            metrics.put("fileRootsTotalSize", () -> map.get().get("TotalSize"), "Sum of all containers' file root sizes in bytes, as of each one's last system maintenance crawl; null if none crawled");
+            metrics.put("fileRootsEarliestCrawlTime", () -> map.get().get("EarliestCrawl"), "Oldest last-crawled time across containers' file roots, showing how stale fileRootsTotalSize may be; null if none crawled");
+            metrics.put("fileRootsCrawled", () -> ((Number)map.get().get("FileRootsCrawled")).longValue(), "Containers whose file root has been crawled for size at least once, including invalid or missing roots");
+            metrics.put("fileRootsNotYetCrawled", () -> ((Number)map.get().get("AllFileRoots")).longValue() - ((Number)map.get().get("FileRootsCrawled")).longValue(), "Containers whose file root has never been crawled for size");
 
             // findPipelineRoot() is non-null only for a valid pipeline override on the folder or an ancestor, since a disabled file root has no default
-            Map<Boolean, Long> disabledFileRoots = new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"),new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
+            Supplier<Map<Boolean, Long>> disabledFileRoots = Suppliers.memoize(() -> new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"),new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
                 .getArrayList(String.class).stream()
                 .map(ContainerManager::getForId)
                 .filter(c -> c != null && !c.isRoot())
-                .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting()));
-            metrics.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true), "Folders with a disabled file root that still have a valid pipeline root override on the folder or an ancestor");
-            metrics.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false), "Folders with a disabled file root and no valid pipeline root override");
+                .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting())));
+            metrics.put("disabledFileRootsWithPipelineOverride", () -> disabledFileRoots.get().get(true), "Folders with a disabled file root that still have a valid pipeline root override on the folder or an ancestor");
+            metrics.put("disabledFileRootsWithoutPipelineOverride", () -> disabledFileRoots.get().get(false), "Folders with a disabled file root and no valid pipeline root override");
 
             TableInfo mappedDirectories = CoreSchema.getInstance().getMappedDirectories();
-            Map<String, Object> fileSets = new SqlSelector(mappedDirectories.getSchema(),
+            Supplier<Map<String, Object>> fileSets = Suppliers.memoize(() -> new SqlSelector(mappedDirectories.getSchema(),
                     new SQLFragment("SELECT COUNT(*) AS NamedFileSets, COUNT(DISTINCT Container) AS NamedFileSetContainers FROM ").append(mappedDirectories, "md"))
-                .getMap();
-            metrics.put("namedFileSets", fileSets.get("NamedFileSets"), "Named file sets across all containers");
-            metrics.put("namedFileSetContainers", fileSets.get("NamedFileSetContainers"), "Distinct containers that define at least one named file set");
+                .getMap());
+            metrics.put("namedFileSets", () -> fileSets.get().get("NamedFileSets"), "Named file sets across all containers");
+            metrics.put("namedFileSetContainers", () -> fileSets.get().get("NamedFileSetContainers"), "Distinct containers that define at least one named file set");
 
-            try (Stream<String> webPartProperties = new TableSelector(Portal.getTableInfoPortalWebParts(), PageFlowUtil.set("Properties"), new SimpleFilter(FieldKey.fromParts("Name"), FilesWebPart.PART_NAME), null)
-                .uncachedStream(String.class))
-            {
-                metrics.put("filesWebPartsUsingFileSet", webPartProperties.filter(FileContentModule::usesNamedFileSet).count(), "Files web parts across the server configured to show a named file set");
-            }
+            metrics.put("filesWebPartsUsingFileSet", () -> {
+                try (Stream<String> webPartProperties = new TableSelector(Portal.getTableInfoPortalWebParts(), PageFlowUtil.set("Properties"), new SimpleFilter(FieldKey.fromParts("Name"), FilesWebPart.PART_NAME), null)
+                    .uncachedStream(String.class))
+                {
+                    return webPartProperties.filter(FileContentModule::usesNamedFileSet).count();
+                }
+            }, "Files web parts across the server configured to show a named file set");
 
             return metrics;
         });

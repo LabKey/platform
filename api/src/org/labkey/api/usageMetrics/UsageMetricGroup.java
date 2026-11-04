@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /** A described nested object; its children may omit descriptions because they inherit the group's */
@@ -29,33 +30,36 @@ public class UsageMetricGroup extends UsageMetrics
         super(path, values, descriptions);
     }
 
-    public UsageMetricGroup put(@NotNull String key, @Nullable Object value)
+    /** Skips the supplier on a describe-only group. A null supplier reports a null value. */
+    public UsageMetricGroup put(@NotNull String key, @Nullable Supplier<?> supplier)
     {
         Map<String, Object> values = getMutableValues();
         if (values != null)
-            values.put(key, value);
+            values.put(key, supplier == null ? null : supply(childPath(key), supplier));
         return this;
     }
 
-    /** Skips the supplier on a describe-only group. Java binds {@code put(key, null)} to this overload. */
-    public UsageMetricGroup put(@NotNull String key, @Nullable Supplier<?> value)
-    {
-        Map<String, Object> values = getMutableValues();
-        if (values != null)
-            values.put(key, value == null ? null : value.get());
-        return this;
-    }
-
-    public UsageMetricGroup putAll(@NotNull Map<String, ?> values)
+    /** Skips the supplier on a describe-only group */
+    public UsageMetricGroup putAll(@NotNull Supplier<? extends Map<String, ?>> mapSupplier)
     {
         Map<String, Object> mutable = getMutableValues();
         if (mutable != null)
-            mutable.putAll(values);
+        {
+            Map<String, ?> map = supply(getPath(), mapSupplier);
+            if (map != null)
+                mutable.putAll(map);
+        }
         return this;
     }
 
     public UsageMetricGroup group(@NotNull String key)
     {
         return addGroup(key);
+    }
+
+    @Override
+    @NotNull String getPath()
+    {
+        return Objects.requireNonNull(super.getPath());
     }
 }

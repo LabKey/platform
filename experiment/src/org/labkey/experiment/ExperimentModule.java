@@ -54,17 +54,14 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineageService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocolAttachmentType;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.FilterProtocolInputCriteria;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DomainAuditProvider;
-import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -152,17 +149,20 @@ import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.data.ParentOfMethod;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
-import org.labkey.experiment.api.property.LengthValidator;
-import org.labkey.experiment.api.property.LookupValidator;
+import org.labkey.experiment.api.property.LengthValidatorKind;
+import org.labkey.experiment.api.property.LookupValidatorKind;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
-import org.labkey.experiment.api.property.RangeValidator;
-import org.labkey.experiment.api.property.RegExValidator;
+import org.labkey.experiment.api.property.RangeValidatorKind;
+import org.labkey.experiment.api.property.RegExValidatorKind;
 import org.labkey.experiment.api.property.StorageNameGenerator;
 import org.labkey.experiment.api.property.StorageProvisionerImpl;
-import org.labkey.experiment.api.property.TextChoiceValidator;
+import org.labkey.experiment.api.property.TextChoiceValidatorKind;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
+import org.labkey.experiment.exp.api.ExpProtocolAttachmentType;
+import org.labkey.experiment.exp.api.FilterProtocolInputCriteria;
+import org.labkey.experiment.exp.property.DomainPropertyAuditProvider;
 import org.labkey.experiment.lineage.ExpLineageServiceImpl;
 import org.labkey.experiment.lineage.LineagePerfTest;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
@@ -247,6 +247,8 @@ public class ExperimentModule extends SpringModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), SpecialCharacterMetricsProvider.getInstance());
 
+        UsageMetricsService.get().registerUsageMetrics(getName(), IllegalFieldNameMetricsProvider.getInstance());
+
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);
@@ -264,11 +266,11 @@ public class ExperimentModule extends SpringModule
         QueryService.get().addQueryListener(new PropertyQueryChangeListener());
         QueryService.get().registerFilterSuggestionProvider(new SampleTypeFilterSuggestionProvider());
 
-        PropertyService.get().registerValidatorKind(new RegExValidator());
-        PropertyService.get().registerValidatorKind(new RangeValidator());
-        PropertyService.get().registerValidatorKind(new LookupValidator());
-        PropertyService.get().registerValidatorKind(new LengthValidator());
-        PropertyService.get().registerValidatorKind(new TextChoiceValidator());
+        PropertyService.get().registerValidatorKind(new RegExValidatorKind());
+        PropertyService.get().registerValidatorKind(new RangeValidatorKind());
+        PropertyService.get().registerValidatorKind(new LookupValidatorKind());
+        PropertyService.get().registerValidatorKind(new LengthValidatorKind());
+        PropertyService.get().registerValidatorKind(new TextChoiceValidatorKind());
 
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
@@ -598,6 +600,7 @@ public class ExperimentModule extends SpringModule
 
         SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
         SystemMaintenance.addTask(new SpecialCharacterMetricsMaintenanceTask());
+        SystemMaintenance.addTask(new IllegalFieldNameMetricsMaintenanceTask());
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
@@ -623,15 +626,13 @@ public class ExperimentModule extends SpringModule
                         SQLFragment protocolSQL = new SQLFragment(baseProtocolSQL);
                         protocolSQL.add(assayProvider.getProtocolPattern());
                         protocolSQL.add(ExpProtocol.ApplicationType.ExperimentRun.toString());
-                        List<Protocol> protocols = new SqlSelector(schema, protocolSQL).getArrayList(Protocol.class);
-                        protocolMetrics.put("protocolCount", protocols.size());
+                        Supplier<List<Protocol>> protocols = Suppliers.memoize(() -> new SqlSelector(schema, protocolSQL).getArrayList(Protocol.class));
+                        protocolMetrics.put("protocolCount", () -> protocols.get().size());
 
-                        List<? extends ExpProtocol> wrappedProtocols = protocols.stream().map(ExpProtocolImpl::new).collect(Collectors.toList());
-
-                        protocolMetrics.put("resultRowCount", () -> assayProvider.getResultRowCount(wrappedProtocols));
+                        protocolMetrics.put("resultRowCount", () -> assayProvider.getResultRowCount(protocols.get().stream().map(ExpProtocolImpl::new).collect(Collectors.toList())));
 
                         // Primary implementation class
-                        protocolMetrics.put("implementingClass", assayProvider.getClass());
+                        protocolMetrics.put("implementingClass", assayProvider::getClass);
                     }
                     assayMetrics.put("autoLinkedAssayCount", () -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class), "Assay designs with auto-link to a study configured; archived included");
                     assayMetrics.put("protocolsWithTransformScriptCount", () -> new SqlSelector(schema,
@@ -771,9 +772,9 @@ public class ExperimentModule extends SpringModule
                 metrics.put("sampleTypesWithCountTypeUnit", () -> new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit = ?", "unit").getObject(Long.class), "Uncategorized sample types with the count metric unit 'unit'");
 
                 UsageMetricGroup sampleColorMetrics = metrics.group("sampleColors", "Sample color usage; only colorCount is reported when no colors exist");
-                Long colorCount = new SqlSelector(schema, "SELECT COUNT(*) FROM exp.datacolors").getObject(Long.class);
+                Supplier<Long> colorCount = Suppliers.memoize(() -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.datacolors").getObject(Long.class));
                 sampleColorMetrics.put("colorCount", colorCount, "Sample colors defined, archived included");
-                UsageMetrics colorDetailMetrics = sampleColorMetrics.reportedIf(colorCount > 0);
+                UsageMetrics colorDetailMetrics = sampleColorMetrics.reportedIf(() -> colorCount.get() > 0);
                 colorDetailMetrics.put("archivedColorCount", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = ?", true)).getObject(Long.class), "Archived sample colors");
                 colorDetailMetrics.put("samplesWithColorCount", () -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE expmaterialcolor IS NOT NULL").getObject(Long.class), "Samples with a color assigned");
                 colorDetailMetrics.put("samplesWithArchivedColorCount", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = ?", true)).getObject(Long.class), "Samples assigned a color that is now archived");
@@ -819,14 +820,14 @@ public class ExperimentModule extends SpringModule
                 metrics.put("dataWithDataParentsCount", () -> new SqlSelector(schema, "SELECT COUNT(DISTINCT d.sourceApplicationId) FROM exp.data d\n" +
                         "JOIN exp.datainput di ON di.targetapplicationid = d.sourceapplicationid").getObject(Long.class), "Protocol steps that both produced data and consumed data inputs; approximates derivations from data parents, counting steps, not data");
 
-                Collection<Map<String, Object>> numDataClassObjectsCounts = new SqlSelector(schema, """
+                Supplier<Collection<Map<String, Object>>> numDataClassObjectsCounts = Suppliers.memoize(() -> new SqlSelector(schema, """
                         SELECT totalCount, numberNameCount FROM
                                     (SELECT cpastype, COUNT(*) AS totalCount from exp.data GROUP BY cpastype) t
                                 JOIN
                                     (SELECT cpastype, COUNT(*) AS numberNameCount FROM exp.data m WHERE m.name SIMILAR TO '[0-9.]*' GROUP BY cpastype) ns
-                                ON t.cpastype = ns.cpastype""").getMapCollection();
-                metrics.put("dataClassWithNumberNamesCount", numDataClassObjectsCounts.size(), "Data types with at least one row named only with digits and periods; includes non-data-class data such as files");
-                metrics.put("dataClassWithOnlyNumberNamesCount", numDataClassObjectsCounts.stream().filter(map ->
+                                ON t.cpastype = ns.cpastype""").getMapCollection());
+                metrics.put("dataClassWithNumberNamesCount", () -> numDataClassObjectsCounts.get().size(), "Data types with at least one row named only with digits and periods; includes non-data-class data such as files");
+                metrics.put("dataClassWithOnlyNumberNamesCount", () -> numDataClassObjectsCounts.get().stream().filter(map ->
                         (Long) map.get("totalCount") > 0 && map.get("totalCount").equals(map.get("numberNameCount"))).count(), "Data types whose names are all digits and periods; includes non-data-class data such as files");
 
                 metrics.put("ontologyPrincipalConceptCodeCount", () -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class), "Fields with a principal ontology concept code");
@@ -1133,6 +1134,7 @@ public class ExperimentModule extends SpringModule
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
+            IllegalFieldNameMetricsMaintenanceTask.TestCase.class,
             ImportAbortResourceTestCase.class,
             LineagePerfTest.class,
             LineageTest.class,

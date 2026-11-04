@@ -25,7 +25,6 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 // Moved from git, see history at https://github.com/LabKey/docker/commits/release18.1/api-src/org/labkey/api/docker/DockerService.java
 
@@ -463,7 +463,7 @@ public interface DockerService
 
     void start(String containerId);
 
-    void stop(String containerId, Map<String, String> archivesFromContainer, boolean delete);
+    void stop(String containerId, Map<String, FileLike> archivesFromContainer, boolean delete);
 
     void stop(DockerContainer dc);
 
@@ -481,7 +481,7 @@ public interface DockerService
 
     boolean isUseDockerVolumes();
 
-    default void executeR(DockerImage dockerImage, FileLike scriptFile, String localWorkingDir, String remoteWorkingDir, FileFilter inputScripts) throws IOException
+    default void executeR(DockerImage dockerImage, FileLike scriptFile, FileLike localWorkingDir, String remoteWorkingDir, Predicate<FileLike> inputScripts) throws IOException
     {
         throw new UnsupportedOperationException(NO_DOCKER);
     }

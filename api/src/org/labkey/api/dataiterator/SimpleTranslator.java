@@ -17,6 +17,7 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.AbstractListValuedMap;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +35,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConversionExceptionWithMessage;
 import org.labkey.api.data.ConvertHelper;
@@ -92,6 +95,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -99,6 +103,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
@@ -320,6 +325,63 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
 
             return null;
+        }
+
+        /**
+         * Fills the alternate-key and title column maps for many keys with one query per batch, so {@link #mappedValue}
+         * returns the same values and errors for them without querying.
+         */
+        public void prefetch(Collection<String> keys)
+        {
+            // A bulk load appends the whole table to the map, so it would duplicate every prefetched key
+            if (_allowBulkLoads)
+                return;
+
+            List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> maps = new ArrayList<>(getMaps());
+            if (_titleColumnLookupMap != null)
+                maps.add(_titleColumnLookupMap);
+
+            Collection<String> unresolved = keys.stream()
+                .filter(StringUtils::isNotEmpty)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            // Like mappedValue, a key reaches the next map only when the previous one has no match
+            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> triple : maps)
+            {
+                if (unresolved.isEmpty())
+                    break;
+
+                prefetch(triple, unresolved);
+                MultiValuedMap<?, ?> map = triple.getRight();
+                unresolved = unresolved.stream().filter(k -> isMiss(map, k)).toList();
+            }
+        }
+
+        private void prefetch(Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> triple, Collection<String> keys)
+        {
+            final ColumnInfo pkCol = triple.getLeft();
+            final ColumnInfo altKeyCol = triple.getMiddle();
+            final MultiValuedMap map = triple.getRight();
+
+            for (List<String> batch : ListUtils.partition(new ArrayList<>(keys), BatchSize.get(BatchSize.Kind.ROWS)))
+            {
+                // fillMultiValuedMap appends, so refetching a key a case-insensitive match already filled would make it ambiguous
+                List<String> uncached = batch.stream().filter(k -> !map.containsKey(k)).toList();
+                if (!uncached.isEmpty())
+                    createSelector(pkCol, altKeyCol, new SimpleFilter(altKeyCol.getFieldKey(), uncached, CompareType.IN)).fillMultiValuedMap(map);
+            }
+
+            for (String k : keys)
+            {
+                if (!map.containsKey(k))
+                    map.put(k, MISS);
+            }
+        }
+
+        private boolean isMiss(MultiValuedMap map, Object k)
+        {
+            Collection<?> vs = map.get(k);
+            return vs.size() == 1 && vs.iterator().next() == MISS;
         }
 
         private final Object MISS = new Object();

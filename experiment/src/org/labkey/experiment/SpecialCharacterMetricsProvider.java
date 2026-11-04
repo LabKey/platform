@@ -41,7 +41,7 @@ public class SpecialCharacterMetricsProvider implements UsageMetricsProvider
     {
         metrics.group(METRIC_KEY, "Semicolons, commas, newlines, and double quotes as of the last system maintenance run since startup. " +
             "TextChoice/MVTC: choice fields with such a choice; Text/MultiLine: columns with such a value; dataName: sample type and data class tables with such a name; objectStringValue: non-provisioned properties with such a value")
-            .putAll(_metrics);
+            .putAll(() -> _metrics);
         return metrics;
     }
 

@@ -55,10 +55,10 @@ public interface AssayRunCreator<ProviderType extends AssayProvider>
     /**
      * Runs the assay's transform scripts ahead of the import transaction, when the provider supports it, so that
      * saveExperimentRun only records their output. Call before opening a transaction around saveExperimentRun and
-     * close the result after that transaction ends.
+     * close the result after that transaction ends. Don't call it for an import that will run in a background job.
      * @return null when nothing ran
      */
-    default @Nullable PreparedTransform prepareTransform(AssayRunUploadContext<ProviderType> context, boolean forceAsync)
+    default @Nullable PreparedTransform prepareTransform(AssayRunUploadContext<ProviderType> context)
             throws ExperimentException, ValidationException
     {
         return null;

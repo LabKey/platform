@@ -217,6 +217,11 @@ public class QueryProfiler
         _listeners.add(listener);
     }
 
+    public void removeListener(DatabaseQueryListener listener)
+    {
+        _listeners.remove(listener);
+    }
+
     @NotNull
     public Query preTrack(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters,
                           @Nullable StackTraceElement[] stackTrace, boolean requestThread)

@@ -22,6 +22,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.TermsOfUseWikiSource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
@@ -31,7 +32,7 @@ import org.labkey.api.view.WebPartView;
 import java.sql.SQLException;
 import java.util.List;
 
-public interface WikiService
+public interface WikiService extends TermsOfUseWikiSource
 {
     static @Nullable WikiService get()
     {
@@ -41,6 +42,7 @@ public interface WikiService
     static void setInstance(WikiService impl)
     {
         ServiceRegistry.get().registerService(WikiService.class, impl);
+        ServiceRegistry.get().registerService(TermsOfUseWikiSource.class, impl);
     }
 
     WebPartView<?> getView(Container c, String name, boolean renderContentOnly);
@@ -59,9 +61,7 @@ public interface WikiService
      */
     WikiMarkdown getWikiMarkdown(Container c, String name);
 
-    // Quick check for a terms-of-use wiki in the provided container. Helps optimize the every-request terms check.
-    boolean hasTermsOfUseWiki(Container c);
-
+    @Override
     default HtmlString getHtml(Container c, String name)
     {
         var wiki = getRenderedWiki(c, name);

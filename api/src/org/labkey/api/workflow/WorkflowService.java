@@ -20,13 +20,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.query.QueryWorkflowHandler;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Map;
 
-public interface WorkflowService
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
+
+public interface WorkflowService extends QueryWorkflowHandler
 {
     enum WorkflowConfigs
     {
@@ -79,6 +82,7 @@ public interface WorkflowService
     static void setInstance(WorkflowService impl)
     {
         ServiceRegistry.get().registerService(WorkflowService.class, impl);
+        ServiceRegistry.get().registerService(QueryWorkflowHandler.class, impl);
     }
 
     static WorkflowService get()
@@ -86,10 +90,15 @@ public interface WorkflowService
         return ServiceRegistry.get().getService(WorkflowService.class);
     }
 
-    void populateConfigParams(Map<String, Object> provided, Map<Enum, Object> configParameters) throws ValidationException;
-
     void populateConfigParams(HttpServletRequest request, Map<Enum, Object> configParameters) throws ValidationException;
-    Map<String, Object> getConfigParameters(HttpServletRequest request) throws ValidationException;
+
+    @Override
+    default void onUpdateComplete(@NotNull Container container, @NotNull User user, @NotNull Map<Enum, Object> configParameters)
+    {
+        if (configParameters.containsKey(WorkflowConfigs.ActionId))
+            onActionComplete(container, user, (Long) configParameters.get(WorkflowConfigs.ActionId), (String) configParameters.get(AuditUserComment));
+    }
+
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId, @Nullable String userAuditComment);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
     boolean actionWillAddSamples(Long actionId);

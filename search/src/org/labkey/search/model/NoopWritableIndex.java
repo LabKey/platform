@@ -21,7 +21,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
-import org.labkey.api.search.SearchMisconfiguredException;
+import org.labkey.search.SearchMisconfiguredException;
 
 import java.util.Collection;
 import java.util.Collections;

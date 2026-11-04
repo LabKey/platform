@@ -216,8 +216,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         TableInfo plateTypeTable = schema.getTableInfoPlateType();
         TableInfo wellGroupTable = schema.getTableInfoWellGroup();
 
-        // plateSets
-        {
+        plateMetrics.put("plateSets", () -> {
             Map<String, Long> plateSets = new HashMap<>();
             plateSets.put("archivedPlateSetCount", plateSetCount(dbSchema, plateSetTable, true));
             plateSets.put("plateSetCount", plateSetCount(dbSchema, plateSetTable, false));
@@ -230,11 +229,10 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             plateSets.put("plateSetsWith1To10PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 0, 11));
             plateSets.put("plateSetsWith11to30PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 10, 31));
             plateSets.put("plateSetsWith31to60PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 30, 61));
-            plateMetrics.put("plateSets", plateSets, "Plate sets: plateSetCount and archivedPlateSetCount exclude templates; type counts (primary, assay, stand-alone assay) include archived and templates; plate-count stats and buckets cover non-archived, non-template plate sets and count all their plates; maximumPlatesInPlateSet is null if there are none");
-        }
+            return plateSets;
+        }, "Plate sets: plateSetCount and archivedPlateSetCount exclude templates; type counts (primary, assay, stand-alone assay) include archived and templates; plate-count stats and buckets cover non-archived, non-template plate sets and count all their plates; maximumPlatesInPlateSet is null if there are none");
 
-        // plates
-        {
+        plateMetrics.put("plates", () -> {
             TableInfo wellTable = schema.getTableInfoWell();
             Map<String, Long> plates = new HashMap<>();
             plates.put("platesCount", plateCount(dbSchema, plateTable, false, false));
@@ -248,11 +246,10 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             plates.put("platesWithNegativeControlGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, false, WellGroup.Type.NEGATIVE_CONTROL));
             plates.put("platesWithPositiveControlGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, false, WellGroup.Type.POSITIVE_CONTROL));
             plates.put("platesWithReplicateGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, false, WellGroup.Type.REPLICATE));
-            plateMetrics.put("plates", plates, "Non-template plates: active and archived counts, then active plates by size (12 to 384 wells) and with each control or replicate well group type; distinctPlatedSamples counts distinct samples in any well, including templates and archived plates");
-        }
+            return plates;
+        }, "Non-template plates: active and archived counts, then active plates by size (12 to 384 wells) and with each control or replicate well group type; distinctPlatedSamples counts distinct samples in any well, including templates and archived plates");
 
-        // templates
-        {
+        plateMetrics.put("templates", () -> {
             Map<String, Long> templates = new HashMap<>();
             templates.put("plateTemplateCount", plateCount(dbSchema, plateTable, true, false));
             templates.put("archivedTemplatesCount", plateCount(dbSchema, plateTable, true, true));
@@ -264,15 +261,14 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             templates.put("templatesWithNegativeControlGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, true, WellGroup.Type.NEGATIVE_CONTROL));
             templates.put("templatesWithPositiveControlGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, true, WellGroup.Type.POSITIVE_CONTROL));
             templates.put("templatesWithReplicateGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, true, WellGroup.Type.REPLICATE));
-            plateMetrics.put("templates", templates, "Plate templates: active and archived counts, then active templates by size (12 to 384 wells) and with each control or replicate well group type");
-        }
+            return templates;
+        }, "Plate templates: active and archived counts, then active templates by size (12 to 384 wells) and with each control or replicate well group type");
 
-        // assays
-        {
+        plateMetrics.put("assays", () -> {
             TableInfo hitTable = schema.getTableInfoHit();
             TableInfo filterCriteriaTable = schema.getTableInfoFilterCriteria();
             List<ExpProtocol> plateEnabledProtocols = getPlateEnabledAssayProtocols();
-            plateMetrics.put("assays", () -> Map.of(
+            return Map.of(
                 "hitCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(hitTable, "h")).getObject(Long.class),
                 "plateSetsWithHits", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(DISTINCT plateSetPath) FROM ").append(hitTable, "h")).getObject(Long.class),
                 "assaysWithPlateMetadataEnabled", plateEnabledProtocols.size(),
@@ -280,17 +276,16 @@ public class PlateMetricsProvider implements UsageMetricsProvider
                 "assayResultsCount", getPlateBasedAssayResultsCount(plateEnabledProtocols),
                 "domainsWithFilterCriteriaConfigured", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(DISTINCT domainId) FROM ").append(filterCriteriaTable, "fc")).getObject(Long.class),
                 "columnsWithFilterCriteria", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(DISTINCT propertyId) FROM ").append(filterCriteriaTable, "fc")).getObject(Long.class)
-            ), "Plate-based assay usage: hits and distinct plate sets with hits; Standard assay designs with plate metadata enabled visible in Biologics projects (Shared designs counted once per project) and their runs and results within those projects; distinct domains and columns with hit selection filter criteria");
-        }
+            );
+        }, "Plate-based assay usage: hits and distinct plate sets with hits; Standard assay designs with plate metadata enabled visible in Biologics projects (Shared designs counted once per project) and their runs and results within those projects; distinct domains and columns with hit selection filter criteria");
 
-        // wells
-        {
+        plateMetrics.put("wells", () -> {
             TableInfo wellTable = schema.getTableInfoWell();
             Map<String, Long> wells = new HashMap<>();
             wells.put("wellCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(wellTable, "w")).getObject(Long.class));
             wells.put("wellsWithSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(wellTable, "w").unsafeAppend(" WHERE sampleId IS NOT NULL")).getObject(Long.class));
-            plateMetrics.put("wells", wells, "All wells, including those on templates and archived plates, and those with a sample");
-        }
+            return wells;
+        }, "All wells, including those on templates and archived plates, and those with a sample");
 
         plateMetrics.put("metadata", () -> Map.of(
             "fieldsCount", getMetadataFieldsCount()

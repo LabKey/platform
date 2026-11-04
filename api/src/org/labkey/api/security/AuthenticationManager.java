@@ -123,6 +123,7 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -1891,10 +1892,10 @@ public class AuthenticationManager
     public static void registerMetricsProvider()
     {
         UsageMetricsService.get().registerUsageMetrics(ModuleLoader.getInstance().getCoreModule().getName(), metrics -> {
-            Map<String, Long> map = AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
+            Supplier<Map<String, Long>> supplier = () -> AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
                 .collect(Collectors.groupingBy(config->config.getAuthenticationProvider().getName(), Collectors.counting()));
 
-            return metrics.put("authenticationConfigurations", map, "Enabled authentication configurations by provider (Database, LDAP, SAML, CAS, etc.)");
+            return metrics.put("authenticationConfigurations", supplier, "Enabled authentication configurations by provider (Database, LDAP, SAML, CAS, etc.)");
         });
     }
 

@@ -28,7 +28,7 @@ import java.util.Map;
  *         if (null != svc)
  *         {
  *             svc.registerUsageMetrics(DataIntegrationModule.NAME, metrics -> metrics.put("etlRunCount",
- *                 new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class),
+ *                 () -> new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class),
  *                 "ETL runs"));
  *         }
  */

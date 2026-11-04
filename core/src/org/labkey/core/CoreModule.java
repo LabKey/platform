@@ -48,12 +48,12 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
-import org.labkey.api.data.ContainerServiceImpl;
 import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
@@ -85,8 +85,6 @@ import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
-import org.labkey.api.files.FileBrowserConfigImporter;
-import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
@@ -103,7 +101,6 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
-import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.products.ProductRegistry;
@@ -119,7 +116,6 @@ import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.FastaDataLoader;
-import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
@@ -155,9 +151,6 @@ import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache.FolderSettingsCacheListener;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.LookAndFeelPropertiesManager;
-import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
-import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
@@ -208,7 +201,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -257,9 +249,13 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentContainerListener;
+import org.labkey.core.attachment.AttachmentHashingMaintenanceTask;
 import org.labkey.core.attachment.AttachmentServiceImpl;
+import org.labkey.core.data.ContainerServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
+import org.labkey.core.files.FileBrowserConfigImporter;
+import org.labkey.core.files.FileBrowserConfigWriter;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.DbLoginManager;
@@ -291,16 +287,21 @@ import org.labkey.core.query.ReportsTable;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
+import org.labkey.core.reader.HTMLDataLoader;
 import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.script.RhinoService;
 import org.labkey.core.secrets.SecretServiceImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.ApiKeyViewProvider;
+import org.labkey.core.security.PasswordExpiration;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.SecurityPointcutServiceImpl;
 import org.labkey.core.security.validators.PermissionsValidatorFactory;
+import org.labkey.core.settings.LookAndFeelPropertiesManager;
+import org.labkey.core.settings.LookAndFeelPropertiesManager.ResourceType;
+import org.labkey.core.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
@@ -311,6 +312,7 @@ import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.TableViewFormTestCase;
 import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
+import org.labkey.core.view.menu.FolderMenu;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.PageTemplate;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
@@ -545,7 +547,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
+        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
             "Allow script authentication via legacy substitution parameters",
@@ -1255,41 +1257,39 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> {
             metrics.group("javaRuntime", "JVM vendor and VM name, keyed by Java system property")
-                .put("java.vendor", System.getProperty("java.vendor"))
-                .put("java.vm.name", System.getProperty("java.vm.name"));
-            metrics.put("distributionFilename", AppProps.getInstance().getDistributionFilename(), "Filename of the distribution the server was installed from; localBuild for developer builds");
-            metrics.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode(), "Site-level setting for when the application menu is shown");
-            metrics.put("optionalFeatures", OptionalFeatureService.get().getOptionalFeatureFlags().stream()
+                .put("java.vendor", () -> System.getProperty("java.vendor"))
+                .put("java.vm.name", () -> System.getProperty("java.vm.name"));
+            metrics.put("distributionFilename", () -> AppProps.getInstance().getDistributionFilename(), "Filename of the distribution the server was installed from; localBuild for developer builds");
+            metrics.put("applicationMenuDisplayMode", () -> LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode(), "Site-level setting for when the application menu is shown");
+            metrics.put("optionalFeatures", () -> OptionalFeatureService.get().getOptionalFeatureFlags().stream()
                 .collect(Collectors.groupingBy(optionalFeatureFlag -> optionalFeatureFlag.getType().name().toLowerCase(),
                     Collectors.mapping(flag -> flag, Collectors.toMap(OptionalFeatureFlag::getFlag, OptionalFeatureFlag::isEnabled))
                 )),
                 "Optional feature flags by type (experimental, deprecated, etc.), each mapping flag name to whether it's enabled"
             );
-            metrics.put("productFeaturesEnabled", ProductRegistry.getProductFeatureSet(), "Product features enabled by the server's license and installed modules");
-            metrics.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString(), "Web analytics tracking modes enabled; [] if none");
+            metrics.put("productFeaturesEnabled", ProductRegistry::getProductFeatureSet, "Product features enabled by the server's license and installed modules");
+            metrics.put("analyticsTrackingStatus", () -> AnalyticsServiceImpl.get().getTrackingStatus().toString(), "Web analytics tracking modes enabled; [] if none");
             String labkeyContextPath = AppProps.getInstance().getContextPath();
-            metrics.put("webappContextPath", labkeyContextPath, "Context path LabKey is deployed under; empty when deployed at the root");
-            metrics.put("embeddedTomcat", true, "Always true; the server runs in embedded Tomcat");
-            boolean customLog4JConfig = false;
-            if (ModuleLoader.getServletContext() != null)
-            {
-                customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
-            }
-            metrics.put("customLog4JConfig", customLog4JConfig, "Whether the server is configured with a custom Log4J configuration");
-            metrics.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production", "development or production mode");
-            Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
-            deployedApps.remove(labkeyContextPath);
-            if (labkeyContextPath.startsWith("/"))
-            {
-                deployedApps.remove(labkeyContextPath.substring(1));
-            }
-            metrics.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","), "Comma-separated names of other webapps deployed alongside LabKey");
+            metrics.put("webappContextPath", () -> labkeyContextPath, "Context path LabKey is deployed under; empty when deployed at the root");
+            metrics.put("embeddedTomcat", () -> true, "Always true; the server runs in embedded Tomcat");
+            metrics.put("customLog4JConfig", () -> ModuleLoader.getServletContext() != null && Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig")),
+                "Whether the server is configured with a custom Log4J configuration");
+            metrics.put("runtimeMode", () -> AppProps.getInstance().isDevMode() ? "development" : "production", "development or production mode");
+            metrics.put("otherDeployedWebapps", () -> {
+                Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
+                deployedApps.remove(labkeyContextPath);
+                if (labkeyContextPath.startsWith("/"))
+                {
+                    deployedApps.remove(labkeyContextPath.substring(1));
+                }
+                return StringUtils.join(deployedApps, ",");
+            }, "Comma-separated names of other webapps deployed alongside LabKey");
 
             metrics.put("totalLogins", () -> UserManager.getAuthCount(null, false, false, false), "Login events in the audit log; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
             metrics.put("apiKeyLogins", () -> UserManager.getAuthCount(null, false, true, false), "Login events in the audit log that used an API key; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
-            metrics.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout(), "HTTP session timeout in minutes");
-            metrics.put("userLimits", new LimitActiveUsersSettings().getMetricsMap(), "Active user warning and limit settings: whether each is on, its user count threshold, and its message");
-            metrics.put("systemUserCount", UserManager.getSystemUserCount(), "Active users marked as system users, which don't count toward user limits");
+            metrics.put("sessionTimeout", () -> ModuleLoader.getServletContext().getSessionTimeout(), "HTTP session timeout in minutes");
+            metrics.put("userLimits", () -> new LimitActiveUsersSettings().getMetricsMap(), "Active user warning and limit settings: whether each is on, its user count threshold, and its message");
+            metrics.put("systemUserCount", UserManager::getSystemUserCount, "Active users marked as system users, which don't count toward user limits");
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
             metrics.put("uniqueRecentUserCount", () -> UserManager.getAuthCount(cal.getTime(), false, false, true), "Distinct users who logged in during the last 30 days");
@@ -1303,19 +1303,22 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     "Emails of active non-system users; only reported when the extended metrics feature flag is on"
                 );
 
-            metrics.put("workbookCount", () -> ContainerManager.getWorkbookCount(), "Workbooks across the server");
-            metrics.put("archivedFolderCount", () -> ContainerManager.getArchivedContainerCount(), "Archived folders across the server");
-            metrics.put("databaseSize", () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize(), "Size of the LabKey database in bytes");
+            metrics.put("workbookCount", ContainerManager::getWorkbookCount, "Workbooks across the server");
+            metrics.put("archivedFolderCount", ContainerManager::getArchivedContainerCount, "Archived folders across the server");
+            String dbSize = "databaseSize";
+            metrics.put(dbSize, NightlyRecalculatingSuppliers.get(dbSize, () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize()), "Size of the LabKey database in bytes");
 
-            // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
-            // Note that they can be non-trivial in size.
-            SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
-            sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
-            sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
+            String schemaSize = "databaseSchemaSize";
+            metrics.put(schemaSize, NightlyRecalculatingSuppliers.get(schemaSize, () -> {
+                // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
+                // Note that they can be non-trivial in size.
+                SQLFragment sql = SQLFragment.unsafe("SELECT table_schema, SUM(total_size) FROM ");
+                sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
+                sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
+                return Collections.unmodifiableMap(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap());
+            }), "Size in bytes of each database schema, including indexes; temp excluded");
 
-            metrics.put("databaseSchemaSize", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap(), "Size in bytes of each database schema, including indexes; temp excluded");
-
-            metrics.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics(), "Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
+            metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
             metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
             UsageMetricGroup roleAssignments = metrics.group("roleAssignments", "Direct assignments of designer roles to users or groups, by role, across all containers");
             final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
@@ -1326,7 +1329,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             UsageMetricGroup allowListCounts = metrics.group("allowListCounts", "Entries in each site allow list, such as external redirect hosts and file extensions");
             for (AllowListType type : AllowListType.values())
             {
-                allowListCounts.put(type.name(), type.getValues().size());
+                allowListCounts.put(type.name(), () -> type.getValues().size());
             }
 
             return metrics;
@@ -1338,6 +1341,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), AttachmentHashingMaintenanceTask.getMetricsProvider());
+        SystemMaintenance.addTask(new AttachmentHashingMaintenanceTask());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
@@ -1550,7 +1555,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
         List<Supplier<Class<?>>> ret = new ArrayList<>(super.getIntegrationTestFactories());
-        ret.add(new JspTestCase("/org/labkey/api/data/ColumnInfoTests.jsp"));
+        ret.add(new JspTestCase("/org/labkey/core/data/ColumnInfoTests.jsp"));
         return ret;
     }
 
@@ -1565,6 +1570,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             LabKeyProxyServlet.TestCase.class,
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
+            PasswordExpiration.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             QuartzShutdown.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,

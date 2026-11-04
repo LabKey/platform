@@ -119,9 +119,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     String SAMPLE_ALIQUOT_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleAliquotProtocol";
     String SAMPLE_ALIQUOT_PROTOCOL_NAME = "Sample Aliquot Protocol";
 
-    String SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX = "SampleManagement.JobProtocol";
-    String SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX = "SampleManagement.TaskProtocol";
-
     // Constant used by ExpDataIterators.AliasDataIterator
     String ALIASCOLUMNALIAS = "org.labkey.experiment.ExpDataIterators$AliasDataIterator#ALIAS";
 
@@ -393,8 +390,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpMaterial getExpMaterial(long rowId);
 
-    @Nullable ExpMaterial getExpMaterial(long rowId, ContainerFilter containerFilter);
-
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
      *
@@ -447,6 +442,19 @@ public interface ExperimentService extends ExperimentRunTypeSource
         @NotNull RemapCache cache,
         @NotNull Map<Long, ExpMaterial> materialCache
     ) throws ValidationException;
+
+    /**
+     * Resolve many sample names in bulk into the same caches, so {@link #findExpMaterial} runs no queries for them.
+     * Errors are left for findExpMaterial to report.
+     */
+    void prefetchExpMaterials(
+        Container container,
+        User user,
+        Collection<String> sampleNames,
+        @Nullable ExpSampleType sampleType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Long, ExpMaterial> materialCache
+    );
 
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
@@ -598,7 +606,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return true;
     }
     
-    static void validateParentAlias(Map<String, String> aliasMap, Set<String> reservedNames, Set<String> existingAliases, GWTDomain updatedDomainDesign, String dataTypeNoun)
+    static void validateParentAlias(Map<String, String> aliasMap, Set<String> reservedNames, GWTDomain updatedDomainDesign, String dataTypeNoun)
     {
         Set<String> dupes = new CaseInsensitiveHashSet();
         aliasMap.forEach((key, value) -> {
