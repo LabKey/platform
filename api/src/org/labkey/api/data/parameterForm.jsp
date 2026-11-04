@@ -83,6 +83,8 @@
                 }
                 else if (p.jsontype == 'date') {
                     item.format = LABKEY.extDefaultDateFormat;
+                    // Display formats may not round-trip through the server's date parsing mode, so post ISO
+                    item.submitFormat = LABKEY.extDateInputFormat;
                 }
                 items.push(item);
             }
