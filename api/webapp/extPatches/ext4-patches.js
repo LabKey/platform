@@ -447,13 +447,20 @@ Ext4.override(Ext4.data.Store, {
 });
 
 /**
- * typeAhead schedules onTypeAhead 250ms after a query, but onDestroy unbinds the store without cancelling it, so it throws.
+ * Delayed query/type-ahead tasks and remote load callbacks can fire after onDestroy has nulled the store. Avoid throwing by checking if destroyed.
  */
 Ext4.override(Ext4.form.field.ComboBox, {
-    onDestroy: function() {
-        if (this.typeAheadTask)
-            this.typeAheadTask.cancel();
-        this.callParent(arguments);
+    doRawQuery: function() {
+        if (!this.isDestroyed)
+            this.callParent(arguments);
+    },
+    onTypeAhead: function() {
+        if (!this.isDestroyed)
+            this.callParent(arguments);
+    },
+    afterQuery: function() {
+        if (!this.isDestroyed)
+            this.callParent(arguments);
     }
 });
 
