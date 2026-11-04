@@ -201,6 +201,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MailMetrics;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.MothershipReport;
@@ -309,6 +310,7 @@ public class ApiModule extends CodeOnlyModule
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
+        MailMetrics.registerMetricsProvider();
         AuditLogService.get().registerAuditType(new SystemUpgradeAuditProvider());
         // Handle system maintenance startup properties as late as possible; we want all system maintenance tasks to be registered first
         ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
@@ -473,6 +475,7 @@ public class ApiModule extends CodeOnlyModule
             KeySharingJSONTokener.TestCase.class,
             LimitedUser.TestCase.class,
             LookAheadDataIterator.TestCase.class,
+            MailMetrics.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             McpService.TestCase.class,
