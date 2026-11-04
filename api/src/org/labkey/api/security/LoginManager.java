@@ -65,9 +65,10 @@ public class LoginManager
 
         try
         {
-            int rowCount = new SqlExecutor(CORE.getSchema()).execute("INSERT INTO " + CORE.getTableInfoLogins() +
-                " (UserId, Crypt, LastChanged, Verification, VerificationTimeout, PreviousCrypts) VALUES (?, ?, ?, ?, ?, ?)",
-                userId, crypt, new Date(), hashVerification(verification), Date.from(Instant.now().plus(SETUP_LINK_TIMEOUT)), crypt);
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(CORE.getTableInfoLogins())
+                .unsafeAppend(" (UserId, Crypt, PasswordLastChanged, PasswordVerification, PasswordVerificationTimeout, PreviousCrypts) VALUES (?, ?, ?, ?, ?, ?)",
+                    userId, crypt, new Date(), hashVerification(verification), Date.from(Instant.now().plus(SETUP_LINK_TIMEOUT)), crypt);
+            int rowCount = new SqlExecutor(CORE.getSchema()).execute(sql);
             if (1 != rowCount)
                 throw new SecurityManager.UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
         }
@@ -93,14 +94,18 @@ public class LoginManager
         }
         String cryptHistory = StringUtils.join(history, ",");
 
-        int rows = new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoLogins() + " SET Crypt=?, LastChanged=?, PreviousCrypts=? WHERE UserId=?", crypt, new Date(), cryptHistory, user.getUserId());
+        // A new password also cancels any pending email change, which may have been requested by whoever held the old one
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoLogins())
+            .unsafeAppend(" SET Crypt = ?, PasswordLastChanged = ?, PreviousCrypts = ?, RequestedEmail = NULL, EmailVerification = NULL, EmailVerificationTimeout = NULL WHERE UserId = ?",
+                crypt, new Date(), cryptHistory, user.getUserId());
+        int rows = new SqlExecutor(CORE.getSchema()).execute(sql);
         if (1 != rows)
             throw new SecurityManager.UserManagementException(user.getEmail(), "Password update statement affected " + rows + " rows.");
     }
 
     private static List<String> getCryptHistory(User user)
     {
-        Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT PreviousCrypts FROM " + CORE.getTableInfoLogins() + " WHERE UserId=?", user.getUserId()));
+        Selector selector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT PreviousCrypts FROM ").append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId()));
         String cryptHistory = selector.getObject(String.class);
 
         if (null == cryptHistory)
@@ -129,16 +134,16 @@ public class LoginManager
         return false;
     }
 
-    public static Date getLastChanged(User user)
+    public static Date getPasswordLastChanged(User user)
     {
-        SqlSelector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT LastChanged FROM " + CORE.getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()));
+        SqlSelector selector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT PasswordLastChanged FROM ").append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId()));
         return selector.getObject(Date.class);
     }
 
     // Look up user ID in core.Logins table and return the corresponding password hash
     public static @Nullable String getPasswordHash(@Nullable User user)
     {
-        return null != user ? new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT Crypt FROM " + CORE.getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()))
+        return null != user ? new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT Crypt FROM ").append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId()))
             .getObject(String.class) : null;
     }
 
@@ -193,40 +198,45 @@ public class LoginManager
     // Test if user has been verified for database authentication
     public static boolean isVerified(User user)
     {
-        return null == new SqlSelector(CORE.getSchema(), "SELECT Verification FROM " + CORE.getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()).getObject(String.class);
+        return null == new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT PasswordVerification FROM ").append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId())).getObject(String.class);
     }
 
-    // Look up a user based on an unexpired verification token
+    // Look up a user based on an unexpired password setup or reset token
     public static @Nullable User verify(String verification)
     {
         Integer userId = null;
         if (StringUtils.length(verification) == TEMP_PASSWORD_LENGTH)
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Verification"), hashVerification(verification));
-            filter.addCondition(FieldKey.fromParts("VerificationTimeout"), new Date(), CompareType.GT);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("PasswordVerification"), hashVerification(verification));
+            filter.addCondition(FieldKey.fromParts("PasswordVerificationTimeout"), new Date(), CompareType.GT);
             userId = new TableSelector(CORE.getTableInfoLogins(), Collections.singleton("UserId"), filter, null)
                 .getObject(Integer.class);
         }
         return userId != null ? UserManager.getUser(userId) : null;
     }
 
-    // Store the hash of a new verification token and return the token, which can't be retrieved later
+    // Store the hash of a new password setup or reset token and return the token, which can't be retrieved later
     public static String createVerification(User user, Duration timeout) throws SecurityManager.UserManagementException
     {
         String verification = createTempPassword();
-        updateVerification(user, new SQLFragment("Verification = ?, VerificationTimeout = ?", hashVerification(verification), Date.from(Instant.now().plus(timeout))));
+        updateVerification(user, SQLFragment.unsafe("PasswordVerification = ?, PasswordVerificationTimeout = ?", hashVerification(verification), Date.from(Instant.now().plus(timeout))));
         return verification;
     }
 
     public static void clearVerification(User user) throws SecurityManager.UserManagementException
     {
         // Literal NULLs: a null Date parameter binds as varchar, which PostgreSQL rejects for a timestamp column
-        updateVerification(user, new SQLFragment("Verification = NULL, VerificationTimeout = NULL"));
+        updateVerification(user, SQLFragment.unsafe("PasswordVerification = NULL, PasswordVerificationTimeout = NULL"));
+    }
+
+    public static void clearEmailVerification(User user) throws SecurityManager.UserManagementException
+    {
+        updateVerification(user, SQLFragment.unsafe("RequestedEmail = NULL, EmailVerification = NULL, EmailVerificationTimeout = NULL"));
     }
 
     private static void updateVerification(User user, SQLFragment assignments) throws SecurityManager.UserManagementException
     {
-        SQLFragment sql = new SQLFragment("UPDATE " + CORE.getTableInfoLogins() + " SET ").append(assignments).append(" WHERE UserId = ?").add(user.getUserId());
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoLogins()).unsafeAppend(" SET ").append(assignments).unsafeAppend(" WHERE UserId = ?", user.getUserId());
         int rows = new SqlExecutor(CORE.getSchema()).execute(sql);
         if (1 != rows)
             throw new SecurityManager.UserManagementException(user.getEmail(), "Unexpected number of rows returned when setting verification: " + rows);
@@ -250,8 +260,8 @@ public class LoginManager
 
     public static VerifyEmail getVerifyEmail(User user)
     {
-        SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
-                + " WHERE UserId = ?", user.getUserId());
+        SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT RequestedEmail, EmailVerification AS Verification, EmailVerificationTimeout AS VerificationTimeout FROM ")
+                .append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId()));
         return sqlSelector.getObject(VerifyEmail.class);
     }
 
@@ -263,9 +273,10 @@ public class LoginManager
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 Instant timeoutDate = Instant.now().plus(EMAIL_CHANGE_LINK_TIMEOUT);
-                SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-                int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail = ?, Verification = ?, VerificationTimeout = ? WHERE UserId = ?",
+                SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoLogins())
+                    .unsafeAppend(" SET RequestedEmail = ?, EmailVerification = ?, EmailVerificationTimeout = ? WHERE UserId = ?",
                         requestedEmail.getEmailAddress(), hashVerification(verificationToken), Date.from(timeoutDate), userToChange.getUserId());
+                int rows = new SqlExecutor(CORE.getSchema()).execute(sql);
                 if (1 != rows)
                     throw new SecurityManager.UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
                 UserManager.addToUserHistory(userToChange, currentUser + " requested email address change from " + userToChange.getEmail() + " to " + requestedEmail +
@@ -280,7 +291,7 @@ public class LoginManager
     {
         if (null != userToChange)
         {
-            new SqlExecutor(CoreSchema.getInstance().getScope()).execute("DELETE FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE UserId = ?", userToChange.getUserId());
+            new SqlExecutor(CORE.getScope()).execute(SQLFragment.unsafe("DELETE FROM ").append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", userToChange.getUserId()));
 
             if (adminUser != null)
                 UserManager.addToUserHistory(userToChange, adminUser.getEmail() + " deleted the password.");
