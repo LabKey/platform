@@ -32,6 +32,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,9 @@ public interface ExpSampleType extends ExpObject, ExpSearchable
 
     /** Returns the sample in the given container with the given name */
     ExpMaterial getSample(Container c, String name);
+
+    /** Returns the samples in the given container with the given names; names with no sample there are omitted */
+    @NotNull List<? extends ExpMaterial> getSamplesByName(@NotNull Container c, @NotNull Collection<String> names);
 
     /** get the sample with name at a specific time */
     ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate, @Nullable ContainerFilter cf);
