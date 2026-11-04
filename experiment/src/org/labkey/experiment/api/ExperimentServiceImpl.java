@@ -1089,7 +1089,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     /** Materials in {@code c} whose {@code column} is one of {@code values}, optionally within one sample type */
-    public @NotNull List<ExpMaterialImpl> getExpMaterialsInContainer(@NotNull Container c, @Nullable String cpasType, @NotNull ExpMaterialTable.Column column, @NotNull Collection<String> values)
+    @NotNull List<ExpMaterialImpl> getExpMaterialsInContainer(@NotNull Container c, @Nullable String cpasType, @NotNull ExpMaterialTable.Column column, @NotNull Collection<String> values)
     {
         List<ExpMaterialImpl> materials = new ArrayList<>();
         for (List<String> batch : ListUtils.partition(new ArrayList<>(new LinkedHashSet<>(values)), BatchSize.get(ROWS)))
