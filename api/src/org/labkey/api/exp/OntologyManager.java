@@ -1454,7 +1454,7 @@ public class OntologyManager
             String deletePropSql = "DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?";
             deleted += executor.execute(deletePropSql, c);
 
-            // Clearing is server-wide and forces every domain to reload, so skip it when nothing here could be cached
+            // Earlier container-delete steps uncache what they delete, so the server-wide clear is only needed for rows deleted here
             if (deleted > 0)
                 clearCaches();
             transaction.commit();
