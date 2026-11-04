@@ -925,7 +925,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpMaterialImpl> getExpMaterialsByName(@NotNull String name, @Nullable Container container, User user)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.Name.name()), name);
+        SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.Name.fieldKey(), name);
         if (container != null)
             filter.addCondition(FieldKey.fromParts("Container"), container);
 
@@ -942,7 +942,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, sampleTypeName, true);
         if (sampleType == null)
             return Collections.emptyList();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.Name.name()), names, IN);
+        SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.Name.fieldKey(), names, IN);
         filter.addCondition(FieldKey.fromParts("Container"), container);
         filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
 
@@ -961,13 +961,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpMaterialImpl getExpMaterial(long rowId)
     {
-        return getExpMaterial(new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowId));
+        return getExpMaterial(new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), rowId));
     }
 
     @Override
     public @Nullable ExpMaterialImpl getExpMaterial(String lsid)
     {
-        return getExpMaterial(new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsid));
+        return getExpMaterial(new SimpleFilter(ExpMaterialTable.Column.LSID.fieldKey(), lsid));
+    }
+
+    @Override
+    public @Nullable ExpMaterialImpl getExpMaterial(@NotNull Container c, @NotNull String lsid)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(ExpMaterialTable.Column.LSID.fieldKey(), lsid);
+        return getExpMaterial(filter);
     }
 
     @Override
@@ -1041,7 +1049,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (rowIds.isEmpty())
             return emptyList();
 
-        return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds));
+        return getExpMaterials(new SimpleFilter().addInClause(ExpMaterialTable.Column.RowId.fieldKey(), rowIds));
     }
 
     @Override
@@ -1050,7 +1058,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (rowIds.isEmpty())
             return;
 
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds);
+        SimpleFilter filter = new SimpleFilter().addInClause(ExpMaterialTable.Column.RowId.fieldKey(), rowIds);
         Set<String> columns = Set.of("RowId", "Container", "SampleState", "CpasType");
         new TableSelector(getTinfoMaterial(), columns, filter, null).forEach(Material.class,
                 m -> block.accept(new SampleOperationRow(m.getRowId(), m.getContainer(), m.getSampleState(), m.getCpasType())));
@@ -1071,7 +1079,28 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (lsids.isEmpty())
             return emptyList();
 
-        return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids));
+        return getExpMaterials(new SimpleFilter().addInClause(ExpMaterialTable.Column.LSID.fieldKey(), lsids));
+    }
+
+    @Override
+    public @NotNull List<ExpMaterialImpl> getExpMaterialsByLsid(@NotNull Container c, @NotNull Collection<String> lsids)
+    {
+        return getExpMaterialsInContainer(c, null, ExpMaterialTable.Column.LSID, lsids);
+    }
+
+    /** Materials in {@code c} whose {@code column} is one of {@code values}, optionally within one sample type */
+    public @NotNull List<ExpMaterialImpl> getExpMaterialsInContainer(@NotNull Container c, @Nullable String cpasType, @NotNull ExpMaterialTable.Column column, @NotNull Collection<String> values)
+    {
+        List<ExpMaterialImpl> materials = new ArrayList<>();
+        for (List<String> batch : ListUtils.partition(new ArrayList<>(new LinkedHashSet<>(values)), BatchSize.get(ROWS)))
+        {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+            if (cpasType != null)
+                filter.addCondition(ExpMaterialTable.Column.CpasType.fieldKey(), cpasType);
+            filter.addInClause(column.fieldKey(), batch);
+            materials.addAll(getExpMaterials(filter));
+        }
+        return materials;
     }
 
     @Override
@@ -4949,7 +4978,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 Set<Integer> linkedDatasetsBySelectedRow = new HashSet<>();
 
                 // Over each selected row
-                SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), deletable);
+                SimpleFilter filter = new SimpleFilter().addInClause(ExpMaterialTable.Column.RowId.fieldKey(), deletable);
                 TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, linkedColumnNames, filter, null);
                 Collection<Map<String, Object>> selectedRow = rowIdsFromTableSelector.getMapCollection();
 
