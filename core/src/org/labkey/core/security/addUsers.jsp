@@ -66,7 +66,7 @@
     }
 
     Ext4.onReady(function(){
-        createCloneUserField(true, false, <%=excludeSiteAdmins%>)
+        createCloneUserField(true, true, <%=excludeSiteAdmins%>)
     });
 </script>
 <%
