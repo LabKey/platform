@@ -292,15 +292,10 @@ public class NotificationEndpoint extends Endpoint
         // do not refactor to use stream as it might result in deadlock
         for (NotificationEndpoint endpoint : getEndpoints(userIds))
         {
-            // TEMPORARY diagnostic for the TeamCity Save Plate stall; remove before merge. Includes the wait for the endpoint's lock.
-            long start = System.currentTimeMillis();
-            boolean sent = endpoint.safely(() -> {
+            endpoint.safely(() -> {
                 endpoint.session.getBasicRemote().sendText(data);
                 LOG.debug("{} sendText: {}", endpoint, eventName);
             });
-            long elapsedMs = System.currentTimeMillis() - start;
-            if (elapsedMs > 1_000)
-                LOG.warn("websocket-slow-send userId={} event={} elapsedMs={} sent={} thread={}", endpoint.userId, eventName, elapsedMs, sent, Thread.currentThread().getName());
             count++;
         }
 

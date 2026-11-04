@@ -37,7 +37,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -75,12 +74,6 @@ public class TransactionFilter implements Filter
 
     // NOTE: can't use ThreadLocal for this as you can't inspect the values for other threads
     private static final Map<Thread, RequestTracker> _pendingRequests = Collections.synchronizedMap(new WeakHashMap<>());
-
-    // TEMPORARY diagnostic for the TeamCity Save Plate stall; remove before merge
-    private static final long SLOW_WRITE_DUMP_MS = 10_000;
-    private static final int MAX_SLOW_WRITE_DUMPS = 20;
-    private static final Set<RequestTracker> _dumpedSlowWrites = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
-    private static final AtomicInteger _slowWriteDumpCount = new AtomicInteger();
 
     public static final String READ_ONLY_ATTRIBUTE_NAME = "ReadOnlyHttpRequest";
     /** Read-only, but a legitimate export on a large instance can outlast the read-only timeout */
@@ -178,10 +171,6 @@ public class TransactionFilter implements Filter
                                         _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
                                         cancelRequest(thread, tracker, RequestCancellation.Source.TIMEOUT);
                                     }
-                                    else
-                                    {
-                                        dumpThreadsIfSlowWrite(thread, tracker);
-                                    }
                                 }
                                 catch (RuntimeException e)
                                 {
@@ -257,25 +246,6 @@ public class TransactionFilter implements Filter
             }
         }
         FileUtil.stopRequest();
-    }
-
-    /** TEMPORARY diagnostic for the TeamCity Save Plate stall; remove before merge. Writes to thread-dump.log, including Postgres locks. */
-    private static void dumpThreadsIfSlowWrite(Thread thread, RequestTracker tracker)
-    {
-        Object readOnly = Boolean.FALSE;
-        try
-        {
-            readOnly = tracker.request.getAttribute(READ_ONLY_ATTRIBUTE_NAME);
-        }
-        catch (IllegalStateException ignored) {} // Ignore when the request has already been recycled
-
-        if (Boolean.TRUE.equals(readOnly) || HeartBeat.currentTimeMillis() - tracker.startTime < SLOW_WRITE_DUMP_MS || _pendingRequests.get(thread) != tracker)
-            return;
-        if (!_dumpedSlowWrites.add(tracker) || _slowWriteDumpCount.incrementAndGet() > MAX_SLOW_WRITE_DUMPS)
-            return;
-
-        _log.warn("slow-write-request {} on thread {}; dumping threads", tracker.toLogString(), thread.getName());
-        DebugInfoDumper.dumpThreads(1);
     }
 
     /** @return true if this read-only, non-export request started before the cutoff and is still running on the thread */
