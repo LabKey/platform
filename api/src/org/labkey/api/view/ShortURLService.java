@@ -24,6 +24,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Manages short URLs, TinyURL-style redirects handled within the server.
@@ -35,7 +36,7 @@ public interface ShortURLService
 {
     static ShortURLService get()
     {
-        return ServiceRegistry.get().getService(ShortURLService.class);
+        return Objects.requireNonNull(ServiceRegistry.get().getService(ShortURLService.class));
     }
 
     static void setInstance(ShortURLService impl)

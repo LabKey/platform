@@ -72,6 +72,7 @@ public class HeartBeat
         }
 
         @Override
+        @SuppressWarnings("NonAtomicVolatileUpdate") // this thread is the only writer
         public void run()
         {
             while (!_shutdown)

@@ -46,6 +46,7 @@ import org.labkey.api.view.UnauthorizedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @NullMarked
@@ -140,7 +141,7 @@ public class ShortURLServiceImpl implements ShortURLService
             {
                 newRecord = Table.insert(user, CoreSchema.getInstance().getTableInfoShortURL(), newRecord);
                 // Re-select entire row to ensure canonical casing for entityId, Issue 52162
-                newRecord = getForEntityId(newRecord.getResourceId());
+                newRecord = Objects.requireNonNull(getForEntityId(newRecord.getResourceId()));
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(newRecord));
                 // By default, the user who created it can manage it
                 policy.addRoleAssignment(user, EditorRole.class);
