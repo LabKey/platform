@@ -133,7 +133,7 @@ final public class QInLineage extends QExpr
         builder.unsafeAppend("((");
         LHS.appendSql(builder, query);
         builder.unsafeAppend(")");
-        builder.append(_in ? " IN (" : " NOT IN (");
+        builder.unsafeAppend(_in ? " IN (" : " NOT IN (");
         builder.append(lineage);
         builder.unsafeAppend("))");
     }

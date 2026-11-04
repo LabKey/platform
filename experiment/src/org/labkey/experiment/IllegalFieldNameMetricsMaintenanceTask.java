@@ -120,8 +120,8 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             Map<String, Map<String, Map<String, Object>>> byDomainUri, Logger log)
     {
         SQLFragment sql = SQLFragment.unsafe("SELECT lsid, ");
-        sql.unsafeAppend(aliasColumn).unsafeAppend(" AS aliases FROM ").unsafeAppend(table)
-            .unsafeAppend(" WHERE ").unsafeAppend(aliasColumn).unsafeAppend(" IS NOT NULL");
+        sql.appendIdentifier(aliasColumn).unsafeAppend(" AS aliases FROM ").appendIdentifier(table)
+            .unsafeAppend(" WHERE ").appendIdentifier(aliasColumn).unsafeAppend(" IS NOT NULL");
 
         new SqlSelector(scope, sql).forEach(rs -> {
             String lsid = rs.getString("lsid");
@@ -502,7 +502,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
         private static void update(SqlExecutor executor, int domainId, String fieldName, String column, String value)
         {
             SQLFragment sql = SQLFragment.unsafe("UPDATE exp.propertydescriptor SET ");
-            sql.unsafeAppend(column).unsafeAppend(" = ?").add(value);
+            sql.appendIdentifier(column).unsafeAppend(" = ?").add(value);
             sql.unsafeAppend(" WHERE name = ? AND propertyid IN (SELECT propertyid FROM exp.propertydomain WHERE domainid = ?)")
                 .add(fieldName).add(domainId);
             assertEquals("expected to rewrite one field", 1, executor.execute(sql));
