@@ -1111,7 +1111,7 @@ public class SecurityApiActions
                 throw new UnauthorizedException("The specified group does not belong to this project.");
             }
 
-            SecurityController.verifyUserCanModifyGroup(_group, getUser());
+            SecurityController.verifyUserCanModifyGroup(_group, container, getUser());
 
             Map<String, String> memberErrors = new HashMap<>();
             List<User> newUsers = new ArrayList<>();
@@ -1763,7 +1763,7 @@ public class SecurityApiActions
             Group group = getGroup(form);
 
             if (group != null)
-                SecurityController.verifyUserCanModifyGroup(group, getUser());
+                SecurityController.verifyUserCanModifyGroup(group, getContainer(), getUser());
 
             for (int id : form.getPrincipalIds())
             {
@@ -1791,7 +1791,7 @@ public class SecurityApiActions
             Group group = getGroup(form);
 
             if (group != null)
-                SecurityController.verifyUserCanModifyGroup(group, getUser());
+                SecurityController.verifyUserCanModifyGroup(group, getContainer(), getUser());
 
             for (int id : form.getPrincipalIds())
             {
