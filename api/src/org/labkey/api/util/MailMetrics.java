@@ -55,7 +55,6 @@ public class MailMetrics
     }
 
     private static final ThreadLocal<Batch> CURRENT_BATCH = new ThreadLocal<>();
-    private static final Batch NESTED = new Batch(null);
     private static final AtomicInteger IN_FLIGHT = new AtomicInteger();
     private static final AtomicInteger PEAK_IN_FLIGHT = new AtomicInteger();
     private static final PeakRate PER_MINUTE = new PeakRate(TimeUnit.MINUTES.toMillis(1));
@@ -86,27 +85,29 @@ public class MailMetrics
     public static Batch startBatch(@NotNull Origin origin)
     {
         if (CURRENT_BATCH.get() != null)
-            return NESTED;
+            return new Batch(origin, false);
 
-        Batch batch = new Batch(origin);
+        Batch batch = new Batch(origin, true);
         CURRENT_BATCH.set(batch);
         return batch;
     }
 
-    public static class Batch implements AutoCloseable
+    public static class Batch implements QuietCloser
     {
-        private final @Nullable Origin _origin;
+        private final @NotNull Origin _origin;
+        private final boolean _outermost;
         private int _sends = 0;
 
-        private Batch(@Nullable Origin origin)
+        private Batch(@NotNull Origin origin, boolean outermost)
         {
             _origin = origin;
+            _outermost = outermost;
         }
 
         @Override
         public void close()
         {
-            if (_origin == null)
+            if (!_outermost)
                 return;
 
             CURRENT_BATCH.remove();
@@ -143,7 +144,7 @@ public class MailMetrics
         return new Send(origin, StringUtils.deleteWhitespace(providerName));
     }
 
-    static class Send implements AutoCloseable
+    static class Send implements QuietCloser
     {
         private final Origin _origin;
         private final String _provider;
@@ -320,7 +321,7 @@ public class MailMetrics
             {
                 try (Batch inner = startBatch(Origin.DIGEST))
                 {
-                    assertSame(NESTED, inner);
+                    assertNotSame(outer, inner);
                     assertSame(outer, CURRENT_BATCH.get());
                 }
                 assertSame(outer, CURRENT_BATCH.get());
