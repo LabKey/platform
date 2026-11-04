@@ -35,6 +35,7 @@ public final class ClientSideMetricDescriptions
         describe("gridSearch", "Grid search box use: engaged (first typing), suggestions chosen by kind (filterChosen, composeChosen, searchChosen), filter suggestions by source (exactValue, identity, identityContains, integerValue, key, partialMatch, partialValue, shape, shapeContains), and Name filters by data type (sampleNameChosen, dataClassNameChosen)");
         describe("gridInsertCounts", "Rows inserted from editable grids and assay imports, by data type and row-count bucket: <type>1To50, <type>51To100, <type>101To250, <type>GT250");
         describe("gridUpdateCounts", "Rows updated from editable grids, by data type and row-count bucket: <type>1To50, <type>51To100, <type>101To250, <type>GT250");
+        describe("labKeyAssistant", "LabKey Assistant prompts submitted (submitPrompt)");
     }
 
     private static void describe(String featureArea, String description)
