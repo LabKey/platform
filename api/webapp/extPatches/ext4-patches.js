@@ -447,6 +447,17 @@ Ext4.override(Ext4.data.Store, {
 });
 
 /**
+ * typeAhead schedules onTypeAhead 250ms after a query, but onDestroy unbinds the store without cancelling it, so it throws.
+ */
+Ext4.override(Ext4.form.field.ComboBox, {
+    onDestroy: function() {
+        if (this.typeAheadTask)
+            this.typeAheadTask.cancel();
+        this.callParent(arguments);
+    }
+});
+
+/**
  * RowExpander plugin is not properly configured to handle sandboxed ExtJS.
  */
 Ext4.override(Ext4.grid.plugin.RowExpander, {
