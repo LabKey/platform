@@ -24,7 +24,9 @@ import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 
-public class ChartMetricsVisitor implements ReportMetricsVisitor
+import java.util.function.Supplier;
+
+public class ChartMetricsVisitor implements ReportMetricsVisitor<ChartMetricsVisitor>
 {
     private final MultiSet<GenericChartReport.RenderType> _chartCountsByRenderType = new HashMultiSet<>();
     private int _trendlineTypeCount = 0;
@@ -48,11 +50,11 @@ public class ChartMetricsVisitor implements ReportMetricsVisitor
     }
 
     @Override
-    public void addMetrics(UsageMetrics metrics, Runnable visitAll)
+    public void addMetrics(UsageMetrics metrics, Supplier<ChartMetricsVisitor> visited)
     {
         metrics
-            .put("genericChartCountsByRenderType", () -> { visitAll.run(); return MultiSetUtils.getOccurrenceMap(_chartCountsByRenderType); }, "Saved charts (GenericChartReport) by render type (BAR_PLOT, BOX_PLOT, etc.)")
-            .put("genericChartWithTrendlineTypeCount", () -> { visitAll.run(); return _trendlineTypeCount; }, "Saved charts with a trendline type set")
-            .put("genericChartWithErrorBarsCount", () -> { visitAll.run(); return _errorBarsCount; }, "Saved charts with SD or SEM error bars");
+            .put("genericChartCountsByRenderType", () -> MultiSetUtils.getOccurrenceMap(visited.get()._chartCountsByRenderType), "Saved charts (GenericChartReport) by render type (BAR_PLOT, BOX_PLOT, etc.)")
+            .put("genericChartWithTrendlineTypeCount", () -> visited.get()._trendlineTypeCount, "Saved charts with a trendline type set")
+            .put("genericChartWithErrorBarsCount", () -> visited.get()._errorBarsCount, "Saved charts with SD or SEM error bars");
     }
 }

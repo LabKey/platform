@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /** A described nested object; its children may omit descriptions because they inherit the group's */
@@ -34,7 +35,7 @@ public class UsageMetricGroup extends UsageMetrics
     {
         Map<String, Object> values = getMutableValues();
         if (values != null)
-            values.put(key, supplier == null ? null : supplier.get());
+            values.put(key, supplier == null ? null : supply(childPath(key), supplier));
         return this;
     }
 
@@ -43,12 +44,22 @@ public class UsageMetricGroup extends UsageMetrics
     {
         Map<String, Object> mutable = getMutableValues();
         if (mutable != null)
-            mutable.putAll(mapSupplier.get());
+        {
+            Map<String, ?> map = supply(getPath(), mapSupplier);
+            if (map != null)
+                mutable.putAll(map);
+        }
         return this;
     }
 
     public UsageMetricGroup group(@NotNull String key)
     {
         return addGroup(key);
+    }
+
+    @Override
+    @NotNull String getPath()
+    {
+        return Objects.requireNonNull(super.getPath());
     }
 }

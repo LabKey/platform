@@ -48,6 +48,7 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -68,6 +69,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
@@ -87,6 +89,7 @@ import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.mcp.ChatHistoryService;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -475,6 +478,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
+        ChatHistoryService.setInstance(new ChatHistoryManager());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
@@ -548,6 +552,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(RequestCancellation.FEATUREFLAG_DISABLE_CANCEL_ABANDONED_REQUESTS,
+            "Disable cancelling abandoned requests",
+            "By default, when a page abandons a read-only request, e.g. the user navigates away or closes the tab, the server stops the request and its database queries. You can disable this feature with this flag.",
+            false, false, FeatureType.Optional));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
             "Allow script authentication via legacy substitution parameters",
             "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
@@ -1302,17 +1310,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     "Emails of active non-system users; only reported when the extended metrics feature flag is on"
                 );
 
-            metrics.put("workbookCount", () -> ContainerManager.getWorkbookCount(), "Workbooks across the server");
-            metrics.put("archivedFolderCount", () -> ContainerManager.getArchivedContainerCount(), "Archived folders across the server");
-            metrics.put("databaseSize", () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize(), "Size of the LabKey database in bytes");
+            metrics.put("workbookCount", ContainerManager::getWorkbookCount, "Workbooks across the server");
+            metrics.put("archivedFolderCount", ContainerManager::getArchivedContainerCount, "Archived folders across the server");
+            String dbSize = "databaseSize";
+            metrics.put(dbSize, NightlyRecalculatingSuppliers.get(dbSize, () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize()), "Size of the LabKey database in bytes");
 
-            // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
-            // Note that they can be non-trivial in size.
-            SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
-            sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
-            sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
-
-            metrics.put("databaseSchemaSize", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap(), "Size in bytes of each database schema, including indexes; temp excluded");
+            String schemaSize = "databaseSchemaSize";
+            metrics.put(schemaSize, NightlyRecalculatingSuppliers.get(schemaSize, () -> {
+                // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
+                // Note that they can be non-trivial in size.
+                SQLFragment sql = SQLFragment.unsafe("SELECT table_schema, SUM(total_size) FROM ");
+                sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
+                sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
+                return Collections.unmodifiableMap(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap());
+            }), "Size in bytes of each database schema, including indexes; temp excluded");
 
             metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
             metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
@@ -1509,11 +1520,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.RevertFolderScopingTestCase.class,
             AllowListType.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
+            ChatHistoryManager.TestCase.class,
             CoreController.TestCase.class,
             CoreController.MoveContainerTestCase.class,
             DataRegion.TestCase.class,
             DavController.TestCase.class,
             DavController.MoveActionContainerScopingTestCase.class,
+            LabKeyAssistantAgentAction.TestCase.class,
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
             HealthCheckTestCase.class,
@@ -1531,6 +1544,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             RhinoService.TestCase.class,
             SchemaXMLTestCase.class,
             SecurityApiActions.TestCase.class,
+            SecurityController.GroupMembershipScopingTestCase.class,
             SecurityController.TestCase.class,
             SiteSettingsUpdater.TestCase.class,
             SqlDialect.DialectTestCase.class,
