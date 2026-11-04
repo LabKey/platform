@@ -50,6 +50,7 @@
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.OntologyObject" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
+<%@ page import="org.labkey.api.exp.PropertyType" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
@@ -1012,6 +1013,83 @@
         {
             assayImportFile(c, user, assayPair.first, assayPair.second, createAssayDataFile("ListLookup\n1\n2\n"), false, null, false);
             assertEquals(String.valueOf(counter.getSql()), 1, counter.getCount());
+        }
+    }
+
+    @Test // GH Issue 1561
+    public void testMvEnabledFieldLengthIsValidated() throws Exception
+    {
+        var field = new GWTPropertyDescriptor("MvText", "string");
+        field.setMvEnabled(true);
+        field.setScale(5);
+
+        var assayPair = createAssay(context, false, false, List.of(field));
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        // Control: a value within the scale and a bare MV indicator import
+        assayImportFile(c, user, provider, assayProtocol, createAssayDataFile("MvText\nshort\nQ\n"), false, null);
+
+        Exception tooLong = importFailure(provider, assayProtocol, "MvText\ntoolong\n");
+        assertTrue(tooLong.getMessage(), tooLong.getMessage().contains("Value is too long for column 'MvText'"));
+    }
+
+    @Test // GH Issue 1561
+    public void testMvEnabledFieldPropertyValidatorsSeeTheValue() throws Exception
+    {
+        var reserved = new GWTPropertyValidator();
+        reserved.setName("No reserved code");
+        reserved.setType(PropertyValidatorType.RegEx);
+        reserved.setExpression("reserved");
+        reserved.setErrorMessage("MvCode must not be 'reserved'");
+        reserved.getProperties().put("failOnMatch", "true");
+        var code = new GWTPropertyDescriptor("MvCode", "string");
+        code.setMvEnabled(true);
+        code.getPropertyValidators().add(reserved);
+
+        var lowercase = new GWTPropertyValidator();
+        lowercase.setName("Lowercase word");
+        lowercase.setType(PropertyValidatorType.RegEx);
+        lowercase.setExpression("[a-z]+");
+        lowercase.setErrorMessage("MvWord must be a lowercase word");
+        var word = new GWTPropertyDescriptor("MvWord", "string");
+        word.setMvEnabled(true);
+        word.getPropertyValidators().add(lowercase);
+
+        var assayPair = createAssay(context, false, false, List.of(code, word));
+        var provider = assayPair.first;
+        var assayProtocol = assayPair.second;
+
+        // Control: valid values and bare MV indicators import
+        assayImportFile(c, user, provider, assayProtocol, createAssayDataFile("MvCode\tMvWord\nallowed\tword\nQ\tQ\n"), false, null);
+
+        Exception failOnMatch = importFailure(provider, assayProtocol, "MvCode\tMvWord\nreserved\tword\n");
+        assertTrue(failOnMatch.getMessage(), failOnMatch.getMessage().contains("MvCode must not be 'reserved'"));
+    }
+
+    @Test // GH Issue 1561
+    public void testFileLinkLengthIsValidatedOnResolvedPath() throws Exception
+    {
+        File linked = FileUtil.createTempFile("lv", ".txt", pipeRoot.getRootPath());
+        String relativePath = linked.getName();
+
+        // The relative input fits the scale, but the column stores the longer resolved path
+        var field = new GWTPropertyDescriptor("LinkedFile", PropertyType.FILE_LINK.getTypeUri());
+        field.setScale(relativePath.length());
+
+        var assayPair = createAssay(context, false, false, List.of(field));
+
+        // File links resolve against the query environment's container, which the JUnit request sets to its own folder
+        Object environment = QueryService.get().cloneEnvironment();
+        QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
+        try
+        {
+            Exception tooLong = importFailure(assayPair.first, assayPair.second, "LinkedFile\n" + relativePath + "\n");
+            assertTrue(tooLong.getMessage(), tooLong.getMessage().contains("Field 'LinkedFile' is limited to"));
+        }
+        finally
+        {
+            QueryService.get().copyEnvironment(environment);
         }
     }
 
