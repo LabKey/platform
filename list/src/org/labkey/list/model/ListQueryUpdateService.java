@@ -118,6 +118,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.BatchSize.Kind.AUDIT;
@@ -220,7 +221,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         for (Map<String, Object> rowKeys : keys)
             keyValues.add(null == rowKeys ? null : getKeyValue(rowKeys));
 
-        Map<String, ListRowMatch> rowsByKey = selectRowsByKey(keyValues.stream().filter(Objects::nonNull).distinct().toList(), true);
+        Map<String, ListRowMatch> rowsByKey = selectRowsByKey(keyValues.stream().filter(Objects::nonNull).distinct().toList());
 
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Object keyValue : keyValues)
@@ -236,25 +237,39 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     /** A selected list row, its key value as the key column returned it, and the id of the container that holds it */
     private record ListRowMatch(Object key, String containerId, Map<String, Object> row) {}
 
-    /**
-     * Selects the rows for the given distinct keys in batches, keyed by string because the request may carry a Long where the column returns an Integer
-     * @param fullRows false selects only the key, entity id, and container, so each match's row holds just the entity id
-     */
-    private Map<String, ListRowMatch> selectRowsByKey(List<Object> distinctKeys, boolean fullRows)
+    /** Selects the rows for the given distinct keys in batches, keyed by string because the request may carry a Long where the column returns an Integer */
+    private Map<String, ListRowMatch> selectRowsByKey(List<Object> distinctKeys)
     {
         TableInfo queryTable = getQueryTable();
         FieldKey keyField = FieldKey.fromParts(_list.getKeyName());
-        ColumnInfo keyColumn = queryTable.getColumn(keyField);
-        Map<String, ColumnInfo> listColumns = fullRows ? getListColumns(queryTable) : Map.of();
-        Set<String> selectColumns = fullRows ? TableSelector.ALL_COLUMNS : Set.of(keyColumn.getName(), ID, "container");
+        Map<String, ColumnInfo> listColumns = getListColumns(queryTable);
+        return selectRowsByKey(queryTable, queryTable.getColumn(keyField), TableSelector.ALL_COLUMNS, distinctKeys, raw -> toListRow(listColumns, raw));
+    }
 
+    /**
+     * Like {@link #selectRowsByKey(List)}, but from the storage table, so rows the query table's container filter hides are found too, as
+     * {@link DefaultQueryUpdateService#getRow} finds them; each match's row holds just the entity id
+     */
+    private Collection<ListRowMatch> selectRowLocations(List<Object> distinctKeys)
+    {
+        TableInfo dbTable = getDbTable();
+        ColumnInfo keyColumn = dbTable.getPkColumns().getFirst();
+        return selectRowsByKey(dbTable, keyColumn, Set.of(keyColumn.getName(), ID, "container"), distinctKeys, raw -> {
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            row.put(ID, raw.get(ID));
+            return row;
+        }).values();
+    }
+
+    private Map<String, ListRowMatch> selectRowsByKey(TableInfo table, ColumnInfo keyColumn, Set<String> selectColumns, List<Object> distinctKeys, Function<Map<String, Object>, Map<String, Object>> toRow)
+    {
         Map<String, ListRowMatch> rowsByKey = new HashMap<>();
         for (List<Object> batch : ListUtils.partition(distinctKeys, BatchSize.get(ROWS)))
         {
-            SimpleFilter filter = new SimpleFilter(keyField, batch, CompareType.IN);
-            new TableSelector(queryTable, selectColumns, filter, null).forEachMap(raw -> {
+            SimpleFilter filter = new SimpleFilter(keyColumn.getFieldKey(), batch, CompareType.IN);
+            new TableSelector(table, selectColumns, filter, null).forEachMap(raw -> {
                 Object key = keyColumn.getValue(raw);
-                rowsByKey.put(String.valueOf(key), new ListRowMatch(key, Objects.toString(raw.get("container"), null), toListRow(listColumns, raw)));
+                rowsByKey.put(String.valueOf(key), new ListRowMatch(key, Objects.toString(raw.get("container"), null), toRow.apply(raw)));
             });
         }
 
@@ -497,7 +512,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             // Check every row's container before any row is updated
             List<Map<String, Object>> keys = null == oldKeys ? rows : oldKeys;
-            _rowContainerIds = verifyRowContainers(user, container, selectRowsByKey(getDistinctKeyValues(keys, new BatchValidationException()), false).values(), UpdatePermission.class);
+            _rowContainerIds = verifyRowContainers(user, container, selectRowLocations(getDistinctKeyValues(keys, new BatchValidationException())), UpdatePermission.class);
             try
             {
                 result = super.updateRows(listUser, container, rows, oldKeys, errors, configParameters, extraScriptContext);
@@ -948,7 +963,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             if (getQueryTable().hasTriggers(container))
             {
                 // Check every row's container before any row reaches a trigger
-                _rowContainerIds = verifyRowContainers(user, container, selectRowsByKey(getDistinctKeyValues(keys, new BatchValidationException()), false).values(), DeletePermission.class);
+                _rowContainerIds = verifyRowContainers(user, container, selectRowLocations(getDistinctKeyValues(keys, new BatchValidationException())), DeletePermission.class);
                 try
                 {
                     return super.deleteRows(user, container, keys, configParameters, extraScriptContext);
@@ -1026,9 +1041,14 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (errors.hasErrors())
             throw errors;
 
-        Map<String, ListRowMatch> rowsByKey = selectRowsByKey(distinctKeys, true);
+        Map<String, ListRowMatch> rowsByKey = selectRowsByKey(distinctKeys);
         List<ListRowMatch> found = distinctKeys.stream().map(k -> rowsByKey.get(String.valueOf(k))).filter(Objects::nonNull).toList();
         verifyRowContainers(user, container, found, DeletePermission.class);
+
+        // Keys the container filter hid can still name rows in other folders, which must be rejected rather than skipped
+        List<Object> hiddenKeys = distinctKeys.stream().filter(k -> !rowsByKey.containsKey(String.valueOf(k))).toList();
+        if (!hiddenKeys.isEmpty())
+            verifyRowContainers(user, container, selectRowLocations(hiddenKeys), DeletePermission.class);
 
         ColumnInfo pkColumn = getDbTable().getPkColumns().getFirst();
         boolean hasAttachments = hasAttachmentProperties();
@@ -1529,7 +1549,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     /**
-     * An update or delete reaching rows in other containers, through a wider container filter, may only change rows in the request container's workbooks.
+     * An update or delete naming rows in other containers may only change rows in the request container's workbooks, whether or not the table's container filter reaches them.
      * The user is an Editor in the project and in the editable subfolder, so rejecting that subfolder's rows can only come from the container rule.
      */
     @TestTimeout(TestTimeout.DEFAULT * 5)
@@ -1538,12 +1558,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         private static final String PROJECT_NAME = "ListRowContainerCheckTest Project";
         private static final String EMAIL = "listrowcontainercheck@listdelete.test";
         private static final String UPDATED = "updated";
+        /** Reaches subfolder rows, as a grid with that filter does */
+        private static final ContainerFilter.Type WIDE = ContainerFilter.Type.CurrentAndSubfolders;
+        /** Hides subfolder rows, as the delete and update APIs' filters do */
+        private static final ContainerFilter.Type NARROW = ContainerFilter.Type.Current;
 
         private static User _admin;
         private static User _user;
         private static Container _project;
         private static Container _readOnlyFolder;
         private static Container _editableFolder;
+        private static Container _unreadableFolder;
         private static Container _workbook;
         private static ListDefinition _list;
 
@@ -1559,7 +1584,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             projectPolicy.addRoleAssignment(_user, EditorRole.class);
             SecurityPolicyManager.savePolicyForTests(projectPolicy, _admin);
 
-            // Readable, so the wider filter selects its rows, but not editable
+            // Readable, so the wide filter selects its rows, but not editable
             _readOnlyFolder = ContainerManager.createContainer(_project, "Read only", _admin);
             MutableSecurityPolicy readOnlyPolicy = new MutableSecurityPolicy(_readOnlyFolder);
             readOnlyPolicy.addRoleAssignment(_user, ReaderRole.class);
@@ -1568,6 +1593,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             // An admin-created folder starts admin-only, so inherit the project's Editor assignment explicitly
             _editableFolder = ContainerManager.createContainer(_project, "Editable", _admin);
             SecurityManager.setInheritPermissions(_editableFolder);
+
+            // Left admin-only, so even the wide filter hides its rows
+            _unreadableFolder = ContainerManager.createContainer(_project, "Unreadable", _admin);
 
             _workbook = ContainerManager.createContainer(_project, null, null, null, WorkbookContainerType.NAME, _admin);
 
@@ -1579,6 +1607,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             _list = null;
             _workbook = null;
+            _unreadableFolder = null;
             _editableFolder = null;
             _readOnlyFolder = null;
             _project = null;
@@ -1612,10 +1641,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             return insertRows(table.getUpdateService(), _admin, folder, 1).getFirst().get(KEY_NAME);
         }
 
-        /** The list from the project, with a filter that reaches subfolder rows; a trigger moves deletes onto the per-row path */
-        private TableInfo projectTable(@Nullable Trigger trigger)
+        /** The list from the project as the user sees it; a trigger moves deletes onto the per-row path */
+        private TableInfo projectTable(ContainerFilter.Type cfType, @Nullable Trigger trigger)
         {
-            ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(_project, _user);
+            ContainerFilter cf = cfType.create(_project, _user);
             if (null == trigger)
                 return _list.getTable(_user, _project, cf);
 
@@ -1627,17 +1656,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             return table;
         }
 
-        /** The row as the project's wider filter sees it, or null if it is gone */
+        /** The row as the admin sees it from the project with the wide filter, or null if it is gone */
         private @Nullable Map<String, Object> selectRow(Object key)
         {
-            TableInfo table = projectTable(null);
+            TableInfo table = _list.getTable(_admin, _project, WIDE.create(_project, _admin));
             assertNotNull(table);
             return new TableSelector(table, new SimpleFilter(FieldKey.fromParts(KEY_NAME), key), null).getMap();
         }
 
-        private void deleteFromProject(List<Object> keys, @Nullable Trigger trigger) throws Exception
+        private void deleteFromProject(ContainerFilter.Type cfType, List<Object> keys, @Nullable Trigger trigger) throws Exception
         {
-            TableInfo table = projectTable(trigger);
+            TableInfo table = projectTable(cfType, trigger);
             assertNotNull("expected the list table to resolve in the project", table);
 
             try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
@@ -1647,9 +1676,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             }
         }
 
-        private void updateFromProject(List<Object> keys) throws Exception
+        private void updateFromProject(ContainerFilter.Type cfType, List<Object> keys) throws Exception
         {
-            TableInfo table = projectTable(null);
+            TableInfo table = projectTable(cfType, null);
             assertNotNull("expected the list table to resolve in the project", table);
 
             List<Map<String, Object>> rows = keys.stream().map(key -> (Map<String, Object>) CaseInsensitiveHashMap.of(KEY_NAME, key, VALUE_FIELD, UPDATED)).toList();
@@ -1673,7 +1702,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             Object projectKey = insertRow(_project);
             Object otherKey = insertRow(folder);
-            assertNotNull("the filter should reach the " + folder.getName() + " row", selectRow(otherKey));
 
             try
             {
@@ -1696,20 +1724,32 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         @Test
         public void deleteRejectsRowsInFolderWithoutDeletePermission() throws Exception
         {
-            assertRejected(_readOnlyFolder, keys -> deleteFromProject(keys, null));
+            assertRejected(_readOnlyFolder, keys -> deleteFromProject(WIDE, keys, null));
         }
 
         @Test
         public void deleteRejectsRowsInSubfolderWithDeletePermission() throws Exception
         {
-            assertRejected(_editableFolder, keys -> deleteFromProject(keys, null));
+            assertRejected(_editableFolder, keys -> deleteFromProject(WIDE, keys, null));
+        }
+
+        @Test
+        public void deleteRejectsRowsHiddenByContainerFilter() throws Exception
+        {
+            assertRejected(_editableFolder, keys -> deleteFromProject(NARROW, keys, null));
+        }
+
+        @Test
+        public void deleteRejectsRowsInUnreadableFolder() throws Exception
+        {
+            assertRejected(_unreadableFolder, keys -> deleteFromProject(WIDE, keys, null));
         }
 
         @Test
         public void deletesRowsInWorkbook() throws Exception
         {
             Object key = insertRow(_workbook);
-            deleteFromProject(List.of(key), null);
+            deleteFromProject(WIDE, List.of(key), null);
             assertNull("the workbook row should be gone", selectRow(key));
         }
 
@@ -1718,7 +1758,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             DeleteCountingTrigger trigger = new DeleteCountingTrigger();
 
-            assertRejected(_readOnlyFolder, keys -> deleteFromProject(keys, trigger));
+            assertRejected(_readOnlyFolder, keys -> deleteFromProject(WIDE, keys, trigger));
             assertEquals("the check should run before any row reaches the trigger", 0, trigger._deletes.get());
         }
 
@@ -1727,7 +1767,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             DeleteCountingTrigger trigger = new DeleteCountingTrigger();
 
-            assertRejected(_editableFolder, keys -> deleteFromProject(keys, trigger));
+            assertRejected(_editableFolder, keys -> deleteFromProject(WIDE, keys, trigger));
+            assertEquals("the check should run before any row reaches the trigger", 0, trigger._deletes.get());
+        }
+
+        @Test
+        public void triggerPathRejectsRowsHiddenByContainerFilter() throws Exception
+        {
+            DeleteCountingTrigger trigger = new DeleteCountingTrigger();
+
+            assertRejected(_editableFolder, keys -> deleteFromProject(NARROW, keys, trigger));
             assertEquals("the check should run before any row reaches the trigger", 0, trigger._deletes.get());
         }
 
@@ -1737,7 +1786,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             DeleteCountingTrigger trigger = new DeleteCountingTrigger();
             Object key = insertRow(_workbook);
 
-            deleteFromProject(List.of(key), trigger);
+            deleteFromProject(WIDE, List.of(key), trigger);
             assertNull("the workbook row should be gone", selectRow(key));
             assertEquals("expected the per-row path to hand the row to the trigger", 1, trigger._deletes.get());
         }
@@ -1745,20 +1794,26 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         @Test
         public void updateRejectsRowsInFolderWithoutUpdatePermission() throws Exception
         {
-            assertRejected(_readOnlyFolder, this::updateFromProject);
+            assertRejected(_readOnlyFolder, keys -> updateFromProject(WIDE, keys));
         }
 
         @Test
         public void updateRejectsRowsInSubfolderWithUpdatePermission() throws Exception
         {
-            assertRejected(_editableFolder, this::updateFromProject);
+            assertRejected(_editableFolder, keys -> updateFromProject(WIDE, keys));
+        }
+
+        @Test
+        public void updateRejectsRowsHiddenByContainerFilter() throws Exception
+        {
+            assertRejected(_editableFolder, keys -> updateFromProject(NARROW, keys));
         }
 
         @Test
         public void updatesRowsInWorkbookInPlace() throws Exception
         {
             Object key = insertRow(_workbook);
-            updateFromProject(List.of(key));
+            updateFromProject(WIDE, List.of(key));
 
             Map<String, Object> row = selectRow(key);
             assertNotNull("the workbook row should remain", row);
