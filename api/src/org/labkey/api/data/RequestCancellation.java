@@ -152,7 +152,7 @@ public final class RequestCancellation
     /** A client's cancel that stopped nothing; a cancelled request logs its line when it exits instead */
     static void cancelIgnored(@NotNull Source source, @NotNull Outcome outcome, @NotNull String requestId, int userId)
     {
-        LOG.info("request-cancel-ignored source={} outcome={} requestId={} userId={}", source, outcome, requestId, userId);
+        LOG.debug("request-cancel-ignored source={} outcome={} requestId={} userId={}", source, outcome, requestId, userId);
     }
 
     /**
