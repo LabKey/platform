@@ -10,7 +10,6 @@ import { App } from '@labkey/api';
 import { LabKeyAssistant } from './assistant';
 
 function render(target: string) {
-    console.log('assistant app.tsx render');
     createRoot(document.getElementById(target)).render(<LabKeyAssistant />);
 }
 
