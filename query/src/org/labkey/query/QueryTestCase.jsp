@@ -1607,7 +1607,7 @@ d,seven,twelve,day,month,date,duration,guid
         ArrayList<QueryException> errors = new ArrayList<>();
         TableInfo t = q.getTable(errors, false);
         assertTrue(errors.isEmpty());
-        SQLFragment sqlf = t.getFromSQL("$");
+        SQLFragment sqlf = t.getFromSQL("t");
         assertNotNull(sqlf);
         String debugSql = sqlf.toDebugString();
         assertFalse(debugSql.contains(testGUID.toString()));
@@ -1623,7 +1623,7 @@ d,seven,twelve,day,month,date,duration,guid
         q.setContainerFilter(custom);
         t = q.getTable(errors, false);
         assertTrue(errors.isEmpty());
-        sqlf = t.getFromSQL("$");
+        sqlf = t.getFromSQL("t");
         assertNotNull(sqlf);
         debugSql = sqlf.toDebugString();
         assertFalse(debugSql.contains(testGUID.toString()));

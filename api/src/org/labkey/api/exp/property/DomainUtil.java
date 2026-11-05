@@ -1013,10 +1013,10 @@ public class DomainUtil
                         {
                             var dialect = domainTable.getSchema().getSqlDialect();
                             DatabaseIdentifier columnId = p.getPropertyDescriptor().getLegalSelectName(dialect);
-                            SQLFragment deletedArray = new SQLFragment("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
+                            SQLFragment deletedArray = SQLFragment.unsafe("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
                             SQLFragment columnFrag = new SQLFragment().appendIdentifier(columnId);
 
-                            SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
+                            SQLFragment sql = SQLFragment.unsafe("SELECT 1 FROM ")
                                     .append(domainTable)
                                     .unsafeAppend(" WHERE ")
                                     .append(dialect.array_some_in_array(columnFrag, deletedArray));

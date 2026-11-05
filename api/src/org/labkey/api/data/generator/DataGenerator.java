@@ -570,7 +570,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 
         SqlDialect dialect = tableInfo.getSchema().getSqlDialect();
         SQLFragment sql = new SQLFragment("SELECT " + columns);
-        SQLFragment fromSql = new SQLFragment(" FROM ").append(tableInfo, "dc");
+        SQLFragment fromSql = SQLFragment.unsafe(" FROM ").append(tableInfo, "dc");
 
         return dialect.limitRows(sql, fromSql, null, null, null, limit, totalCount > limit ? randomLong(0, totalCount-limit) : 0);
     }

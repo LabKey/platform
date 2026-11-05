@@ -1197,7 +1197,7 @@ public class SecurityManager
         displayName = displayName.replace("@"," ");
         displayName = StringUtils.trimToEmpty(displayName);
 
-        SQLFragment select = new SQLFragment("SELECT UserId FROM ").append(core.getTableInfoUsersData());
+        SQLFragment select = SQLFragment.unsafe("SELECT UserId FROM ").append(core.getTableInfoUsersData());
         select.unsafeAppend(" WHERE DisplayName = ? AND UserId != ?");
         select.add(displayName);
         select.add(userId);
