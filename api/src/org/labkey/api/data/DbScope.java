@@ -2158,9 +2158,10 @@ public class DbScope
     }
 
 
+    // Called from the dialect while the LabKey scope itself is being constructed, before _labkeyScope is set
     public boolean isLabKeyScope()
     {
-        return this == getLabKeyScope();
+        return this == _labkeyScope;
     }
 
     /**
