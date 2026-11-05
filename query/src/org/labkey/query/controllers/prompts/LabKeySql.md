@@ -1,4 +1,4 @@
-### **LabKey SQL Documentation**
+# **LabKey SQL Documentation**
 
 LabKey SQL is a SQL dialect that extends standard SQL with features tailored for the LabKey Server platform. Queries are checked against the user's permissions and cross-compiled to the underlying database (PostgreSQL, or MS SQL Server for some premium installations).
 
@@ -11,7 +11,7 @@ Core facts:
 
 -----
 
-### **1. NOT SUPPORTED — Write This Instead**
+## **1. NOT SUPPORTED — Write This Instead**
 
 LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Check generated SQL against this table first**, and against the expression-level list in the expression reference.
 
@@ -31,14 +31,14 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 
 -----
 
-### **2. Schema Names and Statements**
+## **2. Schema Names and Statements**
 
 * **Schema names** can have several parts, each quoted separately as needed: `FROM assay.General."My.Assay".Data`. `listSchemas` returns this form as `quotedName`.
 * Do not end statements with `;` (produces a warning) and do not submit multiple statements.
 
 -----
 
-### **3. Query Structure and Clause Rules**
+## **3. Query Structure and Clause Rules**
 
 * **SELECT list**: `expr [AS] alias`. Alias every expression column — unaliased expressions get auto-names (`Expression1`, …) plus a warning. Duplicate output names are an error (`Duplicate column 'x'`). `*` and `table.*` cannot be aliased. A scalar subquery must return exactly one column. `SELECT 1 AS x` with no FROM is allowed.
 * **FROM/JOIN**: `INNER | LEFT | RIGHT | FULL [OUTER] JOIN ... ON cond` and `CROSS JOIN` (no ON). Comma joins and nested parenthesized joins are supported. Subqueries in FROM should be aliased (warning otherwise). An unqualified column name found in two FROM tables is an error (`Ambiguous field`).
@@ -50,7 +50,7 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 
 -----
 
-### **4. Lookups (Foreign-Key Dot Traversal) and Joins**
+## **4. Lookups (Foreign-Key Dot Traversal) and Joins**
 
 Lookup columns (foreign keys) can be traversed with dot notation instead of writing a JOIN. Follow the FK column with the target column name:
 
@@ -80,7 +80,7 @@ FROM Demographics d JOIN "/Other/Folder".lists.Languages l ON d.Language = l.Lan
 
 -----
 
-### **5. Aggregate Functions**
+## **5. Aggregate Functions**
 
 Available on both databases:
 
@@ -96,7 +96,7 @@ Rules: `DISTINCT` is allowed only in `COUNT` and `GROUP_CONCAT`. No `FILTER` cla
 
 -----
 
-### **6. LabKey Extension Functions**
+## **6. LabKey Extension Functions**
 
 Mathematical, string, date and time, and conditional functions are in the expression reference. LabKey also provides:
 
@@ -104,7 +104,7 @@ Mathematical, string, date and time, and conditional functions are in the expres
 
 -----
 
-### **7. PostgreSQL-Only Scalar Functions**
+## **7. PostgreSQL-Only Scalar Functions**
 
 Only when the server runs PostgreSQL (the common case). In addition to the PostgreSQL-only functions in the expression reference, these are passed through natively:
 
@@ -114,7 +114,7 @@ Only when the server runs PostgreSQL (the common case). In addition to the Postg
 
 -----
 
-### **8. WITH (Common Table Expressions)**
+## **8. WITH (Common Table Expressions)**
 
 ```sql
 WITH AllDemo AS (
@@ -143,7 +143,7 @@ SELECT * FROM Derivations
 
 -----
 
-### **9. VALUES (Constant Tables)**
+## **9. VALUES (Constant Tables)**
 
 ```sql
 SELECT t.column1 AS Id, t.column2 AS Name
@@ -155,7 +155,7 @@ FROM (VALUES (1, 'one'), (2, 'two'), (3, 'three')) AS t
 
 -----
 
-### **10. PIVOT**
+## **10. PIVOT**
 
 A pivot query summarizes and rotates a **grouped** query: `PIVOT aggCol [, aggCol...] BY pivotColumn [IN (...)]`.
 
@@ -176,7 +176,7 @@ Hard rules (violations are errors):
 
 -----
 
-### **11. Parameterized Queries**
+## **11. Parameterized Queries**
 
 ```sql
 PARAMETERS (MinTemp DOUBLE, MinWeight DOUBLE DEFAULT 0.0)
@@ -192,7 +192,7 @@ WHERE temperature_C >= MinTemp AND weight_kg >= MinWeight
 
 -----
 
-### **12. Cross-Folder Queries**
+## **12. Cross-Folder Queries**
 
 Prefix the schema with a quoted folder path (user needs Reader permission in each referenced folder):
 
@@ -206,7 +206,7 @@ GROUP BY p.ParticipantID
 
 -----
 
-### **13. Container Filters**
+## **13. Container Filters**
 
 Annotate a table in the FROM clause to broaden the query scope:
 
@@ -218,7 +218,7 @@ Values: `AllFolders`, `AllInProject`, `AllInProjectPlusShared`, `Current`, `Curr
 
 -----
 
-### **14. Metadata Annotations**
+## **14. Metadata Annotations**
 
 Column annotations after a select expression override display metadata:
 
@@ -231,17 +231,17 @@ Recognized: `@title`, `@format`, `@hidden`, `@concept`, `@nolookup`, `@preservet
 
 -----
 
-### **15. CAST**
+## **15. CAST**
 
 CAST is covered in the expression reference. Queries can also cast to `BINARY`, `VARBINARY`, and `LONGVARBINARY`, and give CHAR/VARCHAR a length.
 
 -----
 
-### **16. JSON and JSONB Operators and Functions (PostgreSQL Only)**
+## **16. JSON and JSONB Operators and Functions (PostgreSQL Only)**
 
 Not available on MS SQL Server. See the [PostgreSQL docs](https://www.postgresql.org/docs/14/functions-json.html) for semantics.
 
-#### Operators via `json_op`
+### Operators via `json_op`
 
 Native operator syntax (`->`, `->>`, etc.) cannot be used. Use the `json_op` pass-through function: `json_op(left_operand, 'operator', right_operand)`.
 
@@ -253,36 +253,36 @@ Native operator syntax (`->`, `->>`, etc.) cannot be used. Use the `json_op` pas
   SELECT * FROM samples WHERE json_op(metadata, '?', 'name')
   ```
 
-#### Conversion / Parsing
+### Conversion / Parsing
 * `parse_json(text)`, `parse_jsonb(text)`: cast text to JSON/JSONB (instead of `::jsonb` / `CAST(... AS JSONB)`).
 * `to_json(value)`, `to_jsonb(value)`; `array_to_json(array)`; `row_to_json(value)` (scalar rows only — use `to_jsonb()` for whole-row).
 
-#### Builders
+### Builders
 * `json_build_array(...)`, `jsonb_build_array(...)`; `json_build_object(k1, v1, ...)`, `jsonb_build_object(...)`; `json_object(text_array)`, `jsonb_object(text_array)`.
 
-#### Query and Extraction
+### Query and Extraction
 * `json_array_length`, `jsonb_array_length`; `json_extract_path(json, ...)`, `jsonb_extract_path(...)`; `json_extract_path_text(...)`, `jsonb_extract_path_text(...)` (clearest for nested text values); `json_object_keys`, `jsonb_object_keys`; `json_array_elements[_text]`, `jsonb_array_elements[_text]`; `json_each`, `jsonb_each`, `json_each_text`, `jsonb_each_text` (**scalar usage only** — not usable as table sources in FROM).
 
-#### Type Inspection, Cleanup, Modification
+### Type Inspection, Cleanup, Modification
 * `json_typeof`, `jsonb_typeof`; `json_strip_nulls`, `jsonb_strip_nulls`; `jsonb_insert(jsonb, path, val)`; `jsonb_pretty(jsonb)`; `jsonb_set(jsonb, path, val)` (strict — NULL in, NULL out); `jsonb_set_lax(jsonb, path, val, null_behavior)` where null_behavior ∈ `'raise_exception' | 'use_json_null' | 'delete_key' | 'return_target'`.
 
-#### Path Queries
+### Path Queries
 * `jsonb_path_exists`, `jsonb_path_match`, `jsonb_path_query`, `jsonb_path_query_array`, `jsonb_path_query_first` — each with a timezone-aware `_tz` variant.
 
-#### Not Supported
+### Not Supported
 `json_populate_record`, `jsonb_populate_record`, `json_populate_recordset`, `jsonb_populate_recordset`, `json_to_record`, `jsonb_to_record`, `json_to_recordset`, `jsonb_to_recordset`.
 
 -----
 
-### **17. Array Functions (PostgreSQL Only)**
+## **17. Array Functions (PostgreSQL Only)**
 
 Not available on MS SQL Server.
 
-#### Construction
+### Construction
 * `ARRAY[elem, ...]` — builds an array. **No space between `ARRAY` and `[`.**
 * `TEXTARRAY[elem, ...]` — like `ARRAY[]` but cast to `TEXT[]`. (One word — `TEXT_ARRAY` is wrong.)
 
-#### Membership and Comparison
+### Membership and Comparison
 * `array_contains_element(array, elem)` — true if elem in array (`= ANY`). Negate with `NOT array_contains_element(...)`.
 * `array_contains_all(a, b)` — every element of b is in a (`a @> b`).
 * `array_contains_any(a, b)` — at least one element of b is in a (`a && b`).
@@ -290,23 +290,23 @@ Not available on MS SQL Server.
 * `array_is_same(a, b)` — unordered set equality.
 * `array_is_empty(a)` — argument must be an ARRAY type (checked at parse time).
 
-#### Not Supported
+### Not Supported
 `array_agg`, `array_length`, `array_append`, `array_prepend`, `array_cat`, `array_remove`, `array_replace`, `array_position`, `array_to_string`, and subscript access (`arr[n]`).
 
 -----
 
-### **18. Database Portability Notes**
+## **18. Database Portability Notes**
 
 Most LabKey servers run PostgreSQL; some premium deployments run MS SQL Server. If the target may be MSSQL:
 
 * Avoid PostgreSQL-only features: JSON functions (§16), arrays (§17), `similar_to`/`regexp_replace`/`to_char`-family (see the expression reference), `overlaps()`, and the PG-only aggregates (§5).
 * `GROUP_CONCAT` on MSSQL requires a separately-installed function and cannot appear in a sub-select; when missing, it returns a literal `'<GROUP_CONCAT function not supported...>'` string instead of data.
 * String comparison and grouping are case-sensitive on PostgreSQL, case-insensitive on MSSQL.
-* `timestampdiff` supports only SECOND, MINUTE, HOUR, and DAY on PostgreSQL but every interval on MSSQL — the `age*` functions are portable.
+* For days, months, or years use the `age*` functions; they are portable.
 
 -----
 
-### **19. Common Error Messages → Fixes**
+## **19. Common Error Messages → Fixes**
 
 Many parse errors now include an inline suggestion (e.g. `Syntax error near 'OFFSET' ... OFFSET is not supported. Use LIMIT n...` or `Unknown method TRIM. Use LTRIM(RTRIM(x)).`). When a suggestion is present, apply it directly — it is dialect-appropriate for the server that produced it.
 
