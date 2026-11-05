@@ -196,7 +196,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     {
         synchronized (_completeEvent)
         {
-            if (!isDone())
+            while (!isDone())
                 _completeEvent.wait();
         }
         return this;
@@ -206,10 +206,15 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     @Override
     public SearchService.IndexTask get(long timeout, @NotNull TimeUnit unit) throws InterruptedException
     {
+        long remaining = unit.toMillis(timeout);
+        long deadline = System.currentTimeMillis() + remaining;
         synchronized (_completeEvent)
         {
-            if (!isDone())
-                _completeEvent.wait(unit.toMillis(timeout));
+            while (!isDone() && remaining > 0)
+            {
+                _completeEvent.wait(remaining);
+                remaining = deadline - System.currentTimeMillis();
+            }
         }
         return this;
     }

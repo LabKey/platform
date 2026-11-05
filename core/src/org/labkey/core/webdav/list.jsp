@@ -64,7 +64,7 @@
     {
         dir = dirs.get(i);
         %><a href="<%=h(dir.getLocalHref(context))%>?listing=html"><%
-        if ("/".equals(dir.getPath()))
+        if (null == dir.parent())
         {
             %><%=h(dir.getHref(context))%><%
         }

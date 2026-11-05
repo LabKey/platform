@@ -348,9 +348,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public boolean canRead(User user, boolean forRead)
     {
-        // TODO: This looks wrong
-        if ("/".equals(getPath()))
-            return true;
         try
         {
             SecurityLogger.indent(getPath() + " AbstractWebdavResource.canRead()");
