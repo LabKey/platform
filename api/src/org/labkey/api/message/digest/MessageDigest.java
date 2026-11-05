@@ -21,6 +21,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.MailMetrics;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -38,11 +39,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * User: klum
- * Date: Jan 13, 2011
- * Time: 1:55:26 PM
- */
 public abstract class MessageDigest
 {
     private static final String LAST_KEY = "LastSuccessfulSend";
@@ -83,7 +79,10 @@ public abstract class MessageDigest
 
                 for (Provider provider : _providers)
                 {
-                    provider.sendDigestForAllContainers(start, end);
+                    try (MailMetrics.Batch ignored = MailMetrics.startBatch(MailMetrics.Origin.DIGEST))
+                    {
+                        provider.sendDigestForAllContainers(start, end);
+                    }
                 }
                 setLastSuccessful(end);
             }
