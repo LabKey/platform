@@ -40,8 +40,9 @@
         boolean showAssistant = OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT);
         if (showAssistant)
         {
-//            dependencies.add("gen/labKeyAssistant");
-            dependencies.add("http://localhost:3001/labKeyAssistant.js");
+            dependencies.add("gen/labKeyAssistant");
+            // uncomment below line, and comment out above line, when using hot reload build
+            // dependencies.add("http://localhost:3001/labKeyAssistant.js");
         }
     }
 %>
