@@ -27,9 +27,14 @@ const LabKeyAssistantButton: FC = () => {
     // Pages can override the header, so the assistant button div may not be available
     if (!enabled || !buttonEl) return null;
 
-    const button = enabled ? (
-        <AssistantButton className="sdms-assistant-button" label="LabKey Assistant" onClick={open} />
-    ) : undefined;
+    const button = (
+        <AssistantButton
+            className="sdms-assistant-button"
+            id="sdms-assistant-button"
+            label="LabKey Assistant"
+            onClick={open}
+        />
+    );
 
     return createPortal(button, buttonEl);
 };
@@ -40,7 +45,7 @@ export const LabKeyAssistant: FC = () => {
     const className = classNames('sdms-labkey-assistant', { 'sdms-labkey-assistant--scrolled': scrolled });
     useEffect(() => {
         const onScroll = () => {
-            setScrolled(window.pageYOffset > 111);
+            setScrolled(window.scrollY > 111);
         };
         document.addEventListener('scroll', onScroll);
         return () => document.removeEventListener('scroll', onScroll);
