@@ -125,12 +125,6 @@ public class LookupValidatorKind extends DefaultValidatorKind implements Validat
         }
 
         @Override
-        public String validate(int rowNum, Object value, ValidatorContext validatorContext, @Nullable Object providedValue)
-        {
-            return super.validate(rowNum, value, validatorContext, providedValue);
-        }
-
-        @Override
         public void prefetch(Collection<?> values, ValidatorContext validatorContext)
         {
             LookupValues validValues = _kind.getLookupValues(_field, validatorContext);
