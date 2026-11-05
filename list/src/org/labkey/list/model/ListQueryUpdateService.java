@@ -120,6 +120,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     /** Non-null while a multi-row operation is in flight; see {@link RowAuditBatch}. */
     private RowAuditBatch _auditBatch;
+    // Shared across updateRow() calls, so a lookup validator loads its target once per batch instead of once per row
+    private ValidatorContext _updateValidatorContext;
 
     public ListQueryUpdateService(ListTable queryTable, TableInfo dbTable, @NotNull ListDefinition list)
     {
@@ -480,7 +482,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             dps.put(dp.getPropertyURI(), dp);
         }
 
-        ValidatorContext validatorCache = new ValidatorContext(container, user);
+        ValidatorContext validatorCache = getUpdateValidatorContext(container, user);
 
         ListItm itm = new ListItm();
         itm.setEntityId((String) oldRow.get(ID));
@@ -591,6 +593,13 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         return result;
+    }
+
+    private ValidatorContext getUpdateValidatorContext(Container container, User user)
+    {
+        if (_updateValidatorContext == null || !_updateValidatorContext.getContainer().equals(container) || !_updateValidatorContext.getUser().equals(user))
+            _updateValidatorContext = new ValidatorContext(container, user);
+        return _updateValidatorContext;
     }
 
     // TODO: Consolidate with ColumnValidator and OntologyManager.validateProperty()
