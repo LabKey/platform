@@ -683,6 +683,8 @@ public class ColumnFactsCache
         }
 
         ColumnFact stats = _cache.get(plan.statsKey());
+        if (stats instanceof ColumnFact.Stats st)
+            column.setDistinctCount(st.distinctCount());
         if (plan.kind() != Kind.STRING)
         {
             // Stats that failed or haven't loaded yet leave the range unknown, so the column isn't treated as out of range
@@ -703,7 +705,7 @@ public class ColumnFactsCache
     {
         ColumnFact values = _cache.get(plan.valuesKey());
         if (values instanceof ColumnFact.Values v && !v.isOverflow())
-            plan.column().setValues(v.values());
+            plan.column().setValues(v.values(), v.truncated(), v.hasBlank());
         return FactState.of(values);
     }
 
