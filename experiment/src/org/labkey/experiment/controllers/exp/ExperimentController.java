@@ -37,6 +37,7 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ConcurrencyLimit;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -184,6 +185,7 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresAnyOf;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
@@ -2560,9 +2562,14 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    @ConcurrencyLimit(value = 4, message = "Too many files are being parsed right now. Please retry in a few moments.")
     public class ParseFileAction extends MutatingApiAction<ParseForm>
     {
+        private static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
+        private static final int MAX_ROWS = 10_000;
+
         @Override
         public Object execute(ParseForm form, BindException errors) throws Exception
         {
@@ -2575,12 +2582,20 @@ public class ExperimentController extends SpringActionController
                 return true;
             }
 
+            // Checked before copying so oversized uploads never reach disk or the parser
+            if (formFile.getSize() > MAX_FILE_BYTES)
+                throw new ApiUsageException("File exceeds the maximum allowed size of " + (MAX_FILE_BYTES / (1024 * 1024)) + " MB.");
+
+            int maxRows = form.getMaxRows();
+            if (maxRows < 0 || maxRows > MAX_ROWS)
+                maxRows = MAX_ROWS;
+
             FileLike tempFile = null;
             try
             {
                 tempFile = FileUtil.createTempFileLike("parse", formFile.getOriginalFilename());
                 FileUtil.copyData(formFile.getInputStream(), tempFile.openOutputStream());
-                streamToJSON(tempFile, form.getFormat(), form.getMaxRows(), formFile.getOriginalFilename());
+                streamToJSON(tempFile, form.getFormat(), maxRows, formFile.getOriginalFilename());
             }
             finally
             {
