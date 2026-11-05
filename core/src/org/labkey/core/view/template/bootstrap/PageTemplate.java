@@ -29,6 +29,7 @@ import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.TemplateProperties;
+import org.labkey.api.util.AIFeaturesStatus;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpStatusException;
@@ -99,10 +100,7 @@ public class PageTemplate extends JspView<PageConfig>
         setView("header", header == null ? new Header(page) : header);
 
         // Only templates with the default header mount the assistant
-        User user = context.getUser();
-        boolean isRealUser = user != null && !user.isGuest();
-        boolean assistantEnabled = OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT);
-        showAssistant = header == null && isStartupComplete && isRealUser && assistantEnabled;
+        showAssistant = header == null && isAssistantAvailable(context.getUser());
 
         if (showAssistant)
         {
@@ -333,9 +331,18 @@ public class PageTemplate extends JspView<PageConfig>
         isAppTemplate = appTemplate;
     }
 
+    public static boolean isAssistantAvailable(User user)
+    {
+        return ModuleLoader.getInstance().isStartupComplete() &&
+                user != null && !user.isGuest() &&
+                OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT) &&
+                AIFeaturesStatus.isReady();
+    }
+
+    // The assistant button lives in the header, so follow pageTemplate.jsp's render-time header check
     public boolean showAssistant()
     {
-        return showAssistant;
+        return showAssistant && getModelBean().showHeader() != PageConfig.TrueFalse.False;
     }
 
     public ActionURL getPermaLink()

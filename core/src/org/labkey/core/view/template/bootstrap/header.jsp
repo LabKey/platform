@@ -46,14 +46,13 @@
 <%@ page import="org.labkey.core.view.PopupAdminView" %>
 <%@ page import="org.labkey.core.view.PopupUserView" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="static org.labkey.api.util.DOM.A" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.alt" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.href" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.src" %>
 <%@ page import="static org.labkey.api.util.DOM.IMG" %>
 <%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
-<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
-<%@ page import="org.labkey.api.mcp.McpService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -90,8 +89,7 @@
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
     String siteShortName = (laf.getShortName() != null && !laf.getShortName().isEmpty()) ? laf.getShortName() : null;
 
-    boolean assistantEnabled = OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT);
-    boolean showAssistant = isStartupComplete && isRealUser && assistantEnabled;
+    boolean showAssistant = PageTemplate.isAssistantAvailable(user);
     final NavTree optionsMenu = isStartupComplete ? PopupAdminView.createNavTree(context) : null;
     boolean hasPremiumModule = moduleLoader.hasModule("Premium");
     boolean isSMHostedOnly = !hasPremiumModule && moduleLoader.hasModule("SampleManagement");
