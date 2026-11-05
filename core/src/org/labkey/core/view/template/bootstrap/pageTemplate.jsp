@@ -29,7 +29,23 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="static org.labkey.core.view.template.bootstrap.PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.mcp.McpService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        boolean showAssistant = OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT);
+        if (showAssistant)
+        {
+//            dependencies.add("gen/labKeyAssistant");
+            dependencies.add("http://localhost:3001/labKeyAssistant.js");
+        }
+    }
+%>
+
 <%
     PageTemplate me = HttpView.currentView();
     PageConfig model = me.getModelBean();
@@ -102,6 +118,16 @@
 <div class="lk-body-ct">
     <% me.include(me.getView("bodyTemplate"), out); %>
 </div>
+<%
+    boolean showAssistant = OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT);
+
+    if (showAssistant)
+    {
+%>
+<div id="sdms-labkey-assistant"></div>
+<%
+    }
+%>
 <% if (null != me.getView("footer")) { %>
 <footer class="footer-block">
     <div class="footer-content">
@@ -120,6 +146,10 @@ if (null != me.getViewContext().getContainer()) {
     if (LABKEY.WebSocket) LABKEY.WebSocket.initWebSocket();
 <%  }
     model.endOfBodyScript(out); %>
+</script>
+
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    LABKEY.App.loadApp('labKeyAssistant', 'sdms-labkey-assistant', {});
 </script>
 </body>
 </html>

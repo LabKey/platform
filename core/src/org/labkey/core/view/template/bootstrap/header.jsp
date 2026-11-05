@@ -52,6 +52,8 @@
 <%@ page import="static org.labkey.api.util.DOM.Attribute.src" %>
 <%@ page import="static org.labkey.api.util.DOM.IMG" %>
 <%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="org.labkey.api.mcp.McpService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -138,6 +140,19 @@
     }
 %>
         <ul class="navbar-nav-lk">
+<%
+    boolean showAssistant = OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT);
+
+    if (showAssistant)
+    {
+        // Note: we only render the outer DOM for the button here, the React code will use it as a portal
+%>
+            <li class="navbar-assistant" id="sdms-navbar-assistant-button">
+            </li>
+<%
+    }
+%>
+
 <%
     boolean showSearch =
         isStartupComplete &&
