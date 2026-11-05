@@ -1481,6 +1481,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
         json.put("productKey", new ProductConfiguration().getCurrentProductKey());
+        json.put("labKeyAssistantEnabled",  OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT));
         return json;
     }
 
