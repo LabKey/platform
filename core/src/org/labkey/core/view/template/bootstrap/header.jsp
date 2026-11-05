@@ -90,6 +90,8 @@
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
     String siteShortName = (laf.getShortName() != null && !laf.getShortName().isEmpty()) ? laf.getShortName() : null;
 
+    boolean assistantEnabled = OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT);
+    boolean showAssistant = isStartupComplete && isRealUser && assistantEnabled;
     final NavTree optionsMenu = isStartupComplete ? PopupAdminView.createNavTree(context) : null;
     boolean hasPremiumModule = moduleLoader.hasModule("Premium");
     boolean isSMHostedOnly = !hasPremiumModule && moduleLoader.hasModule("SampleManagement");
@@ -141,8 +143,6 @@
 %>
         <ul class="navbar-nav-lk">
 <%
-    boolean showAssistant = OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT);
-
     if (showAssistant)
     {
         // Note: we only render the outer DOM for the button here, the React code will use it as a portal

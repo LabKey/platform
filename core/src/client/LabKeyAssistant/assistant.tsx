@@ -18,9 +18,14 @@ const BUTTON_ID = 'sdms-navbar-assistant-button';
 const LabKeyAssistantButton: FC = () => {
     const { enabled, open } = useAssistantService();
     const buttonEl = useMemo<HTMLElement>(() => document.getElementById(BUTTON_ID), []);
+
+    // Pages can override the header, so the assistant button div may not be available
+    if (!enabled || !buttonEl) return null;
+
     const button = enabled ? (
         <AssistantButton className="sdms-assistant-button" label="LabKey Assistant" onClick={open} />
     ) : undefined;
+
     return createPortal(button, buttonEl);
 };
 LabKeyAssistantButton.displayName = 'LabKeyAssistantButton';
