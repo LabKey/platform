@@ -56,6 +56,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.EmailOption;
+import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.attachments.AttachmentFile;
@@ -3129,6 +3130,20 @@ public class AnnouncementsController extends SpringActionController
 
             assertStatus(HttpServletResponse.SC_BAD_REQUEST, getThreadResponse(reader, _folderB, pending));
             assertStatus(HttpServletResponse.SC_OK, getThreadResponse(reader, _folderB, _thread));
+        }
+
+        // GH Issue 1662
+        @Test
+        public void testServiceGetDiscussionsSkipsSecureBoard() throws Exception
+        {
+            String identifier = "GH1662-" + GUID.makeGUID();
+            AnnouncementModel normal = insertDiscussion(_folderB, identifier, null);
+            List<Integer> found = AnnouncementService.get().getDiscussions(_folderB, identifier, true).stream().map(Announcement::getRowId).toList();
+            assertEquals(List.of(normal.getRowId()), found);
+
+            Container secure = getSecureBoard();
+            insertDiscussion(secure, identifier, null);
+            assertTrue(AnnouncementService.get().getDiscussions(secure, identifier, true).isEmpty());
         }
 
         private AnnouncementModel insertDiscussion(Container c, @Nullable String identifier, @Nullable String memberListInput) throws Exception

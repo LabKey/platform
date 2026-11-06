@@ -68,6 +68,7 @@ public interface AnnouncementService
     // Delete
     void deleteAnnouncement(Announcement announcement);
 
+    /** Returns nothing on a secure message board, since there's no user to check against its member lists */
     Collection<? extends Announcement> getDiscussions(Container container, String identifier, boolean includeResponses);
 
     @Nullable
