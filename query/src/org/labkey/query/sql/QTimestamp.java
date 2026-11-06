@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.DateUtil;
 
@@ -48,7 +49,7 @@ public class QTimestamp extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("{ts '" + DateUtil.toISO(_value) + "'}");
+        builder.append(new SQLFragment().setSqlUnsafe("{ts '" + DateUtil.toISO(_value) + "'}"));
     }
 
     @Override

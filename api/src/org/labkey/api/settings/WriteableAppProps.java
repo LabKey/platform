@@ -260,6 +260,12 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES, jsonArray);
     }
 
+    /** Uncached, for use only by {@link OptionalFeatureService}; everyone else should call it instead */
+    public static boolean isOptionalFeatureEnabledUncached(String feature)
+    {
+        return ((AppPropsImpl) AppProps.getInstance()).lookupOptionalFeature(feature);
+    }
+
     public void setFeatureEnabled(String feature, boolean enabled)
     {
         storeBooleanValue(OPTIONAL_FEATURE_PREFIX + feature, enabled);
