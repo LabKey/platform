@@ -447,6 +447,24 @@ Ext4.override(Ext4.data.Store, {
 });
 
 /**
+ * Delayed query/type-ahead tasks and remote load callbacks can fire after onDestroy has nulled the store. Avoid throwing by checking if destroyed.
+ */
+Ext4.override(Ext4.form.field.ComboBox, {
+    doRawQuery: function() {
+        if (!this.isDestroyed)
+            this.callParent(arguments);
+    },
+    onTypeAhead: function() {
+        if (!this.isDestroyed)
+            this.callParent(arguments);
+    },
+    afterQuery: function() {
+        if (!this.isDestroyed)
+            this.callParent(arguments);
+    }
+});
+
+/**
  * RowExpander plugin is not properly configured to handle sandboxed ExtJS.
  */
 Ext4.override(Ext4.grid.plugin.RowExpander, {
