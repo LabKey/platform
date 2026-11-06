@@ -128,7 +128,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             return super::getConnection;
 
         ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(false, selfContained, getScope(),
-            new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
+            SQLFragment.unsafe("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
 
         return null != factory ? factory : super::getConnection;
     }
@@ -164,7 +164,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
         // Explicitly disabling caching is documented to use an unshared Connection, so this path is never self-contained
         ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(cache, false, getScope(),
-            new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
+            SQLFragment.unsafe("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
         _connectionFactory = null != factory ? factory : super::getConnection;
         _jdbcCachingExplicitlySet = true;
 
@@ -438,7 +438,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         @Override
         public SQLFragment getSql()
         {
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM\n(\n");
+            SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) FROM\n(\n");
             sql.append(_factory.getSql());
             sql.unsafeAppend("\n) x");
 
@@ -462,7 +462,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         {
             SqlDialect dialect = getScope().getSqlDialect();
 
-            SQLFragment existsSql = new SQLFragment("EXISTS\n(\n");
+            SQLFragment existsSql = SQLFragment.unsafe("EXISTS\n(\n");
             existsSql.append(_factory.getSql());
             existsSql.unsafeAppend("\n)");
 

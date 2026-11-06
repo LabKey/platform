@@ -111,7 +111,7 @@ public class UnloggedTableGeneration
             String markerName = _markerName;
             if (null == markerName)
                 throw new IllegalStateException("No UNLOGGED marker table; the initial check failed");
-            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("TRUNCATE ").append(markerTable(markerName)));
+            new SqlExecutor(DbScope.getLabKeyScope()).execute(SQLFragment.unsafe("TRUNCATE ").append(markerTable(markerName)));
             check();
         }
         finally
@@ -154,13 +154,13 @@ public class UnloggedTableGeneration
     {
         try
         {
-            SQLFragment exists = new SQLFragment("SELECT EXISTS (SELECT 1 FROM ").append(markerTable(markerName)).append(")");
+            SQLFragment exists = SQLFragment.unsafe("SELECT EXISTS (SELECT 1 FROM ").append(markerTable(markerName)).unsafeAppend(")");
             // A missing marker is handled below; check() logs other failures through its throttle
             if (Boolean.TRUE.equals(new SqlSelector(scope, conn, exists).setLogLevel(Level.OFF).getObject(Boolean.class)))
                 return;
 
             // Bump only after the repair succeeds, so a failing repair does not bump again on every retry
-            new SqlExecutor(scope, conn).execute(new SQLFragment("INSERT INTO ").append(markerTable(markerName)).append(" (x) VALUES (1)"));
+            new SqlExecutor(scope, conn).execute(SQLFragment.unsafe("INSERT INTO ").append(markerTable(markerName)).unsafeAppend(" (x) VALUES (1)"));
             _generation.incrementAndGet();
             LOG.info("UNLOGGED tables were reset by the database, likely a failover or crash recovery. Materialized views will rebuild.");
         }
@@ -179,13 +179,13 @@ public class UnloggedTableGeneration
     {
         TempTableTracker.init();
         String name = "unlogged_marker_" + GUID.makeHash();
-        new SqlExecutor(scope, conn).execute(new SQLFragment("CREATE UNLOGGED TABLE ").append(markerTable(name)).append(" AS SELECT 1 AS x"));
+        new SqlExecutor(scope, conn).execute(SQLFragment.unsafe("CREATE UNLOGGED TABLE ").append(markerTable(name)).unsafeAppend(" AS SELECT 1 AS x"));
         TempTableTracker.track(name, MARKER_REF);
         _markerName = name;
     }
 
     private static SQLFragment markerTable(String name)
     {
-        return new SQLFragment().appendIdentifier(DbSchema.getTemp().getName()).append(".").appendIdentifier(name);
+        return new SQLFragment().appendDottedIdentifiers(DbSchema.getTemp().getName(), name);
     }
 }

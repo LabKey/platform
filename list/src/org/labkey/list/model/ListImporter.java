@@ -147,7 +147,7 @@ public class ListImporter
                 BatchValidationException batchErrors = new BatchValidationException();
                 DataLoader loader = DataLoader.get().createLoader(fileName, null, stream, true, null, null);
                 TableInfo ti = def.getTable(user);
-                String tableName =  ListManager.get().getListTableName(ti);
+                SQLFragment tableName = ListManager.get().getListTableName(ti);
 
                 if (null == ti || null == tableName)
                 {
@@ -167,7 +167,12 @@ public class ListImporter
 
                 // after we call resolveDomainChange() we may need a new TableInfo!
                 ti = def.getTable(user);
-                tableName =  ListManager.get().getListTableName(ti);
+                tableName = ListManager.get().getListTableName(ti);
+
+                if (null == ti || null == tableName)
+                {
+                    throw new IllegalStateException("Table information not available for list: " + def.getName());
+                }
 
                 boolean supportAI = false;
 

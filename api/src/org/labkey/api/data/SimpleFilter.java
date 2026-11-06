@@ -424,7 +424,7 @@ public class SimpleFilter implements Filter
     {
         public FalseClause()
         {
-            super(new SQLFragment("0 = 1"));
+            super(SQLFragment.unsafe("0 = 1"));
         }
     }
 
@@ -432,7 +432,7 @@ public class SimpleFilter implements Filter
     {
         public TrueClause()
         {
-            super(new SQLFragment("1 = 1"));
+            super(SQLFragment.unsafe("1 = 1"));
         }
     }
 
@@ -922,8 +922,8 @@ public class SimpleFilter implements Filter
             joins.keySet().forEach(a -> aliasManager.claimAlias(a, a));
             String alias = aliasManager.decideAlias("_drive_");
 
-            SQLFragment join = new SQLFragment("INNER JOIN ").append(tempTable).unsafeAppend(" ").append(alias)
-                .unsafeAppend(" ON ").append(pkColumn.getValueSql(tableAlias)).unsafeAppend(" = ").append(alias).unsafeAppend(".Id");
+            SQLFragment join = SQLFragment.unsafe("INNER JOIN ").append(tempTable).unsafeAppend(" ").appendIdentifier(alias)
+                .unsafeAppend(" ON ").append(pkColumn.getValueSql(tableAlias)).unsafeAppend(" = ").appendIdentifier(alias).unsafeAppend(".Id");
             join.addTempToken(tempTable);
             joins.put(alias, join);
             return true;
@@ -1981,26 +1981,26 @@ public class SimpleFilter implements Filter
             SqlDialect d = core.getSqlDialect();
 
             Collection<Integer> allUserIds = new TableSelector(CoreSchema.getInstance().getTableInfoUsersData(), Collections.singleton("UserId")).getCollection(Integer.class);
-            SQLFragment shortSql = new SQLFragment("SELECT * FROM core.UsersData WHERE UserId");
+            SQLFragment shortSql = SQLFragment.unsafe("SELECT * FROM core.UsersData WHERE UserId");
             d.appendInClauseSql(shortSql, allUserIds);
             assertEquals(allUserIds.size(), new SqlSelector(core, shortSql).getRowCount());
 
             ArrayList<Object> l = new ArrayList<>(allUserIds);
             while (l.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
                 l.addAll(allUserIds);
-            SQLFragment longSql = new SQLFragment("SELECT * FROM core.UsersData WHERE UserId");
+            SQLFragment longSql = SQLFragment.unsafe("SELECT * FROM core.UsersData WHERE UserId");
             d.appendInClauseSql(longSql, l);
             assertEquals(allUserIds.size(), new SqlSelector(core, longSql).getRowCount());
 
             Collection<String> allDisplayNames = new TableSelector(CoreSchema.getInstance().getTableInfoUsersData(), Collections.singleton("DisplayName")).getCollection(String.class);
-            SQLFragment shortSqlStr = new SQLFragment("SELECT * FROM core.UsersData WHERE DisplayName");
+            SQLFragment shortSqlStr = SQLFragment.unsafe("SELECT * FROM core.UsersData WHERE DisplayName");
             d.appendInClauseSql(shortSqlStr, allDisplayNames);
             assertEquals(allDisplayNames.size(), new SqlSelector(core, shortSqlStr).getRowCount());
 
             l = new ArrayList<>(allDisplayNames);
             while (l.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
                 l.addAll(allDisplayNames);
-            SQLFragment longSqlStr = new SQLFragment("SELECT * FROM core.UsersData WHERE DisplayName");
+            SQLFragment longSqlStr = SQLFragment.unsafe("SELECT * FROM core.UsersData WHERE DisplayName");
             d.appendInClauseSql(longSqlStr, l);
             assertEquals(allDisplayNames.size(), new SqlSelector(core, longSqlStr).getRowCount());
         }
@@ -2063,14 +2063,14 @@ public class SimpleFilter implements Filter
         @Test
         public void testEqualsAndHashCode()
         {
-            SQLClause clause1 = new SQLClause(new SQLFragment("This = That", 1, 2));
-            SQLClause clause2 = new SQLClause(new SQLFragment("This = That", 1, 2));
+            SQLClause clause1 = new SQLClause(SQLFragment.unsafe("This = That", 1, 2));
+            SQLClause clause2 = new SQLClause(SQLFragment.unsafe("This = That", 1, 2));
             assertEquals(clause1, clause2);
             assertEquals(clause1.hashCode(), clause2.hashCode());
-            SQLClause clause3 = new SQLClause(new SQLFragment("That = This", 1, 2));
+            SQLClause clause3 = new SQLClause(SQLFragment.unsafe("That = This", 1, 2));
             assertNotEquals(clause1, clause3);
             assertNotEquals(clause1.hashCode(), clause3.hashCode());
-            SQLClause clause4 = new SQLClause(new SQLFragment("This = That", 3, 4));
+            SQLClause clause4 = new SQLClause(SQLFragment.unsafe("This = That", 3, 4));
             assertNotEquals(clause1, clause4);
             assertNotEquals(clause1.hashCode(), clause4.hashCode());
         }

@@ -470,7 +470,7 @@ public class UserManager
     {
         TableInfo uat = getUserAuditSchemaTableInfo();
         FieldKey createdFk = FieldKey.fromParts("Created");
-        ColumnInfo datePartCol = new ExprColumn(uat, createdFk, new SQLFragment("CAST(Created AS DATE)"), JdbcType.DATE, uat.getColumn(createdFk));
+        ColumnInfo datePartCol = new ExprColumn(uat, createdFk, SQLFragment.unsafe("CAST(Created AS DATE)"), JdbcType.DATE, uat.getColumn(createdFk));
         Aggregate countDistinctDates = new Aggregate(datePartCol.getFieldKey(), Aggregate.BaseType.COUNT, null, true);
 
         TableSelector logins = getRecentLoginOrOuts(LoggedInOrOut.in, since, uat, Collections.singleton(datePartCol));
@@ -483,7 +483,7 @@ public class UserManager
     public static int getAuthCount(@Nullable Date since, boolean excludeSystemUsers, boolean apiKeyOnly, boolean distinct)
     {
         TableInfo uat = getUserAuditSchemaTableInfo();
-        SQLFragment sql = new SQLFragment("SELECT COUNT(");
+        SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(");
         sql.append(distinct ?  "DISTINCT uat.CreatedBy" : "*");
         sql.unsafeAppend(") FROM ");
         sql.append(uat, "uat");

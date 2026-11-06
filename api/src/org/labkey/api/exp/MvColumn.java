@@ -58,10 +58,10 @@ public class MvColumn extends LookupColumn
     @Override
     public SQLFragment getValueSql(String tableAlias)
     {
-        SQLFragment sql = new SQLFragment("\n(SELECT MvIndicator");
+        SQLFragment sql = SQLFragment.unsafe("\n(SELECT MvIndicator");
 
-        sql.append("\nFROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + pd.getPropertyId());
-        sql.append("\nAND exp.ObjectProperty.ObjectId = " + getTableAlias(tableAlias) + ".ObjectId)");
+        sql.unsafeAppend("\nFROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").appendValue(pd.getPropertyId());
+        sql.unsafeAppend("\nAND exp.ObjectProperty.ObjectId = ").appendIdentifier(getTableAlias(tableAlias)).unsafeAppend(".ObjectId)");
 
         return sql;
     }
@@ -95,7 +95,7 @@ public class MvColumn extends LookupColumn
             return strJoinNoContainer;
         }
 
-        strJoinNoContainer.append(" AND " + tableAliasName + ".Container = '" + containerId + "'");
+        strJoinNoContainer.unsafeAppend(" AND ").appendIdentifier(tableAliasName).unsafeAppend(".Container = ").appendValue(containerId, getSqlDialect());
         return strJoinNoContainer;
     }
 

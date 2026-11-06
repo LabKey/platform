@@ -140,7 +140,7 @@ public class Lsid
     {
         // PostgreSQL SUBSTRING supports simple regular expressions. This captures all the text from the fourth
         // colon to the end of the string (or to the fifth colon, if present).
-        SQLFragment expression = new SQLFragment("SUBSTRING(")
+        SQLFragment expression = SQLFragment.unsafe("SUBSTRING(")
             .append(lsidExpression)
             .unsafeAppend(" FROM '%urn:lsid:%:%:#\"[0-9a-f\\-]{36}#\":?%' FOR '#')");
         SQLFragment where = new SQLFragment(lsidExpression).unsafeAppend(" SIMILAR TO '%urn:lsid:%:%:[0-9a-f\\-]{36}:?%'");

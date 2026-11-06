@@ -1018,7 +1018,7 @@ public abstract class CompareType
             SQLFragment sql = dialect.array_is_empty(columnFragment);
             if (!_negated)
                 return sql;
-            return new SQLFragment(" NOT (").append(sql).unsafeAppend(")");
+            return SQLFragment.unsafe(" NOT (").append(sql).unsafeAppend(")");
         }
 
         @Override
@@ -1080,7 +1080,7 @@ public abstract class CompareType
         {
             Pair<SQLFragment, SQLFragment> valueFieldSql = getSqlFragments(columnMap, dialect);
             if (valueFieldSql == null)
-                return new SQLFragment("1=2");
+                return SQLFragment.unsafe("1=2");
 
             return dialect.array_all_in_array(valueFieldSql.first, valueFieldSql.second);
         }
@@ -1117,12 +1117,12 @@ public abstract class CompareType
         {
             Pair<SQLFragment, SQLFragment> valueFieldSql = getSqlFragments(columnMap, dialect);
             if (valueFieldSql == null)
-                return new SQLFragment("1=2");
+                return SQLFragment.unsafe("1=2");
 
             SQLFragment sql = dialect.array_some_in_array(valueFieldSql.first, valueFieldSql.second);
             if (!_negated)
                 return sql;
-            return new SQLFragment(" NOT (").append(sql).unsafeAppend(")");
+            return SQLFragment.unsafe(" NOT (").append(sql).unsafeAppend(")");
         }
 
         @Override
@@ -1178,12 +1178,12 @@ public abstract class CompareType
         {
             Pair<SQLFragment, SQLFragment> valueFieldSql = getSqlFragments(columnMap, dialect);
             if (valueFieldSql == null)
-                return new SQLFragment("1=2");
+                return SQLFragment.unsafe("1=2");
 
             SQLFragment sql = dialect.array_same_array(valueFieldSql.first, valueFieldSql.second);
             if (!_negated)
                 return sql;
-            return new SQLFragment(" NOT (").append(sql).unsafeAppend(")");
+            return SQLFragment.unsafe(" NOT (").append(sql).unsafeAppend(")");
         }
 
         @Override
@@ -1302,7 +1302,7 @@ public abstract class CompareType
         {
             final String param = Objects.toString(getParamVals()[0], null) ;
             if (_selectColumns == null || _selectColumns.isEmpty() || null == param)
-                return new SQLFragment("1=1");
+                return SQLFragment.unsafe("1=1");
 
             Integer paramNum = null;
             try
@@ -1371,7 +1371,7 @@ public abstract class CompareType
                 sql.append(columnSql);
             }
 
-            return hasResult ? sql : new SQLFragment("1=1");
+            return hasResult ? sql : SQLFragment.unsafe("1=1");
         }
     }
 
@@ -2457,7 +2457,7 @@ public abstract class CompareType
         @Override
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            return new SQLFragment("(")
+            return SQLFragment.unsafe("(")
                 .appendIdentifier(alias).unsafeAppend(" IS NULL OR ")
                 .appendIdentifier(alias).unsafeAppend(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ").append(dialect.concatenate("?", "'%'")).append(sqlEscape())
                 .unsafeAppend(")");
@@ -2572,7 +2572,7 @@ public abstract class CompareType
         @Override
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            return new SQLFragment("(")
+            return SQLFragment.unsafe("(")
                 .appendIdentifier(alias).unsafeAppend(" IS NULL OR ")
                 .appendIdentifier(alias).unsafeAppend(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ").append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape())
                 .unsafeAppend(")");
@@ -2607,7 +2607,7 @@ public abstract class CompareType
         {
             String neq = CompareType.NEQ.getSql();
             String isNull = CompareType.ISBLANK.getSql();
-            return new SQLFragment("(")
+            return SQLFragment.unsafe("(")
                 .appendIdentifier(alias).append(neq)
                 .unsafeAppend(" OR ")
                 .appendIdentifier(alias).append(isNull)
@@ -2639,7 +2639,7 @@ public abstract class CompareType
         {
             FieldKey mvFieldKey = new FieldKey(_fieldKey.getParent(), _fieldKey.getName() + MvColumn.MV_INDICATOR_SUFFIX);
             ColumnInfo mvColumn = columnMap.get(mvFieldKey);
-            SQLFragment sql = new SQLFragment().appendIdentifier(mvColumn.getAlias()).append(" IS " + (isNull ? "" : "NOT ") + "NULL");
+            SQLFragment sql = new SQLFragment().appendIdentifier(mvColumn.getAlias()).unsafeAppend(isNull ? " IS NULL" : " IS NOT NULL");
             return sql;
         }
     }
@@ -2661,10 +2661,10 @@ public abstract class CompareType
 
             if (id == null)
             {
-                return new SQLFragment("(1 = 2)");
+                return SQLFragment.unsafe("(1 = 2)");
             }
 
-            return getMemberOfSQL(dialect, alias.getSql(), new SQLFragment("?", convertParamValue(colInfo, id)));
+            return getMemberOfSQL(dialect, alias.getSql(), SQLFragment.unsafe("?", convertParamValue(colInfo, id)));
         }
 
         @Nullable

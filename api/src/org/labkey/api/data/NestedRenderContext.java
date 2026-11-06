@@ -106,7 +106,7 @@ public class NestedRenderContext extends RenderContext
                 }
             }
 
-            SQLFragment fromSQL = new SQLFragment(" FROM (");
+            SQLFragment fromSQL = SQLFragment.unsafe(" FROM (");
             ColumnInfo groupColumn = appendFromSQL(tinfo, name, groupingSort, fromSQL, _nestingOption.getRowIdFieldKey(), true);
             fromSQL.unsafeAppend(" ) FilterOnly ");
 
@@ -125,8 +125,8 @@ public class NestedRenderContext extends RenderContext
             String groupBySQL = sortSQL.replaceAll(" DESC", "").replaceAll(" ASC", "").replaceAll("ORDER BY ", "GROUP BY ");
 
             // Add one to the limit so we can tell if there are more groups or not, and should therefore show pagination
-            SQLFragment fullSQL = new SQLFragment(" ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" IN (SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" FROM (");
-            fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(new SQLFragment("SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" "),
+            SQLFragment fullSQL = SQLFragment.unsafe(" ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" IN (SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" FROM (");
+            fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(SQLFragment.unsafe("SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" "),
                     fromSQL, null, maxRows != Table.ALL_ROWS || offset > 0 ? new SQLFragment(sortSQL) : null, new SQLFragment(groupBySQL), maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
             fullSQL.unsafeAppend(" ) Limited )");
 
