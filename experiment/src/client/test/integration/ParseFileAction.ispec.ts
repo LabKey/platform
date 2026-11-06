@@ -139,6 +139,14 @@ describe('ParseFileAction', () => {
         expect(response.body.exception).toEqual(`File has more than ${MAX_COLUMNS} columns.`);
     });
 
+    it('rejects wide records split across quoted newlines', async () => {
+        const chunk = '\t'.repeat(MAX_COLUMNS / 2);
+        mock({ 'quoted.tsv': '"a\nb"' + chunk + '"c\nd"' + chunk + '"e\nf"' + chunk + '\nx\n' });
+
+        const response = await parseFile('quoted.tsv', readerOptions).expect(400);
+        expect(response.body.exception).toEqual(`File has more than ${MAX_COLUMNS} columns.`);
+    });
+
     it('rejects TSV output over the cell cap', async () => {
         // 60 columns x 10,000 rows stays under the row and column caps but over the cell cap
         const width = 60;

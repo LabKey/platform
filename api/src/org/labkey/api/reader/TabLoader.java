@@ -388,6 +388,7 @@ public class TabLoader extends DataLoader
         if (!_parseQuotes)
         {
             String[] fields = StringUtils.splitByWholeSeparator(line.toString(), _strDelimiter);
+            checkColumnCount(fields.length);
             for (int i = 0; i < fields.length; i++)
                 fields[i] = parseValue(fields[i]);
             return fields;
@@ -417,6 +418,8 @@ public class TabLoader extends DataLoader
             boolean parseEnclosedQuotes = _parseEnclosedQuotes || isArrayColumn;
 
             colIndex++;
+            // Checked per field so a record spanning quoted newlines can't grow unbounded
+            checkColumnCount(colIndex);
 
             boolean isDelimiterOrQuote = false;
             if (ch == _chDelimiter)

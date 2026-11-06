@@ -183,7 +183,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresAnyOf;
@@ -322,7 +321,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -2513,7 +2511,7 @@ public class ExperimentController extends SpringActionController
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
                     if (!FileUtil.hasCloudScheme(realContent))                      // TODO: handle streaming from S3 to JSON
-                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, -1, null);
+                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, -1, -1, null);
                     return null;
                 }
 
@@ -2620,13 +2618,9 @@ public class ExperimentController extends SpringActionController
                     DataLoaderFactory dlf = DataLoader.get().findFactory(tempFile, null);
                     if (dlf instanceof ExcelLoader.Factory)
                         throw new ApiUsageException("Excel files must have a .xls or .xlsx extension.");
-                    if (dlf instanceof TabLoader.TsvFactory)
-                        checkColumnCount(tempFile, '\t');
-                    else if (dlf instanceof TabLoader.CsvFactory)
-                        checkColumnCount(tempFile, ',');
                 }
 
-                streamToJSON(tempFile, form.getFormat(), maxRows, MAX_CELLS, formFile.getOriginalFilename());
+                streamToJSON(tempFile, form.getFormat(), maxRows, MAX_CELLS, MAX_COLUMNS, formFile.getOriginalFilename());
             }
             finally
             {
@@ -2659,29 +2653,11 @@ public class ExperimentController extends SpringActionController
                 throw new ApiUsageException("Unable to read file as an Excel document.", e);
             }
         }
-
-        // Column inference allocates per column before any row is read, so reject very wide lines up front.
-        // Delimiters inside quoted values are counted too, which can only over-count.
-        private static void checkColumnCount(FileLike file, char delimiter) throws IOException
-        {
-            try (InputStream in = new BufferedInputStream(file.openInputStream()))
-            {
-                int delimiters = 0;
-                int b;
-                while ((b = in.read()) != -1)
-                {
-                    if (b == '\n')
-                        delimiters = 0;
-                    else if (b == delimiter && ++delimiters >= MAX_COLUMNS)
-                        throw new ApiUsageException("File has more than " + MAX_COLUMNS + " columns.");
-                }
-            }
-        }
     }
 
 
     // SampleTypeTest
-    private void streamToJSON(FileLike realContent, String format, int maxRow, long maxCells, String originalFileName) throws IOException
+    private void streamToJSON(FileLike realContent, String format, int maxRow, long maxCells, int maxColumns, String originalFileName) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
@@ -2707,6 +2683,7 @@ public class ExperimentController extends SpringActionController
                 DataLoader tabLoader = dlf.createLoader(in, true))
             {
                 tabLoader.setScanAheadLineCount(5000);
+                tabLoader.setMaxColumns(maxColumns);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
 
                 if (ignoreTypes)
