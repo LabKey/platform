@@ -84,6 +84,8 @@ public interface MutableColumnRenderProperties extends ColumnRenderProperties, M
 
     void setImportAliasesSet(Set<String> importAliases);
 
+    void setSystemImportAliasesSet(Set<String> importAliases);
+
     void setPropertyType(PropertyType propertyType);
 
     void setFacetingBehaviorType(FacetingBehaviorType type);

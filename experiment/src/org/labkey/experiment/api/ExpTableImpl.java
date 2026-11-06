@@ -188,9 +188,10 @@ abstract public class ExpTableImpl<C extends Enum>
     protected MutableColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         var result = addColumn(containerCol);
-        Set<String> set = new LinkedHashSet<>(result.getImportAliasSet());
+        // GH Issue 1584: a system alias, since the column is surfaced as "Folder" and nothing else reclaims "container"
+        Set<String> set = new LinkedHashSet<>(result.getSystemImportAliasSet());
         set.add("container");
-        result.setImportAliasesSet(set);
+        result.setSystemImportAliasesSet(set);
         if (null != url)
             result.setURL(new DetailsURL(url));
         return result;
@@ -286,7 +287,7 @@ abstract public class ExpTableImpl<C extends Enum>
         ret.setInputType("text");
         ret.setMeasure(false);
         ret.setDimension(false);
-        ret.setImportAliasesSet(Sets.newCaseInsensitiveHashSet("comment"));
+        ret.setSystemImportAliasesSet(Sets.newCaseInsensitiveHashSet("comment"));
         return ret;
     }
 

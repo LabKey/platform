@@ -411,6 +411,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setDefaultValueType(col.getDefaultValueType());
         setDefaultValue(col.getDefaultValue());
         setImportAliasesSet(col.getImportAliasSet());
+        setSystemImportAliasesSet(col.getSystemImportAliasSet());
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
@@ -495,6 +496,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setDefaultValueType(col.getDefaultValueType());
         setDefaultValue(col.getDefaultValue());
         setImportAliasesSet(col.getImportAliasSet());
+        setSystemImportAliasesSet(col.getSystemImportAliasSet());
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
