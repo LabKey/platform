@@ -2881,7 +2881,14 @@ public class AnnouncementsController extends SpringActionController
     {
         AnnouncementFullModel thread = getThread(getContainer(), rowId, entityId);
 
-        if (thread == null || getReadableRowIds(getUser(), getContainer(), new SimpleFilter(FieldKey.fromParts("RowId"), thread.getRowId()), approvedOnly).isEmpty())
+        if (thread == null)
+            return null;
+
+        // Secure boards are rare, so skip the query when only folder read matters; the model lacks Approved for moderation
+        if (!approvedOnly && !getSettings().isSecureOn())
+            return getContainer().hasPermission(getUser(), ReadPermission.class) ? thread : null;
+
+        if (getReadableRowIds(getUser(), getContainer(), new SimpleFilter(FieldKey.fromParts("RowId"), thread.getRowId()), approvedOnly).isEmpty())
             return null;
 
         return thread;
@@ -2900,11 +2907,17 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public Object execute(GetDiscussionsForm form, BindException errors)
         {
+            List<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(getContainer(), form.getDiscussionSrcIdentifier());
+
+            // getDiscussions() already omits unapproved threads, so only a secure board needs the schema check
+            if (!AnnouncementManager.getMessageBoardSettings(getContainer()).isSecureOn())
+                return success(discussions);
+
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DiscussionSrcIdentifier"), form.getDiscussionSrcIdentifier())
                 .addCondition(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK);
             Set<Integer> readable = getReadableRowIds(getUser(), getContainer(), filter, true);
 
-            return success(AnnouncementManager.getDiscussions(getContainer(), form.getDiscussionSrcIdentifier()).stream()
+            return success(discussions.stream()
                 .filter(thread -> readable.contains(thread.getRowId()))
                 .toList());
         }
@@ -3153,6 +3166,7 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementModel normal = insertDiscussion(_folderB, identifier, null);
             List<Integer> found = AnnouncementService.get().getDiscussions(_folderB, identifier, true).stream().map(Announcement::getRowId).toList();
             assertEquals(List.of(normal.getRowId()), found);
+            assertEquals(Set.of(normal.getRowId()), getDiscussionRowIds(createUserInRole(_folderB, ReaderRole.class), _folderB, identifier));
 
             Container secure = getSecureBoard();
             insertDiscussion(secure, identifier, null);
