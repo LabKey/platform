@@ -36,6 +36,7 @@ import org.labkey.api.security.SecurityManager.AuthenticationAttempt;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
@@ -281,7 +282,7 @@ public class AuthFilter implements Filter
 
     public static User getGuestUser()
     {
-        if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS))
+        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS))
             return User.nobody;
         else
             return User.guest;

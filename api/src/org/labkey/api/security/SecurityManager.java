@@ -92,6 +92,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
@@ -717,7 +718,7 @@ public class SecurityManager
 
             if (null != transformSessionId)
             {
-                if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+                if (OptionalFeatureService.get().isFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
                 {
                     apiKey = transformSessionId;
                     AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' header instead");
@@ -750,7 +751,7 @@ public class SecurityManager
 
                 if (apiKeyParameter != null)
                 {
-                    if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
+                    if (OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
                     {
                         apiKey = apiKeyParameter;
                         shouldSetSessionCookie = false;
@@ -1443,6 +1444,9 @@ public class SecurityManager
 
         if (membersToDelete != null && !membersToDelete.isEmpty())
         {
+            if (group.isSystemGroup())
+                throw new IllegalArgumentException("Can't remove a member from the " + group.getName() + " group");
+
             SQLFragment sql = new SQLFragment(
             "DELETE FROM " + core.getTableInfoMembers() + "\nWHERE GroupId = ? AND UserId ");
             sql.add(groupId);
@@ -3300,7 +3304,7 @@ public class SecurityManager
                 assertNotNull(verifiedUser);
                 assertEquals(user, verifiedUser);
 
-                String stored = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT Verification FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()).getObject(String.class);
+                String stored = new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT PasswordVerification FROM ").append(CoreSchema.getInstance().getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId())).getObject(String.class);
                 assertNotNull(stored);
                 assertNotEquals("Verification token stored in plain text", status.getVerification(), stored);
 
@@ -3349,6 +3353,78 @@ public class SecurityManager
             finally
             {
                 UserManager.deleteUser(user.getUserId());
+            }
+        }
+
+        // GH Issue 1778
+        @Test
+        public void testEmailChangeTokens() throws Exception
+        {
+            ValidEmail email;
+            ValidEmail newEmail;
+
+            do
+            {
+                String rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
+                email = new ValidEmail(rawEmail);
+                newEmail = new ValidEmail("changed_" + rawEmail);
+            }
+            while (UserManager.getUser(email) != null || UserManager.getUser(newEmail) != null);
+
+            User user = null;
+
+            try
+            {
+                NewUserStatus status = addUser(email, null);
+                user = status.getUser();
+                String setup = status.getVerification();
+
+                String emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                assertEquals("Email change request cancelled the pending setup link", user, LoginManager.verify(setup));
+                assertNull("Email-change token accepted as a set-password token", LoginManager.verify(emailChange));
+                assertTrue(LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertFalse("Setup token accepted as an email-change token", LoginManager.getVerifyEmail(user).isVerified(setup));
+
+                LoginManager.clearVerification(user);
+                assertTrue("Pending email change reported as an unverified user", LoginManager.isVerified(user));
+                assertTrue("Clearing the password token cancelled the email change", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+
+                String reset = LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
+                assertTrue("Reset cancelled the pending email change", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+
+                LoginManager.clearEmailVerification(user);
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+                assertFalse(LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertEquals("Clearing the email change cancelled the reset link", user, LoginManager.verify(reset));
+
+                emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                LoginManager.setPassword(user, generateStrongPassword(user));
+                assertFalse("Setting a password left the pending email change usable", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+
+                emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                try
+                {
+                    UserManager.changeEmail(user, user, false, newEmail.getEmailAddress(), reset);
+                    fail("Reset token completed an email change");
+                }
+                catch (UserManagementException expected)
+                {
+                }
+                assertEquals(email.getEmailAddress(), UserManager.getUser(user.getUserId()).getEmail());
+
+                UserManager.changeEmail(user, user, false, newEmail.getEmailAddress(), emailChange);
+                assertEquals(newEmail.getEmailAddress(), UserManager.getUser(user.getUserId()).getEmail());
+                assertNull("Reset link sent to the old address outlived the email change", LoginManager.verify(reset));
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+            }
+            finally
+            {
+                if (null != user)
+                    UserManager.deleteUser(user.getUserId());
             }
         }
 

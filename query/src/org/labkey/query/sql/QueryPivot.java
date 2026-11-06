@@ -311,7 +311,7 @@ public class QueryPivot extends AbstractQueryRelation
             if (null != fromSql)
             {
                 sqlPivotValues = new SQLFragment();
-                sqlPivotValues.unsafeAppend("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
+                sqlPivotValues.SELECT_DISTINCT().append(_pivotColumn.getValueSql());
                 sqlPivotValues.unsafeAppend("\nFROM ").append(fromSql);
                 sqlPivotValues.unsafeAppend("\nORDER BY 1 ASC");
                 hasPhiColumns = _from._query.getInvolvedTableColumns().stream().anyMatch(tc -> tc._col.getPHI()!=PHI.NotPHI);
@@ -755,7 +755,7 @@ public class QueryPivot extends AbstractQueryRelation
         SqlBuilder sql = new SqlBuilder(getSqlDialect());
         sql.appendComment("<QueryPivot>", getSqlDialect());
         sql.unsafeAppend("SELECT ");
-        String comma = "";
+        boolean first = true;
 
         for (RelationColumn col : _select.values())
         {
@@ -765,50 +765,37 @@ public class QueryPivot extends AbstractQueryRelation
 
             if (isKey)
             {
-                sql.append(comma).append(col.getValueSql()).unsafeAppend(" AS ").append(col.getAlias());
-                comma = ",\n";
+                sql.unsafeAppend(first ? "" : ",\n").append(col.getValueSql()).unsafeAppend(" AS ").appendIdentifier(col.getAlias());
+                first = false;
                 continue;
             }
 
             // Add aggregate around summary columns -- the non-key and non-pivoted-aggregates
             if (!isAgg)
             {
-                String wrappedAgg = "MAX";
-                if (col instanceof QuerySelect.SelectColumn && ((QuerySelect.SelectColumn) col)._field instanceof QAggregate aggregate)
+                QAggregate.Type wrappedAgg = QAggregate.Type.MAX;
+                if (col instanceof QuerySelect.SelectColumn selectColumn && selectColumn._field instanceof QAggregate aggregate)
                 {
-                    switch (aggregate.getType())
+                    QAggregate.Type type = aggregate.getType();
+                    if (Set.of(QAggregate.Type.COUNT, QAggregate.Type.SUM, QAggregate.Type.MIN, QAggregate.Type.MAX).contains(type))
                     {
-                        case COUNT:
-                            wrappedAgg = "SUM";
-                            if (aggregate.isDistinct())
-                            {
-                                _query.reportError("Can't use 'COUNT(DISTINCT)' in summary column '" + ((QuerySelect.SelectColumn) col).getName() + "'.  " +
-                                        "Either remove this column from the select list; change the aggregate to SUM, MIN, MAX; or add this column to the PIVOT BY column set.");
-                            }
-                            break;
-                        case SUM:
-                            wrappedAgg = "SUM";
-                            break;
-                        case MIN:
-                            wrappedAgg = "MIN";
-                            break;
-                        case MAX:
-                            wrappedAgg = "MAX";
-                            break;
-                        case AVG:
-                        case STDDEV:
-                        case STDERR:
-                        case GROUP_CONCAT:
-                        default:
-                            // illegal
-                            _query.reportError("Can't use '" + aggregate.getType().name() + "' in summary column '" + ((QuerySelect.SelectColumn) col).getName() + "'.  " +
+                        if (aggregate.isDistinct() && type != QAggregate.Type.MIN && type != QAggregate.Type.MAX)
+                        {
+                            _query.reportError("Can't use '" + type.name() + "(DISTINCT)' in summary column '" + selectColumn.getName() + "'.  " +
                                     "Either remove this column from the select list; change the aggregate to SUM, MIN, MAX; or add this column to the PIVOT BY column set.");
-                            break;
+                        }
+                        // a pivoted COUNT is re-aggregated by summing the per-group counts
+                        wrappedAgg = type == QAggregate.Type.COUNT ? QAggregate.Type.SUM : type;
+                    }
+                    else
+                    {
+                        _query.reportError("Can't use '" + type.name() + "' in summary column '" + selectColumn.getName() + "'.  " +
+                                "Either remove this column from the select list; change the aggregate to SUM, MIN, MAX; or add this column to the PIVOT BY column set.");
                     }
                 }
 
-                sql.append(comma).append(wrappedAgg).unsafeAppend("(").append(col.getValueSql()).unsafeAppend(") AS ").append(col.getAlias());
-                comma = ",\n";
+                sql.unsafeAppend(first ? "" : ",\n").append(wrappedAgg.getFunctionSql(getSqlDialect())).unsafeAppend("(").append(col.getValueSql()).unsafeAppend(") AS ").appendIdentifier(col.getAlias());
+                first = false;
                 continue;
             }
 
@@ -816,14 +803,23 @@ public class QueryPivot extends AbstractQueryRelation
             if (null == type)
             {
                 // #23919: When inner query returns no results, without CAST we get "failed to find conversion function from unknown to text"
-                sql.append(comma).unsafeAppend("CAST(NULL AS ").append(getSqlDialect().getSqlCastTypeName(col.getJdbcType())).unsafeAppend(") AS ").append(col.getAlias());
-                comma = ",\n";
+                SQLFragment castType = getSqlDialect().getSqlCastTypeNameAsSql(col.getJdbcType());
+                sql.unsafeAppend(first ? "" : ",\n");
+                if (null == castType)
+                {
+                    _query.reportError("Unsupported type for pivot column '" + col.getFieldKey().getName() + "': " + col.getJdbcType().name());
+                    sql.appendError();
+                }
+                else
+                {
+                    sql.unsafeAppend("CAST(NULL AS ").append(castType).unsafeAppend(") AS ").appendIdentifier(col.getAlias());
+                }
+                first = false;
             }
             else
             {
-                String agg = type.name();
-                sql.append(comma).append(agg).unsafeAppend("(").append(col.getValueSql()).unsafeAppend(") AS ").append(col.getAlias());
-                comma = ",\n";
+                sql.unsafeAppend(first ? "" : ",\n").append(type.getFunctionSql(getSqlDialect())).unsafeAppend("(").append(col.getValueSql()).unsafeAppend(") AS ").appendIdentifier(col.getAlias());
+                first = false;
             }
 
             // getSql() does not return
@@ -841,7 +837,7 @@ public class QueryPivot extends AbstractQueryRelation
             {
                 QNode value = (QNode)pivotValue.getValue();
                 String alias = makePivotColumnAlias(col.getAlias(), pivotValue.getKey());
-                sql.append(comma).unsafeAppend("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
+                sql.unsafeAppend(first ? "" : ",\n").unsafeAppend("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
                 if (value instanceof QNull)
                 {
                     sql.unsafeAppend(" IS NULL");
@@ -860,7 +856,7 @@ public class QueryPivot extends AbstractQueryRelation
                     ((QExpr) value).appendSql(sql, _query);
                 }
                 sql.unsafeAppend(") THEN (").append(col.getValueSql()).unsafeAppend(") ELSE NULL END) AS ").appendIdentifier(alias);
-                comma = ",\n";
+                first = false;
             }
         }
 
@@ -954,7 +950,7 @@ public class QueryPivot extends AbstractQueryRelation
                 _sqlPivot = f;
             }
             SQLFragment ret = new SQLFragment(_sqlPivot);
-            ret.append(pivotTableAlias);
+            ret.appendIdentifier(pivotTableAlias);
             return ret;
         }
 

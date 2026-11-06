@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
@@ -92,7 +93,7 @@ public class QNumber extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append(getValueString());
+        builder.append(new SQLFragment().setSqlUnsafe(getValueString()));
     }
 
     @Override

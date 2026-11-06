@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * SMTP email transport provider.
@@ -41,6 +43,7 @@ import java.util.Properties;
 public class SmtpTransportProvider implements EmailTransportProvider
 {
     private static final Logger LOG = LogHelper.getLogger(SmtpTransportProvider.class, "SMTP Transport Provider");
+    private static final ScheduledThreadPoolExecutor WRITE_TIMEOUT_EXECUTOR = createWriteTimeoutExecutor();
 
     private final Properties _properties = new Properties();
     private Session _session = null;
@@ -126,9 +129,22 @@ public class SmtpTransportProvider implements EmailTransportProvider
         _session = createSession(_properties);
     }
 
+    private static ScheduledThreadPoolExecutor createWriteTimeoutExecutor()
+    {
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, Thread.ofPlatform().daemon().name("SMTP write timeout").factory());
+        executor.setRemoveOnCancelPolicy(true);
+        executor.setKeepAliveTime(1, TimeUnit.MINUTES);
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
+    }
+
     private static Session createSession(Properties properties)
     {
-        Session session = Session.getInstance(properties);
+        // Without a shared executor, Angus Mail creates (and shuts down) a thread pool per connection to enforce writetimeout
+        Properties sessionProperties = new Properties();
+        sessionProperties.putAll(properties);
+        sessionProperties.put("mail.smtp.executor.writetimeout", WRITE_TIMEOUT_EXECUTOR);
+        Session session = Session.getInstance(sessionProperties);
 
         if ("true".equalsIgnoreCase(session.getProperty("mail.smtp.ssl.enable")) ||
                 "true".equalsIgnoreCase(session.getProperty("mail.smtp.starttls.enable")))

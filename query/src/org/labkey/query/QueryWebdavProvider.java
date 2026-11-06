@@ -55,7 +55,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 	@Nullable
 	public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
 	{
-		if (target instanceof WebdavResolverImpl.WebFolderResource)
+		if (target instanceof WebdavResolverImpl.WebFolderResource folder && !folder.getContainer().isRoot())
 			return PageFlowUtil.set(QUERY_NAME);
 		return null;
 	}
@@ -65,9 +65,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 	{
 		if (!QUERY_NAME.equalsIgnoreCase(name))
 			return null;
-		if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder))
-			return null;
-		if (parent.getPath().equals("/"))
+		if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder) || folder.getContainer().isRoot())
 			return null;
         return new QueryResource(folder);
 	}

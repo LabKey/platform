@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -126,7 +126,7 @@ public final class PipelineJacksonTyping
 
     public static boolean isEnforced()
     {
-        return !AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_JOB_TYPE_ALLOWLIST);
+        return !OptionalFeatureService.get().isFeatureEnabled(FEATUREFLAG_DISABLE_JOB_TYPE_ALLOWLIST);
     }
 
     /**
