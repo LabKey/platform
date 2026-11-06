@@ -26,6 +26,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.poifs.crypt.Decryptor;
+import org.apache.poi.poifs.filesystem.FileMagic;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -2567,7 +2570,7 @@ public class ExperimentController extends SpringActionController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    @ConcurrencyLimit(value = 4, message = "Too many files are being parsed right now. Please retry in a few moments.")
+    @ConcurrencyLimit(value = 2, message = "Too many files are being parsed right now. Please retry in a few moments.")
     public class ParseFileAction extends MutatingApiAction<ParseForm>
     {
         private static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
@@ -2610,7 +2613,7 @@ public class ExperimentController extends SpringActionController
                 String lowerCaseFileName = tempFile.getName().toLowerCase();
                 if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
                 {
-                    checkUncompressedSize(tempFile);
+                    checkExcelContent(tempFile);
                 }
                 else
                 {
@@ -2630,7 +2633,30 @@ public class ExperimentController extends SpringActionController
             return null;
         }
 
-        // POI loads the whole .xlsx into memory, so reject zip bombs before it opens the file. Non-zip files have no entries.
+        private static void checkExcelContent(FileLike file) throws IOException
+        {
+            FileMagic magic;
+            try (InputStream in = FileMagic.prepareToCheckMagic(file.openInputStream()))
+            {
+                magic = FileMagic.valueOf(in);
+            }
+
+            if (magic == FileMagic.OOXML)
+            {
+                checkUncompressedSize(file);
+            }
+            else if (magic == FileMagic.OLE2)
+            {
+                // An encrypted .xlsx is a zip inside OLE2 that POI decrypts with Excel's default password, hiding it from the zip check
+                try (POIFSFileSystem fs = new POIFSFileSystem(file.toNioPathForRead().toFile(), true))
+                {
+                    if (fs.getRoot().hasEntry(Decryptor.DEFAULT_POIFS_ENTRY))
+                        throw new ApiUsageException("Encrypted Excel files are not supported.");
+                }
+            }
+        }
+
+        // POI loads the whole .xlsx into memory, so reject zip bombs before it opens the file
         private static void checkUncompressedSize(FileLike file) throws IOException
         {
             try (ZipInputStream zip = new ZipInputStream(file.openInputStream()))
