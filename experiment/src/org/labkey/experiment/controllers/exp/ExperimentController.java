@@ -2575,7 +2575,8 @@ public class ExperimentController extends SpringActionController
         private static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
         private static final int MAX_ROWS = 10_000;
         private static final long MAX_CELLS = 500_000;
-        private static final long MAX_UNCOMPRESSED_BYTES = 50L * 1024 * 1024;
+        // Sheet XML compresses about 5-15x, so this admits typical files up to the upload cap
+        private static final long MAX_UNCOMPRESSED_BYTES = 100L * 1024 * 1024;
         // Same as Excel's column limit
         private static final int MAX_COLUMNS = 16_384;
 
@@ -2649,7 +2650,7 @@ public class ExperimentController extends SpringActionController
                     {
                         total += n;
                         if (total > MAX_UNCOMPRESSED_BYTES)
-                            throw new ApiUsageException("Spreadsheet is too large to parse; it expands to more than " + (MAX_UNCOMPRESSED_BYTES / (1024 * 1024)) + " MB.");
+                            throw new ApiUsageException("Spreadsheet is too large to parse: its contents are over " + (MAX_UNCOMPRESSED_BYTES / (1024 * 1024)) + " MB when uncompressed. Use a smaller file or save it as .csv.");
                     }
                 }
             }
@@ -2732,11 +2733,15 @@ public class ExperimentController extends SpringActionController
                     }
                 }
                 rowsArray.put(headerArray);
+                boolean truncated = false;
                 for (Map<String, Object> rowMap : tabLoader)
                 {
-                    // headers count as a row to be consistent
-                    if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
+                    // Headers count as a row, matching the Excel path
+                    if (maxRow > -1 && maxRow <= rowsArray.length())
+                    {
+                        truncated = true;
                         break;
+                    }
 
                     cellCount += 1 + cols.length;
                     checkCellBudget(cellCount, maxCells);
@@ -2762,6 +2767,8 @@ public class ExperimentController extends SpringActionController
                 JSONObject sheetJSON = new JSONObject();
                 sheetJSON.put("name", "flat");
                 sheetJSON.put("data", rowsArray);
+                if (truncated)
+                    sheetJSON.put("truncated", true);
                 sheetsArray = new JSONArray();
                 sheetsArray.put(sheetJSON);
             }
@@ -2772,6 +2779,11 @@ public class ExperimentController extends SpringActionController
             JSONObject workbookJSON = new JSONObject();
             workbookJSON.put("fileName", realContent.getName());
             workbookJSON.put("sheets", sheetsArray);
+            // Lets callers that read whole files detect that rows were dropped by maxRows or the server cap
+            boolean truncated = false;
+            for (int i = 0; i < sheetsArray.length(); i++)
+                truncated |= sheetsArray.getJSONObject(i).optBoolean("truncated");
+            workbookJSON.put("truncated", truncated);
             if (originalFileName != null)
                 workbookJSON.put("originalFileName", originalFileName);
             writer.writeResponse(new ApiSimpleResponse(workbookJSON));

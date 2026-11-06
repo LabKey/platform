@@ -641,11 +641,15 @@ public class ExcelFactory
         for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
         {
             JSONArray rowsArray = new JSONArray();
+            boolean truncated = false;
             Sheet sheet = workbook.getSheetAt(sheetIndex);
             for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++)
             {
                 if (maxRows > -1 && maxRows <= rowIndex)
+                {
+                    truncated = true;
                     break;
+                }
 
                 Row row = sheet.getRow(rowIndex);
 
@@ -796,6 +800,8 @@ public class ExcelFactory
             JSONObject sheetJSON = new JSONObject();
             sheetJSON.put("name", workbook.getSheetName(sheetIndex));
             sheetJSON.put("data", rowsArray);
+            if (truncated)
+                sheetJSON.put("truncated", true);
             result.put(sheetJSON);
         }
         return result;

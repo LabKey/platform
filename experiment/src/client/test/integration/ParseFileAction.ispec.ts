@@ -76,6 +76,16 @@ describe('ParseFileAction', () => {
             ['A', 1],
             ['B', 2],
         ]);
+        expect(response.body.truncated).toBe(false);
+    });
+
+    it.each([
+        [2, 2, true],
+        [3, 3, false],
+    ])('returns exactly maxRows=%i rows including the header for TSV', async (maxRows, expectedRows, truncated) => {
+        const response = await parseFile(SMALL_TSV, readerOptions, maxRows).expect(200);
+        expect(response.body.sheets[0].data.length).toEqual(expectedRows);
+        expect(response.body.truncated).toBe(truncated);
     });
 
     it('rejects files over the size cap', async () => {
@@ -90,10 +100,9 @@ describe('ParseFileAction', () => {
 
         const response = await parseFile(LONG_TSV, readerOptions, maxRows).expect(200);
         const data = response.body.sheets[0].data;
-        // The TSV path counts the header as a row and stops one short of the cap
-        expect(data.length).toBeLessThanOrEqual(MAX_ROWS);
-        expect(data.length).toBeGreaterThanOrEqual(MAX_ROWS - 1);
+        expect(data.length).toEqual(MAX_ROWS);
         expect(data[0]).toEqual(['Name', 'Value']);
+        expect(response.body.truncated).toBe(true);
     });
 
     it('parses an Excel file and honors maxRows', async () => {
@@ -104,6 +113,16 @@ describe('ParseFileAction', () => {
         expect(response.body.sheets[0].name).toEqual('Sheet1');
         expect(data.length).toEqual(2);
         expect(data[0]).toEqual(['Name', 'IntCol', 'StringCol', 'DateCol', 'BoolCol', 'Parent']);
+        expect(response.body.sheets[0].truncated).toBe(true);
+        expect(response.body.truncated).toBe(true);
+    });
+
+    it('parses a whole Excel file without truncation', async () => {
+        mock({ [XLSX]: XLSX_CONTENT });
+
+        const response = await parseFile(XLSX, readerOptions).expect(200);
+        expect(response.body.sheets[0].data.length).toEqual(5);
+        expect(response.body.truncated).toBe(false);
     });
 
     it('rejects Excel content without an Excel extension', async () => {
