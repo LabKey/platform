@@ -182,6 +182,8 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
+import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresAnyOf;
@@ -320,6 +322,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -2573,6 +2576,8 @@ public class ExperimentController extends SpringActionController
         private static final int MAX_ROWS = 10_000;
         private static final long MAX_CELLS = 500_000;
         private static final long MAX_UNCOMPRESSED_BYTES = 50L * 1024 * 1024;
+        // Same as Excel's column limit
+        private static final int MAX_COLUMNS = 16_384;
 
         @Override
         public Object execute(ParseForm form, BindException errors) throws Exception
@@ -2605,7 +2610,20 @@ public class ExperimentController extends SpringActionController
 
                 String lowerCaseFileName = tempFile.getName().toLowerCase();
                 if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
+                {
                     checkUncompressedSize(tempFile);
+                }
+                else
+                {
+                    // Other names are sniffed by content, which would let Excel skip the checks above
+                    DataLoaderFactory dlf = DataLoader.get().findFactory(tempFile, null);
+                    if (dlf instanceof ExcelLoader.Factory)
+                        throw new ApiUsageException("Excel files must have a .xls or .xlsx extension.");
+                    if (dlf instanceof TabLoader.TsvFactory)
+                        checkColumnCount(tempFile, '\t');
+                    else if (dlf instanceof TabLoader.CsvFactory)
+                        checkColumnCount(tempFile, ',');
+                }
 
                 streamToJSON(tempFile, form.getFormat(), maxRows, MAX_CELLS, formFile.getOriginalFilename());
             }
@@ -2638,6 +2656,24 @@ public class ExperimentController extends SpringActionController
             catch (ZipException e)
             {
                 throw new ApiUsageException("Unable to read file as an Excel document.", e);
+            }
+        }
+
+        // Column inference allocates per column before any row is read, so reject very wide lines up front.
+        // Delimiters inside quoted values are counted too, which can only over-count.
+        private static void checkColumnCount(FileLike file, char delimiter) throws IOException
+        {
+            try (InputStream in = new BufferedInputStream(file.openInputStream()))
+            {
+                int delimiters = 0;
+                int b;
+                while ((b = in.read()) != -1)
+                {
+                    if (b == '\n')
+                        delimiters = 0;
+                    else if (b == delimiter && ++delimiters >= MAX_COLUMNS)
+                        throw new ApiUsageException("File has more than " + MAX_COLUMNS + " columns.");
+                }
             }
         }
     }
@@ -2676,6 +2712,10 @@ public class ExperimentController extends SpringActionController
                     for (ColumnDescriptor col : cols)
                         col.clazz = String.class;
 
+                // Every output row has cols.length entries, so charge the full width per row, as the Excel path does
+                long cellCount = 1 + cols.length;
+                checkCellBudget(cellCount, maxCells);
+
                 JSONArray rowsArray = new JSONArray();
                 JSONArray headerArray = new JSONArray();
                 for (ColumnDescriptor col : cols)
@@ -2697,6 +2737,9 @@ public class ExperimentController extends SpringActionController
                     // headers count as a row to be consistent
                     if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
                         break;
+
+                    cellCount += 1 + cols.length;
+                    checkCellBudget(cellCount, maxCells);
 
                     JSONArray rowArray = new JSONArray();
                     for (ColumnDescriptor col : cols)
@@ -2733,6 +2776,12 @@ public class ExperimentController extends SpringActionController
                 workbookJSON.put("originalFileName", originalFileName);
             writer.writeResponse(new ApiSimpleResponse(workbookJSON));
         }
+    }
+
+    private static void checkCellBudget(long cellCount, long maxCells)
+    {
+        if (maxCells > -1 && cellCount > maxCells)
+            throw new ApiUsageException("File is too large to parse; it exceeds " + maxCells + " cells.");
     }
 
 
