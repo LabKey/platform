@@ -461,9 +461,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return row;
     }
 
-    protected void validateValue(ColumnInfo column, Object value, Object providedValue) throws ValidationException
+    protected void validateValue(ColumnInfo column, Object value, Object providedValue, @Nullable Domain domain) throws ValidationException
     {
-        DomainProperty dp = getDomain() == null ? null : getDomain().getPropertyByName(column.getColumnName());
+        DomainProperty dp = domain == null ? null : domain.getPropertyByName(column.getColumnName());
         List<ColumnValidator> validators = ColumnValidators.create(column, dp);
         for (ColumnValidator v : validators)
         {
@@ -475,6 +475,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     protected void validateInsertRow(Map<String, Object> row) throws ValidationException
     {
+        // getDomain() isn't cached for a simple table without a domain, so look it up once per row
+        Domain domain = getDomain();
         for (ColumnInfo col : getQueryTable().getColumns())
         {
             Object value = row.get(col.getColumnName());
@@ -491,20 +493,22 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
             else
             {
-                validateValue(col, value, null);
+                validateValue(col, value, null, domain);
             }
         }
     }
 
     protected void validateUpdateRow(Map<String, Object> row) throws ValidationException
     {
+        // getDomain() isn't cached for a simple table without a domain, so look it up once per row
+        Domain domain = getDomain();
         for (ColumnInfo col : getQueryTable().getColumns())
         {
             // Only validate incoming values
             if (row.containsKey(col.getColumnName()))
             {
                 Object value = row.get(col.getColumnName());
-                validateValue(col, value, null);
+                validateValue(col, value, null, domain);
             }
         }
     }

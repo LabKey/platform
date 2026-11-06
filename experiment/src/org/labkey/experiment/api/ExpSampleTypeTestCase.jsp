@@ -94,6 +94,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineageService" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
@@ -1603,6 +1604,54 @@ public void testLookupValidatorPreloadWithDuplicateKeys() throws Exception
     }
 }
 
+@Test // GH Issue 1745
+public void testBulkLookupsScopedToContainer() throws Exception
+{
+    ExpSampleType st = createSampleType(generateSampleTypeName(), List.of(new GWTPropertyDescriptor("name", "string")), null);
+    Container sub = ContainerManager.ensureContainer(c, "bulkLookup-" + st.getName(), _user);
+
+    String prefix = st.getName() + "-";
+    List<String> inProject = List.of(prefix + "1", prefix + "2", prefix + "3", prefix + "4");
+    String inSub = prefix + "InSub";
+    insertSampleRows(st.getName(), nameRows(inProject));
+    insertSampleRows(sub, st.getName(), nameRows(List.of(inSub)));
+
+    List<String> names = new ArrayList<>(inProject);
+    names.add(inSub);
+    names.add(prefix + "Missing");
+
+    try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
+    {
+        List<? extends ExpMaterial> byName = st.getSamplesByName(c, names);
+        assertEquals(Set.copyOf(inProject), byName.stream().map(ExpMaterial::getName).collect(Collectors.toSet()));
+        byName.forEach(m -> assertEquals(m.getName(), c, m.getContainer()));
+
+        List<? extends ExpMaterial> subByName = st.getSamplesByName(sub, names);
+        assertEquals(List.of(inSub), subByName.stream().map(ExpMaterial::getName).toList());
+        String subLsid = subByName.getFirst().getLSID();
+
+        List<String> lsids = new ArrayList<>(byName.stream().map(ExpMaterial::getLSID).toList());
+        lsids.add(subLsid);
+        lsids.add(prefix + "MissingLsid");
+
+        List<? extends ExpMaterial> byLsid = ExperimentService.get().getExpMaterialsByLsid(c, lsids);
+        assertEquals(byName.stream().map(ExpMaterial::getRowId).collect(Collectors.toSet()), byLsid.stream().map(ExpMaterial::getRowId).collect(Collectors.toSet()));
+
+        assertNull(ExperimentService.get().getExpMaterial(c, subLsid));
+        assertNotNull(ExperimentService.get().getExpMaterial(sub, subLsid));
+    }
+
+    assertTrue(st.getSamplesByName(c, emptyList()).isEmpty());
+    assertTrue(ExperimentService.get().getExpMaterialsByLsid(c, emptyList()).isEmpty());
+}
+
+private static List<Map<String, Object>> nameRows(List<String> names)
+{
+    List<Map<String, Object>> rows = new ArrayList<>();
+    names.forEach(name -> rows.add(CaseInsensitiveHashMap.of("name", name)));
+    return rows;
+}
+
 private PropertyDescriptor lookupField(String sampleType, PropertyType type)
 {
     PropertyDescriptor field = new PropertyDescriptor("urn:lsid:labkey.com:LookupValidatorTest:" + type.name(), type, "Lookup", c);
@@ -1745,9 +1794,16 @@ private List<Map<String, Object>> getSampleRows(String sampleType)
 
 private List<Map<String, Object>> insertSampleRows(String sampleType, List<Map<String, Object>> rows) throws Exception
 {
+    return insertSampleRows(c, sampleType, rows);
+}
+
+private List<Map<String, Object>> insertSampleRows(Container container, String sampleType, List<Map<String, Object>> rows) throws Exception
+{
     BatchValidationException errors = new BatchValidationException();
-    QueryUpdateService svc = getSampleTypeUpdateService(sampleType);
-    List<Map<String, Object>> ret = svc.insertRows(_user, c, rows, errors, null, null);
+    UserSchema schema = QueryService.get().getUserSchema(_user, container, SamplesSchema.SCHEMA_SAMPLES);
+    QueryUpdateService svc = schema.getTableOrThrow(sampleType).getUpdateService();
+    assertNotNull("Update service cannot be null", svc);
+    List<Map<String, Object>> ret = svc.insertRows(_user, container, rows, errors, null, null);
     if (errors.hasErrors())
         throw errors;
     return ret;
