@@ -104,7 +104,8 @@ public class PageTemplate extends JspView<PageConfig>
 
         if (showAssistant)
         {
-            // Use "http://localhost:3001/labKeyAssistant.js" for hot reload builds
+            // For hot reload
+            // addClientDependency(ClientDependency.fromPath("http://localhost:3001/labKeyAssistant.js"));
             addClientDependency(ClientDependency.fromPath("gen/labKeyAssistant"));
         }
 
