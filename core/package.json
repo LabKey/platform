@@ -20,7 +20,7 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.74.5-fb-sdms-labkey-assistant.2",
+    "@labkey/components": "7.74.5",
     "@labkey/themes": "1.9.8"
   },
   "devDependencies": {
