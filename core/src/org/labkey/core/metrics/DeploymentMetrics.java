@@ -25,6 +25,7 @@ import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -55,9 +56,8 @@ public class DeploymentMetrics
     static @NotNull String getChannel(Function<String, String> env)
     {
         String channel = StringUtils.truncate(StringUtils.trimToNull(env.apply(CHANNEL_ENV)), MAX_LENGTH);
-        return channel == null ? UNKNOWN_CHANNEL : channel.toLowerCase();
+        return channel == null ? UNKNOWN_CHANNEL : channel.toLowerCase(Locale.ROOT);
     }
-
 
     /** Independent of the channel, so customer-built images around the distribution still count */
     static boolean isContainer(Function<String, String> env, Predicate<Path> exists, @Nullable String pid1Cgroup)
@@ -66,7 +66,7 @@ public class DeploymentMetrics
             || exists.test(Path.of("/run/.containerenv"))
             // "container" is set by Podman, systemd-nspawn, and LXC
             || Stream.of("KUBERNETES_SERVICE_HOST", "ECS_CONTAINER_METADATA_URI_V4", "container").anyMatch(name -> StringUtils.isNotBlank(env.apply(name)))
-            // Only populated under cgroup v1; v2 shows "0::/" inside a container
+            // Under cgroup v2 a private cgroup namespace (Docker's default) shows "0::/"; v1 or --cgroupns=host exposes the container path
             || (pid1Cgroup != null && CONTAINER_CGROUP.matcher(pid1Cgroup).find());
     }
 
