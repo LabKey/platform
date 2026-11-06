@@ -54,6 +54,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
@@ -587,9 +588,16 @@ public class ExcelFactory
     @NotNull
     public static JSONArray convertExcelToJSON(InputStream in, boolean extended, int maxRows) throws IOException
     {
+        return convertExcelToJSON(in, extended, maxRows, -1);
+    }
+
+    /** @param maxCells cap on rows plus cells across all sheets, or -1 for no cap; exceeding it throws ApiUsageException */
+    @NotNull
+    public static JSONArray convertExcelToJSON(InputStream in, boolean extended, int maxRows, long maxCells) throws IOException
+    {
         try (Workbook workbook = WorkbookFactory.create(in))
         {
-            return convertExcelToJSON(workbook, extended, maxRows);
+            return convertExcelToJSON(workbook, extended, maxRows, maxCells);
         }
     }
 
@@ -619,9 +627,16 @@ public class ExcelFactory
     @NotNull
     public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended, int maxRows)
     {
+        return convertExcelToJSON(workbook, extended, maxRows, -1);
+    }
+
+    @NotNull
+    public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended, int maxRows, long maxCells)
+    {
         JSONArray result = new JSONArray();
 
         DataFormatter formatter = new DataFormatter();
+        long cellCount = 0;
 
         for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
         {
@@ -633,6 +648,12 @@ public class ExcelFactory
                     break;
 
                 Row row = sheet.getRow(rowIndex);
+
+                // Count blank-filled cells up to getLastCellNum() before building them, so one far-right cell can't blow up output
+                cellCount += 1 + (row == null ? 0 : Math.max(0, row.getLastCellNum()));
+                if (maxCells > -1 && cellCount > maxCells)
+                    throw new ApiUsageException("Spreadsheet is too large to parse; it exceeds " + maxCells + " cells.");
+
                 JSONArray rowArray = new JSONArray();
                 if (row != null)
                 {
@@ -788,6 +809,20 @@ public class ExcelFactory
     public static class ExcelFactoryTestCase extends Assert
     {
         private static final double DELTA = 1E-8;
+
+        @Test
+        public void testConvertExcelToJSONCellCap() throws IOException
+        {
+            try (Workbook wb = new XSSFWorkbook())
+            {
+                // A single far-right cell makes the row span all 16,384 columns
+                wb.createSheet("Wide").createRow(0).createCell(16_383).setCellValue("x");
+
+                JSONArray uncapped = convertExcelToJSON(wb, false, -1, -1);
+                assertEquals(16_384, uncapped.getJSONObject(0).getJSONArray("data").getJSONArray(0).length());
+                assertThrows(ApiUsageException.class, () -> convertExcelToJSON(wb, false, -1, 1_000));
+            }
+        }
 
         @Test
         public void testCreateFromArray() throws IOException

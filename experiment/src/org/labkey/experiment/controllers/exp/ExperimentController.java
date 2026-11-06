@@ -348,6 +348,8 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipException;
+import java.util.zip.ZipInputStream;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
@@ -2508,7 +2510,7 @@ public class ExperimentController extends SpringActionController
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
                     if (!FileUtil.hasCloudScheme(realContent))                      // TODO: handle streaming from S3 to JSON
-                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, null);
+                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, -1, null);
                     return null;
                 }
 
@@ -2569,6 +2571,8 @@ public class ExperimentController extends SpringActionController
     {
         private static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
         private static final int MAX_ROWS = 10_000;
+        private static final long MAX_CELLS = 500_000;
+        private static final long MAX_UNCOMPRESSED_BYTES = 50L * 1024 * 1024;
 
         @Override
         public Object execute(ParseForm form, BindException errors) throws Exception
@@ -2594,8 +2598,16 @@ public class ExperimentController extends SpringActionController
             try
             {
                 tempFile = FileUtil.createTempFileLike("parse", formFile.getOriginalFilename());
-                FileUtil.copyData(formFile.getInputStream(), tempFile.openOutputStream());
-                streamToJSON(tempFile, form.getFormat(), maxRows, formFile.getOriginalFilename());
+                try (InputStream in = formFile.getInputStream(); OutputStream out = tempFile.openOutputStream())
+                {
+                    FileUtil.copyData(in, out);
+                }
+
+                String lowerCaseFileName = tempFile.getName().toLowerCase();
+                if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
+                    checkUncompressedSize(tempFile);
+
+                streamToJSON(tempFile, form.getFormat(), maxRows, MAX_CELLS, formFile.getOriginalFilename());
             }
             finally
             {
@@ -2604,11 +2616,35 @@ public class ExperimentController extends SpringActionController
             }
             return null;
         }
+
+        // POI loads the whole .xlsx into memory, so reject zip bombs before it opens the file. Non-zip files have no entries.
+        private static void checkUncompressedSize(FileLike file) throws IOException
+        {
+            try (ZipInputStream zip = new ZipInputStream(file.openInputStream()))
+            {
+                byte[] buf = new byte[8192];
+                long total = 0;
+                while (zip.getNextEntry() != null)
+                {
+                    int n;
+                    while ((n = zip.read(buf)) > 0)
+                    {
+                        total += n;
+                        if (total > MAX_UNCOMPRESSED_BYTES)
+                            throw new ApiUsageException("Spreadsheet is too large to parse; it expands to more than " + (MAX_UNCOMPRESSED_BYTES / (1024 * 1024)) + " MB.");
+                    }
+                }
+            }
+            catch (ZipException e)
+            {
+                throw new ApiUsageException("Unable to read file as an Excel document.", e);
+            }
+        }
     }
 
 
     // SampleTypeTest
-    private void streamToJSON(FileLike realContent, String format, int maxRow, String originalFileName) throws IOException
+    private void streamToJSON(FileLike realContent, String format, int maxRow, long maxCells, String originalFileName) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
@@ -2619,7 +2655,7 @@ public class ExperimentController extends SpringActionController
         {
             try (InputStream in = realContent.openInputStream())
             {
-                sheetsArray = ExcelFactory.convertExcelToJSON(in, extended, maxRow);
+                sheetsArray = ExcelFactory.convertExcelToJSON(in, extended, maxRow, maxCells);
             }
         }
         else
