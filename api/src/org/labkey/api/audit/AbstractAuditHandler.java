@@ -84,6 +84,11 @@ public abstract class AbstractAuditHandler implements AuditHandler
     protected interface DetailedAuditRecordFactory
     {
         DetailedAuditTypeEvent create(@Nullable Map<String, Object> row, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents);
+
+        /** Called once after the call's last record is created, to save what the records collected */
+        default void complete()
+        {
+        }
     }
 
     /** Called once per detailed {@link #addAuditEvent} call; override to load what every row's record needs in one pass */
@@ -219,6 +224,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                         batch.clear();
                     }
                     addSideEffectEvents(auditLog, user, sideEffectEvents, useTransactionAuditCache);
+                    recordFactory.complete();
                     break;
                 }
             }
