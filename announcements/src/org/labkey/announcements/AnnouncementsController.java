@@ -38,6 +38,7 @@ import org.labkey.announcements.model.MessageBoardContributorRole;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.announcements.model.Settings;
 import org.labkey.announcements.query.AnnouncementSchema;
+import org.labkey.announcements.query.AnnouncementTable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -55,6 +56,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.EmailOption;
+import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.attachments.AttachmentFile;
@@ -66,6 +68,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -95,6 +98,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -102,6 +106,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
@@ -144,6 +149,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -632,7 +638,7 @@ public class AnnouncementsController extends SpringActionController
         {
             if (!getPermissions().allowRead(ann))
             {
-                throw new UnauthorizedException();
+                throw createUnreadableThreadException(getContainer(), getUser());
             }
         }
 
@@ -823,7 +829,7 @@ public class AnnouncementsController extends SpringActionController
 
             if (null != insert.getParent())
             {
-                AnnouncementModel parent = AnnouncementManager.getAnnouncement(c, insert.getParent());
+                AnnouncementModel parent = getReadableThread(null, insert.getParent(), false);
                 // A response's own member list is a stale snapshot, so allowResponse() must see the thread itself
                 if (null == parent || null != parent.getParent())
                     throw createThreadNotFoundException(c);
@@ -946,7 +952,7 @@ public class AnnouncementsController extends SpringActionController
             Container c = getContainer();
 
             if (null != form.getParentId())
-                parent = AnnouncementManager.getAnnouncement(c, form.getParentId());
+                parent = getReadableThread(null, form.getParentId(), false);
 
             if (null == parent || null != parent.getParent())
             {
@@ -1629,6 +1635,12 @@ public class AnnouncementsController extends SpringActionController
     {
         return new NotFoundException("Could not find " + getSettings(c).getConversationName().toLowerCase());
     }
+
+    // GH Issue 1662: an unreadable thread looks missing, except that guests must still be prompted to log in
+    private static RuntimeException createUnreadableThreadException(Container c, @Nullable User user)
+    {
+        return null == user || user.isGuest() ? new UnauthorizedException() : createThreadNotFoundException(c);
+    }
     
     public static class AnnouncementDeleteForm extends ReturnUrlForm
     {
@@ -2302,13 +2314,17 @@ public class AnnouncementsController extends SpringActionController
 
         protected void init(Container c, AnnouncementFullModel ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
         {
-            if (null == c || !perm.allowRead(ann))
-            {
+            if (null == c)
                 throw new UnauthorizedException();
-            }
 
             if (null == ann)
                 throw createThreadNotFoundException(c);
+
+            if (!perm.allowRead(ann))
+            {
+                ViewContext context = HttpView.currentContext();
+                throw createUnreadableThreadException(c, null == context ? null : context.getUser());
+            }
 
             ThreadViewBean bean = getModelBean();
             bean.announcementModel = ann;
@@ -2483,9 +2499,10 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
             Permissions perm = getPermissions(threadContainer, getUser(), getSettings(threadContainer));
+            // GH Issue 1662: report an unreadable thread as missing
             if (!perm.allowRead(ann))
             {
-                throw new UnauthorizedException();
+                throw new NotFoundException("No such message thread: " + id);
             }
 
             // We track the subscriptions on the last post for the thread
@@ -2701,9 +2718,9 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    private @Nullable AnnouncementModel getThread(Container container, Integer rowId, String entityId)
+    private @Nullable AnnouncementFullModel getThread(Container container, Integer rowId, String entityId)
     {
-        AnnouncementModel thread = null;
+        AnnouncementFullModel thread = null;
 
         if (rowId != null)
             thread = AnnouncementManager.getAnnouncement(container, rowId);
@@ -2769,7 +2786,7 @@ public class AnnouncementsController extends SpringActionController
             // Ensure parent exists
             if (form.isReply())
             {
-                var parentThread = getThread(getContainer(), null, newThread.getParent());
+                var parentThread = getReadableThread(null, newThread.getParent(), false);
 
                 if (parentThread == null || parentThread.getParent() != null)
                 {
@@ -2816,7 +2833,7 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public Object execute(ThreadIdentityForm form, BindException errors)
         {
-            var thread = getThread(getContainer(), form.getRowId(), form.getEntityId());
+            var thread = getReadableThread(form.getRowId(), form.getEntityId(), false);
 
             if (thread == null)
             {
@@ -2848,6 +2865,35 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
+    // GH Issue 1662: the announcement schema applies secure board member lists and, optionally, moderation, so API
+    // reads go through it
+    private static Set<Integer> getReadableRowIds(User user, Container c, SimpleFilter filter, boolean approvedOnly)
+    {
+        AnnouncementSchema schema = new AnnouncementSchema(user, c);
+        ContainerFilter cf = ContainerFilter.current(c, user);
+        TableInfo table = approvedOnly ? schema.createAnnouncementTable(cf) : new AnnouncementTable(schema, cf, new SimpleFilter());
+        return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), filter, null).getArrayList(Integer.class));
+    }
+
+    // Reports an unreadable thread as missing, so callers can't probe for its existence. Writes include unapproved
+    // threads so admins can still moderate them.
+    private @Nullable AnnouncementFullModel getReadableThread(Integer rowId, String entityId, boolean approvedOnly)
+    {
+        AnnouncementFullModel thread = getThread(getContainer(), rowId, entityId);
+
+        if (thread == null)
+            return null;
+
+        // Secure boards are rare, so skip the query when only folder read matters; the model lacks Approved for moderation
+        if (!approvedOnly && !getSettings().isSecureOn())
+            return getContainer().hasPermission(getUser(), ReadPermission.class) ? thread : null;
+
+        if (getReadableRowIds(getUser(), getContainer(), new SimpleFilter(FieldKey.fromParts("RowId"), thread.getRowId()), approvedOnly).isEmpty())
+            return null;
+
+        return thread;
+    }
+
     @RequiresPermission(ReadPermission.class)
     public static class GetDiscussionsAction extends ReadOnlyApiAction<GetDiscussionsForm>
     {
@@ -2861,7 +2907,19 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public Object execute(GetDiscussionsForm form, BindException errors)
         {
-            return success(AnnouncementManager.getDiscussions(getContainer(), form.getDiscussionSrcIdentifier()));
+            List<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(getContainer(), form.getDiscussionSrcIdentifier());
+
+            // getDiscussions() already omits unapproved threads, so only a secure board needs the schema check
+            if (!AnnouncementManager.getMessageBoardSettings(getContainer()).isSecureOn())
+                return success(discussions);
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DiscussionSrcIdentifier"), form.getDiscussionSrcIdentifier())
+                .addCondition(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK);
+            Set<Integer> readable = getReadableRowIds(getUser(), getContainer(), filter, true);
+
+            return success(discussions.stream()
+                .filter(thread -> readable.contains(thread.getRowId()))
+                .toList());
         }
     }
 
@@ -2878,7 +2936,7 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public Object execute(ThreadIdentityForm form, BindException errors)
         {
-            AnnouncementModel thread = getThread(getContainer(), form.getRowId(), form.getEntityId());
+            AnnouncementModel thread = getReadableThread(form.getRowId(), form.getEntityId(), true);
 
             if (thread == null)
             {
@@ -2904,7 +2962,7 @@ public class AnnouncementsController extends SpringActionController
         public Object execute(ThreadForm form, BindException errors)
         {
             var rawThread = form.getThread();
-            var thread = getThread(getContainer(), rawThread.getRowId(), rawThread.getEntityId());
+            var thread = getReadableThread(rawThread.getRowId(), rawThread.getEntityId(), false);
 
             if (thread == null)
             {
@@ -2969,7 +3027,7 @@ public class AnnouncementsController extends SpringActionController
             // Negative: the @RequiresPermission(ReadPermission) gate only proves read on folder A; a caller who
             // cannot read the thread's own folder must not be able to subscribe to it.
             User readerA = createUserInRole(_folderA, ReaderRole.class);
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, readerA));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, readerA));
 
             // Positive control: the same subscription succeeds (302 to the success URL) once the caller can also
             // read the thread's folder.
@@ -3005,7 +3063,7 @@ public class AnnouncementsController extends SpringActionController
 
             // Negative: a reader of the secure board who is not on the member list cannot read the thread, so cannot
             // subscribe. Under the old container-ReadPermission check this incorrectly succeeded.
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, nonMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, nonMember));
 
             // Positive control: a reader who is on the member list can read the thread, so the subscription succeeds.
             assertStatus(HttpServletResponse.SC_FOUND, post(url, member));
@@ -3062,6 +3120,84 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementManager.saveMessageBoardSettings(secure, settings);
             assertEquals(Set.of(), queryRowIds(member, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
             assertEquals(all, only(queryRowIds(editor, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME), all));
+        }
+
+        // GH Issue 1662
+        @Test
+        public void testReadApisEnforceSecureBoardMemberList() throws Exception
+        {
+            Container secure = getSecureBoard();
+            User member = createUserInRole(secure, ReaderRole.class);
+            User nonMember = createUserInRole(secure, ReaderRole.class);
+            User editor = createUserInRole(secure, EditorRole.class);
+
+            String identifier = "GH1662-" + GUID.makeGUID();
+            AnnouncementModel memberThread = insertDiscussion(secure, identifier, String.valueOf(member.getUserId()));
+            AnnouncementModel otherThread = insertDiscussion(secure, identifier, null);
+
+            assertEquals(Set.of(), getDiscussionRowIds(nonMember, secure, identifier));
+            assertEquals(Set.of(memberThread.getRowId()), getDiscussionRowIds(member, secure, identifier));
+            assertEquals(Set.of(memberThread.getRowId(), otherThread.getRowId()), getDiscussionRowIds(editor, secure, identifier));
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, getThreadResponse(nonMember, secure, memberThread));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, getThreadResponse(member, secure, otherThread));
+            assertStatus(HttpServletResponse.SC_OK, getThreadResponse(member, secure, memberThread));
+            assertStatus(HttpServletResponse.SC_OK, getThreadResponse(editor, secure, otherThread));
+        }
+
+        // GH Issue 1662
+        @Test
+        public void testGetThreadHidesUnapprovedThread() throws Exception
+        {
+            User reader = createUserInRole(_folderB, ReaderRole.class);
+            AnnouncementModel pending = insertDiscussion(_folderB, null, null);
+            TableInfo announcements = CommSchema.getInstance().getTableInfoAnnouncements();
+            new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId = ?", pending.getRowId());
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, getThreadResponse(reader, _folderB, pending));
+            assertStatus(HttpServletResponse.SC_OK, getThreadResponse(reader, _folderB, _thread));
+        }
+
+        // GH Issue 1662
+        @Test
+        public void testServiceGetDiscussionsSkipsSecureBoard() throws Exception
+        {
+            String identifier = "GH1662-" + GUID.makeGUID();
+            AnnouncementModel normal = insertDiscussion(_folderB, identifier, null);
+            List<Integer> found = AnnouncementService.get().getDiscussions(_folderB, identifier, true).stream().map(Announcement::getRowId).toList();
+            assertEquals(List.of(normal.getRowId()), found);
+            assertEquals(Set.of(normal.getRowId()), getDiscussionRowIds(createUserInRole(_folderB, ReaderRole.class), _folderB, identifier));
+
+            Container secure = getSecureBoard();
+            insertDiscussion(secure, identifier, null);
+            assertTrue(AnnouncementService.get().getDiscussions(secure, identifier, true).isEmpty());
+        }
+
+        private AnnouncementModel insertDiscussion(Container c, @Nullable String identifier, @Nullable String memberListInput) throws Exception
+        {
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Read API test thread");
+            insert.setBody("body");
+            insert.setDiscussionSrcIdentifier(identifier);
+            insert.setMemberListInput(memberListInput);
+            return AnnouncementManager.insertAnnouncement(c, getAdmin(), insert, null, false);
+        }
+
+        private Set<Integer> getDiscussionRowIds(User user, Container c, String identifier) throws Exception
+        {
+            ActionURL url = new ActionURL(GetDiscussionsAction.class, c).addParameter("discussionSrcIdentifier", identifier);
+            MockHttpServletResponse response = get(url, user);
+            assertStatus(HttpServletResponse.SC_OK, response);
+            var data = new JSONObject(response.getContentAsString()).getJSONArray("data");
+            Set<Integer> rowIds = new HashSet<>();
+            for (int i = 0; i < data.length(); i++)
+                rowIds.add(data.getJSONObject(i).getInt("rowId"));
+            return rowIds;
+        }
+
+        private MockHttpServletResponse getThreadResponse(User user, Container c, AnnouncementModel thread) throws Exception
+        {
+            return get(new ActionURL(GetThreadAction.class, c).addParameter("rowId", thread.getRowId()), user);
         }
 
         // GH Issue 1637: on a secure board, AnnouncementSubscription rows are the member list that grants read
@@ -3357,13 +3493,72 @@ public class AnnouncementsController extends SpringActionController
                 .addParameter("title", "Reply")
                 .addParameter("body", "reply body");
 
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(apiReply, nonMember));
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(uiReply, nonMember));
+            // A thread the caller can't read is reported as missing
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(apiReply, nonMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(uiReply, nonMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(uiReply, nonMember));
             assertEquals(List.of(member.getUserId()), currentMemberList(secure, thread));
 
             // Positive control: a member can reply through the API, and the reply keeps them on the member list
             assertStatus(HttpServletResponse.SC_OK, post(apiReply, member));
             assertEquals(List.of(member.getUserId()), currentMemberList(secure, thread));
+        }
+
+        // GH Issue 1662
+        @Test
+        public void testApiWritesHideUnreadableThread() throws Exception
+        {
+            Container secure = createBoard("SecureProbe", Settings.SECURE_WITHOUT_EMAIL);
+            User member = createUserInRole(secure, MessageBoardContributorRole.class);
+            User nonMember = createUserInRole(secure, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(secure, member);
+
+            ActionURL deleteMissing = new ActionURL(DeleteThreadAction.class, secure).addParameter("rowId", Integer.MAX_VALUE);
+            ActionURL delete = new ActionURL(DeleteThreadAction.class, secure).addParameter("rowId", thread.getRowId());
+            ActionURL update = new ActionURL(UpdateThreadAction.class, secure)
+                .addParameter("thread.rowId", thread.getRowId())
+                .addParameter("thread.body", "updated body");
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(deleteMissing, nonMember));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(delete, nonMember));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(update, nonMember));
+            assertNotNull(AnnouncementManager.getAnnouncement(secure, thread.getRowId()));
+
+            // Admins can still remove an unapproved thread. Secure boards never allow deletes, so use a normal board.
+            Container board = createBoard("NormalUnapproved", Settings.SECURE_OFF);
+            AnnouncementModel pending = insertThread(board);
+            TableInfo announcements = CommSchema.getInstance().getTableInfoAnnouncements();
+            new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId = ?", pending.getRowId());
+            assertStatus(HttpServletResponse.SC_OK, post(new ActionURL(DeleteThreadAction.class, board).addParameter("rowId", pending.getRowId()), getAdmin()));
+            assertNull(AnnouncementManager.getAnnouncement(board, pending.getRowId()));
+        }
+
+        // GH Issue 1662
+        @Test
+        public void testUiReadsHideUnreadableThread() throws Exception
+        {
+            Container secure = createBoard("SecureUiRead", Settings.SECURE_WITHOUT_EMAIL);
+            User member = createUserInRole(secure, MessageBoardContributorRole.class);
+            User nonMember = createUserInRole(secure, MessageBoardContributorRole.class);
+            User guest = UserManager.getGuestUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(secure.getPolicy());
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, getAdmin());
+            AnnouncementModel thread = insertThread(secure, member);
+
+            ActionURL view = new ActionURL(ThreadAction.class, secure).addParameter("rowId", thread.getRowId());
+            ActionURL download = new ActionURL(DownloadAction.class, secure)
+                .addParameter("entityId", thread.getEntityId())
+                .addParameter("name", "missing.txt");
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(view, nonMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(download, nonMember));
+            assertStatus(HttpServletResponse.SC_OK, get(view, member));
+
+            // Guests are prompted to log in rather than told the thread is missing
+            int guestStatus = get(view, guest).getStatus();
+            assertNotEquals(HttpServletResponse.SC_NOT_FOUND, guestStatus);
+            assertNotEquals(HttpServletResponse.SC_OK, guestStatus);
         }
 
         @Test
@@ -3388,7 +3583,7 @@ public class AnnouncementsController extends SpringActionController
                 .addParameter("body", "reply body");
 
             assertStatus(HttpServletResponse.SC_NOT_FOUND, post(viaOldResponse, formerMember));
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(viaThread, formerMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(viaThread, formerMember));
         }
 
         @Test
