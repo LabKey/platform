@@ -66,6 +66,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -144,6 +145,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -2848,6 +2850,13 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
+    // GH Issue 1662: the announcement schema applies moderation and secure board member lists, so API reads go through it
+    private static Set<Integer> getReadableRowIds(User user, Container c, SimpleFilter filter)
+    {
+        TableInfo table = new AnnouncementSchema(user, c).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME);
+        return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), filter, null).getArrayList(Integer.class));
+    }
+
     @RequiresPermission(ReadPermission.class)
     public static class GetDiscussionsAction extends ReadOnlyApiAction<GetDiscussionsForm>
     {
@@ -2861,7 +2870,13 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public Object execute(GetDiscussionsForm form, BindException errors)
         {
-            return success(AnnouncementManager.getDiscussions(getContainer(), form.getDiscussionSrcIdentifier()));
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DiscussionSrcIdentifier"), form.getDiscussionSrcIdentifier())
+                .addCondition(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK);
+            Set<Integer> readable = getReadableRowIds(getUser(), getContainer(), filter);
+
+            return success(AnnouncementManager.getDiscussions(getContainer(), form.getDiscussionSrcIdentifier()).stream()
+                .filter(thread -> readable.contains(thread.getRowId()))
+                .toList());
         }
     }
 
@@ -2880,7 +2895,8 @@ public class AnnouncementsController extends SpringActionController
         {
             AnnouncementModel thread = getThread(getContainer(), form.getRowId(), form.getEntityId());
 
-            if (thread == null)
+            // Report an unreadable thread as missing, so callers can't probe for its existence
+            if (thread == null || getReadableRowIds(getUser(), getContainer(), new SimpleFilter(FieldKey.fromParts("RowId"), thread.getRowId())).isEmpty())
             {
                 errors.reject(ERROR_MSG, "Unable to find thread in folder " + getContainer().getPath());
                 return null;
@@ -3062,6 +3078,69 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementManager.saveMessageBoardSettings(secure, settings);
             assertEquals(Set.of(), queryRowIds(member, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
             assertEquals(all, only(queryRowIds(editor, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME), all));
+        }
+
+        // GH Issue 1662
+        @Test
+        public void testReadApisEnforceSecureBoardMemberList() throws Exception
+        {
+            Container secure = getSecureBoard();
+            User member = createUserInRole(secure, ReaderRole.class);
+            User nonMember = createUserInRole(secure, ReaderRole.class);
+            User editor = createUserInRole(secure, EditorRole.class);
+
+            String identifier = "GH1662-" + GUID.makeGUID();
+            AnnouncementModel memberThread = insertDiscussion(secure, identifier, String.valueOf(member.getUserId()));
+            AnnouncementModel otherThread = insertDiscussion(secure, identifier, null);
+
+            assertEquals(Set.of(), getDiscussionRowIds(nonMember, secure, identifier));
+            assertEquals(Set.of(memberThread.getRowId()), getDiscussionRowIds(member, secure, identifier));
+            assertEquals(Set.of(memberThread.getRowId(), otherThread.getRowId()), getDiscussionRowIds(editor, secure, identifier));
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, getThreadResponse(nonMember, secure, memberThread));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, getThreadResponse(member, secure, otherThread));
+            assertStatus(HttpServletResponse.SC_OK, getThreadResponse(member, secure, memberThread));
+            assertStatus(HttpServletResponse.SC_OK, getThreadResponse(editor, secure, otherThread));
+        }
+
+        // GH Issue 1662
+        @Test
+        public void testGetThreadHidesUnapprovedThread() throws Exception
+        {
+            User reader = createUserInRole(_folderB, ReaderRole.class);
+            AnnouncementModel pending = insertDiscussion(_folderB, null, null);
+            TableInfo announcements = CommSchema.getInstance().getTableInfoAnnouncements();
+            new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId = ?", pending.getRowId());
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, getThreadResponse(reader, _folderB, pending));
+            assertStatus(HttpServletResponse.SC_OK, getThreadResponse(reader, _folderB, _thread));
+        }
+
+        private AnnouncementModel insertDiscussion(Container c, @Nullable String identifier, @Nullable String memberListInput) throws Exception
+        {
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Read API test thread");
+            insert.setBody("body");
+            insert.setDiscussionSrcIdentifier(identifier);
+            insert.setMemberListInput(memberListInput);
+            return AnnouncementManager.insertAnnouncement(c, getAdmin(), insert, null, false);
+        }
+
+        private Set<Integer> getDiscussionRowIds(User user, Container c, String identifier) throws Exception
+        {
+            ActionURL url = new ActionURL(GetDiscussionsAction.class, c).addParameter("discussionSrcIdentifier", identifier);
+            MockHttpServletResponse response = get(url, user);
+            assertStatus(HttpServletResponse.SC_OK, response);
+            var data = new JSONObject(response.getContentAsString()).getJSONArray("data");
+            Set<Integer> rowIds = new HashSet<>();
+            for (int i = 0; i < data.length(); i++)
+                rowIds.add(data.getJSONObject(i).getInt("rowId"));
+            return rowIds;
+        }
+
+        private MockHttpServletResponse getThreadResponse(User user, Container c, AnnouncementModel thread) throws Exception
+        {
+            return get(new ActionURL(GetThreadAction.class, c).addParameter("rowId", thread.getRowId()), user);
         }
 
         // GH Issue 1637: on a secure board, AnnouncementSubscription rows are the member list that grants read
