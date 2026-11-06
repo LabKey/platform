@@ -98,6 +98,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -105,6 +106,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
@@ -636,7 +638,7 @@ public class AnnouncementsController extends SpringActionController
         {
             if (!getPermissions().allowRead(ann))
             {
-                throw new UnauthorizedException();
+                throw createUnreadableThreadException(getContainer(), getUser());
             }
         }
 
@@ -827,7 +829,7 @@ public class AnnouncementsController extends SpringActionController
 
             if (null != insert.getParent())
             {
-                AnnouncementModel parent = AnnouncementManager.getAnnouncement(c, insert.getParent());
+                AnnouncementModel parent = getReadableThread(null, insert.getParent(), false);
                 // A response's own member list is a stale snapshot, so allowResponse() must see the thread itself
                 if (null == parent || null != parent.getParent())
                     throw createThreadNotFoundException(c);
@@ -950,7 +952,7 @@ public class AnnouncementsController extends SpringActionController
             Container c = getContainer();
 
             if (null != form.getParentId())
-                parent = AnnouncementManager.getAnnouncement(c, form.getParentId());
+                parent = getReadableThread(null, form.getParentId(), false);
 
             if (null == parent || null != parent.getParent())
             {
@@ -1633,6 +1635,12 @@ public class AnnouncementsController extends SpringActionController
     {
         return new NotFoundException("Could not find " + getSettings(c).getConversationName().toLowerCase());
     }
+
+    // GH Issue 1662: an unreadable thread looks missing, except that guests must still be prompted to log in
+    private static RuntimeException createUnreadableThreadException(Container c, @Nullable User user)
+    {
+        return null == user || user.isGuest() ? new UnauthorizedException() : createThreadNotFoundException(c);
+    }
     
     public static class AnnouncementDeleteForm extends ReturnUrlForm
     {
@@ -2306,13 +2314,17 @@ public class AnnouncementsController extends SpringActionController
 
         protected void init(Container c, AnnouncementFullModel ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
         {
-            if (null == c || !perm.allowRead(ann))
-            {
+            if (null == c)
                 throw new UnauthorizedException();
-            }
 
             if (null == ann)
                 throw createThreadNotFoundException(c);
+
+            if (!perm.allowRead(ann))
+            {
+                ViewContext context = HttpView.currentContext();
+                throw createUnreadableThreadException(c, null == context ? null : context.getUser());
+            }
 
             ThreadViewBean bean = getModelBean();
             bean.announcementModel = ann;
@@ -2487,9 +2499,10 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
             Permissions perm = getPermissions(threadContainer, getUser(), getSettings(threadContainer));
+            // GH Issue 1662: report an unreadable thread as missing
             if (!perm.allowRead(ann))
             {
-                throw new UnauthorizedException();
+                throw new NotFoundException("No such message thread: " + id);
             }
 
             // We track the subscriptions on the last post for the thread
@@ -2705,9 +2718,9 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    private @Nullable AnnouncementModel getThread(Container container, Integer rowId, String entityId)
+    private @Nullable AnnouncementFullModel getThread(Container container, Integer rowId, String entityId)
     {
-        AnnouncementModel thread = null;
+        AnnouncementFullModel thread = null;
 
         if (rowId != null)
             thread = AnnouncementManager.getAnnouncement(container, rowId);
@@ -2864,9 +2877,9 @@ public class AnnouncementsController extends SpringActionController
 
     // Reports an unreadable thread as missing, so callers can't probe for its existence. Writes include unapproved
     // threads so admins can still moderate them.
-    private @Nullable AnnouncementModel getReadableThread(Integer rowId, String entityId, boolean approvedOnly)
+    private @Nullable AnnouncementFullModel getReadableThread(Integer rowId, String entityId, boolean approvedOnly)
     {
-        AnnouncementModel thread = getThread(getContainer(), rowId, entityId);
+        AnnouncementFullModel thread = getThread(getContainer(), rowId, entityId);
 
         if (thread == null || getReadableRowIds(getUser(), getContainer(), new SimpleFilter(FieldKey.fromParts("RowId"), thread.getRowId()), approvedOnly).isEmpty())
             return null;
@@ -3001,7 +3014,7 @@ public class AnnouncementsController extends SpringActionController
             // Negative: the @RequiresPermission(ReadPermission) gate only proves read on folder A; a caller who
             // cannot read the thread's own folder must not be able to subscribe to it.
             User readerA = createUserInRole(_folderA, ReaderRole.class);
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, readerA));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, readerA));
 
             // Positive control: the same subscription succeeds (302 to the success URL) once the caller can also
             // read the thread's folder.
@@ -3037,7 +3050,7 @@ public class AnnouncementsController extends SpringActionController
 
             // Negative: a reader of the secure board who is not on the member list cannot read the thread, so cannot
             // subscribe. Under the old container-ReadPermission check this incorrectly succeeded.
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, nonMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, nonMember));
 
             // Positive control: a reader who is on the member list can read the thread, so the subscription succeeds.
             assertStatus(HttpServletResponse.SC_FOUND, post(url, member));
@@ -3466,9 +3479,10 @@ public class AnnouncementsController extends SpringActionController
                 .addParameter("title", "Reply")
                 .addParameter("body", "reply body");
 
-            // The API reports a thread the caller can't read as missing
+            // A thread the caller can't read is reported as missing
             assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(apiReply, nonMember));
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(uiReply, nonMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(uiReply, nonMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(uiReply, nonMember));
             assertEquals(List.of(member.getUserId()), currentMemberList(secure, thread));
 
             // Positive control: a member can reply through the API, and the reply keeps them on the member list
@@ -3505,6 +3519,34 @@ public class AnnouncementsController extends SpringActionController
             assertNull(AnnouncementManager.getAnnouncement(board, pending.getRowId()));
         }
 
+        // GH Issue 1662
+        @Test
+        public void testUiReadsHideUnreadableThread() throws Exception
+        {
+            Container secure = createBoard("SecureUiRead", Settings.SECURE_WITHOUT_EMAIL);
+            User member = createUserInRole(secure, MessageBoardContributorRole.class);
+            User nonMember = createUserInRole(secure, MessageBoardContributorRole.class);
+            User guest = UserManager.getGuestUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(secure.getPolicy());
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, getAdmin());
+            AnnouncementModel thread = insertThread(secure, member);
+
+            ActionURL view = new ActionURL(ThreadAction.class, secure).addParameter("rowId", thread.getRowId());
+            ActionURL download = new ActionURL(DownloadAction.class, secure)
+                .addParameter("entityId", thread.getEntityId())
+                .addParameter("name", "missing.txt");
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(view, nonMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(download, nonMember));
+            assertStatus(HttpServletResponse.SC_OK, get(view, member));
+
+            // Guests are prompted to log in rather than told the thread is missing
+            int guestStatus = get(view, guest).getStatus();
+            assertNotEquals(HttpServletResponse.SC_NOT_FOUND, guestStatus);
+            assertNotEquals(HttpServletResponse.SC_OK, guestStatus);
+        }
+
         @Test
         public void testRemovedMemberCannotReplyViaOldResponse() throws Exception
         {
@@ -3527,7 +3569,7 @@ public class AnnouncementsController extends SpringActionController
                 .addParameter("body", "reply body");
 
             assertStatus(HttpServletResponse.SC_NOT_FOUND, post(viaOldResponse, formerMember));
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(viaThread, formerMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(viaThread, formerMember));
         }
 
         @Test
