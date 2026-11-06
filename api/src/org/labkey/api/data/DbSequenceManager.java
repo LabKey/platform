@@ -36,10 +36,16 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 /**
  * User: adam
@@ -595,11 +601,120 @@ public class DbSequenceManager
             assertEquals(first+1, after);
         }
 
+        private final List<String> _reclaimableNames = new ArrayList<>();
+
+        private String reclaimableName()
+        {
+            String name = "org.labkey.api.data.DbSequence.TestReclaimable/" + GUID.makeGUID();
+            _reclaimableNames.add(name);
+            return name;
+        }
+
+        private static DbScope scope()
+        {
+            return CoreSchema.getInstance().getScope();
+        }
+
+        private static List<Long> draw(DbSequence seq, int count)
+        {
+            return Stream.generate(seq::next).limit(count).toList();
+        }
+
+        @Test
+        public void testReclaimableRollbackReusesValues()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = reclaimableName();
+
+            try (DbScope.Transaction ignored = scope().ensureTransaction())
+            {
+                assertEquals(List.of(1L, 2L, 3L), draw(DbSequenceManager.getReclaimable(c, name, 0), 3));
+            }
+            assertEquals(0, DbSequenceManager.getReclaimable(c, name, 0).current());
+
+            try (DbScope.Transaction tx = scope().ensureTransaction())
+            {
+                assertEquals(List.of(1L, 2L, 3L), draw(DbSequenceManager.getReclaimable(c, name, 0), 3));
+                tx.commit();
+            }
+            assertEquals(3, DbSequenceManager.getReclaimable(c, name, 0).current());
+        }
+
+        @Test
+        public void testReclaimableHandlesShareOneTransaction()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = reclaimableName();
+
+            try (DbScope.Transaction tx = scope().ensureTransaction())
+            {
+                DbSequence first = DbSequenceManager.getReclaimable(c, name, 0);
+                DbSequence second = DbSequenceManager.getReclaimable(c, name, 0);
+                List<Long> values = List.of(first.next(), second.next(), first.next(), second.next());
+                assertEquals(List.of(1L, 2L, 3L, 4L), values);
+                tx.commit();
+            }
+            assertEquals(4, DbSequenceManager.getReclaimable(c, name, 0).current());
+        }
+
+        @Test
+        public void testReclaimableAcrossCommitAndKeepConnectionAndWithoutTransaction()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = reclaimableName();
+
+            try (DbScope.Transaction tx = scope().ensureTransaction())
+            {
+                DbSequence seq = DbSequenceManager.getReclaimable(c, name, 0);
+                assertEquals(List.of(1L, 2L), draw(seq, 2));
+                tx.commitAndKeepConnection();
+                assertEquals(3, seq.next());
+            }
+            // Values committed by commitAndKeepConnection() survive; the uncommitted tail is reclaimed
+            assertEquals(2, DbSequenceManager.getReclaimable(c, name, 0).current());
+
+            assertFalse(scope().isTransactionActive());
+            DbSequence seq = DbSequenceManager.getReclaimable(c, name, 0);
+            assertEquals(List.of(3L, 4L), draw(seq, 2));
+            assertEquals(4, seq.current());
+        }
+
+        @Test
+        public void testReclaimableConcurrentTransactionsStayContiguous() throws Throwable
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = reclaimableName();
+            final int perTransaction = 3;
+            final Set<Long> committed = new ConcurrentHashSet<>();
+            final Set<Long> duplicates = new ConcurrentHashSet<>();
+            final AtomicInteger iteration = new AtomicInteger();
+
+            JunitUtil.createRaces(() -> {
+                boolean commit = iteration.getAndIncrement() % 3 != 0;
+                try (DbScope.Transaction tx = scope().ensureTransaction())
+                {
+                    List<Long> values = draw(DbSequenceManager.getReclaimable(c, name, 0), perTransaction);
+                    assertEquals("Values drawn in one transaction must be contiguous: " + values, values.getFirst() + perTransaction - 1, (long) values.getLast());
+                    if (commit)
+                    {
+                        tx.commit();
+                        values.stream().filter(v -> !committed.add(v)).forEach(duplicates::add);
+                    }
+                }
+            }, 5, 12, 60);
+
+            assertTrue("Duplicate committed values: " + duplicates, duplicates.isEmpty());
+            long total = committed.size();
+            assertEquals("Committed values must be exactly 1.." + total, LongStream.rangeClosed(1, total).boxed().collect(Collectors.toSet()), committed);
+            assertEquals(total, DbSequenceManager.getReclaimable(c, name, 0).current());
+        }
+
         @After
         public void cleanup()
         {
             Container c = JunitUtil.getTestContainer();
             DbSequenceManager.delete(c, NAME);
+            _reclaimableNames.forEach(name -> DbSequenceManager.delete(c, name));
         }
     }
 }

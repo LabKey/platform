@@ -709,6 +709,33 @@ public void testContainerDelete() throws Exception
     }
 }
 
+// GH Issue 1563: the :withCounter max-counter probe on exp.data
+@Test
+public void testWithCounterBootstrapsFromExistingNames() throws Exception
+{
+    List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("Lab", "string"));
+    DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+    options.setNameExpression("${${Lab}-:withCounter}");
+    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "WithCounterBootstrap", options, props, emptyList(), null, null);
+
+    List<Map<String, Object>> existing = List.of(
+        CaseInsensitiveHashMap.of("name", "D-1"),
+        CaseInsensitiveHashMap.of("name", "D-3"),
+        CaseInsensitiveHashMap.of("name", "d-5"),
+        CaseInsensitiveHashMap.of("name", "D-abc"));
+    List<Map<String, Object>> generated = List.of(CaseInsensitiveHashMap.of("Lab", "D"), CaseInsensitiveHashMap.of("Lab", "D"));
+
+    List<Map<String, Object>> ret;
+    try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().beginTransaction())
+    {
+        helper.insertRows(c, existing, dataClass.getName());
+        ret = helper.insertRows(c, generated, dataClass.getName());
+        tx.commit();
+    }
+
+    assertEquals(List.of("D-6", "D-7"), ret.stream().map(r -> r.get("name")).toList());
+}
+
 @Test
 public void testLargeUnique() throws Exception
 {

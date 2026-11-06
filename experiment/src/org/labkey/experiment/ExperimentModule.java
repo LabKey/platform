@@ -1157,6 +1157,7 @@ public class ExperimentModule extends SpringModule
         List<Supplier<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/experiment/api/ExpDataClassDataTestCase.jsp"));
         list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleTypeTestCase.jsp"));
+        list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleNameCounterTestCase.jsp"));
         return list;
     }
 
