@@ -264,6 +264,7 @@ import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.ClientSideMetricDescriptions;
+import org.labkey.core.metrics.DeploymentMetrics;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.metrics.WebSocketMXBean;
@@ -1349,6 +1350,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), AttachmentHashingMaintenanceTask.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), DeploymentMetrics.getMetricsProvider());
         SystemMaintenance.addTask(new AttachmentHashingMaintenanceTask());
 
         if (AppProps.getInstance().isDevMode())
@@ -1577,6 +1579,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            DeploymentMetrics.TestCase.class,
             LabKeyProxyServlet.TestCase.class,
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
