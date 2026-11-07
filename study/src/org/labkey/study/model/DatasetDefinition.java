@@ -77,10 +77,12 @@ import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -137,6 +139,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReentrantLockWithName;
@@ -2838,9 +2841,21 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         for (Integer id : ids)
         {
             Domain domain = PropertyService.get().getDomain(id.intValue());
-            try
+            if (null == domain)
+                continue;
+
+            // Dataset domain kinds match only domains whose dataset row exists, so Domain.delete() would NPE here. GH Issue 1612.
+            try (DbScope.Transaction transaction = s.getScope().ensureTransaction())
             {
-                domain.delete(null);
+                DefaultValueService.get().clearDefaultValues(domain.getContainer(), domain);
+                if (null != domain.getStorageTableName())
+                    StudySchema.getInstance().getDatasetSchema().dropTableIfExists(domain.getStorageTableName());
+                OntologyManager.deleteDomain(domain.getTypeURI(), domain.getContainer());
+                transaction.commit();
+            }
+            catch (RuntimeException x)
+            {
+                _log.error("Failed to delete orphaned dataset domain {} in container {}", domain, domain.getContainer().getPath(), x);
             }
             catch (DomainNotFoundException x)
             {
@@ -3094,9 +3109,32 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public static class TestCleanupOrphanedDatasetDomains extends Assert
     {
         @Test
-        public void test()
+        public void test() throws DomainNotFoundException
         {
-            cleanupOrphanedDatasetDomains();
+            Container c = JunitUtil.getTestContainer();
+            String domainUri = new Lsid("StudyDataset.Folder-" + c.getRowId(), "junitOrphanedDataset").toString();
+            String tableName = "junit_orphaned_dataset";
+            DbSchema datasetSchema = StudySchema.getInstance().getDatasetSchema();
+
+            datasetSchema.dropTableIfExists(tableName);
+            try
+            {
+                new SqlExecutor(datasetSchema).execute(new SQLFragment().unsafeAppend("CREATE TABLE ")
+                    .appendDottedIdentifiers(datasetSchema.getName(), tableName).unsafeAppend(" (x INT)"));
+                DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(new DomainDescriptor.Builder(domainUri, c)
+                    .setName("junitOrphanedDataset").setStorageSchemaName(datasetSchema.getName()).setStorageTableName(tableName).build());
+
+                cleanupOrphanedDatasetDomains();
+
+                assertNull(OntologyManager.getDomainDescriptor(dd.getDomainId()));
+                assertFalse(datasetSchema.getSqlDialect().isTableExists(datasetSchema.getScope(), datasetSchema.getName(), tableName));
+            }
+            finally
+            {
+                datasetSchema.dropTableIfExists(tableName);
+                if (null != OntologyManager.getDomainDescriptor(domainUri, c))
+                    OntologyManager.deleteDomain(domainUri, c);
+            }
         }
     }
 }
