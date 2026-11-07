@@ -157,4 +157,14 @@ describe('ParseFileAction', () => {
         const response = await parseFile('cells.tsv', readerOptions).expect(400);
         expect(response.body.exception).toEqual(`File is too large to parse; it exceeds ${MAX_CELLS} cells.`);
     });
+
+    it('keeps values that do not match the inferred type', async () => {
+        const rows = Array.from({ length: 6_000 }, (_, i) => (i === 5_500 ? 'abc\t1' : `${i + 10}\t1`));
+        mock({ 'late.tsv': 'A\tB\n' + rows.join('\n') + '\n' });
+
+        const response = await parseFile('late.tsv', readerOptions).expect(200);
+        const data = response.body.sheets[0].data;
+        expect(data[1][0]).toEqual(10);
+        expect(data[5_501][0]).toEqual('abc');
+    });
 });

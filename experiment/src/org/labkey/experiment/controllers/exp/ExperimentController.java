@@ -2663,9 +2663,17 @@ public class ExperimentController extends SpringActionController
                     tabLoader.setInferTypes(false);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
 
-                if (ignoreTypes)
-                    for (ColumnDescriptor col : cols)
+                for (ColumnDescriptor col : cols)
+                {
+                    if (ignoreTypes)
+                    {
                         col.clazz = String.class;
+                    }
+                    if (maxCells > -1)
+                    {
+                        col.errorValues = DataLoader.ERROR_VALUE_USE_ORIGINAL;
+                    }
+                }
 
                 // Every output row has cols.length entries, so charge the full width per row, as the Excel path does
                 long cellCount = 1 + cols.length;
