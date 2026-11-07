@@ -97,6 +97,7 @@ import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.ExpressionAssistantAgentAction;
+import org.labkey.query.controllers.ImportRowsTestCase;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.controllers.QueryMcp;
@@ -391,6 +392,7 @@ public class QueryModule extends DefaultModule
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
             OlapController.ContainerScopingTestCase.class,
+            ImportRowsTestCase.class,
             QueryController.SaveRowsTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
