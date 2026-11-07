@@ -1511,7 +1511,12 @@ public class OntologyManager
                 .unsafeAppend(")"))
                 .fillSet(Integer.class, new HashSet<>());
 
-            deleteDefaultValues(propertyIds);
+            Set<Integer> allPropertyIds = new SqlSelector(schema, new SQLFragment()
+                .unsafeAppend("SELECT DISTINCT PropertyId FROM ").append(getTinfoPropertyDomain())
+                .unsafeAppend(" WHERE ").appendInClause("DomainId", domainIds, dialect))
+                .fillSet(Integer.class, new HashSet<>());
+
+            deleteDefaultValues(propertyIds, allPropertyIds);
 
             executor.execute(new SQLFragment()
                 .unsafeAppend("DELETE FROM ").append(getTinfoPropertyDomain())
@@ -1547,10 +1552,14 @@ public class OntologyManager
         }
     }
 
-    // Forms remember default values per folder and user; they're the only values expected on a deleted domain's properties
-    private static void deleteDefaultValues(Collection<Integer> propertyIds)
+    /**
+     * Forms remember default values per folder and user; they're the only values expected on a deleted domain's properties.
+     * An object holding an exclusive property belongs to a deleted domain, so its values for that domain's shared
+     * properties go too. Values for properties outside the deleted domains stay, and keep their object alive.
+     */
+    private static void deleteDefaultValues(Collection<Integer> exclusivePropertyIds, Collection<Integer> allPropertyIds)
     {
-        if (propertyIds.isEmpty())
+        if (exclusivePropertyIds.isEmpty())
             return;
 
         DbSchema schema = getExpSchema();
@@ -1559,7 +1568,7 @@ public class OntologyManager
         List<Long> objectIds = new SqlSelector(schema, appendDefaultValueUriFilter(new SQLFragment()
             .unsafeAppend("SELECT DISTINCT o.ObjectId FROM ").append(getTinfoObject(), "o")
             .unsafeAppend(" INNER JOIN ").append(getTinfoObjectProperty(), "op").unsafeAppend(" ON op.ObjectId = o.ObjectId")
-            .unsafeAppend(" WHERE ").appendInClause("op.PropertyId", propertyIds, dialect)))
+            .unsafeAppend(" WHERE ").appendInClause("op.PropertyId", exclusivePropertyIds, dialect)))
             .getArrayList(Long.class);
 
         if (objectIds.isEmpty())
@@ -1574,7 +1583,7 @@ public class OntologyManager
         new SqlExecutor(schema).execute(new SQLFragment()
             .unsafeAppend("DELETE FROM ").append(getTinfoObjectProperty())
             .unsafeAppend(" WHERE ").appendInClause("ObjectId", objectIds, dialect)
-            .unsafeAppend(" AND ").appendInClause("PropertyId", propertyIds, dialect));
+            .unsafeAppend(" AND ").appendInClause("PropertyId", allPropertyIds, dialect));
 
         // Owners last, once their children are gone
         deleteEmptyObjects(objectIds);
@@ -3453,10 +3462,11 @@ public class OntologyManager
             String scope = "Folder-" + c.getRowId() + ".User-" + user.getUserId();
             String defaultsParentLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + "Parent", scope, "deadDomain").toString();
             String defaultsLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX, scope, "deadDomain").toString();
+            String liveDefaultsLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX, scope, "liveDomain").toString();
 
             Runnable cleanup = () -> {
                 deleteDomainsInStorageSchemas(List.of(missingSchema));
-                deleteOntologyObjects(c, defaultsParentLsid);
+                deleteOntologyObjects(c, defaultsParentLsid, liveDefaultsLsid);
                 if (getDomainDescriptor(liveDomainUri, c) != null)
                 {
                     try
@@ -3484,7 +3494,13 @@ public class OntologyManager
                 ensurePropertyDomain(exclusivePd, deadDomain, 1);
 
                 ensureObject(c, defaultsLsid, defaultsParentLsid);
-                insertProperties(c, user, defaultsParentLsid, new ObjectProperty(defaultsLsid, c, exclusivePd.getPropertyURI(), "remembered"));
+                insertProperties(c, user, defaultsParentLsid,
+                    new ObjectProperty(defaultsLsid, c, exclusivePd.getPropertyURI(), "remembered"),
+                    new ObjectProperty(defaultsLsid, c, sharedPd.getPropertyURI(), "rememberedShared"));
+
+                // The live domain's own defaults use the shared property too, and must survive
+                ensureObject(c, liveDefaultsLsid);
+                insertProperties(c, user, null, new ObjectProperty(liveDefaultsLsid, c, sharedPd.getPropertyURI(), "liveRemembered"));
 
                 TableInfo listTable = getExpSchema().getTable("List");
                 new SqlExecutor(getExpSchema()).execute(new SQLFragment()
@@ -3503,6 +3519,7 @@ public class OntologyManager
                 assertNotNull(getPropertyDescriptor(sharedPd.getPropertyId()));
                 assertNull(getOntologyObject(c, defaultsLsid));
                 assertNull(getOntologyObject(c, defaultsParentLsid));
+                assertEquals("liveRemembered", getProperties(c, liveDefaultsLsid).get(sharedPd.getPropertyURI()));
             }
             finally
             {
