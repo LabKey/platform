@@ -151,9 +151,10 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
                         SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
 
                         // Sort by RowId so data get exported (and then imported) in the same order as created (default is the reverse order)
-                        writeTsv(tinfo, columns, filter, new Sort(FieldKey.fromParts("RowId")), dir, DATA_CLASS_PREFIX + dataClass.getName());
+                        Sort sort = new Sort(FieldKey.fromParts("RowId"));
+                        writeTsv(tinfo, columns, filter, sort, dir, DATA_CLASS_PREFIX + dataClass.getName());
 
-                        writeAttachments(ctx.getContainer(), tinfo, dir);
+                        writeAttachments(ctx.getContainer(), tinfo, filter, sort, dir);
                     }
                 }
             }

@@ -54,6 +54,7 @@ import org.labkey.list.model.FolderListImporter;
 import org.labkey.list.model.FolderListWriter;
 import org.labkey.list.model.IntegerListDomainKind;
 import org.labkey.list.model.ListAttachmentExportImportTestCase;
+import org.labkey.list.model.ListAttachmentMergeImportTestCase;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListManager;
@@ -241,6 +242,7 @@ public class ListModule extends SpringModule
     {
         return Set.of(
             ListAttachmentExportImportTestCase.class,
+            ListAttachmentMergeImportTestCase.class,
             ListQueryUpdateService.AuditBatchTestCase.class,
             ListQueryUpdateService.GetRowsTestCase.class
         );

@@ -242,7 +242,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
         return col.getPHI().isExportLevelAllowed(_exportPhiLevel);
     }
 
-    protected void writeAttachments(Container c, TableInfo tinfo, VirtualFile dir) throws SQLException, IOException
+    protected void writeAttachments(Container c, TableInfo tinfo, SimpleFilter filter, Sort sort, VirtualFile dir) throws SQLException, IOException
     {
         List<ColumnInfo> attachmentCols = new ArrayList<>();
         for (DomainProperty prop : tinfo.getDomain().getProperties())
@@ -268,7 +268,8 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
             for (ColumnInfo col : attachmentCols)
                 uniquifiers.put(col.getName(), new FileNameUniquifier());
 
-            try (ResultSet rs = QueryService.get().getSelectBuilder(tinfo).columns(selectColumns).select())
+            // Import pairs uniquified file names to TSV rows by position, so filter and sort must match the TSV's
+            try (ResultSet rs = QueryService.get().getSelectBuilder(tinfo).columns(selectColumns).filter(filter).sort(sort).select())
             {
                 while (rs.next())
                 {
