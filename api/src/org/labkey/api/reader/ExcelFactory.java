@@ -16,6 +16,7 @@
 package org.labkey.api.reader;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.ooxml.POIXMLException;
@@ -23,6 +24,12 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
+import org.apache.poi.poifs.crypt.Decryptor;
+import org.apache.poi.poifs.crypt.EncryptionInfo;
+import org.apache.poi.poifs.crypt.EncryptionMode;
+import org.apache.poi.poifs.crypt.Encryptor;
+import org.apache.poi.poifs.filesystem.FileMagic;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -54,12 +61,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.vfs.FileLike;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheet;
 
 import java.io.ByteArrayOutputStream;
@@ -69,6 +78,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -583,13 +594,65 @@ public class ExcelFactory
         return row != null ? row.getCell(colIdx) : null;
     }
 
+    /**
+     * Rejects encrypted OOXML, and .xlsx content that inflates past maxUncompressedBytes, before POI loads it into memory.
+     * Decides by file signature because POI does, and decrypts OOXML with Excel's default password.
+     */
+    public static void checkWorkbookContent(FileLike file, long maxUncompressedBytes) throws IOException
+    {
+        FileMagic magic;
+        try (InputStream in = FileMagic.prepareToCheckMagic(file.openInputStream()))
+        {
+            magic = FileMagic.valueOf(in);
+        }
+
+        if (magic == FileMagic.OOXML)
+        {
+            // Same reader settings as POI's ZipHelper.openZipStream, so we count exactly the entries it will inflate
+            try (ZipArchiveInputStream zip = new ZipArchiveInputStream(file.openInputStream(), StandardCharsets.UTF_8.name(), false, true))
+            {
+                byte[] buf = new byte[8192];
+                long total = 0;
+                while (zip.getNextEntry() != null)
+                {
+                    int n;
+                    while ((n = zip.read(buf)) > 0)
+                    {
+                        total += n;
+                        if (total > maxUncompressedBytes)
+                            throw new ApiUsageException("Spreadsheet is too large to parse: its contents are over " + (maxUncompressedBytes / (1024 * 1024)) + " MB when uncompressed. Use a smaller file or save it as .csv.");
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                throw new ApiUsageException("Unable to read file as an Excel document.", e);
+            }
+        }
+        else if (magic == FileMagic.OLE2)
+        {
+            try (POIFSFileSystem fs = new POIFSFileSystem(file.toNioPathForRead().toFile(), true))
+            {
+                if (fs.getRoot().hasEntry(Decryptor.DEFAULT_POIFS_ENTRY))
+                    throw new ApiUsageException("Encrypted Excel files are not supported.");
+            }
+        }
+    }
+
     /** Supports .xls (BIFF8 only), and .xlsx */
     @NotNull
     public static JSONArray convertExcelToJSON(InputStream in, boolean extended, int maxRows) throws IOException
     {
+        return convertExcelToJSON(in, extended, maxRows, -1);
+    }
+
+    /** @param maxCells cap on rows plus cells across all sheets, or -1 for no cap; exceeding it throws ApiUsageException */
+    @NotNull
+    public static JSONArray convertExcelToJSON(InputStream in, boolean extended, int maxRows, long maxCells) throws IOException
+    {
         try (Workbook workbook = WorkbookFactory.create(in))
         {
-            return convertExcelToJSON(workbook, extended, maxRows);
+            return convertExcelToJSON(workbook, extended, maxRows, maxCells);
         }
     }
 
@@ -619,20 +682,37 @@ public class ExcelFactory
     @NotNull
     public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended, int maxRows)
     {
+        return convertExcelToJSON(workbook, extended, maxRows, -1);
+    }
+
+    @NotNull
+    public static JSONArray convertExcelToJSON(Workbook workbook, boolean extended, int maxRows, long maxCells)
+    {
         JSONArray result = new JSONArray();
 
         DataFormatter formatter = new DataFormatter();
+        long cellCount = 0;
 
         for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
         {
             JSONArray rowsArray = new JSONArray();
+            boolean truncated = false;
             Sheet sheet = workbook.getSheetAt(sheetIndex);
             for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++)
             {
                 if (maxRows > -1 && maxRows <= rowIndex)
+                {
+                    truncated = true;
                     break;
+                }
 
                 Row row = sheet.getRow(rowIndex);
+
+                // Count blank-filled cells up to getLastCellNum() before building them, so one far-right cell can't blow up output
+                cellCount += 1 + (row == null ? 0 : Math.max(0, row.getLastCellNum()));
+                if (maxCells > -1 && cellCount > maxCells)
+                    throw new ApiUsageException("Spreadsheet is too large to parse; it exceeds " + maxCells + " cells.");
+
                 JSONArray rowArray = new JSONArray();
                 if (row != null)
                 {
@@ -775,6 +855,8 @@ public class ExcelFactory
             JSONObject sheetJSON = new JSONObject();
             sheetJSON.put("name", workbook.getSheetName(sheetIndex));
             sheetJSON.put("data", rowsArray);
+            if (truncated)
+                sheetJSON.put("truncated", true);
             result.put(sheetJSON);
         }
         return result;
@@ -788,6 +870,59 @@ public class ExcelFactory
     public static class ExcelFactoryTestCase extends Assert
     {
         private static final double DELTA = 1E-8;
+
+        @Test
+        public void testConvertExcelToJSONCellCap() throws IOException
+        {
+            try (Workbook wb = new XSSFWorkbook())
+            {
+                // A single far-right cell makes the row span all 16,384 columns
+                wb.createSheet("Wide").createRow(0).createCell(16_383).setCellValue("x");
+
+                JSONArray uncapped = convertExcelToJSON(wb, false, -1, -1);
+                assertEquals(16_384, uncapped.getJSONObject(0).getJSONArray("data").getJSONArray(0).length());
+                assertThrows(ApiUsageException.class, () -> convertExcelToJSON(wb, false, -1, 1_000));
+            }
+        }
+
+        @Test
+        public void testCheckWorkbookContent() throws Exception
+        {
+            FileLike plain = FileUtil.createTempFileLike("plain", ".xlsx");
+            FileLike encrypted = FileUtil.createTempFileLike("encrypted", ".xlsx");
+            try
+            {
+                try (XSSFWorkbook wb = new XSSFWorkbook(); OutputStream out = plain.openOutputStream())
+                {
+                    wb.createSheet("S").createRow(0).createCell(0).setCellValue("x");
+                    wb.write(out);
+                }
+                checkWorkbookContent(plain, 10L * 1024 * 1024);
+                assertThrows(ApiUsageException.class, () -> checkWorkbookContent(plain, 100));
+
+                // POI decrypts this with the default password, and the zip check alone would not see inside it
+                try (POIFSFileSystem fs = new POIFSFileSystem())
+                {
+                    Encryptor encryptor = new EncryptionInfo(EncryptionMode.standard).getEncryptor();
+                    encryptor.confirmPassword(Decryptor.DEFAULT_PASSWORD);
+                    try (OutputStream os = encryptor.getDataStream(fs); XSSFWorkbook wb = new XSSFWorkbook())
+                    {
+                        wb.createSheet("S");
+                        wb.write(os);
+                    }
+                    try (OutputStream out = encrypted.openOutputStream())
+                    {
+                        fs.writeFilesystem(out);
+                    }
+                }
+                assertThrows(ApiUsageException.class, () -> checkWorkbookContent(encrypted, 10L * 1024 * 1024));
+            }
+            finally
+            {
+                plain.delete();
+                encrypted.delete();
+            }
+        }
 
         @Test
         public void testCreateFromArray() throws IOException
