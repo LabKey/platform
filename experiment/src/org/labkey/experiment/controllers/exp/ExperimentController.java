@@ -26,9 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.poifs.crypt.Decryptor;
-import org.apache.poi.poifs.filesystem.FileMagic;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -352,8 +349,6 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipException;
-import java.util.zip.ZipInputStream;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
@@ -2576,8 +2571,8 @@ public class ExperimentController extends SpringActionController
         private static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
         private static final int MAX_ROWS = 10_000;
         private static final long MAX_CELLS = 500_000;
-        // Sheet XML compresses about 5-15x, so this admits typical files up to the upload cap
-        private static final long MAX_UNCOMPRESSED_BYTES = 100L * 1024 * 1024;
+        // Sized to heap, not upload size: POI peaks at about 20x the sheet XML, so 25 MB is about 600 MB per request
+        private static final long MAX_UNCOMPRESSED_BYTES = 25L * 1024 * 1024;
         // Same as Excel's column limit
         private static final int MAX_COLUMNS = 16_384;
 
@@ -2613,7 +2608,7 @@ public class ExperimentController extends SpringActionController
                 String lowerCaseFileName = tempFile.getName().toLowerCase();
                 if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
                 {
-                    checkExcelContent(tempFile);
+                    ExcelFactory.checkWorkbookContent(tempFile, MAX_UNCOMPRESSED_BYTES);
                 }
                 else
                 {
@@ -2631,53 +2626,6 @@ public class ExperimentController extends SpringActionController
                     tempFile.delete();
             }
             return null;
-        }
-
-        private static void checkExcelContent(FileLike file) throws IOException
-        {
-            FileMagic magic;
-            try (InputStream in = FileMagic.prepareToCheckMagic(file.openInputStream()))
-            {
-                magic = FileMagic.valueOf(in);
-            }
-
-            if (magic == FileMagic.OOXML)
-            {
-                checkUncompressedSize(file);
-            }
-            else if (magic == FileMagic.OLE2)
-            {
-                // An encrypted .xlsx is a zip inside OLE2 that POI decrypts with Excel's default password, hiding it from the zip check
-                try (POIFSFileSystem fs = new POIFSFileSystem(file.toNioPathForRead().toFile(), true))
-                {
-                    if (fs.getRoot().hasEntry(Decryptor.DEFAULT_POIFS_ENTRY))
-                        throw new ApiUsageException("Encrypted Excel files are not supported.");
-                }
-            }
-        }
-
-        // POI loads the whole .xlsx into memory, so reject zip bombs before it opens the file
-        private static void checkUncompressedSize(FileLike file) throws IOException
-        {
-            try (ZipInputStream zip = new ZipInputStream(file.openInputStream()))
-            {
-                byte[] buf = new byte[8192];
-                long total = 0;
-                while (zip.getNextEntry() != null)
-                {
-                    int n;
-                    while ((n = zip.read(buf)) > 0)
-                    {
-                        total += n;
-                        if (total > MAX_UNCOMPRESSED_BYTES)
-                            throw new ApiUsageException("Spreadsheet is too large to parse: its contents are over " + (MAX_UNCOMPRESSED_BYTES / (1024 * 1024)) + " MB when uncompressed. Use a smaller file or save it as .csv.");
-                    }
-                }
-            }
-            catch (ZipException e)
-            {
-                throw new ApiUsageException("Unable to read file as an Excel document.", e);
-            }
         }
     }
 
