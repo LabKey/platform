@@ -2658,6 +2658,9 @@ public class ExperimentController extends SpringActionController
             {
                 tabLoader.setScanAheadLineCount(5000);
                 tabLoader.setMaxColumns(maxColumns);
+                tabLoader.setMaxInferenceCells(maxCells);
+                if (ignoreTypes)
+                    tabLoader.setInferTypes(false);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
 
                 if (ignoreTypes)

@@ -106,6 +106,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected boolean _initialized = false;
     protected int _scanAheadLineCount = 7500; // number of lines to scan trying to infer data types
     protected int _maxColumns = -1; // -1 means no limit
+    protected long _maxInferenceCells = -1; // -1 means no limit
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
     private boolean _inferTypes = true;
@@ -328,6 +329,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         if (getInferTypes())
         {
             int inferStartLine = _skipLines == -1 ? 1 : _skipLines;
+            int inferEndLine = numLines;
+            if (_maxInferenceCells > -1 && nCols > 0)
+                inferEndLine = (int) Math.min(numLines, inferStartLine + Math.max(1, _maxInferenceCells / nCols));
             for (int f = 0; f < nCols; f++)
             {
                 List<Class<?>> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
@@ -351,7 +355,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     }
                 }
 
-                for (int line = inferStartLine; line < numLines; line++)
+                for (int line = inferStartLine; line < inferEndLine; line++)
                 {
                     if (f >= lineFields[line].length)
                         continue;
@@ -493,6 +497,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     public void setMaxColumns(int maxColumns)
     {
         _maxColumns = maxColumns;
+    }
+
+    public void setMaxInferenceCells(long maxInferenceCells)
+    {
+        _maxInferenceCells = maxInferenceCells;
     }
 
     protected void checkColumnCount(int count)
