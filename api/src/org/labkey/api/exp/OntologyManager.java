@@ -1523,10 +1523,16 @@ public class OntologyManager
                 .unsafeAppend(" WHERE ").appendInClause("DomainId", domainIds, dialect));
 
             // Values other than defaults mean something outside these domains still uses the property
-            propertyIds.removeAll(new SqlSelector(schema, new SQLFragment()
+            List<Integer> keptIds = new SqlSelector(schema, new SQLFragment()
                 .unsafeAppend("SELECT DISTINCT PropertyId FROM ").append(getTinfoObjectProperty())
                 .unsafeAppend(" WHERE ").appendInClause("PropertyId", propertyIds, dialect))
-                .getArrayList(Integer.class));
+                .getArrayList(Integer.class);
+            if (!keptIds.isEmpty())
+            {
+                propertyIds.removeAll(keptIds);
+                List<String> examples = keptIds.stream().limit(10).map(OntologyManager::getPropertyDescriptor).filter(Objects::nonNull).map(PropertyDescriptor::getPropertyURI).toList();
+                _log.warn("Kept {} property descriptors that still have values but no longer belong to a domain, e.g., {}", keptIds.size(), examples);
+            }
 
             for (TableInfo table : List.of(schema.getTable("PropertyValidator"), schema.getTable("ConditionalFormat"), getTinfoPropertyDescriptor()))
             {
@@ -3463,10 +3469,15 @@ public class OntologyManager
             String defaultsParentLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + "Parent", scope, "deadDomain").toString();
             String defaultsLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX, scope, "deadDomain").toString();
             String liveDefaultsLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX, scope, "liveDomain").toString();
+            String keptPropUri = new Lsid("Junit", "OntologyManager", "keptProp").toString();
+            String keptValueLsid = new Lsid("Junit", "OntologyManager", "keptValueObject").toString();
 
             Runnable cleanup = () -> {
                 deleteDomainsInStorageSchemas(List.of(missingSchema));
-                deleteOntologyObjects(c, defaultsParentLsid, liveDefaultsLsid);
+                deleteOntologyObjects(c, defaultsParentLsid, liveDefaultsLsid, keptValueLsid);
+                PropertyDescriptor keptPd = getPropertyDescriptor(keptPropUri, c);
+                if (keptPd != null)
+                    deletePropertyDescriptor(keptPd);
                 if (getDomainDescriptor(liveDomainUri, c) != null)
                 {
                     try
@@ -3492,6 +3503,22 @@ public class OntologyManager
                 ensurePropertyDomain(sharedPd, liveDomain, 0);
                 ensurePropertyDomain(sharedPd, deadDomain, 0);
                 ensurePropertyDomain(exclusivePd, deadDomain, 1);
+
+                SqlExecutor executor = new SqlExecutor(getExpSchema());
+                executor.execute(new SQLFragment()
+                    .unsafeAppend("INSERT INTO ").append(getExpSchema().getTable("PropertyValidator"))
+                    .unsafeAppend(" (Name, TypeURI, Container, PropertyId) VALUES (?, ?, ?, ?)")
+                    .addAll("junitValidator", "urn:lsid:labkey.com:PropertyValidator:length", c, exclusivePd.getPropertyId()));
+                executor.execute(new SQLFragment()
+                    .unsafeAppend("INSERT INTO ").append(getExpSchema().getTable("ConditionalFormat"))
+                    .unsafeAppend(" (PropertyId, SortOrder, Filter, Bold, Italic, Strikethrough) VALUES (?, ?, ?, ?, ?, ?)")
+                    .addAll(exclusivePd.getPropertyId(), 0, "format.column~eq=x", true, false, false));
+
+                // A value that isn't a saved default means something else still uses the property, so it's kept
+                PropertyDescriptor keptPd = insertPropertyDescriptor(new PropertyDescriptor(keptPropUri, PropertyType.STRING, "keptProp", c));
+                ensurePropertyDomain(keptPd, deadDomain, 2);
+                ensureObject(c, keptValueLsid);
+                insertProperties(c, user, null, new ObjectProperty(keptValueLsid, c, keptPropUri, "stillUsed"));
 
                 ensureObject(c, defaultsLsid, defaultsParentLsid);
                 insertProperties(c, user, defaultsParentLsid,
@@ -3520,6 +3547,16 @@ public class OntologyManager
                 assertNull(getOntologyObject(c, defaultsLsid));
                 assertNull(getOntologyObject(c, defaultsParentLsid));
                 assertEquals("liveRemembered", getProperties(c, liveDefaultsLsid).get(sharedPd.getPropertyURI()));
+
+                for (String table : List.of("PropertyValidator", "ConditionalFormat"))
+                {
+                    assertEquals(table, 0L, (long) new SqlSelector(getExpSchema(), new SQLFragment()
+                        .unsafeAppend("SELECT COUNT(*) FROM ").append(getExpSchema().getTable(table))
+                        .unsafeAppend(" WHERE PropertyId = ?").add(exclusivePd.getPropertyId())).getObject(Long.class));
+                }
+
+                assertNotNull(getPropertyDescriptor(keptPd.getPropertyId()));
+                assertEquals("stillUsed", getProperties(c, keptValueLsid).get(keptPropUri));
             }
             finally
             {
