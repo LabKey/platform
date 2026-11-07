@@ -84,6 +84,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -92,6 +93,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
@@ -143,6 +145,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReentrantLockWithName;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
@@ -2844,13 +2847,27 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             if (null == domain)
                 continue;
 
+            DbSchema datasetSchema = StudySchema.getInstance().getDatasetSchema();
+            DomainDescriptor dd = OntologyManager.getDomainDescriptor(id);
+            if (null != domain.getStorageTableName() && (null == dd || !datasetSchema.getName().equalsIgnoreCase(dd.getStorageSchemaName())))
+            {
+                _log.warn("Skipping orphaned dataset domain {} in container {}: its storage isn't in the {} schema", domain, domain.getContainer().getPath(), datasetSchema.getName());
+                continue;
+            }
+
             // Dataset domain kinds match only domains whose dataset row exists, so Domain.delete() would NPE here. GH Issue 1612.
             try (DbScope.Transaction transaction = s.getScope().ensureTransaction())
             {
                 DefaultValueService.get().clearDefaultValues(domain.getContainer(), domain);
                 if (null != domain.getStorageTableName())
-                    StudySchema.getInstance().getDatasetSchema().dropTableIfExists(domain.getStorageTableName());
+                    datasetSchema.dropTableIfExists(domain.getStorageTableName());
                 OntologyManager.deleteDomain(domain.getTypeURI(), domain.getContainer());
+
+                DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(domain.getContainer(), String.format("The orphaned domain %s was deleted", domain.getName()));
+                event.setDomainUri(domain.getTypeURI());
+                event.setDomainName(domain.getName());
+                AuditLogService.get().addEvent(User.getAdminServiceUser(), event);
+
                 transaction.commit();
             }
             catch (RuntimeException x)
@@ -3109,12 +3126,18 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public static class TestCleanupOrphanedDatasetDomains extends Assert
     {
         @Test
-        public void test() throws DomainNotFoundException
+        public void test() throws Exception
         {
             Container c = JunitUtil.getTestContainer();
-            String domainUri = new Lsid("StudyDataset.Folder-" + c.getRowId(), "junitOrphanedDataset").toString();
+            User user = TestContext.get().getUser();
+            Lsid domainLsid = new Lsid("StudyDataset.Folder-" + c.getRowId(), "junitOrphanedDataset");
+            String domainUri = domainLsid.toString();
+            String elsewhereUri = new Lsid("StudyDataset.Folder-" + c.getRowId(), "junitOrphanedElsewhere").toString();
+            // Folder-level defaults of a user-created domain are keyed by its kind-qualified LSID
+            String defaultsLsid = new Lsid(DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "-" + domainLsid.getNamespacePrefix(), "Folder-" + c.getRowId(), domainLsid.getObjectId()).toString();
             String tableName = "junit_orphaned_dataset";
             DbSchema datasetSchema = StudySchema.getInstance().getDatasetSchema();
+            SimpleFilter auditFilter = new SimpleFilter(FieldKey.fromParts(DomainAuditProvider.COLUMN_NAME_DOMAIN_URI), domainUri);
 
             datasetSchema.dropTableIfExists(tableName);
             try
@@ -3123,17 +3146,35 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     .appendDottedIdentifiers(datasetSchema.getName(), tableName).unsafeAppend(" (x INT)"));
                 DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(new DomainDescriptor.Builder(domainUri, c)
                     .setName("junitOrphanedDataset").setStorageSchemaName(datasetSchema.getName()).setStorageTableName(tableName).build());
+                PropertyDescriptor pd = OntologyManager.insertPropertyDescriptor(new PropertyDescriptor(domainUri + "#junitProp", PropertyType.STRING, "junitProp", c));
+                OntologyManager.ensurePropertyDomain(pd, dd, 0);
+                OntologyManager.ensureObject(c, defaultsLsid);
+                OntologyManager.insertProperties(c, defaultsLsid, new ObjectProperty(defaultsLsid, c, pd.getPropertyURI(), "remembered"));
+
+                // Storage outside the dataset schema must be left alone
+                DomainDescriptor elsewhere = OntologyManager.ensureDomainDescriptor(new DomainDescriptor.Builder(elsewhereUri, c)
+                    .setName("junitOrphanedElsewhere").setStorageSchemaName("junit_not_studydataset").setStorageTableName(tableName).build());
+
+                int auditEventsBefore = AuditLogService.get().getAuditEvents(c, user, DomainAuditProvider.EVENT_TYPE, auditFilter, null).size();
 
                 cleanupOrphanedDatasetDomains();
 
                 assertNull(OntologyManager.getDomainDescriptor(dd.getDomainId()));
                 assertFalse(datasetSchema.getSqlDialect().isTableExists(datasetSchema.getScope(), datasetSchema.getName(), tableName));
+                assertNull(OntologyManager.getOntologyObject(c, defaultsLsid));
+                assertNull(OntologyManager.getPropertyDescriptor(pd.getPropertyId()));
+                assertEquals(auditEventsBefore + 1, AuditLogService.get().getAuditEvents(c, user, DomainAuditProvider.EVENT_TYPE, auditFilter, null).size());
+                assertNotNull(OntologyManager.getDomainDescriptor(elsewhere.getDomainId()));
             }
             finally
             {
                 datasetSchema.dropTableIfExists(tableName);
-                if (null != OntologyManager.getDomainDescriptor(domainUri, c))
-                    OntologyManager.deleteDomain(domainUri, c);
+                OntologyManager.deleteOntologyObject(defaultsLsid, c, true);
+                for (String uri : List.of(domainUri, elsewhereUri))
+                {
+                    if (null != OntologyManager.getDomainDescriptor(uri, c))
+                        OntologyManager.deleteDomain(uri, c);
+                }
             }
         }
     }

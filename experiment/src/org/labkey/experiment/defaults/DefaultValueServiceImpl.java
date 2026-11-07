@@ -59,16 +59,18 @@ public class DefaultValueServiceImpl implements DefaultValueService
 
     private String getContainerDefaultsLSID(Container container, Domain domain)
     {
-        String suffix = "Folder-" + container.getRowId();
         DomainKind<?> kind = domain.getDomainKind();
         if (kind != null && kind.isUserCreatedType())
-        {
-            Lsid domainLsid = new Lsid(domain.getTypeURI());
-            return (new Lsid(qualifyByDomainKind(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, domainLsid), suffix, domainLsid.getObjectId())).toString();
-        }
+            return getQualifiedContainerDefaultsLSID(container, domain);
         else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
-            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
+            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, "Folder-" + container.getRowId(), domain.getName())).toString();
 
+    }
+
+    private String getQualifiedContainerDefaultsLSID(Container container, Domain domain)
+    {
+        Lsid domainLsid = new Lsid(domain.getTypeURI());
+        return (new Lsid(qualifyByDomainKind(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, domainLsid), "Folder-" + container.getRowId(), domainLsid.getObjectId())).toString();
     }
 
     private String getUserDefaultsParentLSID(Container container, User user, Domain domain)
@@ -314,6 +316,9 @@ public class DefaultValueServiceImpl implements DefaultValueService
     public void clearDefaultValues(Container container, Domain domain)
     {
         clearDefaultValues(container, getContainerDefaultsLSID(container, domain));
+        // A domain whose kind no longer resolves (e.g., an orphaned dataset) may have stored its defaults under the qualified LSID
+        if (domain.getDomainKind() == null)
+            clearDefaultValues(container, getQualifiedContainerDefaultsLSID(container, domain));
         // get two expressions to delete all user-based defaults in this container:
         String userParentLsid = getUserDefaultsWildcardLSID(container, domain, true);
         String userScopesLsid = getUserDefaultsWildcardLSID(container, domain, false);
