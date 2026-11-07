@@ -1112,4 +1112,18 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private record ContainerDefaultRow(long objectId, String objectURI, int domainId, int domainCount) implements DefaultValueRow {}
 
     private record UserDefaultRow(long objectId, String objectURI, long parentId, String parentURI, String container, int domainId, int domainCount) implements DefaultValueRow {}
+
+    /**
+     * Called from exp-26.009-26.010.sql
+     * GitHub Issue #1612: deleting a module dropped its provisioned schemas but kept the domains stored in them.
+     */
+    @SuppressWarnings("unused")
+    @DeferredUpgrade
+    public static void deleteDomainsWithMissingStorage(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        OntologyManager.deleteDomainsWithMissingStorage();
+    }
 }
