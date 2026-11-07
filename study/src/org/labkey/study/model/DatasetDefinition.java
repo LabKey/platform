@@ -3168,12 +3168,20 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
             finally
             {
-                datasetSchema.dropTableIfExists(tableName);
-                OntologyManager.deleteOntologyObject(defaultsLsid, c, true);
-                for (String uri : List.of(domainUri, elsewhereUri))
+                // Log rather than throw so a cleanup failure can't mask the assertion that failed
+                try
                 {
-                    if (null != OntologyManager.getDomainDescriptor(uri, c))
-                        OntologyManager.deleteDomain(uri, c);
+                    datasetSchema.dropTableIfExists(tableName);
+                    OntologyManager.deleteOntologyObject(defaultsLsid, c, true);
+                    for (String uri : List.of(domainUri, elsewhereUri))
+                    {
+                        if (null != OntologyManager.getDomainDescriptor(uri, c))
+                            OntologyManager.deleteDomain(uri, c);
+                    }
+                }
+                catch (Exception e)
+                {
+                    _log.error("Failed to clean up orphaned dataset domain test fixtures", e);
                 }
             }
         }
