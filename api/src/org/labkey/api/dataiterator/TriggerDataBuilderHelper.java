@@ -149,7 +149,10 @@ public class TriggerDataBuilderHelper
                 sharedKeys = expTable.getExistingRecordSharedKeyColumnNames();
             }
 
-            di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, _target, !context.getInsertOption().updateOnly));
+            // GH Issue 1048: null padding would make MERGE overwrite every column the input omitted
+            QueryUpdateService.InsertOption option = context.getInsertOption();
+            boolean padMissingColumns = !option.updateOnly && (!option.mergeRows || option.replace);
+            di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, _target, padMissingColumns));
             context.setWithLookupRemapping(false);
 
             // Skip existing records

@@ -35,6 +35,7 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -45,10 +46,12 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ImportProgress;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -1242,6 +1245,122 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 assertEquals(expected, qus.getRows(_user, _container, keys));
             }
+        }
+    }
+    /** GH Issue 1048: MERGE must leave columns the input omits unchanged, with or without a trigger on the table. */
+    @TestTimeout(TestTimeout.DEFAULT * 5)
+    public static class MergeTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "ListMergeTest Project";
+        private static final String LIST_NAME = "Merge list";
+        private static final String KEY_NAME = "Key";
+        private static final String INT_FIELD = "A";
+        private static final String TEXT_FIELD = "B";
+
+        private static User _user;
+        private static Container _container;
+        private static ListDefinition _list;
+
+        @BeforeClass
+        public static void setup() throws Exception
+        {
+            _user = TestContext.get().getUser();
+
+            deleteTestContainer();
+            _container = ContainerManager.ensureContainer(PROJECT_NAME, _user);
+
+            _list = ListService.get().createList(_container, LIST_NAME, ListDefinition.KeyType.Integer);
+            _list.setKeyName(KEY_NAME);
+            addField(INT_FIELD, PropertyType.INTEGER);
+            addField(TEXT_FIELD, PropertyType.STRING);
+            _list.save(_user);
+        }
+
+        private static void addField(String name, PropertyType type)
+        {
+            Domain domain = _list.getDomain();
+            assertNotNull(domain);
+            DomainProperty dp = domain.addProperty();
+            dp.setName(name);
+            dp.setType(PropertyService.get().getType(_container, type.getXmlName()));
+            dp.setPropertyURI(ListDomainKind.createPropertyURI(LIST_NAME, name, _container, _list.getKeyType()).toString());
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            _list = null;
+            _container = null;
+            _user = null;
+
+            deleteTestContainer();
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+        }
+
+        /** Cached tables are locked, so only one built for write accepts another trigger factory */
+        private TableInfo tableWithTrigger()
+        {
+            AbstractTableInfo table = (AbstractTableInfo) new ListQuerySchema(_user, _container).getTable(LIST_NAME, null, true, true);
+            table.addTriggerFactory((_, _, _) -> List.of(new Trigger() {}));
+            table.resetTriggers(_container);
+            assertTrue(table.hasTriggers(_container));
+
+            return table;
+        }
+
+        private void insertRow(int key) throws Exception
+        {
+            TableInfo table = _list.getTable(_user);
+            assertNotNull(table);
+
+            BatchValidationException errors = new BatchValidationException();
+            table.getUpdateService().insertRows(_user, _container, List.of(CaseInsensitiveHashMap.of(KEY_NAME, key, INT_FIELD, 1, TEXT_FIELD, "x")), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        private void mergeIntField(TableInfo table, int key) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+            {
+                int count = table.getUpdateService().mergeRows(_user, _container, MapDataIterator.of(List.of(CaseInsensitiveHashMap.of(KEY_NAME, key, INT_FIELD, 2))), errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+                assertEquals(1, count);
+                tx.commit();
+            }
+        }
+
+        private void assertOmittedFieldKept(int key)
+        {
+            Map<String, Object> row = new TableSelector(_list.getTable(_user), new SimpleFilter(FieldKey.fromParts(KEY_NAME), key), null).getMap();
+            assertNotNull(row);
+            assertEquals(2, ((Number) row.get(INT_FIELD)).intValue());
+            assertEquals("MERGE nulled a column it was not given", "x", row.get(TEXT_FIELD));
+        }
+
+        @Test
+        public void mergeWithoutTriggerKeepsOmittedColumns() throws Exception
+        {
+            insertRow(1);
+            mergeIntField(_list.getTable(_user), 1);
+            assertOmittedFieldKept(1);
+        }
+
+        @Test
+        public void mergeWithTriggerKeepsOmittedColumns() throws Exception
+        {
+            insertRow(2);
+            mergeIntField(tableWithTrigger(), 2);
+            assertOmittedFieldKept(2);
         }
     }
 }

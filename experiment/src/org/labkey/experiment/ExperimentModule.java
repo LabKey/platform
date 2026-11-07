@@ -137,6 +137,7 @@ import org.labkey.experiment.api.ImportAbortResourceTestCase;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.SampleMergeTestCase;
 import org.labkey.experiment.api.SampleProvidedAmountAuditTestCase;
 import org.labkey.experiment.api.SampleTypeFilterSuggestionProvider;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
@@ -1140,6 +1141,7 @@ public class ExperimentModule extends SpringModule
             LineageTest.class,
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
+            SampleMergeTestCase.class,
             SampleProvidedAmountAuditTestCase.class,
             SampleTypeFilterSuggestionProvider.TestCase.class,
             SampleTypeServiceImpl.TestCase.class,
