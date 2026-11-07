@@ -1921,8 +1921,16 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
         });
 
-        // Dropping a schema leaves behind the domains stored in it, GH Issue 1612
-        OntologyManager.deleteDomainsInStorageSchemas(schemaActions.deleteList());
+        // Dropping a schema leaves behind the domains stored in it, GH Issue 1612. The schemas are already gone, so a
+        // failure here mustn't stop the module from being removed.
+        try
+        {
+            OntologyManager.deleteDomainsInStorageSchemas(schemaActions.deleteList());
+        }
+        catch (RuntimeException e)
+        {
+            _log.error("Failed to delete domains stored in dropped schemas {}", schemaActions.deleteList(), e);
+        }
 
         schemaActions.skipList().forEach(sam -> _log.info("Skipping drop of schema \"{}\" because it's in use by module \"{}\"", sam.schema(), sam.module()));
 

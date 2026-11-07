@@ -1466,11 +1466,16 @@ public class OntologyManager
         SQLFragment sql = new SQLFragment()
             .unsafeAppend("SELECT DISTINCT StorageSchemaName FROM ").append(getTinfoDomainDescriptor())
             .unsafeAppend(" WHERE StorageSchemaName IS NOT NULL");
-        List<String> missingSchemas = new SqlSelector(getExpSchema(), sql).getArrayList(String.class).stream()
+        List<String> storageSchemas = new SqlSelector(getExpSchema(), sql).getArrayList(String.class);
+
+        return deleteDomainsInStorageSchemas(findMissingSchemas(storageSchemas, existingSchemas, claimedSchemas));
+    }
+
+    private static List<String> findMissingSchemas(Collection<String> storageSchemas, Map<String, String> existingSchemas, Set<String> claimedSchemas)
+    {
+        return storageSchemas.stream()
             .filter(name -> !existingSchemas.containsKey(name) && !claimedSchemas.contains(name))
             .toList();
-
-        return deleteDomainsInStorageSchemas(missingSchemas);
     }
 
     /**
@@ -1524,6 +1529,11 @@ public class OntologyManager
                     .unsafeAppend("DELETE FROM ").append(table)
                     .unsafeAppend(" WHERE ").appendInClause("PropertyId", propertyIds, dialect));
             }
+
+            // exp.List references its domain without cascading; these rows went with the dropped list schema
+            executor.execute(new SQLFragment()
+                .unsafeAppend("DELETE FROM ").append(schema.getTable("List"))
+                .unsafeAppend(" WHERE ").appendInClause("DomainId", domainIds, dialect));
 
             executor.execute(new SQLFragment()
                 .unsafeAppend("DELETE FROM ").append(getTinfoDomainDescriptor())
@@ -3476,8 +3486,17 @@ public class OntologyManager
                 ensureObject(c, defaultsLsid, defaultsParentLsid);
                 insertProperties(c, user, defaultsParentLsid, new ObjectProperty(defaultsLsid, c, exclusivePd.getPropertyURI(), "remembered"));
 
+                TableInfo listTable = getExpSchema().getTable("List");
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment()
+                    .unsafeAppend("INSERT INTO ").append(listTable)
+                    .unsafeAppend(" (EntityId, Container, ListId, Name, DomainId, KeyName, KeyType) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                    .addAll(GUID.makeGUID(), c, Integer.MAX_VALUE, "junitDeadList", deadDomain.getDomainId(), "Key", "Integer"));
+
                 assertEquals(1, deleteDomainsInStorageSchemas(List.of(missingSchema.toUpperCase(Locale.ROOT))));
 
+                assertEquals(0L, (long) new SqlSelector(getExpSchema(), new SQLFragment()
+                    .unsafeAppend("SELECT COUNT(*) FROM ").append(listTable)
+                    .unsafeAppend(" WHERE DomainId = ?").add(deadDomain.getDomainId())).getObject(Long.class));
                 assertNull(getDomainDescriptor(deadDomain.getDomainId()));
                 assertNotNull(getDomainDescriptor(liveDomain.getDomainId()));
                 assertNull(getPropertyDescriptor(exclusivePd.getPropertyId()));
@@ -3488,6 +3507,45 @@ public class OntologyManager
             finally
             {
                 cleanup.run();
+            }
+        }
+
+        @Test
+        public void testFindMissingSchemas()
+        {
+            Map<String, String> existing = SchemaNameCache.get().getSchemaNameMap(getExpSchema().getScope());
+            Set<String> claimed = new CaseInsensitiveHashSet("junit_claimed_but_gone");
+
+            // Matching is case-insensitive against both the database's schemas and the claimed ones
+            assertEquals(List.of("junit_gone"), findMissingSchemas(List.of("exp", "EXP", "JUNIT_CLAIMED_BUT_GONE", "junit_gone"), existing, claimed));
+        }
+
+        @Test
+        public void testDeleteDomainsWithMissingStorage() throws Exception
+        {
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
+            String existingStorageUri = new Lsid("Junit", "OntologyManager", "existingStorage").toString();
+            String missingStorageUri = new Lsid("Junit", "OntologyManager", "missingStorage").toString();
+
+            try
+            {
+                DomainDescriptor existingStorage = ensureDomainDescriptor(new DomainDescriptor.Builder(existingStorageUri, c)
+                    .setName("existingStorage").setStorageSchemaName("EXP").setStorageTableName("junit_table").build());
+                DomainDescriptor missingStorage = ensureDomainDescriptor(new DomainDescriptor.Builder(missingStorageUri, c)
+                    .setName("missingStorage").setStorageSchemaName("junit_missing_storage2").setStorageTableName("junit_table").build());
+
+                deleteDomainsWithMissingStorage();
+
+                assertNotNull(getDomainDescriptor(existingStorage.getDomainId()));
+                assertNull(getDomainDescriptor(missingStorage.getDomainId()));
+            }
+            finally
+            {
+                for (String uri : List.of(existingStorageUri, missingStorageUri))
+                {
+                    if (getDomainDescriptor(uri, c) != null)
+                        deleteDomain(uri, c);
+                }
             }
         }
 
