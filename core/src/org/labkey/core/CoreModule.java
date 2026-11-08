@@ -58,6 +58,7 @@ import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.MultiChoice;
@@ -1652,6 +1653,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<DbSchema> getSchemasToTest()
     {
         Set<DbSchema> result = new LinkedHashSet<>(super.getSchemasToTest());
+        // Spring AI's PgVectorStore owns these tables, and their pgvector/uuid columns have no LabKey type mapping
+        result.remove(DbSchema.get(VECTOR_SCHEMA, DbSchemaType.Module));
 
         // Add the "labkey" schema in all module data sources as well... should match application.properties
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())
