@@ -545,7 +545,8 @@ public class DataIteratorUtil
             }
             catch (BatchValidationException x)
             {
-                return false;
+                // Unwrap with getValidationException().getCause()
+                throw new RuntimeValidationException(x);
             }
         }
 
