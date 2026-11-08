@@ -198,6 +198,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
 
         model.setTitle(title);
         model.setBody(body);
+        model.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(c, model.getRowId()));
 
         List<AttachmentFile> files = Collections.emptyList();
 
