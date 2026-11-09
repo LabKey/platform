@@ -20,13 +20,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.TemplateProperties;
+import org.labkey.api.util.AIFeaturesStatus;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpStatusException;
@@ -55,6 +58,7 @@ public class PageTemplate extends JspView<PageConfig>
 {
     public static String EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS = "PageTemplate#short-circuit-robots";
     private boolean isAppTemplate = false;
+    private boolean showAssistant = false;
 
     protected PageTemplate(String template, PageConfig page)
     {
@@ -84,8 +88,9 @@ public class PageTemplate extends JspView<PageConfig>
 
         WikiService wikiService = WikiService.get();
 
+        boolean isStartupComplete = ModuleLoader.getInstance().isStartupComplete();
         WebPartView<?> header = null;
-        if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())
+        if (isStartupComplete && null != wikiService && null != c && null != c.getProject())
         {
             header = wikiService.getView(c.getProject(), "_header", false);
             if (null != header)
@@ -93,6 +98,16 @@ public class PageTemplate extends JspView<PageConfig>
         }
 
         setView("header", header == null ? new Header(page) : header);
+
+        // Only templates with the default header mount the assistant
+        showAssistant = header == null && isAssistantAvailable(context.getUser());
+
+        if (showAssistant)
+        {
+            // For hot reload
+            // addClientDependency(ClientDependency.fromPath("http://localhost:3001/labKeyAssistant.js"));
+            addClientDependency(ClientDependency.fromPath("gen/labKeyAssistant"));
+        }
 
         // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
         setBody(body);
@@ -315,6 +330,20 @@ public class PageTemplate extends JspView<PageConfig>
     protected void setAppTemplate(boolean appTemplate)
     {
         isAppTemplate = appTemplate;
+    }
+
+    public static boolean isAssistantAvailable(User user)
+    {
+        return ModuleLoader.getInstance().isStartupComplete() &&
+                user != null && !user.isGuest() &&
+                OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT) &&
+                AIFeaturesStatus.isReady();
+    }
+
+    // The assistant button lives in the header, so follow pageTemplate.jsp's render-time header check
+    public boolean showAssistant()
+    {
+        return showAssistant && getModelBean().showHeader() != PageConfig.TrueFalse.False;
     }
 
     public ActionURL getPermaLink()
