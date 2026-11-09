@@ -36,6 +36,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -252,6 +254,18 @@ public class DataIteratorUtil
      */
     protected static TableMap buildTableMap(TableInfo target, boolean useImportAliases)
     {
+        return buildTableMap(target, useImportAliases, kindSystemImportAliases(target));
+    }
+
+    private static Set<String> kindSystemImportAliases(TableInfo target)
+    {
+        Domain domain = target.getDomain();
+        DomainKind<?> kind = null == domain ? null : domain.getDomainKind();
+        return null == kind ? Set.of() : kind.getSystemImportAliases();
+    }
+
+    protected static TableMap buildTableMap(TableInfo target, boolean useImportAliases, Set<String> kindSystemAliases)
+    {
         /* CONSIDER: move this functionality into a TableInfo method so this map (or maps) can be cached */
         List<ColumnInfo> cols = target.getColumns().stream()
                 .filter(col -> !col.isMvIndicatorColumn() && !col.isRawValueColumn())
@@ -259,6 +273,7 @@ public class DataIteratorUtil
 
         Map<String, Pair<ColumnInfo, TokenRank>> ranked = new CaseInsensitiveHashMap<>(cols.size()*4);
         Map<String, Set<FieldKey>> ambiguous = new CaseInsensitiveHashMap<>();
+        FieldKey containerFieldKey = target.getContainerFieldKey();
 
         for (ColumnInfo col : cols)
         {
@@ -276,7 +291,7 @@ public class DataIteratorUtil
             for (String alias : col.getSystemImportAliasSet())
                 putToken(ranked, ambiguous, alias, col, TokenRank.systemAlias);
 
-            if (useImportAliases || "folder".equalsIgnoreCase(col.getName()))
+            if (useImportAliases || col.getFieldKey().equals(containerFieldKey))
             {
                 for (String alias : col.getImportAliasSet())
                     putToken(ranked, ambiguous, alias, col, TokenRank.userAlias);
@@ -288,6 +303,21 @@ public class DataIteratorUtil
             putToken(ranked, ambiguous, col.getLabel(), col, TokenRank.label);
             putToken(ranked, ambiguous, col.getPropertyURI(), col, TokenRank.propertyUri);
             putToken(ranked, ambiguous, col.getName(), col, TokenRank.name);
+        }
+
+        // GH Issue 1584: a token the kind claims for a built-in column never falls through to something a designer
+        // configured. A field named for that column shadows it -- addColumn replaces the entry rather than refusing --
+        // which takes the system alias off the table and would otherwise leave the token to a field's own alias or
+        // label, writing the server's value into it. A column claiming the token by name still wins it.
+        for (String token : kindSystemAliases)
+        {
+            Pair<ColumnInfo, TokenRank> claim = ranked.get(token);
+            if (null != claim && claim.second.compareTo(TokenRank.systemAlias) < 0)
+            {
+                LOG.warn("Import token '{}' in '{}' is claimed by field '{}' rather than the built-in column it belongs to; leaving it unresolved.",
+                        token, target.getName(), claim.first.getName());
+                ranked.remove(token);
+            }
         }
 
         // Debug, not warn: this runs on every coerce step and every cached-map miss, so a single broken design would
@@ -715,6 +745,14 @@ public class DataIteratorUtil
             return col;
         }
 
+        /** getContainerFieldKey() only recognises a GUID-typed column, so the container column has to be one. */
+        private BaseColumnInfo guidCol(String name)
+        {
+            BaseColumnInfo col = new BaseColumnInfo(name, _table, JdbcType.GUID);
+            _table.addColumn(col);
+            return col;
+        }
+
         private TableMap build(boolean useImportAliases)
         {
             return buildTableMap(_table, useImportAliases);
@@ -796,10 +834,16 @@ public class DataIteratorUtil
         }
 
         @Test
-        public void aFolderColumnKeepsItsUserAliasesWhenUserAliasesAreOff()
+        public void theContainerColumnKeepsItsUserAliasesWhenUserAliasesAreOff()
         {
-            col("Folder").setImportAliasesSet(Set.of("legacyFolder"));
-            assertEquals("Folder", resolve(build(false), "legacyFolder"));
+            // getContainerFieldKey() finds a GUID-typed column named "container" or "folder"; a user's String field of
+            // the same name is not one, so it no longer inherits the exemption the old name match gave it.
+            guidCol("container").setImportAliasesSet(Set.of("legacyFolder"));
+            col("NotTheContainer").setImportAliasesSet(Set.of("userToken"));
+
+            TableMap map = build(false);
+            assertEquals("container", resolve(map, "legacyFolder"));
+            assertNull("Every other column is still subject to useImportAliases", resolve(map, "userToken"));
         }
 
         @Test
@@ -857,6 +901,36 @@ public class DataIteratorUtil
             TableMap map = build(true);
             assertFalse("A field name outranks both aliases, so nothing is ambiguous", map.ambiguous.containsKey("dup"));
             assertEquals("dup", resolve(map, "dup"));
+        }
+
+        @Test
+        public void aShadowedKindTokenDoesNotFallThroughToAUserAlias()
+        {
+            // A legacy field named "folder" replaces the built-in container column, taking the system alias with it
+            col("folder");
+            col("UserField").setImportAliasesSet(Set.of("Container"));
+
+            TableMap map = buildTableMap(_table, true, Set.of("container"));
+            assertNull("A field's own alias must not inherit a token the kind reserves", resolve(map, "Container"));
+            assertEquals("folder", resolve(map, "folder"));
+        }
+
+        @Test
+        public void aKindTokenStillResolvesToTheColumnThatClaimsIt()
+        {
+            col("Folder").setSystemImportAliasesSet(Set.of("container"));
+            col("UserField").setImportAliasesSet(Set.of("Container"));
+
+            assertEquals("Folder", resolve(buildTableMap(_table, true, Set.of("container")), "container"));
+        }
+
+        @Test
+        public void aColumnNamedForAKindTokenStillWinsIt()
+        {
+            // Lists and datasets name the column "Container" outright; name rank outranks the reservation
+            col("Container");
+
+            assertEquals("Container", resolve(buildTableMap(_table, true, Set.of("container")), "container"));
         }
 
         @Test
