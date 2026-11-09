@@ -82,6 +82,7 @@ public class StatementUtils
     private final TableInfo _targetTable;
     private Set<String> _keyColumnNames = null;       // override the primary key of _table
     private Set<String> _skipColumnNames = Set.of();
+    private Set<String> _omittableColumnNames = Set.of();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardDataIteratorBuilder
     private boolean _selectIds = false;
@@ -149,6 +150,29 @@ public class StatementUtils
     {
         _skipColumnNames = null==skip ? Set.of() : skip;
         return this;
+    }
+
+    /** Insert columns that get their database default in rows binding {@link #useDefaultParameterName} to 1 */
+    public StatementUtils omittable(Set<String> omittable)
+    {
+        _omittableColumnNames = null==omittable ? Set.of() : omittable;
+        return this;
+    }
+
+    public static String useDefaultParameterName(String columnName)
+    {
+        return columnName + "$useDefault";
+    }
+
+    private boolean isInlineableDefault(@Nullable String defaultValue)
+    {
+        if (null == defaultValue)
+            return false;
+        if (_dialect.isPostgreSQL())
+            return true;
+        // SQL Server allows sequence and NEWSEQUENTIALID() defaults only in a DEFAULT constraint, not inside CASE
+        String upper = defaultValue.toUpperCase();
+        return _dialect.isSqlServer() && !upper.contains("NEXT VALUE FOR") && !upper.contains("NEWSEQUENTIALID");
     }
 
     public StatementUtils noupdate(Set<String> noupdate)
@@ -750,10 +774,25 @@ public class StatementUtils
             }
             else
             {
-                if (null != _skipColumnNames && _skipColumnNames.contains(Objects.toString(remap.get(name),name)))
+                String inputName = Objects.toString(remap.get(name),name);
+                if (null != _skipColumnNames && _skipColumnNames.contains(inputName))
                     continue;
                 ParameterHolder ph = createParameter(column);
-                appendParameterOrVariable(valueSQL, ph);
+                if (Operation.insert == _operation && _omittableColumnNames.contains(inputName) && !ph.isConstant &&
+                        !column.isAutoIncrement() && isInlineableDefault(column.getJdbcDefaultValue()))
+                {
+                    // GH Issue 1867: these dialects report the default as an expression, so evaluate it per row rather than splitting the batch by omitted columns
+                    ParameterHolder useDefault = createParameter(useDefaultParameterName(name), JdbcType.INTEGER);
+                    valueSQL.unsafeAppend("CASE WHEN ");
+                    appendParameterOrVariable(valueSQL, useDefault);
+                    valueSQL.unsafeAppend(" = 1 THEN (").append(new SQLFragment().setSqlUnsafe(column.getJdbcDefaultValue())).unsafeAppend(") ELSE ");
+                    appendParameterOrVariable(valueSQL, ph);
+                    valueSQL.unsafeAppend(" END");
+                }
+                else
+                {
+                    appendParameterOrVariable(valueSQL, ph);
+                }
             }
             cols.add(column);
             values.add(valueSQL);
