@@ -217,6 +217,20 @@ public class SQLFragment
         return this;
     }
 
+    /** Flags SQL that must never be executed, without adding the marker text */
+    protected void markNotExecutable()
+    {
+        hasError = true;
+    }
+
+    /** Appends without the quote/semicolon check; allowed only once markNotExecutable() has been called */
+    protected void appendUnchecked(CharSequence charseq)
+    {
+        if (!hasError)
+            throw new IllegalStateException("appendUnchecked() requires a fragment marked not executable");
+        getStringBuilder().append(charseq);
+    }
+
     public boolean hasError()
     {
         // CTE sqlf is null between createCommonTableExpressionToken() and setCommonTableExpressionSql()

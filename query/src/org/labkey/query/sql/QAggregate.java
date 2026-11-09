@@ -442,7 +442,7 @@ public class QAggregate extends QExpr
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.unsafeAppend(" ").append(getTokenText()).unsafeAppend("(");
+        builder.unsafeAppend(" ").appendSourceText(getTokenText()).unsafeAppend("(");
         if (_distinct)
         {
             builder.unsafeAppend("DISTINCT ");

@@ -92,7 +92,7 @@ public class QType extends QExpr
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(jdbcType.name());
+        builder.appendSourceText(jdbcType.name());
         if (null != length)
         {
             builder.unsafeAppend("(").appendValue(length);

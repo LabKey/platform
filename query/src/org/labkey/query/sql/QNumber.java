@@ -101,7 +101,7 @@ public class QNumber extends QExpr implements IConstant
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(getValueString());
+        builder.appendSourceText(getValueString());
     }
 
     @NotNull

@@ -59,7 +59,7 @@ public class QValuesTable extends QTable
         builder.unsafeAppend(" VALUES ");
         values.appendSource(builder,false);
         builder.unsafeAppend(" AS ");
-        builder.append(_alias.getTokenText());
+        builder.appendIdentifier(_alias.getTokenText());
     }
 
     @Override
