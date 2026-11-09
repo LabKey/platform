@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
@@ -32,13 +33,16 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,6 +58,8 @@ import java.util.stream.Stream;
  */
 public class DbSequenceManager
 {
+    private static final Logger LOG = LogHelper.getLogger(DbSequenceManager.class, "Database-backed sequences");
+
     // This handler expects to always return a single integer value
     private static final ResultSetHandler<Integer> INTEGER_RETURNING_RESULTSET_HANDLER = (rs, conn) -> {
         rs.next();
@@ -285,8 +291,130 @@ public class DbSequenceManager
 
     static long next(DbSequence sequence)
     {
+        ReclaimableBlocks blocks = getReclaimableBlocks(sequence);
+        if (null != blocks)
+            return blocks.next(sequence);
+
         Pair<Long,Long> p = reserve(sequence, 1);
         return p.second;
+    }
+
+
+    // The holder for the current transaction, or null if the sequence isn't reclaimable or no transaction is active
+    private static @Nullable ReclaimableBlocks getReclaimableBlocks(DbSequence sequence)
+    {
+        if (!sequence.useCurrentTransaction())
+            return null;
+
+        DbScope.Transaction tx = getTableInfo().getSchema().getScope().getCurrentTransaction();
+        if (null == tx)
+            return null;
+
+        return tx.addCommitTask(new ReclaimableBlocks(), DbScope.CommitTaskOption.PRECOMMIT);
+    }
+
+
+    /**
+     * Reserves reclaimable sequence values in growing blocks, keyed per transaction rather than per handle because one
+     * transaction can hold several handles to the same sequence. The reserving UPDATE row-locks the sequence until
+     * commit; PRECOMMIT writes the unused tail back, so a commit that skips the write-back leaves a gap, never a duplicate.
+     */
+    private static class ReclaimableBlocks implements Runnable
+    {
+        private static final long MAX_BLOCK_SIZE = 100;
+
+        private static class Block
+        {
+            private long _current;
+            private final long _last;
+            private final long _size;
+
+            private Block(long current, long last, long size)
+            {
+                _current = current;
+                _last = last;
+                _size = size;
+            }
+        }
+
+        private final Map<Long, Block> _blocks = new HashMap<>();
+        // Draws from PRECOMMIT tasks that run after the write-back go straight to the database
+        private boolean _flushed = false;
+
+        synchronized long next(DbSequence sequence)
+        {
+            if (_flushed)
+                return reserve(sequence, 1).second;
+
+            Block block = _blocks.get(sequence.getRowId());
+            if (null == block || block._current == block._last)
+            {
+                long size = 1;
+                if (null != block)
+                    size = Math.min(block._size * 2, MAX_BLOCK_SIZE);
+                Pair<Long, Long> reserved = reserve(sequence, size);
+                block = new Block(reserved.first, reserved.second, size);
+                _blocks.put(sequence.getRowId(), block);
+            }
+
+            block._current++;
+            return block._current;
+        }
+
+        synchronized void ensureMinimum(DbSequence sequence, long minimum)
+        {
+            Block block = _blocks.get(sequence.getRowId());
+            if (null == block)
+            {
+                updateMinimum(sequence, minimum);
+            }
+            else if (minimum <= block._last)
+            {
+                block._current = Math.max(block._current, minimum);
+            }
+            else
+            {
+                // The stored value is the block's last, so this sets it to the minimum; keeping the size keeps blocks growing
+                updateMinimum(sequence, minimum);
+                _blocks.put(sequence.getRowId(), new Block(minimum, minimum, block._size));
+            }
+        }
+
+        synchronized void setSequenceValue(DbSequence sequence, long value)
+        {
+            _blocks.remove(sequence.getRowId());
+            updateSequenceValue(sequence, value);
+        }
+
+        @Override
+        public synchronized void run()
+        {
+            _flushed = true;
+            TableInfo tinfo = getTableInfo();
+            _blocks.forEach((rowId, block) -> {
+                if (block._current < block._last)
+                {
+                    SQLFragment sql = new SQLFragment().unsafeAppend("UPDATE ").append(tinfo)
+                            .unsafeAppend(" SET Value = ? WHERE RowId = ? AND Value = ?")
+                            .add(block._current).add(rowId).add(block._last);
+                    if (new SqlExecutor(tinfo.getSchema()).execute(sql) != 1)
+                        LOG.warn("DbSequence {} changed outside its reserved block; leaving values {}-{} unused", rowId, block._current + 1, block._last);
+                }
+            });
+            _blocks.clear();
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            return o instanceof ReclaimableBlocks;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return ReclaimableBlocks.class.hashCode();
+        }
     }
 
 
@@ -327,6 +455,15 @@ public class DbSequenceManager
     // Sets the sequence value to requested minimum, if it's currently less than this value
     static void ensureMinimum(DbSequence sequence, long minimum)
     {
+        ReclaimableBlocks blocks = getReclaimableBlocks(sequence);
+        if (null != blocks)
+            blocks.ensureMinimum(sequence, minimum);
+        else
+            updateMinimum(sequence, minimum);
+    }
+
+    private static void updateMinimum(DbSequence sequence, long minimum)
+    {
         TableInfo tinfo = getTableInfo();
 
         SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).unsafeAppend(" SET Value = ? WHERE RowId = ? AND Value < ?");
@@ -342,6 +479,15 @@ public class DbSequenceManager
 
     // Explicitly sets the sequence value, only used at shutdown!
     static void setSequenceValue(DbSequence sequence, long value)
+    {
+        ReclaimableBlocks blocks = getReclaimableBlocks(sequence);
+        if (null != blocks)
+            blocks.setSequenceValue(sequence, value);
+        else
+            updateSequenceValue(sequence, value);
+    }
+
+    private static void updateSequenceValue(DbSequence sequence, long value)
     {
         TableInfo tinfo = getTableInfo();
 
@@ -684,7 +830,7 @@ public class DbSequenceManager
         {
             Container c = JunitUtil.getTestContainer();
             String name = reclaimableName();
-            final int perTransaction = 3;
+            final int perTransaction = 5;
             final Set<Long> committed = new ConcurrentHashSet<>();
             final Set<Long> duplicates = new ConcurrentHashSet<>();
             final AtomicInteger iteration = new AtomicInteger();
@@ -707,6 +853,78 @@ public class DbSequenceManager
             long total = committed.size();
             assertEquals("Committed values must be exactly 1.." + total, LongStream.rangeClosed(1, total).boxed().collect(Collectors.toSet()), committed);
             assertEquals(total, DbSequenceManager.getReclaimable(c, name, 0).current());
+        }
+
+        // Reads the stored value on the transaction's connection, unlike current()
+        private static long storedValue(DbSequence seq)
+        {
+            TableInfo tinfo = getTableInfo();
+            SQLFragment sql = new SQLFragment().unsafeAppend("SELECT Value FROM ").append(tinfo).unsafeAppend(" WHERE RowId = ?").add(seq.getRowId());
+            return new SqlSelector(tinfo.getSchema(), sql).getObject(Long.class);
+        }
+
+        @Test
+        public void testReclaimableReservesBlockAndWritesBackTail()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = reclaimableName();
+
+            try (DbScope.Transaction tx = scope().ensureTransaction())
+            {
+                DbSequence seq = DbSequenceManager.getReclaimable(c, name, 0);
+                assertEquals(List.of(1L, 2L, 3L, 4L), draw(seq, 4));
+                assertTrue("Expected a block reserved past the drawn values", storedValue(seq) > 4);
+                assertEquals("current() returns the committed value", 0, seq.current());
+                tx.commit();
+            }
+
+            DbSequence seq = DbSequenceManager.getReclaimable(c, name, 0);
+            assertEquals(4, seq.current());
+            assertEquals(5, seq.next());
+        }
+
+        @Test
+        public void testReclaimableEnsureMinimumInTransaction()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = reclaimableName();
+
+            try (DbScope.Transaction tx = scope().ensureTransaction())
+            {
+                DbSequence seq = DbSequenceManager.getReclaimable(c, name, 0);
+                List<Long> values = new ArrayList<>(draw(seq, 4));
+                seq.ensureMinimum(6);
+                values.add(seq.next());
+                seq.ensureMinimum(3);
+                values.add(seq.next());
+                seq.ensureMinimum(20);
+                values.add(seq.next());
+                assertEquals(List.of(1L, 2L, 3L, 4L, 7L, 8L, 21L), values);
+                tx.commit();
+            }
+            assertEquals(21, DbSequenceManager.getReclaimable(c, name, 0).current());
+        }
+
+        @Test
+        public void testReclaimableDrawsFromPrecommitTasks()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = reclaimableName();
+            List<Long> beforeWriteBack = new ArrayList<>();
+            List<Long> afterWriteBack = new ArrayList<>();
+
+            try (DbScope.Transaction tx = scope().ensureTransaction())
+            {
+                DbSequence seq = DbSequenceManager.getReclaimable(c, name, 0);
+                tx.addCommitTask(() -> beforeWriteBack.add(seq.next()), DbScope.CommitTaskOption.PRECOMMIT);
+                assertEquals(List.of(1L, 2L, 3L, 4L), draw(seq, 4));
+                tx.addCommitTask(() -> afterWriteBack.add(seq.next()), DbScope.CommitTaskOption.PRECOMMIT);
+                tx.commit();
+            }
+
+            assertEquals(List.of(5L), beforeWriteBack);
+            assertEquals(List.of(6L), afterWriteBack);
+            assertEquals(6, DbSequenceManager.getReclaimable(c, name, 0).current());
         }
 
         @After
