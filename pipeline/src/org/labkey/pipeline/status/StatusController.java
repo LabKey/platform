@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.labkey.pipeline.status;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -35,6 +37,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.Table;
 import org.labkey.api.pipeline.NoSuchJobException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -51,13 +54,17 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -77,6 +84,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.analysis.AnalysisController;
+import org.labkey.pipeline.api.PipelineSchema;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.springframework.validation.BindException;
@@ -84,13 +92,16 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -98,6 +109,7 @@ import static org.labkey.pipeline.api.PipelineStatusManager.cancelStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.completeStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.deleteStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.getStatusFile;
+import static org.labkey.pipeline.api.PipelineStatusManager.getStatusFilesInScope;
 
 
 public class StatusController extends SpringActionController
@@ -391,8 +403,12 @@ public class StatusController extends SpringActionController
 
             if (!getContainer().equals(_statusFile.lookupContainer()))
             {
+                Container target = _statusFile.lookupContainer();
+                // Only redirect if the user can read the job's container; otherwise don't reveal that it exists
+                if (target == null || !target.hasPermission(getUser(), ReadPermission.class))
+                    throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
                 ActionURL url = getViewContext().cloneActionURL();
-                url.setContainer(_statusFile.lookupContainer());
+                url.setContainer(target);
                 throw new RedirectException(url);
             }
 
@@ -471,7 +487,7 @@ public class StatusController extends SpringActionController
             Container c = getContainerCheckAdmin();
 
             PipelineStatusFile psf = getStatusFile(form.getRowId());
-            if (psf == null)
+            if (psf == null || psf.lookupContainer() == null || !psf.lookupContainer().hasPermission(getUser(), ReadPermission.class))
                 throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             var status = StatusDetailsBean.create(c, psf, form.getOffset(), form.getCount());
@@ -488,7 +504,12 @@ public class StatusController extends SpringActionController
             Container c = getContainerCheckAdmin();
 
             PipelineStatusFile sf = getStatusFile(form.getRowId());
+
             if (sf == null)
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+            Container sfContainer = sf.lookupContainer();
+            // Only navigate to the job's container if the user can read it
+            if (sfContainer == null || !sfContainer.hasPermission(getUser(), ReadPermission.class))
                 throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             if (sf.getDataUrl() != null)
@@ -504,7 +525,7 @@ public class StatusController extends SpringActionController
                 }
             }
 
-            return urlDetails(c, form.getRowId());
+            return urlDetails(sfContainer, form.getRowId());
         }
     }
 
@@ -519,8 +540,12 @@ public class StatusController extends SpringActionController
             if (c == null || c.isRoot())
             {
                 PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
-                if (sf.getContainerId() != null)
-                    c = ContainerManager.getForId(sf.getContainerId());
+                if (sf == null)
+                    throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+                Container sfContainer = sf.lookupContainer();
+                // Only navigate to the job's container if the user can read it; otherwise don't reveal it exists
+                if (sfContainer != null && sfContainer.hasPermission(getUser(), ReadPermission.class))
+                    c = sfContainer;
             }
 
             if (c != null)
@@ -552,7 +577,8 @@ public class StatusController extends SpringActionController
             String fileName;
 
             PipelineStatusFile sf = getStatusFile(form.getRowId());
-            if (sf != null)
+            // Resolved by global rowId; only serve files for a job that belongs to the current container
+            if (sf != null && getContainer().equals(sf.lookupContainer()))
             {
                 fileName = form.getFilename();
 
@@ -721,6 +747,17 @@ public class StatusController extends SpringActionController
         private String _dataRegionSelectionKey;
         private boolean _confirm;
         private boolean _deleteRuns;
+        private List<PipelineStatusFileImpl> _statusFiles = List.of();
+
+        public List<PipelineStatusFileImpl> getStatusFiles()
+        {
+            return _statusFiles;
+        }
+
+        public void setStatusFiles(List<PipelineStatusFileImpl> statusFiles)
+        {
+            _statusFiles = statusFiles;
+        }
 
         public String getDataRegionSelectionKey()
         {
@@ -753,13 +790,17 @@ public class StatusController extends SpringActionController
         }
     }
 
-    // DeletePermission will be checked in PipelineStatusManager.deleteStatus()
+    // DeletePermission is checked per job, against the job's own container, in getView() and in PipelineStatusManager.deleteStatus()
     @RequiresPermission(ReadPermission.class)
     public class DeleteStatusAction extends FormViewAction<ConfirmDeleteStatusForm>
     {
         @Override
         public void validateCommand(ConfirmDeleteStatusForm form, Errors errors)
         {
+            // The confirmation page posts back the rowIds it displayed; only fall back to the grid selection
+            if (form.getRowIds() != null && form.getRowIds().length > 0)
+                return;
+
             // Don't clear the state yet because we're just validating at this point. We'll clear it as part of the
             // delete itself. See issue 44873
             Set<String> runs = DataRegionSelection.getSelected(getViewContext(), false);
@@ -777,6 +818,22 @@ public class StatusController extends SpringActionController
         @Override
         public ModelAndView getView(ConfirmDeleteStatusForm form, boolean reshow, BindException errors)
         {
+            Container c = getContainerCheckAdmin();
+
+            int[] rowIds = form.getRowIds() == null ? new int[0] : form.getRowIds();
+            // Scope to what deleteStatus() would delete, so the page can't list jobs the confirm wouldn't touch
+            List<PipelineStatusFileImpl> statusFiles = getStatusFilesInScope(c, getUser(), rowIds);
+            if (statusFiles.size() != Arrays.stream(rowIds).distinct().count())
+                throw new NotFoundException("Could not find status file for every requested rowId");
+
+            for (PipelineStatusFileImpl sf : statusFiles)
+            {
+                Container sfContainer = sf.lookupContainer();
+                if (sfContainer == null || !sfContainer.hasPermission(getUser(), DeletePermission.class))
+                    throw new NotFoundException("Could not find status file for rowId " + sf.getRowId());
+            }
+            form.setStatusFiles(statusFiles);
+
             return new JspView<>("/org/labkey/pipeline/status/deleteStatus.jsp", form, errors);
         }
 
@@ -787,15 +844,23 @@ public class StatusController extends SpringActionController
                 return false;
 
             getContainerCheckAdmin();
+
+            // Delete the jobs the confirmation page listed, not a selection that may since have changed
+            Set<Long> rowIds = new TreeSet<>();
+            for (int rowId : form.getRowIds() == null ? new int[0] : form.getRowIds())
+                rowIds.add((long) rowId);
+
             try
             {
-                deleteStatus(getViewBackgroundInfo().getContainer(), getViewBackgroundInfo().getUser(), form.isDeleteRuns(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
+                deleteStatus(getViewBackgroundInfo().getContainer(), getViewBackgroundInfo().getUser(), form.isDeleteRuns(), rowIds);
             }
             catch (PipelineProvider.HandlerException e)
             {
                 errors.addError(new LabKeyError(e.getMessage() == null ? "Failed to delete at least one job. It may be referenced by other jobs" : e.getMessage()));
                 return false;
             }
+
+            DataRegionSelection.clearAll(getViewContext());
             return true;
         }
 
@@ -926,7 +991,11 @@ public class StatusController extends SpringActionController
             for (Long rowId : rowIds)
             {
                 var sf = getStatusFile(rowId);
+                // Resolved by global rowId; reject a job that belongs to another container
                 if (sf == null)
+                    throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+                Container sfContainer = sf.lookupContainer();
+                if (sfContainer == null || !sfContainer.hasPermission(getUser(), UpdatePermission.class))
                     throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
                 if (firstDetailsURL == null)
@@ -1083,6 +1152,196 @@ public class StatusController extends SpringActionController
             assertForAdminOperationsPermission(user,
                 controller.new ForceRefreshAction()
             );
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testStatusDetailsContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            PipelineStatusFileImpl sf = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString());
+            long rowId = sf.getRowId();
+
+            ActionURL foreignUrl = new ActionURL(StatusDetailsAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
+
+            // This API authorizes against the job's OWN container (folder B), not the container in the URL, so it
+            // intentionally supports referencing a job from another container -- but only for a caller who can read the
+            // container the job actually lives in.
+            // A caller who can read folder A but NOT folder B must still get 404: the job must not be revealed to
+            // someone without rights to its container. This is the case that fails without the fix.
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+            // A site admin, who CAN read folder B, is served B's job through folder A -- the supported cross-container reference.
+            assertStatus(HttpServletResponse.SC_OK, get(foreignUrl, admin));
+
+            // Positive control: addressing the job through its own container also succeeds for a caller who can read it.
+            ActionURL ownUrl = new ActionURL(StatusDetailsAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+        }
+
+        @Test
+        public void testRetryStatusContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A job that lives in folder B
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.error.toString()).getRowId();
+
+            // A caller who can Update folder A (Editor) but has no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // Retrying B's job through folder A must 404 rather than re-queue a job in a container the caller can't touch.
+            ActionURL foreignUrl = new ActionURL(RetryStatusAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // The job must be untouched in its own container
+            assertEquals("Job status must be unchanged after a cross-container retry",
+                    PipelineJob.TaskStatus.error.toString(), getStatusFile((int) rowId).getStatus());
+
+            // Positive control (a real successful retry needs a serialized job) is covered by existing pipeline retry tests.
+        }
+
+        @Test
+        public void testShowDataContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString()).getRowId();
+
+            // Addressing B's job through folder A must 404 rather than redirect to / expose it
+            ActionURL foreignUrl = new ActionURL(ShowDataAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+            // A site admin who CAN read folder B gets a redirect
+            assertStatus(HttpServletResponse.SC_FOUND, get(foreignUrl, admin));
+
+            // Positive control: through its own container the action redirects (302) rather than 404
+            ActionURL ownUrl = new ActionURL(ShowDataAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_FOUND, get(ownUrl, admin));
+        }
+
+        @Test
+        public void testCompleteStatusContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            // A job in folder B with no serialized job store, so completeStatus() takes its fallback (bean update) path
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.error.toString()).getRowId();
+
+            // A caller with no rights in folder B must not be able to mark B's job complete via the fallback path
+            try
+            {
+                completeStatus(readerA, List.of(rowId));
+                fail("Expected UnauthorizedException marking a job complete in a container the caller can't update");
+            }
+            catch (UnauthorizedException ignored) {}
+            assertEquals("Status must be unchanged after an unauthorized complete",
+                    PipelineJob.TaskStatus.error.toString(), getStatusFile(rowId).getStatus());
+
+            // Positive control: a site admin (Update in B) can complete it through the same fallback path
+            completeStatus(admin, List.of(rowId));
+            assertEquals("Admin should be able to mark the job complete",
+                    PipelineJob.TaskStatus.complete.toString(), getStatusFile(rowId).getStatus());
+        }
+
+        @Test
+        public void testDetailsContainerScoping() throws Exception
+        {
+            // DetailsAction is the HTML job-details page (distinct from the StatusDetailsAction API). It resolves the
+            // job by global rowId; without the guard a caller could view another folder's job details through their own
+            // folder. The guard 404s when the caller cannot read the job's container, and otherwise redirects to it.
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString()).getRowId();
+
+            ActionURL foreignUrl = new ActionURL(DetailsAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
+            // A caller who can read folder A but NOT folder B must get 404 -- the page must not reveal B's job exists.
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+            // A site admin who CAN read folder B is redirected (302) to B rather than rendering B's job through A.
+            assertStatus(HttpServletResponse.SC_FOUND, get(foreignUrl, admin));
+
+            // Positive control: through its own container the details page renders (200), proving the guard rejects
+            // only the cross-container case rather than every request.
+            ActionURL ownUrl = new ActionURL(DetailsAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+        }
+
+        @Test
+        public void testDeleteStatusContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+            User readerB = createUserInRole(folderB, ReaderRole.class);
+
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString()).getRowId();
+            String rowIdParam = String.valueOf(rowId);
+
+            // A caller with no rights in folder B must not see B's job described through folder A
+            ActionURL foreignUrl = new ActionURL(DeleteStatusAction.class, folderA).addParameter("rowIds", rowIdParam);
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+
+            // Same on the POST that reshows the page, where the rowIds come from the data region selection
+            ActionURL selectUrl = new ActionURL(DeleteStatusAction.class, folderA).addParameter(DataRegion.SELECT_CHECKBOX_NAME, rowIdParam);
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(selectUrl, readerA));
+
+            // Read alone isn't enough: the page confirms a delete, so it requires DeletePermission like the POST does
+            ActionURL ownUrl = new ActionURL(DeleteStatusAction.class, folderB).addParameter("rowIds", rowIdParam);
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(ownUrl, readerB));
+
+            // Even a site admin gets 404 through folder A: deleteStatus() scopes its DELETE to the URL's container, so
+            // listing B's job here would promise a delete that silently wouldn't happen.
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, admin));
+
+            // Positive control: through its own container a caller who can delete gets the page
+            assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+
+            // Rendering the confirmation page must not delete anything
+            assertNotNull("Job must still exist after rendering the confirmation page", getStatusFile(rowId));
+        }
+
+        @Test
+        public void testDeleteStatusActsOnDisplayedJobs() throws Exception
+        {
+            // The page lists form.getRowIds(), so the confirm must delete those same ids rather than a grid selection
+            // that the confirming request may not carry at all.
+            Container folderB = createContainer("B");
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString()).getRowId();
+
+            ActionURL confirmUrl = new ActionURL(DeleteStatusAction.class, folderB)
+                    .addParameter("rowIds", String.valueOf(rowId))
+                    .addParameter("confirm", "true");
+            assertStatus(HttpServletResponse.SC_FOUND, post(confirmUrl, getAdmin()));
+            assertNull("Confirming must delete the job the page listed", getStatusFile(rowId));
+        }
+
+        // Insert a bare status file in the given container. FilePath is a required column; point it at a non-existent
+        // log so nothing tries to read it, and so getJobStore().getJob() returns null (exercising the bean-only paths).
+        private PipelineStatusFileImpl insertStatusFile(Container c, String status)
+        {
+            User admin = getAdmin();
+            PipelineStatusFileImpl sf = new PipelineStatusFileImpl();
+            sf.beforeInsert(admin, c.getId());
+            sf.setStatus(status);
+            // uq_statusfiles_filepath is a global unique constraint, so the path must be unique per run -- a GUID keeps
+            // a leftover row from an interrupted prior run from colliding with this insert.
+            sf.setFilePath(FileUtil.appendName(FileUtil.getTempDirectory(), "pipeline-scoping-test-" + c.getRowId() + "-" + status + "-" + GUID.makeGUID() + ".log").getAbsolutePath());
+            return Table.insert(admin, PipelineSchema.getInstance().getTableInfoStatusFiles(), sf);
         }
     }
 }

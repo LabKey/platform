@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ public class InsertIssueDefAction extends UserSchemaAction
         {
             if (_results.size() == 1)
             {
-                String name = String.valueOf(_results.get(0).get("name"));
+                String name = String.valueOf(_results.getFirst().get("name"));
 
                 IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), name);
                 if (issueListDef != null)

@@ -1,17 +1,34 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.mcp;
-
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.util.AIFeaturesStatus;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ToolContext;
@@ -23,6 +40,8 @@ import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 ///
@@ -44,20 +63,20 @@ import java.util.function.Supplier;
 ///     permission annotation is required, otherwise your tool will not be registered.**
 /// 4.  Add `ToolContext` as the first parameter to the method
 /// 5.  Add additional required or optional parameters to the method signature, as needed. Note that "required" is the
-///     default. Again here, the parameter descriptions are very important. Provide examples of parameter values.
+///     default. Again, here, the parameter descriptions are very important. Provide examples of parameter values.
 /// 6.  Use the helper method `getContext(ToolContext)` to retrieve the current `Container` and `User`
 /// 7.  Use the helper method `getUser(ToolContext)` in the rare cases where you need just a `User`
 /// 8.  Perform additional permissions checking (beyond what the annotations offer), where appropriate
 /// 9.  Filter all results to the current container, of course
 /// 10. For any error conditions, throw exceptions with detailed information. These will get translated into appropriate
-///     failure responses and the LLM client will attempt to correct any problems (hopefully).
+///     failure responses, and the LLM client will attempt to correct any problems (hopefully).
 /// 11. For success cases, return a String with a message or JSON content, for example, `JSONObject.toString()`. Spring
 ///     has some limited ability to convert other objects into JSON strings, but we haven't experimented with that. See
 ///     `DefaultToolCallResultConverter` and the ability to provide a custom result converter via the `@Tool` annotation.
 ///
 /// At registration time, the framework will:
 /// - Ensure all tools are annotated for permissions
-/// - Ensure there aren't multiple tools with the same name
+/// - Ensure there are not multiple tools with the same name
 ///
 /// On every tool request, before invoking any tool code, the framework will:
 /// - Authenticate the user or provide a guest user
@@ -79,17 +98,20 @@ import java.util.function.Supplier;
 ///
 /// CoreMcp and QueryMcp have examples of resource declarations.
 ///
-public interface McpService extends ToolCallbackProvider
+public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
 {
+    String VECTOR_SCHEMA = "vector_indexes"; // for pgvector extension, see core-26.005-26.006.sql
+
     Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
     String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
+    String ENABLE_AI_FEATURES = "enableAIFeatures";
 
     // Interface for MCP classes that we will "ingest" using Spring annotations. Provides a few helper methods.
     interface McpImpl
     {
         default ContainerUser getContext(ToolContext toolContext)
         {
-            User user = (User)toolContext.getContext().get("user");
+            User user = getUser(toolContext);
             Container container = (Container)toolContext.getContext().get("container");
             if (container == null)
                 throw new McpException("No container path is set. Ask the user which container/folder they want to use (you can call listContainers to show available options), then call setContainer before retrying.");
@@ -104,9 +126,6 @@ public interface McpService extends ToolCallbackProvider
         // Every MCP resource should call this on every invocation
         default void incrementResourceRequestCount(String resource)
         {
-            if (!OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG))
-                throw new RuntimeException("The MCP server is not enabled for external requests. Consider toggling the experimental feature flag.");
-
             get().incrementResourceRequestCount(resource);
         }
     }
@@ -122,9 +141,29 @@ public interface McpService extends ToolCallbackProvider
     static void setInstance(McpService service)
     {
         ServiceRegistry.get().registerService(McpService.class, service);
+        ServiceRegistry.get().registerService(AIFeaturesStatus.class, service);
+    }
+
+    default boolean isEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG);
+    }
+
+    default boolean isAIFeaturesEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(ENABLE_AI_FEATURES);
     }
 
     boolean isReady();
+
+    boolean isModelReady();
+
+    // Convenience for in-product AI features: the AI feature flag is on, the service is ready, and the model is ready.
+    @Override
+    default boolean isAIFeaturesReady()
+    {
+        return isAIFeaturesEnabled() && isReady() && isModelReady();
+    }
 
     // Register MCPs in Module.startup()
     default void register(McpImpl mcp)
@@ -152,35 +191,77 @@ public interface McpService extends ToolCallbackProvider
     void registerResources(@NotNull List<McpServerFeatures.SyncResourceSpecification> resources);
 
     @Override
-    ToolCallback @NonNull [] getToolCallbacks();
+    ToolCallback @NotNull [] getToolCallbacks();
 
-    default ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    default ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier)
     {
-        return getChat(session, agentName, systemPromptSupplier, true);
+        return getChat(session, conversationName, systemPromptSupplier, true);
     }
 
     void saveSessionContainer(ToolContext context, Container container);
 
     void incrementResourceRequestCount(String resource);
 
-    ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
+    default ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
+    {
+        return getChat(session, conversationName, systemPromptSupplier, createIfNotExists, null);
+    }
+
+    /** @param toolNames the registered tools this chat may offer the model, or null for all of them */
+    ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists, @Nullable Set<String> toolNames);
 
     void close(HttpSession session, ChatClient chat);
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
 
-    /** get consolidated response (good for many text oriented agents/use-cases) */
+    record VectorDocument(String id, String text, Map<String, Object> metadata) {}
+
+    /**
+     * get a consolidated response (good for many text-oriented agents/use-cases)
+     * @throws GuardrailException when a guardrail blocks the exchange, after dropping it so it can't block later turns
+     */
     MessageResponse sendMessage(ChatClient chat, String message);
 
-    /** get individual response parts, useful for agents that generate SQL or programmatic responses */
+    /**
+     * get individual response parts, useful for agents that generate SQL or programmatic responses
+     * @throws GuardrailException when a guardrail blocks the exchange, after dropping it so it can't block later turns
+     */
     default List<MessageResponse> sendMessageEx(ChatClient chat, String message)
     {
         return List.of(sendMessage(chat, message));
     }
 
     /**
+     * Collapses the latest {@code count + 1} exchanges in the chat's memory into one: the first exchange's user
+     * message followed by the latest reply. A last exchange that got no reply or a blank one is dropped.
+     */
+    void squashExchanges(ChatClient chat, int count);
+
+    /**
      * return an in-memory Vector store for prototyping RAG features
      * CONSIDER: Is it possible to implement VectorStoreRetriever wrapper for SearchService???
      */
     VectorStore getVectorStore();
+
+    /** Returns true if the vector store exists and contains at least one document. */
+    boolean isVectorStorePopulated(@NotNull VectorStore vs);
+
+    /**
+     * Adds documents to the vector store, automatically splitting any document whose token
+     * count exceeds the embedding model's input limit. Prefer this over
+     * {@code getVectorStore().add(...)} for indexing — it prevents the
+     * {@code IllegalArgumentException} that {@code TokenCountBatchingStrategy} throws on
+     * oversized inputs.
+     */
+    void addDocuments(List<VectorDocument> documents);
+
+    void saveVectorStore();
+
+    /** Drop and recreate the vector store table. Use when the embedding model has changed and dimensions no longer match. */
+    void resetVectorStore();
+
+    default HttpView<Object> getAssistantStatusView()
+    {
+        return new HtmlView(HtmlString.of("LabKey Assistant features are not available."));
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package org.labkey.api.module;
 
 import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.resource.Resource;
 
@@ -85,7 +85,7 @@ public interface ModuleResourceCacheHandler<V>
         return resource ->
         {
             String filename = resource.getName();
-            return StringUtils.endsWithIgnoreCase(filename, suffix) && filename.length() > suffix.length();
+            return Strings.CI.endsWith(filename, suffix) && filename.length() > suffix.length();
         };
     }
 
@@ -95,6 +95,6 @@ public interface ModuleResourceCacheHandler<V>
      */
     default Predicate<String> getFilenameFilter(String suffix)
     {
-        return filename -> StringUtils.endsWithIgnoreCase(filename, suffix) && filename.length() > suffix.length();
+        return filename -> Strings.CI.endsWith(filename, suffix) && filename.length() > suffix.length();
     }
 }

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
@@ -7,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.ontology.Unit;
@@ -102,7 +117,7 @@ public class MultiChoice
             boolean disabledInput = isDisabledInput(ctx);
             String formFieldName = getFormFieldName(ctx);
             ColumnInfo boundColumn = getBoundColumn();
-            IPropertyValidator textChoiceValidator = null==boundColumn ? null : PropertyService.get().getValidatorForColumn(boundColumn, PropertyValidatorType.TextChoice);
+            PropertyValidatorDef textChoiceValidator = null==boundColumn ? null : PropertyService.get().getValidatorForColumn(boundColumn, PropertyValidatorType.TextChoice);
 
             if (textChoiceValidator != null)
             {
@@ -558,7 +573,7 @@ public class MultiChoice
         //
 
         @Override
-        public void free() throws SQLException
+        public void free()
         {
 
         }
@@ -576,49 +591,49 @@ public class MultiChoice
         }
 
         @Override
-        public Object getArray() throws SQLException
+        public Object getArray()
         {
             return toArray(new String[size()]);
         }
 
         @Override
-        public Object getArray(Map<String, Class<?>> map) throws SQLException
+        public Object getArray(Map<String, Class<?>> map)
         {
             return toArray(new String[size()]);
         }
 
         @Override
-        public Object getArray(long index, int count) throws SQLException
+        public Object getArray(long index, int count)
         {
             return subList((int) index, (int) index + count).toArray(new String[0]);
         }
 
         @Override
-        public Object getArray(long index, int count, Map<String, Class<?>> map) throws SQLException
+        public Object getArray(long index, int count, Map<String, Class<?>> map)
         {
             return subList((int) index, (int) index + count).toArray(new String[0]);
         }
 
         @Override
-        public ResultSet getResultSet() throws SQLException
+        public ResultSet getResultSet()
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ResultSet getResultSet(Map<String, Class<?>> map) throws SQLException
+        public ResultSet getResultSet(Map<String, Class<?>> map)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ResultSet getResultSet(long index, int count) throws SQLException
+        public ResultSet getResultSet(long index, int count)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ResultSet getResultSet(long index, int count, Map<String, Class<?>> map) throws SQLException
+        public ResultSet getResultSet(long index, int count, Map<String, Class<?>> map)
         {
             throw new UnsupportedOperationException();
         }
@@ -773,7 +788,7 @@ public class MultiChoice
             {
                 var maps = csvLoader.load();
                 assertEquals(1, maps.size());
-                Map<String,Object> map = maps.get(0);
+                Map<String,Object> map = maps.getFirst();
                 assertTrue(map.get("column") instanceof String);
                 String value = (String) map.get("column");
                 assertEquals(expected, Array.from(value));
@@ -782,7 +797,7 @@ public class MultiChoice
             {
                 var maps = tsvLoader.load();
                 assertEquals(1, maps.size());
-                Map<String,Object> map = maps.get(0);
+                Map<String,Object> map = maps.getFirst();
                 assertTrue(map.get("column") instanceof String);
                 String value = (String) map.get("column");
                 assertEquals(expected, Array.from(value));

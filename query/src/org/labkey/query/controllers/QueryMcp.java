@@ -1,19 +1,40 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query.controllers;
 
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.mcp.McpInternal;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryParseException;
@@ -25,8 +46,10 @@ import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.SqlParser;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.mcp.annotation.McpResource;
@@ -34,27 +57,34 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.labkey.api.util.StringUtilsLabKey.pluralize;
 
 public class QueryMcp implements McpService.McpImpl
 {
+    private static final Logger LOG = LogHelper.getLogger(QueryMcp.class, "MCP query tools");
+    private static final String SCHEMA_NAME_DESCRIPTION = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\". Copy quotedName from listSchemas.";
+
     @McpResource(
-        uri = "resource://org/labkey/query/controllers/LabKeySql.md",
+        uri = "resource://org/labkey/query/controllers/prompts/LabKeySql.md",
         mimeType = "application/markdown",
         name = "LabKey SQL",
-        description = "Provide documentation for LabKey SQL specific syntax")
+        description = "Required reading before writing or debugging LabKey SQL. Covers lookup traversal, PIVOT, parameterized queries, cross-folder queries, and all available functions.")
     public ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
         incrementResourceRequestCount("LabKey SQL");
-        String markdown = IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
+        String markdown = IOUtils.resourceToString("org/labkey/query/controllers/prompts/LabKeySql.md", null, QueryController.class.getClassLoader());
         return new ReadResourceResult(List.of(
             new TextResourceContents(
-                "resource://org/labkey/query/controllers/LabKeySql.md",
+                "resource://org/labkey/query/controllers/prompts/LabKeySql.md",
                 "application/markdown",
                 markdown
             )
@@ -73,6 +103,7 @@ public class QueryMcp implements McpService.McpImpl
             array.put(new JSONObject(Map.of(
                 "name", entry.getKey().getName(),
                 "quotedName", entry.getKey().toSQLString(),
+                "apiName", entry.getKey().toString(),
                 "description", StringUtils.trimToEmpty(entry.getValue().getDescription())
             )));
         }
@@ -81,7 +112,7 @@ public class QueryMcp implements McpService.McpImpl
 
     @Tool(description = "Provide list of tables within the provided schema.")
     @RequiresPermission(ReadPermission.class)
-    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName)
+    String listTables(ToolContext toolContext, @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName)
     {
         var json = _listTables(getContext(toolContext), schemaName);
         return json.toString();
@@ -91,7 +122,7 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String listColumns(
         ToolContext toolContext,
-        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
+        @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName,
         @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
     )
     {
@@ -103,7 +134,7 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String getSourceForSavedQuery(
         ToolContext toolContext,
-        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
+        @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName,
         @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
     )
     {
@@ -118,7 +149,7 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String validateSQL(
             ToolContext toolContext,
-            @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
+            @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName,
             @ToolParam(description = "SQL source") String sql
     )
     {
@@ -151,11 +182,108 @@ public class QueryMcp implements McpService.McpImpl
         catch (Exception x)
         {
             // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
-            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```" + x.getMessage() + "```";
+            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```\n" + x.getMessage() + "\n```";
         }
         return "success";
     }
 
+    @Tool(description = "Validate a SQL expression for a calculated column. The set of available columns and their types, including any PHI-restricted columns, is supplied by the hosting endpoint, not by the caller; you only need to provide the expression itself.")
+    @McpInternal("Added for validation for the ExpressionAssistantAgentAction endpoint.")
+    @RequiresPermission(ReadPermission.class)
+    String validateCalculatedColumnExpression(
+            ToolContext toolContext,
+            @ToolParam(description = "SQL expression for the calculated column") String expression
+    )
+    {
+        var context = getContext(toolContext);
+
+        @SuppressWarnings("unchecked")
+        Map<FieldKey, JdbcType> columnMap = (Map<FieldKey, JdbcType>) toolContext.getContext().get("columnMap");
+        @SuppressWarnings("unchecked")
+        List<FieldKey> phiColumns = (List<FieldKey>) toolContext.getContext().get("phiColumns");
+
+        if (columnMap == null)
+            throw new IllegalArgumentException("validateCalculatedColumnExpression requires a columnMap supplied by the endpoint; it cannot be invoked directly.");
+
+        if (toolContext.getContext().get(ExpressionAssistantAgentAction.VALIDATION_CALLS_ATTR) instanceof AtomicInteger calls)
+            calls.incrementAndGet();
+
+        try
+        {
+            QueryServiceImpl.CalculatedColumnParseResult result = QueryServiceImpl.get().parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+
+            JSONObject json = new JSONObject();
+            json.put("jdbcType", result.jdbcType().name());
+            json.put("expression", expression);
+
+            return json.toString();
+        }
+        catch (QueryException x)
+        {
+            return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```\n" + x.getMessage() + "\n```";
+        }
+    }
+
+
+    @Tool(description =
+            "Execute a LabKey SQL query and return results as tab-separated values (RFC 4180 TSV). " +
+                    "Use this to inspect actual query results while writing or debugging SQL. " +
+                    "Prefer validateSQL when you only need to check syntax without running the query. " +
+                    "Returns up to 100 rows by default, or up to 1,000 rows when using limit; use offset and limit to page through larger result sets. " +
+                    "Response format: a header row of column names, then one data row per newline, fields tab-separated. " +
+                    "Fields containing tabs, newlines, or double-quotes are RFC 4180 quoted. " +
+                    "On SQL error, the error message is returned as plain text rather than throwing. " +
+                    "For data analysis or bulk retrieval, use the LabKey Python or R client APIs instead of this tool. " +
+                    "**Important** This tool does not yet support queries with named parameters.")
+    @RequiresPermission(ReadPermission.class)
+    String executeSQL(
+            ToolContext toolContext,
+            @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName,
+            @ToolParam(description = "LabKey SQL to execute") String sql,
+            @ToolParam(description = "Rows to skip before returning results.", required=false) Integer offset,
+            @ToolParam(description = "Number of rows to return (limit <= 1000, default=100)", required=false) Integer limit
+    )
+    {
+        var cu = getContext(toolContext);
+        var schema = DefaultSchema.get(cu.getUser(), cu.getContainer(), getSchemaKey(schemaName));
+        if (!(schema instanceof UserSchema userSchema))
+            return "Could not find schema " + schemaName;
+
+        offset = null==offset ? 0 : offset < 0 ? 0 : offset;
+        limit = (limit == null || limit < 0) ? 100 : Math.min(1000, limit);
+        var execute = new SqlController.SqlExecute(cu, userSchema, sql)
+                .page(offset, limit)
+                .truncation(500, "…[truncated]");
+
+        try
+        {
+            StringWriter sw = new StringWriter(2000);
+            SqlController.SqlExecute.ExecuteResult result = execute.execute(sw);
+            String message = "\n-- " + pluralize(result.rows(), "row", "rows") + " returned";
+            if (result.complete())
+                message += ".";
+            else
+                message += ", more may be available (use offset and limit to page).";
+             return sw + message;
+        }
+        catch (Exception x)
+        {
+            if (x instanceof SQLException sqlx)
+                logSqlFailure(sqlx);
+            else if (x instanceof RuntimeSQLException rsx)
+                logSqlFailure(rsx.getSQLException());
+            else if (!(x instanceof QueryException))
+                LOG.error("executeSQL failed", x);
+            return x.getMessage() != null ? x.getMessage() : x.getClass().getSimpleName();
+        }
+    }
+
+    // DB error messages echo literals from the model's SQL, which often come from the user's prompt
+    private static void logSqlFailure(SQLException x)
+    {
+        LOG.warn("executeSQL failed with SQLState {}", x.getSQLState());
+        LOG.debug("executeSQL failed", x);
+    }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */
     public static Map<SchemaKey, UserSchema> _listAllSchemas(DefaultSchema root)

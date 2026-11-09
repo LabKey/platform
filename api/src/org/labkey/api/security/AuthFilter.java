@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.labkey.api.security;
 
+import datadog.trace.api.interceptor.MutableSpan;
+import io.opentracing.util.GlobalTracer;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
@@ -30,16 +32,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.SecurityManager.AuthenticationAttempt;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HttpsUtil;
-import org.labkey.api.util.Pair;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 
@@ -53,9 +57,11 @@ import java.util.Random;
 public class AuthFilter implements Filter
 {
     private static final Object FIRST_REQUEST_LOCK = new Object();
+    /** Datadog's standard user attribute */
+    private static final String USER_ID_TAG = "usr.id";
+    private static final String IMPERSONATED_USER_ID_TAG = "labkey.impersonated_user_id";
 
     public static final String STRICT_TRANSPORT_SECURITY_HEADER_NAME = "Strict-Transport-Security";
-    public static final String X_FRAME_OPTIONS_HEADER_NAME = "X-Frame-Options";
     public static final String X_CONTENT_TYPE_OPTIONS_HEADER_NAME = "X-Content-Type-Options";
     public static final String REFERRER_POLICY_HEADER_NAME = "Referrer-Policy";
     public static final String SERVER_HEADER_NAME = "Server";
@@ -87,8 +93,6 @@ public class AuthFilter implements Filter
 
         if (ModuleLoader.getInstance().isStartupComplete())
         {
-            if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
-                resp.setHeader(X_FRAME_OPTIONS_HEADER_NAME, AppProps.getInstance().getXFrameOption());
             resp.setHeader(X_CONTENT_TYPE_OPTIONS_HEADER_NAME, "nosniff");
             resp.setHeader(REFERRER_POLICY_HEADER_NAME, "origin-when-cross-origin" );
 
@@ -171,12 +175,12 @@ public class AuthFilter implements Filter
 
         try
         {
-            Pair<User, HttpServletRequest> pair = SecurityManager.attemptAuthentication(req, resp);
+            AuthenticationAttempt attempt = SecurityManager.attemptAuthentication(req, resp);
 
-            if (null != pair)
+            if (null != attempt)
             {
-                user = pair.getKey();
-                req = pair.getValue();
+                user = attempt.user();
+                req = attempt.request();
             }
         }
         catch (UnauthorizedImpersonationException uie)
@@ -192,6 +196,11 @@ public class AuthFilter implements Filter
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, uee.getMessage());
             return;
         }
+        catch (BadRequestException bre)
+        {
+            resp.sendError(bre.getStatus(), bre.getMessage());
+            return;
+        }
         catch (UnauthorizedException ue)
         {
             ExceptionUtil.handleException(req, resp, ue, ue.getMessage(), false);
@@ -199,14 +208,9 @@ public class AuthFilter implements Filter
         }
 
         if (null == user)
-        {
-            if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS))
-                user = User.nobody;
-            else
-                user = User.guest;
-        }
+            user = getGuestUser();
         else
-            UserManager.updateRecentUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
+            UserManager.updateRecentUser(user.isImpersonated() ? user.getImpersonatingUser() : user);
 
         req = AuthenticatedRequest.create(req, user);
 
@@ -220,6 +224,7 @@ public class AuthFilter implements Filter
         }
 
         QueryService.get().setEnvironment(QueryService.Environment.USER, user);
+        tagRootSpan(user);
 
         try
         {
@@ -252,6 +257,19 @@ public class AuthFilter implements Filter
         }
     }
 
+    // The user id, not the email, so no personal data reaches Datadog; with the host it still identifies the account
+    private static void tagRootSpan(User user)
+    {
+        User authenticated = user.isImpersonated() ? user.getImpersonatingUser() : user;
+        if (authenticated.isGuest() || !(GlobalTracer.get().activeSpan() instanceof MutableSpan active))
+            return;
+
+        MutableSpan root = active.getLocalRootSpan();
+        root.setTag(USER_ID_TAG, String.valueOf(authenticated.getUserId()));
+        if (user.isImpersonated())
+            root.setTag(IMPERSONATED_USER_ID_TAG, String.valueOf(user.getUserId()));
+    }
+
     private void addRandomHeader(HttpServletRequest req, HttpServletResponse resp)
     {
         // make response size  a bit random (compressed or not)
@@ -262,7 +280,13 @@ public class AuthFilter implements Filter
         resp.addHeader("X-LK-NONCE", sb.toString());
     }
 
-
+    public static User getGuestUser()
+    {
+        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS))
+            return User.nobody;
+        else
+            return User.guest;
+    }
 
     private boolean clearRequestAttributes(HttpServletRequest request)
     {

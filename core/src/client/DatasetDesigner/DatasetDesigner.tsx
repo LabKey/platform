@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,29 @@
  * limitations under the License.
  */
 
-import React, { PureComponent, ReactNode } from 'react';
+import React, { FC, PureComponent, ReactNode } from 'react';
 import {
     Alert,
+    AppContexts,
+    BeforeUnload,
     DatasetDesignerPanels,
     DatasetModel,
     fetchDatasetDesign,
     LoadingSpinner,
-    BeforeUnload,
-    withServerContext,
+    redirect,
 } from '@labkey/components';
 import { ActionURL, Domain, getServerContext } from '@labkey/api';
 
 import '../DomainDesigner.scss';
 
 interface State {
-    model: DatasetModel;
     isLoadingModel: boolean;
     message?: string;
+    model: DatasetModel;
 }
 
 class DatasetDesigner extends PureComponent<any, State> {
-    private _dirty: boolean = false;
+    private _dirty = false;
 
     constructor(props) {
         super(props);
@@ -66,9 +67,7 @@ class DatasetDesigner extends PureComponent<any, State> {
 
     navigate(defaultUrl: string): void {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || defaultUrl;
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     }
 
     navigateOnComplete(model: DatasetModel): void {
@@ -133,12 +132,16 @@ class DatasetDesigner extends PureComponent<any, State> {
                 <DatasetDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    onComplete={this.onComplete}
                     onChange={this.onChange}
+                    onComplete={this.onComplete}
                 />
             </BeforeUnload>
         );
     }
 }
 
-export const App = withServerContext(DatasetDesigner);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <DatasetDesigner />
+    </AppContexts>
+);

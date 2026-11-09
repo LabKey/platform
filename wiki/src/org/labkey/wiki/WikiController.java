@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,16 @@
 package org.labkey.wiki;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -57,15 +59,25 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
@@ -74,7 +86,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.PermanentRedirectException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
@@ -97,6 +108,7 @@ import org.labkey.wiki.model.WikiTree;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
+import org.labkey.wiki.view.PermanentRedirectException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -123,7 +135,7 @@ import java.util.stream.Collectors;
 
 public class WikiController extends SpringActionController
 {
-    private static final Logger LOG = LogManager.getLogger(WikiController.class);
+    private static final Logger LOG = LogHelper.getLogger(WikiController.class, "Wiki action debugging");
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
 
     public WikiController()
@@ -196,7 +208,7 @@ public class WikiController extends SpringActionController
             //get all containers that include wiki pages
             _containerList = populateWikiContainerList(context);
             if (!_containerList.contains(context.getContainer()))
-                _containerList.add(0, context.getContainer());
+                _containerList.addFirst(context.getContainer());
 
             //get wiki page list for the currently stored container (or current container if null)
             Container cStored;
@@ -348,7 +360,7 @@ public class WikiController extends SpringActionController
             }
             else
             {
-                String firstName = WikiSelectManager.getPageNames(c).iterator().next();
+                String firstName = WikiSelectManager.getPageNames(c).getFirst();
                 wiki = WikiSelectManager.getWiki(c, firstName);
             }
         }
@@ -380,7 +392,8 @@ public class WikiController extends SpringActionController
             if (!perms.allowDelete(_wiki))
                 throw new UnauthorizedException("You do not have permissions to delete this wiki page");
 
-            return new JspView<>("/org/labkey/wiki/view/wikiDelete.jsp", _wiki);
+            // GH Issue 1468: warn up front, rather than failing on submit, when the subtree can't be deleted
+            return new JspView<>("/org/labkey/wiki/view/wikiDelete.jsp", new WikiDeleteBean(_wiki, findUndeletableDescendant(perms, _wiki)));
         }
 
         @Override
@@ -395,16 +408,50 @@ public class WikiController extends SpringActionController
             if (!perms.allowDelete(_wiki))
                 throw new UnauthorizedException("You do not have permissions to delete this wiki page");
 
+            // GH Issue 1468: permission on the root page (e.g., as its creator) doesn't extend to descendants created by
+            // others. Check the whole subtree up front so the delete is all-or-nothing, then check each page again just
+            // before it's deleted to catch any child added concurrently.
+            if (form.getIsDeletingSubtree())
+            {
+                Wiki blocked = findUndeletableDescendant(perms, _wiki);
+                if (null != blocked)
+                    throw undeletableDescendantException(blocked);
+            }
+
             try
             {
                 //delete page and all versions
-                getWikiManager().deleteWiki(getUser(), c, _wiki, form.getIsDeletingSubtree());
+                getWikiManager().deleteWiki(getUser(), c, _wiki, form.getIsDeletingSubtree(), descendant -> {
+                    if (!perms.allowDelete(descendant))
+                        throw undeletableDescendantException(descendant);
+                });
             }
             catch (OptimisticConflictException e)
             {
                 // Issue 13549: if someone else already deleted the wiki, no need to throw exception
             }
             return true;
+        }
+
+        // Returns the first descendant (depth-first) the user cannot delete, or null if all are deletable.
+        // A single blocked page prevents the subtree delete, so there's no need to collect every blocked page.
+        private @Nullable Wiki findUndeletableDescendant(BaseWikiPermissions perms, Wiki wiki)
+        {
+            for (Wiki child : wiki.children())
+            {
+                if (!perms.allowDelete(child))
+                    return child;
+
+                Wiki blocked = findUndeletableDescendant(perms, child);
+                if (null != blocked)
+                    return blocked;
+            }
+            return null;
+        }
+
+        private UnauthorizedException undeletableDescendantException(Wiki descendant)
+        {
+            return new UnauthorizedException("You do not have permissions to delete the child wiki page '" + descendant.getName() + "', so this wiki subtree can't be deleted");
         }
 
         @Override
@@ -430,6 +477,8 @@ public class WikiController extends SpringActionController
             return _wiki != null ? new ManageAction(getViewContext(), _wiki).getUrl() : null;
         }
     }
+
+    public record WikiDeleteBean(Wiki wiki, @Nullable Wiki undeletableDescendant){}
 
     public enum NextAction
     {
@@ -743,7 +792,8 @@ public class WikiController extends SpringActionController
         public abstract Set<WikiTree> getWikiTrees(FORM form, Container c);
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class PrintAllAction extends PrintMultipleAction<Object>
     {
         @Override
@@ -759,7 +809,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class PrintBranchAction extends PrintMultipleAction<WikiNameForm>
     {
         private Wiki _rootWiki;
@@ -816,7 +867,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class PrintAllRawAction extends SimpleViewAction<Object>
     {
         @Override
@@ -921,29 +973,53 @@ public class WikiController extends SpringActionController
         return cSource;
     }
 
-    private Container getDestContainer(String destContainer, String path, BindException errors)
+    private static final String DEST_NOT_FOUND_MESSAGE = "No destination container found, or you do not have permission to copy to it.";
+
+    // Returns the destination folder, creating it if it doesn't exist yet. The user must be an admin of the folder,
+    // or, if it's going to be created, an admin of the closest folder above it that already exists.
+    private @NotNull Container getDestContainer(String destContainer, String path, BindException errors)
     {
         if (destContainer == null)
-        {
             destContainer = path;
-            if (destContainer == null)
-                return null;
-        }
+        if (destContainer == null)
+            throw new NotFoundException(DEST_NOT_FOUND_MESSAGE);
 
         Container c = ContainerManager.getForPath(destContainer);
 
-        // Check for existence ourselves so we know whether to set the folder type or not
-        if (null == c)
+        if (null != c)
         {
-            // Ensure the destination container and set collaboration folder type, #30597
-            c = ContainerManager.ensureContainer(destContainer, User.getAdminServiceUser());
-            FolderType collaboration = FolderTypeManager.get().getFolderType("Collaboration");
-
-            if (null != collaboration)
-                ContainerManager.setFolderType(c, collaboration, getUser(), errors);
+            if (!c.hasPermission(getUser(), AdminPermission.class))
+                throw new NotFoundException(DEST_NOT_FOUND_MESSAGE);
+            return c;
         }
 
+        // Check permission before creating anything. Admin on the root means site or application admin, so only
+        // they can create a new top-level project this way.
+        Container ancestor = getNearestExistingAncestor(Path.parse(destContainer));
+        if (!ancestor.hasPermission(getUser(), AdminPermission.class))
+            throw new NotFoundException(DEST_NOT_FOUND_MESSAGE);
+
+        // Create the folder as the user and make it a Collaboration folder, #30597. Only a newly created folder gets
+        // this folder type; an existing one keeps its own, which is why we looked it up first.
+        c = ContainerManager.ensureContainer(destContainer, getUser());
+        FolderType collaboration = FolderTypeManager.get().getFolderType("Collaboration");
+
+        if (null != collaboration)
+            ContainerManager.setFolderType(c, collaboration, getUser(), errors);
+
         return c;
+    }
+
+    // Walks up the path and returns the first folder that exists, falling back to the root
+    private static @NotNull Container getNearestExistingAncestor(Path path)
+    {
+        for (Path p = path.getParent(); p != null && !p.isEmpty(); p = p.getParent())
+        {
+            Container c = ContainerManager.getForPath(p);
+            if (null != c)
+                return c;
+        }
+        return ContainerManager.getRoot();
     }
 
     private void displayWikiModuleInDestContainer(Container cDest)
@@ -980,9 +1056,12 @@ public class WikiController extends SpringActionController
         {
             //user must have admin perms on both source and destination container
 
-            //Get source container. Handle both post and get cases.
+            // Check the source first, since getting the destination may create folders
             Container cSrc = getSourceContainer(form.getSourceContainer());
-            //Get destination container. Handle both post and get cases.
+            if (cSrc == null || !cSrc.hasPermission(getUser(), AdminPermission.class))
+                throw new NotFoundException("No source container found, or you do not have permission to copy from it.");
+
+            // Checks destination permissions and creates the folder if needed
             _cDest = getDestContainer(form.getDestContainer(), form.getPath(), errors);
 
             if (errors.hasErrors())
@@ -1006,36 +1085,33 @@ public class WikiController extends SpringActionController
                     throw new NotFoundException("No page named '" + pageName + "' exists in the source container.");
             }
 
-            if (_cDest != null && _cDest.hasPermission(getUser(), AdminPermission.class))
+            //get source wiki pages
+            List<String> srcPageNames;
+
+            if (parentPage != null)
+                // TODO: make subtrees work; previously getWikiManager().getSubTreePageList(cSrc, parentPage), now
+                // something like WikiSelectManager.getDescendents(cSrc, name)
+                srcPageNames = WikiSelectManager.getPageNames(cSrc);
+            else
+                srcPageNames = WikiSelectManager.getPageNames(cSrc);
+
+            //get existing destination wiki page names
+            List<String> destPageNames = WikiSelectManager.getPageNames(_cDest);
+
+            //map source page row ids to new page row ids
+            Map<Integer, Integer> pageIdMap = new IntHashMap<>();
+            //shortcut for root topics
+            pageIdMap.put(null, null);
+
+            //copy each page in the list
+            for (String name : srcPageNames)
             {
-                //get source wiki pages
-                List<String> srcPageNames;
-
-                if (parentPage != null)
-                    // TODO: make subtrees work; previously getWikiManager().getSubTreePageList(cSrc, parentPage), now
-                    // something like WikiSelectManager.getDescendents(cSrc, name)
-                    srcPageNames = WikiSelectManager.getPageNames(cSrc);
-                else
-                    srcPageNames = WikiSelectManager.getPageNames(cSrc);
-
-                //get existing destination wiki page names
-                List<String> destPageNames = WikiSelectManager.getPageNames(_cDest);
-
-                //map source page row ids to new page row ids
-                Map<Integer, Integer> pageIdMap = new IntHashMap<>();
-                //shortcut for root topics
-                pageIdMap.put(null, null);
-
-                //copy each page in the list
-                for (String name : srcPageNames)
-                {
-                    Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
-                    getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, _cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
-                }
-
-                //display the wiki module in the destination container
-                displayWikiModuleInDestContainer(_cDest);
+                Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
+                getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, _cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
             }
+
+            //display the wiki module in the destination container
+            displayWikiModuleInDestContainer(_cDest);
 
             return true;
         }
@@ -1840,27 +1916,11 @@ public class WikiController extends SpringActionController
          }
     }
 
-    public static class ContainerForm
-    {
-        private String _id;
-
-        public String getId()
-        {
-            return _id;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setId(String id)
-        {
-            _id = id;
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
-    public static class GetPagesAction extends ReadOnlyApiAction<ContainerForm>
+    public static class GetPagesAction extends ReadOnlyApiAction<Object>
     {
         @Override
-        public ApiResponse execute(ContainerForm form, BindException errors)
+        public ApiResponse execute(Object o, BindException errors)
         {
             Map<String, String> wikiMap = WikiSelectManager.getNameTitleMap(getContainer());
             if (null == wikiMap)
@@ -2300,7 +2360,7 @@ public class WikiController extends SpringActionController
                 throw new UnauthorizedException("You do not have permissions to create a new wiki page in this folder!");
 
             String wikiname = form.getName();
-            LOG.debug("Inserting wiki " + wikiname);
+            LOG.debug("Inserting wiki {}", wikiname);
 
             Container c = getContainer();
             Wiki wiki = new Wiki(c, wikiname);
@@ -2377,9 +2437,9 @@ public class WikiController extends SpringActionController
 
             // issue 12960: if the wiki was updated by a different user, don't allow the save
             if (!wikiUpdate.getPageVersionId().equals(form.getPageVersionId()))
-                throw new NotFoundException("This wiki version has already been updated by a different user.");            
+                throw new NotFoundException("This wiki version has already been updated by a different user.");
 
-            LOG.debug("Updating wiki " + wikiUpdate.getName());
+            LOG.debug("Updating wiki {}", wikiUpdate.getName());
 
             if (!getPermissions().allowUpdate(wikiUpdate))
                 throw new UnauthorizedException("You are not allowed to edit this wiki page.");
@@ -2470,6 +2530,10 @@ public class WikiController extends SpringActionController
             if (null == wiki)
                 throw new IllegalArgumentException("Could not find the wiki with entity id '" + form.getEntityId() + "'!");
 
+            // Mutating a page's attachments requires UpdatePermission on the page
+            if (!getPermissions().allowUpdate(wiki))
+                throw new UnauthorizedException("You do not have permission to modify this wiki page's attachments.");
+
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new IllegalArgumentException("You must use the 'multipart/form-data' mimetype when posting to attachFiles.api");
 
@@ -2519,21 +2583,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    public static class GetWikiTocForm
-    {
-        private String _currentPage = null;
-
-        public String getCurrentPage()
-        {
-            return _currentPage;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setCurrentPage(String currentPage)
-        {
-            _currentPage = currentPage;
-        }
-    }
+    public record GetWikiTocForm(String currentPage){}
 
     @RequiresPermission(ReadPermission.class)
     public static class GetWikiTocAction extends ReadOnlyApiAction<GetWikiTocForm>
@@ -2551,7 +2601,7 @@ public class WikiController extends SpringActionController
             response.put("pages", pageProps);
 
             Set<String> expandedPaths = NavTreeManager.getExpandedPathsCopy(getViewContext(), WikiTOC.getNavTreeId(getContainer()));
-            applyExpandedState(pageProps, expandedPaths, form.getCurrentPage());
+            applyExpandedState(pageProps, expandedPaths, form.currentPage());
 
             //include info about the current container
             Map<String, Object> containerProps = new HashMap<>();
@@ -2559,9 +2609,9 @@ public class WikiController extends SpringActionController
             containerProps.put("id", container.getId());
             containerProps.put("path", container.getPath());
 
-            if (form.getCurrentPage() != null)
+            if (form.currentPage() != null)
             {
-                Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.getCurrentPage());
+                Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.currentPage());
                 if (wiki != null)
                 {
                     WikiVersion version = wiki.getLatestVersion();
@@ -2734,7 +2784,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class BackLinksAction extends SimpleViewAction<Object>
     {
         @Override
@@ -2896,5 +2947,166 @@ public class WikiController extends SpringActionController
     private WikiManager getWikiManager()
     {
         return WikiManager.get();
+    }
+
+    public static class CopyWikiContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        private Container _source;
+        private Container _dest;
+
+        @Before
+        public void createWikiToCopy()
+        {
+            // Two folders and a wiki page that lives in the source. Each test makes a limited user an admin on exactly
+            // one of the folders to exercise a different side of CopyWikiAction's cross-container authorization.
+            _source = createContainer("Source");
+            _dest = createContainer("Dest");
+            WikiManager.get().insertWiki(getAdmin(), _source, "page", "body", WikiRendererType.HTML, "Page");
+        }
+
+        @Test
+        public void testCopyWikiRequiresSourceAdmin() throws Exception
+        {
+            // Caller administers the destination only
+            assertCrossContainerCopyRejected(_dest);
+        }
+
+        @Test
+        public void testCopyWikiRequiresDestAdmin() throws Exception
+        {
+            // Caller administers the source only
+            assertCrossContainerCopyRejected(_source);
+        }
+
+        // Drives a source->dest copy posted through callerAdminContainer an admin on BOTH folders must be
+        // accepted (redirect) and actually copy the page
+        private void assertCrossContainerCopyRejected(Container callerAdminContainer) throws Exception
+        {
+            User limitedAdmin = createUserInRole(callerAdminContainer, FolderAdminRole.class);
+            ActionURL url = new ActionURL(CopyWikiAction.class, callerAdminContainer)
+                    .addParameter("sourceContainer", _source.getPath())
+                    .addParameter("destContainer", _dest.getPath());
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, limitedAdmin));
+            assertTrue("No pages should have been copied into the destination", WikiSelectManager.getPageNames(_dest).isEmpty());
+
+            assertStatus(HttpServletResponse.SC_FOUND, post(url, getAdmin()));
+            assertFalse("An admin copy across both folders should have copied the wiki page", WikiSelectManager.getPageNames(_dest).isEmpty());
+        }
+
+        @Test
+        public void testCopyWikiCannotCreateFolderWithoutParentAdmin() throws Exception
+        {
+            // Caller administers the source only, so must not be able to create a folder under the destination
+            User limitedAdmin = createUserInRole(_source, FolderAdminRole.class);
+            String newPath = _dest.getPath() + "/NewChild";
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(copyUrl(newPath), limitedAdmin));
+            assertNull("The destination folder should not have been created", ContainerManager.getForPath(newPath));
+        }
+
+        @Test
+        public void testCopyWikiChecksSourceBeforeCreatingFolder() throws Exception
+        {
+            // Caller administers the destination's parent but not the source. The source check has to come first,
+            // otherwise the folder would be created and then left behind when the source check fails.
+            User limitedAdmin = createUserInRole(_dest, FolderAdminRole.class);
+            String newPath = _dest.getPath() + "/NewChild";
+            ActionURL url = new ActionURL(CopyWikiAction.class, _dest)
+                    .addParameter("sourceContainer", _source.getPath())
+                    .addParameter("destContainer", newPath);
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, limitedAdmin));
+            assertNull("The destination folder should not have been created", ContainerManager.getForPath(newPath));
+        }
+
+        @Test
+        public void testCopyWikiCannotCreateProjectWithoutSiteAdmin() throws Exception
+        {
+            User limitedAdmin = createUserInRole(_source, FolderAdminRole.class);
+            String newPath = "/" + getClass().getName().replaceAll("[^A-Za-z0-9]", "_") + "-NewProject";
+
+            try
+            {
+                assertStatus(HttpServletResponse.SC_NOT_FOUND, post(copyUrl(newPath), limitedAdmin));
+                assertNull("A new top-level project should not have been created", ContainerManager.getForPath(newPath));
+            }
+            finally
+            {
+                Container leftover = ContainerManager.getForPath(newPath);
+                if (leftover != null)
+                    ContainerManager.deleteAll(leftover, getAdmin());
+            }
+        }
+
+        @Test
+        public void testCopyWikiCreatesFolderUnderAdministeredParent() throws Exception
+        {
+            // Caller administers both the source and the parent of the new destination folder
+            User limitedAdmin = createUserInRole(_source, FolderAdminRole.class);
+            grantRole(limitedAdmin, _dest, FolderAdminRole.class);
+            String newPath = _dest.getPath() + "/NewChild";
+
+            assertStatus(HttpServletResponse.SC_FOUND, post(copyUrl(newPath), limitedAdmin));
+            Container created = ContainerManager.getForPath(newPath);
+            assertNotNull("The destination folder should have been created", created);
+            assertEquals("Collaboration", created.getFolderType().getName());
+            assertFalse("The wiki page should have been copied", WikiSelectManager.getPageNames(created).isEmpty());
+        }
+
+        private ActionURL copyUrl(String destPath)
+        {
+            return new ActionURL(CopyWikiAction.class, _source)
+                    .addParameter("sourceContainer", _source.getPath())
+                    .addParameter("destContainer", destPath);
+        }
+
+        @Test
+        public void testAttachFilesRequiresUpdate() throws Exception
+        {
+            Container folder = createContainer("AttachFolder");
+            WikiManager.get().insertWiki(getAdmin(), folder, "attachPage", "body", WikiRendererType.HTML, "Attach Page");
+            String entityId = WikiSelectManager.getWiki(folder, "attachPage").getEntityId();
+
+            ActionURL url = new ActionURL(AttachFilesAction.class, folder).addParameter("entityId", entityId);
+
+            // A Reader must not be able to delete/replace the page's attachments
+            User reader = createUserInRole(folder, ReaderRole.class);
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, reader));
+
+            // Positive control: an Editor passes the UpdatePermission guard.
+            User editor = createUserInRole(folder, EditorRole.class);
+            assertNotEquals("An editor must pass the attachment UpdatePermission guard, not be blocked at 403",
+                HttpServletResponse.SC_FORBIDDEN, post(url, editor).getStatus());
+        }
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class PermissionTestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        @Test
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.hasSiteAdminPermission());
+            WikiController controller = new WikiController();
+
+            // TODO: Check more actions
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user, false,
+                controller.new PageAction(),
+                controller.new PrintRawAction()
+            );
+
+            // @RequiresPermission(UpdatePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                controller.new BackLinksAction(),
+                controller.new PrintAllAction(),
+                controller.new PrintAllRawAction(),
+                controller.new PrintBranchAction()
+            );
+        }
     }
 }

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment.lineage;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -104,7 +119,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
             if (seed instanceof ExpRunItem && ExperimentServiceImpl.get().isUnknownMaterial((ExpRunItem) seed))
             {
-                LOG.warn("Lineage not available for unknown material: " + seed.getLSID());
+                LOG.warn("Lineage not available for unknown material: {}", seed.getLSID());
                 continue;
             }
 
@@ -173,8 +188,7 @@ public class ExpLineageServiceImpl implements ExpLineageService
 
             if (parentRowId == null || childRowId == null)
             {
-                LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
-                        StringUtils.join(seedIdentifiers.lsids(), ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
+                LOG.error("Node not found for lineage: {}.\n  depth={}, parentLsid={}, parentType={}, parentRowId={}, childLsid={}, childType={}, childRowId={}", StringUtils.join(seedIdentifiers.lsids(), ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId);
             }
             else
             {

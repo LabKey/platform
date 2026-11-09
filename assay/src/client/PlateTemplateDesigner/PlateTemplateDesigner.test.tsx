@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 LabKey Corporation
+ * Copyright (c) 2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -23,6 +23,10 @@ jest.mock('@labkey/api', () => ({
         // Pass the callback through unchanged so tests can invoke it directly.
         getCallbackWrapper: (fn: (...args: unknown[]) => unknown) => fn,
     },
+}));
+
+jest.mock('@labkey/components', () => ({
+    redirect: jest.fn(),
 }));
 
 const mockPlate: PlateTemplate = {

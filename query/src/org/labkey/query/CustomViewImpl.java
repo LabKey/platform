@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -404,7 +404,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
 
             if (fas.getContainerFilterNames() != null && !fas.getContainerFilterNames().isEmpty())
             {
-                String containerFilter = fas.getContainerFilterNames().get(0);
+                String containerFilter = fas.getContainerFilterNames().getFirst();
                 ContainerFilterType.Enum containerFilterType = ContainerFilterType.Enum.forString(containerFilter);
                 if (containerFilterType != null)
                     customViewXml.setContainerFilter(containerFilterType);
@@ -412,7 +412,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         }
         catch (URISyntaxException e)
         {
-            _log.error("Bad filter/sort URL in custom view: " + _cstmView.getFilter());
+            _log.error("Bad filter/sort URL in custom view: {}", _cstmView.getFilter());
         }
 
         String filename = (null != getName() ? getName() : "default") + ".db_" + getCstmView().getCustomViewId() + CustomViewXmlReader.XML_FILE_EXTENSION;

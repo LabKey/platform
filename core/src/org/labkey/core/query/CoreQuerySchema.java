@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -76,14 +77,13 @@ import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CoreQuerySchema extends UserSchema
 {
-    private Set<Integer> _projectUserIds;
+    private Set<Integer> _folderUserIds;
     private final boolean _mustCheckPermissions;
 
     public static final String NAME = "core";
@@ -107,6 +107,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
     public static final String SHORT_URL_TABLE_NAME = "ShortURL";
     public static final String DOCUMENTS_TABLE_NAME = "Documents";
+    public static final String REPORTS_TABLE_NAME = "Reports";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -144,6 +145,9 @@ public class CoreQuerySchema extends UserSchema
 
         if (getUser().isTroubleshooter())
             names.add(DOCUMENTS_TABLE_NAME);
+
+        if (getContainer().hasPermission(getUser(), AdminPermission.class))
+            names.add(REPORTS_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
@@ -205,6 +209,8 @@ public class CoreQuerySchema extends UserSchema
             return new ShortUrlTableInfo(this);
         if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().isTroubleshooter())
             return new DocumentsTable(this, cf);
+        if (REPORTS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
+            return new ReportsTable(this, cf);
 
         return null;
     }
@@ -433,7 +439,7 @@ public class CoreQuerySchema extends UserSchema
 
             SQLFragment groupIdSql = new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoPrincipals() + " WHERE ");
             groupIdSql.append(getRootPlusProjectCondition());
-            groupIdSql.append(")");
+            groupIdSql.unsafeAppend(")");
 
             members.addCondition(groupIdSql);
         }
@@ -456,7 +462,7 @@ public class CoreQuerySchema extends UserSchema
         // Include this condition outside the root
         if (null != project)
         {
-            sql.append(" OR Container = ?");
+            sql.unsafeAppend(" OR Container = ?");
             sql.add(project);
         }
 
@@ -477,17 +483,15 @@ public class CoreQuerySchema extends UserSchema
         }
         else
         {
-            if (_projectUserIds == null)
+            // All users with read permissions in this folder
+            if (_folderUserIds == null)
             {
-                Set<Integer> projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
-                // Add app admins and site admins (they both have ApplicationAdminPermission)
-                SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(ApplicationAdminPermission.class)).stream()
-                    .map(User::getUserId)
-                    .forEach(projectUserIds::add);
-                _projectUserIds = projectUserIds;
+                _folderUserIds = SecurityManager.getUsersWithPermissions(getContainer(), Set.of(ReadPermission.class)).stream()
+                    .map(UserPrincipal::getUserId)
+                    .collect(Collectors.toSet());
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
-            users.addInClause(userid, _projectUserIds);
+            users.addInClause(userid, _folderUserIds);
 
             addGroupsColumn(users);
             addAvatarColumn(users);
@@ -641,7 +645,7 @@ public class CoreQuerySchema extends UserSchema
         TableInfo t;
         t = def.getTable(this, errors, true);
         if (!errors.isEmpty())
-            throw errors.get(0);
+            throw errors.getFirst();
         ((BaseColumnInfo)t.getColumn("UserId")).setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
@@ -773,11 +777,10 @@ public class CoreQuerySchema extends UserSchema
 
                     settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
 
-                    Map<String, Object> params = Collections.emptyMap();
                     TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
 
-                    try (Results results = QueryService.get().select(table, table.getColumns(),
-                            new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()), null, params, true))
+                    try (Results results = QueryService.get().getSelectBuilder(table).filter(
+                            new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId())).select(true))
                     {
                         if (results.next())
                         {

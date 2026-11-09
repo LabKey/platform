@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public interface FileStream
             {
                 if (!tempFile.delete() && tempFile.exists())
                 {
-                    LOG.warn("Failed to delete temporary file [" + tempFile.getAbsolutePath() + "]");
+                    LOG.warn("Failed to delete temporary file [{}]", tempFile.getAbsolutePath());
                 }
             }
         }

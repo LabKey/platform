@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ public class RSSServiceImpl implements RSSService
             }
             catch (IOException e)
             {
-                LogManager.getLogger(RSSService.class).error("Invalid RSS Feed: " + e.getMessage());
+                LogManager.getLogger(RSSService.class).error("Invalid RSS Feed: {}", e.getMessage());
             }
 
             if (null != reader)
@@ -102,7 +102,7 @@ public class RSSServiceImpl implements RSSService
                 }
                 catch (FeedException fe)
                 {
-                    LogManager.getLogger(RSSService.class).error("Invalid Feed (FeedException): " + _feed.getFeedURL());
+                    LogManager.getLogger(RSSService.class).error("Invalid Feed (FeedException): {}", _feed.getFeedURL());
                 }
             }
         }

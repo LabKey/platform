@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,19 +104,13 @@ public class NormalContainerType implements ContainerType
     @Override
     public String getTitleFor(TitleContext tContext, Container currentContainer)
     {
-        switch (tContext)
+        return switch (tContext)
         {
-            case appBar:
-                return currentContainer.getName();
-            case parentInNav:
-                return currentContainer.getTitle();
-            case childInNav:
-                return currentContainer.getTitle();
-            case importTarget:
-                return currentContainer.getPath();
-            default:
-                return currentContainer.getTitle();
-        }
+            case appBar -> currentContainer.getName();
+            case parentInNav -> currentContainer.getTitle();
+            case childInNav -> currentContainer.getTitle();
+            case importTarget -> currentContainer.getPath();
+        };
     }
 
     @Override

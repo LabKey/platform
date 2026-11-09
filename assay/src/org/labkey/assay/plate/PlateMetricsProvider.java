@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.assay.plate;
 
 import org.labkey.api.assay.AssayProtocolSchema;
@@ -15,6 +30,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetricGroup;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.query.AssayDbSchema;
@@ -31,10 +48,10 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         return new SQLFragment("SELECT ps.rowId, COUNT(p.rowId) AS plateCount FROM ")
                 .append(plateSetTable, "ps")
-                .append(" LEFT OUTER JOIN ").append(plateTable, "p")
-                .append(" ON ps.rowId = p.plateSet")
-                .append(" WHERE ps.template = ? AND ps.archived = ?")
-                .append(" GROUP BY ps.rowId")
+                .unsafeAppend(" LEFT OUTER JOIN ").append(plateTable, "p")
+                .unsafeAppend(" ON ps.rowId = p.plateSet")
+                .unsafeAppend(" WHERE ps.template = ? AND ps.archived = ?")
+                .unsafeAppend(" GROUP BY ps.rowId")
                 .add(false)
                 .add(false);
     }
@@ -42,8 +59,8 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     private SQLFragment plateSetsPlateCountBetweenSQL(TableInfo plateSetTable, TableInfo plateTable, int above, int below)
     {
         SQLFragment sql = plateSetPlatesSQL(plateSetTable, plateTable);
-        SQLFragment inner = sql.append(" HAVING COUNT(p.rowId) > ? AND COUNT(p.rowId) < ?").add(above).add(below);
-        return new SQLFragment("SELECT COUNT(*) FROM (").append(inner).append(") as pc");
+        SQLFragment inner = sql.unsafeAppend(" HAVING COUNT(p.rowId) > ? AND COUNT(p.rowId) < ?").add(above).add(below);
+        return new SQLFragment("SELECT COUNT(*) FROM (").append(inner).unsafeAppend(") as pc");
     }
 
     private Long plateSetPlatesCountBetween(DbSchema schema, TableInfo plateSetTable, TableInfo plateTable, int above, int below)
@@ -54,9 +71,9 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     private Long plateSetPlatesCount(DbSchema schema, TableInfo plateSetTable, TableInfo plateTable, int count)
     {
         SQLFragment platesSQL = plateSetPlatesSQL(plateSetTable, plateTable)
-                .append(" HAVING COUNT(p.rowId) = ?")
+                .unsafeAppend(" HAVING COUNT(p.rowId) = ?")
                 .add(count);
-        SQLFragment outer = new SQLFragment("SELECT COUNT(*) FROM (").append(platesSQL).append(") as pc");
+        SQLFragment outer = new SQLFragment("SELECT COUNT(*) FROM (").append(platesSQL).unsafeAppend(") as pc");
         return new SqlSelector(schema, outer).getObject(Long.class);
     }
 
@@ -64,7 +81,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
                 .append(plateTable, "p")
-                .append(" WHERE p.template = ? AND p.archived = ?")
+                .unsafeAppend(" WHERE p.template = ? AND p.archived = ?")
                 .add(template)
                 .add(archived);
         return new SqlSelector(schema, sql).getObject(Long.class);
@@ -74,7 +91,7 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
                 .append(plateSetTable, "ps")
-                .append(" WHERE archived = ? AND template = ?")
+                .unsafeAppend(" WHERE archived = ? AND template = ?")
                 .add(archived)
                 .add(false);
         return new SqlSelector(schema, sql).getObject(Long.class);
@@ -84,9 +101,9 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
                 .append(plateTable, "p")
-                .append(" JOIN ").append(plateTypeTable, "pt")
-                .append(" ON p.plateType = pt.rowId")
-                .append(" WHERE p.archived = ? AND p.template = ? AND pt.columns = ? AND pt.rows = ?")
+                .unsafeAppend(" JOIN ").append(plateTypeTable, "pt")
+                .unsafeAppend(" ON p.plateType = pt.rowId")
+                .unsafeAppend(" WHERE p.archived = ? AND p.template = ? AND pt.columns = ? AND pt.rows = ?")
                 .add(false)
                 .add(template)
                 .add(cols)
@@ -98,8 +115,8 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT wg.plateId) FROM ")
                 .append(wellGroupTable, "wg")
-                .append(" INNER JOIN ").append(plateTable, "p").append(" ON p.rowId = wg.plateId ")
-                .append(" WHERE p.archived = ? AND p.template = ? AND wg.typename = ?")
+                .unsafeAppend(" INNER JOIN ").append(plateTable, "p").unsafeAppend(" ON p.rowId = wg.plateId ")
+                .unsafeAppend(" WHERE p.archived = ? AND p.template = ? AND wg.typename = ?")
                 .add(false)
                 .add(template)
                 .add(wellGroupType);
@@ -189,9 +206,9 @@ public class PlateMetricsProvider implements UsageMetricsProvider
     }
 
     @Override
-    public Map<String, Object> getUsageMetrics()
+    public UsageMetrics addUsageMetrics(UsageMetrics metrics)
     {
-        var plateMetrics = new HashMap<String, Object>();
+        UsageMetricGroup plateMetrics = metrics.group("plates", "Plate feature usage across all containers");
         var schema = AssayDbSchema.getInstance();
         var dbSchema = schema.getSchema();
         TableInfo plateSetTable = schema.getTableInfoPlateSet();
@@ -199,30 +216,28 @@ public class PlateMetricsProvider implements UsageMetricsProvider
         TableInfo plateTypeTable = schema.getTableInfoPlateType();
         TableInfo wellGroupTable = schema.getTableInfoWellGroup();
 
-        // plateSets
-        {
+        plateMetrics.put("plateSets", () -> {
             Map<String, Long> plateSets = new HashMap<>();
             plateSets.put("archivedPlateSetCount", plateSetCount(dbSchema, plateSetTable, true));
             plateSets.put("plateSetCount", plateSetCount(dbSchema, plateSetTable, false));
-            plateSets.put("primaryPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type = ?").add(PlateSetType.primary)).getObject(Long.class));
-            plateSets.put("assayPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type = ?").add(PlateSetType.assay)).getObject(Long.class));
-            plateSets.put("standAloneAssayPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").append(" WHERE type = ?").add(PlateSetType.assay).append(" AND rootPlateSetId IS NULL")).getObject(Long.class));
+            plateSets.put("primaryPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").unsafeAppend(" WHERE type = ?").add(PlateSetType.primary)).getObject(Long.class));
+            plateSets.put("assayPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").unsafeAppend(" WHERE type = ?").add(PlateSetType.assay)).getObject(Long.class));
+            plateSets.put("standAloneAssayPlateSetCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(plateSetTable, "ps").unsafeAppend(" WHERE type = ?").add(PlateSetType.assay).unsafeAppend(" AND rootPlateSetId IS NULL")).getObject(Long.class));
             plateSets.put("plateSetsWithNoPlatesCount", plateSetPlatesCount(dbSchema, plateSetTable, plateTable, 0));
             plateSets.put("plateSetsWithOnePlateCount", plateSetPlatesCount(dbSchema, plateSetTable, plateTable, 1));
-            plateSets.put("maximumPlatesInPlateSet", new SqlSelector(dbSchema, new SQLFragment("SELECT MAX(plateCount) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).append(") x")).getObject(Long.class));
+            plateSets.put("maximumPlatesInPlateSet", new SqlSelector(dbSchema, new SQLFragment("SELECT MAX(plateCount) FROM (").append(plateSetPlatesSQL(plateSetTable, plateTable)).unsafeAppend(") x")).getObject(Long.class));
             plateSets.put("plateSetsWith1To10PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 0, 11));
             plateSets.put("plateSetsWith11to30PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 10, 31));
             plateSets.put("plateSetsWith31to60PlatesCount", plateSetPlatesCountBetween(dbSchema, plateSetTable, plateTable, 30, 61));
-            plateMetrics.put("plateSets", plateSets);
-        }
+            return plateSets;
+        }, "Plate sets: plateSetCount and archivedPlateSetCount exclude templates; type counts (primary, assay, stand-alone assay) include archived and templates; plate-count stats and buckets cover non-archived, non-template plate sets and count all their plates; maximumPlatesInPlateSet is null if there are none");
 
-        // plates
-        {
+        plateMetrics.put("plates", () -> {
             TableInfo wellTable = schema.getTableInfoWell();
             Map<String, Long> plates = new HashMap<>();
             plates.put("platesCount", plateCount(dbSchema, plateTable, false, false));
             plates.put("archivedPlatesCount", plateCount(dbSchema, plateTable, false, true));
-            plates.put("distinctPlatedSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM (SELECT DISTINCT sampleId FROM ").append(wellTable, "w").append(" WHERE sampleId IS NOT NULL) as ds")).getObject(Long.class));
+            plates.put("distinctPlatedSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM (SELECT DISTINCT sampleId FROM ").append(wellTable, "w").unsafeAppend(" WHERE sampleId IS NOT NULL) as ds")).getObject(Long.class));
             plates.put("12WellCount", plateTypeCount(dbSchema, plateTable, plateTypeTable, 4, 3, false));
             plates.put("24WellCount", plateTypeCount(dbSchema, plateTable, plateTypeTable, 6, 4, false));
             plates.put("48WellCount", plateTypeCount(dbSchema, plateTable, plateTypeTable, 8, 6, false));
@@ -231,11 +246,10 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             plates.put("platesWithNegativeControlGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, false, WellGroup.Type.NEGATIVE_CONTROL));
             plates.put("platesWithPositiveControlGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, false, WellGroup.Type.POSITIVE_CONTROL));
             plates.put("platesWithReplicateGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, false, WellGroup.Type.REPLICATE));
-            plateMetrics.put("plates", plates);
-        }
+            return plates;
+        }, "Non-template plates: active and archived counts, then active plates by size (12 to 384 wells) and with each control or replicate well group type; distinctPlatedSamples counts distinct samples in any well, including templates and archived plates");
 
-        // templates
-        {
+        plateMetrics.put("templates", () -> {
             Map<String, Long> templates = new HashMap<>();
             templates.put("plateTemplateCount", plateCount(dbSchema, plateTable, true, false));
             templates.put("archivedTemplatesCount", plateCount(dbSchema, plateTable, true, true));
@@ -247,15 +261,14 @@ public class PlateMetricsProvider implements UsageMetricsProvider
             templates.put("templatesWithNegativeControlGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, true, WellGroup.Type.NEGATIVE_CONTROL));
             templates.put("templatesWithPositiveControlGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, true, WellGroup.Type.POSITIVE_CONTROL));
             templates.put("templatesWithReplicateGroups", plateWellGroupCount(dbSchema, plateTable, wellGroupTable, true, WellGroup.Type.REPLICATE));
-            plateMetrics.put("templates", templates);
-        }
+            return templates;
+        }, "Plate templates: active and archived counts, then active templates by size (12 to 384 wells) and with each control or replicate well group type");
 
-        // assays
-        {
+        plateMetrics.put("assays", () -> {
             TableInfo hitTable = schema.getTableInfoHit();
             TableInfo filterCriteriaTable = schema.getTableInfoFilterCriteria();
             List<ExpProtocol> plateEnabledProtocols = getPlateEnabledAssayProtocols();
-            plateMetrics.put("assays", Map.of(
+            return Map.of(
                 "hitCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(hitTable, "h")).getObject(Long.class),
                 "plateSetsWithHits", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(DISTINCT plateSetPath) FROM ").append(hitTable, "h")).getObject(Long.class),
                 "assaysWithPlateMetadataEnabled", plateEnabledProtocols.size(),
@@ -263,22 +276,21 @@ public class PlateMetricsProvider implements UsageMetricsProvider
                 "assayResultsCount", getPlateBasedAssayResultsCount(plateEnabledProtocols),
                 "domainsWithFilterCriteriaConfigured", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(DISTINCT domainId) FROM ").append(filterCriteriaTable, "fc")).getObject(Long.class),
                 "columnsWithFilterCriteria", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(DISTINCT propertyId) FROM ").append(filterCriteriaTable, "fc")).getObject(Long.class)
-            ));
-        }
+            );
+        }, "Plate-based assay usage: hits and distinct plate sets with hits; Standard assay designs with plate metadata enabled visible in Biologics projects (Shared designs counted once per project) and their runs and results within those projects; distinct domains and columns with hit selection filter criteria");
 
-        // wells
-        {
+        plateMetrics.put("wells", () -> {
             TableInfo wellTable = schema.getTableInfoWell();
             Map<String, Long> wells = new HashMap<>();
             wells.put("wellCount", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(wellTable, "w")).getObject(Long.class));
-            wells.put("wellsWithSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(wellTable, "w").append(" WHERE sampleId IS NOT NULL")).getObject(Long.class));
-            plateMetrics.put("wells", wells);
-        }
+            wells.put("wellsWithSamples", new SqlSelector(dbSchema, new SQLFragment("SELECT COUNT(*) FROM ").append(wellTable, "w").unsafeAppend(" WHERE sampleId IS NOT NULL")).getObject(Long.class));
+            return wells;
+        }, "All wells, including those on templates and archived plates, and those with a sample");
 
-        plateMetrics.put("metadata", Map.of(
+        plateMetrics.put("metadata", () -> Map.of(
             "fieldsCount", getMetadataFieldsCount()
-        ));
+        ), "Custom plate metadata fields, summed across Biologics projects");
 
-        return Map.of("plates", plateMetrics);
+        return metrics;
     }
 }

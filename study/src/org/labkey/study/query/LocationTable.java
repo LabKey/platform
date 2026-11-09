@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,7 +161,7 @@ public class LocationTable extends BaseStudyTable
             if (1 != rows.size())
                 throw new IllegalStateException("Bulk update not allowed on locations.");
 
-            Map<String, Object> map = rows.get(0);
+            Map<String, Object> map = rows.getFirst();
 
             Integer locId = asInteger(map.get("RowId"));
             if (null == locId)
@@ -261,27 +261,25 @@ public class LocationTable extends BaseStudyTable
         var inUseColumn = getRealTable().getColumn("InUse");
         SQLFragment existsSQL = new SQLFragment();
         existsSQL.append(inUseColumn.getValueSql(locationTableAlias));
-        if (schema.getSqlDialect().isSqlServer())
-            existsSQL.append(" = 1");
 
         existsSQL
-            .append(" OR\n")
-            .append(EXISTS)
+            .unsafeAppend(" OR\n")
+            .unsafeAppend(EXISTS)
             .append(schema.getTableInfoSampleRequest(), "sr")
-            .append(" WHERE ")
-            .append(locationTableAlias)
-            .append(".RowId = sr.DestinationSiteId AND ")
-            .append(locationTableAlias)
-            .append(".Container = sr.Container) OR\n")
-            .append(EXISTS)
+            .unsafeAppend(" WHERE ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".RowId = sr.DestinationSiteId AND ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".Container = sr.Container) OR\n")
+            .unsafeAppend(EXISTS)
             .append(schema.getTableInfoSampleRequestRequirement(), "srr")
-            .append(" WHERE ")
-            .append(locationTableAlias)
-            .append(".RowId = srr.SiteId AND ")
-            .append(locationTableAlias)
-            .append(".Container = srr.Container) OR\n");
+            .unsafeAppend(" WHERE ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".RowId = srr.SiteId AND ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".Container = srr.Container) OR\n");
 
-        StudyService.get().appendLocationInUseClauses(existsSQL, locationTableAlias, EXISTS);
+        StudyService.get().appendLocationInUseClauses(existsSQL, locationTableAlias, SQLFragment.unsafe(EXISTS));
 
         // Wrap the EXISTS expression as needed for this dialect
         return schema.getSqlDialect().wrapBooleanExpression(existsSQL);

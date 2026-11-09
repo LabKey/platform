@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package org.labkey.api.action;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
@@ -47,31 +45,22 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     public ModelAndView handleRequest() throws Exception
     {
         BindException errors;
-        try (Timing ignored = MiniProfiler.step("bind"))
-        {
-            // GET parameters have already been validated in ViewServlet
-            PropertyValues pvs = getPropertyValues();
-            if (!isGet())
-                validateUnicodePropertyValues(pvs);
-            errors = bindParameters(pvs);
-        }
+        // GET parameters have already been validated in ViewServlet
+        PropertyValues pvs = getPropertyValues();
+        if (!isGet())
+            validateUnicodePropertyValues(pvs);
+        errors = bindParameters(pvs);
 
         FORM form;
-        try (Timing ignored = MiniProfiler.step("validate"))
-        {
-            form = (FORM) errors.getTarget();
-            validate(form, errors);
-        }
+        form = (FORM) errors.getTarget();
+        validate(form, errors);
 
         ModelAndView v;
 
-        try (Timing ignored = MiniProfiler.step("createView"))
-        {
-            if (_print)
-                v = getPrintView(form, errors);
-            else
-                v = getView(form, errors);
-        }
+        if (_print)
+            v = getPrintView(form, errors);
+        else
+            v = getView(form, errors);
 
         return v;
     }
@@ -114,7 +103,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
 
     public BindException bindParameters(PropertyValues pvs) throws Exception
     {
-        return defaultBindParameters(getCommand(), pvs);
+        return defaultBindParameters(pvs);
     }
 
     public void validate(FORM form, BindException errors)

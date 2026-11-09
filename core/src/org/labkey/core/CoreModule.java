@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,14 +48,14 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
-import org.labkey.api.data.ContainerServiceImpl;
 import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -85,10 +85,9 @@ import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
-import org.labkey.api.files.FileBrowserConfigImporter;
-import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -102,7 +101,6 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
-import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.products.ProductRegistry;
@@ -118,12 +116,12 @@ import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.FastaDataLoader;
-import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.secrets.SecretService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
@@ -141,6 +139,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -152,9 +151,6 @@ import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache.FolderSettingsCacheListener;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.LookAndFeelPropertiesManager;
-import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
-import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
@@ -169,7 +165,11 @@ import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.usageMetrics.ApiMetricArea;
+import org.labkey.api.usageMetrics.CoreMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.usageMetrics.UsageMetricGroup;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
@@ -201,7 +201,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -212,7 +211,9 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.SiteSettingsUpdater;
 import org.labkey.core.admin.AllowListType;
+import org.labkey.core.admin.ConnectionUsageTsvWriter;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
@@ -248,15 +249,22 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentContainerListener;
+import org.labkey.core.attachment.AttachmentHashingMaintenanceTask;
 import org.labkey.core.attachment.AttachmentServiceImpl;
+import org.labkey.core.data.ContainerServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
+import org.labkey.core.files.FileBrowserConfigImporter;
+import org.labkey.core.files.FileBrowserConfigWriter;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.DbLoginManager;
+import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.metrics.ClientSideMetricDescriptions;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
+import org.labkey.core.metrics.WebSocketMXBean;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -275,18 +283,25 @@ import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.PostgresTableSizesTable;
 import org.labkey.core.query.PostgresUserSchema;
+import org.labkey.core.query.ReportsTable;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
+import org.labkey.core.reader.HTMLDataLoader;
 import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.script.RhinoService;
+import org.labkey.core.secrets.SecretServiceImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.ApiKeyViewProvider;
+import org.labkey.core.security.PasswordExpiration;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.SecurityPointcutServiceImpl;
 import org.labkey.core.security.validators.PermissionsValidatorFactory;
+import org.labkey.core.settings.LookAndFeelPropertiesManager;
+import org.labkey.core.settings.LookAndFeelPropertiesManager.ResourceType;
+import org.labkey.core.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
@@ -297,6 +312,7 @@ import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.TableViewFormTestCase;
 import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
+import org.labkey.core.view.menu.FolderMenu;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.PageTemplate;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
@@ -313,6 +329,7 @@ import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
 import org.labkey.filters.ContentSecurityPolicyFilter;
+import org.mitre.dsmiley.httpproxy.LabKeyProxyServlet;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
@@ -340,11 +357,12 @@ import org.radeox.test.macro.list.AtoZListFormatterTest;
 import org.radeox.test.macro.list.ExampleListFormatterTest;
 import org.radeox.test.macro.list.SimpleListTest;
 
+import javax.management.StandardMBean;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -360,10 +378,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.mcp.McpService.VECTOR_SCHEMA;
+import static org.labkey.api.security.SecurityManager.FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
@@ -416,6 +437,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     protected void init()
     {
+        SecretServiceImpl secretService = new SecretServiceImpl();
+        SecretService.setInstance(secretService);
+        ContextListener.addShutdownListener(ShutdownListener.of("SecretService", null, secretService::shutdown));
+
         ContainerService.setInstance(new ContainerServiceImpl());
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
         ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
@@ -446,14 +471,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("notification", NotificationController.class);
         addController("product", ProductController.class);
 
+        WarningService.setInstance(new WarningServiceImpl());
+
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
-
-        WarningService.setInstance(new WarningServiceImpl());
 
         ViewService.setInstance(ViewServiceImpl.getInstance());
         OptionalFeatureService.setInstance(new OptionalFeatureServiceImpl());
@@ -507,34 +532,32 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+        DefaultSchema.registerProvider(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
         {
-            DefaultSchema.registerProvider(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                @Override
-                public boolean isAvailable(DefaultSchema schema, Module module)
-                {
-                    return schema.getContainer().isRoot() && schema.getContainer().hasPermission(schema.getUser(), TroubleshooterPermission.class);
-                }
+                return schema.getContainer().isRoot() && schema.getContainer().hasPermission(schema.getUser(), TroubleshooterPermission.class);
+            }
 
-                @Override
-                public QuerySchema createSchema(DefaultSchema schema, Module module)
-                {
-                    return new PostgresUserSchema(schema.getUser(), schema.getContainer());
-                }
-            });
-        }
+            @Override
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
+            {
+                return new PostgresUserSchema(schema.getUser(), schema.getContainer());
+            }
+        });
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
+        OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(DataColumn.EXPERIMENTAL_USE_QUERYSELECT_COMPONENT, "Use QuerySelect for row insert/update form",
-            "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
-            "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
-            "search to find the other select values.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
-            "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
-            "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false, true);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
+            "Allow script authentication via legacy substitution parameters",
+            "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
+            false, false, FeatureType.Deprecated));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATURE_FLAG_ALLOW_APIKEY_PARAMETER,
+            FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION,
+            "Allows tools such as SSRS to authenticate by providing an API key via an 'apikey' parameter. Providing " +
+            "a credential via a URL parameter is not generally recommended, but in some cases this is the only option.",
+            false, false, FeatureType.Optional));
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
@@ -577,31 +600,65 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
     }
 
+    private static boolean isConnected(DbScope dbScope, Set<String> failedDataSources)
+    {
+        boolean dbConnected;
+        try (Connection conn = dbScope.getConnection())
+        {
+            dbConnected = conn != null;
+        }
+        // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+        // we return a 200 saying we're not healthy instead of a 500
+        catch (Exception e)
+        {
+            if (failedDataSources.add(dbScope.getDataSourceName()))
+                LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
+            dbConnected = false;
+        }
+
+        if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+            LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
+
+        return dbConnected;
+    }
+
     private void registerHealthChecks()
     {
-        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
+        // Data sources that were unreachable on the previous check, so we can log transitions instead of every poll
+        Set<String> failedDataSources = ConcurrentHashMap.newKeySet();
+
+        // Default-category failures take the server out of rotation, so check only the LabKey scope; getDbScopes() would
+        // also connect to external data sources, blocking until an unreachable one times out
+        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () -> {
+            DbScope labkeyScope = DbScope.getLabKeyScope();
+            boolean dbConnected = isConnected(labkeyScope, failedDataSources);
+            Map<String, Object> healthValues = new HashMap<>();
+            healthValues.put(labkeyScope.getDatabaseName(), dbConnected);
+            return new HealthCheck.Result(dbConnected, healthValues);
+        });
+
+        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.EXTERNAL_DATA_SOURCES_CATEGORY, () -> {
+            Map<String, Object> healthValues = new HashMap<>();
+            boolean allConnected = true;
+            for (DbScope dbScope : DbScope.getDbScopes())
             {
-                Map<String, Object> healthValues = new HashMap<>();
-                boolean allConnected = true;
-                for (DbScope dbScope : DbScope.getDbScopes())
-                {
-                    boolean dbConnected;
-                    try (Connection conn = dbScope.getConnection())
-                    {
-                        dbConnected = conn != null;
-                    }
-                    catch (SQLException e)
-                    {
-                        dbConnected = false;
-                    }
+                if (dbScope.isLabKeyScope())
+                    continue;
 
-                    healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                    allConnected &= dbConnected;
-                }
-
-                return new HealthCheck.Result(allConnected, healthValues);
+                boolean dbConnected = isConnected(dbScope, failedDataSources);
+                healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                allConnected &= dbConnected;
             }
-        );
+
+            // getDbScopes() omits data sources that failed to connect, and those have no database name
+            for (String dsName : DbScope.getFailedDataSourceNames())
+            {
+                healthValues.put(dsName, false);
+                allConnected = false;
+            }
+
+            return new HealthCheck.Result(allConnected, healthValues);
+        });
 
         HealthCheckRegistry.get().registerHealthCheck("modules", HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
             Map<String, Throwable> failures =  ModuleLoader.getInstance().getModuleFailures();
@@ -964,6 +1021,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         checkForMissingDbViews();
 
+        ((SecretServiceImpl)SecretService.get()).handleStartupProperties();
         ProductConfiguration.handleStartupProperties();
 
         // This listener deletes all properties; make sure it executes after most of the other listeners
@@ -975,6 +1033,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
+        AuthenticationManager.registerProvider(new LoginAttemptDisableLoginProvider());
         AnalyticsServiceImpl.get().resetCSP();
 
         if (moduleContext.isNewInstall() && ModuleLoader.getInstance().shouldInsertData())
@@ -1007,6 +1066,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContextListener.addShutdownListener(ShutdownListener.of("Temp file cleanup", null, this::deleteTempFiles));
 
         SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
+        ClientSideMetricDescriptions.register();
+        SimpleMetricsService.get().describeFeatureAreas(CoreMetricArea.values());
+        // API module counters, declared here because the API module starts before this service exists
+        SimpleMetricsService.get().describeFeatureAreas(ApiMetricArea.values());
+        SimpleMetricsService.get().describeFeatureArea("API", "rPackageUsage", "R packages loaded (including dependencies) by server-run R scripts that completed, by package name, once per run; base packages excluded, knitr reports count only knitr and rmarkdown, and ~~packageLimitReached~~ counts runs that loaded over 250 packages");
+        SimpleMetricsService.get().describeFeatureArea("API", "pythonPackageUsage", "Python packages imported directly by server-run Python scripts that completed, by package name, once per run; standard library excluded, and ~~packageLimitReached~~ counts runs that imported over 250 packages");
 
         // Export action stats on graceful shutdown
         ContextListener.addShutdownListener(new ShutdownListener() {
@@ -1025,28 +1090,31 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
                     scheduler.standby();
                 }
-                catch (SchedulerException ignored)
+                catch (SchedulerException e)
                 {
+                    LOG.error("Failed to put Quartz scheduler in standby", e);
                 }
 
-                Logger logger = LogManager.getLogger(ActionsTsvWriter.class);
+                logTsv(new ActionsTsvWriter());
+                if (ConnectionUsage.isEnabled())
+                    logTsv(new ConnectionUsageTsvWriter());
+                LOG.info("Completed logging statistics for actions prior to web application shut down");
+            }
 
-                if (null != logger)
+            private void logTsv(TSVWriter writer)
+            {
+                StringBuilder buf = new StringBuilder();
+
+                try (writer)
                 {
-                    StringBuilder buf = new StringBuilder();
-
-                    try (TSVWriter writer = new ActionsTsvWriter())
-                    {
-                        writer.write(buf);
-                    }
-                    catch (IOException e)
-                    {
-                        LOG.error("Exception exporting action stats", e);
-                    }
-
-                    logger.info(buf.toString());
-                    LOG.info("Completed logging statistics for actions prior to web application shut down");
+                    writer.write(buf);
                 }
+                catch (IOException e)
+                {
+                    LOG.error("Exception exporting {}", writer.getClass().getSimpleName(), e);
+                }
+
+                LogManager.getLogger(writer.getClass()).info(buf.toString());
             }
 
             @Override
@@ -1054,12 +1122,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             {
                 try
                 {
-                    // Clean up Quartz resources and wait for jobs to complete
-                    Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-                    scheduler.shutdown(true);
+                    QuartzShutdown.shutdown(StdSchedulerFactory.getDefaultScheduler(), QuartzShutdown.DEFAULT_TIMEOUT);
                 }
-                catch (SchedulerException ignored)
+                catch (SchedulerException e)
                 {
+                    LOG.error("Failed to shut down Quartz scheduler", e);
                 }
             }
         });
@@ -1136,21 +1203,29 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             .filter(DataLoaderFactory::indexable)
             .forEach(ss::addDocumentParser);
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            AppProps.OPTIONAL_NO_GUESTS,
             "No Guest Account",
             "Disable the guest account",
-            false);
+            false,
+            false,
+            FeatureType.Optional
+        ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
             "Block malicious clients",
             "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
             false);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            FEATURE_FLAG_DISABLE_ENFORCE_CSP,
             "Disable enforce Content Security Policy",
             "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
             "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
             "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
             "(e.g., if an enforce CSP breaks critical functionality).",
-            false);
+            false,
+            false,
+            FeatureType.Deprecated
+        ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS,
             "Data Region Async Total Rows",
             "Enable asynchronous calculation of total rows for data regions. This can improve performance for large datasets.",
@@ -1158,7 +1233,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
             "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
-        OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
+        OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (_, enabled) -> {
             // update the timer task when this setting changes
             MothershipReport.setSelfTestMarketingUpdates(enabled);
             UsageReportingLevel.reportNow();
@@ -1180,99 +1255,94 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.populateSettingsWithStartupProps();
         AnalyticsServiceImpl.populateSettingsWithStartupProps();
 
-        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
-            Map<String, Object> results = new HashMap<>();
-            Map<String, Object> javaInfo = new HashMap<>();
-            javaInfo.put("java.vendor", System.getProperty("java.vendor"));
-            javaInfo.put("java.vm.name", System.getProperty("java.vm.name"));
-            results.put("javaRuntime", javaInfo);
-            results.put("distributionFilename", AppProps.getInstance().getDistributionFilename());
-            results.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode());
-            results.put("optionalFeatures", OptionalFeatureService.get().getOptionalFeatureFlags().stream()
+        UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> {
+            metrics.group("javaRuntime", "JVM vendor and VM name, keyed by Java system property")
+                .put("java.vendor", () -> System.getProperty("java.vendor"))
+                .put("java.vm.name", () -> System.getProperty("java.vm.name"));
+            metrics.put("distributionFilename", () -> AppProps.getInstance().getDistributionFilename(), "Filename of the distribution the server was installed from; localBuild for developer builds");
+            metrics.put("applicationMenuDisplayMode", () -> LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode(), "Site-level setting for when the application menu is shown");
+            metrics.put("optionalFeatures", () -> OptionalFeatureService.get().getOptionalFeatureFlags().stream()
                 .collect(Collectors.groupingBy(optionalFeatureFlag -> optionalFeatureFlag.getType().name().toLowerCase(),
                     Collectors.mapping(flag -> flag, Collectors.toMap(OptionalFeatureFlag::getFlag, OptionalFeatureFlag::isEnabled))
-                ))
+                )),
+                "Optional feature flags by type (experimental, deprecated, etc.), each mapping flag name to whether it's enabled"
             );
-            results.put("productFeaturesEnabled", ProductRegistry.getProductFeatureSet());
-            results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
+            metrics.put("productFeaturesEnabled", ProductRegistry::getProductFeatureSet, "Product features enabled by the server's license and installed modules");
+            metrics.put("analyticsTrackingStatus", () -> AnalyticsServiceImpl.get().getTrackingStatus().toString(), "Web analytics tracking modes enabled; [] if none");
             String labkeyContextPath = AppProps.getInstance().getContextPath();
-            results.put("webappContextPath", labkeyContextPath);
-            results.put("embeddedTomcat", true);
-            boolean customLog4JConfig = false;
-            if (ModuleLoader.getServletContext() != null)
-            {
-                customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
-            }
-            results.put("customLog4JConfig", customLog4JConfig);
-            results.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production");
-            Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
-            deployedApps.remove(labkeyContextPath);
-            if (labkeyContextPath.startsWith("/"))
-            {
-                deployedApps.remove(labkeyContextPath.substring(1));
-            }
-            results.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","));
+            metrics.put("webappContextPath", () -> labkeyContextPath, "Context path LabKey is deployed under; empty when deployed at the root");
+            metrics.put("embeddedTomcat", () -> true, "Always true; the server runs in embedded Tomcat");
+            metrics.put("customLog4JConfig", () -> ModuleLoader.getServletContext() != null && Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig")),
+                "Whether the server is configured with a custom Log4J configuration");
+            metrics.put("runtimeMode", () -> AppProps.getInstance().isDevMode() ? "development" : "production", "development or production mode");
+            metrics.put("otherDeployedWebapps", () -> {
+                Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
+                deployedApps.remove(labkeyContextPath);
+                if (labkeyContextPath.startsWith("/"))
+                {
+                    deployedApps.remove(labkeyContextPath.substring(1));
+                }
+                return StringUtils.join(deployedApps, ",");
+            }, "Comma-separated names of other webapps deployed alongside LabKey");
 
-            // Report the total number of login entries in the audit log
-            results.put("totalLogins", UserManager.getAuthCount(null, false, false, false));
-            results.put("apiKeyLogins", UserManager.getAuthCount(null, false, true, false));
-            results.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout());
-            results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
-            results.put("systemUserCount", UserManager.getSystemUserCount());
+            metrics.put("totalLogins", () -> UserManager.getAuthCount(null, false, false, false), "Login events in the audit log; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
+            metrics.put("apiKeyLogins", () -> UserManager.getAuthCount(null, false, true, false), "Login events in the audit log that used an API key; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE);
+            metrics.put("sessionTimeout", () -> ModuleLoader.getServletContext().getSessionTimeout(), "HTTP session timeout in minutes");
+            metrics.put("userLimits", () -> new LimitActiveUsersSettings().getMetricsMap(), "Active user warning and limit settings: whether each is on, its user count threshold, and its message");
+            metrics.put("systemUserCount", UserManager::getSystemUserCount, "Active users marked as system users, which don't count toward user limits");
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
-            results.put("uniqueRecentUserCount", UserManager.getAuthCount(cal.getTime(), false, false, true));
-            results.put("uniqueRecentNonSystemUserCount", UserManager.getAuthCount(cal.getTime(), true, false, true));
-            if (OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_EXTENDED_METRICS))
-            {
-                // Optionally include a list of active users, Issue #53050
-                results.put("activeUsers", UserManager.getActiveUsers().stream()
+            metrics.put("uniqueRecentUserCount", () -> UserManager.getAuthCount(cal.getTime(), false, false, true), "Distinct users who logged in during the last 30 days");
+            metrics.put("uniqueRecentNonSystemUserCount", () -> UserManager.getAuthCount(cal.getTime(), true, false, true), "Distinct non-system users who logged in during the last 30 days");
+            // Optionally include a list of active users, Issue #53050
+            metrics.reportedIf(OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_EXTENDED_METRICS))
+                .put("activeUsers", () -> UserManager.getActiveUsers().stream()
                     .filter(u -> !u.isSystem())
                     .map(User::getEmail)
-                    .toList()
+                    .toList(),
+                    "Emails of active non-system users; only reported when the extended metrics feature flag is on"
                 );
-            }
 
-            results.put("workbookCount", ContainerManager.getWorkbookCount());
-            results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
-            results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
+            metrics.put("workbookCount", ContainerManager::getWorkbookCount, "Workbooks across the server");
+            metrics.put("archivedFolderCount", ContainerManager::getArchivedContainerCount, "Archived folders across the server");
+            String dbSize = "databaseSize";
+            metrics.put(dbSize, NightlyRecalculatingSuppliers.get(dbSize, () -> CoreSchema.getInstance().getSchema().getScope().getDatabaseSize()), "Size of the LabKey database in bytes");
 
-            if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-            {
+            String schemaSize = "databaseSchemaSize";
+            metrics.put(schemaSize, NightlyRecalculatingSuppliers.get(schemaSize, () -> {
                 // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
                 // Note that they can be non-trivial in size.
-                SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
+                SQLFragment sql = SQLFragment.unsafe("SELECT table_schema, SUM(total_size) FROM ");
                 sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
-                sql.append(" WHERE table_schema != 'temp' GROUP BY table_schema");
+                sql.unsafeAppend(" WHERE table_schema != 'temp' GROUP BY table_schema");
+                return Collections.unmodifiableMap(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap());
+            }), "Size in bytes of each database schema, including indexes; temp excluded");
 
-                var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
-                results.put("databaseSchemaSize", schemaSizes);
-            }
-
-            results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
-            results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
-            Map<String, Long> roleAssignments = new HashMap<>();
+            metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, and whether each is external and enabled");
+            metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
+            UsageMetricGroup roleAssignments = metrics.group("roleAssignments", "Direct assignments of designer roles to users or groups, by role, across all containers");
             final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
-            roleAssignments.put("assayDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
-            roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
-            roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
-            results.put("roleAssignments", roleAssignments);
+            roleAssignments.put("assayDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
+            roleAssignments.put("dataClassDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
+            roleAssignments.put("sampleTypeDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
 
-            Map<String, Integer> allowListCounts = new HashMap<>();
+            UsageMetricGroup allowListCounts = metrics.group("allowListCounts", "Entries in each site allow list, such as external redirect hosts and file extensions");
             for (AllowListType type : AllowListType.values())
             {
-                allowListCounts.put(type.name(), type.getValues().size());
+                allowListCounts.put(type.name(), () -> type.getValues().size());
             }
-            results.put("allowListCounts", allowListCounts);
 
-            return results;
+            return metrics;
         });
 
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
+        LabKeyManagement.register(new StandardMBean(WebSocketConnectionManager.getInstance(), WebSocketMXBean.class, true), "WebSockets");
         UsageMetricsService.get().registerUsageMetrics(getName(), DbLoginManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), AttachmentHashingMaintenanceTask.getMetricsProvider());
+        SystemMaintenance.addTask(new AttachmentHashingMaintenanceTask());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
@@ -1282,6 +1352,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fileContentService.addFileListener(WebFilesResolverImpl.get());
 
         RoleManager.registerPermission(new QCAnalystPermission());
+        RoleManager.registerPermission(new EditModuleResourcesPermission(), false);
         MarkdownService.setInstance(new MarkdownServiceImpl());
 
         // initialize email preference service and listeners
@@ -1438,13 +1509,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
             AdminController.WorkbookDeleteTestCase.class,
+            AdminController.ImportFolderSourceScopingTestCase.class,
+            AdminController.RevertFolderScopingTestCase.class,
             AllowListType.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
             CoreController.TestCase.class,
+            CoreController.MoveContainerTestCase.class,
             DataRegion.TestCase.class,
             DavController.TestCase.class,
+            DavController.MoveActionContainerScopingTestCase.class,
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
+            HealthCheckTestCase.class,
             LoggerController.TestCase.class,
             LoggingTestCase.class,
             LoginController.TestCase.class,
@@ -1459,12 +1535,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             RhinoService.TestCase.class,
             SchemaXMLTestCase.class,
             SecurityApiActions.TestCase.class,
+            SecurityController.GroupMembershipScopingTestCase.class,
             SecurityController.TestCase.class,
+            SiteSettingsUpdater.TestCase.class,
             SqlDialect.DialectTestCase.class,
+            SqlDialect.LabKeyScopeDialectTestCase.class,
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
             UnknownSchemasTest.class,
-            UserController.TestCase.class
+            UserController.TestCase.class,
+            ReportsTable.TestCase.class
         );
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
@@ -1476,7 +1556,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public @NotNull Collection<Supplier<Class<?>>> getIntegrationTestFactories()
     {
         List<Supplier<Class<?>>> ret = new ArrayList<>(super.getIntegrationTestFactories());
-        ret.add(new JspTestCase("/org/labkey/api/data/ColumnInfoTests.jsp"));
+        ret.add(new JspTestCase("/org/labkey/core/data/ColumnInfoTests.jsp"));
         return ret;
     }
 
@@ -1484,13 +1564,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            AdminController.FileRootPermissionTestCase.class,
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            LabKeyProxyServlet.TestCase.class,
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
+            PasswordExpiration.TestCase.class,
             PostgreSqlVersion.TestCase.class,
+            QuartzShutdown.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
+            SecretServiceImpl.TestCase.class,
             StatsServiceImpl.TestCase.class,
 
 
@@ -1540,7 +1625,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             CoreSchema.getInstance().getSchemaName(),       // core
             PropertySchema.getInstance().getSchemaName(),   // prop
             TestSchema.getInstance().getSchemaName(),       // test
-            DbSchema.TEMP_SCHEMA_NAME                       // temp
+            DbSchema.TEMP_SCHEMA_NAME,                      // temp
+            VECTOR_SCHEMA                                   // used by pgvector - see core-26.005-26.006.sql
         );
     }
 
@@ -1659,7 +1745,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     SiteResourceHandler handler = getResourceHandler(entry.getKey());
                     if (handler != null)
-                        incrementRevision |= setSiteResource(handler, entry.getValue(), User.guest);
+                        incrementRevision |= setSiteResource(handler, entry.getValue());
                 }
 
                 // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
@@ -1684,11 +1770,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 // using guest user since the server startup doesn't have a true user (this will be used for audit events)
                 ContainerManager.getHomeContainer().setFolderType(folderType, User.guest);
             else
-                LOG.error("Unable to find folder type for home project during server startup: " + folderTypeEntry.getValue());
+                LOG.error("Unable to find folder type for home project during server startup: {}", folderTypeEntry.getValue());
         }
 
         StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);
-        if (null != resetPermissionsEntry && Boolean.valueOf(resetPermissionsEntry.getValue()))
+        if (null != resetPermissionsEntry && Boolean.parseBoolean(resetPermissionsEntry.getValue()))
         {
             // reset the home project permissions to remove the default assignments given at server install
             MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
@@ -1730,14 +1816,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return LookAndFeelPropertiesManager.get().getResourceHandler(type);
     }
 
-    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop, User user)
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop)
     {
         Resource resource = getModuleResourceFromPropValue(prop.getValue());
         if (resource != null)
         {
             try
             {
-                resourceHandler.accept(resource, ContainerManager.getRoot(), user);
+                resourceHandler.accept(resource, ContainerManager.getRoot(), User.guest);
                 return true;
             }
             catch(Exception e)

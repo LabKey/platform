@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,11 @@ public abstract class StudyManualTest extends StudyTest
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
     @Override
-    protected BrowserType bestBrowser()
-    {
-        return BrowserType.CHROME;
-    }
-
-    @Override
     protected void doCreateSteps()
     {
         createStudyManually();
         startSpecimenImport(2);
+        waitForSpecimenImport();
 
         afterManualCreate();
     }

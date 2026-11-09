@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
  */
 public class StringExpressionFactory
 {
-    private static final Cache<String, StringExpression> templates = CacheManager.getCache(5000, CacheManager.DAY, "StringExpression templates");
-    private static final Cache<String, StringExpression> templatesUrl = CacheManager.getCache(10000, CacheManager.DAY, "StringExpression template URLs");
+    private static final Cache<String, StringExpression> templates = CacheManager.getCache(String.class, 5000, CacheManager.DAY, "StringExpression templates");
+    private static final Cache<String, StringExpression> templatesUrl = CacheManager.getCache(String.class, 10000, CacheManager.DAY, "StringExpression template URLs");
 
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
@@ -422,7 +422,7 @@ public class StringExpressionFactory
                     break;
 
                 // Add in reverse order since we are parsing from back to front
-                formats.add(0, format);
+                formats.addFirst(format);
 
                 value = value.substring(0, colon);
             }
@@ -893,7 +893,7 @@ public class StringExpressionFactory
             ArrayList<StringPart> parts = getParsedExpression();
             if (parts.size() == 1)
             {
-                StringExpressionFactory.StringPart part = parts.get(0);
+                StringExpressionFactory.StringPart part = parts.getFirst();
                 try
                 {
                     return nullFilter(part.getValue(context), part);
@@ -1312,7 +1312,7 @@ public class StringExpressionFactory
             // special case if entire pattern consists of one substitution, don't encode
             if (1 == _parsedExpression.size())
             {
-                StringPart p = _parsedExpression.get(0);
+                StringPart p = _parsedExpression.getFirst();
                 if (p instanceof FieldPart fp)
                 {
                     _parsedExpression.set(0, new FieldPart(fp._key, SubstitutionFormat.passThrough));

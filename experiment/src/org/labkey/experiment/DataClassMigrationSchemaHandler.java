@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
@@ -59,7 +74,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
             clause = new SQLClause(
                 new SQLFragment("LSID IN (SELECT LSID FROM exp.Data WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
-                    .append(")")
+                    .unsafeAppend(")")
             );
         }
         else
@@ -96,12 +111,12 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
 
         // Select all ObjectIds associated with the not-copied rows from the source database
         SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data d INNER JOIN ")
-            .appendIdentifier(sourceTable.getSelectName())
-            .append(" dc ON d.LSID = dc.LSID");
+            .append(sourceTable.getSQLName())
+            .unsafeAppend(" dc ON d.LSID = dc.LSID");
 
         // Don't create an empty IN clause; need to work around issue where "NOT xxx IN (NULL)" evaluates to NULL.
         if (!copiedLsids.isEmpty())
-            objectIdSql.append(" AND NOT dc.LSID").appendInClause(copiedLsids, sourceTable.getSqlDialect());
+            objectIdSql.unsafeAppend(" AND NOT dc.LSID").appendInClause(copiedLsids, sourceTable.getSqlDialect());
 
         Collection<Long> notCopiedObjectIds = new SqlSelector(sourceTable.getSchema(), objectIdSql).getCollection(Long.class);
 
@@ -154,13 +169,13 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
         executor.execute(
             new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ObjectId")
                 .append(objectIdClause)
-                .append(")")
+                .unsafeAppend(")")
         );
         LOG.info("   exp.DataAliasMap");
         executor.execute(
             new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID IN (SELECT LSID FROM exp.Data WHERE ObjectId")
                 .appendInClause(objectIds, dialect)
-                .append(")")
+                .unsafeAppend(")")
         );
         LOG.info("   exp.Data");
         executor.execute(

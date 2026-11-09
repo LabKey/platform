@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,7 +184,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return getKindName().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
-
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
@@ -248,9 +247,17 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     abstract Collection<KeyType> getSupportedKeyTypes();
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
-       return RESERVED_NAMES;
+        return RESERVED_NAMES;
+    }
+
+    @Override
+    public @NotNull Set<String> getReservedNameExemptions()
+    {
+        // createDomain renames a colliding field to "_<name>" and keeps the original as its label, so lists routinely
+        // carry a base property name as a label by design rather than by misconfiguration.
+        return BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ public class PopupMenu extends DisplayElement
     private Align _align = Align.LEFT;
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
     private String _imageId = "";
-    private String _offset = "-1";
     private String _safeID = "lk-menu-" + UniqueID.getServerSessionScopedUID();
 
     public PopupMenu()
@@ -69,11 +68,6 @@ public class PopupMenu extends DisplayElement
         _buttonStyle = buttonStyle;
     }
 
-    public void setOffset(String offset)
-    {
-        _offset = offset;
-    }
-    
     public NavTree getNavTree()
     {
         return _navTree;
@@ -130,7 +124,6 @@ public class PopupMenu extends DisplayElement
             _safeID = _navTree.getId();
 
         Map<String, String> attributes = new HashMap<>();
-        String onClickScript = null;
 
         attributes.put("data-toggle", "dropdown");
 
@@ -148,7 +141,7 @@ public class PopupMenu extends DisplayElement
                 if (_buttonStyle == ButtonStyle.TEXTBUTTON)
                 {
                     assert !requiresSelection : "Only button-style popups can require selection.";
-                    out.write(LinkBuilder.labkeyLink(_navTree.getText()).onClick(onClickScript).attributes(attributes).addClass("dropdown-toggle"));
+                    out.write(LinkBuilder.labkeyLink(_navTree.getText()).attributes(attributes).addClass("dropdown-toggle"));
                 }
                 else if (_buttonStyle == ButtonStyle.MENUBUTTON)
                 {
@@ -157,7 +150,6 @@ public class PopupMenu extends DisplayElement
 
                     ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
                         .dropdown(true)
-                        .onClick(onClickScript)
                         .attributes(attributes);
 
                     if (button != null)
@@ -174,14 +166,13 @@ public class PopupMenu extends DisplayElement
                     assert !requiresSelection : "Only button-style popups can require selection.";
                     if (_navTree.getImageCls() != null && !_navTree.getImageCls().isEmpty())
                     {
-                        out.write(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "#",
-                            onClickScript, _navTree.getImageCls(), _imageId, attributes));
+                        out.write(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "#", _navTree.getImageCls(), _imageId, attributes));
                     }
                     else
                     {
                         assert _navTree.getImageSrc() != null && !_navTree.getImageSrc().isEmpty() : "Must provide an image source or image cls for image based popups.";
                         out.write(PageFlowUtil.generateDropDownImage(_navTree.getText(), "#",
-                            onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth(), attributes));
+                             _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth(), attributes));
                     }
 
                     if (_buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
@@ -194,7 +185,7 @@ public class PopupMenu extends DisplayElement
                 {
                     assert !requiresSelection : "Only button-style popups can require selection.";
                     out.write(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "#",
-                        onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId(), attributes));
+                        _buttonStyle == ButtonStyle.BOLDTEXT, _navTree.getId(), attributes));
                 }
 
                 UL(

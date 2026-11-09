@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
         if (userSchema == null)
             return;
 
-        LogManager.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '" + schemaName + "' in container '" + c.getPath() + "'...");
+        LogManager.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '{}' in container '{}'...", schemaName, c.getPath());
 
         // Walk over the dbSchema's tables -- it's faster than walking the UserSchema's tables
         List<TableInfo> sorted = dbSchema.getSortedTables();

@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@
     {
         if (bean.urlExcelTemplates.size() == 1)
         {
-            Pair<String, String> p = bean.urlExcelTemplates.get(0);
+            Pair<String, String> p = bean.urlExcelTemplates.getFirst();
             %><%= button(p.first).href(p.second).usePost() %><br>&nbsp;<br><%
         }
         else

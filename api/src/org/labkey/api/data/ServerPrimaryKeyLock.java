@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,11 @@
  */
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exceptions.OptimisticConflictException;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 
 /**
  * Created by matthew on 2/22/16.
@@ -46,17 +43,14 @@ public class ServerPrimaryKeyLock extends DbScope.ServerLock
         scope = t.getSchema().getScope();
         this.failIfRowNotFound = failIfRowNotFound;
 
-        if (scope.getSqlDialect().isSqlServer())
-            forUpdate.append(" WITH (UPDLOCK)");
-        forUpdate.append("\nWHERE ");
+        forUpdate.unsafeAppend("\nWHERE ");
         String and = " ";
         for (ColumnInfo pkColumn : pkColumns)
         {
             forUpdate.append(and);
-            forUpdate.appendIdentifier(pkColumn.getSelectIdentifier()).append("=?").add(pkValues[forUpdate.getParamsArray().length]);
+            forUpdate.appendIdentifier(pkColumn.getSelectIdentifier()).unsafeAppend("=?").add(pkValues[forUpdate.getParamsArray().length]);
         }
-        if (scope.getSqlDialect().isPostgreSQL())
-            forUpdate.append("\nFOR UPDATE");
+        forUpdate.unsafeAppend("\nFOR UPDATE");
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
             Study study = ctx.getStudy();
             ExportDirType protocolXml = ctx.getXml().getProtocolDocs();
 
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             VirtualFile folder = root.getDir(protocolXml.getDir());
             List<AttachmentFile> attachments = new ArrayList<>();
@@ -66,7 +66,7 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
 
             for (String fileName : folder.list())
             {
-                ctx.getLogger().info("importing protocol document: " + fileName);
+                ctx.getLogger().info("importing protocol document: {}", fileName);
 
                 if (existing.contains(fileName))
                     study.removeProtocolDocument(fileName, ctx.getUser());
@@ -76,7 +76,7 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
 
             study.attachProtocolDocument(attachments, ctx.getUser());
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

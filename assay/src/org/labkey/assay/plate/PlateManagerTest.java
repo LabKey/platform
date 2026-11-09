@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.assay.plate;
 
 import org.apache.commons.collections4.MapUtils;
@@ -9,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
+import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
@@ -40,6 +56,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -84,6 +101,7 @@ public final class PlateManagerTest
     private static Container container;
     private static ExpSampleType sampleType;
     private static User user;
+    private static boolean primaryPlateSetFlag;
 
     private enum PlateMetadataFields
     {
@@ -110,6 +128,10 @@ public final class PlateManagerTest
             newActiveModules.add(assayModule);
             container.setActiveModules(newActiveModules);
         }
+
+        // Configure optional feature flag
+        primaryPlateSetFlag = OptionalFeatureService.get().isFeatureEnabled(PlateService.DEPRECATE_PRIMARY_PLATE_SET_FLAG);
+        OptionalFeatureService.get().setFeatureEnabled(PlateService.DEPRECATE_PRIMARY_PLATE_SET_FLAG, true, user);
 
         Domain domain = PlateManager.get().getPlateMetadataDomain(container, user);
         if (domain != null)
@@ -186,9 +208,31 @@ public final class PlateManagerTest
     @AfterClass
     public static void cleanup()
     {
+        // Restore optional feature flag
+        OptionalFeatureService.get().setFeatureEnabled(PlateService.DEPRECATE_PRIMARY_PLATE_SET_FLAG, primaryPlateSetFlag, user);
+
         deleteTestContainer();
         container = null;
         user = null;
+    }
+
+    @Test
+    public void testDeprecatePrimaryPlateSetFlag()
+    {
+        try
+        {
+            OptionalFeatureService.get().setFeatureEnabled(PlateService.DEPRECATE_PRIMARY_PLATE_SET_FLAG, false, user);
+
+            PlateSetImpl plateSetImpl = new PlateSetImpl();
+            plateSetImpl.setType(PlateSetType.primary);
+            plateSetImpl.setName("testDeprecatePrimaryPlateSetFlag");
+
+            assertCreatePlateSetThrows("The primary plate set feature is not enabled.", plateSetImpl, null, null);
+        }
+        finally
+        {
+            OptionalFeatureService.get().setFeatureEnabled(PlateService.DEPRECATE_PRIMARY_PLATE_SET_FLAG, true, user);
+        }
     }
 
     @Test
@@ -469,7 +513,7 @@ public final class PlateManagerTest
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkNegativeControl));
 
         // verify plate metadata property updates
-        try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columns.values()).filter(filter).sort(new Sort("Col")).select())
         {
             int row = 0;
             while (r.next())
@@ -516,7 +560,7 @@ public final class PlateManagerTest
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
         filter.addCondition(FieldKey.fromParts("Row"), 0);
-        try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columns.values()).filter(filter).sort(new Sort("Col")).select())
         {
             int row = 0;
             while (r.next())
@@ -2083,7 +2127,7 @@ public final class PlateManagerTest
         filter.addCondition(FieldKey.fromParts("PlateId"), plateRowId);
 
         var wellTable = getWellTable();
-        return QueryService.get().select(wellTable, getWellTableColumns(wellTable).values(), filter, new Sort("RowId"));
+        return QueryService.get().getSelectBuilder(wellTable).columns(getWellTableColumns(wellTable).values()).filter(filter).sort(new Sort("RowId")).select();
     }
 
     private Map<String, Object> getWellRow(long plateRowId, @NotNull String position)
@@ -2096,7 +2140,7 @@ public final class PlateManagerTest
         return QueryService.get().getSelectBuilder(wellTable)
                 .columns(getWellTableColumns(wellTable).values())
                 .filter(filter)
-                .buildSqlSelector(null)
+                .buildSqlSelector()
                 .getMap();
     }
 

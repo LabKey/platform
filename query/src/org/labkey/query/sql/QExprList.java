@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class QExprList extends QExpr implements SupportsAnnotations
     protected void appendSql(SqlBuilder builder, Query query, boolean parens)
     {
         if (parens)
-            builder.append("(");
+            builder.unsafeAppend("(");
         builder.pushPrefix("");
         for (QNode child : children())
         {
@@ -51,7 +51,7 @@ public class QExprList extends QExpr implements SupportsAnnotations
         }
         builder.popPrefix();
         if (parens)
-            builder.append(")");
+            builder.unsafeAppend(")");
     }
 
     @Override
@@ -63,7 +63,7 @@ public class QExprList extends QExpr implements SupportsAnnotations
     protected void appendSource(SourceBuilder builder, boolean parens)
     {
         if (parens)
-            builder.append("(");
+            builder.unsafeAppend("(");
         builder.pushPrefix("");
         for (QNode child : children())
         {
@@ -72,7 +72,7 @@ public class QExprList extends QExpr implements SupportsAnnotations
         }
         builder.popPrefix();
         if (parens)
-            builder.append(")");
+            builder.unsafeAppend(")");
     }
 
     @Override

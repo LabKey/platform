@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,9 +94,9 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
 
         @Override
-        public Set<Class<? extends Permission>> getPermissions(User user)
+        public boolean hasPermission(User user, Class<? extends Permission> perm)
         {
-            return Collections.emptySet();
+            return false;
         }
 
         @Override

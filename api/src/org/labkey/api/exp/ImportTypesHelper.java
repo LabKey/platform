@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.labkey.api.exp;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -30,7 +31,7 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -50,7 +51,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -232,7 +232,7 @@ public class ImportTypesHelper
                 continue;
             }
 
-            if (StringUtils.endsWithIgnoreCase(columnName, MV_INDICATOR_SUFFIX))
+            if (Strings.CI.endsWith(columnName, MV_INDICATOR_SUFFIX))
             {
                 mvColumns.add(columnName);
                 continue;
@@ -331,7 +331,7 @@ public class ImportTypesHelper
 
         // not part of PropertyDescriptors, this class could eventually become a builder for DomainProperty
         private String _domainName;
-        private List<? extends IPropertyValidator> _validators;
+        private List<? extends PropertyValidatorDef> _validators;
         private List<ConditionalFormat> _formats;
         private String _defaultValue;
 
@@ -655,12 +655,12 @@ public class ImportTypesHelper
             _domainName = domainName;
         }
 
-        public List<? extends IPropertyValidator> getValidators()
+        public List<? extends PropertyValidatorDef> getValidators()
         {
             return _validators;
         }
 
-        public void setValidators(List<? extends IPropertyValidator> validators)
+        public void setValidators(List<? extends PropertyValidatorDef> validators)
         {
             _validators = validators;
         }

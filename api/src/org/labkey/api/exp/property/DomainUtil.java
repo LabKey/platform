@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.CompareType;
@@ -36,8 +40,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseIdentifier;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -88,10 +92,12 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatType;
@@ -99,11 +105,13 @@ import org.labkey.data.xml.TableType;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -111,13 +119,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
-import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.CALCULATED_CONCEPT_URI;
 import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
 
 public class DomainUtil
@@ -125,6 +136,25 @@ public class DomainUtil
     private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
     public static final String ILLEGAL_DOMAIN_NAME_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
     public static final Set<String> ILLEGAL_PROPERTY_NAMES = Set.of("*"); // Issue 53416
+
+    /** The field-naming rules enforced by {@link #validateProperties}, named so callers can tally them. GH Issue 1589. */
+    public enum FieldNameRule
+    {
+        starName,
+        substitutionToken,
+        newlineInName,
+        reservedPrefix,
+        reservedName,
+        namingPatternConflict,
+        duplicateName,
+        duplicateImportAlias,
+        importAliasVsFieldName,
+        importAliasVsReservedName,
+        duplicateLabel,
+        labelVsFieldName,
+        labelVsImportAlias,
+        labelVsReservedName
+    }
 
     private DomainUtil()
     {
@@ -200,24 +230,30 @@ public class DomainUtil
         return defaultValue.toString();
     }
 
-    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap)
+    @Nullable
+    private static QuerySchema resolveLookupSchema(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap)
     {
         Container lookupContainer = p.getLookupContainer() == null ? c : ContainerService.get().getForPath(p.getLookupContainer());
 
         if (null == lookupContainer)
-            return false;
+            return null;
 
         // Saving default schema for use again if there are multiple lookups from the same schema
-        DefaultSchema defaultSchema = defaultSchemaMap.get(lookupContainer);
-        if (null == defaultSchema)
-        {
-            defaultSchema = DefaultSchema.get(user, lookupContainer);
-            defaultSchemaMap.put(lookupContainer, defaultSchema);
-        }
+        DefaultSchema defaultSchema = defaultSchemaMap.computeIfAbsent(lookupContainer, lc -> DefaultSchema.get(user, lc));
 
-        QuerySchema schema = DefaultSchema.resolve(defaultSchema, SchemaKey.fromString(p.getLookupSchema()));
+        return DefaultSchema.resolve(defaultSchema, SchemaKey.fromString(p.getLookupSchema()));
+    }
 
-        if (null == schema)
+    private static boolean isSameScope(QuerySchema schema, DbScope scope)
+    {
+        return null == schema.getDbSchema() || schema.getDbSchema().getScope() == scope;
+    }
+
+    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap, DbScope domainScope)
+    {
+        QuerySchema schema = resolveLookupSchema(user, c, p, defaultSchemaMap);
+
+        if (null == schema || !isSameScope(schema, domainScope))
             return false;
 
         // Only checking names here to avoid creating tableinfo each time. Avoids potential infinite loop.
@@ -311,7 +347,7 @@ public class DomainUtil
                 if (null == lookupDefaultSchemaMap)
                     lookupDefaultSchemaMap = new HashMap<>();
 
-                field.setLookupIsValid(isValidPdLookup(user, container, field, lookupDefaultSchemaMap));
+                field.setLookupIsValid(isValidPdLookup(user, container, field, lookupDefaultSchemaMap, getDomainScope(domainKind)));
             }
 
             //set property as PK
@@ -438,9 +474,7 @@ public class DomainUtil
 
     public static boolean allowMultiChoice(DomainKind<?> kind)
     {
-        if (!kind.allowMultiChoiceProperties())
-            return false;
-        return CoreSchema.getInstance().getSqlDialect().isPostgreSQL();
+        return kind.allowMultiChoiceProperties();
     }
 
     private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)
@@ -551,7 +585,7 @@ public class DomainUtil
         gwtProp.setScannable(prop.isScannable());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
-        for (IPropertyValidator pv : prop.getValidators())
+        for (PropertyValidatorDef pv : prop.getValidators())
         {
             GWTPropertyValidator gpv = new GWTPropertyValidator();
             Lsid lsid = new Lsid(pv.getTypeURI());
@@ -755,6 +789,7 @@ public class DomainUtil
         DomainKind<?> validateDomainKind = templateInfo == null && strictFieldValidation ? kind : null;
 
         ValidationException ve = DomainUtil.validateProperties(null, domain, validateDomainKind, null, user);
+        validateLookupScopes(domain, null, getDomainScope(kind), container, user, ve);
         if (ve.hasErrors())
         {
             throw new ValidationException(ve);
@@ -786,7 +821,7 @@ public class DomainUtil
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user,
                                                              boolean updateDomainName, @Nullable String auditComment, @Nullable String auditUserComment, @Nullable Map<String, Object> oldProps, @Nullable Map<String, Object> newProps)
     {
-        LOG.info("Updating domain descriptor for " + orig.getName());
+        LOG.info("Updating domain descriptor for {}", orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
 
         // Issue 52824: when updating, remove domain descriptor from cache so others don't see a descriptor from the cache in a partially updated state
@@ -804,6 +839,7 @@ public class DomainUtil
 
         DomainKind<?> kind = d.getDomainKind();
         ValidationException validationException = validateProperties(d, update, kind, orig, user);
+        validateLookupScopes(update, orig, getDomainScope(kind), d.getContainer(), user, validationException);
 
         if (validationException.hasErrors())
         {
@@ -982,7 +1018,7 @@ public class DomainUtil
 
                             SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
                                     .append(domainTable)
-                                    .append(" WHERE ")
+                                    .unsafeAppend(" WHERE ")
                                     .append(dialect.array_some_in_array(columnFrag, deletedArray));
 
                             if (new SqlSelector(domainTable.getSchema().getScope(), sql).exists())
@@ -1049,6 +1085,8 @@ public class DomainUtil
                 {
                     for (Map<String, Object> valueUpdate : entry.getValue())
                         updateTextChoiceValueRows(d, user, entry.getKey(), valueUpdate, validationException);
+                    if (!validationException.getErrors().isEmpty())
+                        return validationException;
                 }
 
                 // update indices - add missing and drop those that aren't included in domain info
@@ -1165,7 +1203,7 @@ public class DomainUtil
         if (pd.getPropertyId() > 0)
             return null;
 
-        LOG.debug("Adding property for " + pd.getName());
+        LOG.debug("Adding property for {}", pd.getName());
         if (StringUtils.isEmpty(pd.getPropertyURI()))
         {
             String newPropertyURI = createUniquePropertyURI(domain.getTypeURI(), null, propertyUrisInUse);
@@ -1179,7 +1217,7 @@ public class DomainUtil
         LOG.debug("Property added as string property");
         defaultValues.put(p, pd.getDefaultValue());
         _copyProperties(p, pd, errors);
-        LOG.debug("Properties copied from " + pd + " to " + p.getPropertyDescriptor() );
+        LOG.debug("Properties copied from {} to {}", pd, p.getPropertyDescriptor());
         updatePropertyValidators(p, null, pd);
 
         return p;
@@ -1343,8 +1381,8 @@ public class DomainUtil
                 newProps.put(v.getRowId(), v);
             else
             {
-                Lsid lsid = DefaultPropertyValidator.createValidatorURI(v.getType());
-                IPropertyValidator pv = PropertyService.get().createValidator(lsid.toString());
+                Lsid lsid = DefaultValidatorKind.createValidatorURI(v.getType());
+                PropertyValidatorDef pv = PropertyService.get().createValidator(lsid.toString());
 
                 _copyValidator(pv, v);
                 dp.addValidator(pv);
@@ -1374,7 +1412,7 @@ public class DomainUtil
             }
 
             // update any new or changed
-            for (IPropertyValidator pv : dp.getValidators())
+            for (PropertyValidatorDef pv : dp.getValidators())
             {
                 var gpv = newProps.get(pv.getRowId());
                 if (gpv == null)
@@ -1420,57 +1458,50 @@ public class DomainUtil
             TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain, ContainerFilter.getUnsafeEverythingFilter());
             if (domainTable != null && domainTable.getUpdateService() != null)
             {
-                // we need to make all the row updates for this domain property at one time to prevent the
-                // double mapping if one choice value was changed from a -> b and another from b -> c
-                // (not sure why someone would do that though)
-                List<Map<String, Object>> rows = new ArrayList<>();
-
-                for (Map.Entry<String, Object> entry : valueUpdates.entrySet())
+                List<ColumnInfo> columns = new ArrayList<>(domainTable.getPkColumns());
+                ColumnInfo propCol = domainTable.getColumn(propName);
+                if (propCol == null)
                 {
-                    // query for the row PKs of domain rows that have the original text choice value
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(propName), entry.getKey());
-                    // filter out aliquots for sample type domain
-                    if (domain.getDomainKind() instanceof SampleTypeDomainKind && isParentOnlyField)
-                        filter.addCondition(FieldKey.fromParts("IsAliquot"), false);
-                    List<ColumnInfo> columns = new ArrayList<>(domainTable.getPkColumns());
-                    if (domainTable.getContainerFieldKey() != null)
-                        columns.add(domainTable.getColumn(domainTable.getContainerFieldKey()));
-                    var resultsetRows = new TableSelector(domainTable, columns, filter, null).getMapCollection();
+                    errors.addError(new PropertyValidationError("Property column not found", propName));
+                    return;
+                }
+                columns.add(propCol);
+                ColumnInfo containerCol = domainTable.getContainerFieldKey() != null ? domainTable.getColumn(domainTable.getContainerFieldKey()) : null;
+                if (containerCol != null)
+                    columns.add(containerCol);
 
-                    // generate a column name map for updateRow(), add the updated property value into the row map as well
-                    for (Map<String, Object> rsRow : resultsetRows)
+                SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(propCol.getFieldKey(), valueUpdates.keySet()));
+                // filter out aliquots for sample type domain
+                if (domain.getDomainKind() instanceof SampleTypeDomainKind && isParentOnlyField)
+                    filter.addCondition(FieldKey.fromParts("IsAliquot"), false);
+
+                Map<String, TableInfo> containerTables = new HashMap<>();
+                BatchValidationException batchErrors = new BatchValidationException();
+                // The transaction makes the PostgreSQL driver use a cursor; the cursor's snapshot reads each row once with its original value, so a -> b, b -> c (or a swap) can't double map
+                try (DbScope.Transaction transaction = domainTable.getSchema().getScope().ensureTransaction();
+                     Stream<Map<String, Object>> stream = new TableSelector(domainTable, columns, filter, null).uncachedMapStream())
+                {
+                    int batchSize = BatchSize.get(ROWS);
+                    List<Map<String, Object>> batch = new ArrayList<>(batchSize);
+                    Iterator<Map<String, Object>> iter = stream.iterator();
+                    while (iter.hasNext())
                     {
+                        Map<String, Object> rsRow = iter.next();
                         var valueRow = new CaseInsensitiveHashMap<>();
                         for (ColumnInfo col : columns)
                             valueRow.put(col.getName(), col.getValue(rsRow));
-                        valueRow.put(propName, entry.getValue());
-                        rows.add(valueRow);
-                    }
-                }
+                        valueRow.put(propCol.getName(), valueUpdates.get((String) propCol.getValue(rsRow)));
+                        batch.add(valueRow);
 
-                try
-                {
-                    BatchValidationException batchErrors = new BatchValidationException();
-                    // use update rows against each distinct row container to map the text choice value to the updated value,
-                    // using each row container so that the audit events end up in the right container
-                    if (domainTable.getContainerFieldKey() != null)
-                    {
-                        String containerFieldName = domainTable.getContainerFieldKey().getName();
-                        Set<String> rowContainers = rows.stream().map((row) -> (String) row.get(containerFieldName)).collect(Collectors.toSet());
-                        for (String rowContainer : rowContainers)
+                        if (batch.size() == batchSize || !iter.hasNext())
                         {
-                            // GitHub Issue 924: Updating Single Text choice values errors when there are child folders
-                            var dataContainer = ContainerManager.getForId(rowContainer);
-                            var domainTable_ = domain.getDomainKind().getTableInfo(user, dataContainer, domain, ContainerFilter.getUnsafeEverythingFilter());
-                            List<Map<String, Object>> containerRows = rows.stream().filter((row) -> row.get(containerFieldName).equals(rowContainer)).collect(Collectors.toList());
-                            domainTable_.getUpdateService().updateRows(user, dataContainer, containerRows, containerRows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+                            updateTextChoiceValueBatch(domain, user, domainTable, containerCol, containerTables, batch, batchErrors);
+                            if (batchErrors.hasErrors())
+                                throw batchErrors;
+                            batch = new ArrayList<>(batchSize);
                         }
                     }
-                    else
-                        domainTable.getUpdateService().updateRows(user, domain.getContainer(), rows, rows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
-
-                    if (batchErrors.hasErrors())
-                        throw batchErrors;
+                    transaction.commit();
                 }
                 catch (Exception e)
                 {
@@ -1480,7 +1511,28 @@ public class DomainUtil
         }
     }
 
-    private static boolean _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
+    private static void updateTextChoiceValueBatch(Domain domain, User user, TableInfo domainTable, @Nullable ColumnInfo containerCol, Map<String, TableInfo> containerTables,
+                                                   List<Map<String, Object>> batch, BatchValidationException batchErrors) throws Exception
+    {
+        if (containerCol == null)
+        {
+            domainTable.getUpdateService().updateRows(user, domain.getContainer(), batch, batch, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+            return;
+        }
+
+        Map<String, List<Map<String, Object>>> rowsByContainer = batch.stream().collect(Collectors.groupingBy(row -> (String) row.get(containerCol.getName())));
+        for (Map.Entry<String, List<Map<String, Object>>> entry : rowsByContainer.entrySet())
+        {
+            // GitHub Issue 924: Updating Single Text choice values errors when there are child folders
+            Container dataContainer = ContainerManager.getForId(entry.getKey());
+            TableInfo table = containerTables.computeIfAbsent(entry.getKey(),
+                    id -> domain.getDomainKind().getTableInfo(user, dataContainer, domain, ContainerFilter.getUnsafeEverythingFilter()));
+            List<Map<String, Object>> rows = entry.getValue();
+            table.getUpdateService().updateRows(user, dataContainer, rows, rows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+        }
+    }
+
+    private static boolean _copyValidator(PropertyValidatorDef pv, GWTPropertyValidator gpv)
     {
         boolean hasChange = false;
         if (pv != null && gpv != null)
@@ -1558,15 +1610,35 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain<?> updates, @Nullable DomainKind domainKind, @Nullable GWTDomain<?> orig, @Nullable User user)
     {
-        Set<String> reservedNames = null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user, domain == null))
-                : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
+        Set<String> reservedNames = null != domainKind ? domainKind.getReservedPropertyNames(domain, user, domain == null)
+                : updates.getReservedFieldNames();
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
-        Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
-        Map<String, String> altNameMap = new CaseInsensitiveHashMap<>();
-        ValidationException exception = new ValidationException();
-        Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
-
         boolean allowMultiChoice = domainKind != null ? allowMultiChoice(domainKind) : updates.isAllowMultiChoiceProperties();
+        boolean supportsNamingPattern = domainKind != null && domainKind.supportsNamingPattern();
+
+        return validateProperties(updates, reservedNames, reservedPrefixes, allowMultiChoice, supportsNamingPattern,
+                getOriginalFieldPropertyIdNameMap(orig), null);
+    }
+
+    /**
+     * Applies the field-naming rules to an already-resolved rule set, so a caller that has no {@link Domain} can run
+     * them. GH Issue 1589: the nightly scan over stored domains resolves the reserved names itself and passes a
+     * {@code tally} to count violations by {@link FieldNameRule}; {@code tally} is null on the save path.
+     */
+    public static ValidationException validateProperties(@NotNull GWTDomain<?> updates, @NotNull Set<String> reservedNameSet,
+            @NotNull Set<String> reservedPrefixes, boolean allowMultiChoice, boolean supportsNamingPattern,
+            @Nullable Map<Integer, String> propertyIdNameMap, @Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally)
+    {
+        Set<String> reservedNames = new CaseInsensitiveHashSet(reservedNameSet);
+        Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
+        // GH Issue 1257: import alias -> the fields declaring it.
+        Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
+        // GH Issue 1589: explicit label -> the fields carrying it. Only populated when tallying, since label collisions
+        // are counted but not rejected.
+        Map<String, List<GWTPropertyDescriptor>> labelMap = new CaseInsensitiveLinkedHashMap<>();
+        Set<String> fieldNames = new CaseInsensitiveHashSet();
+        ValidationException exception = new ValidationException();
+
         for (GWTPropertyDescriptor field : updates.getFields(true))
         {
             String name = field.getName();
@@ -1577,8 +1649,32 @@ public class DomainUtil
                 continue;
             }
 
+            fieldNames.add(name);
+
+            // GH Issue 1257: Collect alias to field list mapping. convertToSet() is case-sensitive, so dedupe the field's
+            // own aliases here to keep case variants ("abc, ABC") from looking like two fields claiming one alias. Iterate
+            // the parsed values rather than a CaseInsensitiveHashSet so the alias keeps the casing the user entered.
+            Set<String> fieldAliases = new CaseInsensitiveHashSet();
+            for (String alias : ColumnRenderPropertiesImpl.convertToSet(field.getImportAliases()))
+            {
+                // an alias that repeats the field's name is redundant but not ambiguous, so skip it
+                if (!alias.equalsIgnoreCase(name) && fieldAliases.add(alias))
+                    importAliasMap.computeIfAbsent(alias, k -> new ArrayList<>()).add(field);
+            }
+
+            if (tally != null)
+            {
+                // Only an explicitly set label counts. A label derived from the field name is not something anyone
+                // chose, and the only way to resolve a collision on one is to rename the field.
+                String label = StringUtils.trimToNull(field.getLabel());
+                // A label repeating its own field's name is redundant but not ambiguous.
+                if (label != null && !label.equalsIgnoreCase(name))
+                    labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
+            }
+
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
             {
+                tally(tally, FieldNameRule.starName, field);
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "The field name '" + name + "' is not allowed.")));
             }
 
@@ -1601,6 +1697,7 @@ public class DomainUtil
             Matcher expMatcher = SUBSTITUTION_EXP_PATTERN.matcher(name);
             if (expMatcher.find())
             {
+                tally(tally, FieldNameRule.substitutionToken, field);
                 exception.addFieldError(name, getDomainErrorMessage(updates, "The '${}' substitution token is reserved for system use."));
                 continue;
             }
@@ -1608,6 +1705,7 @@ public class DomainUtil
             // Issue 52746: SM Import: Newlines in field names on import
             if (StringUtils.containsAny(name, "\t\n\r"))
             {
+                tally(tally, FieldNameRule.newlineInName, field);
                 exception.addFieldError(name, getDomainErrorMessage(updates, "Field name may not contain 'tab', 'new line', or 'return' characters."));
                 continue;
             }
@@ -1618,6 +1716,7 @@ public class DomainUtil
                 Optional<String> reservedPrefix = reservedPrefixes.stream().filter(prefix -> lcName.startsWith(prefix.toLowerCase())).findAny();
                 if (reservedPrefix.isPresent())
                 {
+                    tally(tally, FieldNameRule.reservedPrefix, field);
                     exception.addFieldError(name, getDomainErrorMessage(updates, "The prefix '" + reservedPrefix.get() + "' is reserved for system use."));
                     continue;
                 }
@@ -1629,16 +1728,18 @@ public class DomainUtil
                 String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
+                    tally(tally, FieldNameRule.reservedName, field);
                     exception.addFieldError(name, getDomainErrorMessage(updates, ("'" + name + "' is a reserved field name in '" + updates.getName() + "'.")));
                 }
                 continue;
             }
 
-            if (domainKind != null && domainKind.supportsNamingPattern())
+            if (supportsNamingPattern)
             {
                 String nameSyntaxError = NameGenerator.validateFieldKeyConflict(name);
                 if (nameSyntaxError != null)
                 {
+                    tally(tally, FieldNameRule.namingPatternConflict, field);
                     exception.addFieldError(name, nameSyntaxError);
                     continue;
                 }
@@ -1646,26 +1747,13 @@ public class DomainUtil
 
             if (namePropertyIdMap.containsKey(name))
             {
+                tally(tally, FieldNameRule.duplicateName, field);
                 String errorMsg = getDomainErrorMessage(updates, "The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
             }
             else
-            {
                 namePropertyIdMap.put(name, field.getPropertyId());
-
-                // Issue 52827: File/attachment fields with special characters
-                if (altNameMap.containsKey(name))
-                {
-                    String errorMsg = getDomainErrorMessage(updates, "The field name '" + name + "' cannot be used with another field '" + altNameMap.get(name) + "'. Please provide a different name for the field.");
-                    PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
-                    exception.addError(propertyValidationError);
-                }
-                else
-                {
-                    altNameMap.put(name, name);
-                }
-            }
 
             if (field.getValueExpression() != null && field.getValueExpression().trim().length() > 4000)
             {
@@ -1674,7 +1762,103 @@ public class DomainUtil
             }
         }
 
+        // GH Issue 1257: import aliases must be unique across the domain and must not collide with a field name, since
+        // ImportAliasable.Helper.createImportMap() resolves names, labels, and aliases into one case-insensitive map.
+        importAliasMap.forEach((alias, fields) -> {
+            String names = "'" + fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
+
+            if (fields.size() > 1)
+            {
+                fields.forEach(f -> tally(tally, FieldNameRule.duplicateImportAlias, f));
+                addImportAliasErrors(exception, updates, fields, "Duplicate import alias '" + alias + "' for fields " + names + ".");
+            }
+
+            if (fieldNames.contains(alias))
+            {
+                fields.forEach(f -> tally(tally, FieldNameRule.importAliasVsFieldName, f));
+                addImportAliasErrors(exception, updates, fields, "Import alias '" + alias + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a field name.");
+            }
+
+            // GH Issue 1474: 'Container' should not be allowed as valid Import Alias
+            if (reservedNames.contains(alias))
+            {
+                fields.forEach(f -> tally(tally, FieldNameRule.importAliasVsReservedName, f));
+                addImportAliasErrors(exception, updates, fields, "Import alias '" + alias + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a reserved field name.");
+            }
+        });
+
+        // GH Issue 1589: tally-only. ImportAliasable.Helper.createImportMap resolves propertyURI, name, label and import
+        // alias into one case-insensitive map at precedence propertyURI < propName < alias < label < name, so a label
+        // that ties with any of them silently loses the token or steals it. Counted, not rejected: these configurations
+        // save successfully today and blocking them would break existing domains.
+        labelMap.forEach((label, fields) -> {
+            if (fields.size() > 1)
+                fields.forEach(f -> tally(tally, FieldNameRule.duplicateLabel, f));
+
+            // A name outranks a label, so these fields' labels are unreachable at import.
+            if (fieldNames.contains(label))
+                fields.forEach(f -> tally(tally, FieldNameRule.labelVsFieldName, f));
+
+            // A label outranks an alias, so here the colliding alias is the unreachable one. One field owning both its
+            // own label and the matching alias resolves to that field either way, so it is redundant, not ambiguous.
+            List<GWTPropertyDescriptor> aliasFields = importAliasMap.get(label);
+            if (aliasFields != null && !isSameSingleField(fields, aliasFields))
+                fields.forEach(f -> tally(tally, FieldNameRule.labelVsImportAlias, f));
+
+            if (reservedNames.contains(label))
+                fields.forEach(f -> tally(tally, FieldNameRule.labelVsReservedName, f));
+        });
+
         return exception;
+    }
+
+    private static boolean isSameSingleField(List<GWTPropertyDescriptor> a, List<GWTPropertyDescriptor> b)
+    {
+        return a.size() == 1 && b.size() == 1 && a.get(0) == b.get(0);
+    }
+
+    private static DbScope getDomainScope(DomainKind<?> kind)
+    {
+        return Objects.requireNonNullElse(kind.getScope(), DbScope.getLabKeyScope());
+    }
+
+    // GH Issue 438: a lookup join can't span data sources. Unchanged lookups are skipped so an existing bad one doesn't block unrelated edits.
+    private static void validateLookupScopes(GWTDomain<?> updates, @Nullable GWTDomain<?> orig, DbScope domainScope, Container c, User user, ValidationException errors)
+    {
+        Map<Integer, GWTPropertyDescriptor> origFields = null == orig ? Map.of() : orig.getFields().stream()
+            .collect(Collectors.toMap(GWTPropertyDescriptor::getPropertyId, f -> f, (a, b) -> a));
+        Map<Container, DefaultSchema> defaultSchemaMap = new HashMap<>();
+
+        for (GWTPropertyDescriptor field : updates.getFields(true))
+        {
+            if (StringUtils.isBlank(field.getLookupSchema()) || StringUtils.isBlank(field.getLookupQuery()) || !isLookupChanged(field, origFields.get(field.getPropertyId())))
+                continue;
+
+            QuerySchema schema = resolveLookupSchema(user, c, field, defaultSchemaMap);
+            if (null != schema && !isSameScope(schema, domainScope))
+                errors.addFieldError(field.getName(), getDomainErrorMessage(updates, "Field '" + field.getName() + "' can't look up '" + field.getLookupSchema() + "." + field.getLookupQuery() + "' because it is in a different data source."));
+        }
+    }
+
+    private static boolean isLookupChanged(GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField)
+    {
+        return null == origField
+            || !Strings.CI.equals(field.getLookupContainer(), origField.getLookupContainer())
+            || !Strings.CI.equals(field.getLookupSchema(), origField.getLookupSchema())
+            || !Strings.CI.equals(field.getLookupQuery(), origField.getLookupQuery());
+    }
+
+    private static void tally(@Nullable BiConsumer<FieldNameRule, GWTPropertyDescriptor> tally, FieldNameRule rule, GWTPropertyDescriptor field)
+    {
+        if (tally != null)
+            tally.accept(rule, field);
+    }
+
+    /** Anchor an import alias error on every field that declares the offending alias so the designer can highlight them. */
+    private static void addImportAliasErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
+    {
+        for (GWTPropertyDescriptor field : fields)
+            exception.addError(new PropertyValidationError(getDomainErrorMessage(updates, message), field.getName(), field.getPropertyId()));
     }
 
     @Nullable
@@ -1714,5 +1898,232 @@ public class DomainUtil
             values.add(label.replaceAll("\\s", ""));
         }
         return values;
+    }
+
+    /** GH Issue 1257: import alias validation in {@link #validateProperties}. */
+    public static class ImportAliasTestCase extends Assert
+    {
+        private static final String FIELD_ONE = "AliasFieldOne";
+        private static final String FIELD_TWO = "AliasFieldTwo";
+        private static final String FIELD_THREE = "AliasFieldThree";
+
+        private static GWTPropertyDescriptor field(String name, @Nullable String importAliases)
+        {
+            GWTPropertyDescriptor pd = new GWTPropertyDescriptor(name, PropertyType.STRING.getTypeUri());
+            pd.setImportAliases(importAliases);
+            return pd;
+        }
+
+        /**
+         * Validate with a null DomainKind and no original domain so the surrounding name/reserved-name checks stay out of
+         * the way, and with no domain name so messages carry no "&lt;domainName&gt; -- " prefix.
+         */
+        private static ValidationException validate(GWTPropertyDescriptor... fields)
+        {
+            GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
+            domain.setFields(Arrays.asList(fields));
+            return validateProperties(null, domain, null, null, null);
+        }
+
+        @Test
+        public void aliasesWithNoOverlapAreAllowed()
+        {
+            ValidationException errors = validate(
+                    field(FIELD_ONE, "one, uno"),
+                    field(FIELD_TWO, "two"),
+                    field(FIELD_THREE, null));
+            assertFalse("Non-overlapping import aliases should validate: " + errors.getAllErrors(), errors.hasErrors());
+        }
+
+        @Test
+        public void aliasRepeatingItsOwnFieldNameIsAllowed()
+        {
+            // Redundant, but resolves to the same field, so there is nothing ambiguous to reject
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_ONE), field(FIELD_TWO, FIELD_TWO.toLowerCase()));
+            assertFalse("A field's import alias may repeat its own name: " + errors.getAllErrors(), errors.hasErrors());
+        }
+
+        @Test
+        public void caseVariantsWithinOneFieldCountOnce()
+        {
+            // convertToSet() is case-sensitive, so "dupe, DUPE" parses to two aliases that collapse to one for this check
+            ValidationException errors = validate(field(FIELD_ONE, "dupe, DUPE"), field(FIELD_TWO, null));
+            assertFalse("Case variants of one alias on a single field are not a duplicate: " + errors.getAllErrors(), errors.hasErrors());
+        }
+
+        @Test
+        public void messageEchoesTheAliasAsEntered()
+        {
+            // Reported back to the user, so it must not be normalized to the lower case the comparison uses
+            ValidationException errors = validate(field(FIELD_ONE, "MixedCaseAlias"), field(FIELD_TWO, "mixedcasealias"));
+            assertEquals(List.of("Duplicate import alias 'MixedCaseAlias' for fields '" + FIELD_ONE + "', '" + FIELD_TWO + "'."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void duplicateAliasAcrossFieldsIsRejected()
+        {
+            ValidationException errors = validate(field(FIELD_TWO, "shared"), field(FIELD_ONE, "shared"));
+            // Field names in the message are sorted, so they do not depend on the order the fields were declared in
+            String expected = "Duplicate import alias 'shared' for fields '" + FIELD_ONE + "', '" + FIELD_TWO + "'.";
+            assertEquals("Error should be anchored on the first field", List.of(expected), errors.getFieldErrors(FIELD_TWO));
+            assertEquals("Error should be anchored on the second field", List.of(expected), errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void duplicateAliasAcrossFieldsIgnoresCase()
+        {
+            ValidationException errors = validate(field(FIELD_ONE, "shared"), field(FIELD_TWO, "SHARED"));
+            // The message reports the alias as first encountered, which is the earlier field's spelling
+            String expected = "Duplicate import alias 'shared' for fields '" + FIELD_ONE + "', '" + FIELD_TWO + "'.";
+            assertEquals(List.of(expected), errors.getFieldErrors(FIELD_ONE));
+            assertEquals(List.of(expected), errors.getFieldErrors(FIELD_TWO));
+        }
+
+        @Test
+        public void aliasConflictingWithFieldNameIsRejected()
+        {
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_TWO), field(FIELD_TWO, null));
+            assertEquals(List.of("Import alias '" + FIELD_TWO + "' on field '" + FIELD_ONE + "' conflicts with a field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+            assertTrue("The conflict belongs to the field declaring the alias, not the field being named",
+                    errors.getFieldErrors(FIELD_TWO).isEmpty());
+        }
+
+        @Test
+        public void aliasConflictingWithFieldNameIgnoresCase()
+        {
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_TWO.toLowerCase()), field(FIELD_TWO, null));
+            assertEquals(List.of("Import alias '" + FIELD_TWO.toLowerCase() + "' on field '" + FIELD_ONE + "' conflicts with a field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void aliasConflictingWithALaterFieldNameIsRejected()
+        {
+            // The alias is declared before the field it collides with, so the check cannot run field-by-field
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_THREE), field(FIELD_TWO, null), field(FIELD_THREE, null));
+            assertEquals(List.of("Import alias '" + FIELD_THREE + "' on field '" + FIELD_ONE + "' conflicts with a field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void aliasThatIsBothDuplicatedAndAFieldNameReportsBoth()
+        {
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_THREE), field(FIELD_TWO, FIELD_THREE), field(FIELD_THREE, null));
+            List<String> expected = List.of(
+                    "Duplicate import alias '" + FIELD_THREE + "' for fields '" + FIELD_ONE + "', '" + FIELD_TWO + "'.",
+                    "Import alias '" + FIELD_THREE + "' on fields '" + FIELD_ONE + "', '" + FIELD_TWO + "' conflicts with a field name.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_ONE));
+            assertEquals(expected, errors.getFieldErrors(FIELD_TWO));
+        }
+
+        @Test
+        public void multipleAliasesPerFieldWithDuplicatesAndTrickyChars()
+        {
+            String aliasWithBlanks = "with blanks";
+            String aliasWithComma = "with, comma";
+            String trickyChars = "\u00C5\u00E4"; // Angstrom + a-umlaut
+            ValidationException errors = validate(field(FIELD_ONE, trickyChars + "," + "\"" + aliasWithComma + "\"" + "," + aliasWithBlanks),
+                    field(FIELD_TWO,  "\"" + aliasWithComma + "\"" ), field(FIELD_THREE, trickyChars + " \"" + aliasWithComma + "\""));
+            List<String> expected = List.of(
+                    "Duplicate import alias '" + trickyChars + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "'.",
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_ONE));
+            expected = List.of(
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_TWO));
+            expected = List.of(
+                    "Duplicate import alias '" + trickyChars + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "'.",
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_THREE));
+        }
+
+        @Test
+        public void blankFieldNameDoesNotBreakAliasChecking()
+        {
+            // A nameless field is reported on its own and must not reach the alias map, where it would have no name to report
+            ValidationException errors = validate(field(null, "shared"), field("   ", "shared"), field(FIELD_ONE, "shared"));
+            assertEquals("Each nameless field should be reported once",
+                    List.of("Please provide a name for each field.", "Please provide a name for each field."),
+                    errors.getGlobalErrorStrings());
+            assertTrue("Only one named field declares the alias, so it is not a duplicate: " + errors.getAllErrors(),
+                    errors.getFieldErrors(FIELD_ONE).isEmpty());
+        }
+    }
+
+    public static class LookupScopeTestCase extends Assert
+    {
+        private static final String FIELD_NAME = "LookupField";
+        private static final int PROPERTY_ID = 1;
+
+        // Stands in for an external data source; core.Users lives in the LabKey DB
+        private static final DbScope OTHER_SCOPE = new DbScope() {};
+
+        private static GWTPropertyDescriptor lookup(int propertyId, @Nullable String schema, @Nullable String query)
+        {
+            GWTPropertyDescriptor pd = new GWTPropertyDescriptor(FIELD_NAME, PropertyType.INTEGER.getTypeUri());
+            pd.setPropertyId(propertyId);
+            pd.setLookupSchema(schema);
+            pd.setLookupQuery(query);
+            return pd;
+        }
+
+        private static GWTDomain<GWTPropertyDescriptor> domain(GWTPropertyDescriptor field)
+        {
+            GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
+            domain.setFields(List.of(field));
+            return domain;
+        }
+
+        private static List<String> validate(GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField, DbScope domainScope)
+        {
+            ValidationException errors = new ValidationException();
+            validateLookupScopes(domain(field), null == origField ? null : domain(origField), domainScope, JunitUtil.getTestContainer(), TestContext.get().getUser(), errors);
+            return errors.getFieldErrors(FIELD_NAME);
+        }
+
+        @Test
+        public void sameDataSourceIsAllowed()
+        {
+            assertEquals(List.of(), validate(lookup(0, "core", "Users"), null, DbScope.getLabKeyScope()));
+        }
+
+        @Test
+        public void newLookupToOtherDataSourceIsRejected()
+        {
+            assertEquals(List.of("Field '" + FIELD_NAME + "' can't look up 'core.Users' because it is in a different data source."),
+                    validate(lookup(0, "core", "Users"), null, OTHER_SCOPE));
+        }
+
+        @Test
+        public void unchangedLookupToOtherDataSourceIsAllowed()
+        {
+            // Case-only differences don't count as a change
+            assertEquals(List.of(), validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, "Core", "users"), OTHER_SCOPE));
+        }
+
+        @Test
+        public void changedLookupToOtherDataSourceIsRejected()
+        {
+            assertEquals(1, validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, "core", "Containers"), OTHER_SCOPE).size());
+            assertEquals(1, validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, null, null), OTHER_SCOPE).size());
+        }
+
+        @Test
+        public void newFieldIsNotMatchedToAnExistingField()
+        {
+            // New fields arrive with propertyId 0, so they never match an original field and are always validated
+            assertEquals(1, validate(lookup(0, "core", "Users"), lookup(PROPERTY_ID, "core", "Users"), OTHER_SCOPE).size());
+        }
+
+        @Test
+        public void incompleteOrUnresolvableLookupIsSkipped()
+        {
+            assertEquals(List.of(), validate(lookup(0, "core", null), null, OTHER_SCOPE));
+            // Some UIs (e.g. SND's package editor) send "" for fields without a lookup
+            assertEquals(List.of(), validate(lookup(0, "", ""), null, OTHER_SCOPE));
+            assertEquals(List.of(), validate(lookup(0, "noSuchSchema", "Users"), null, OTHER_SCOPE));
+        }
     }
 }

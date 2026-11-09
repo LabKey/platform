@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2013-2015 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,4 +21,5 @@
 <p>
     The connection using the supplied credentials was <a style="color: red; font-size: 200%">not successful</a>.
 </p>
+<labkey:errors/>
 <%=link("manage remote connections", QueryController.RemoteQueryConnectionUrls.urlManageRemoteConnection(getContainer()))%>

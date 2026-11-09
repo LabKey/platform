@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,24 +95,20 @@ public class CrosstabMeasure
         @NotNull
         public JdbcType getAggregateSqlType(ColumnInfo sourceCol)
         {
-            switch(this)
+            return switch (this)
             {
-                case COUNT:
-                    return JdbcType.BIGINT;
-                case AVG:
-                case STDDEV:
-                    return JdbcType.DECIMAL;
-                default:
-                    return sourceCol.getJdbcType();
-            }
+                case COUNT -> JdbcType.BIGINT;
+                case AVG, STDDEV -> JdbcType.DECIMAL;
+                default -> sourceCol.getJdbcType();
+            };
         }
 
         public SQLFragment getSqlExpression(SqlDialect sqlDialect, SQLFragment columnSQL)
         {
             SQLFragment result = new SQLFragment(getSqlFunction(sqlDialect));
-            result.append("(");
+            result.unsafeAppend("(");
             result.append(columnSQL);
-            result.append(")");
+            result.unsafeAppend(")");
             return result;
         }
 

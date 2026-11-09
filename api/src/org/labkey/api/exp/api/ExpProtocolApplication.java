@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,8 +77,8 @@ public interface ExpProtocolApplication extends ExpObject
     void removeMaterialInput(User user, ExpMaterial material);
     void removeMaterialInputs(User user, Collection<Long> rowIds);
 
-    void addProvenanceInput(Set<String> lsids);
-    void addProvenanceMapping(Set<Pair<String, String>> lsidPairs);
+    void addProvenanceInput(User user, Set<String> lsids);
+    void addProvenanceMapping(User user, Set<Pair<String, String>> lsidPairs);
     Set<Pair<String, String>> getProvenanceMapping();
 
     ExpRun getRun();

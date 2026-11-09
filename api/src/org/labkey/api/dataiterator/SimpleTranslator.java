@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.AbstractListValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +35,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConversionExceptionWithMessage;
 import org.labkey.api.data.ConvertHelper;
@@ -57,7 +60,6 @@ import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.ontology.Unit;
@@ -92,12 +94,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
@@ -221,12 +227,22 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public void setIncludePkLookup(boolean includePkLookup)
         {
             _includePkLookup = includePkLookup;
-            _maps = null;
         }
 
         public ColumnInfo getPkColumn()
         {
-            return _targetTable.getPkColumns().get(0);
+            return _targetTable.getPkColumns().getFirst();
+        }
+
+        private Pair<ColumnInfo, Map<?, ?>> pkLookupMap()
+        {
+            if (!_includePkLookup)
+                return null;
+
+            if (_pkColumnLookupMap == null)
+                _pkColumnLookupMap = Pair.of(getPkColumn(), lruMap());
+
+            return _pkColumnLookupMap;
         }
 
         private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> getMaps()
@@ -237,6 +253,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
                 ColumnInfo pkCol = getPkColumn();
                 Set<ColumnInfo> seen = new HashSet<>();
+                // Match the lookup table's text comparison, or a per-key fetch finds "ABC" for "abc" but files it where get("abc") misses
+                boolean caseInsensitive = !_targetTable.getSqlDialect().isCaseSensitive();
 
                 // See similar check in AbstractForeignKey.allowImportByAlternateKey()
                 // The lookup table must meet the following requirements:
@@ -251,7 +269,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (def.columns().size() != 1)
                         continue;
 
-                    ColumnInfo col = def.columns().get(0);
+                    ColumnInfo col = def.columns().getFirst();
                     if (!seen.add(col))
                         continue;
 
@@ -261,7 +279,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (!col.getJdbcType().isText())
                         continue;
 
-                    _maps.add(Triple.of(pkCol, col, new ArrayListValuedHashMap()));
+                    _maps.add(Triple.of(pkCol, col, lruMultiValuedMap(caseInsensitive)));
                 }
 
                 if (_includeTitleColumn)
@@ -269,13 +287,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     ColumnInfo titleColumn = _targetTable.getTitleColumn() != null ? _targetTable.getColumn(_targetTable.getTitleColumn()) : null;
                     if (titleColumn != null && !seen.contains(titleColumn))
                     {
-                        _titleColumnLookupMap = Triple.of(pkCol, titleColumn, new ArrayListValuedHashMap());
+                        _titleColumnLookupMap = Triple.of(pkCol, titleColumn, lruMultiValuedMap(caseInsensitive));
                     }
-                }
-
-                if (_includePkLookup)
-                {
-                    _pkColumnLookupMap = Pair.of(pkCol, new HashMap<>());
                 }
             }
             return _maps;
@@ -290,16 +303,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (k instanceof Map || k instanceof List)
                 return k;
 
-            List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>>> maps = getMaps();
-
-            if (_pkColumnLookupMap != null)
+            Pair<ColumnInfo, Map<?, ?>> pkLookupMap = pkLookupMap();
+            if (pkLookupMap != null)
             {
-                Object v = fetch(_pkColumnLookupMap, k);
+                Object v = fetch(pkLookupMap, k);
                 if (v != null)
                     return v;
             }
 
-            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple : maps)
+            // Also initializes _titleColumnLookupMap
+            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple : getMaps())
             {
                 Object v = fetch(triple, k);
                 if (v != null)
@@ -314,7 +327,122 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return null;
         }
 
+        /**
+         * Fills the alternate-key and title column maps for many keys with one query per batch, so {@link #mappedValue}
+         * returns the same values and errors for them without querying.
+         */
+        public void prefetch(Collection<String> keys)
+        {
+            // A bulk load appends the whole table to the map, so it would duplicate every prefetched key
+            if (_allowBulkLoads)
+                return;
+
+            List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> maps = new ArrayList<>(getMaps());
+            if (_titleColumnLookupMap != null)
+                maps.add(_titleColumnLookupMap);
+
+            Collection<String> unresolved = keys.stream()
+                .filter(StringUtils::isNotEmpty)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            // Like mappedValue, a key reaches the next map only when the previous one has no match
+            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> triple : maps)
+            {
+                if (unresolved.isEmpty())
+                    break;
+
+                prefetch(triple, unresolved);
+                MultiValuedMap<?, ?> map = triple.getRight();
+                unresolved = unresolved.stream().filter(k -> isMiss(map, k)).toList();
+            }
+        }
+
+        private void prefetch(Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> triple, Collection<String> keys)
+        {
+            final ColumnInfo pkCol = triple.getLeft();
+            final ColumnInfo altKeyCol = triple.getMiddle();
+            final MultiValuedMap map = triple.getRight();
+
+            for (List<String> batch : ListUtils.partition(new ArrayList<>(keys), BatchSize.get(BatchSize.Kind.ROWS)))
+            {
+                // fillMultiValuedMap appends, so refetching a key a case-insensitive match already filled would make it ambiguous
+                List<String> uncached = batch.stream().filter(k -> !map.containsKey(k)).toList();
+                if (!uncached.isEmpty())
+                    createSelector(pkCol, altKeyCol, new SimpleFilter(altKeyCol.getFieldKey(), uncached, CompareType.IN)).fillMultiValuedMap(map);
+            }
+
+            for (String k : keys)
+            {
+                if (!map.containsKey(k))
+                    map.put(k, MISS);
+            }
+        }
+
+        private boolean isMiss(MultiValuedMap map, Object k)
+        {
+            Collection<?> vs = map.get(k);
+            return vs.size() == 1 && vs.iterator().next() == MISS;
+        }
+
         private final Object MISS = new Object();
+
+        private static final int SELECTOR_MAX_ROWS = 100_000;
+        // Above SELECTOR_MAX_ROWS so a bulk load never evicts its own rows
+        static final int MAX_CACHED_KEYS = 2 * SELECTOR_MAX_ROWS;
+
+        private static <K, V> Map<K, V> lruMap()
+        {
+            return new LinkedHashMap<>(16, 0.75f, true)
+            {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<K, V> eldest)
+                {
+                    return size() > MAX_CACHED_KEYS;
+                }
+            };
+        }
+
+        // Normalizes keys itself: CaseInsensitiveMapWrapper's case-mapping side map is never pruned on eviction, so it would defeat the cap
+        private static <V> MultiValuedMap<Object, V> lruMultiValuedMap(boolean caseInsensitive)
+        {
+            return new AbstractListValuedMap<>(RemapConverter.<Object, List<V>>lruMap())
+            {
+                @Override
+                protected List<V> createCollection()
+                {
+                    return new ArrayList<>();
+                }
+
+                private Object normalize(Object key)
+                {
+                    return caseInsensitive && key instanceof String s ? s.toLowerCase(Locale.ROOT) : key;
+                }
+
+                @Override
+                public List<V> get(Object key)
+                {
+                    return super.get(normalize(key));
+                }
+
+                @Override
+                public boolean put(Object key, V value)
+                {
+                    return super.put(normalize(key), value);
+                }
+
+                @Override
+                public boolean containsKey(Object key)
+                {
+                    return super.containsKey(normalize(key));
+                }
+
+                @Override
+                public List<V> remove(Object key)
+                {
+                    return super.remove(normalize(key));
+                }
+            };
+        }
 
         // While there should be at most one matching value for lookup targets with a true unique constraint,
         // using a multi-valued map allows us to also work with things that are almost always unique, like
@@ -342,7 +470,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     bulkLoaded = map.get(k);
                 }
 
-                // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
+                // The multi-valued map returns an empty collection if 'k' is not in the map.
                 if (bulkLoaded == null || bulkLoaded.isEmpty() )
                 {
                     // when the given key (e.g., a rowId value) cannot be assigned to the alternate key value,
@@ -366,10 +494,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     vs = bulkLoaded;
                 }
 
-                // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
+                // The multi-valued map returns an empty collection if 'k' is not in the map.
                 // If there are no values in the database, stash a MISS marker to avoid re-fetching.
+                // A non-String key's detached empty list makes getSingleValue() throw, which keeps it away from the
+                // title column; memoizing it would turn that into a null that falls through to a title match
                 assert vs != null;
-                if (vs.isEmpty())
+                if (vs.isEmpty() && k instanceof String)
                     map.put(k, MISS);
             }
 
@@ -449,7 +579,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             // Load a bunch of rows in the hopes of not needing to fetch for every value we encounter,
             // but if we have a miss, we'll do per-value fetches as needed
-            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(100_000);
+            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(SELECTOR_MAX_ROWS);
         }
 
 
@@ -486,20 +616,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int derivationDataColInd;
         final int index;
         final boolean isDerivation;
-        final String presentDerivationWarning;
-        final String presentNonDerivationWarning;
 
         final SimpleConvertColumn _convertCol;
 
-        public DerivationScopedConvertColumn(int index, SimpleConvertColumn convertCol, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+        public DerivationScopedConvertColumn(int index, SimpleConvertColumn convertCol, int derivationDataColInd, boolean isDerivation)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type, convertCol.defaultUnit);
             _convertCol = convertCol;
             this.index = index;
             this.derivationDataColInd = derivationDataColInd;
             this.isDerivation = isDerivation;
-            this.presentDerivationWarning = presentDerivationWarning;
-            this.presentNonDerivationWarning = presentNonDerivationWarning;
         }
 
         @Override
@@ -507,7 +633,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             Object thisValue =  _convertCol.convert(o);
 
-            return getDerivationData(thisValue, derivationDataColInd, isDerivation, presentDerivationWarning, presentNonDerivationWarning);
+            return getDerivationData(thisValue, derivationDataColInd, isDerivation);
 
         }
     }
@@ -520,23 +646,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int index;
         final boolean isDerivation;
 
-        final String presentDerivationWarning;
-        final String presentNonDerivationWarning;
-
-        public DerivationScopedColumn(int index, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+        public DerivationScopedColumn(int index, int derivationDataColInd, boolean isDerivation)
         {
             this.index = index;
             this.derivationDataColInd = derivationDataColInd;
             this.isDerivation = isDerivation;
-            this.presentDerivationWarning = presentDerivationWarning;
-            this.presentNonDerivationWarning = presentNonDerivationWarning;
         }
 
         @Override
         public Object get()
         {
             Object thisValue =  _data.get(index);
-            return getDerivationData(thisValue, derivationDataColInd, isDerivation, presentDerivationWarning, presentNonDerivationWarning);
+            return getDerivationData(thisValue, derivationDataColInd, isDerivation);
         }
     }
 
@@ -544,23 +665,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * @param thisValue the original field value
      * @param derivationDataColInd the col index for the field used to determine if a record is child or parent
      * @param isDerivationField if this field is a child only field
-     * @param presentDerivationWarning the warning msg to log if a child field is present for a parent record
-     * @param presentNonDerivationWarning the warning msg to log if a parent field is present for a child record
      */
-    private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+    private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField)
     {
         Object derivationData = derivationDataColInd < 0 ? null : _data.get(derivationDataColInd);
         if ((isDerivationField && derivationData != null)
                 || (!isDerivationField && derivationData == null))
             return thisValue;
-
-        if (thisValue != null)
-        {
-            if (isDerivationField && presentDerivationWarning != null)
-                LOG.warn(presentDerivationWarning);
-            else if (!isDerivationField && presentNonDerivationWarning != null)
-                LOG.warn(presentNonDerivationWarning);
-        }
 
         return null;
     }
@@ -712,6 +823,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         final Set<Object> allowableContainers = new HashSet<>();
 
+        // GH Issue 1332: a bad container value recurs on every row; warn once per distinct value, not per row
+        final Set<Object> loggedUnresolvedContainers = new HashSet<>();
+        final Set<Object> loggedRejectedContainers = new HashSet<>();
+
         public ContainerColumn(UserSchema us, TableInfo tableInfo, String containerId, int idx)
         {
             this.us = us;
@@ -743,7 +858,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (!this.us.getContainer().allowRowMutationForContainer(rowContainer))
                     {
                         getRowError().addError(new SimpleValidationError("Row supplied container value: " + rowContainerVal + " cannot be used for actions against the container: " + us.getContainer().getPath()));
-                        LOG.warn("Resolved container to " + rowContainer.getPath() + " but rejected as valid location for import into " + us.getContainer().getPath() + " in " + us.getSchemaName() + "." + tableInfo.getPublicSchemaName());
+                        if (loggedRejectedContainers.add(rowContainerVal))
+                            LOG.warn("Resolved container to {} but rejected as valid location for import into {} in {}.{}", rowContainer.getPath(), us.getContainer().getPath(), us.getSchemaName(), tableInfo.getPublicSchemaName());
                     }
                     else
                     {
@@ -754,10 +870,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
                 else
                 {
-                    // only log if the incoming value is GUID-like
-                    if (rowContainerVal instanceof String && GUID.isGUID((String)rowContainerVal))
+                    // only log if the incoming value is GUID-like, and only once per distinct value
+                    if (rowContainerVal instanceof String s && GUID.isGUID(s) && loggedUnresolvedContainers.add(rowContainerVal))
                     {
-                        LOG.warn("Failed to resolve container value '" + rowContainerVal + "' to container for import into " + us.getSchemaName() + "." + tableInfo.getPublicSchemaName() + ", defaulting to original target container of " + us.getContainer().getPath());
+                        LOG.warn("Failed to resolve container value '{}' to container for import into {}.{}, defaulting to original target container of {}", rowContainerVal, us.getSchemaName(), tableInfo.getPublicSchemaName(), us.getContainer().getPath());
                     }
                 }
             }
@@ -1402,7 +1518,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 Set<String> columnNames = new HashSet<>();
                 final String lookupColumnName = extraColumnFieldKey.getName();
-                final String lookupTablePkColumnName = tableInfo.getPkColumns().get(0).getName();     // Expect only 1
+                final String lookupTablePkColumnName = tableInfo.getPkColumns().getFirst().getName();     // Expect only 1
                 columnNames.add(lookupColumnName);
                 columnNames.add(lookupTablePkColumnName);
                 new TableSelector(tableInfo, columnNames).forEachMap(row -> {
@@ -2052,9 +2168,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             SimpleTranslator t = new SimpleTranslator(simpleData, context);
             t.selectAll();
             assert(t.getColumnCount() == simpleData.getColumnCount());
-            assertTrue(t.getColumnInfo(0).getJdbcType() == JdbcType.INTEGER);
+            assertSame(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
             for (int i=1 ; i<=t.getColumnCount() ; i++)
-                assertTrue(t.getColumnInfo(i).getJdbcType() == JdbcType.VARCHAR);
+                assertSame(t.getColumnInfo(i).getJdbcType(), JdbcType.VARCHAR);
             for (int i=1 ; i<=4 ; i++)
             {
                 assertTrue(t.next());
@@ -2246,6 +2362,173 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
             }
 
+        }
+
+        /** Lookup fixture with one text alternate key (Value) over an integer pk (RowId); Ordinal is unique but not text, so it yields no map. */
+        private EnumTableInfo<LookupValues> remapLookupTable()
+        {
+            var core = QueryService.get().getUserSchema(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
+            return new EnumTableInfo<>(LookupValues.class, core, "fake enum", true);
+        }
+
+        @Test
+        public void remapCacheSurvivesPkLookupToggle()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+
+            // RemappingConvertColumn flips this before every row, so it must not discard what earlier rows resolved
+            converter.setIncludePkLookup(false);
+
+            List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> maps = converter.getMaps();
+            assertEquals("expected one alternate-key map, on the Value column", 1, maps.size());
+
+            // Seed keys no enum value can supply, so anything but a cache hit resolves to null
+            MultiValuedMap cache = maps.getFirst().getRight();
+            Integer seeded = 42;
+            cache.put("seeded-hit", seeded);
+            cache.put("seeded-miss", converter.MISS);
+
+            assertEquals(seeded, converter.mappedValue("seeded-hit"));
+            assertNull(converter.mappedValue("seeded-miss"));
+
+            for (int i = 0; i < 3; i++)
+            {
+                converter.setIncludePkLookup(true);
+                converter.setIncludePkLookup(false);
+            }
+
+            assertSame("toggling includePkLookup discarded the cached lookups", maps, converter.getMaps());
+            assertEquals("resolved value was discarded, so every row re-queries it", seeded, converter.mappedValue("seeded-hit"));
+            assertNull("MISS marker was discarded, so every row re-queries the absent value", converter.mappedValue("seeded-miss"));
+        }
+
+        @Test
+        public void remapResolutionIsStableAcrossPkLookupToggle()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+            converter.setIncludePkLookup(false);
+
+            Object resolved = converter.mappedValue(LookupValues.Two.name());
+            assertNotNull("expected " + LookupValues.Two + " to resolve by alternate key", resolved);
+
+            converter.setIncludePkLookup(true);
+            converter.setIncludePkLookup(false);
+
+            assertEquals(resolved, converter.mappedValue(LookupValues.Two.name()));
+        }
+
+        @Test
+        public void remapAlternateKeyWinsWhenPkLookupIsOff()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+
+            // Seed the two maps to disagree on one key, so the resolved value says which map was consulted
+            Integer key = 7;
+            Integer pkResolution = 7;
+            Integer akResolution = 99;
+            Map pkCache = converter.pkLookupMap().getValue();
+            MultiValuedMap akCache = converter.getMaps().getFirst().getRight();
+            pkCache.put(key, pkResolution);
+            akCache.put(key, akResolution);
+
+            assertEquals("pk lookup should take precedence while includePkLookup is on", pkResolution, converter.mappedValue(key));
+
+            // The pk map survives the toggle, so this also pins that it is not consulted while the flag is off
+            converter.setIncludePkLookup(false);
+            assertEquals("alternate key should resolve while includePkLookup is off", akResolution, converter.mappedValue(key));
+        }
+
+        @Test
+        public void remapPkLookupMapIsRetained()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, false);
+            assertNull("pk lookup map should not exist while includePkLookup is off", converter.pkLookupMap());
+
+            converter.setIncludePkLookup(true);
+            Pair<ColumnInfo, Map<?, ?>> pkMap = converter.pkLookupMap();
+            assertNotNull(pkMap);
+
+            converter.setIncludePkLookup(false);
+            assertNull(converter.pkLookupMap());
+
+            converter.setIncludePkLookup(true);
+            assertSame("pk lookup map was rebuilt rather than retained", pkMap, converter.pkLookupMap());
+        }
+
+        @Test
+        public void remapAlternateKeyCacheEvictsLeastRecentlyUsed()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+            converter.setIncludePkLookup(false);
+
+            MultiValuedMap cache = converter.getMaps().getFirst().getRight();
+            for (int i = 0; i < RemapConverter.MAX_CACHED_KEYS; i++)
+                cache.put("seeded-" + i, i);
+
+            // A hit makes seeded-0 the most recently used, so the miss below evicts seeded-1 instead
+            assertEquals(0, converter.mappedValue("seeded-0"));
+            assertNotNull(converter.mappedValue(LookupValues.Two.name()));
+
+            assertTrue("a recently used entry was evicted", cache.containsKey("seeded-0"));
+            assertFalse("the least recently used entry should be evicted", cache.containsKey("seeded-1"));
+            assertTrue(cache.containsKey(LookupValues.Two.name()));
+            assertEquals(RemapConverter.MAX_CACHED_KEYS, cache.keySet().size());
+        }
+
+        @Test
+        public void remapPkCacheEvictsLeastRecentlyUsed()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+
+            Map pkCache = converter.pkLookupMap().getValue();
+            int seedBase = 1_000_000;
+            for (int i = 0; i < RemapConverter.MAX_CACHED_KEYS; i++)
+                pkCache.put(seedBase + i, seedBase + i);
+
+            assertEquals(seedBase, converter.mappedValue(seedBase));
+            assertEquals(0, converter.mappedValue(0));
+
+            assertTrue("a recently used entry was evicted", pkCache.containsKey(seedBase));
+            assertFalse("the least recently used entry should be evicted", pkCache.containsKey(seedBase + 1));
+            assertTrue(pkCache.containsKey(0));
+            assertEquals(RemapConverter.MAX_CACHED_KEYS, pkCache.size());
+        }
+
+        @Test
+        public void remapCaseInsensitiveCacheMatchesAnyCase()
+        {
+            MultiValuedMap<Object, Object> insensitive = RemapConverter.lruMultiValuedMap(true);
+            insensitive.put("ABC", 1);
+            assertTrue(insensitive.containsKey("abc"));
+            assertEquals(List.of(1), insensitive.get("aBc"));
+            insensitive.put("abc", 2);
+            assertEquals("differently cased keys should share one entry", 1, insensitive.keySet().size());
+            insensitive.put(7, 3);
+            assertTrue("non-String keys should be left as is", insensitive.containsKey(7));
+
+            MultiValuedMap<Object, Object> sensitive = RemapConverter.lruMultiValuedMap(false);
+            sensitive.put("ABC", 1);
+            assertFalse(sensitive.containsKey("abc"));
+        }
+
+        /** Every lookup of a non-String key must throw, not just the first, rather than falling through to the title column. */
+        @Test
+        public void remapNonStringMissIsNotMemoized()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+            converter.setIncludePkLookup(false);
+
+            for (int i = 0; i < 2; i++)
+            {
+                try
+                {
+                    fail("lookup " + i + " of a non-String key resolved to " + converter.mappedValue(12345));
+                }
+                catch (ConversionException expected)
+                {
+                }
+            }
+            assertFalse(converter.getMaps().getFirst().getRight().containsKey(12345));
         }
 
         @Test

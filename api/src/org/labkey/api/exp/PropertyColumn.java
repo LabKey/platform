@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -31,7 +30,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -214,29 +213,29 @@ public class PropertyColumn extends LookupColumn
         SQLFragment sql = new SQLFragment("(SELECT ");
         if (isMvIndicatorColumn())
         {
-            sql.append("MvIndicator");
+            sql.unsafeAppend("MvIndicator");
         }
         else if (_pd.getPropertyType() == PropertyType.BOOLEAN)
         {
-            sql.append("CASE WHEN FloatValue IS NULL THEN NULL WHEN FloatValue=1.0 THEN 1 ELSE 0 END");
+            sql.unsafeAppend("CASE WHEN FloatValue IS NULL THEN NULL WHEN FloatValue=1.0 THEN 1 ELSE 0 END");
         }
         else
         {
             sql.append(getPropertyCol(_pd));
         }
-        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").append(String.valueOf(_pd.getPropertyId()));
-        sql.append(" AND exp.ObjectProperty.ObjectId = ");
+        sql.unsafeAppend(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").append(String.valueOf(_pd.getPropertyId()));
+        sql.unsafeAppend(" AND exp.ObjectProperty.ObjectId = ");
         if (_parentIsObjectId)
             sql.append(_foreignKey.getValueSql(tableAlias));
         else
-            sql.append(getTableAlias(tableAlias)).append(".ObjectId");
-        sql.append(")");
+            sql.append(getTableAlias(tableAlias)).unsafeAppend(".ObjectId");
+        sql.unsafeAppend(")");
 
         String cast = getPropertySqlCastType();
         if (null != cast)
         {
             sql.insert(0, "CAST(");
-            sql.append(" AS ").append(cast).append(")");
+            sql.unsafeAppend(" AS ").append(cast).unsafeAppend(")");
         }
 
         return sql;
@@ -306,44 +305,10 @@ public class PropertyColumn extends LookupColumn
             return strJoinNoContainer;
         }
 
-        strJoinNoContainer.append(" AND ");
+        strJoinNoContainer.unsafeAppend(" AND ");
         strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container")));
 
         return strJoinNoContainer;
-    }
-
-    @Override
-    protected SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk, boolean equalOrIsNull)
-    {
-        // hack: issue 16263, on sql server entityid is a uniqueidentifier type, we need to force a cast
-        // when using an entityid to join to an objecturi
-        boolean addEntityIdCast = Strings.CI.equals("entityid", fk.getSqlTypeName()) &&
-                Strings.CI.equals("lsidtype", pk.getSqlTypeName()) &&
-                getSqlDialect().isSqlServer();
-
-        if (addEntityIdCast)
-        {
-            SQLFragment condition = new SQLFragment();
-            if (equalOrIsNull)
-                condition.append("(");
-
-            SQLFragment fkSql = fk.getValueSql(tableAliasName);
-                condition.append("CAST((").append(fkSql).append(") AS VARCHAR(36))");
-            condition.append(" = ");
-
-            SQLFragment pkSql = pk.getValueSql(getTableAlias(tableAliasName));
-            condition.append(pkSql);
-
-            if (equalOrIsNull)
-            {
-                condition.append(" OR (").append(fkSql).append(" IS NULL");
-                condition.append(" AND ").append(pkSql).append(" IS NULL))");
-            }
-
-            return condition;
-        }
-        else
-            return super.getJoinCondition(tableAliasName, fk, pk, equalOrIsNull);
     }
 
     @Override
@@ -366,7 +331,7 @@ public class PropertyColumn extends LookupColumn
 
     @NotNull
     @Override
-    public List<? extends IPropertyValidator> getValidators()
+    public List<? extends PropertyValidatorDef> getValidators()
     {
         return PropertyService.get().getPropertyValidators(_pd);
     }

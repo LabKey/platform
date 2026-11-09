@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,16 +39,11 @@ public class JobIncompleteFilter implements UMOFilter
             return true;
 
         PipelineJob job = (PipelineJob) payload;
-        switch (job.getActiveTaskStatus())
+        return switch (job.getActiveTaskStatus())
         {
-            case error:
-                return false;
-
-            case complete:
-                return (job.getActiveTaskId() != null);
-
-            default:
-                return true;
-        }
+            case error -> false;
+            case complete -> (job.getActiveTaskId() != null);
+            default -> true;
+        };
     }
 }

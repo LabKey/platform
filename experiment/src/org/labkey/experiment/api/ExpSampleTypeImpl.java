@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -75,6 +76,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -96,9 +98,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Sample Types", false);
     public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory(mediaCategoryName, "Media Sample Types", false) {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+            return MediaReadPermission.class;
         }
     };
 
@@ -276,7 +278,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             List<? extends DomainProperty> props = getDomain().getProperties();
             if (!props.isEmpty())
             {
-                result = props.get(0);
+                result = props.getFirst();
             }
         }
         return result;
@@ -865,9 +867,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return ret;
     }
 
-    public void onSamplesChanged(User user, List<Material> materials, SampleTypeServiceImpl.SampleChangeType reason)
+    public void onSamplesChanged(User user, List<Material> materials, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
-        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, reason);
+        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, reason, changedSince);
 
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length != 0)
@@ -891,7 +893,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             }
         }
     }
-
 
     @Override
     public void setContainer(Container container)

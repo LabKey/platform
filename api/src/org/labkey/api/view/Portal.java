@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,13 +177,13 @@ public class Portal implements ModuleChangeListener
         // Select all containers that are affected
         TableInfo webparts = Portal.getTableInfoPortalWebParts();
         SQLFragment where = filter.getSQLFragment(webparts, "WP");
-        SQLFragment selectContainers = new SQLFragment("SELECT DISTINCT Container FROM ").append(Portal.getTableInfoPortalWebParts()).append(" ").append(where);
+        SQLFragment selectContainers = new SQLFragment("SELECT DISTINCT Container FROM ").append(Portal.getTableInfoPortalWebParts()).unsafeAppend(" ").append(where);
         Collection<String> containersToClear = new SqlSelector(Portal.getSchema(), selectContainers).getCollection(String.class);
 
         // Clear the properties
         SQLFragment update = new SQLFragment("UPDATE ");
         update.append(Portal.getTableInfoPortalWebParts());
-        update.append(" SET Properties = NULL ");
+        update.unsafeAppend(" SET Properties = NULL ");
         update.append(where);
         new SqlExecutor(Portal.getSchema()).execute(update);
 
@@ -205,13 +205,13 @@ public class Portal implements ModuleChangeListener
     /** Issue 51727 - metrics to track web part usage */
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () ->
+        return metrics ->
         {
             SQLFragment sql = new SQLFragment("SELECT Name, COUNT(*) AS C FROM ").
                     append(getTableInfoPortalWebParts(), "pwp").
-                    append(" GROUP BY Name");
+                    unsafeAppend(" GROUP BY Name");
 
-            return Map.of("webPartCounts", new SqlSelector(getSchema(), sql).getValueMap(String.class));
+            return metrics.put("webPartCounts", () -> new SqlSelector(getSchema(), sql).getValueMap(String.class), "Web parts on portal pages across the server, by web part name");
         };
     }
 
@@ -1017,27 +1017,27 @@ public class Portal implements ModuleChangeListener
 
             SQLFragment insertSQL = new SQLFragment("INSERT INTO ")
                     .append(portalTable)
-                    .append("\n(");
+                    .unsafeAppend("\n(");
             String comma = "";
             for (String name : insertColumns)
             {
                 insertSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
                 comma = ",";
             }
-            insertSQL.append(")\n")
-                    .append(" (SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?\n WHERE ? NOT IN (")
+            insertSQL.unsafeAppend(")\n")
+                    .unsafeAppend(" (SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?\n WHERE ? NOT IN (")
                     .addAll(insertValues)
                     .add(p.getPageId())
-                    .append("SELECT PageId FROM ")
+                    .unsafeAppend("SELECT PageId FROM ")
                     .append(portalTable)
-                    .append(" WHERE Container = ? AND PageId = ?) AND\n")
+                    .unsafeAppend(" WHERE Container = ? AND PageId = ?) AND\n")
                     .add(p.getContainer()).add(p.getPageId())
-                    .append(" ? NOT IN (SELECT ").appendIdentifier(columnIndex.getSelectIdentifier()).append(" FROM ")
+                    .unsafeAppend(" ? NOT IN (SELECT ").appendIdentifier(columnIndex.getSelectIdentifier()).unsafeAppend(" FROM ")
                     .add(p.getIndex())
                     .append(portalTable)
-                    .append(" WHERE Container = ?)")
+                    .unsafeAppend(" WHERE Container = ?)")
                     .add(p.getContainer())
-                    .append(getSqlDialect().isPostgreSQL() ? " FOR UPDATE)" : ")");
+                    .unsafeAppend(" FOR UPDATE)");
             count = new SqlExecutor(portalTable.getSchema()).execute(insertSQL);
         }
 
@@ -1049,57 +1049,42 @@ public class Portal implements ModuleChangeListener
             updateSQL.append(portalTable);
 
             SQLFragment indexSQL = new SQLFragment("CASE WHEN ? NOT IN\n(SELECT ");
-            indexSQL.appendIdentifier(columnIndex.getSelectIdentifier()).append(" FROM ")
+            indexSQL.appendIdentifier(columnIndex.getSelectIdentifier()).unsafeAppend(" FROM ")
                     .add(p.getIndex())
                     .append(portalTable)
-                    .append(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").appendIdentifier(columnIndex.getSelectIdentifier()).append(" END\n")
+                    .unsafeAppend(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").appendIdentifier(columnIndex.getSelectIdentifier()).unsafeAppend(" END\n")
                     .add(p.getContainer()).add(p.getPageId()).add(p.getIndex());
 
-            if (portalTable.getSqlDialect().isPostgreSQL())
-            {
-                List<String> updateColumns = new ArrayList<>();
-                updateColumns.add("Index");
-                updateColumns.add("Caption");
-                updateColumns.add("Hidden");
-                updateColumns.add("Type");
-                updateColumns.add("Action");
-                updateColumns.add("TargetFolder");
-                updateColumns.add("Permanent");
-                updateColumns.add("Properties");
+            List<String> updateColumns = new ArrayList<>();
+            updateColumns.add("Index");
+            updateColumns.add("Caption");
+            updateColumns.add("Hidden");
+            updateColumns.add("Type");
+            updateColumns.add("Action");
+            updateColumns.add("TargetFolder");
+            updateColumns.add("Permanent");
+            updateColumns.add("Properties");
 
-                updateSQL.append("\nSET (");
-                String comma = "";
-                for (String name : updateColumns)
-                {
-                    updateSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
-                    comma = ",";
-                }
-                updateSQL.append(") =\n")
-                        .append("(")
-                        .append(indexSQL)
-                        .append(", ?, ?, ?, ?, ?, ?, ?)\n");
+            updateSQL.unsafeAppend("\nSET (");
+            String comma = "";
+            for (String name : updateColumns)
+            {
+                updateSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
+                comma = ",";
             }
-            else
-            {       // SQL Server
-                updateSQL.append("\nSET ")
-                        .appendIdentifier(columnIndex.getSelectIdentifier()).append(" = ").append(indexSQL).append(", ")
-                        .append("Caption").append(" = ?, ")
-                        .append("Hidden").append(" = ?, ")
-                        .append("Type").append(" = ?, ")
-                        .append("Action").append(" = ?, ")
-                        .append("TargetFolder").append(" = ?, ")
-                        .append("Permanent").append(" = ?, ")        
-                        .append("Properties").append(" = ? \n");
-            }
+            updateSQL.unsafeAppend(") =\n")
+                    .unsafeAppend("(")
+                    .append(indexSQL)
+                    .unsafeAppend(", ?, ?, ?, ?, ?, ?, ?)\n");
 
             updateSQL.add(p.getCaption()).add(p.isHidden()).add(p.getType()).add(p.getAction())
                     .add(p.getTargetFolder()).add(p.isPermanent()).add(p.getProperties())
-                    .append("WHERE Container = ? AND PageId = ?")
+                    .unsafeAppend("WHERE Container = ? AND PageId = ?")
                     .add(p.getContainer()).add(p.getPageId());
 
             count = new SqlExecutor(portalTable.getSchema()).execute(updateSQL);
             if (0 == count)
-                LOG.warn((update ? "Update" : "Insert") + " failed for page '" + p.pageId + "' in container '" + ContainerManager.getForId(p.getContainer()).getPath() + "'");
+                LOG.warn("{} failed for page '{}' in container '{}'", update ? "Update" : "Insert", p.pageId, ContainerManager.getForId(p.getContainer()).getPath());
         }
     }
 
@@ -1521,7 +1506,7 @@ public class Portal implements ModuleChangeListener
         SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromString("pageId"), pageId);
         ArrayList<PortalPage> pages = new TableSelector(getTableInfoPortalPages(), filter, null).getArrayList(PortalPage.class);
         if (!pages.isEmpty())
-            return pages.get(0);        // In rare cases there could be more than one.
+            return pages.getFirst();        // In rare cases there could be more than one.
         return null;
     }
 
@@ -2212,7 +2197,7 @@ public class Portal implements ModuleChangeListener
                 .mapToInt(Collection::size)
                 .sum();
 
-            LOG.info(viewCount + " webparts defined in all modules");
+            LOG.info("{} webparts defined in all modules", viewCount);
 
             // Make sure the cache retrieves the expected number of webpart definitions from the simpletest module, if present
 

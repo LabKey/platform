@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import org.labkey.api.view.RedirectException;
  */
 public class ThumbnailCache
 {
-    private static final BlockingCache<String, CacheableWriter> _cache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.YEAR, "Thumbnails", null);
+    private static final BlockingCache<String, CacheableWriter> _cache = CacheManager.getBlockingCache(String.class, 10000, CacheManager.YEAR, "Thumbnails", null);
     private static final DynamicThumbnailLoader _dynamicLoader = new DynamicThumbnailLoader();
 
     // Get the thumbnail for a DynamicThumbnailProvider. Returns the dynamic thumbnail if it has already been created

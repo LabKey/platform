@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.DOMUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.util.DOMUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;

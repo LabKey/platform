@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,10 +39,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 6/11/13
- */
 public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> extends SimpleViewAction<FormType>
 {
     private ExpProtocol _protocol;
@@ -50,10 +46,10 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
     @Override
     public ModelAndView getView(FormType form, BindException errors) throws Exception
     {
-        _protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
+        _protocol = ExperimentService.get().getExpProtocol(getContainer(), form.getProtocolId());
         if (_protocol == null)
         {
-            throw new NotFoundException();
+            throw new NotFoundException("Protocol does not exist.");
         }
         long[] objectIds;
         if (form.getId() != null)
@@ -71,6 +67,8 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
                 objectIds[idx++] = Integer.parseInt(objectIdString);
         }
 
+        // GitHub Issue #1892: (NAB-9) The object ids come straight from the request and getDilutionSummaries() resolves them to runs
+        verifyObjectIdsReadable(objectIds);
         Set<Integer> cutoffSet = new HashSet<>();
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(_protocol);
         Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getUser(), form.getFitTypeEnum(), objectIds);
@@ -90,6 +88,13 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
         JspView<GraphSelectedBean> multiGraphView = new JspView<>("/org/labkey/api/assay/nab/view/multiRunGraph.jsp", bean);
 
         return new VBox(new AssayHeaderView(_protocol, provider, false, true, null), multiGraphView);
+    }
+
+    /**
+     * Verify that the current user may view each of the requested object ids before any run data is loaded.
+     */
+    protected void verifyObjectIdsReadable(long[] ids) throws Exception
+    {
     }
 
     protected abstract GraphSelectedBean createSelectionBean(ViewContext context, ExpProtocol protocol, int[] cutoffs,

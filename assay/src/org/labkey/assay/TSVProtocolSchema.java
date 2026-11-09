@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,20 +160,20 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     SqlDialect dialect = getSchema().getSqlDialect();
                     SQLFragment plateHitsSQL = new SQLFragment("(CASE WHEN (SELECT ResultId FROM ")
                             .append(AssayDbSchema.getInstance().getTableInfoHit(), "h")
-                            .append(" WHERE h.ResultId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
-                            .append(" AND h.RunId = ").append(ExprColumn.STR_TABLE_ALIAS + ".Run").append(")")
-                            .append(" IS NULL THEN ").append(dialect.getBooleanFALSE())
-                            .append(" ELSE ").append(dialect.getBooleanTRUE()).append(" END")
-                            .append(")");
+                            .unsafeAppend(" WHERE h.ResultId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+                            .unsafeAppend(" AND h.RunId = ").append(ExprColumn.STR_TABLE_ALIAS + ".Run").unsafeAppend(")")
+                            .unsafeAppend(" IS NULL THEN ").append(dialect.getBooleanFALSE())
+                            .unsafeAppend(" ELSE ").append(dialect.getBooleanTRUE()).unsafeAppend(" END")
+                            .unsafeAppend(")");
 
                     ExprColumn plateHitsColumn = new ExprColumn(this, "Hit", plateHitsSQL, JdbcType.BOOLEAN);
                     plateHitsColumn.setConceptURI("hit-selection");
                     plateHitsColumn.setLabel("Hit Selection");
                     addColumn(plateHitsColumn);
-                    defaultColumns.add(0, plateHitsColumn.getFieldKey());
+                    defaultColumns.addFirst(plateHitsColumn.getFieldKey());
                 }
 
-                defaultColumns.add(0, FieldKey.fromParts("Well", "SampleId"));
+                defaultColumns.addFirst(FieldKey.fromParts("Well", "SampleId"));
 
                 // join to any replicate roll ups
                 Domain replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());

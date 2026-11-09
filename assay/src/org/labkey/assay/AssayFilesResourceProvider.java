@@ -1,9 +1,24 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -25,7 +40,7 @@ import java.util.Set;
 public class AssayFilesResourceProvider implements WebdavService.Provider
 {
     @Override
-    public Set<String> addChildren(WebdavResource target, boolean isListing)
+    public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
@@ -50,7 +65,7 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
     }
 
     @Override
-    public WebdavResource resolve(WebdavResource parent, String name)
+    public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!FileContentService.ASSAY_FILES.equalsIgnoreCase(name))
             return null;
@@ -77,10 +92,7 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
                 return new AssayFilesResource(parent, Path.toPathPart(name), dir.getFileSystemDirectory(), c);
             }
         }
-        catch (MissingRootDirectoryException e)
-        {
-            // Don't complain here, just hide the @assayfiles subfolder
-        }
+        // Don't complain here, just hide the @assayfiles subfolder
         catch (RuntimeException e)
         {
             // Don't complain here if AccessDeniedException, just hide the @scripts subfolder (Issue 50212)
@@ -112,13 +124,13 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
         @Override
         protected boolean hasAccess(User user)
         {
-            return getPermissions(user).contains(AdminPermission.class);
+            return hasPermission(user, AdminPermission.class);
         }
 
         @Override
         public boolean canRead(User user, boolean forRead)
         {
-            return getPermissions(user).contains(ReadPermission.class);
+            return hasPermission(user, ReadPermission.class);
         }
     }
 }

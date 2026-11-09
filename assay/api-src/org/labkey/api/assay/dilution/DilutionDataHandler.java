@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,8 +67,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -297,7 +295,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         List<? extends ExpData> outputDatas = run.getOutputDatas(getDataType());
         if (outputDatas == null || outputDatas.size() != 1)
             throw new IllegalStateException(getResourceName(run) + " runs should have a single data output.");
-        FileLike dataFile = outputDatas.get(0).getFileLike();
+        FileLike dataFile = outputDatas.getFirst().getFileLike();
         if (!dataFile.exists())
             return null;
         return dataFile;
@@ -331,7 +329,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             excluded[wellDataRow.getRow()][wellDataRow.getColumn()] = wellDataRow.isExcluded();
         }
 
-        Plate plate = PlateService.get().createPlate(template, cellValues, excluded, recalcStats ? PlateService.NO_RUNID : run.getRowId(), 1);
+        Plate plate = recalcStats
+                ? PlateService.get().createPlate(template, cellValues, excluded, PlateService.NO_RUNID, 1)
+                : PlateService.get().createPlate(template, cellValues, excluded, run, 1);
         return Collections.singletonList(plate);
     }
 
@@ -355,16 +355,22 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
         // Attempt to populate the well data for dataFileUrls that may have been fixed since the new
         // WellData and DilutionData tables were added.
+        boolean wellDataPopulated = false;
         synchronized (WELL_DATA_LOCK_OBJECT)
         {
-            if (useRunForPlates && !isWellDataPopulated(run) && getDataFile(run) != null)
+            if (useRunForPlates)
             {
-                populateWellData(protocol, run, user);
+                wellDataPopulated = isWellDataPopulated(run);
+                if (!wellDataPopulated && getDataFile(run) != null)
+                {
+                    populateWellData(protocol, run, user);
+                    wellDataPopulated = isWellDataPopulated(run);
+                }
             }
         }
 
         List<Plate> plates;
-        if (useRunForPlates && isWellDataPopulated(run))
+        if (wellDataPopulated)
         {
             plates = createPlates(run, nabTemplate, recalcStats);
         }
@@ -447,7 +453,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider<?> provider, List<Plate> plates, Map<? extends ExpMaterial, String> sampleInputs)throws ExperimentException
     {
-        Plate plate = plates.get(0);
+        Plate plate = plates.getFirst();
         List<? extends WellGroup> wellgroups = plate.getWellGroups(WellGroup.Type.SPECIMEN);
         Map<String, ExpMaterial> nameToMaterial = new HashMap<>();
         for (Map.Entry<? extends ExpMaterial,String> e : sampleInputs.entrySet())
@@ -471,7 +477,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider<?> provider, ExpRun run, List<Plate> plates, User user,
                                                                List<Integer> sortedCutoffs, StatsService.CurveFitType fit);
 
-    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, long... dataObjectIds) throws ExperimentException, SQLException;
+    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, long... dataObjectIds) throws ExperimentException;
 
     final protected DilutionDataFileParser getDataFileParser(ExpData data, FileLike dataFile, ViewBackgroundInfo info)
     {

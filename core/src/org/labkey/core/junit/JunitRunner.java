@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ package org.labkey.core.junit;
 import junit.framework.TestCase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.Runner;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.NoTestsRemainException;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.labkey.api.util.CPUTimer;
@@ -52,13 +55,46 @@ public class JunitRunner
         Map<Description, List<CPUTimer>> individualPerfResults;
     }
 
-    static RunnerResult run(Class clazz, String method)
+    /** @return null if clazz has no test named method */
+    static @Nullable RunnerResult run(Class<?> clazz, String method)
     {
-        Request request = Request.method(clazz, method);
-        return run(request);
+        Runner runner = Request.aClass(clazz).getRunner();
+        try
+        {
+            methodFilter(method).apply(runner);
+        }
+        catch (NoTestsRemainException e)
+        {
+            return null;
+        }
+        return run(Request.runner(runner));
     }
 
-    static RunnerResult run(Class clazz)
+    // A bare method name also matches every Parameterized invocation ("method[0]", "method[1]", ...); Request.method() needs the full invocation name
+    private static Filter methodFilter(String method)
+    {
+        return new Filter()
+        {
+            @Override
+            public boolean shouldRun(Description description)
+            {
+                if (description.isTest())
+                {
+                    String name = description.getMethodName();
+                    return name != null && (name.equals(method) || name.startsWith(method + "["));
+                }
+                return description.getChildren().stream().anyMatch(this::shouldRun);
+            }
+
+            @Override
+            public String describe()
+            {
+                return "Method " + method;
+            }
+        };
+    }
+
+    static RunnerResult run(Class<?> clazz)
     {
         assert !TestCase.class.isAssignableFrom(clazz) : clazz + " is not a TestCase";
         Request request = Request.classes(clazz);
@@ -76,7 +112,7 @@ public class JunitRunner
 
         try
         {
-            LOG.info("Starting suite: " + description + " (" + StringUtilsLabKey.pluralize(desc.testCount(), "test") + ")");
+            LOG.info("Starting suite: {} ({})", description, StringUtilsLabKey.pluralize(desc.testCount(), "test"));
 
             ArrayList<CPUTimer> allTimers = new ArrayList<>();
             Map<Description, ArrayList<CPUTimer>> testTimers = new LinkedHashMap<>();
@@ -86,14 +122,14 @@ public class JunitRunner
                 @Override
                 public void testStarted(Description description)
                 {
-                    LOG.debug("Starting test: " + description);
+                    LOG.debug("Starting test: {}", description);
                     TestContext.get().clearPerfResults();
                 }
 
                 @Override
                 public void testFinished(Description description)
                 {
-                    LOG.debug("Finished test: " + description);
+                    LOG.debug("Finished test: {}", description);
                     ArrayList<CPUTimer> timers = TestContext.get().getPerfResults();
                     testTimers.put(description, timers);
                     allTimers.addAll(timers);
@@ -103,7 +139,7 @@ public class JunitRunner
                 public void testFailure(Failure failure)
                 {
                     Throwable t = failure.getException();
-                    LOG.error("Test failed: " + failure.getDescription() + ":\n" + JunitController.renderTrace(t));
+                    LOG.error("Test failed: {}:\n{}", failure.getDescription(), JunitController.renderTrace(t));
                 }
             });
             Result result = core.run(request);
@@ -118,7 +154,7 @@ public class JunitRunner
         finally
         {
             TestContext.get().clearPerfResults();
-            LOG.info("Completed suite: " + description);
+            LOG.info("Completed suite: {}", description);
         }
     }
 }

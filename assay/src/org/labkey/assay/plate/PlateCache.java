@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2023-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.assay.plate;
 
 import org.apache.logging.log4j.LogManager;
@@ -32,7 +47,7 @@ import java.util.Set;
 public class PlateCache
 {
     private static final PlateLoader _loader = new PlateLoader();
-    private static final Cache<String, PlateImpl> PLATE_CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Plate Cache", _loader);
+    private static final Cache<String, PlateImpl> PLATE_CACHE = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "Plate Cache", _loader);
     private static final Logger LOG = LogManager.getLogger(PlateCache.class);
 
     private static class PlateLoader implements CacheLoader<String, PlateImpl>
@@ -53,10 +68,10 @@ public class PlateCache
 
             if (plates.size() == 1)
             {
-                PlateBean bean = plates.get(0);
+                PlateBean bean = plates.getFirst();
 
                 PlateImpl plate = PlateManager.get().populatePlate(bean);
-                LOG.debug(String.format("Caching plate \"%s\" for folder %s", plate.getName(), cacheKey._container.getPath()));
+                LOG.debug("Caching plate \"{}\" for folder {}", plate.getName(), cacheKey._container.getPath());
 
                 // add all cache keys for this plate
                 addCacheKeys(cacheKey, plate);
@@ -173,7 +188,7 @@ public class PlateCache
 
     public static void uncache(Container c)
     {
-        LOG.debug(String.format("Clearing cache for folder %s", c.getPath()));
+        LOG.debug("Clearing cache for folder {}", c.getPath());
 
         // uncache all plates for this container
         if (_loader._containerPlateMap.containsKey(c))
@@ -190,7 +205,7 @@ public class PlateCache
     {
         // noop if the plate doesn't exist in the cache
         String key = PlateCacheKey.getCacheKey(c, rowId);
-        if (PLATE_CACHE.getKeys().contains(key))
+        if (PLATE_CACHE.getKeys().anyMatch(key::equals))
         {
             Plate plate = getPlate(c, rowId);
             if (plate != null)
@@ -202,7 +217,7 @@ public class PlateCache
 
     public static void uncache(Container c, Plate plate)
     {
-        LOG.debug(String.format("Un-caching plate \"%s\" for folder %s", plate.getPlateId(), c.getPath()));
+        LOG.debug("Un-caching plate \"{}\" for folder {}", plate.getPlateId(), c.getPath());
 
         if (plate.getPlateId() == null)
             throw new IllegalArgumentException("Plate cannot be uncached, plateId is null");
@@ -221,7 +236,12 @@ public class PlateCache
 
     public static void uncache(Container c, PlateSet plateSet)
     {
-        getPlateIDs(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSet.getRowId()))
+        uncachePlateSetPlates(c, plateSet.getRowId());
+    }
+
+    public static void uncachePlateSetPlates(Container c, long plateSetRowId)
+    {
+        getPlateIDs(c, new SimpleFilter(FieldKey.fromParts(PlateTable.Column.PlateSet.name()), plateSetRowId))
                 .forEach(plateId -> uncache(c, plateId));
     }
 

@@ -1,13 +1,18 @@
+/*
+ * Copyright (c) 2020-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 import React, { FC, memo, PureComponent, useMemo } from 'react';
 import { ActionURL, Ajax, getServerContext, Utils } from '@labkey/api';
-import { LoadingSpinner, resolveErrorMessage, Alert, withAppUser, ServerContextProvider } from '@labkey/components';
+import { Alert, AppContexts, LoadingSpinner, resolveErrorMessage } from '@labkey/components';
 
 import { GlobalSettings } from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 
 import { Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions } from '../components/models';
 
-import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
+import { addOrUpdateAnAuthConfig, isEquivalent, reorder } from './utils';
 
 const UNSAVED_ALERT =
     'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
@@ -15,11 +20,11 @@ const UNSAVED_ALERT =
 interface State {
     authCount: number;
     canEdit: boolean;
-    dirtinessData: { [key: string]: AuthConfig[] };
+    dirtinessData: Record<string, AuthConfig[]>;
     dirty: boolean;
     error: string;
     formConfigurations: AuthConfig[];
-    globalSettings: { [key: string]: any };
+    globalSettings: Record<string, any>;
     helpLink: string;
     initError: string;
     loading: boolean;
@@ -187,7 +192,7 @@ class AuthenticationConfiguration extends PureComponent<{}, Partial<State>> {
         return configType.map(auth => auth.configuration);
     };
 
-    onDragEnd = (result: { [key: string]: any }): void => {
+    onDragEnd = (result: Record<string, any>): void => {
         const { globalSettings, dirtinessData } = this.state;
 
         if (!result.destination) {
@@ -207,7 +212,7 @@ class AuthenticationConfiguration extends PureComponent<{}, Partial<State>> {
                 const oldOrdering = state.dirtinessData[configType];
                 return !isEquivalent(newOrdering, oldOrdering);
             });
-            const dirty = dirtyStateAreas.length > 0 || !isEquivalent({ ...globalSettings }, dirtinessData);
+            const dirty = dirtyStateAreas.length > 0 || !isEquivalent({ ...globalSettings }, dirtinessData.globalSettings);
 
             return { ...newState, dirty };
         });
@@ -300,21 +305,21 @@ class AuthenticationConfiguration extends PureComponent<{}, Partial<State>> {
         return (
             <div className="parent-panel">
                 <GlobalSettings
-                    globalSettings={globalSettings as GlobalSettingsOptions}
-                    canEdit={canEdit}
-                    onChange={this.globalAuthOnChange}
                     authCount={authCount}
+                    canEdit={canEdit}
+                    globalSettings={globalSettings as GlobalSettingsOptions}
+                    onChange={this.globalAuthOnChange}
                 />
 
                 <AuthConfigMasterPanel
-                    formConfigurations={formConfigurations}
-                    ssoConfigurations={ssoConfigurations}
-                    secondaryConfigurations={secondaryConfigurations}
-                    primaryProviders={primaryProviders}
-                    secondaryProviders={secondaryProviders}
-                    helpLink={helpLink}
-                    canEdit={canEdit}
                     actions={this.actions}
+                    canEdit={canEdit}
+                    formConfigurations={formConfigurations}
+                    helpLink={helpLink}
+                    primaryProviders={primaryProviders}
+                    secondaryConfigurations={secondaryConfigurations}
+                    secondaryProviders={secondaryProviders}
+                    ssoConfigurations={ssoConfigurations}
                 />
 
                 {dirty && <Alert bsStyle="info">{UNSAVED_ALERT}</Alert>}
@@ -347,12 +352,9 @@ class AuthenticationConfiguration extends PureComponent<{}, Partial<State>> {
     }
 }
 
-export const App: FC = memo(() => {
-    const initialServerContext = useMemo(() => withAppUser(getServerContext()), []);
-
-    return (
-        <ServerContextProvider initialContext={initialServerContext}>
-            <AuthenticationConfiguration />
-        </ServerContextProvider>
-    );
-});
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <AuthenticationConfiguration />
+    </AppContexts>
+);
+App.displayName = 'App';

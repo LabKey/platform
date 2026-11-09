@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,7 +191,7 @@ public class ImageUtil
         List<String> errors = new ArrayList<>();
         Document document = JSoupUtil.convertHtmlToDocument(html, true, errors);
         if (!errors.isEmpty())
-            throw new RuntimeException(errors.get(0));
+            throw new RuntimeException(errors.getFirst());
         return renderThumbnail(webImage(context, document, baseURI, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT));
     }
 

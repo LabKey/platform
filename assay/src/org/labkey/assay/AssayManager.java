@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,10 @@ package org.labkey.assay;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayDomainService;
@@ -76,16 +80,19 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -112,38 +119,44 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AssayManager implements AssayService
 {
     SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Assays") {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+            return AssayReadPermission.class;
         }
     };
     SearchService.SearchCategory ASSAY_BATCH_CATEGORY = new SearchService.SearchCategory("assayBatch", "Assay Batches", false) {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+            return AssayReadPermission.class;
         }
     };
     SearchService.SearchCategory ASSAY_RUN_CATEGORY = new SearchService.SearchCategory("assayRun", "Assay Runs", false) {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+            return AssayReadPermission.class;
         }
     };
 
+    /** Holds the provider's name rather than the instance, since reloading module assays replaces the instances */
+    private record ProtocolProvider(ExpProtocol protocol, String providerName) {}
+
     /** Cache the protocols defined in a given container, which we can quickly compose to get the protocols in scope */
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, argument) ->
+    private static final Cache<Container, List<ProtocolProvider>> PROTOCOL_CACHE = DatabaseCache.get(Container.class, ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, _) ->
     {
-        List<ExpProtocol> result = new ArrayList<>();
+        List<ProtocolProvider> result = new ArrayList<>();
 
         // Filter to just the ones that have an AssayProvider associated with them
         for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
@@ -153,7 +166,7 @@ public class AssayManager implements AssayService
             {
                 // We don't want anyone editing our cached object
                 protocol.lock();
-                result.add(protocol);
+                result.add(new ProtocolProvider(protocol, p.getName()));
             }
         }
         return result.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(result);
@@ -201,6 +214,7 @@ public class AssayManager implements AssayService
             throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
         }
         _providers.add(provider);
+        clearProtocolCache();
         PipelineProvider pipelineProvider = provider.getPipelineProvider();
         if (pipelineProvider != null)
         {
@@ -384,39 +398,39 @@ public class AssayManager implements AssayService
 
     private @NotNull List<ExpProtocol> getAssayProtocols(Container container, boolean currentOnly)
     {
-        List<ExpProtocol> allProtocols = new ArrayList<>();
+        return getProtocolProviders(container, currentOnly).map(ProtocolProvider::protocol).sorted().toList();
+    }
 
+    /** Unsorted */
+    private @NotNull Stream<ProtocolProvider> getProtocolProviders(Container container, boolean currentOnly)
+    {
         Collection<Container> containerScopes = currentOnly ? List.of(container) : container.getContainersFor(ContainerType.DataType.protocol);
-        for (Container containerInScope : containerScopes)
-        {
-            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
-            allProtocols.addAll(ids);
-        }
-
-        Collections.sort(allProtocols);
-        return Collections.unmodifiableList(allProtocols);
+        return containerScopes.stream().flatMap(c -> PROTOCOL_CACHE.get(c).stream());
     }
 
     @Override
     public @NotNull List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
     {
-        // Take the full list
-        List<ExpProtocol> allProtocols = getAssayProtocols(container);
         if (provider == null)
-        {
-            return allProtocols;
-        }
+            return getAssayProtocols(container);
 
-        // Filter it down to just ones that match the provider
-        List<ExpProtocol> result = new ArrayList<>();
-        for (ExpProtocol p : allProtocols)
-        {
-            if (provider.equals(getProvider(p)))
-            {
-                result.add(p);
-            }
-        }
-        return Collections.unmodifiableList(result);
+        return getProtocolProviders(container, false)
+                .filter(pp -> provider.getName().equals(pp.providerName()))
+                .map(ProtocolProvider::protocol)
+                .sorted()
+                .toList();
+    }
+
+    /** Providers of the assay protocols in scope, without resolving each protocol's provider again */
+    public @NotNull Set<AssayProvider> getAssayProvidersInScope(Container container)
+    {
+        Collection<AssayProvider> providers = getAssayProviders();
+        return getProtocolProviders(container, false)
+                .map(ProtocolProvider::providerName)
+                .distinct()
+                .map(name -> getProvider(name, providers))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -607,7 +621,7 @@ public class AssayManager implements AssayService
                 batches = ExperimentService.get().getMatchingBatches(batch.getName(), batch.getContainer(), protocol);
             }
 
-            return batches.get(0);
+            return batches.getFirst();
         }
     }
 
@@ -661,14 +675,14 @@ public class AssayManager implements AssayService
         ActionURL assayBeginURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, AssayController.AssayBeginAction.class);
         assayBeginURL.setExtraPath(c.getId());
         String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
-        StringBuilder body = new StringBuilder(StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment));
+        String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment);
         Map<String, Object> m = new HashMap<>();
         m.put(SearchService.PROPERTY.title.toString(), name);
         m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
         m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
 
         String docId = protocol.getDocumentId();
-        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getEntityId(), "text/plain", body.toString(), assayBeginURL, createdBy, created, modifiedBy, modified, m);
+        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getEntityId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
         queue.addResource(r);
     }
 
@@ -710,33 +724,45 @@ public class AssayManager implements AssayService
         for (ExpProtocol protocol : getAssayProtocols(queue.getContainer()))
         {
             if (shouldIndexProtocolBatches(protocol))
-                indexAssayBatches(queue, protocol, modifiedSince);
+                queue.addRunnable((q) -> indexAssayBatches(q, protocol, modifiedSince, 0));
         }
     }
 
-    private void indexAssayBatches(SearchService.TaskIndexingQueue queue, ExpProtocol protocol, @Nullable Date modifiedSince)
+    private void indexAssayBatches(SearchService.TaskIndexingQueue queue, ExpProtocol protocol,
+                                    @Nullable Date modifiedSince, long minRowId)
     {
-        if (shouldIndexProtocolBatches(protocol))
-        {
-            for (ExpExperiment batch : protocol.getBatches(queue.getContainer()))
-            {
-                if (modifiedSince == null || modifiedSince.before(batch.getModified()))
-                    indexAssayBatch(queue, batch);
-            }
-        }
+        List<? extends ExpExperiment> batches = ExperimentService.get().getExpBatches(
+                queue.getContainer(), protocol, modifiedSince, minRowId, SearchService.INDEXING_LIMIT);
+
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
+        tracker.forEach(batches, ExpExperiment::getRowId, b -> indexAssayBatch(queue, b));
+
+        if (tracker.wasFull())
+            queue.addRunnable((q) -> indexAssayBatches(q, protocol, modifiedSince, tracker.getMaxRowId()));
     }
 
     public void indexAssayRuns(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
         for (ExpProtocol protocol : getAssayProtocols(queue.getContainer()))
-            indexAssayRuns(queue, protocol, modifiedSince);
+            queue.addRunnable((q) -> indexAssayRuns(q, protocol, modifiedSince, 0));
     }
 
-    private void indexAssayRuns(SearchService.TaskIndexingQueue queue, ExpProtocol protocol, @Nullable Date modifiedSince)
+    private void indexAssayRuns(SearchService.TaskIndexingQueue queue, ExpProtocol protocol,
+                                 @Nullable Date modifiedSince, long minRowId)
     {
-        ExperimentService.get().getExpRuns(queue.getContainer(), protocol, null, run ->
-                modifiedSince == null || modifiedSince.before(run.getModified())
-        ).forEach(r -> indexAssayRun(queue, r));
+        SQLFragment filterSQL = new SQLFragment("ER.ProtocolLSID = ? AND ER.RowId > ?")
+                .add(protocol.getLSID())
+                .add(minRowId);
+        if (modifiedSince != null)
+            filterSQL.unsafeAppend(" AND ER.Modified > ?").add(modifiedSince);
+
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(filterSQL, _ -> true, queue.getContainer(), SearchService.INDEXING_LIMIT);
+
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
+        tracker.forEach(runs, ExpRun::getRowId, r -> indexAssayRun(queue, r));
+
+        if (tracker.wasFull())
+            queue.addRunnable((q) -> indexAssayRuns(q, protocol, modifiedSince, tracker.getMaxRowId()));
     }
 
     @Override
@@ -745,7 +771,7 @@ public class AssayManager implements AssayService
         ExpRun expRun = ExperimentService.get().getExpRun(expRunRowId);
         if (expRun == null)
             return;
-        
+
         if (shouldIndexRun(expRun))
             indexAssayRun(queue, ExperimentService.get().getExpRun(expRunRowId));
     }
@@ -955,7 +981,7 @@ public class AssayManager implements AssayService
             if (protocols.size() > 1)
                 throw new NotFoundException("More than one assay protocol named '" + protocol.getName() + "' was found.");
 
-            expProtocol = protocols.get(0);
+            expProtocol = protocols.getFirst();
         }
         return expProtocol;
     }
@@ -1065,10 +1091,10 @@ public class AssayManager implements AssayService
                 return checker.getValidationSql(container, user, protocol, assayDataTable);
             }
             else
-                log.error(String.format("Assay data table not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
+                log.error("Assay data table not found for protocol : {} in folder : {}", protocol.getName(), container.getPath());
         }
         else
-            log.error(String.format("Assay provider not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
+            log.error("Assay provider not found for protocol : {} in folder : {}", protocol.getName(), container.getPath());
 
         return null;
     }
@@ -1086,5 +1112,76 @@ public class AssayManager implements AssayService
     public AssayDomainService createAssayDomainService(User user, Container container)
     {
         return new AssayDomainServiceImpl(user, container);
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static Container _container;
+        private static ExpProtocol _protocol;
+
+        @BeforeClass
+        public static void setup() throws Exception
+        {
+            JunitUtil.deleteTestContainer();
+            _container = JunitUtil.getTestContainer();
+
+            AssayDomainService domainService = new AssayDomainServiceImpl(TestContext.get().getUser(), _container);
+            GWTProtocol template = domainService.getAssayTemplate("General");
+            template.setName("ProtocolCacheTestAssay");
+            GWTProtocol saved = domainService.saveChanges(template, true);
+            _protocol = ExperimentService.get().getExpProtocol(saved.getProtocolId());
+            assertNotNull(_protocol);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            JunitUtil.deleteTestContainer();
+            _container = null;
+            _protocol = null;
+        }
+
+        @Test
+        public void testProviderFilterMatchesResolvedProvider()
+        {
+            AssayManager mgr = AssayManager.get();
+            List<ExpProtocol> all = mgr.getAssayProtocols(_container);
+            assertTrue(all.contains(_protocol));
+
+            for (AssayProvider provider : mgr.getAssayProviders())
+            {
+                List<ExpProtocol> expected = all.stream().filter(p -> provider.equals(mgr.getProvider(p))).toList();
+                assertEquals("Protocols for provider " + provider.getName(), expected, mgr.getAssayProtocols(_container, provider));
+            }
+
+            assertTrue(mgr.getAssayProtocols(_container, mgr.getProvider(_protocol)).contains(_protocol));
+        }
+
+        @Test
+        public void testProvidersInScopeMatchResolvedProviders()
+        {
+            AssayManager mgr = AssayManager.get();
+            Set<AssayProvider> expected = mgr.getAssayProtocols(_container).stream()
+                    .map(mgr::getProvider)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            assertEquals(expected, mgr.getAssayProvidersInScope(_container));
+            assertTrue(expected.contains(mgr.getProvider(_protocol)));
+        }
+
+        @Test
+        public void testModuleAssayReloadClearsProtocolCache()
+        {
+            AssayManager mgr = AssayManager.get();
+            mgr.getAssayProtocols(_container);
+            assertTrue(PROTOCOL_CACHE.getKeys().anyMatch(_container::equals));
+
+            ModuleAssayCache.get().clearModuleAssayCollections();
+            assertFalse(PROTOCOL_CACHE.getKeys().anyMatch(_container::equals));
+
+            assertTrue(mgr.getAssayProtocols(_container, mgr.getProvider(_protocol)).contains(_protocol));
+            assertTrue(PROTOCOL_CACHE.getKeys().anyMatch(_container::equals));
+        }
     }
 }

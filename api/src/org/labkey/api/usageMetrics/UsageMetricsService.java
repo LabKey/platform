@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.api.usageMetrics;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,11 +27,9 @@ import java.util.Map;
  *         UsageMetricsService svc = UsageMetricsService.get();
  *         if (null != svc)
  *         {
- *             svc.registerUsageMetrics(DataIntegrationModule.NAME, () -> {
- *                 Map<String, Object> metric = new HashMap<>();
- *                 metric.put("etlRunCount", new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class));
- *                 return metric;
- *             });
+ *             svc.registerUsageMetrics(DataIntegrationModule.NAME, metrics -> metrics.put("etlRunCount",
+ *                 () -> new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class),
+ *                 "ETL runs"));
  *         }
  */
 public interface UsageMetricsService
@@ -55,9 +54,13 @@ public interface UsageMetricsService
      *  Metrics can be included at UsageReportingLevel OFF or ON. Usage metrics will only be sent for ON.
      *
      * @param moduleName The name of the module
-     * @param metrics Implementation of the functional interface UsageMetricsProvider.getUsageMetrics() method. Typically,
-     *                this will return a map of metric name -> value pairs.
      * @throws IllegalArgumentException if moduleName doesn't correspond to an existing module
      */
     void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
+
+    /**
+     * Not included in the mothership report. Runs every provider, so it costs as much as generating a report.
+     * @return map of module name to its metric descriptions
+     */
+    Map<String, List<UsageMetrics.Description>> getModuleUsageMetricDescriptions();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class StudyDomainKind extends BaseStudyDomainKind
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     @Nullable

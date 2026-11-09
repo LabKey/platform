@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.folderDis
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.helpMenuEnabled;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.logoHref;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.reportAProblemPath;
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.restrictedColumnsEnabled;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.supportEmail;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemDescription;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemEmailAddress;
@@ -52,7 +51,7 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.themeName
  */
 public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
-    private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
+    private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
     private static final Logger LOG = LogHelper.getLogger(LookAndFeelProperties.class, "Manages site-wide and project-scoped look and feel settings");
 
     public static void clearCaches()
@@ -68,7 +67,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         themeName("Server color scheme. Valid values: " + Arrays.toString(Theme.values())),
         folderDisplayMode("Show project and folder navigation. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
         applicationMenuDisplayMode("Show application selection menu. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
-        helpMenuEnabled("Show LabKey Help menu item"),
+        helpMenuEnabled("Show LabKey Documentation menu item"),
         logoHref("Logo link (specifies page to which header logo links)"),
         reportAProblemPath("Support link (specifies page where users can request support)"),
         supportEmail("Support email (shown to users if they don't have permission to see a page, or are having trouble logging in)"),
@@ -246,14 +245,14 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return displayMode != null ? FolderDisplayMode.fromString(lookupStringValue(applicationMenuDisplayMode, null)) : null;
     }
 
-    public boolean isHelpMenuEnabled()
+    public boolean isDocumentationMenuEnabled()
     {
         return lookupBooleanValue(helpMenuEnabled, true);
     }
 
-    public Boolean isHelpMenuEnabledStored()
+    public Boolean isDocumentationMenuEnabledStored()
     {
-        String stored = getStoredValue(restrictedColumnsEnabled);
+        String stored = getStoredValue(helpMenuEnabled);
         return null == stored ? null : "TRUE".equals(stored);
     }
 
@@ -323,8 +322,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         //initial login will be used as the default value. During setup user will be prompted to change.
         String emailAddress = lookupStringValue(systemEmailAddress, "");
         if (emailAddress.isEmpty())
-            LOG.error(String.format("System Email Address became unset somehow. Visit '%s/admin-projectSettings.view' to fix it",
-                    _settingsContainer.getTitle().isEmpty() ? "" : _settingsContainer.getPath()));
+            LOG.error("System Email Address became unset somehow. Visit '{}/admin-projectSettings.view' to fix it", _settingsContainer.getTitle().isEmpty() ? "" : _settingsContainer.getPath());
         return emailAddress;
     }
 

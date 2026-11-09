@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2023 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,11 +177,11 @@ public class ListWriter
                             .collect(Collectors.toCollection(LinkedList::new));
 
                     // Sort the data rows by PK, #11261
-                    Sort sort = ti.getPkColumns().size() != 1 ? null : new Sort(ti.getPkColumns().get(0).getFieldKey());
+                    Sort sort = ti.getPkColumns().size() != 1 ? null : new Sort(ti.getPkColumns().getFirst().getFieldKey());
 
                     // NOTE: TSVGridWriter generates and closes Results
 
-                    try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().getSelectBuilder(ti).columns(columns).sort(sort).select(null, false), displayColumns))
+                    try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().getSelectBuilder(ti).columns(columns).sort(sort).select(false), displayColumns))
                     {
                         tsvWriter.setApplyFormats(false);
                         tsvWriter.setColumnHeaderType(ColumnHeaderType.ImportField); // Issue 53431
@@ -290,9 +290,9 @@ public class ListWriter
                 uniquifiers.put(attachmentColumn.getName(), new FileNameUniquifier());
 
             List<ColumnInfo> selectColumns = new ArrayList<>(attachmentColumns);
-            selectColumns.add(0, ti.getColumn("EntityId"));
+            selectColumns.addFirst(ti.getColumn("EntityId"));
 
-            try (ResultSet rs = QueryService.get().getSelectBuilder(ti).columns(selectColumns).select(null, false))
+            try (ResultSet rs = QueryService.get().getSelectBuilder(ti).columns(selectColumns).select(false))
             {
                 while (rs.next())
                 {

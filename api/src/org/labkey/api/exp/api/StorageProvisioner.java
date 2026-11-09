@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,20 @@ public interface StorageProvisioner
     TableInfo createTableInfoImpl(@NotNull Domain domain);
 
     /**
+     * Variant of {@link #createTableInfo} for callers that cache the result for the process lifetime. The table is
+     * locked for cross-thread sharing, and it plus the DomainDescriptor it retains are dropped from MemTracker, which
+     * would otherwise report both as leaks.
+     */
+    @NotNull
+    static TableInfo createSharedTableInfo(@NotNull Domain domain)
+    {
+        return get().createSharedTableInfoImpl(domain);
+    }
+
+    @NotNull
+    TableInfo createSharedTableInfoImpl(@NotNull Domain domain);
+
+    /**
      * This is really an internal method, use createTableInfo() in most scenarios
      * This is public to support upgrade scenarios only.
      */
@@ -86,6 +100,7 @@ public interface StorageProvisioner
     void ensureTableIndices(@NotNull Domain domain);
     void ensureTableIndices(@NotNull Domain domain, Supplier<Boolean> afterAddSupplier);
 
+    @NotNull
     SchemaTableInfo getSchemaTableInfo(Domain domain);
 
     /**

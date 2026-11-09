@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.util.logging.LogHelper;
@@ -158,9 +163,16 @@ public class SystemMaintenance
         return _timerDisabled;
     }
 
-    public static void setTimeDisabled(boolean disable)
+    public static void setTimeDisabled(Container container, User user, boolean disable)
     {
         _timerDisabled = disable;
+
+        StringBuilder html = new StringBuilder("<table>");
+        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(container, "The system maintenance setting was changed (see details).");
+        AbstractWriteableSettingsGroup.appendDiffRow(html, "Timer Enabled", null, Boolean.toString(!disable));
+        html.append("</table>");
+        event.setChanges(html.toString());
+        AuditLogService.get().addEvent(user, event);
     }
 
     private final static String SET_NAME = "SystemMaintenance";
@@ -176,7 +188,7 @@ public class SystemMaintenance
     }
 
     // For all tasks that can be disabled, set the enabledTasks to enabled and set the rest to disabled
-    public static void setProperties(Set<String> enabledTasks, String time)
+    public static void setProperties(Container container, User user, Set<String> enabledTasks, String time)
     {
         WritablePropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
 
@@ -192,6 +204,18 @@ public class SystemMaintenance
 
         writableProps.save();
         setTimer();
+
+        StringBuilder html = new StringBuilder("<table>");
+        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(container,
+                "The system maintenance tasks were changed (see details).");
+        AbstractWriteableSettingsGroup.appendDiffRow(html, TIME_PROPERTY_NAME, null, time);
+        for (String task : enabled)
+            AbstractWriteableSettingsGroup.appendDiffRow(html, task, null, "ENABLED");
+        for (String task : disabled)
+            AbstractWriteableSettingsGroup.appendDiffRow(html, task, null, "DISABLED");
+        html.append("</table>");
+        event.setChanges(html.toString());
+        AuditLogService.get().addEvent(user, event);
     }
 
     // Enable all tasksToEnable, disable all tasksToDisable, and don't modify the enabled property for all other tasks

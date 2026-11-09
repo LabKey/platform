@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,18 +136,18 @@ public class DbSequenceManager
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment getRowIdSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
-        getRowIdSql.append(" WHERE Container = ? AND Name = ? AND Id = ?");
+        getRowIdSql.unsafeAppend(" WHERE Container = ? AND Name = ? AND Id = ?");
         getRowIdSql.add(c);
         getRowIdSql.add(name);
         getRowIdSql.add(id);
 
         Integer rowId = executeAndMaybeReturnInteger(tinfo, getRowIdSql);
 
-        if (rowId != null && rowId > 0 && withUpdateLock && tinfo.getSqlDialect().isPostgreSQL())
+        if (rowId != null && rowId > 0 && withUpdateLock)
         {
             SQLFragment lockRowSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
-            lockRowSql.append(" WHERE RowId = ?");
-            lockRowSql.append(" FOR UPDATE");
+            lockRowSql.unsafeAppend(" WHERE RowId = ?");
+            lockRowSql.unsafeAppend(" FOR UPDATE");
             lockRowSql.add(rowId);
             new SqlExecutor(tinfo.getSchema()).execute(lockRowSql); // get lock for current transaction
         }
@@ -160,7 +160,7 @@ public class DbSequenceManager
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment getRowIdSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
-        getRowIdSql.append(" WHERE Container = ? AND Name LIKE ? AND Id = ?");
+        getRowIdSql.unsafeAppend(" WHERE Container = ? AND Name LIKE ? AND Id = ?");
         getRowIdSql.add(c);
         getRowIdSql.add(likePrefix + "%");
         getRowIdSql.add(id);
@@ -184,7 +184,7 @@ public class DbSequenceManager
             throw new IllegalStateException("Sequence ID is too large: " + id);
 
         SQLFragment insertSql = new SQLFragment("INSERT INTO ").append(tinfo.getSelectName());
-        insertSql.append(" (Container, Name, Id, Value) VALUES (?, ?, ?, ?)");
+        insertSql.unsafeAppend(" (Container, Name, Id, Value) VALUES (?, ?, ?, ?)");
 
         insertSql.add(c);
         insertSql.add(name);
@@ -228,7 +228,7 @@ public class DbSequenceManager
         if (null != rowId)
         {
             TableInfo tinfo = getTableInfo();
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE RowId = ?");
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).unsafeAppend(" WHERE RowId = ?");
             sql.add(rowId);
 
             execute(tinfo, sql);
@@ -242,7 +242,7 @@ public class DbSequenceManager
         if (!rowIds.isEmpty())
         {
             TableInfo tinfo = getTableInfo();
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE RowId");
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).unsafeAppend(" WHERE RowId");
             sql = dialect.appendInClauseSql(sql, rowIds);
 
             execute(tinfo, sql);
@@ -255,20 +255,20 @@ public class DbSequenceManager
     public static void deleteAll(Container c)
     {
         TableInfo tinfo = getTableInfo();
-        SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ?");
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).unsafeAppend(" WHERE Container = ?");
         sql.add(c);
 
         execute(tinfo, sql);
     }
 
 
-    static int current(DbSequence sequence)
+    static long current(DbSequence sequence)
     {
         TableInfo tinfo = getTableInfo();
-        SQLFragment sql = new SQLFragment("SELECT Value FROM ").append(tinfo.getSelectName()).append(" WHERE RowId = ?");
+        SQLFragment sql = new SQLFragment("SELECT Value FROM ").append(tinfo.getSelectName()).unsafeAppend(" WHERE RowId = ?");
         sql.add(sequence.getRowId());
 
-        Integer currentValue = executeAndMaybeReturnInteger(tinfo, sql);
+        Long currentValue = executeAndMaybeReturnLong(tinfo, sql);
 
         if (null == currentValue)
             throw new IllegalStateException("Current value for " + sequence + " was null!");
@@ -292,19 +292,16 @@ public class DbSequenceManager
         TableInfo tinfo = getTableInfo();
 
         SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = (");
+        sql.unsafeAppend("UPDATE ").append(tinfo.getSelectName()).unsafeAppend(" SET Value = (");
 
         addValueSql(sql, tinfo, sequence);
 
-        sql.append(") + ? WHERE RowId = ?");
+        sql.unsafeAppend(") + ? WHERE RowId = ?");
         sql.add(count);
         sql.add(sequence.getRowId());
 
         // Reselect the current value
         tinfo.getSqlDialect().addReselect(sql, tinfo.getColumn("Value"), null);
-
-        // Add locking appropriate to this dialect
-        addLocks(tinfo, sql);
 
         long last = sequence.useCurrentTransaction() ? executeAndReturnLongInTraction(tinfo, sql) : executeAndReturnLong(tinfo, sql, Level.WARN);
         long first = last - count;
@@ -312,28 +309,12 @@ public class DbSequenceManager
     }
 
 
-    private static void addLocks(TableInfo tinfo, SQLFragment updateSql)
-    {
-        if (tinfo.getSqlDialect().isSqlServer())
-            updateSql.insert(updateSql.indexOf("SET"), "WITH (XLOCK, ROWLOCK) ");
-    }
-
-
     private static void addValueSql(SQLFragment sql, TableInfo tinfo, DbSequence sequence)
     {
-        SqlDialect dialect = tinfo.getSqlDialect();
-
-        if (dialect.isPostgreSQL())
-        {
-            // SELECT with FOR UPDATE locks the row to ensure a true atomic update
-            SQLFragment selectForUpdate = new SQLFragment("SELECT Value FROM ").append(tinfo, "seq").append(" WHERE RowId = ? FOR UPDATE");
-            selectForUpdate.add(sequence.getRowId());
-            sql.append("(").append(selectForUpdate).append(")");
-        }
-        else
-        {
-            sql.append("Value");
-        }
+        // SELECT with FOR UPDATE locks the row to ensure a true atomic update
+        SQLFragment selectForUpdate = new SQLFragment("SELECT Value FROM ").append(tinfo, "seq").unsafeAppend(" WHERE RowId = ? FOR UPDATE");
+        selectForUpdate.add(sequence.getRowId());
+        sql.unsafeAppend("(").append(selectForUpdate).unsafeAppend(")");
     }
 
 
@@ -342,13 +323,10 @@ public class DbSequenceManager
     {
         TableInfo tinfo = getTableInfo();
 
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE RowId = ? AND Value < ?");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).unsafeAppend(" SET Value = ? WHERE RowId = ? AND Value < ?");
         sql.add(minimum);
         sql.add(sequence.getRowId());
         sql.add(minimum);
-
-        // Add locking appropriate to this dialect
-        addLocks(tinfo, sql);
 
         if (sequence.useCurrentTransaction())
             new SqlExecutor(tinfo.getSchema()).execute(sql);
@@ -361,12 +339,9 @@ public class DbSequenceManager
     {
         TableInfo tinfo = getTableInfo();
 
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE RowId = ?");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).unsafeAppend(" SET Value = ? WHERE RowId = ?");
         sql.add(value);
         sql.add(sequence.getRowId());
-
-        // Add locking appropriate to this dialect
-        addLocks(tinfo, sql);
 
         if (sequence.useCurrentTransaction())
             new SqlExecutor(tinfo.getSchema()).execute(sql);
@@ -404,6 +379,20 @@ public class DbSequenceManager
         try (Connection conn = scope.getPooledConnection())
         {
             return new SqlSelector(scope, conn, sql).getObject(Integer.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    private static @Nullable Long executeAndMaybeReturnLong(TableInfo tinfo, SQLFragment sql)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlSelector(scope, conn, sql).getObject(Long.class);
         }
         catch (SQLException e)
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.labkey.test.tests.study;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.util.FileUtil;
@@ -31,6 +30,7 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.domain.DomainFormPanel;
@@ -62,6 +62,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.labkey.test.util.TestDataGenerator.randomTextChoice;
@@ -79,6 +80,7 @@ public class AssayTest extends AbstractAssayTest
     private static final String ISSUE_53616_ASSAY = "Issue53616Assay";
     private static final String ISSUE_53616_PROJECT = "Issue53616Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String ISSUE_53831_PROJECT = "Issue53831Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
+    private static final String GH_1023_PROJECT = "GH1023Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String SAMPLE_FIELD_TEST_ASSAY = "SampleFieldTestAssay";
     private static final String SAMPLE_FIELD_PROJECT_NAME = "Sample Field Test Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String MVTC_MULTI_FILE_IMPORT_ASSAY = TestDataGenerator.randomDomainName("MVTCMultiFileImportAssay", DomainUtils.DomainKind.Assay);
@@ -107,6 +109,7 @@ public class AssayTest extends AbstractAssayTest
         _containerHelper.deleteProject(ISSUE_53616_PROJECT, false);
         _containerHelper.deleteProject(ISSUE_53625_PROJECT, false);
         _containerHelper.deleteProject(ISSUE_53831_PROJECT, false);
+        _containerHelper.deleteProject(GH_1023_PROJECT, false);
         _containerHelper.deleteProject(MVTC_MULTI_FILE_IMPORT_PROJECT, false);
 
         _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
@@ -121,16 +124,15 @@ public class AssayTest extends AbstractAssayTest
         ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", "a" + "0123456789".repeat(15));
         List<String> errors = assayDesignerPage.clickSaveExpectingErrors();
         checker().verifyEquals("Wrong number of errors", 1, errors.size());
-        checker().verifyEquals("Wrong error message: " + errors.get(0),
+        checker().verifyEquals("Wrong error message: " + errors.getFirst(),
                 "Value is too long for assay design name, a maximum length of 150 is allowed. The supplied value, 'a01234567890123456789012...78901234567890123456789', was 151 characters long.",
-                errors.get(0));
+                errors.getFirst());
         assayDesignerPage.clickCancel();
     }
 
     @Test
     public void testAssayMultiFileImportForMVTC() throws Exception
     {
-        Assume.assumeTrue("Multi-choice text fields are only supported on PostgreSQL", WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL);
         _containerHelper.createProject(MVTC_MULTI_FILE_IMPORT_PROJECT, "Assay");
         new GeneralAssayDesign(MVTC_MULTI_FILE_IMPORT_ASSAY)
                 .setRunFields(List.of(new FieldDefinition("runText", FieldDefinition.ColumnType.String)), true)
@@ -196,7 +198,7 @@ public class AssayTest extends AbstractAssayTest
         log("Save initial assay design with sample field set to 'All Samples'");
         List<String> errors = assayDesignerPage.clickSaveExpectingErrors();
         assertEquals("Wrong number of errors", 1, errors.size());
-        assertTrue("Wrong error message: " + errors.get(0), errors.get(0).startsWith("Name cannot exceed 200 characters, but was"));
+        assertTrue("Wrong error message: " + errors.getFirst(), errors.getFirst().startsWith("Name cannot exceed 200 characters, but was"));
 
         resultsPanel.removeAllFields(false);
         resultsPanel.addField("ShortAndSweet");
@@ -219,8 +221,11 @@ public class AssayTest extends AbstractAssayTest
         log("Starting Assay security scenario tests");
         setupEnvironment();
         setupPipeline(getProjectName());
-        SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), StudyHelper.SPECIMEN_ARCHIVE_A, FileUtil.appendName(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
-        importer.importAndWaitForComplete();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), StudyHelper.SPECIMEN_ARCHIVE_A, FileUtil.appendName(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
+            importer.importAndWaitForComplete();
+        }
         defineAssay();
         uploadRuns(TEST_ASSAY_FLDR_LAB1, TEST_ASSAY_USR_TECH1);
         editResults();
@@ -567,61 +572,65 @@ public class AssayTest extends AbstractAssayTest
                 TEST_ASSAY_SET_PROPERTIES[3]);
         clickAndWait(Locator.linkWithText(TEST_RUN1));
         assertElementNotPresent(Locator.tagWithText("td", "7.0"));
-        // Make sure that our specimen IDs resolved correctly
-        assertTextPresent(
-                "AAA07XSF-02",
-                "999320885",
-                "301",
-                "AAA07XK5-05",
-                "999320812",
-                "601",
-                TEST_ASSAY_DATA_PROP_NAME + "4",
-                TEST_ASSAY_DATA_PROP_NAME + "5",
-                TEST_ASSAY_DATA_PROP_NAME + "6",
-                "2000-06-06",
-                "0.0",
-                "f",
-                ALIASED_DATA);
+        // Make sure that our specimen IDs resolved correctly -- this whole block relies on specimen-to-assay
+        // resolution (SpecimenID lookups, AssayMatch), so it's skipped entirely when the module is absent.
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            assertTextPresent(
+                    "AAA07XSF-02",
+                    "999320885",
+                    "301",
+                    "AAA07XK5-05",
+                    "999320812",
+                    "601",
+                    TEST_ASSAY_DATA_PROP_NAME + "4",
+                    TEST_ASSAY_DATA_PROP_NAME + "5",
+                    TEST_ASSAY_DATA_PROP_NAME + "6",
+                    "2000-06-06",
+                    "0.0",
+                    "f",
+                    ALIASED_DATA);
 
-        _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId");
-        _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType");
-        _customizeViewsHelper.addColumn("SpecimenID/AssayMatch");
-        _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
-        _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
-        _customizeViewsHelper.removeColumn("testAssayDataProp4");
-        _customizeViewsHelper.applyCustomView();
+            _customizeViewsHelper.openCustomizeViewPanel();
+            _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId");
+            _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType");
+            _customizeViewsHelper.addColumn("SpecimenID/AssayMatch");
+            _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
+            _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
+            _customizeViewsHelper.removeColumn("testAssayDataProp4");
+            _customizeViewsHelper.applyCustomView();
 
-        assertTextPresent("Blood (Whole)", 4);
+            assertTextPresent("Blood (Whole)", 4);
 
-        Locator.XPathLocator trueLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'true']");
-        int totalTrues = getElementCount(trueLocator);
-        assertEquals(4, totalTrues);
+            Locator.XPathLocator trueLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'true']");
+            int totalTrues = getElementCount(trueLocator);
+            assertEquals(4, totalTrues);
 
-        DataRegionTable region = new DataRegionTable("Data", this);
-        region.setFilter("SpecimenID", "Starts With", "AssayTestControl");
+            DataRegionTable region = new DataRegionTable("Data", this);
+            region.setFilter("SpecimenID", "Starts With", "AssayTestControl");
 
-        // verify that there are no trues showing for the assay match column that were filtered out
-        totalTrues = getElementCount(trueLocator);
-        assertEquals(0, totalTrues);
+            // verify that there are no trues showing for the assay match column that were filtered out
+            totalTrues = getElementCount(trueLocator);
+            assertEquals(0, totalTrues);
 
-        log("Check out the data for all of the runs");
-        clickAndWait(Locator.linkWithText("view results"));
-        region.clearAllFilters("SpecimenID");
-        assertElementPresent(Locator.tagWithText("td", "7.0"));
-        assertElementPresent(Locator.tagWithText("td", "18"));
+            log("Check out the data for all of the runs");
+            clickAndWait(Locator.linkWithText("view results"));
+            region.clearAllFilters("SpecimenID");
+            assertElementPresent(Locator.tagWithText("td", "7.0"));
+            assertElementPresent(Locator.tagWithText("td", "18"));
 
-        assertTextPresent("Blood (Whole)", 7);
+            assertTextPresent("Blood (Whole)", 7);
 
-        Locator.XPathLocator falseLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'false']");
-        int totalFalses = getElementCount(falseLocator);
-        assertEquals(3, totalFalses);
+            Locator.XPathLocator falseLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'false']");
+            int totalFalses = getElementCount(falseLocator);
+            assertEquals(3, totalFalses);
 
-        region.setFilter("SpecimenID", "Does Not Start With", "BAQ");
+            region.setFilter("SpecimenID", "Does Not Start With", "BAQ");
 
-        // verify the falses have been filtered out
-        totalFalses = getElementCount(falseLocator);
-        assertEquals(0, totalFalses);
+            // verify the falses have been filtered out
+            totalFalses = getElementCount(falseLocator);
+            assertEquals(0, totalFalses);
+        }
 
         stopImpersonating();
     }
@@ -681,7 +690,14 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Next");
         assertTextPresent("Link to " + TEST_ASSAY_FLDR_STUDY1 + " Study: Verify Results");
 
-        setFormElement(Locator.name("visitId"), "301.5");
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            setFormElement(Locator.name("visitId"), "301.5");
+            for (int i = 1; i <= 3; i++)
+            {
+                uncheckCheckbox(Locator.checkboxByNameAndValue(".select", String.valueOf(i + 1)));
+            }
+        }
         clickButton("Link to Study");
 
         log("Verifying that the data was published");
@@ -696,31 +712,37 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("Study Navigator"));
 
         log("Test participant counts and row counts in study overview");
-        String[] row2 = new String[]{TEST_ASSAY, "8", "1", "1", "1", "1", "1", "1", "2"};
+        String[] row2 = _studyHelper.isSpecimenModulePresent() ? new String[]{TEST_ASSAY, "8", "1", "1", "1", "1", "1", "1", "2"}
+                : new String[]{TEST_ASSAY, "6", "1", "1", "1", "1", "1", "1"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         // Manually click the checkbox -- normal checkCheckbox() method doesn't seem to work for checkbox that reloads using onchange event
         clickAndWait(Locator.checkboxByNameAndValue("visitStatistic", "RowCount"));
-        row2 = new String[]{TEST_ASSAY, "8 / 9", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "2 / 3"};
+        row2 = _studyHelper.isSpecimenModulePresent() ? new String[]{TEST_ASSAY, "8 / 9", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "2 / 3"}
+                : new String[]{TEST_ASSAY, "6 / 6", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         doAndWaitForPageToLoad(() -> uncheckCheckbox(Locator.checkboxByNameAndValue("visitStatistic", "ParticipantCount")));
-        row2 = new String[]{TEST_ASSAY, "9", "1", "1", "1", "1", "1", "1", "3"};
+        row2 = _studyHelper.isSpecimenModulePresent() ? new String[]{TEST_ASSAY, "9", "1", "1", "1", "1", "1", "1", "3"}
+                : new String[]{TEST_ASSAY, "6", "1", "1", "1", "1", "1", "1"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
 
-        clickAndWait(Locator.linkWithText("9"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            clickAndWait(Locator.linkWithText("9"));
 
-        assertElementPresent(Locator.linkWithText("999320885"), 1);
-        assertElementPresent(Locator.linkWithText("999320885"), 1);
-        assertTextPresent(
-                "301.0",
-                "9.0",
-                "8.0",
-                TEST_RUN1_COMMENTS,
-                TEST_RUN2_COMMENTS,
-                TEST_RUN1,
-                TEST_RUN2,
-                "2000-06-06",
-                TEST_ASSAY_RUN_PROP1,
-                "18");
+            assertElementPresent(Locator.linkWithText("999320885"), 1);
+            assertElementPresent(Locator.linkWithText("999320885"), 1);
+            assertTextPresent(
+                    "301.0",
+                    "9.0",
+                    "8.0",
+                    TEST_RUN1_COMMENTS,
+                    TEST_RUN2_COMMENTS,
+                    TEST_RUN1,
+                    TEST_RUN2,
+                    "2000-06-06",
+                    TEST_ASSAY_RUN_PROP1,
+                    "18");
+        }
 
         // test recall
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
@@ -811,15 +833,15 @@ public class AssayTest extends AbstractAssayTest
         linkStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
-        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='AAA07XMC-02'] and following-sibling::td[text()='301.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td/a[text()='AAA07XMC-04'] and following-sibling::td[not(text())]]"));
-        assertElementPresent(Locator.xpath("//td[text()='Day 90 - 95' and following-sibling::td/a[text()='AAA07XSF-02'] and following-sibling::td[not(text())]]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td[normalize-space()='AAA07XMC-02'] and following-sibling::td["+(_studyHelper.isSpecimenModulePresent() ? "text()='301.0'" : "not(text())") +"]]"));
+        assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td[normalize-space()='AAA07XMC-04'] and following-sibling::td[not(text())]]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 90 - 95' and following-sibling::td[normalize-space()='AAA07XSF-02'] and following-sibling::td[not(text())]]"));
 
-        assertElementPresent(Locator.xpath("//td[text()='Day 120 - 127' and following-sibling::td/a[text()='AssayTestControl1'] and following-sibling::td[text()='5.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Day 152 - 159' and following-sibling::td/a[text()='AssayTestControl2'] and following-sibling::td[text()='6.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Day 0 - 7' and following-sibling::td/a[text()='BAQ00051-09'] and following-sibling::td[text()='7.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='BAQ00051-08'] and following-sibling::td[text()='8.0']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td/a[text()='BAQ00051-11'] and following-sibling::td[text()='9.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 120 - 127' and following-sibling::td[normalize-space()='AssayTestControl1'] and following-sibling::td[text()='5.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 152 - 159' and following-sibling::td[normalize-space()='AssayTestControl2'] and following-sibling::td[text()='6.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 0 - 7' and following-sibling::td[normalize-space()='BAQ00051-09'] and following-sibling::td[text()='7.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td[normalize-space()='BAQ00051-08'] and following-sibling::td[text()='8.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td[normalize-space()='BAQ00051-11'] and following-sibling::td[text()='9.0']]"));
 
         linkStudy.clickHeaderButtonAndWait("Link to Study");
 
@@ -912,15 +934,15 @@ public class AssayTest extends AbstractAssayTest
         linkStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit3' and following-sibling::td/a[text()='AAA07XMC-02']]"));
-        assertElementPresent(Locator.xpath("//td[text()='33.0' and following-sibling::td/a[text()='AAA07XMC-04']]"));
-        assertElementPresent(Locator.xpath("//td[text()='4.0' and following-sibling::td/a[text()='AAA07XSF-02']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit3' and following-sibling::td[normalize-space()='AAA07XMC-02']]"));
+        assertElementPresent(Locator.xpath("//td[text()='33.0' and following-sibling::td[normalize-space()='AAA07XMC-04']]"));
+        assertElementPresent(Locator.xpath("//td[text()='4.0' and following-sibling::td[normalize-space()='AAA07XSF-02']]"));
 
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit2' and following-sibling::td/a[text()='AssayTestControl1']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='AssayTestControl2']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-09']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-08']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-11']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit2' and following-sibling::td[normalize-space()='AssayTestControl1']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[normalize-space()='AssayTestControl2']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[normalize-space()='BAQ00051-09']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[normalize-space()='BAQ00051-08']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[normalize-space()='BAQ00051-11']]"));
 
         linkStudy.clickHeaderButtonAndWait("Link to Study");
 
@@ -932,11 +954,13 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("Study Navigator"));
 
         log("Test participant counts and row counts in study overview");
-        String[] row2 = new String[]{TEST_ASSAY, "9", " ", " ", " ", "1", " ", " ", "1", " ", " ", "4", " ", " ", " ", " ", "1", "1", " ", " ", " ", "1", " ", " ", " ", " ", " "};
+        List<String> rowList = Stream.of(TEST_ASSAY, "9", " ", " ", " ", "1", " ", " ", "1", " ", " ", "4", " ", " ", " ", " ", "1", "1", " ", " ", " ", "1", " ", " ", " ", " ", " ")
+                .filter(v -> _studyHelper.isSpecimenModulePresent() || !v.isBlank()).toList();
+        String[] row2 = rowList.toArray(new String[]{});
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         // Manually click the checkbox -- normal checkCheckbox() method doesn't seem to work for checkbox that reloads using onchange event
         clickAndWait(Locator.checkboxByNameAndValue("visitStatistic", "RowCount"));
-        row2 = new String[]{TEST_ASSAY, "9 / 9", " ", " ", " ", "1 / 1", " ", " ", "1 / 1", " ", " ", "4 / 4", " ", " ", " ", " ", "1 / 1", "1 / 1", " ", " ", " ", "1 / 1", " ", " ", " ", " ", " "};
+        row2 = rowList.stream().map(v -> !v.isBlank() && v.length() == 1 ? v + " / " + v : v).toList().toArray(new String[]{});
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
 
         log("Test that correct timepoints were created");
@@ -1097,10 +1121,13 @@ public class AssayTest extends AbstractAssayTest
 
     private void verifySpecimensPresent(int aaa07Count, int controlCount, int baq00051Count)
     {
-        // need to double the count, once for the label and once for the param in the link url
-        assertTextPresent("AAA07", aaa07Count * 2);
-        assertTextPresent("AssayTestControl", controlCount * 2);
-        assertTextPresent("BAQ00051", baq00051Count * 2);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // need to double the count, once for the label and once for the param in the link url
+            assertTextPresent("AAA07", aaa07Count * 2);
+            assertTextPresent("AssayTestControl", controlCount * 2);
+            assertTextPresent("BAQ00051", baq00051Count * 2);
+        }
     }
 
     @Test // Issue 53625
@@ -1210,6 +1237,27 @@ public class AssayTest extends AbstractAssayTest
         dataTable = new DataRegionTable("Data", getDriver());
         checker().verifyEquals("Incorrect number of results shown.", 1, dataTable.getDataRowCount());
         checker().verifyEquals("Lookup values not as expected.", List.of("123"), dataTable.getColumnDataAsText(lookupField.getLabel()));
+    }
+
+    @Test // GitHub Issue #1023
+    public void testNoExternalReturnUrlRedirect() throws Exception
+    {
+        _containerHelper.createProject(GH_1023_PROJECT, "Assay");
+        goToProjectHome(GH_1023_PROJECT);
+
+        // Navigate to domain designer with an external returnUrl. The safeRedirect action
+        // should prevent external redirects, falling back to the local home page instead.
+        String domainDesignerUrl = WebTestHelper.buildURL("assay", GH_1023_PROJECT, "designer",
+                Map.of("providerName", "General", "returnUrl", "https://labkey.com"));
+        beginAt(domainDesignerUrl);
+        DomainDesignerPage domainDesignerPage = new DomainDesignerPage(getDriver());
+        domainDesignerPage.fieldsPanel();
+        domainDesignerPage.clickCancel();
+        String postCancelUrl = getDriver().getCurrentUrl();
+        assertFalse("Cancel with an external returnUrl should not navigate to an external site",
+                postCancelUrl.contains("labkey.com"));
+        assertTrue("Cancel with an external returnUrl should redirect to a local LabKey page instead of: " + postCancelUrl,
+                WebTestHelper.isTestServerUrl(postCancelUrl));
     }
 
     @Override

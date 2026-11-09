@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public class PropertyCache
 
     PropertyCache(String name, CacheLoader<String, PropertyMap> propertyLoader)
     {
-        _blockingCache = DatabaseCache.get(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name, propertyLoader);
+        _blockingCache = DatabaseCache.get(String.class, CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name, propertyLoader);
     }
 
     @Nullable PropertyMap getProperties(User user, Container container, String category)

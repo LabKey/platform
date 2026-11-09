@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,8 @@ public interface SecurableResource extends HasPermission
     @Override
     default boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return SecurityManager.hasAllPermissions(this.getClass().getName() + ":" + getResourceName(),
+        // Prefer hasAnyPermissions() for a singleton since it's less expensive than hasAllPermissions()
+        return SecurityManager.hasAnyPermissions(this.getClass().getName() + ":" + getResourceName(),
                 this, user, Set.of(perm), Set.of());
     }
 }

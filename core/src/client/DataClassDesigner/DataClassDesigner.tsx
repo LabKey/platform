@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,36 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
-import { ActionURL, getServerContext } from "@labkey/api";
+import React, { FC } from 'react';
+import { ActionURL, getServerContext } from '@labkey/api';
 import {
     Alert,
+    AppContexts,
     BeforeUnload,
     DataClassDesigner,
     DataClassModel,
     fetchDataClass,
     LoadingSpinner,
-    withServerContext
+    redirect,
 } from '@labkey/components';
 
-import "../DomainDesigner.scss"
+import '../DomainDesigner.scss';
 
 type State = {
-    model?: DataClassModel,
-    isLoading: boolean,
-    message?: string
-}
+    isLoading: boolean;
+    message?: string;
+    model?: DataClassModel;
+};
 
 class DataClassDesignerWrapper extends React.Component<any, State> {
+    private _dirty = false;
 
-    private _dirty: boolean = false;
-
-    constructor(props)
-    {
+    constructor(props) {
         super(props);
 
         this.state = {
-            isLoading: true
+            isLoading: true,
         };
     }
 
@@ -53,10 +52,10 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
 
         fetchDataClass(name, rowId)
             .then((model: DataClassModel) => {
-                this.setState(() => ({model, isLoading: false}));
+                this.setState(() => ({ model, isLoading: false }));
             })
-            .catch((error) => {
-                this.setState(() => ({message: error.exception, isLoading: false}));
+            .catch(error => {
+                this.setState(() => ({ message: error.exception, isLoading: false }));
             });
     }
 
@@ -68,9 +67,7 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
 
     navigate(defaultUrl: string) {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || defaultUrl;
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     }
 
     onCancel = () => {
@@ -78,7 +75,9 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
     };
 
     onComplete = (model: DataClassModel) => {
-        this.navigate(ActionURL.buildURL('experiment', 'showDataClass', getServerContext().container.path, {name: model.name}));
+        this.navigate(
+            ActionURL.buildURL('experiment', 'showDataClass', getServerContext().container.path, { name: model.name })
+        );
     };
 
     onChange = (model: DataClassModel) => {
@@ -89,11 +88,11 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
         const { isLoading, message, model } = this.state;
 
         if (message) {
-            return <Alert>{message}</Alert>
+            return <Alert>{message}</Alert>;
         }
 
         if (isLoading) {
-            return <LoadingSpinner/>
+            return <LoadingSpinner />;
         }
 
         const { rowId, name } = ActionURL.getParameters();
@@ -103,14 +102,18 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 <DataClassDesigner
                     initModel={model}
-                    onCancel={this.onCancel}
-                    onComplete={this.onComplete}
-                    onChange={this.onChange}
                     isUpdate={isUpdate}
+                    onCancel={this.onCancel}
+                    onChange={this.onChange}
+                    onComplete={this.onComplete}
                 />
             </BeforeUnload>
-        )
+        );
     }
 }
 
-export const App = withServerContext(DataClassDesignerWrapper);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <DataClassDesignerWrapper />
+    </AppContexts>
+);

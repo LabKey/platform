@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -381,7 +381,7 @@ public class ParamParserImpl implements ParamParser
         try (BufferedWriter inputWriter = new BufferedWriter(PrintWriters.getPrintWriter(fileDest.openOutputStream())))
         {
             String xml = getXMLFromMap(params);
-            _log.debug("Writing " + params.size() + " parameters (" + fileDest + "):");
+            _log.debug("Writing {} parameters ({}):", params.size(), fileDest);
             _log.debug(xml);
             inputWriter.write(xml);
         }

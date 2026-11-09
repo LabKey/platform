@@ -1,3 +1,20 @@
+<%
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
 <%@ page import="org.apache.commons.lang3.tuple.Triple" %>
 <%@ page import="org.apache.xmlbeans.XmlException" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
@@ -155,7 +172,9 @@ public void testBasicSchemaXML() throws Exception
     assertNotNull(t);
     assertNull(t.getColumn("WRAPPED"));
 
-    sql = new SQLFragment().append("SELECT ").append(t.getColumn("ZERO").getValueSql("t")).append("\nFROM ").append(t.getFromSQL("t"));
+    sql = new SQLFragment()
+        .SELECT().append(t.getColumn("ZERO").getValueSql("t"))
+        .FROM().append(t.getFromSQL("t"));
     try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
     {
         assertTrue(rs.next());
@@ -181,12 +200,12 @@ public void testBasicSchemaXML() throws Exception
     assertFalse(calculated.isUserEditable());
 
     sql = new SQLFragment()
-            .append("SELECT\n")
-            .append("  ").append(wrapped.getValueSql("t")).append(" AS ").appendIdentifier(wrapped.getAlias()).append(",\n")
-            .append("  ").append(calculated.getValueSql("t")).append(" AS ").appendIdentifier(calculated.getAlias()).append(",\n")
-            .append("  ").append("*")
-            .append("\nFROM ").append(t.getFromSQL("t"))
-            .append("\nWHERE ").append(t.getColumn("ZED").getValueSql("t")).append(" = 0 AND ").append(t.getColumn("SIX").getValueSql("t")).append(" = 6");
+            .SELECT()
+                .unsafeAppend("  ").append(wrapped.getValueSql("t")).unsafeAppend(" AS ").appendIdentifier(wrapped.getAlias()).unsafeAppend(",\n")
+                .unsafeAppend("  ").append(calculated.getValueSql("t")).unsafeAppend(" AS ").appendIdentifier(calculated.getAlias()).unsafeAppend(",\n")
+                .unsafeAppend("  ").unsafeAppend("*")
+            .FROM().append(t.getFromSQL("t"))
+            .WHERE().append(t.getColumn("ZED").getValueSql("t")).unsafeAppend(" = 0").AND().append(t.getColumn("SIX").getValueSql("t")).unsafeAppend(" = 6");
     try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
     {
         assertTrue(rs.next());
@@ -340,7 +359,9 @@ public void testExpressions()throws Exception
 
         var r = getSchemaTableInfo(xml);
         assertEquals(type, r.getColumn("EXPR").getJdbcType());
-        SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\nFROM ").append(r.getFromSQL("t"));
+        SQLFragment sql = new SQLFragment()
+            .SELECT().append(r.getColumn("EXPR").getValueSql("t"))
+            .FROM().append(r.getFromSQL("t"));
         var result = new SqlSelector(scope, sql).getObject((Class<?>)type.getJavaClass());
         assertEquals(expected, result);
     }
@@ -432,7 +453,9 @@ public void testUserSchemaTable()throws Exception
 
         r = getUserTableInfo(xml);
         assertEquals(type, r.getColumn("EXPR").getJdbcType());
-        SQLFragment sql = new SQLFragment().append("SELECT ").append(r.getColumn("EXPR").getValueSql("t")).append("\nFROM ").append(r.getFromSQL("t"));
+        SQLFragment sql = new SQLFragment()
+            .SELECT().append(r.getColumn("EXPR").getValueSql("t"))
+            .FROM().append(r.getFromSQL("t"));
         var result = new SqlSelector(scope, sql).getObject((Class<?>)type.getJavaClass());
         assertEquals(expected, result);
     }
@@ -462,15 +485,16 @@ public void testUserSchemaDependantColumns() throws Exception
         assertNotNull(table);
         var column = table.getColumn(columnName);
         assertNotNull(column);
-        SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
-                .append("\nFROM ").append(table.getFromSQL("q_"));
+        SQLFragment sqlf = new SQLFragment()
+            .SELECT().append(column.getValueSql("q_")).unsafeAppend(" ").appendIdentifier(column.getAlias())
+            .FROM().append(table.getFromSQL("q_"));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
 
         // getFromSQL(five)
-        sqlf = new SQLFragment("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
-                .append("\nFROM ").append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
+        sqlf = new SQLFragment()
+            .SELECT().append(column.getValueSql("q_")).unsafeAppend(" ").appendIdentifier(column.getAlias())
+            .FROM().append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
         result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
     }
@@ -489,9 +513,9 @@ public void testUserSchemaDependantColumns() throws Exception
         assertNotNull(table);
         var column = table.getColumn(columnName);
         assertNotNull(column);
-        SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
-                .append("\nFROM ").append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
+        SQLFragment sqlf = new SQLFragment()
+            .SELECT().append(column.getValueSql("q_")).unsafeAppend(" ").appendIdentifier(column.getAlias())
+            .FROM().append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
     }
@@ -512,9 +536,9 @@ public void testUserSchemaDependantColumns() throws Exception
         assertNotNull(table);
         var column = table.getColumn(columnName);
         assertNotNull(column);
-        SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
-                .append("\nFROM ").append(table.getFromSQL("q_"));
+        SQLFragment sqlf = new SQLFragment()
+            .SELECT().append(column.getValueSql("q_")).unsafeAppend(" ").appendIdentifier(column.getAlias())
+            .FROM().append(table.getFromSQL("q_"));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
     }

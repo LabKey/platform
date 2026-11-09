@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
@@ -80,7 +80,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     private boolean _schemaChanged;
     private boolean _schemaImport;
-    private List<PropertyValidatorImpl> _validators;
+    private List<PropertyValidatorDefImpl> _validators;
     private List<ConditionalFormat> _formats;
     private String _defaultValue;
 
@@ -794,7 +794,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (_pdOld != null) return true;
 
-        for (PropertyValidatorImpl v : ensureValidators())
+        for (PropertyValidatorDefImpl v : ensureValidators())
         {
             if (v.isDirty() || v.isNew())
                 return true;
@@ -870,6 +870,9 @@ public class DomainPropertyImpl implements DomainProperty
 
             OntologyManager.validatePropertyDescriptor(_pd);
             Table.update(user, OntologyManager.getTinfoPropertyDescriptor(), _pd, _pdOld.getPropertyId());
+            // The raw update above bypasses the cache; a changed URI leaves a stale entry under the old key that invalidateDomain() can't find
+            if (!_pdOld.getPropertyURI().equals(_pd.getPropertyURI()))
+                OntologyManager.clearPropertyDescriptorCache(_pdOld);
             OntologyManager.ensurePropertyDomain(_pd, dd, sortOrder);
 
             boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName() && dd.getStorageTableName() != null;
@@ -899,12 +902,12 @@ public class DomainPropertyImpl implements DomainProperty
                     if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
                     {
                         updateBooleanValue(
-                                new SQLFragment().appendIdentifier(domainKind.getStorageSchemaName()).append(".").appendIdentifier(_domain.getStorageTableName()),
+                                new SQLFragment().appendIdentifier(domainKind.getStorageSchemaName()).unsafeAppend(".").appendIdentifier(_domain.getStorageTableName()),
                                 _pd.getLegalSelectName(dialect), _pdOld.getFormat(), null); // GitHub Issue #647
                     }
 
                     TableInfo table = domainKind.getTableInfo(user, getContainer(), _domain, ContainerFilter.getUnsafeEverythingFilter());
-                    if (table != null && _pdOld.getPropertyType() != null && table.getSchema().getSqlDialect().isPostgreSQL())
+                    if (table != null && _pdOld.getPropertyType() != null)
                         QueryChangeListener.QueryPropertyChange.handleColumnTypeChange(_pdOld, _pd, SchemaKey.fromString(table.getUserSchema().getSchemaName()), table.getName(), user, getContainer());
                 }
                 else if (propResized)
@@ -920,7 +923,7 @@ public class DomainPropertyImpl implements DomainProperty
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(
                             new SQLFragment("UPDATE ").
                                     append(OntologyManager.getTinfoObjectProperty()).
-                                    append(" SET StringValue = DateTimeValue, DateTimeValue = NULL WHERE PropertyId = ?").
+                                    unsafeAppend(" SET StringValue = DateTimeValue, DateTimeValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
                 else if (!oldType.getJdbcType().isText() && newType.getJdbcType().isText())
@@ -928,7 +931,7 @@ public class DomainPropertyImpl implements DomainProperty
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(
                             new SQLFragment("UPDATE ").
                                     append(OntologyManager.getTinfoObjectProperty()).
-                                    append(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
+                                    unsafeAppend(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
                 else if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isDateOrTime())
@@ -939,9 +942,9 @@ public class DomainPropertyImpl implements DomainProperty
                         update = dialect.getDateTimeToTimeCast("DateTimeValue");
                     SQLFragment sqlFragment = new SQLFragment("UPDATE ")
                             .append(OntologyManager.getTinfoObjectProperty())
-                            .append(" SET DateTimeValue = ")
+                            .unsafeAppend(" SET DateTimeValue = ")
                             .append(update)
-                            .append(" WHERE PropertyId = ?")
+                            .unsafeAppend(" WHERE PropertyId = ?")
                             .add(_pdOld.getPropertyId());
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(sqlFragment);
                 }
@@ -970,7 +973,7 @@ public class DomainPropertyImpl implements DomainProperty
         _schemaChanged = false;
         _schemaImport = false;
 
-        for (PropertyValidatorImpl validator : ensureValidators())
+        for (PropertyValidatorDefImpl validator : ensureValidators())
         {
             if (validator.isDeleted())
                 DomainPropertyManager.get().removePropertyValidator(this, validator);
@@ -992,16 +995,16 @@ public class DomainPropertyImpl implements DomainProperty
         String trueValue = StringUtils.trimToNull(f.format(true));
         String falseValue = StringUtils.trimToNull(f.format(false));
         String nullValue = StringUtils.trimToNull(f.format(null));
-        SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).append(" SET ").
-                appendIdentifier(column).append(" = CASE WHEN ").
-                appendIdentifier(column).append(" IN ('1', 'true') THEN ? WHEN ").
-                appendIdentifier(column).append(" IN ('0', 'false') THEN ? ELSE ? END");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).unsafeAppend(" SET ").
+                appendIdentifier(column).unsafeAppend(" = CASE WHEN ").
+                appendIdentifier(column).unsafeAppend(" IN ('1', 'true') THEN ? WHEN ").
+                appendIdentifier(column).unsafeAppend(" IN ('0', 'false') THEN ? ELSE ? END");
         sql.add(trueValue);
         sql.add(falseValue);
         sql.add(nullValue);
         if (whereClause != null)
         {
-            sql.append(" WHERE ");
+            sql.unsafeAppend(" WHERE ");
             sql.append(whereClause);
         }
         new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
@@ -1009,13 +1012,13 @@ public class DomainPropertyImpl implements DomainProperty
 
     @Override
     @NotNull
-    public List<PropertyValidatorImpl> getValidators()
+    public List<PropertyValidatorDefImpl> getValidators()
     {
         return Collections.unmodifiableList(ensureValidators());
     }
 
     @Override
-    public void addValidator(IPropertyValidator validator)
+    public void addValidator(PropertyValidatorDef validator)
     {
         if (validator != null)
         {
@@ -1025,21 +1028,21 @@ public class DomainPropertyImpl implements DomainProperty
             // Ensure validator is a valid kind (ex. urn:lsid:labkey.com:PropertyValidator:length is no longer valid)
             if ( null != PropertyService.get().getValidatorKind(validator.getTypeURI()) )
             {
-                PropertyValidator impl = new PropertyValidator();
+                PropertyValidatorBean impl = new PropertyValidatorBean();
                 impl.copy(validator);
                 impl.setPropertyId(getPropertyId());
-                ensureValidators().add(new PropertyValidatorImpl(impl));
+                ensureValidators().add(new PropertyValidatorDefImpl(impl));
             }
         }
     }
 
     @Override
-    public void removeValidator(IPropertyValidator validator)
+    public void removeValidator(PropertyValidatorDef validator)
     {
         int idx = ensureValidators().indexOf(validator);
         if (idx != -1)
         {
-            PropertyValidatorImpl impl = ensureValidators().get(idx);
+            PropertyValidatorDefImpl impl = ensureValidators().get(idx);
             impl.delete();
         }
     }
@@ -1049,7 +1052,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (validatorId == 0) return;
 
-        for (PropertyValidatorImpl imp : ensureValidators())
+        for (PropertyValidatorDefImpl imp : ensureValidators())
         {
             if (imp.getRowId() == validatorId)
             {
@@ -1122,14 +1125,14 @@ public class DomainPropertyImpl implements DomainProperty
         _formats = formats;
     }
 
-    private List<PropertyValidatorImpl> ensureValidators()
+    private List<PropertyValidatorDefImpl> ensureValidators()
     {
         if (_validators == null)
         {
             _validators = new ArrayList<>();
-            for (PropertyValidator validator : DomainPropertyManager.get().getValidators(this))
+            for (PropertyValidatorBean validator : DomainPropertyManager.get().getValidators(this))
             {
-                _validators.add(new PropertyValidatorImpl(validator));
+                _validators.add(new PropertyValidatorDefImpl(validator));
             }
         }
         return _validators;
@@ -1267,7 +1270,7 @@ public class DomainPropertyImpl implements DomainProperty
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertTrue(_dp.isDirty());
             assertFalse(_dp._schemaChanged);
-            assertTrue(_dp.getPHI() == _pd.getPHI());
+            assertSame(_dp.getPHI(), _pd.getPHI());
 
             // Issue #18738 change the schema outside of a schema reload and verify that the column
             // change the schema but don't mark the property as "Schema Import"
@@ -1329,7 +1332,7 @@ public class DomainPropertyImpl implements DomainProperty
             _pd.setLookupQuery(query);
             _pd.setLookupSchema(schema);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
-            assertTrue(_dp.isDirty() == expectedDirty);
+            assertEquals(_dp.isDirty(), (boolean) expectedDirty);
             assertFalse(_dp._schemaChanged);
 
             // verify the lookup object returned
@@ -1344,7 +1347,7 @@ public class DomainPropertyImpl implements DomainProperty
                 else if (query == null || schema == null)
                     assertTrue(true);
                 else
-                    assertTrue(false);
+                    fail();
             }
             else
             {

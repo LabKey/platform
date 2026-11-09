@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ import org.labkey.api.util.TimeOnlyDate;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLRecordConverter;
+import org.labkey.api.view.WebPartView;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
 
@@ -77,7 +78,6 @@ import java.beans.PropertyEditorSupport;
 import java.io.File;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
@@ -186,6 +186,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NoOpConverter(), File.class); // let data iterator handle conversion
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
         _register(new DefaultScaleConverter(), DefaultScaleType.class);
+        _register(new CaseInsensitiveEnumConverter(), WebPartView.FrameType.class);
         _register(new SchemaKey.Converter(), SchemaKey.class);
         _register(new FieldKey.Converter(), FieldKey.class);
         _register(new JSONTypeConverter(), JSONObject.class);
@@ -1069,6 +1070,48 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
+    /**
+     * Like {@link EnumConverter}, but matches the constant name case-insensitively first. Registered for enums whose
+     * persisted external representation (e.g. webpart properties) isn't guaranteed to match the declared case of the
+     * enum constants (see {@link WebPartView.FrameType}).
+     */
+    public static class CaseInsensitiveEnumConverter implements Converter
+    {
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if (!type.isEnum())
+            {
+                if (type == String.class)
+                    return value;
+                throw new IllegalArgumentException();
+            }
+
+            if (value == null)
+                return null;
+
+            String s = value.toString();
+            for (Object constant : type.getEnumConstants())
+            {
+                if (((Enum<?>)constant).name().equalsIgnoreCase(s))
+                    return constant;
+            }
+
+            try
+            {
+                int ordinal = Integer.parseInt(s);
+                Object[] values = type.getEnumConstants();
+                if (ordinal >= 0 && ordinal < values.length)
+                    return values[ordinal];
+            }
+            // That's OK, not an ordinal value for the enum
+            catch (NumberFormatException ignored) {}
+
+            throw new ConversionExceptionWithMessage("Could not convert '" + value + "' to " + type.getSimpleName());
+        }
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -1098,6 +1141,25 @@ public class ConvertHelper implements PropertyEditorRegistrar
             }
         }
 
+        /** Webpart properties are sometimes provided in lowercase; FrameType conversion must tolerate that. */
+        @Test
+        public void testCaseInsensitiveEnumConverter()
+        {
+            assertEquals(WebPartView.FrameType.PORTAL, ConvertUtils.convert("portal", WebPartView.FrameType.class));
+            assertEquals(WebPartView.FrameType.DIV, ConvertUtils.convert("Div", WebPartView.FrameType.class));
+            assertEquals(WebPartView.FrameType.NOT_HTML, ConvertUtils.convert("not_html", WebPartView.FrameType.class));
+            assertEquals(WebPartView.FrameType.NOT_HTML, ConvertUtils.convert("NOT_HTML", WebPartView.FrameType.class));
+
+            // Ordinal fallback, same as EnumConverter
+            assertEquals(WebPartView.FrameType.DIALOG, ConvertUtils.convert("2", WebPartView.FrameType.class));
+
+            try
+            {
+                ConvertUtils.convert("bogus", WebPartView.FrameType.class);
+                fail("Expected ConversionException for invalid FrameType value");
+            }
+            catch (ConversionException ignored) {}
+        }
 
         @Test
         public void testConvertTimestamp()

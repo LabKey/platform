@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,8 +47,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -176,9 +176,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         BaseColumnInfo containerCol;
         if (isProvisioned)
         {
-            SQLFragment sql = new SQLFragment("CAST (");
-            sql.append(getSqlDialect().getStringHandler().quoteStringLiteral(getContainer().getId()));
-            sql.append(" AS ").append(getSchema().getSqlDialect().getGuidType()).append(")");
+            SQLFragment sql = SQLFragment.unsafe("CAST (");
+            sql.appendValue(getContainer());
+            sql.unsafeAppend(" AS ").append(getSchema().getSqlDialect().getGuidTypeAsSql()).unsafeAppend(")");
             containerCol = new ExprColumn(this, "Container", sql, JdbcType.GUID);
         }
         else
@@ -365,13 +365,13 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             String pvAlias = getSqlDialect().truncate(parentAlias + "$PV", 0);
             SQLFragment join = new SQLFragment();
 
-            join.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), pvAlias).append(" ON\n");
-            join.append(parentAlias).append(".ParticipantSequenceNum = ").append(pvAlias).append(".ParticipantSequenceNum AND\n");
+            join.unsafeAppend(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), pvAlias).unsafeAppend(" ON\n");
+            join.appendIdentifier(parentAlias).unsafeAppend(".ParticipantSequenceNum = ").appendIdentifier(pvAlias).unsafeAppend(".ParticipantSequenceNum AND\n");
             if (null == container)
-                join.append(parentAlias).append(".Container = ").append(pvAlias).append(".Container");
+                join.appendIdentifier(parentAlias).unsafeAppend(".Container = ").appendIdentifier(pvAlias).unsafeAppend(".Container");
             else
-                join.append(getSqlDialect().getStringHandler().quoteStringLiteral(container.getId()))
-                        .append(" = ").append(pvAlias).append(".Container");
+                join.appendValue(container, getSqlDialect())
+                        .unsafeAppend(" = ").appendIdentifier(pvAlias).unsafeAppend(".Container");
 
             map.put(pvAlias, join);
         }
@@ -435,7 +435,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
 
     /* Subclass can override to support per-table roles */
-    protected Set<Role> getContextualRoles()
+    protected @NotNull Set<Role> getContextualRoles()
     {
         return getUserSchema().getContextualRoles();
     }
@@ -483,12 +483,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                     ptidVisitCommentAlias = ColumnInfo.legalNameFromName(ptidVisitCommentProperty);
             }
 
-            List<Pair<String, String>> commentFields = new ArrayList<>();
+            List<Pair<SQLFragment, SQLFragment>> commentFields = new ArrayList<>();
 
             if (_includeVialComments)
             {
-                String field = ExprColumn.STR_TABLE_ALIAS + "$" + SPECIMEN_COMMENT_JOIN + ".Comment";
-                parent.addColumn(new ExprColumn(parent, VIAL_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)
+                SQLFragment field = new SQLFragment().appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend("$" + SPECIMEN_COMMENT_JOIN + ".Comment");
+                parent.addColumn(new ExprColumn(parent, VIAL_COMMENT_ALIAS, field, JdbcType.VARCHAR)
                 {
                     @Override
                     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
@@ -497,14 +497,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         specimenCommentJoin(parentAlias, map);
                     }
                 }).setHidden(true);
-                if (getSqlDialect().isSqlServer())
-                    field = "CAST((" + field + ") AS VARCHAR(500))";
-                commentFields.add(new Pair<>(field, "'Vial: '"));
+                commentFields.add(new Pair<>(field, new SQLFragment().appendStringLiteral("Vial: ", getSqlDialect())));
             }
             if (ptidCommentTable != null && ptidCommentAlias != null)
             {
-                String field = ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_COMMENT_JOIN + "." + ptidCommentAlias;
-                parent.addColumn(new ExprColumn(parent, PARTICIPANT_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)
+                SQLFragment field = new SQLFragment().appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend("$" + PARTICIPANT_COMMENT_JOIN + ".").appendIdentifier(ptidCommentAlias);
+                parent.addColumn(new ExprColumn(parent, PARTICIPANT_COMMENT_ALIAS, field, JdbcType.VARCHAR)
                 {
                     @Override
                     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
@@ -513,12 +511,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         participantCommentJoin(parentAlias, map);
                     }
                 }).setHidden(true);
-                commentFields.add(new Pair<>(field, "'" + subjectNoun + ": '"));
+                commentFields.add(new Pair<>(field, new SQLFragment().appendStringLiteral(subjectNoun + ": ", getSqlDialect())));
             }
             if (ptidVisitCommentTable != null && ptidVisitCommentAlias != null)
             {
-                String field = ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANTVISIT_COMMENT_JOIN + "." + ptidVisitCommentAlias;
-                parent.addColumn(new ExprColumn(parent, PARTICIPANTVISIT_COMMENT_ALIAS, new SQLFragment(field), JdbcType.VARCHAR)
+                SQLFragment field = new SQLFragment().appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend("$" + PARTICIPANTVISIT_COMMENT_JOIN + ".").appendIdentifier(ptidVisitCommentAlias);
+                parent.addColumn(new ExprColumn(parent, PARTICIPANTVISIT_COMMENT_ALIAS, field, JdbcType.VARCHAR)
                 {
                     @Override
                     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
@@ -527,31 +525,31 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         participantVisitCommentJoin(parentAlias, map);
                     }
                 }).setHidden(true);
-                commentFields.add(new Pair<>(field, "'" + subjectNoun + "/Visit: '"));
+                commentFields.add(new Pair<>(field, new SQLFragment().appendStringLiteral(subjectNoun + "/Visit: ", getSqlDialect())));
             }
 
-            StringBuilder sb = new StringBuilder();
+            SQLFragment sb = new SQLFragment();
             if (!commentFields.isEmpty())
             {
                 switch (commentFields.size())
                 {
                     case 1 ->
                     {
-                        sb.append("CASE");
+                        sb.unsafeAppend("CASE");
                         appendCommentCaseSQL(sb, commentFields);
-                        sb.append(" ELSE NULL END");
+                        sb.unsafeAppend(" ELSE NULL END");
                     }
                     case 2 ->
                     {
-                        sb.append("CASE");
+                        sb.unsafeAppend("CASE");
                         appendCommentCaseSQL(sb, commentFields);
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(0)));
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(1)));
-                        sb.append(" ELSE NULL END");
+                        sb.unsafeAppend(" ELSE NULL END");
                     }
                     case 3 ->
                     {
-                        sb.append("CASE");
+                        sb.unsafeAppend("CASE");
                         appendCommentCaseSQL(sb, commentFields);
                         appendCommentCaseSQL(sb, Arrays.asList(commentFields.get(0), commentFields.get(1)));
                         appendCommentCaseSQL(sb, Arrays.asList(commentFields.get(0), commentFields.get(2)));
@@ -559,16 +557,16 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(0)));
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(1)));
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(2)));
-                        sb.append(" ELSE NULL END");
+                        sb.unsafeAppend(" ELSE NULL END");
                     }
                 }
             }
-            sql.append("(");
+            sql.unsafeAppend("(");
             if (!sb.isEmpty())
-                sql.append(sb.toString());
+                sql.append(sb);
             else
-                sql.append("' '");
-            sql.append(")");
+                sql.unsafeAppend("' '");
+            sql.unsafeAppend(")");
             setValueSQL(sql);
 
             // Address issue #20328. Seems like this should be set automatically, since we're essentially wrapping a column that
@@ -576,27 +574,20 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
         }
 
-        private void appendCommentCaseSQL(StringBuilder sb, List<Pair<String, String>> fields)
+        private void appendCommentCaseSQL(SQLFragment sb, List<Pair<SQLFragment, SQLFragment>> fields)
         {
-            String concat = "";
+            var and = SQLFragment.sep(" WHEN ", "AND ", "THEN ");
+            for (Pair<SQLFragment, SQLFragment> field : fields)
+                sb.append(and.next()).append(field.first).unsafeAppend(" IS NOT NULL ");
+            sb.append(and.last());
 
-            sb.append(" WHEN ");
-            for (Pair<String, String> field : fields)
-            {
-                sb.append(concat).append(field.first).append(" IS NOT NULL ");
-                concat = "AND ";
-            }
-
-            sb.append("THEN ");
-
-            String[] castFields = new String[fields.size()];
-            String sep = "''";
+            SQLFragment[] castFields = new SQLFragment[fields.size()];
+            SQLFragment sep = SQLFragment.unsafe("''");
 
             for (int i = 0; i < fields.size(); i++)
             {
-                castFields[i] = "CAST((" + getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first) + ") AS VARCHAR" +
-                        (getSqlDialect().isSqlServer() ? "(500)" : "") + ")";
-                sep = "', '";
+                castFields[i] = SQLFragment.unsafe("CAST((").append(getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first)).unsafeAppend(") AS VARCHAR)");
+                sep = SQLFragment.unsafe("', '");
             }
 
             sb.append(getSqlDialect().concatenate(castFields));
@@ -624,10 +615,10 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(SpecimenSchema.get().getTableInfoSpecimenComment().getFromSQL(tableAlias));
-            joinSql.append(" ON ");
-            joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
-            joinSql.append(parentAlias).append(".Container = ").append(tableAlias).append(".Container\n");
+            joinSql.unsafeAppend(" LEFT OUTER JOIN ").append(SpecimenSchema.get().getTableInfoSpecimenComment().getFromSQL(tableAlias));
+            joinSql.unsafeAppend(" ON ");
+            joinSql.appendIdentifier(parentAlias).unsafeAppend(".GlobalUniqueId = ").appendIdentifier(tableAlias).unsafeAppend(".GlobalUniqueId AND ");
+            joinSql.appendIdentifier(parentAlias).unsafeAppend(".Container = ").appendIdentifier(tableAlias).unsafeAppend(".Container\n");
             map.put(tableAlias, joinSql);
         }
 
@@ -638,11 +629,11 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(_ptidCommentTable.getFromSQL(ptidTableAlias));
-            joinSql.append(" ON ");
-            joinSql.append(parentAlias).append(".Ptid = ")
+            joinSql.unsafeAppend(" LEFT OUTER JOIN ").append(_ptidCommentTable.getFromSQL(ptidTableAlias));
+            joinSql.unsafeAppend(" ON ");
+            joinSql.appendIdentifier(parentAlias).unsafeAppend(".Ptid = ")
                     .append(_ptidCommentTable.getColumn(StudyService.get().getSubjectColumnName(_container)).getValueSql(ptidTableAlias))
-                    .append("\n");
+                    .unsafeAppend("\n");
             map.put(ptidTableAlias, joinSql);
         }
 
@@ -653,9 +644,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(_ptidVisitCommentTable.getFromSQL(ptidTableAlias));
-            joinSql.append(" ON ");
-            joinSql.append(parentAlias).append(".ParticipantSequenceNum = ").append(ptidTableAlias).append(".ParticipantSequenceNum");
+            joinSql.unsafeAppend(" LEFT OUTER JOIN ").append(_ptidVisitCommentTable.getFromSQL(ptidTableAlias));
+            joinSql.unsafeAppend(" ON ");
+            joinSql.appendIdentifier(parentAlias).unsafeAppend(".ParticipantSequenceNum = ").appendIdentifier(ptidTableAlias).unsafeAppend(".ParticipantSequenceNum");
             map.put(ptidTableAlias, joinSql);
         }
     }
@@ -764,7 +755,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     {
         checkedPermissions.add(perm);
         // Most tables should not be editable in Dataspace
-        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
+        if (!perm.equals(ReadPermission.class) && StudyService.get().isDataspace(getContainer()))
             return false;
         return hasPermissionOverridable(user, perm);
     }
@@ -799,8 +790,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     {
         if (perm.equals(ReadPermission.class))
             return getContainer().hasPermission(user, perm, getContextualRoles());
-        else
-            return getContainer().hasPermissions(user, Set.of(perm, EditSpecimenDataPermission.class), getContextualRoles());
+
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        return sms != null && getContainer().hasPermissions(user, Set.of(perm, sms.getEditSpecimenDataPermission()), getContextualRoles());
     }
 
     protected void addOptionalColumns(List<DomainProperty> optionalProperties, boolean editable, @Nullable List<String> readOnlyColumnNames)
@@ -810,9 +802,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         for (DomainProperty domainProperty : optionalProperties)
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
-            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
+            SQLFragment sql = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS);
             var legalName = property.getLegalSelectName(dialect);
-            sql.append(".").appendIdentifier(legalName);
+            sql.unsafeAppend(".").appendIdentifier(legalName);
             var column = new ExprColumn(this, legalName.getId(), sql, property.getJdbcType());
             defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null, defaultsSupplier);
             if (editable)

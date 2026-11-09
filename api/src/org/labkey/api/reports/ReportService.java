@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlValidationException;
@@ -41,19 +42,19 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 public interface ReportService
 {
-    String R_REPORT_CUSTOM_SHARING = "rReportCustomSharing";
-
     // this logger is to enable all report loggers in the admin ui (org.labkey.api.reports.*)
     @SuppressWarnings({"UnusedDeclaration", "SSBasedInspection"})
     Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());
 
     String LINK_REPORT_TYPE = "ReportService.linkReport";
+    String GENERIC_CHART_REPORT_TYPE = "ReportService.GenericChartReport";
+    String TIME_CHART_REPORT_TYPE = "ReportService.TimeChartReport";
 
     static ReportService get()
     {
@@ -69,6 +70,18 @@ public interface ReportService
      * Registers a report type, reports must be registered in order to be created.
      */
     void registerReport(Report report);
+
+    /** Sees every saved report during the nightly pass, then adds its own metrics */
+    interface ReportMetricsVisitor<V extends ReportMetricsVisitor<V>>
+    {
+        void visit(Report report);
+
+        /** Suppliers must read results from visited.get(), the cached instance that saw every report, not from this one. Calling it runs the pass on demand, so describing the metrics visits nothing. */
+        void addMetrics(UsageMetrics metrics, Supplier<V> visited);
+    }
+
+    /** The factory supplies a fresh visitor for each pass, plus one per usage metrics collection to add the metrics */
+    void registerReportMetricsVisitor(Supplier<? extends ReportMetricsVisitor<?>> factory);
 
     /**
      * A descriptor class must be registered with the service in order to be valid.
@@ -170,7 +183,7 @@ public interface ReportService
      * parameters. Imported reports are always treated as new reports even if they were exported from
      * the same container.
      */
-    Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, SQLException, XmlValidationException;
+    Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException;
 
     /**
      * Runs maintenance on the report service.

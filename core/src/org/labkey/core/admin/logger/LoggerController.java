@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.labkey.core.admin.logger;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -264,7 +264,7 @@ public class LoggerController extends SpringActionController
             if (filterLevel != null && !(filterLevel.equals(level)))
                 return true;
 
-            return filter.getContains() != null && !StringUtils.containsIgnoreCase(loggerName, filter.getContains());
+            return filter.getContains() != null && !Strings.CI.contains(loggerName, filter.getContains());
         }
     }
 

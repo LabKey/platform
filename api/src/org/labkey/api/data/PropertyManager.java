@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -488,9 +488,9 @@ public class PropertyManager
             if (null == name)
                 return;
 
-            String sql = SCHEMA.getSqlDialect().execute(SCHEMA.getSchema(), "property_setValue", "?, ?, ?");
-
-            new SqlExecutor(SCHEMA.getSchema()).execute(sql, getSet(), name, _store.getSaveValue(this, value));
+            new SqlExecutor(SCHEMA.getSchema()).execute(
+                    SCHEMA.getSqlDialect().execute(SCHEMA.getSchema(), "property_setValue",
+                            new SQLFragment("?, ?, ?", getSet(), name, _store.getSaveValue(this, value))));
         }
 
         public void save()
@@ -501,7 +501,7 @@ public class PropertyManager
             // Flag all property map saves here to catch the unmodified case (those code paths are likely to mutate in
             // other scenarios). Also, we want to flag updates to existing property maps, but that path invokes a stored
             // procedure that StatementWrapper doesn't recognize as mutating SQL.
-            SpringActionController.executingMutatingSql("Saving a PropertyMap");
+            SpringActionController.checkForMutatingSql(() -> "Saving a PropertyMap");
 
             if (!isModified())
             {
@@ -603,17 +603,17 @@ public class PropertyManager
         var setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
 
         SQLFragment deleteProps = new SQLFragment();
-        deleteProps.append("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());
-        deleteProps.append(" WHERE ").appendIdentifier(setSelectName).append(" IN ");
-        deleteProps.append("(SELECT ").appendIdentifier(setSelectName).append(" FROM ").append(SCHEMA.getTableInfoPropertySets(), "ps");
-        deleteProps.append(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+        deleteProps.unsafeAppend("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());
+        deleteProps.unsafeAppend(" WHERE ").appendIdentifier(setSelectName).unsafeAppend(" IN ");
+        deleteProps.unsafeAppend("(SELECT ").appendIdentifier(setSelectName).unsafeAppend(" FROM ").append(SCHEMA.getTableInfoPropertySets(), "ps");
+        deleteProps.unsafeAppend(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
         deleteProps.add(user);
         deleteProps.add(objectId);
         deleteProps.add(category);
 
         store.appendWhereFilter(deleteProps);
 
-        deleteProps.append(")");
+        deleteProps.unsafeAppend(")");
 
         SqlExecutor sqlx = new SqlExecutor(SCHEMA.getSchema());
         sqlx.execute(deleteProps);
@@ -638,17 +638,17 @@ public class PropertyManager
         {
             SQLFragment deleteProps = new SQLFragment("DELETE FROM ")
                 .append(SCHEMA.getTableInfoProperties())
-                .append(" WHERE ")
+                .unsafeAppend(" WHERE ")
                 .appendIdentifier(setSelectName)
-                .append(" = ?")
+                .unsafeAppend(" = ?")
                 .add(propertySet);
             executor.execute(deleteProps);
 
             SQLFragment deleteSet = new SQLFragment("DELETE FROM ")
                 .append(SCHEMA.getTableInfoPropertySets())
-                .append(" WHERE ")
+                .unsafeAppend(" WHERE ")
                 .appendIdentifier(setSelectName)
-                .append(" = ?")
+                .unsafeAppend(" = ?")
                 .add(propertySet);
             executor.execute(deleteSet);
             t.commit();

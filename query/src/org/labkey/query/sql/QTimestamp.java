@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.DateUtil;
 
@@ -48,13 +49,13 @@ public class QTimestamp extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("{ts '" + DateUtil.toISO(_value) + "'}");
+        builder.append(new SQLFragment().setSqlUnsafe("{ts '" + DateUtil.toISO(_value) + "'}"));
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("{ts ").append(getTokenText()).append("}");
+        builder.unsafeAppend("{ts ").append(getTokenText()).unsafeAppend("}");
     }
 
     @NotNull

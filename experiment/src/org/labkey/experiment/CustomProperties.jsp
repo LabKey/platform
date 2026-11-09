@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@
 <%
     final JspWriter fout = out;
 
-    CustomProperties.iterate(getContainer(), form.getCustomProperties().values(), form.getRenderers(), (indent, description, value) ->
+    CustomProperties.iterate(getContainer(), form.getCustomProperties().values(), (indent, description, value) ->
     {
         try
         {
@@ -46,7 +46,7 @@
                 fout.print(unsafe("&nbsp;&nbsp;&nbsp;&nbsp;"));
             }
 
-            // Note: StandardPropertyRenderer HTML encodes description and value
+            // Note: CustomPropertyRenderer HTML encodes description and value
             fout.println(unsafe(description + ":"));
             fout.println(unsafe("    </td>"));
             fout.println(unsafe("    <td>" + value + "</td>"));

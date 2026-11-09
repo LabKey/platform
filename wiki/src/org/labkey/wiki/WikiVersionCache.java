@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.labkey.wiki.model.WikiVersion;
 // other cached objects.  This would require adding wiki rowid to the cache key.
 public class WikiVersionCache
 {
-    private static final Cache<String, WikiVersion> CACHE = CacheManager.getStringKeyCache(50000, CacheManager.DAY, "Wiki Versions");
+    private static final Cache<String, WikiVersion> CACHE = CacheManager.getCache(String.class, 50000, CacheManager.DAY, "Wiki Versions");
 
     static WikiVersion getVersion(Container c, final int version)
     {

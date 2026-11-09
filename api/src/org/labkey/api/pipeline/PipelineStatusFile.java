@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.labkey.vfs.FileLike;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -47,9 +46,9 @@ public interface PipelineStatusFile
 
         PipelineStatusFile getStatusFile(String jobGuid);
 
-        List<? extends PipelineStatusFile> getQueuedStatusFiles() throws SQLException;
+        List<? extends PipelineStatusFile> getQueuedStatusFiles();
 
-        List<? extends PipelineStatusFile> getQueuedStatusFiles(Container c) throws SQLException;
+        List<? extends PipelineStatusFile> getQueuedStatusFiles(Container c);
     }
 
     interface StatusWriter

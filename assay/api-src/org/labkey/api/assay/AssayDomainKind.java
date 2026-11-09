@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.security.DesignAssayPermission;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
@@ -38,6 +37,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchema.HasContextualRoles;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AssayReadPermission;
@@ -275,10 +275,8 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     {
         if (perm == ReadPermission.class)
         {
-            Set<Role> roles = null;
-            if (userSchema instanceof UserSchema.HasContextualRoles schemaWithRoles)
-                roles = schemaWithRoles.getContextualRoles();
-            return userSchema.getContainer().hasPermission(user, AssayReadPermission.class, roles);
+            Set<Role> contextualRoles = userSchema instanceof HasContextualRoles hasRoles ? hasRoles.getContextualRoles() : Set.of();
+            return userSchema.getContainer().hasPermission(user, AssayReadPermission.class, contextualRoles);
         }
 
         return super.hasPermission(user, perm, userSchema);

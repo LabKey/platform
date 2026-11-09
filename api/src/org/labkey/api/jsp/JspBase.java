@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,15 +33,15 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.HelpPopupBuilder;
 import org.labkey.api.util.SafeToRender;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.util.InputBuilder;
-import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -345,7 +345,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
 
-    private static final HtmlString SELECTED = HtmlString.of(" selected");
+    private static final HtmlString SELECTED = h(" selected");
 
     /** Returns " selected" (if true) or "" (false) */
     public HtmlString selected(boolean selected)
@@ -359,14 +359,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return selected(Objects.equals(a,b));
     }
 
-    /** Returns " selected" (if a.equals(b)) */
-    public HtmlString selectedEq(Object a, Object b)
-    {
-        return selected(null==a ? null==b : a.equals(b));
-    }
-
-
-    private static final HtmlString DISABLED = HtmlString.of(" disabled");
+    private static final HtmlString DISABLED = h(" disabled");
 
     /** Returns " disabled" (if true) or "" (false) */
     public HtmlString disabled(boolean disabled)
@@ -374,7 +367,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return disabled ? DISABLED : EMPTY_STRING;
     }
 
-    private static final HtmlString READ_ONLY = HtmlString.of(" readonly");
+    private static final HtmlString READ_ONLY = h(" readonly");
 
     /** Returns " readonly" (if true) or "" (false) */
     public HtmlString readonly(boolean readOnly)
@@ -383,8 +376,8 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
 
-    private static final HtmlString ALTERNATE_ROW = HtmlString.of("labkey-alternate-row");
-    private static final HtmlString ROW = HtmlString.of("labkey-row");
+    private static final HtmlString ALTERNATE_ROW = h("labkey-alternate-row");
+    private static final HtmlString ROW = h("labkey-row");
 
     // Returns "labkey-alternate-row" (true) or "labkey-row" (false)
     public HtmlString getShadeRowClass(boolean shade)
@@ -580,25 +573,25 @@ public abstract class JspBase extends JspContext implements HasViewContext
     // Format date using the container-configured date format and HTML filter the result
     public HtmlString formatDate(Date date)
     {
-        return HtmlString.of(null == date ? "" : DateUtil.formatDate(getContainer(), date));
+        return h(null == date ? "" : DateUtil.formatDate(getContainer(), date));
     }
 
     // Format LocalDate using the container-configured date format and HTML filter the result
     public HtmlString formatDate(LocalDate date)
     {
-        return HtmlString.of(null == date ? "" : DateUtil.formatDate(getContainer(), date));
+        return h(null == date ? "" : DateUtil.formatDate(getContainer(), date));
     }
 
     // Format date & time using the container-configured date & time format and HTML filter the result
     public HtmlString formatDateTime(Date date)
     {
-        return HtmlString.of(null == date ? "" : DateUtil.formatDateTime(getContainer(), date));
+        return h(null == date ? "" : DateUtil.formatDateTime(getContainer(), date));
     }
 
     // Format date & time using the specified date & time format and HTML filter the result
     public HtmlString formatDateTime(Date date, String pattern)
     {
-        return HtmlString.of(null == date ? "" : DateUtil.formatDateTime(date, pattern));
+        return h(null == date ? "" : DateUtil.formatDateTime(date, pattern));
     }
 
     public String getMessage(ObjectError e)
@@ -616,7 +609,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     public Errors getErrors(String bean)
     {
-        return (Errors)getViewContext().getRequest().getAttribute(BindingResult.MODEL_KEY_PREFIX + bean);
+        return (Errors)getViewContext().getRequestOrThrow().getAttribute(BindingResult.MODEL_KEY_PREFIX + bean);
     }
 
     protected List<ObjectError> _getErrorsForPath(String path)
@@ -696,7 +689,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
                 if (!_returnedErrors.containsKey(e))
                 {
                     missed.add(e);
-                    _returnedErrors.put(e,"missed");
+                    _returnedErrors.put(e, "missed");
                 }
             }
         }
@@ -782,7 +775,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     @Deprecated // makeId() is preferred
     protected int getRequestScopedUID()
     {
-        return UniqueID.getRequestScopedUID(getViewContext().getRequest());
+        return UniqueID.getRequestScopedUID(getViewContext().getRequestOrThrow());
     }
 
     protected String makeId(String prefix)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ public class QPartitionBy extends QExprList
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("OVER(");
+        builder.unsafeAppend("OVER(");
         if (null != getFirstChild())
         {
-            builder.append("PARTITION BY ");
+            builder.unsafeAppend("PARTITION BY ");
             builder.pushPrefix("");
             for (QNode child : children())
             {
@@ -37,7 +37,7 @@ public class QPartitionBy extends QExprList
             }
             builder.popPrefix();
         }
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
 }

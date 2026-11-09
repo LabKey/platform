@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,8 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         {
             sb.append(separator);
             separator = ", ";
-            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL()), getSchema().getDbSchema().getSqlDialect()));
+            // NOTE: consider new class LabKeySQL extends SQLFragment
+            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL()), getSchema().getDbSchema().getSqlDialect()).getRawSQL());
         }
 
         if (_pivotBuilder != null)

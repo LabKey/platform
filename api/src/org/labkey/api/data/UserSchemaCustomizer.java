@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public interface UserSchemaCustomizer
                 Class c = Class.forName(className);
                 if (!(UserSchemaCustomizer.class.isAssignableFrom(c)))
                 {
-                    LogManager.getLogger(UserSchemaCustomizer.class).warn("Class '" + c.getName() + "' is not an implementation of " + UserSchemaCustomizer.class.getName());
+                    LogManager.getLogger(UserSchemaCustomizer.class).warn("Class '{}' is not an implementation of {}", c.getName(), UserSchemaCustomizer.class.getName());
                 }
                 else
                 {

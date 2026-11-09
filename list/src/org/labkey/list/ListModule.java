@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListQuerySchema;
+import org.labkey.list.model.ListQueryUpdateService;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.ListWriter;
@@ -69,9 +70,7 @@ import org.labkey.list.view.SingleListWebPartFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class ListModule extends SpringModule
@@ -154,13 +153,12 @@ public class ListModule extends SpringModule
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(getName(), () -> {
-                Map<String, Object> metric = new HashMap<>();
+            svc.registerUsageMetrics(getName(), metrics -> {
                 DbSchema dbSchema = DbSchema.get("exp", DbSchemaType.Module);
-                metric.put("listCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
-                metric.put("publicPicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist + "'").getObject(Long.class));
-                metric.put("privatePicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist + "'").getObject(Long.class));
-                return metric;
+                metrics.put("listCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list").getObject(Long.class), "List definitions across all containers, including picklists");
+                metrics.put("publicPicklistCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist + "'").getObject(Long.class), "Shared (public) picklists across all containers");
+                metrics.put("privatePicklistCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist + "'").getObject(Long.class), "Private picklists across all containers");
+                return metrics;
             });
         }
     }
@@ -232,7 +230,17 @@ public class ListModule extends SpringModule
     {
         return Set.of(
             ListManager.TestCase.class,
-            ListWriter.TestCase.class
+            ListWriter.TestCase.class,
+            ListAuditProvider.TestCase.class
+        );
+    }
+
+    @Override
+    public @NotNull Set<Class<?>> getIntegrationTests()
+    {
+        return Set.of(
+            ListQueryUpdateService.AuditBatchTestCase.class,
+            ListQueryUpdateService.GetRowsTestCase.class
         );
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ public class StudyQCStateHandler implements DataStateHandler<StudyController.Man
             return true;
         }
         SQLFragment f = new SQLFragment();
-        f.append("SELECT * FROM ").append(
-                StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).append(
+        f.unsafeAppend("SELECT * FROM ").append(
+                StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).unsafeAppend(
                 " WHERE QCState = ? AND Container = ?");
         f.add(state.getRowId());
         f.add(state.getContainer());

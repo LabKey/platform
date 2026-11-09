@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class QOrder extends QNode
                 default:
                     if (fComma)
                     {
-                        builder.append(",");
+                        builder.unsafeAppend(",");
                     }
                     fComma = true;
                     node.appendSource(builder);
@@ -44,7 +44,7 @@ public class QOrder extends QNode
                 case SqlBaseParser.ASCENDING:
                     break;
                 case SqlBaseParser.DESCENDING:
-                    builder.append(" DESC");
+                    builder.unsafeAppend(" DESC");
                     break;
             }
         }

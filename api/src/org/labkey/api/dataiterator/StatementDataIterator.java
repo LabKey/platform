@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -406,7 +406,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 if (_currentBatchSize > 0) // flush the statement batch buffer
                     processBatch(_currentBatchSize, _currentRowNumber);
                 if (_log != null)
-                    _log.info("Committing " + Integer.toString(_txSize) + " rows");
+                    _log.info("Committing {} rows", Integer.toString(_txSize));
                 _currentStmt.getScope().getCurrentTransaction().commitAndKeepConnection();
             }
 
@@ -425,7 +425,7 @@ public class StatementDataIterator extends AbstractDataIterator
             SQLException sqlx = rtsqlx.getSQLException();
             if (sqlx instanceof BatchUpdateException && null != sqlx.getNextException())
                 sqlx = sqlx.getNextException();
-            if (StringUtils.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
+            if (Strings.CS.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
             {
                 getGlobalError().addGlobalError(sqlx);
 //              see bug21719
@@ -923,7 +923,7 @@ public class StatementDataIterator extends AbstractDataIterator
         }
 
         @Override
-        public boolean next() throws BatchValidationException
+        public boolean next()
         {
             currentRow++;
             if (currentRow == totalRows || (currentRow % rowsPerBatch == (rowsPerBatch-1)))

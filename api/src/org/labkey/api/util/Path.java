@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -395,6 +395,11 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         return _parent.get();
     }
 
+
+    /**
+     * Create a path that does not contain parts "." or "..".
+     * NOTE: returns null if the normalized path would need to start with "../"
+     */
     public Path normalize()
     {
         for (int i = 0; i < _length; i++)

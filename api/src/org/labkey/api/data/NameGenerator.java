@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,6 @@ public class NameGenerator
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX, Pattern.CASE_INSENSITIVE);
     public static final String WITH_COUNTER_NO_GAP_PARAM = "NoGap"; // named parameter to enforce continuity in sequence
 
-    public static final String EXPERIMENTAL_WITH_COUNTER = "UseStrictIncrementCounter"; // sql server
     public static final String EXPERIMENTAL_ALLOW_GAP_COUNTER = "AllowCounterGap"; // postgres
 
     /**
@@ -622,7 +621,7 @@ public class NameGenerator
             {
                 try
                 {
-                    Integer.parseInt(startVal);
+                    Long.parseLong(startVal);
                 }
                 catch (NumberFormatException e)
                 {
@@ -702,7 +701,7 @@ public class NameGenerator
         if (!unmatchedOpen.isEmpty())
         {
             if (unmatchedOpen.size() == 1)
-                errors.add("No closing brace found for the substitution pattern starting at position " + unmatchedOpen.get(0) + ".");
+                errors.add("No closing brace found for the substitution pattern starting at position " + unmatchedOpen.getFirst() + ".");
             else
                 errors.add("No closing braces found for the substitution patterns starting at positions " + StringUtils.join(unmatchedOpen, ", ") + ".");
         }
@@ -809,7 +808,7 @@ public class NameGenerator
 
     public static boolean isParentLookup(List<String> fieldParts, @NotNull CaseInsensitiveHashMap<String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
     {
-        if (!isParentInputToken(fieldParts.get(0), importAliases, false))
+        if (!isParentInputToken(fieldParts.getFirst(), importAliases, false))
             return false;
 
         return fieldParts.size() != 2 || !isParentInputWithDataType(fieldParts.toArray(String[]::new), currentDataTypeName, false, container, user);
@@ -817,13 +816,13 @@ public class NameGenerator
 
     public static boolean isAncestorSearch(List<String> fieldParts, @NotNull CaseInsensitiveHashMap<String> importAliases, Container container, User user)
     {
-        if (!fieldParts.get(0).startsWith("~"))
+        if (!fieldParts.getFirst().startsWith("~"))
             return false;
 
         if (fieldParts.size() == 1)
-            return importAliases.containsKey(fieldParts.get(0).substring(1));
+            return importAliases.containsKey(fieldParts.getFirst().substring(1));
 
-        if (!isParentInputToken(fieldParts.get(0), null, true))
+        if (!isParentInputToken(fieldParts.getFirst(), null, true))
             return false;
 
         return fieldParts.size() <= 3 && isParentInputWithDataType(fieldParts.subList(0, 2).toArray(String[]::new), null,true, container, user);
@@ -911,7 +910,7 @@ public class NameGenerator
             else if (ancestorPaths != null && !ancestorPaths.isEmpty())
             {
                 isAncestor = true;
-                Pair<ExpLineageOptions.LineageExpType, String> ancestorType = ancestorPaths.get(ancestorPaths.size() - 1);
+                Pair<ExpLineageOptions.LineageExpType, String> ancestorType = ancestorPaths.getLast();
                 isMaterial = ExpLineageOptions.LineageExpType.Material == ancestorType.first;
                 isData = ExpLineageOptions.LineageExpType.Data == ancestorType.first;
                 if (!StringUtils.isEmpty(ancestorType.second))
@@ -1205,7 +1204,7 @@ public class NameGenerator
 
                         if (_validateSyntax)
                         {
-                            String fieldName = fieldParts.get(0);
+                            String fieldName = fieldParts.getFirst();
                             if (isParentInputToken(fieldName, null, true))
                                 _syntaxErrors.add("Invalid substitution token. Ancestor " + (fieldName.toLowerCase().contains("material") ? "sample type" : "dataclass") + " must be specified in lineage search syntax: ${" + fieldName + "}.");
                             else if (!substitutionValues.contains(fieldName) && !isParentPart)
@@ -1247,7 +1246,7 @@ public class NameGenerator
                     String fieldKeyDisplay = QueryKey.decodePart(fkTok.toString());
                     if (isParentLookup || isAncestorSearch)
                     {
-                        String alias = fieldParts.get(0);
+                        String alias = fieldParts.getFirst();
                         boolean isParentAlias = importAliasFieldKeys != null && importAliasFieldKeys.containsKey(isAncestorSearch ? alias.substring(1) : alias);
 
                         Object lookupValuePreview = null;
@@ -1476,7 +1475,7 @@ public class NameGenerator
         {
             fieldParts.addAll(allFieldParts);
 
-            String alias = allFieldParts.get(0);
+            String alias = allFieldParts.getFirst();
             boolean isParentAlias = importAliases.containsKey(alias.substring(1));
             String isMaterialStr;
             String typeStr;
@@ -1506,7 +1505,7 @@ public class NameGenerator
             {
                 String dataTypeLsid = isMaterialAncestor ? sampleTypeLSIDs.get(typeStr) : dataClassLSIDs.get(typeStr);
                 Pair<ExpLineageOptions.LineageExpType, String> ancestorType = new Pair<>(isMaterialAncestor ? ExpLineageOptions.LineageExpType.Material : ExpLineageOptions.LineageExpType.Data, dataTypeLsid);
-                partAncestorOptions.put(fkTok, new NameExpressionAncestorPartOption(options, null, ancestorType, null, fieldParts.get(fieldParts.size() - 1)));
+                partAncestorOptions.put(fkTok, new NameExpressionAncestorPartOption(options, null, ancestorType, null, fieldParts.getLast()));
             }
             else
             {
@@ -1570,7 +1569,7 @@ public class NameGenerator
             String parentTypeName = null;
             if (parentParts.size() == 1) // alias, or one of Inputs/, MaterialInputs/, DataInputs/
             {
-                String alias = parentParts.get(0);
+                String alias = parentParts.getFirst();
                 boolean isParentAlias = importAliases.containsKey(alias);
                 if (isParentAlias)
                 {
@@ -1583,7 +1582,7 @@ public class NameGenerator
                 parentTypeName = parentParts.get(1);
             }
 
-            partAncestorOptions.put(fkTok, new NameExpressionAncestorPartOption(options, parentTypeName, null, ancestorPaths, allFieldParts.get(allFieldParts.size() - 1)));
+            partAncestorOptions.put(fkTok, new NameExpressionAncestorPartOption(options, parentTypeName, null, ancestorPaths, allFieldParts.getLast()));
         }
 
         return fieldParts;
@@ -1636,7 +1635,7 @@ public class NameGenerator
             {
                 try
                 {
-                    startInd = Integer.valueOf(startIndStr);
+                    startInd = Long.parseLong(startIndStr);
                 }
                 catch (NumberFormatException e)
                 {
@@ -1803,7 +1802,7 @@ public class NameGenerator
             if (counterMatcher.find())
             {
                 String namePrefixExpression = counterMatcher.group(1);
-                int startInd = 0;
+                long startInd = 0;
                 String startIndStr = counterMatcher.group(2);
                 String numberFormat = counterMatcher.group(3);
                 String param = counterMatcher.group(4);
@@ -1812,7 +1811,7 @@ public class NameGenerator
                 {
                     try
                     {
-                        startInd = Integer.valueOf(startIndStr);
+                        startInd = Long.parseLong(startIndStr);
                     }
                     catch (NumberFormatException e)
                     {
@@ -1928,7 +1927,7 @@ public class NameGenerator
             ArrayList<StringExpressionFactory.StringPart> parts = getParsedExpression();
             if (parts.size() == 1)
             {
-                StringExpressionFactory.StringPart part = parts.get(0);
+                StringExpressionFactory.StringPart part = parts.getFirst();
                 try
                 {
                     if (part instanceof CounterExpressionPart counterExpressionPart)
@@ -1974,7 +1973,7 @@ public class NameGenerator
         private final static long WITH_COUNTER_PREVIEW_VALUE = 1;
 
         private final String _prefixExpression;
-        private final Integer _startIndex;
+        private final long _startIndex;
 
         private final FieldKeyStringExpression _parsedNameExpression;
 
@@ -1987,7 +1986,7 @@ public class NameGenerator
 
         private final String _counterSeqPrefix;
 
-        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, boolean strictIncremental, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        public CounterExpressionPart(String expression, long startIndex, String counterFormatStr, boolean strictIncremental, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
         {
             _prefixExpression = expression;
             _parsedNameExpression = NameGenerationExpression.create(expression, false, NullValueBehavior.ReplaceNullWithBlank, true, container, null, null, false);
@@ -2007,13 +2006,6 @@ public class NameGenerator
         public Object getToken()
         {
             return _prefixExpression;
-        }
-
-        @NotNull
-        @Override
-        public Collection<SubstitutionFormat> getFormats()
-        {
-            return Collections.emptyList();
         }
 
         @Override
@@ -2107,12 +2099,6 @@ public class NameGenerator
         public FieldKeyStringExpression getParsedNameExpression()
         {
             return _parsedNameExpression;
-        }
-
-        @Override
-        public boolean hasSideEffects()
-        {
-            return false;
         }
 
         @Override
@@ -2536,7 +2522,7 @@ public class NameGenerator
 
                 assertEquals(1, parsedExpressions.size());
                 assertEquals(2, se.getDeepParsedExpression().size());
-                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+                assertTrue(parsedExpressions.getFirst() instanceof NameGenerator.CounterExpressionPart);
 
                 String s = se.eval(m);
                 assertEquals("S100.1", s);
@@ -2552,7 +2538,7 @@ public class NameGenerator
 
                 assertEquals(1, parsedExpressions.size());
                 assertEquals(4, se.getDeepParsedExpression().size());
-                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+                assertTrue(parsedExpressions.getFirst() instanceof NameGenerator.CounterExpressionPart);
 
                 String s = se.eval(m);
                 assertEquals("S100.mouse1.1", s);
@@ -2599,7 +2585,7 @@ public class NameGenerator
 
                 assertEquals(1, parsedExpressions.size());
                 assertEquals(2, se.getDeepParsedExpression().size());
-                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+                assertTrue(parsedExpressions.getFirst() instanceof NameGenerator.CounterExpressionPart);
 
                 String s = se.eval(m);
                 assertEquals("S100_1", s);
@@ -2617,9 +2603,9 @@ public class NameGenerator
 
                 assertEquals(1, parsedExpressions.size());
                 assertEquals(2, se.getDeepParsedExpression().size());
-                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
-                NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) parsedExpressions.get(0);
-                assertEquals((Integer) 101, counterPart._startIndex);
+                assertTrue(parsedExpressions.getFirst() instanceof NameGenerator.CounterExpressionPart);
+                NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) parsedExpressions.getFirst();
+                assertEquals(101L, counterPart._startIndex);
 
                 String s = se.eval(m);
                 assertEquals("S100..101", s);
@@ -2635,7 +2621,7 @@ public class NameGenerator
 
                 assertEquals(1, parsedExpressions.size());
                 assertEquals(2, se.getDeepParsedExpression().size());
-                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+                assertTrue(parsedExpressions.getFirst() instanceof NameGenerator.CounterExpressionPart);
 
                 String s = se.eval(m);
                 assertEquals("S100...0111", s);
@@ -2643,6 +2629,32 @@ public class NameGenerator
                 assertEquals("S100...0112", s);
             }
 
+        }
+
+        @Test
+        public void testWithCounterLongStartValue()
+        {
+            // Issue 1431: a start value larger than Integer.MAX_VALUE must not be truncated
+            Map<String, Object> m = new HashMap<>();
+            m.put(ALIQUOTED_FROM_INPUT, aliquotedFrom);
+            Map<FieldKey, Object> fm = toFieldKeyMap(m);
+
+            Container c = JunitUtil.getTestContainer();
+            long start = 10_000_000_000L; // > Integer.MAX_VALUE
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + (aliquotedFrom + "Z").toLowerCase());
+
+            String pattern = "${${AliquotedFrom}Z:withCounter(" + start + ")}";
+            Pair<List<String>, List<String>> messages =
+                    NameGenerator.validateWithCounterSyntax(pattern, pattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Long start value should validate", messages.first.isEmpty());
+
+            FieldKeyStringExpression se = NameGenerationExpression.create(
+                    pattern, false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+            NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) se.getParsedExpression().getFirst();
+            assertEquals(start, counterPart._startIndex);
+
+            assertEquals("S100Z" + start, se.eval(m));
+            assertEquals("S100Z" + (start + 1), se.eval(fm));
         }
 
         @Test

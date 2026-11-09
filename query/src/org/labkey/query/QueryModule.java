@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,23 +42,18 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.JavaExportScriptFactory;
 import org.labkey.api.query.JavaScriptExportScriptFactory;
-import org.labkey.api.query.PerlExportScriptFactory;
-import org.labkey.api.query.PythonExportScriptFactory;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.RExportScriptFactory;
-import org.labkey.api.query.SasExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
-import org.labkey.api.query.URLExportScriptFactory;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
-import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.JavaScriptReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
@@ -81,6 +76,8 @@ import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
+import org.labkey.api.usageMetrics.QueryMetricArea;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -99,6 +96,7 @@ import org.labkey.query.analytics.SummaryStatisticsAnalyticsProvider;
 import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
+import org.labkey.query.controllers.ExpressionAssistantAgentAction;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.controllers.QueryMcp;
@@ -128,15 +126,21 @@ import org.labkey.query.reports.ViewCategoryImporter;
 import org.labkey.query.reports.ViewCategoryWriter;
 import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
 import org.labkey.query.reports.getdata.FilterClauseBuilder;
+import org.labkey.query.reports.report.InternalScriptEngineReport;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QNode;
+import org.labkey.query.sql.QNumber;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
+import org.labkey.query.suggestions.ColumnFactsCache;
+import org.labkey.query.suggestions.FilterSuggestionRanker;
+import org.labkey.query.suggestions.SuggestionTerm;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
+import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 
 import java.util.ArrayList;
@@ -144,9 +148,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
-
-import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
-import static org.labkey.api.reports.ReportService.R_REPORT_CUSTOM_SHARING;
 
 public class QueryModule extends DefaultModule
 {
@@ -236,19 +237,18 @@ public class QueryModule extends DefaultModule
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
-            "This feature will turn on generating a generic [details] URL link in most grids.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
-            "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
-            "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update",
-            "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product folder lookups",
             "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
             "Only list folder-specific data within product folders.", false);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryService.EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS, "Disable managed columns in query triggers",
-                "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings.", false);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            QueryService.DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS,
+            "Disable managed columns in query triggers",
+            "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings. This option will be removed in a future release of LabKey Server.",
+            false,
+            false,
+            OptionalFeatureService.FeatureType.Deprecated
+        ));
     }
 
 
@@ -273,6 +273,9 @@ public class QueryModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        SimpleMetricsService.get().describeFeatureAreas(QueryMetricArea.values());
+        SimpleMetricsService.get().describeClientSideFeatureArea("expressionAssistant", "Calculated field expression assistant use: clickButton, submitPrompt, applyExpression, clickHelpWithValidate");
+
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER, ContainerManager.ContainerListener.Order.Last);
 
         if (null != PipelineService.get())
@@ -309,7 +312,6 @@ public class QueryModule extends DefaultModule
         // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
 
         CacheManager.addListener(new ServerManager.CacheListener());
-        CacheManager.addListener(new QueryServiceImpl.CacheListener());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
             if (container.hasPermission(user, ReadPermission.class))
@@ -349,15 +351,8 @@ public class QueryModule extends DefaultModule
         if (null != trustedAnalystRole)
             trustedAnalystRole.addPermission(EditQueriesPermission.class);
 
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(R_REPORT_CUSTOM_SHARING,
-            "Restore custom R report sharing",
-            "Allows R reports to be shared on a per user basis. This option will be removed in LabKey Server 26.7.",
-            false,
-            false,
-            OptionalFeatureService.FeatureType.Deprecated)
-        );
-
         McpService.get().register(new QueryMcp());
+        QueryUserSchema.register(this);
     }
 
     @Override
@@ -391,15 +386,19 @@ public class QueryModule extends DefaultModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            ColumnFactsCache.TestCase.class,
+            FilterSuggestionRanker.TestCase.class,
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
+            OlapController.ContainerScopingTestCase.class,
             QueryController.SaveRowsTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,
             SelectRowsStreamHack.TestCase.class,
-            ServerManager.TestCase.class
+            ServerManager.TestCase.class,
+            SqlController.TestCase.class
         );
     }
 
@@ -427,12 +426,18 @@ public class QueryModule extends DefaultModule
             JdbcType.TestCase.class,
             MemberSet.TestCase.class,
             MetadataElementBase.TestCase.class,
+            Method.IsDistinctFromMethodTestCase.class,
             Method.TestCase.class,
+            ExpressionAssistantAgentAction.TestCase.class,
             QNode.TestCase.class,
+            QNumber.TestCase.class,
             Query.TestCase.class,
+            RemoteConnections.TestCase.class,
             ReportsController.SerializationTest.class,
             SqlParser.SqlParserTestCase.class,
-            TableWriter.TestCase.class
+            SuggestionTerm.TestCase.class,
+            TableWriter.TestCase.class,
+            QueryUserSchema.TestCase.class
         );
     }
 

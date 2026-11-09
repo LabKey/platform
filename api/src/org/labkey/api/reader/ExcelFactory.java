@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,7 +226,7 @@ public class ExcelFactory
     }
 
 
-    public static WorkbookMetadata getMetadata(Workbook wb, List<String> names) throws IOException, InvalidFormatException
+    public static WorkbookMetadata getMetadata(Workbook wb, List<String> names) throws IOException
     {
         if (wb instanceof XSSFWorkbook)
             return new WorkbookMetadata(null, true, names, ((XSSFWorkbook)wb).isDate1904(), ((XSSFWorkbook)wb).getSharedStringSource());
@@ -546,7 +546,7 @@ public class ExcelFactory
                 catch (Exception e)
                 {
                     // Issue 41879 -- best effort, don't make a big fuss over bad formula
-                    LOG.warn("Exception parsing Excel formula: " + e.getMessage());
+                    LOG.warn("Exception parsing Excel formula: {}", e.getMessage());
                 }
             }
         }

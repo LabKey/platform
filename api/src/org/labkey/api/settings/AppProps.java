@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.SupportedDatabase;
+import org.labkey.api.secrets.SecretService;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
@@ -44,9 +44,8 @@ public interface AppProps
     // Used for all optional features; "experimental" for historical reasons.
     String OPTIONAL_FEATURE_PREFIX = "experimentalFeature.";
     String SCOPE_OPTIONAL_FEATURE = "ExperimentalFeature"; // Startup property prefix for all optional features; "Experimental" for historical reasons.
-    String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
+    String OPTIONAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
-    String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
     String REJECT_CONTROLLER_FIRST_URLS = "rejectControllerFirstUrls";
@@ -67,12 +66,21 @@ public interface AppProps
 
     boolean isMailRecorderEnabled();
 
-    boolean isOptionalFeatureEnabled(String feature);
-
     boolean isDevMode();
 
     @Nullable
     String getEnlistmentId();
+
+    /**
+     * Returns the DevOps-assigned name of the tenant/customer this deployment belongs to (e.g., "Hooli",
+     * "WNPRC"), or {@code null} if none is configured. Not customer-facing; currently sourced from
+     * whichever active {@link org.labkey.api.secrets.SecretProvider} reports one.
+     * @see SecretService#getAppName()
+     */
+    default @Nullable String getAppName()
+    {
+        return SecretService.get().getAppName();
+    }
 
     boolean isCachingAllowed();
 
@@ -116,6 +124,13 @@ public interface AppProps
      */
     @NotNull
     String getReleaseVersion();
+
+    /**
+     * Returns the core module's build time. Null if the module was built without one, unlike the sentinel from
+     * {@link #getReleaseVersion()}.
+     */
+    @Nullable
+    String getBuildTime();
 
     /**
      * Convenience method for getting the core schema version, returning 0.0 instead of null
@@ -172,11 +187,17 @@ public interface AppProps
     /** Timeout in seconds for read-only HTTP requests, after which resources like DB connections and spawned processes will be killed. Set to 0 to disable. */
     int getReadOnlyHttpRequestTimeout();
 
+    int DEFAULT_SCRIPT_EXECUTION_TIMEOUT = 60;
+
+    /** Timeout in seconds for server-side JavaScript (e.g. trigger scripts), measured in wall-clock time including database and other Java operations invoked by the script. Set to 0 to disable. */
+    int getScriptExecutionTimeout();
+
+    int DEFAULT_ASSAY_TRANSFORM_SCRIPT_TIMEOUT = 60;
+
+    /** Timeout in minutes for assay transform and validation scripts. Set to 0 to disable. */
+    int getAssayTransformScriptTimeout();
+
     int getMaxBLOBSize();
-
-    boolean isExt3Required();
-
-    boolean isExt3APIRequired();
 
     ExceptionReportingLevel getExceptionReportingLevel();
 
@@ -214,11 +235,6 @@ public interface AppProps
 
     // configurable http security settings
 
-    /**
-     * @return "SAMEORIGIN" or "DENY" or "ALLOW"
-     */
-    String getXFrameOption();
-
     String getStaticFilesPrefix();
 
     boolean isWebfilesRootEnabled();
@@ -231,6 +247,13 @@ public interface AppProps
 
     /** @return whether the server should include its name and version as a header in HTTP responses */
     boolean isIncludeServerHttpHeader();
+
+    /**
+     * Returns the terms-of-use re-acceptance frequency in seconds. 0 means require acceptance on every sign-in, which
+     * is the default. Positive value means acceptance is valid for that many seconds before the user is prompted again
+     * after next login.
+     */
+    int getTermsOfUseFrequencySeconds();
 
     /**
      * @return List of configured external redirect hosts
@@ -251,9 +274,12 @@ public interface AppProps
 
     @NotNull String getDistributionFilename();
 
-    @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases();
-
     @NotNull List<String> getAllowedExtensions();
 
     @NotNull String getAllowedExternalResourceHosts();
+
+    default @NotNull String getDocumentationServer()
+    {
+        return "https://www.labkey.org";
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public interface AntiVirusService
 
     default void warnAndAuditLog(Logger log, String logmessage, ViewBackgroundInfo info, @Nullable String originalName)
     {
-        log.warn((null != info.getUser() ? info.getUser().getEmail() + " " : "") + logmessage);
+        log.warn("{}{}", null != info.getUser() ? info.getUser().getEmail() + " " : "", logmessage);
         FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(
                 info.getContainer(), logmessage
         );

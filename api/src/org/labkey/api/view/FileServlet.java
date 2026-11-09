@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.usageMetrics.ApiMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -74,9 +75,9 @@ public class FileServlet extends HttpServlet
             request.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, helper);
         }
 
-        SimpleMetricsService.get().increment("API", "FileServlet", "urlsDispatched");
+        SimpleMetricsService.get().increment(ApiMetricArea.FILE_SERVLET, "urlsDispatched");
         String dispatchUrl = containerPath + "/filecontent-sendFile.view?" + (null == fileNameParam ? "fileName=" + PageFlowUtil.encodeURIComponent(fileName) : "");
-        _log.info("FileServlet dispatching " + request.getRequestURL() + " to " + dispatchUrl);
+        _log.info("FileServlet dispatching {} to {}", request.getRequestURL(), dispatchUrl);
         // NOTE other parameters seem to get magically propagated...
         RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);
         r.forward(request, response);

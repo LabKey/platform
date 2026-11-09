@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class IssueListDefCache
 {
-    private static final Cache<Container, IssueDefCollections> ISSUE_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Issue list definitions", (c, argument) -> new IssueDefCollections(c));
+    private static final Cache<Container, IssueDefCollections> ISSUE_DEF_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Issue list definitions", (c, argument) -> new IssueDefCollections(c));
 
     private static class IssueDefCollections
     {

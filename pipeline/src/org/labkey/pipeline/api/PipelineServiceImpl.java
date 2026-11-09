@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.bootstrap.ClusterBootstrap;
+import org.labkey.bootstrap.StartupEnvironment;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.analysis.ProtocolManagementAuditProvider;
 import org.labkey.pipeline.importer.FolderImportJob;
@@ -118,6 +119,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -192,7 +194,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             {
                 _jmsType = JmsType.unknown;
             }
-            LOG.info("Found " + _jmsType + " JMS queue.");
+            LOG.info("Found {} JMS queue.", _jmsType);
         }
     }
 
@@ -455,9 +457,10 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     {
         List<String> args = new ArrayList<>();
         args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
-        File labkeyBootstrap = FileUtil.appendName(new File(System.getProperty("catalina.home")), "labkeyBootstrap.jar");
+        File labkeyHome = StartupEnvironment.getLabKeyHome();
+        File labkeyBootstrap = labkeyHome == null ? null : FileUtil.appendName(labkeyHome, "labkeyBootstrap.jar");
 
-        if (!labkeyBootstrap.exists())
+        if (labkeyBootstrap == null || !labkeyBootstrap.exists())
         {
             try
             {
@@ -711,12 +714,12 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 }
                 catch (UMOException e)
                 {
-                    LOG.error("Failed to get implementation class from descriptor " + descriptor, e);
+                    LOG.error("Failed to get implementation class from descriptor {}", descriptor, e);
                 }
                 catch (IllegalAccessException | InstantiationException | NoSuchMethodException |
                        InvocationTargetException e)
                 {
-                    LOG.error("Failed to resume jobs for descriptor " + descriptor, e);
+                    LOG.error("Failed to resume jobs for descriptor {}", descriptor, e);
                 }
             }
         }
@@ -1024,7 +1027,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     @Override
     public File getProtocolParametersFile(ExpRun expRun)
     {
-        return expRun.getInputDatas(ANALYSIS_PARAMETERS_ROLE_NAME, null).get(0).getFile();
+        return expRun.getInputDatas(ANALYSIS_PARAMETERS_ROLE_NAME, null).getFirst().getFile();
     }
 
     @Override
@@ -1046,6 +1049,18 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
 
         return new TableSelector(PipelineService.get().getJobsTable(u, c, cf), Collections.singleton("Description"), filter, null).getMapCollection();
+    }
+
+    @Override
+    public List<ActiveJob> getActivePipelineJobs(User u, Container c, Collection<String> providerNames, @Nullable ContainerFilter cf)
+    {
+        if (providerNames.isEmpty())
+            return List.of();
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Provider"), providerNames, CompareType.IN);
+        filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
+
+        return new TableSelector(PipelineService.get().getJobsTable(u, c, cf), Set.of("Provider", "Description"), filter, null).getArrayList(ActiveJob.class);
     }
 
     public static class TestCase extends Assert

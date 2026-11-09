@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.study.controllers.StudyController;
@@ -57,7 +58,7 @@ public class StudyImportInitialTask
         {
             StudyDocument.Study studyXml = ctx.getXml();
 
-            if (ctx.getContainer().isDataspace() && !studyXml.getAllowDataspace())
+            if (StudyService.get().isDataspace(ctx.getContainer()) && !studyXml.getAllowDataspace())
             {
                 throw new PipelineJobException("Can't import study into a Dataspace folder.");
             }
@@ -90,7 +91,7 @@ public class StudyImportInitialTask
             StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
             if (null == study)
             {
-                ctx.getLogger().info("Loading study from " + originalFileName);
+                ctx.getLogger().info("Loading study from {}", originalFileName);
                 ctx.getLogger().info("Creating study");
 
                 // Create study
@@ -114,7 +115,7 @@ public class StudyImportInitialTask
             }
             else
             {
-                ctx.getLogger().info("Reloading study from " + originalFileName);
+                ctx.getLogger().info("Reloading study from {}", originalFileName);
 
                 TimepointType timepointType = study.getTimepointType();
                 if (studyXml.isSetTimepointType())
@@ -182,7 +183,7 @@ public class StudyImportInitialTask
 
     private static void throwFirstErrorAsPipelineJobException(BindException errors) throws PipelineJobException
     {
-        ObjectError firstError = errors.getAllErrors().get(0);
+        ObjectError firstError = errors.getAllErrors().getFirst();
         throw new PipelineJobException("ERROR: " + firstError.getDefaultMessage());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,6 @@ import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
 public class DatasetQueryView extends StudyQueryView
 {
     public static final String EXPERIMENTAL_LINKED_DATASET_CHECK = "LinkedDatasetCheck";
-    public static final String EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS = "MergeWithManagedDatasetKeys";
     public static final String EXPERIMENTAL_QUERY_DATASETS = "queryBasedDatasets";
 
     private final DatasetDefinition _dataset;
@@ -145,7 +144,7 @@ public class DatasetQueryView extends StudyQueryView
         if (!_dataset.getName().equalsIgnoreCase(settings.getQueryName()))
         {
             // settings has label instead of name; warn that label is being used to lookup
-            _systemLog.warn("Dataset in schema'" + schema.getName() + "' was referenced by label (" + settings.getQueryName() + "), not name (" + _dataset.getName() + ").");
+            _systemLog.warn("Dataset in schema'{}' was referenced by label ({}), not name ({}).", schema.getName(), settings.getQueryName(), _dataset.getName());
         }
 
         _showSourceLinks = settings.isShowSourceLinks();
@@ -740,7 +739,7 @@ public class DatasetQueryView extends StudyQueryView
             if (dcf.isSubsetOfStudies())
             {
                 // DISPLAY the current subset
-                Collection<GUID> ids = dcf.generateIds(dqs.getContainer(), ReadPermission.class, null);
+                Collection<GUID> ids = dcf.generateIds(dqs.getContainer(), ReadPermission.class, Set.of());
                 ArrayList<String> labels = new ArrayList<>(ids.size());
                 for (GUID id : ids)
                 {
@@ -848,12 +847,12 @@ public class DatasetQueryView extends StudyQueryView
                     TableInfo rootTable = filteredTable.getRealTable();
 
                     // create the validation query
-                    SQLFragment sql = new SQLFragment("SELECT DS.lsid")
-                            .append(" FROM ").append(rootTable,"DS")
-                            .append(" JOIN ").append(dataTable, "AT")
-                            .append(" ON DS.").append(_dataset.getKeyPropertyName()).append(" = ").append("AT.").append(dataTable.getPkColumnNames().get(0))
-                            .append(" WHERE DS.").append(studyVisit).append(" <> AT.").append(_assayVisit).append(" OR ")
-                            .append(" DS.ParticipantId <> ").append(rootTable.getSqlDialect().getVarcharCast(new SQLFragment("AT." + _assaySubject.getName())));
+                    SQLFragment sql = SQLFragment.unsafe("SELECT DS.lsid")
+                            .unsafeAppend(" FROM ").append(rootTable,"DS")
+                            .unsafeAppend(" JOIN ").append(dataTable, "AT")
+                            .unsafeAppend(" ON DS.").append(rootTable.getSqlDialect().getColumnSelectName(_dataset.getKeyPropertyName())).unsafeAppend(" = ").unsafeAppend("AT.").append(rootTable.getSqlDialect().getColumnSelectName(dataTable.getPkColumnNames().getFirst()))
+                            .unsafeAppend(" WHERE DS.").appendIdentifier(studyVisit).unsafeAppend(" <> AT.").append(_assayVisit).unsafeAppend(" OR ")
+                            .unsafeAppend(" DS.ParticipantId <> ").append(rootTable.getSqlDialect().getVarcharCast(SQLFragment.unsafe("AT.").append(rootTable.getSqlDialect().getColumnSelectName(_assaySubject.getName()))));
 
                     return sql;
                 }

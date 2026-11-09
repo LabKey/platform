@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -50,11 +53,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Project;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.products.ProductMenuProvider;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryParam;
@@ -66,6 +66,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.settings.Theme;
@@ -107,7 +108,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -186,7 +186,7 @@ public class PageFlowUtil
      */
     private static final String DEFAULT_PARSER_NAME = "org.apache.xerces.parsers.SAXParser";
 
-    private static final String NONPRINTING_ALTCHAR = "~";
+    private static final char NONPRINTING_ALTCHAR = '~';
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
 
@@ -347,14 +347,25 @@ public class PageFlowUtil
             return "";
 
         int len = s.length();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < len; ++i)
+        int first = 0;
+        while (first < len && isPrintable(s.charAt(first)))
+            first++;
+        if (first == len)
+            return s;
+
+        StringBuilder sb = new StringBuilder(len).append(s, 0, first);
+        for (int i = first; i < len; ++i)
         {
             char c = s.charAt(i);
-            sb.append(c >= ' ' || c == '\n' || c == '\r' || c == '\t' ? c : NONPRINTING_ALTCHAR);
+            sb.append(isPrintable(c) ? c : NONPRINTING_ALTCHAR);
         }
 
         return sb.toString();
+    }
+
+    private static boolean isPrintable(char c)
+    {
+        return c >= ' ' || c == '\n' || c == '\r' || c == '\t';
     }
 
     /**
@@ -448,6 +459,12 @@ public class PageFlowUtil
                     break;
                 case '\"':
                     js.append("\\\"");
+                    break;
+                case '\u2028':
+                    js.append("\\u2028");
+                    break;
+                case '\u2029':
+                    js.append("\\u2029");
                     break;
                 default:
                     js.append(c);
@@ -909,19 +926,20 @@ public class PageFlowUtil
         return getMediaTypeFor(file.toPath());
     }
 
+    private static final Detector DETECTOR = new DefaultDetector();
+
     public static MediaType getMediaTypeFor(Path file)
     {
-        try
+        Metadata metaData = new Metadata();
+        String filename = file.getFileName().toString();
+
+        // use the metadata to hint at the type for a faster lookup
+        metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
+        metaData.add(HttpHeaders.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
+
+        try (TikaInputStream tis = TikaInputStream.get(file))
         {
-            DefaultDetector detector = new DefaultDetector();
-            Metadata metaData = new Metadata();
-            String filename = file.getFileName().toString();
-
-            // use the metadata to hint at the type for a faster lookup
-            metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
-
-            return detector.detect(TikaInputStream.get(file), metaData);
+            return DETECTOR.detect(tis, metaData, new ParseContext());
         }
         catch (IOException e)
         {
@@ -1403,12 +1421,12 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static HtmlString generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
+    public static HtmlString generateDropDownTextLink(String text, String href, boolean bold,
                                                   String id, Map<String, String> properties)
     {
         if (StringUtils.isBlank(id))
             id = HttpView.currentPageConfig().makeId("dropdown_");
-        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
+        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; ";
         HttpView.currentPageConfig().addHandler(id+"PopupLink", "click", onclick);
         return DOM.createHtmlFragment(
             A(at(properties).id(id+"PopupLink").cl("labkey-menu-text-link","dropdown-toggle").at(bold, style, "font-weight:bold;").at(DOM.Attribute.href, href),
@@ -1419,13 +1437,13 @@ public class PageFlowUtil
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */
-    public static HtmlString generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
+    public static HtmlString generateDropDownImage(String text, String href, String imageSrc, String imageId,
                                                Integer imageHeight, Integer imageWidth, Map<String, String> properties)
     {
         var page = HttpView.currentPageConfig();
 
         String anchorId = page.makeId("A_");
-        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : onClick);
+        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; ";
         page.addHandler(anchorId, "click", onclick);
         return DOM.createHtmlFragment(
             A(at(properties).id(anchorId).at(DOM.Attribute.href,href),
@@ -1434,8 +1452,8 @@ public class PageFlowUtil
     }
 
     /* Renders image using font icon and a drop down wrapped in an unstyled link */
-    public static HtmlString generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
-                                                       String imageId, Map<String, String> properties)
+    public static HtmlString generateDropDownFontIconImage(String text, String href, String imageCls,
+                                                           String imageId, Map<String, String> properties)
     {
         PageConfig page = HttpView.currentPageConfig();
         String id = page.makeId("a_");
@@ -1654,12 +1672,6 @@ public class PageFlowUtil
 
         if (includeDefaultResources)
         {
-            // Respect App Properties regarding Ext3 configuration
-            if (AppProps.getInstance().isExt3APIRequired())
-                resources.add(ClientDependency.fromPath("clientapi/ext3"));
-            else if (AppProps.getInstance().isExt3Required())
-                resources.add(ClientDependency.fromPath("Ext3"));
-
             // TODO: Turn this into a lib.xml
             // core/css/core.js requires jQuery
             resources.add(ClientDependency.fromPath("internal/jQuery"));
@@ -1668,18 +1680,6 @@ public class PageFlowUtil
             // Always include clientapi and internal
             resources.add(ClientDependency.fromPath("clientapi"));
             resources.add(ClientDependency.fromPath("internal"));
-        }
-
-        // Add mini-profiler as dependency if enabled
-        long miniProfilerId = -1;
-        if (MiniProfiler.isEnabled(context))
-        {
-            RequestInfo req = MemTracker.getInstance().current();
-            if (req != null)
-            {
-                miniProfilerId = req.getId();
-                resources.add(ClientDependency.fromPath("miniprofiler"));
-            }
         }
 
         if (extraResources != null)
@@ -1694,15 +1694,6 @@ public class PageFlowUtil
             .append(getStylesheetIncludes(c, resources, includeDefaultResources))
             .append(getManifestIncludes(c, resources))
             .append(getJavaScriptIncludes(c, resources));
-
-        if (miniProfilerId != -1)
-        {
-            LinkedHashSet<Long> ids = new LinkedHashSet<>();
-            ids.add(miniProfilerId);
-            ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
-
-            builder.append(MiniProfiler.renderInitScript(context.getUser(), miniProfilerId, ids, getServerSessionHash()));
-        }
 
         return builder;
     }
@@ -2180,7 +2171,7 @@ public class PageFlowUtil
         // Note: If you update this set of flags please update enum on client in @labkey/api
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", true);
-        experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
+        experimental.put(AppProps.OPTIONAL_NO_GUESTS, OptionalFeatureService.get().isFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);
@@ -2254,8 +2245,10 @@ public class PageFlowUtil
         json.put("helpLinkPrefix", HelpTopic.getHelpLinkPrefix());
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
-        if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+        if (OptionalFeatureService.get().isFeatureEnabled(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU) && user != null)
             json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
+
+        json.put("mcpReady", AIFeaturesStatus.isReady());
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
@@ -2686,6 +2679,16 @@ public class PageFlowUtil
         return StringUtils.containsAny(value,",\"");
     }
 
+    /// Generate one row of tab-delimited output using RFC 4180 quoting rules.
+    /// Fields containing tabs, newlines, or double quotes are enclosed in double quotes,
+    /// with embedded double quotes escaped by doubling.
+    public static String joinValuesWithTabs4180(@NotNull List<String> values)
+    {
+        return values.stream()
+                .map(value -> null == value ? "" : StringUtils.containsAny(value, "\t\n\r\"") ? "\"" + Strings.CS.replace(value, "\"", "\"\"") + "\"" : value)
+                .collect(Collectors.joining("\t"));
+    }
+
 
     static final String FIELD_ENCODED_PREFIX = "%_";
 
@@ -2739,6 +2742,17 @@ public class PageFlowUtil
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testFilterControlChars()
+        {
+            assertEquals("", filterControlChars(null));
+            assertEquals("", filterControlChars(""));
+            String clean = "plain text\twith\r\nwhitespace";
+            assertSame(clean, filterControlChars(clean));
+            assertEquals("42", filterControlChars(42));
+            assertEquals("~a~b\n~", filterControlChars("\u0000a\u0007b\n\u001F"));
+        }
+
         @Test
         public void testScriptDetection()
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,11 +59,11 @@ public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
         Container container = domain.getContainer();
 
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT o.ObjectId FROM ");
+        sql.unsafeAppend("SELECT o.ObjectId FROM ");
         sql.append(getTableInfo(), "c");
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(OntologyManager.getTinfoObject(), "o");
-        sql.append(" WHERE c.LSID = o.ObjectURI AND c.container = ?");
+        sql.unsafeAppend(" WHERE c.LSID = o.ObjectURI AND c.container = ?");
         sql.add(container.getId());
         return sql;
     }
@@ -73,7 +73,7 @@ public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
     protected abstract TableInfo getTableInfo();
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         TableInfo table = getTableInfo();
         return table.getColumnNameSet();

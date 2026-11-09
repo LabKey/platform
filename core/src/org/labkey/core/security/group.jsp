@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -331,7 +331,7 @@ if (!bean.isSystemGroup)
     {
         %>
         <labkey:form action="<%=urlFor(StandardDeleteGroupAction.class)%>" method="POST">
-        <%= button("Delete Empty Group").submit(true).onClick("return confirm('Permanently delete group " + bean.groupName + "?')") %>
+        <%= button("Delete Empty Group").submit(true).onClick("return confirm(" + q("Permanently delete group " + bean.groupName + "?") + ")") %>
         <input type="hidden" name="group" value="<%= h(bean.groupName) %>">
         </labkey:form>
         <%

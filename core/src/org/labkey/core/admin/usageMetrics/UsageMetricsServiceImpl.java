@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,16 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -84,5 +88,29 @@ public class UsageMetricsServiceImpl implements UsageMetricsService
         });
 
         return allModulesMetrics;
+    }
+
+    @Override
+    public Map<String, List<UsageMetrics.Description>> getModuleUsageMetricDescriptions()
+    {
+        Map<String, List<UsageMetrics.Description>> allDescriptions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        moduleUsageReports.forEach((moduleName, providers) ->
+        {
+            List<UsageMetrics.Description> moduleDescriptions = allDescriptions.computeIfAbsent(moduleName, k -> new ArrayList<>());
+            providers.forEach(provider ->
+            {
+                try
+                {
+                    moduleDescriptions.addAll(provider.getUsageMetricDescriptions());
+                }
+                catch (Exception e)
+                {
+                    LOG.error("A provider in module {} failed to collect usage metric descriptions", moduleName, e);
+                }
+            });
+            moduleDescriptions.sort(Comparator.comparing(UsageMetrics.Description::path, String.CASE_INSENSITIVE_ORDER));
+        });
+
+        return allDescriptions;
     }
 }

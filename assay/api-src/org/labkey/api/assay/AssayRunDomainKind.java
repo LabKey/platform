@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainUtil;
@@ -54,7 +53,7 @@ public class AssayRunDomainKind extends AssayDomainKind
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return RESERVED_NAMES;
     }

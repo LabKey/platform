@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,7 +210,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsFilled FROM ")
                     .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
                     .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
-                    .append(" AND sampleId IS NOT NULL)");
+                    .unsafeAppend(" AND sampleId IS NOT NULL)");
             ExprColumn wellsFilled = new ExprColumn(this, Column.WellsFilled.name(), sql, JdbcType.INTEGER);
             wellsFilled.setDescription("The number of wells that have samples for this plate.");
             addColumn(wellsFilled);
@@ -221,7 +221,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsEmpty FROM ")
                     .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
                     .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
-                    .append(" AND sampleId IS NULL)");
+                    .unsafeAppend(" AND sampleId IS NULL)");
             ExprColumn wellsEmpty = new ExprColumn(this, Column.WellsEmpty.name(), sql, JdbcType.INTEGER);
             wellsEmpty.setDescription("The number of wells that do not have samples for this plate.");
             addColumn(wellsEmpty);

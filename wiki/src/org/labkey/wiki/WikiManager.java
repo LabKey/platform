@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentService.DuplicateFilenameException;
-import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
@@ -42,11 +42,12 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.McpService.VectorDocument;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
@@ -56,6 +57,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -92,8 +94,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.security.WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME;
 
 public class WikiManager implements WikiService
 {
@@ -169,7 +174,7 @@ public class WikiManager implements WikiService
         {
             wikiInsert.beforeInsert(user, c.getId());
             wikiInsert.setPageVersionId(null);
-            LOG.debug("Table.insert() for wiki " + wikiInsert.getName());
+            LOG.debug("Table.insert() for wiki {}", wikiInsert.getName());
             Table.insert(user, comm.getTableInfoPages(), wikiInsert);
             String entityId = wikiInsert.getEntityId();
 
@@ -181,7 +186,7 @@ public class WikiManager implements WikiService
                 wikiversion.setCreatedBy(wikiInsert.getCreatedBy());
             }
             wikiversion.setVersion(1);
-            LOG.debug("Table.insert() for wiki version " + wikiInsert.getName());
+            LOG.debug("Table.insert() for wiki version {}", wikiInsert.getName());
 
             //if copying wiki with history, avoid overwriting 'created by' user
             User userToInsert = (copyHistory) ? null : user;
@@ -207,7 +212,7 @@ public class WikiManager implements WikiService
         {
             WikiCache.uncache(c, wikiInsert, true);
 
-            LOG.debug("indexWiki() for " + wikiInsert.getName());
+            LOG.debug("indexWiki() for {}", wikiInsert.getName());
             indexWiki(wikiInsert);
         }
 
@@ -326,17 +331,15 @@ public class WikiManager implements WikiService
             // Table.insert() provides no way to conditionalize the insert, resulting in constraint violation exceptions
             // that kill the current transaction on PostgreSQL. We want "best effort" inserts here, so execute custom
             // INSERT SQL instead.
-            SQLFragment sql = new SQLFragment("INSERT INTO ")
-                .append(CommSchema.getInstance().getTableInfoPageAliases())
-                .append(" (Container, Alias, PageRowId) SELECT ?, ?, ?\n")
-                .add(wiki.getContainerId())
-                .add(alias)
-                .add(wiki.getRowId())
-                .append("WHERE NOT EXISTS (SELECT * FROM ")
-                .append(CommSchema.getInstance().getTableInfoPageAliases())
-                .append(" WHERE Container = ? AND LOWER(Alias) = LOWER(?))")
-                .add(wiki.getContainerId())
-                .add(alias);
+            SQLFragment sql = new SQLFragment()
+                .INSERT_INTO().append(CommSchema.getInstance().getTableInfoPageAliases()).unsafeAppend(" (Container, Alias, PageRowId)")
+                .SELECT().unsafeAppend("?, ?, ?").add(wiki.getContainerId()).add(alias).add(wiki.getRowId())
+                .WHERE().unsafeAppend("NOT EXISTS (")
+                    .SELECT().unsafeAppend("*")
+                    .FROM().append(CommSchema.getInstance().getTableInfoPageAliases())
+                    .WHERE().unsafeAppend("Container = ?").add(wiki.getContainerId())
+                        .AND().unsafeAppend("LOWER(Alias) = LOWER(?)").add(alias)
+                .unsafeAppend(")");
             int rows = executor.execute(sql);
 
             if (0 == rows)
@@ -344,7 +347,7 @@ public class WikiManager implements WikiService
                 if (null != errors)
                     errors.rejectValue("name", ERROR_MSG, "Warning: Alias '" + alias + "' already exists in this folder.");
                 else
-                    LOG.warn("Attempt to add alias to wiki \"" + wiki.getName() + "\" failed; \"" + alias + "\" already exists in this folder.");
+                    LOG.warn("Attempt to add alias to wiki \"{}\" failed; \"{}\" already exists in this folder.", wiki.getName(), alias);
             }
         });
     }
@@ -370,8 +373,18 @@ public class WikiManager implements WikiService
 
     public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
     {
+        deleteWiki(user, c, wiki, isDeletingSubtree, null);
+    }
+
+    /**
+     * @param descendantCheck when deleting a subtree, invoked on each descendant immediately before it's deleted; it
+     *                        should throw to prevent the deletion. Pages deleted before the throw stay deleted, but a
+     *                        page is never deleted before its descendants, so the remaining tree is never orphaned.
+     */
+    public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree, @Nullable Consumer<Wiki> descendantCheck) throws SQLException
+    {
         //shift children to new parent, or delete recursively if deleting the whole subtree
-        handleChildren(user, c, wiki, isDeletingSubtree);
+        handleChildren(user, c, wiki, isDeletingSubtree, descendantCheck);
 
         DbScope scope = comm.getSchema().getScope();
 
@@ -401,7 +414,7 @@ public class WikiManager implements WikiService
     }
 
 
-    private void handleChildren(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
+    private void handleChildren(User user, Container c, Wiki wiki, boolean isDeletingSubtree, @Nullable Consumer<Wiki> descendantCheck) throws SQLException
     {
         //shift any children upward so they are not orphaned
 
@@ -413,7 +426,11 @@ public class WikiManager implements WikiService
             if(isDeletingSubtree)
             {
                 for(Wiki childWiki : children)
-                    deleteWiki(user, c, childWiki, true);
+                {
+                    if (null != descendantCheck)
+                        descendantCheck.accept(childWiki);
+                    deleteWiki(user, c, childWiki, true, descendantCheck);
+                }
             }
             else
             {
@@ -714,23 +731,23 @@ public class WikiManager implements WikiService
 
     private void indexWikiContainerFast(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince, @Nullable String wikiName)
     {
-        LOG.debug("indexWikiContainerFast(" + wikiName + ")");
+        LOG.debug("indexWikiContainerFast({})", wikiName);
         Container c = queue.getContainer();
         SQLFragment f = new SQLFragment();
-        f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
-            .append("V.title, V.body, V.renderertype\n");
-        f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n");
-        f.append("WHERE P.container = ?");
+        f.unsafeAppend("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
+            .unsafeAppend("V.title, V.body, V.renderertype\n");
+        f.unsafeAppend("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n");
+        f.unsafeAppend("WHERE P.container = ?");
         f.add(c);
         SQLFragment since = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, "P").toSQLFragment(null, comm.getSqlDialect());
 
         if (!since.isEmpty())
         {
-            f.append(" AND ").append(since);
+            f.unsafeAppend(" AND ").append(since);
         }
         if (null != wikiName)
         {
-            f.append(" AND P.name = ?");
+            f.unsafeAppend(" AND P.name = ?");
             f.add(wikiName);
         }
 
@@ -745,19 +762,19 @@ public class WikiManager implements WikiService
                 wikiName = rs.getString("name");
                 assert null != wikiName;
 
-                if (WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME.equals(wikiName))
+                if (TERMS_OF_USE_WIKI_NAME.equals(wikiName))
                     continue;
 
                 if (!rs.getBoolean("shouldindex"))
                 {
-                    LOG.debug(String.format("Wiki [%1$s] set to not index, skipping.", wikiName));
+                    LOG.debug("Wiki [{}] set to not index, skipping.", wikiName);
                     continue;
                 }
 
                 String entityId = rs.getString("entityid");
                 assert null != entityId;
 
-                LOG.debug("Indexing wiki " + wikiName + ":" + entityId);
+                LOG.debug("Indexing wiki {}:{}", wikiName, entityId);
 
                 String wikiTitle = rs.getString("title");
                 String keywords;
@@ -782,7 +799,7 @@ public class WikiManager implements WikiService
                 catch (Throwable t)
                 {
                     // Log rendering exception and details about the culprit, but continue indexing wikis in this container
-                    LOG.error("Could not render wiki \"" + wikiName + "\" in folder \"" + c.getPath() + "\"");
+                    LOG.error("Could not render wiki \"{}\" in folder \"{}\"", wikiName, c.getPath());
                     ExceptionUtil.logExceptionToMothership(null, t);
                     continue;
                 }
@@ -870,6 +887,34 @@ public class WikiManager implements WikiService
     }
 
     @Override
+    public WikiMarkdown getWikiMarkdown(Container c, String name)
+    {
+        if (null == c || null == name)
+            return null;
+
+        try
+        {
+            Wiki wiki = WikiSelectManager.getWiki(c, name);
+            if (null == wiki)
+                return null;
+            WikiVersion version = wiki.getLatestVersion();
+            String body = version.getBody();
+            String markdown = version.getRendererTypeEnum().bestAttemptConvertToMarkdown(null == body ? "" : body);
+            return new WikiMarkdown(name, version.getTitle(), markdown, wiki.getEntityId());
+        }
+        catch (Exception x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    @Override
+    public boolean hasTermsOfUseWiki(Container c)
+    {
+        return (c.isRoot() || c.isProject()) && null != WikiSelectManager.getWiki(c, TERMS_OF_USE_WIKI_NAME);
+    }
+
+    @Override
     public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
     {
         Wiki wiki = new Wiki(c, name);
@@ -930,6 +975,66 @@ public class WikiManager implements WikiService
     {
         List<String> l = WikiSelectManager.getPageNames(c);
         return new ArrayList<>(l);
+    }
+
+    @Override
+    public int populateVectorStore(Container container)
+    {
+        McpService mcp = McpService.get();
+        if (null == mcp.getVectorStore())
+            throw new NotFoundException("VectorStore not enabled.");
+
+        ActionURL wikiBase = new ActionURL("wiki", "page", container);
+        AtomicInteger count = new AtomicInteger();
+
+        for (String name : getNames(container))
+        {
+            Wiki wiki = WikiSelectManager.getWiki(container, name);
+            if (null == wiki)
+                continue;
+            WikiVersion version = wiki.getLatestVersion();
+            if (null == version)
+                continue;
+
+            String body = version.getBody();
+            String markdown = version.getRendererTypeEnum().bestAttemptConvertToMarkdown(null == body ? "" : body);
+            List<String> path = getAncestorTitles(wiki);
+
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("Content-Type", "text/markdown");
+            metadata.put("filename", name + ".md");
+            metadata.put("title", version.getTitle());
+            metadata.put("source", wikiBase.clone().addParameter("name", name).getURIString());
+            if (!path.isEmpty())
+                metadata.put("path", path);
+
+            VectorDocument doc = new VectorDocument(container.getId() + "/" + wiki.getEntityId(), markdown, metadata);
+            try
+            {
+                mcp.addDocuments(List.of(doc));
+                count.incrementAndGet();
+            }
+            catch (IllegalArgumentException x)
+            {
+                LogManager.getLogger(WikiManager.class).info(name, x);
+            }
+        }
+
+        mcp.saveVectorStore();
+        return count.get();
+    }
+
+    private List<String> getAncestorTitles(Wiki wiki)
+    {
+        List<String> titles = new ArrayList<>();
+        Wiki current = wiki.getParentWiki();
+        while (current != null)
+        {
+            WikiVersion version = current.getLatestVersion();
+            titles.add(0, version != null ? version.getTitle() : current.getName());
+            current = current.getParentWiki();
+        }
+        return titles;
     }
 
     @Override
@@ -1063,6 +1168,11 @@ public class WikiManager implements WikiService
     public AttachmentParentType getAttachmentType()
     {
         return WikiType.get();
+    }
+
+    public HtmlString getNoPermissionsMessage(User user)
+    {
+        return HtmlString.of(user.isGuest() ? "Please log in to see this data." : "You do not have permission to see this data.");
     }
 
     public static class TestCase extends Assert

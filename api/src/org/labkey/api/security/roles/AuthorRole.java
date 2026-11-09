@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,32 +18,27 @@ package org.labkey.api.security.roles;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.permissions.AssayReadPermission;
-import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.MediaReadPermission;
-import org.labkey.api.security.permissions.NotebookReadPermission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
 
-/*
- * User: Dave
- * Date: Apr 27, 2009
- */
+import java.util.Collection;
+import java.util.stream.Stream;
+
 public class AuthorRole extends AbstractRole
 {
+    static final Collection<Class<? extends Permission>> PERMISSIONS = Stream.concat(
+        ReaderRole.PERMISSIONS.stream(),
+        Stream.of(
+            InsertPermission.class,
+            ShareReportPermission.class
+        )
+    ).toList();
+
     public AuthorRole()
     {
         super("Author", "Authors may read and add some information. They can also update and delete some information they added.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                AssayReadPermission.class,
-                DataClassReadPermission.class,
-                MediaReadPermission.class,
-                NotebookReadPermission.class,
-                InsertPermission.class,
-                ShareReportPermission.class
+            PERMISSIONS
         );
     }
 

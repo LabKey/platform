@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public class ListImporter
                     {
                         def = lists.get(dataKey.second);
                         if (def == null)
-                            log.error("Could not locate a list with name:" + dataKey.second);
+                            log.error("Could not locate a list with name:{}", dataKey.second);
                     }
                     else if (dataKey.first.equals(ListReloadTask.LIST_ID_KEY))
                     {
@@ -118,7 +118,7 @@ public class ListImporter
                         {
                             def = ListService.get().getList(c, Integer.parseInt(dataKey.second));
                             if (def == null)
-                                log.error("Could not locate a list with Id:" + dataKey.second);
+                                log.error("Could not locate a list with Id:{}", dataKey.second);
                         }
                         catch (NumberFormatException e)
                         {
@@ -161,7 +161,7 @@ public class ListImporter
 
                 if (!hasXmlMetadata && !resolveDomainChanges(c, user, loader, def, log, errors))
                 {
-                    log.warn("Skipping filed-based import of '" + def.getName() + "' due to domain resolution errors.");
+                    log.warn("Skipping filed-based import of '{}' due to domain resolution errors.", def.getName());
                     return false;
                 }
 
@@ -215,15 +215,15 @@ public class ListImporter
                             if (!batchErrors.hasErrors())
                             {
                                 if (0 < b.getDeleted())
-                                    log.info("Deleted " + b.getDeleted() + " row(s) from list: " + def.getName());
+                                    log.info("Deleted {} row(s) from list: {}", b.getDeleted(), def.getName());
                                 if (0 < b.getMerged())
-                                    log.info("Merged " + b.getMerged() + " row(s) into list: " + def.getName());
+                                    log.info("Merged {} row(s) into list: {}", b.getMerged(), def.getName());
                                 if (0 < b.getUpdated())
-                                    log.info("Updated " + b.getUpdated() + " row(s) into list: " + def.getName());
+                                    log.info("Updated {} row(s) into list: {}", b.getUpdated(), def.getName());
                                 if (0 < b.getInserted())
-                                    log.info("Inserted " + b.getInserted() + " row(s) into list: " + def.getName());
+                                    log.info("Inserted {} row(s) into list: {}", b.getInserted(), def.getName());
                                 if (0>=b.getDeleted() && 0>=b.getMerged() && 0>=b.getUpdated() && 0>=b.getInserted())
-                                    log.info("No rows changed from list: " + def.getName());
+                                    log.info("No rows changed from list: {}", def.getName());
                             }
                         }
                     }
@@ -237,19 +237,7 @@ public class ListImporter
                             if (qus != null && !_importContext.useMerge())
                             {
                                 int deletedRows = ti.getUpdateService().truncateRows(user, c, null, null);
-                                log.info("Deleted " + deletedRows + " row(s) from list: " + def.getName() + " for reload preparation");
-                            }
-                        }
-
-                        // pre-process
-                        if (supportAI)
-                        {
-                            SqlDialect dialect = ti.getSqlDialect();
-
-                            if (dialect.isSqlServer())
-                            {
-                                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" ON\n");
-                                new SqlExecutor(ti.getSchema()).execute(check);
+                                log.info("Deleted {} row(s) from list: {} for reload preparation", deletedRows, def.getName());
                             }
                         }
 
@@ -267,68 +255,43 @@ public class ListImporter
                             SqlDialect dialect = ti.getSqlDialect();
 
                             // If auto-increment based need to reset the sequence counter on the DB
-                            if (dialect.isPostgreSQL())
+                            String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
+                            if (null != src)
                             {
-                                String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
-                                if (null != src)
+                                SQLFragment keyupdate;
+
+                                // To best support crazy column names, reuse the regclass in the nextval() call when present
+                                if (src.startsWith("nextval(") && src.endsWith("::regclass)"))
                                 {
-                                    SQLFragment keyupdate;
+                                    String setVal = src.replace("nextval(", "setval(");
+                                    setVal = setVal.replace("::regclass)", "::regclass, ");
+                                    keyupdate = new SQLFragment("SELECT ").append(new SQLFragment().setSqlUnsafe(setVal));
+                                }
+                                else
+                                {
+                                    // In case there are sequences in the wild with different syntax, fall back on
+                                    // our previous strategy
+                                    String sequence = "";
 
-                                    // To best support crazy column names, reuse the regclass in the nextval() call when present
-                                    if (src.startsWith("nextval(") && src.endsWith("::regclass)"))
-                                    {
-                                        String setVal = src.replace("nextval(", "setval(");
-                                        setVal = setVal.replace("::regclass)", "::regclass, ");
-                                        keyupdate = new SQLFragment("SELECT ").append(SQLFragment.unsafe(setVal));
-                                    }
-                                    else
-                                    {
-                                        // In case there are sequences in the wild with different syntax, fall back on
-                                        // our previous strategy
-                                        String sequence = "";
+                                    int start = src.indexOf('\'');
+                                    int end = src.lastIndexOf('\'');
 
-                                        int start = src.indexOf('\'');
-                                        int end = src.lastIndexOf('\'');
+                                    if (end > start)
 
-                                        if (end > start)
-
-                                            sequence = src.substring(start + 1, end);
-                                        if (!sequence.toLowerCase().startsWith("list."))
-                                            sequence = "list." + sequence;
-                                        keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence, dialect);
-                                    }
-
-                                    String keyStorageColName = def.getDomain().getPropertyByName(def.getKeyName()).getPropertyDescriptor().getStorageColumnName();
-                                    keyupdate.append(" coalesce((SELECT MAX(").appendIdentifier(dialect.makeDatabaseIdentifier(keyStorageColName.toLowerCase())).append(")+1 FROM ").append(tableName);
-                                    keyupdate.append("), 1), false)");
-                                    new SqlExecutor(ti.getSchema()).execute(keyupdate);
+                                        sequence = src.substring(start + 1, end);
+                                    if (!sequence.toLowerCase().startsWith("list."))
+                                        sequence = "list." + sequence;
+                                    keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence, dialect);
                                 }
 
-                            }
-                            else if (dialect.isSqlServer())
-                            {
-                                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
-                                new SqlExecutor(ti.getSchema()).execute(check);
-                                supportAI = false; // reset in order to avoid setting IDENTITY_INSERT to OFF again in the finally block below.
+                                String keyStorageColName = def.getDomain().getPropertyByName(def.getKeyName()).getPropertyDescriptor().getStorageColumnName();
+                                keyupdate.unsafeAppend(" coalesce((SELECT MAX(").appendIdentifier(dialect.makeDatabaseIdentifier(keyStorageColName.toLowerCase())).unsafeAppend(")+1 FROM ").append(tableName);
+                                keyupdate.unsafeAppend("), 1), false)");
+                                new SqlExecutor(ti.getSchema()).execute(keyupdate);
                             }
                         }
 
                         transaction.commit();
-                    }
-                }
-                // any errors during an insert in the above block will keep IDENTITY_INSERT set to ON - so setting it to OFF in the finally block.
-                // Refer to Issue 32667 for more details.
-                finally
-                {
-                    if (supportAI)
-                    {
-                        SqlDialect dialect = ti.getSqlDialect();
-
-                        if (dialect.isSqlServer())
-                        {
-                            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
-                            new SqlExecutor(ti.getSchema()).execute(check);
-                        }
                     }
                 }
             }
@@ -339,7 +302,7 @@ public class ListImporter
             }
             else
             {
-                log.info("Could not retrieve file stream for dir: " + sourceDir.getLocation() + " and file: " + fileName);
+                log.info("Could not retrieve file stream for dir: {} and file: {}", sourceDir.getLocation(), fileName);
             }
         }
         return true;
@@ -393,17 +356,17 @@ public class ListImporter
         for (ValidatorImporter vi : validatorImporters)
             vi.process();
 
-        log.info(StringUtilsLabKey.pluralize(successfulLists, "list") + " imported successfully");
+        log.info("{} imported successfully", StringUtilsLabKey.pluralize(successfulLists, "list"));
         if (failedLists > 0)
         {
-            log.warn(StringUtilsLabKey.pluralize(failedLists, "list") + " failed to import");
+            log.warn("{} failed to import", StringUtilsLabKey.pluralize(failedLists, "list"));
         }
         if (!fileNameMap.isEmpty())
         {
             log.info("The following files were not imported because the server could not find a list with matching name: ");
             for (String s : fileNameMap.values())
             {
-                log.info("\tSkipped " + s);
+                log.info("\tSkipped {}", s);
             }
         }
     }
@@ -583,7 +546,7 @@ public class ListImporter
 
                     try
                     {
-                        log.info("Truncating list: " + def.getName());
+                        log.info("Truncating list: {}", def.getName());
                         def.delete(user);
                         replaced = true;
                     }
@@ -598,7 +561,7 @@ public class ListImporter
             {
                 try
                 {
-                    log.info("Recreating list: " + name);
+                    log.info("Recreating list: {}", name);
                     boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), validatorImporters, errors, log);
                     assert success;
                 }
@@ -682,7 +645,7 @@ public class ListImporter
             boolean isDirty = false;
             if (domain != null)
             {
-                log.info("resolving domain of list: " + listDef.getName());
+                log.info("resolving domain of list: {}", listDef.getName());
                 Map<String, DomainProperty> currentColumns = listDef.getDomain().getProperties().stream().collect(Collectors.toMap(DomainProperty::getName, e -> e));
 
                 // Do a pass over the loader's columns
@@ -696,7 +659,7 @@ public class ListImporter
                         PropertyDescriptor pd = new PropertyDescriptor(domain.getTypeURI() + "." + loaderCol.name, type, loaderCol.name, c);
                         domain.addPropertyOfPropertyDescriptor(pd);
                         isDirty = true;
-                        log.info("\tAdded column " + loaderCol.name + " of type \"" + type.getXarName() + "\" to " + listDef.getName());
+                        log.info("\tAdded column {} of type \"{}\" to {}", loaderCol.name, type.getXarName(), listDef.getName());
                     }
                     currentColumns.remove(loaderCol.name);
                 }
@@ -706,14 +669,14 @@ public class ListImporter
                 {
                     if (listDef.getKeyName().equals(columnName) && !listDef.getKeyType().getLabel().equals("Auto-Increment Integer"))
                     {
-                        log.warn("Failed to import data for '" + listDef.getName() + "'. Primary Key '" + columnName + "' not present in file.");
+                        log.warn("Failed to import data for '{}'. Primary Key '{}' not present in file.", listDef.getName(), columnName);
                         return false;
                     }
                     else if (!listDef.getKeyName().equals(columnName) && !currentColumns.get(columnName).isRequired())
                     {
                         currentColumns.get(columnName).delete();
                         isDirty = true;
-                        log.info("\tDeleted column " + columnName);
+                        log.info("\tDeleted column {}", columnName);
                     }
                 }
 

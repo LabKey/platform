@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@ package org.labkey.query.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections4.MultiSet;
-import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.MultiSetUtils;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -39,6 +38,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -46,8 +46,10 @@ import org.labkey.api.module.Module;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -56,7 +58,7 @@ import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
-import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
+import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.ReportDB;
@@ -64,8 +66,9 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
+import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
-import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
+import org.labkey.api.reports.report.python.IpynbReport;
 import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.r.RReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -77,6 +80,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.GUID;
@@ -91,14 +95,15 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.query.reports.report.ModuleJavaScriptReportDescriptor;
+import org.labkey.query.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 
+import javax.script.ScriptEngine;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -109,10 +114,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
 
@@ -122,6 +129,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     private static final List<UIProvider> _uiProviders = new CopyOnWriteArrayList<>();
     private static final Map<String, UIProvider> _typeToProviderMap = new ConcurrentHashMap<>();
     private static final List<String> _globalItemFilterTypes = new CopyOnWriteArrayList<>();
+    private static final List<Supplier<? extends ReportMetricsVisitor<?>>> _metricsVisitorFactories = new CopyOnWriteArrayList<>();
 
     /**
      * maps descriptor types to providers
@@ -167,7 +175,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             throw new IllegalArgumentException("Invalid descriptor instance");
 
         if (null != _descriptors.putIfAbsent(descriptor.getDescriptorType(), descriptor.getClass()))
-            _log.warn("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
+            _log.warn("Descriptor type : {} has previously been registered.", descriptor.getDescriptorType());
     }
 
     @Override
@@ -220,6 +228,12 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
 
         if (null != _reports.putIfAbsent(report.getType(), report.getClass()))
             _log.warn("Report type : {} has previously been registered.", report.getType());
+    }
+
+    @Override
+    public void registerReportMetricsVisitor(Supplier<? extends ReportMetricsVisitor<?>> factory)
+    {
+        _metricsVisitorFactories.add(factory);
     }
 
     @Override
@@ -381,22 +395,68 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     public boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors)
     {
         final ReportDescriptor descriptor = report.getDescriptor();
+        Report stored = null;
 
         if (descriptor.isNew())
         {
+            validateScriptCreation(context, report, errors);
             if (descriptor.isShared())
                 report.canShare(context.getUser(), context.getContainer(), errors);
         }
         else
         {
-            if (report.canEdit(context.getUser(), context.getContainer(), errors))
+            stored = getStoredReport(descriptor.getReportId());
+            if (null != stored && !context.getContainer().getId().equals(stored.getContainerId()))
+            {
+                errors.add(new SimpleValidationError("A report can only be saved from the folder that it belongs to."));
+                return false;
+            }
+
+            // canEdit checks the stored report, so a save that changes the type must pass the new type's creation check
+            if (descriptor.getReportId() instanceof DbReportIdentifier && (null == stored || !stored.getType().equals(report.getType())))
+                validateScriptCreation(context, report, errors);
+
+            Report toCheck = null != stored ? stored : report;
+
+            if (toCheck.canEdit(context.getUser(), context.getContainer(), errors))
             {
                 if (descriptor.isShared())
-                    report.canShare(context.getUser(), context.getContainer(), errors);
+                    toCheck.canShare(context.getUser(), context.getContainer(), errors);
             }
         }
 
+        // GH Issue 1649: generic report actions, such as study-reports-saveReportView, can write a chart's config too
+        descriptor.validateContent(context.getUser(), null != stored ? stored.getDescriptor() : null, errors);
+
         return errors.isEmpty();
+    }
+
+    private void validateScriptCreation(ContainerUser context, Report report, List<ValidationError> errors)
+    {
+        if (!(report instanceof ScriptReport))
+            return;
+
+        ScriptEngine engine = null;
+        if (report instanceof ScriptEngineReport scriptEngineReport)
+        {
+            engine = scriptEngineReport.getScriptEngine(context.getContainer());
+        }
+        else if (report instanceof JavaScriptReport || report instanceof IpynbReport)
+        {
+            String extension = (report instanceof JavaScriptReport) ? "js" : IpynbReport.EXTENSION;
+
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
+            engine = svc.getEngineByExtension(context.getContainer(), extension);
+        }
+
+        if (engine == null)
+        {
+            errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
+            return;
+        }
+
+        if (!ReportUtil.canCreateScript(context, engine))
+            errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or TrustedAnalyst to create a script report."));
     }
 
     private ReportDB _saveDbReport(ContainerUser context, String key, Report report, boolean skipValidation)
@@ -438,9 +498,15 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         else
             throw new RuntimeException("Can't save a report that is not stored in the database!");
 
-        boolean reportExists = null != reportId && reportExists(reportId.getRowId());
+        // A descriptor's reportId can come straight from client input, so it may name a row in any container.
+        ReportDB existing = null != reportId ? getReportDB(reportId.getRowId()) : null;
+        if (null != existing && !c.getId().equals(existing.getContainerId()))
+            throw new UnauthorizedException("A report can only be saved from the folder that it belongs to.");
+
+        boolean reportExists = null != existing;
         if (reportExists)
-            reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId());
+            reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId(),
+                    new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId()), Level.WARN);
         else
             reportDB = Table.insert(user, getTable(), reportDB);
 
@@ -571,8 +637,8 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         if (reportIdentifier != null && reportIdentifier.getRowId() != 0)
         {
             TableInfo table = getTable();
-            SQLFragment sql = new SQLFragment("UPDATE ").append(table, "");
-            sql.append(" SET DisplayOrder = ? WHERE RowId = ?");
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(table, "");
+            sql.unsafeAppend(" SET DisplayOrder = ? WHERE RowId = ?");
             sql.addAll(displayOrder, reportIdentifier.getRowId());
 
             new SqlExecutor(table.getSchema()).execute(sql);
@@ -815,12 +881,17 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         return null;
     }
 
-    private boolean reportExists(int reportId)
+    /** Unscoped by container on purpose: callers need the row's own container to decide whether they may touch it. */
+    private @Nullable ReportDB getReportDB(int reportId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), reportId);
-        ReportDB report = new TableSelector(getTable(), filter, null).getObject(ReportDB.class);
+        return new TableSelector(getTable(), filter, null).getObject(ReportDB.class);
+    }
 
-        return (report != null);
+    /** The persisted report a descriptor's reportId names, or null if it names no database row. */
+    private @Nullable Report getStoredReport(@Nullable ReportIdentifier reportId)
+    {
+        return reportId instanceof DbReportIdentifier dbReportId ? _getInstance(getReportDB(dbReportId.getRowId())) : null;
     }
 
     @Nullable
@@ -920,8 +991,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                     Dataset dataset = study.getDatasetByLabel(queryName);
                     if (dataset != null && !dataset.getName().equals(dataset.getLabel()))
                     {
-                        ctx.getLogger().error("Report \"" + xmlFileName + "\" could not be imported. Its queryName is \"" + queryName +
-                            ",\" which is a dataset label. Dataset labels are no longer supported; queryName should be set to the dataset name (\"" + dataset.getName() + "\") instead.");
+                        ctx.getLogger().error("Report \"{}\" could not be imported. Its queryName is \"{},\" which is a dataset label. Dataset labels are no longer supported; queryName should be set to the dataset name (\"{}\") instead.", xmlFileName, queryName, dataset.getName());
                         return null;
                     }
                 }
@@ -1066,36 +1136,43 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(moduleName, () -> {
-                // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
-                MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
-                AtomicInteger genericChartWithTrendlineTypeCount = new AtomicInteger();
-                AtomicInteger genericChartWithErrorBarsCount = new AtomicInteger();
-                Map<String, Long> countsByType = ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
-                    .flatMap(c -> ReportService.get().getReports(null, c).stream())
-                    .peek(report -> {
-                        if (report instanceof GenericChartReport chart)
-                        {
-                            chartCountsByRenderType.add(chart.getRenderType());
-                            if (chart.getDescriptor() instanceof VisualizationReportDescriptor descriptor)
-                            {
-                                String configJson = descriptor.getJSON();
-                                if (configJson.contains("\"trendlineType\":") && !configJson.contains("\"trendlineType\":\"\""))
-                                    genericChartWithTrendlineTypeCount.getAndIncrement();
-                                if (configJson.contains("\"errorBars\":\"SD\"") || configJson.contains("\"errorBars\":\"SEM\""))
-                                    genericChartWithErrorBarsCount.getAndIncrement();
-                            }
-                        }
-                    })
-                    .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
-
-                return Map.of(
-                    "reportCountsByType", countsByType,
-                    "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType),
-                    "genericChartWithTrendlineTypeCount", genericChartWithTrendlineTypeCount,
-                    "genericChartWithErrorBarsCount", genericChartWithErrorBarsCount
-                );
+            svc.registerUsageMetrics(moduleName, metrics -> {
+                Supplier<ReportMetricsPass> pass = NightlyRecalculatingSuppliers.get("reportMetricsPass", ReportServiceImpl::visitReports);
+                metrics.put("reportCountsByType", () -> pass.get().countsByType(), "Saved reports in existing containers by report type");
+                for (int i = 0; i < _metricsVisitorFactories.size(); i++)
+                    addVisitorMetrics(metrics, _metricsVisitorFactories.get(i).get(), pass, i);
+                return metrics;
             });
+        }
+    }
+
+    /** The visitors are in factory order */
+    private record ReportMetricsPass(Map<String, Long> countsByType, List<ReportMetricsVisitor<?>> visitors) {}
+
+    @SuppressWarnings("unchecked")
+    private static <V extends ReportMetricsVisitor<V>> void addVisitorMetrics(UsageMetrics metrics, ReportMetricsVisitor<V> visitor, Supplier<ReportMetricsPass> pass, int index)
+    {
+        visitor.addMetrics(metrics, () -> (V) pass.get().visitors().get(index));
+    }
+
+    /** Visits every saved report in an existing container with fresh visitors and counts them by type */
+    private static ReportMetricsPass visitReports()
+    {
+        List<ReportMetricsVisitor<?>> visitors = _metricsVisitorFactories.stream().<ReportMetricsVisitor<?>>map(Supplier::get).toList();
+
+        // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
+        TableInfo table = getTable();
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(table, "r")
+            .unsafeAppend(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(")");
+        ReportServiceImpl reportService = getInstance();
+        try (Stream<ReportDB> rows = new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class))
+        {
+            Map<String, Long> countsByType = rows
+                .map(reportService::_getInstance)
+                .filter(Objects::nonNull)
+                .peek(report -> visitors.forEach(visitor -> visitor.visit(report)))
+                .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
+            return new ReportMetricsPass(Collections.unmodifiableMap(countsByType), visitors);
         }
     }
 }

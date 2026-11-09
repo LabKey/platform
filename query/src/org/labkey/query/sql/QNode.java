@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -443,7 +443,7 @@ abstract public class QNode implements Cloneable
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr)expr.childList().get(0);
+                methodName = (QExpr)expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }

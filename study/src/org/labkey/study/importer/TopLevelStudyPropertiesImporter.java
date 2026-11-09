@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
         StudyImpl origStudy = StudyManager.getInstance().getStudy(ctx.getContainer());
         if (origStudy != null)
         {
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             StudyImpl study = origStudy.createMutable();
             StudyDocument.Study studyXml = ctx.getXml();
@@ -128,7 +128,7 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
                 if (validationException.hasErrors())
                     validationException.getErrors().forEach(ve -> errors.reject(null, ve.getMessage()));
             }
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 }

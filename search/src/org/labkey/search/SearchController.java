@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.CrawlerRunningState;
 import org.labkey.search.model.IndexInspector;
 import org.labkey.search.model.LuceneDirectoryType;
+import org.labkey.search.model.SearchIconState;
 import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
@@ -148,6 +149,8 @@ public class SearchController extends SpringActionController
         private int msg = 0;
         private boolean pause;
         private boolean start;
+        private boolean hideSearchIcon;
+        private boolean showSearchIcon;
         private boolean delete;
         private String indexPath;
 
@@ -197,6 +200,26 @@ public class SearchController extends SpringActionController
         public void setPause(boolean pause)
         {
             this.pause = pause;
+        }
+
+        public boolean isHideSearchIcon()
+        {
+            return hideSearchIcon;
+        }
+
+        public void setHideSearchIcon(boolean hideSearchIcon)
+        {
+            this.hideSearchIcon = hideSearchIcon;
+        }
+
+        public boolean isShowSearchIcon()
+        {
+            return showSearchIcon;
+        }
+
+        public void setShowSearchIcon(boolean showSearchIcon)
+        {
+            this.showSearchIcon = showSearchIcon;
         }
 
         public String getIndexPath()
@@ -334,6 +357,14 @@ public class SearchController extends SpringActionController
             {
                 SearchPropertyManager.setCrawlerRunningState(getUser(), CrawlerRunningState.Pause);
                 ss.pauseCrawler();
+            }
+            else if (form.isShowSearchIcon())
+            {
+                SearchPropertyManager.setSearchIconState(getUser(), SearchIconState.Show);
+            }
+            else if (form.isHideSearchIcon())
+            {
+                SearchPropertyManager.setSearchIconState(getUser(), SearchIconState.Hide);
             }
             else if (form.isDelete())
             {

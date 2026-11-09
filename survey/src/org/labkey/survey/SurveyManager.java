@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.labkey.survey;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -49,6 +51,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
@@ -61,13 +64,24 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.survey.model.Survey;
-import org.labkey.api.survey.model.SurveyDesign;
-import org.labkey.api.survey.model.SurveyListener;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.survey.model.Survey;
+import org.labkey.survey.model.SurveyDesign;
+import org.labkey.survey.model.SurveyListener;
+import org.labkey.survey.query.SurveyQuerySchema;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -80,6 +94,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -204,6 +219,13 @@ public class SurveyManager
 
     public SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign survey)
     {
+        // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser. This is the chokepoint every
+        // caller reaches, including SurveyService; the query update path is gated separately in SurveyDesignTable.
+        // BrowserDeveloperPermission is a site permission that root role assignments grant in every container, so it
+        // has to be required alongside the folder-scoped write check, never in place of it.
+        if (!container.hasPermissions(user, Set.of(InsertPermission.class, BrowserDeveloperPermission.class)))
+            throw new UnauthorizedException("You must be either a PlatformDeveloper or TrustedAnalyst with insert permission in this folder to create and edit survey designs.");
+
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -252,7 +274,7 @@ public class SurveyManager
 
             if (!errors.isEmpty())
             {
-                Throwable first = errors.get(0);
+                Throwable first = errors.getFirst();
                 if (first instanceof RuntimeException)
                     throw (RuntimeException)first;
                 else
@@ -264,9 +286,36 @@ public class SurveyManager
         }
     }
 
-    public SurveyDesign getSurveyDesign(Container container, User user, int surveyId)
+    /**
+     * Checks that the user has read permission to the container that owns the design, but we accept cross-container references
+     */
+    @Nullable
+    public SurveyDesign getSurveyDesignForRead(Container container, User user, int surveyId)
     {
-        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter(FieldKey.fromParts("rowId"), surveyId), null).getObject(SurveyDesign.class);
+        SurveyDesign surveyDesign = _getSurveyDesign(new SimpleFilter(), surveyId);
+
+        if (surveyDesign != null)
+        {
+            Container actualContainer = ContainerManager.getForId(surveyDesign.getContainerId());
+
+            // A survey design can be requested from a different folder provided the user has read permission.
+            return actualContainer == null || !actualContainer.hasPermission(user, ReadPermission.class) ? null : surveyDesign;
+        }
+        return null;
+    }
+
+    @Nullable
+    public SurveyDesign getSurveyDesignForWrite(Container container, User user, int surveyId)
+    {
+        // Container scoping is enforced when updating a survey design.
+        return _getSurveyDesign(SimpleFilter.createContainerFilter(container), surveyId);
+    }
+
+    @Nullable
+    private SurveyDesign _getSurveyDesign(SimpleFilter filter, int surveyId)
+    {
+        filter.addCondition(FieldKey.fromParts("rowId"), surveyId);
+        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), filter, null).getObject(SurveyDesign.class);
     }
 
     /**
@@ -296,7 +345,7 @@ public class SurveyManager
     {
         DbSchema schema = SurveySchema.getInstance().getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM ").append(SurveySchema.getInstance().getSurveyDesignsTable(), "sd");
-        sql.append(" WHERE ");
+        sql.unsafeAppend(" WHERE ");
         sql.append(filter.getSQLFragment(schema, new SQLFragment("sd.container")));
         return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
     }
@@ -306,15 +355,17 @@ public class SurveyManager
         TableInfo table = SurveySchema.getInstance().getSurveyDesignsTable();
         DbSchema schema = SurveySchema.getInstance().getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "sd");
-        sql.append(" ").append(filter.getSQLFragment(table.getSqlDialect()));
+        sql.unsafeAppend(" ").append(filter.getSQLFragment(table.getSqlDialect()));
 
         return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
     }
 
     public Survey getSurvey(Container container, User user, int rowId)
     {
+        // Scope by container so a global rowId can't read/modify a survey in another folder
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("rowId"), rowId);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
         return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getObject(Survey.class);
     }
 
@@ -348,7 +399,7 @@ public class SurveyManager
         if (surveys.length > 0)
         {
             SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
-            deleteSurveysSql.append(s.getSurveysTable()).append(" WHERE Container = ?").add(c);
+            deleteSurveysSql.append(s.getSurveysTable()).unsafeAppend(" WHERE Container = ?").add(c);
             executor.execute(deleteSurveysSql);
 
             // invoke any survey listeners to clean up any dependent objects
@@ -381,7 +432,7 @@ public class SurveyManager
                     deleteSurvey(c, user, survey.getRowId());
             }
             SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
-            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).append(" WHERE RowId = ?").add(surveyDesignId);
+            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).unsafeAppend(" WHERE RowId = ? AND Container = ?").add(surveyDesignId).add(c);
             executor.execute(deleteSurveyDesignsSql);
 
             transaction.commit();
@@ -390,8 +441,10 @@ public class SurveyManager
 
     public Survey[] getSurveys(Container c, User user, int surveyDesignId)
     {
+        // Scope by container so the delete cascade and lookups can't reach surveys in another folder
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("surveyDesignId"), surveyDesignId);
+        filter.addCondition(FieldKey.fromParts("Container"), c);
 
         return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getArray(Survey.class);
     }
@@ -415,7 +468,7 @@ public class SurveyManager
 
                 if (!errors.isEmpty())
                 {
-                    Throwable first = errors.get(0);
+                    Throwable first = errors.getFirst();
                     if (first instanceof RuntimeException)
                         throw (RuntimeException)first;
                     else
@@ -447,7 +500,7 @@ public class SurveyManager
     public static List<Throwable> fireDeleteSurvey(Container c, User user, Survey survey)
     {
         List<Throwable> errors = new ArrayList<>();
-        SurveyDesign design = SurveyManager.get().getSurveyDesign(c, user, survey.getSurveyDesignId());
+        SurveyDesign design = SurveyManager.get().getSurveyDesignForRead(c, user, survey.getSurveyDesignId());
 
         for (SurveyListener l : _surveyListeners)
         {
@@ -503,7 +556,7 @@ public class SurveyManager
         {
             List<String> pks = table.getPkColumnNames();
             if (pks.size() == 1)
-                return FieldKey.fromParts(pks.get(0));
+                return FieldKey.fromParts(pks.getFirst());
             else if (table.getColumn(FieldKey.fromParts("EntityId")) != null)
                 return FieldKey.fromParts("EntityId");
             else if (table.getColumn(FieldKey.fromParts("RowId")) != null)
@@ -773,13 +826,170 @@ public class SurveyManager
             }
 
             // check a few of the key properties
-            assertTrue("Unexpected property value", trimmedMap.get("name").equals("test"));
-            assertTrue("Unexpected property value", trimmedMap.get("caption").equals("Test"));
-            assertTrue("Unexpected property value", trimmedMap.get("shortCaption").equals("Test"));
-            assertTrue("Unexpected property value", trimmedMap.get("hidden").equals(false));
-            assertTrue("Unexpected property value", trimmedMap.get("jsonType").equals("string"));
-            assertTrue("Unexpected property value", trimmedMap.get("inputType").equals("text"));
-            assertTrue("Unexpected property value", trimmedMap.get("required").equals(true));
+            assertEquals("Unexpected property value", "test", trimmedMap.get("name"));
+            assertEquals("Unexpected property value", "Test", trimmedMap.get("caption"));
+            assertEquals("Unexpected property value", "Test", trimmedMap.get("shortCaption"));
+            assertEquals("Unexpected property value", false, trimmedMap.get("hidden"));
+            assertEquals("Unexpected property value", "string", trimmedMap.get("jsonType"));
+            assertEquals("Unexpected property value", "text", trimmedMap.get("inputType"));
+            assertEquals("Unexpected property value", true, trimmedMap.get("required"));
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        private Container _projectA;
+        private Container _projectB;
+        private User _user;
+
+        @Before
+        public void setUp()
+        {
+            // Every test here dispatches through SurveyController, and DefaultModule.dispatch 404s before the action
+            // runs unless the module is active in the container.
+            Module survey = ModuleLoader.getInstance().getModule("Survey");
+            _user = getAdmin();
+            _projectA = createContainer("A", survey);
+            _projectB = createContainer("B", survey);
+        }
+
+        @Test
+        public void testSurveyDesignContainerScoping() throws Exception
+        {
+            SurveyManager sm = SurveyManager.get();
+
+            SurveyDesign design = new SurveyDesign();
+            design.setLabel("Scoping test design");
+            design = sm.saveSurveyDesign(_projectA, _user, design);
+            int designId = design.getRowId();
+
+            // 1. Same container: a user with read access in the design's container sees it.
+            User readerA = createUserInRole(_projectA, ReaderRole.class);
+            assertNotNull("Design should be visible from its own container to a user with read access",
+                    sm.getSurveyDesignForRead(_projectA, readerA, designId));
+
+            // 2. Different container, caller can read the design's container: tolerated, design is returned.
+            User readerAB = createUserInRole(_projectA, ReaderRole.class);
+            grantRole(readerAB, _projectB, ReaderRole.class);
+            assertNotNull("Design should be visible from another container when the caller can read the design's container",
+                    sm.getSurveyDesignForRead(_projectB, readerAB, designId));
+
+            // 3. Different container, caller cannot read the design's container: must return null.
+            User readerB = createUserInRole(_projectB, ReaderRole.class);
+            assertNull("Design must NOT be visible to a caller without read access to the design's container",
+                    sm.getSurveyDesignForRead(_projectB, readerB, designId));
+
+            // A delete issued from the wrong container must not remove the design
+            sm.deleteSurveyDesign(_projectB, _user, designId, true);
+            assertNotNull("Cross-container delete must be a no-op", sm.getSurveyDesignForRead(_projectA, _user, designId));
+
+            // A delete from the correct container removes it
+            sm.deleteSurveyDesign(_projectA, _user, designId, true);
+            assertNull("Same-container delete should remove the design", sm.getSurveyDesignForRead(_projectA, _user, designId));
+        }
+
+        // GH Issue 1308: SaveSurveyTemplateAction must not let a caller in one folder overwrite and reparent a survey
+        // design owned by another folder.
+        @Test
+        public void testSaveSurveyTemplateActionContainerScoping() throws Exception
+        {
+            SurveyManager sm = SurveyManager.get();
+
+            SurveyDesign design = new SurveyDesign();
+            design.setLabel("Design owned by A");
+            design.setDescription("original description");
+            design = sm.saveSurveyDesign(_projectA, _user, design);
+            int designId = design.getRowId();
+
+            User attacker = createUserInRole(_projectA, ReaderRole.class);
+            grantRole(attacker, _projectB, AuthorRole.class);
+            // GH Issue 1526 gates the action on BrowserDeveloperPermission, so the attacker needs a developer role
+            // to reach the container check this test covers.
+            grantRootRole(attacker, PlatformDeveloperRole.class);
+
+            ActionURL url = new ActionURL(SurveyController.SaveSurveyTemplateAction.class, _projectB)
+                    .addParameter("rowId", designId)
+                    .addParameter("label", "STOLEN")
+                    .addParameter("description", "hijacked");
+            // Container scoping rejects the cross-folder rowId before the design is touched
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, attacker));
+
+            // The design must still belong to folder A with its original field values: not reparented, not overwritten.
+            SurveyDesign after = sm.getSurveyDesignForRead(_projectA, _user, designId);
+            assertNotNull("Design must still exist after the cross-container save attempt", after);
+            assertEquals("Design must NOT be reparented into the attacker's container",
+                    _projectA.getId(), after.getContainerId());
+            assertEquals("Design label must NOT be overwritten from another container",
+                    "Design owned by A", after.getLabel());
+            assertEquals("Design description must NOT be overwritten from another container",
+                    "original description", after.getDescription());
+        }
+
+        // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser, so authoring one requires
+        // the BrowserDeveloperPermission. Both PlatformDeveloper and TrustedAnalyst are expected to satisfy the check.
+        @Test
+        public void testSurveyDesignAuthoringRequiresTrustedAnalyst() throws Exception
+        {
+            User author = createUserInRole(_projectA, AuthorRole.class);
+            assertFalse("Test author must not be a trusted analyst", author.isTrustedAnalyst());
+            assertTrue("Site admin is expected to satisfy the trusted analyst check", _user.isTrustedAnalyst());
+
+            TableInfo designs = QueryService.get()
+                    .getUserSchema(author, _projectA, SurveyQuerySchema.SCHEMA_NAME)
+                    .getTable(SurveyQuerySchema.SURVEY_DESIGN_TABLE_NAME);
+            assertNotNull("Survey designs table should resolve for an author", designs);
+
+            // The query update path is closed to an untrusted author, so query-insertRows.api cannot reach the metadata column
+            assertFalse("An untrusted author must not be able to insert a survey design",
+                    designs.hasPermission(author, InsertPermission.class));
+            assertFalse("An untrusted author must not be able to update a survey design",
+                    designs.hasPermission(author, UpdatePermission.class));
+            // ...but reading the designs grid is unaffected
+            assertTrue("An author must still be able to read survey designs",
+                    designs.hasPermission(author, ReadPermission.class));
+
+            // A trusted user keeps both write paths
+            TableInfo adminDesigns = QueryService.get()
+                    .getUserSchema(_user, _projectA, SurveyQuerySchema.SCHEMA_NAME)
+                    .getTable(SurveyQuerySchema.SURVEY_DESIGN_TABLE_NAME);
+            assertTrue("A trusted user must be able to insert a survey design",
+                    adminDesigns.hasPermission(_user, InsertPermission.class));
+            assertTrue("A trusted user must be able to update a survey design",
+                    adminDesigns.hasPermission(_user, UpdatePermission.class));
+
+            // The action rejects the same author. UnauthorizedException resolves to 403 rather than 401 for a logged-in user.
+            ActionURL url = new ActionURL(SurveyController.SaveSurveyTemplateAction.class, _projectA)
+                    .addParameter("label", "Untrusted design")
+                    .addParameter("metadata", "{\"survey\":{\"beforeLoad\":{\"fn\":\"function(){}\"},"
+                            + "\"sections\":[{\"title\":\"s\",\"questions\":[]}]}}");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, author));
+        }
+
+        @Test
+        public void testSurveyContainerScoping()
+        {
+            SurveyManager sm = SurveyManager.get();
+
+            SurveyDesign design = new SurveyDesign();
+            design.setLabel("Scoping test design for survey");
+             design = sm.saveSurveyDesign(_projectA, _user, design);
+
+            Survey survey = new Survey();
+            survey.setLabel("Scoping test survey");
+            survey.setSurveyDesignId(design.getRowId());
+            survey = sm.saveSurvey(_projectA, _user, survey);
+            int surveyRowId = survey.getRowId();
+
+            assertNotNull("Survey should be visible from its own container", sm.getSurvey(_projectA, _user, surveyRowId));
+            assertNull("Survey must NOT be visible from another container", sm.getSurvey(_projectB, _user, surveyRowId));
+
+            // A delete issued from the wrong container must not remove the survey
+            sm.deleteSurvey(_projectB, _user, surveyRowId);
+            assertNotNull("Cross-container delete must be a no-op", sm.getSurvey(_projectA, _user, surveyRowId));
+
+            // A delete from the correct container removes it
+            sm.deleteSurvey(_projectA, _user, surveyRowId);
+            assertNull("Same-container delete should remove the survey", sm.getSurvey(_projectA, _user, surveyRowId));
         }
     }
 }

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2023-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
@@ -172,10 +187,10 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
 
     private static List<char[]> removeDuplicateSubstringsBetweenSegments(List<char[]> segments)
     {
-        char[] firstSegment = segments.get(0);
+        char[] firstSegment = segments.getFirst();
         List<char[]> filtered = remove(segments.subList(1, segments.size()), firstSegment);
         List<char[]> ret = filtered.size() > 1 ? removeDuplicateSubstringsBetweenSegments(filtered) : filtered;
-        ret.add(0, firstSegment);
+        ret.addFirst(firstSegment);
 
         return ret;
     }

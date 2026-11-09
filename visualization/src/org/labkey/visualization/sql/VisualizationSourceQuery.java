@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
-import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.VisualizationAggregateColumn;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 
@@ -590,7 +589,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
-    public String getSQL(VisualizationSourceColumn.Factory factory) throws SQLGenerationException
+    public String getSQL(VisualizationSourceColumn.Factory factory)
     {
         return getSelectClause(factory) + "\n" +
                 getFromClause() + "\n" +

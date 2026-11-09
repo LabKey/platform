@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,9 @@ public class JobRunner implements Executor
     }
 
     /**
-     * Waits for all submitted jobs to complete. Does not require shutdown.
+     * Waits for all submitted jobs to complete. Jobs can be scheduled in the future, so this can be a long wait.
+     * Does not require shutdown.
+     * Callers should prefer using Future.get() from the result of JobRunner.execute().
      */
     public void waitForCompletion()
     {
@@ -149,7 +151,7 @@ public class JobRunner implements Executor
 
         synchronized (_jobs)
         {
-            Future<?> task = _executor.schedule(command, delay, TimeUnit.MILLISECONDS);
+            Future<?> task = _executor.schedule(job::runJob, delay, TimeUnit.MILLISECONDS);
 
             job._task = task;
             _jobs.put(task, job);

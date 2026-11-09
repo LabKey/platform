@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,7 +287,7 @@ public class CohortFilterFactory
                 continue;
             }
 
-            if (StringUtils.isEmpty(dataregion) || !StringUtils.startsWithIgnoreCase(name, dataregion + "."))
+            if (StringUtils.isEmpty(dataregion) || !Strings.CI.startsWith(name, dataregion + "."))
                 continue;
             int tilde = name.indexOf('~');
             if (-1 == tilde || -1 == name.indexOf('/'))
@@ -333,7 +333,7 @@ public class CohortFilterFactory
         List<String> parts = fk.getParts();
         if (!parts.isEmpty())
         {
-            String first = parts.get(0);
+            String first = parts.getFirst();
             if (Strings.CI.equals(first, subject))
             {
                 ArrayList<String> t = new ArrayList<>(parts);

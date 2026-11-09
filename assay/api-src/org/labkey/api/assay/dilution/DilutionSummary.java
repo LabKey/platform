@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class DilutionSummary implements Serializable
         ensureSameSample(sampleGroups);
         _curveFitType = curveFitType;
         _sampleGroups = sampleGroups;
-        _firstGroup = sampleGroups.get(0);
+        _firstGroup = sampleGroups.getFirst();
         _assay = assay;
         _lsid = lsid;
         _container = container;
@@ -76,8 +76,8 @@ public class DilutionSummary implements Serializable
 
     private void ensureSameSample(List<WellGroup> groups)
     {
-        String templateName = groups.get(0).getPlate().getName();
-        String wellgroupName = groups.get(0).getName();
+        String templateName = groups.getFirst().getPlate().getName();
+        String wellgroupName = groups.getFirst().getName();
         for (int groupIndex = 1; groupIndex < groups.size(); groupIndex++)
         {
             if (!templateName.equals(groups.get(groupIndex).getPlate().getName()))
@@ -148,21 +148,24 @@ public class DilutionSummary implements Serializable
         return (String) _firstGroup.getProperty(SampleProperty.SampleDescription.name());
     }
 
-    private Map<WellData, WellGroup> _dataToSample;
+    private volatile Map<WellData, WellGroup> _dataToSample;
     private Map<WellData, WellGroup> getDataToSampleMap()
     {
-        if (_dataToSample == null)
+        Map<WellData, WellGroup> dataToSample = _dataToSample;
+        if (dataToSample == null)
         {
-            _dataToSample = new HashMap<>();
+            // Populate before publishing, since cached runs are shared by concurrent graph requests
+            dataToSample = new HashMap<>();
             for (WellGroup sampleGroup : _sampleGroups)
             {
                 for (WellData data : sampleGroup.getWellData(true))
                 {
-                    _dataToSample.put(data, sampleGroup);
+                    dataToSample.put(data, sampleGroup);
                 }
             }
+            _dataToSample = dataToSample;
         }
-        return _dataToSample;
+        return dataToSample;
     }
 
     public double getPercent(WellData data) throws FitFailedException

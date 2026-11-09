@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -77,6 +79,7 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +108,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     // but may make _cache susceptible to concurrency conflicts or security problems -- more investigation is needed
     // private static Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
     private final Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
+
+    // GH Issue 1512: does this query expose a PK? Lets lookup-target enumeration skip re-resolving known no-PK queries.
+    // Keyed by resolving container + schema path + name + Modified; cleared on any QueryDef/schema change (a query's PK
+    // can shift without its own row changing, via chained queries, source metadata, or schema reloads).
+    private static final Cache<String, Boolean> HAS_PK_COLUMN_CACHE = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.MONTH, "Query has-PK-column flags");
 
     private Map<String, TableType> _metadataTableMap = null;
 
@@ -217,7 +225,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 String referrer = request.getHeader("Referer");
                 extra = " [url=" + request.getRequestURI() + (null != referrer ? ", referrer=" + referrer : "") + "]";
             }
-            log.info("Could not find the requested custom view named '" + name + "'" + " in " + getSchemaPath() + "." + getQueryDef().getName() + " in the container " + _container.getPath() + " for user " + owner + extra);
+            log.info("Could not find the requested custom view named '{}' in {}.{} in the container {} for user {}{}", name, getSchemaPath(), getQueryDef().getName(), _container.getPath(), owner, extra);
         }
         return result;
     }
@@ -482,7 +490,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         String sql = getSql();
         if (sql != null)
         {
-            log.debug("Parsing query " + schema.getSchemaName() + "." + getName());
+            log.debug("Parsing query {}.{}", schema.getSchemaName(), getName());
             query.parse(sql, skipSuggestedColumns);
         }
         if (includeMetadata)
@@ -569,12 +577,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 if (null == table || (null != errors && !errors.isEmpty() && !errors.stream().allMatch(error -> error instanceof QueryParseException && ((QueryParseException)error).isWarning())))
                     return null;
 
-                log.debug("Caching table " + schema.getName() + "." + table.getName());
+                log.debug("Caching table {}.{}", schema.getName(), table.getName());
                 _cache.put(key, table);
             }
             else
             {
-                log.debug("Returning cached table '" + getName() + "', " + (includeMetadata ? "with" : "without") + " metadata");
+                log.debug("Returning cached table '{}', {} metadata", getName(), includeMetadata ? "with" : "without");
             }
 
             return table;
@@ -812,6 +820,46 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public boolean isIncludedForLookups()
     {
         return _includedForLookups;
+    }
+
+    // GH Issue 1512: cache-busting token for the has-PK cache. DB queries use Modified; subclasses override (e.g. a
+    // file-based module query uses its .sql mtime). Null means "don't cache" (unsaved/transient def).
+    @Nullable
+    protected String getHasPkCacheVersion()
+    {
+        Date modified = _queryDef.getModified();
+        return null == modified ? null : String.valueOf(modified.getTime());
+    }
+
+    // GH Issue 1512: key on the resolving container, not the defining one: an inheritable/shared query compiles to a
+    // different table, and PK, per folder.
+    @Nullable
+    private String getHasPkColumnCacheKey()
+    {
+        String version = getHasPkCacheVersion();
+        if (null == version || null == getContainer() || null == getName())
+            return null;
+        return getContainer().getId() + "/" + getSchemaPath() + "/" + getName() + "/" + version;
+    }
+
+    public static void clearHasPkColumnCache()
+    {
+        HAS_PK_COLUMN_CACHE.clear();
+    }
+
+    /** @return cached PK-presence for this query, or null if not cached */
+    @Nullable
+    public Boolean getCachedHasPkColumn()
+    {
+        String key = getHasPkColumnCacheKey();
+        return null == key ? null : HAS_PK_COLUMN_CACHE.get(key);
+    }
+
+    public void cacheHasPkColumn(boolean hasPkColumn)
+    {
+        String key = getHasPkColumnCacheKey();
+        if (null != key)
+            HAS_PK_COLUMN_CACHE.put(key, hasPkColumn);
     }
 
     @Override
@@ -1075,7 +1123,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 {
                     // Don't completely die if someone specified invalid metadata XML. Log a warning
                     // and render without the custom metadata.
-                    log.warn("Unable to parse metadata XML for " + getSchemaName() + "." + getName() + " in " + getContainer(), e);
+                    log.warn("Unable to parse metadata XML for {}.{} in {}", getSchemaName(), getName(), getContainer(), e);
                 }
             }
             if (_document == null)

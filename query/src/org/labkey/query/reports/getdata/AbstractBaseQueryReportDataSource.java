@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public abstract class AbstractBaseQueryReportDataSource implements QueryReportDa
         TableInfo table = sourceQueryDef.getTable(getSchema(), errors, true);
         if (!errors.isEmpty())
         {
-            throw errors.get(0);
+            throw errors.getFirst();
         }
         return QueryService.get().getColumns(table, requiredInputs);
     }

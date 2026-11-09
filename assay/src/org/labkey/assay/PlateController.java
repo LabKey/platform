@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.JsonInputLimit;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -46,7 +45,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -59,6 +57,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.usageMetrics.AssayMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
@@ -76,7 +75,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ZipFile;
-import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetExport;
@@ -85,7 +83,6 @@ import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.WellGroupImpl;
 import org.labkey.assay.plate.model.CreatePlateSetOptions;
 import org.labkey.assay.plate.model.ReformatOptions;
-import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -214,17 +211,6 @@ public class PlateController extends SpringActionController
         {
             root.addChild("Plates");
         }           
-    }
-
-    /** Delete soon! */
-    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public static class DesignerServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService() throws IllegalStateException
-        {
-            return new PlateDataServiceImpl(getViewContext());
-        }
     }
 
     public static class RowIdForm
@@ -605,63 +591,6 @@ public class PlateController extends SpringActionController
         {
             setHelpTopic("editPlateTemplate");
             root.addChild("Plate Editor");
-        }
-    }
-
-    /** Delete soon! */
-    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public class DesignerGwtAction extends SimpleViewAction<DesignerForm>
-    {
-        @Override
-        public ModelAndView getView(DesignerForm form, BindException errors)
-        {
-            Map<String, String> properties = new HashMap<>();
-            String templateName = null;
-            Long plateId = null;
-
-            if (form.getTemplateName() != null)
-            {
-                plateId = form.getPlateId();
-                templateName = form.getTemplateName();
-            }
-            else if (form.getPlateId() != null)
-            {
-                Plate plate = PlateManager.get().getPlate(getContainer(), form.getPlateId());
-                if (plate != null)
-                {
-                    plateId = plate.getRowId();
-                    templateName = plate.getName();
-                }
-            }
-
-            if (templateName != null)
-            {
-                properties.put("copyTemplate", Boolean.toString(form.isCopy()));
-                properties.put("templateName", templateName);
-                if (plateId != null)
-                    properties.put("plateId", String.valueOf(plateId));
-                if (form.isCopy())
-                    properties.put("defaultPlateName", getUniqueName(getContainer(), templateName));
-                else
-                    properties.put("defaultPlateName", templateName);
-            }
-
-            if (form.getAssayType() != null)
-                properties.put("assayTypeName", form.getAssayType());
-            if (form.getTemplateType() != null)
-                properties.put("templateTypeName", form.getTemplateType());
-
-            properties.put("templateRowCount", String.valueOf(form.getRowCount()));
-            properties.put("templateColumnCount", String.valueOf(form.getColCount()));
-
-            return new AssayGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("editPlateTemplate");
-            root.addChild("Plate Editor (GWT)");
         }
     }
 
@@ -1718,7 +1647,7 @@ public class PlateController extends SpringActionController
                 String fullFileName = plateSetSource.getName() + " - " + plateSetDestination.getName();
 
                 PlateManager.get().getPlateSetExportFile(fullFileName, exportColumns, plateDataRows, form.getFileType(), getViewContext().getResponse());
-                SimpleMetricsService.get().increment(AssayModule.NAME, "plateSet", "exportWorklist");
+                SimpleMetricsService.get().increment(AssayMetricArea.PLATE_SET, "exportWorklist");
             }
             catch (Exception e)
             {
@@ -1888,19 +1817,19 @@ public class PlateController extends SpringActionController
 
             if (form.getExportType() == PlateExportType.CSV)
             {
-                metricsService.increment(AssayModule.NAME, "plate", "exportCSV");
+                metricsService.increment(AssayMetricArea.PLATE, "exportCSV");
                 fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.COMMA);
                 fileExtension = TSVWriter.DELIM.COMMA.extension;
             }
             else if (form.getExportType() == PlateExportType.TSV)
             {
-                metricsService.increment(AssayModule.NAME, "plate", "exportTSV");
+                metricsService.increment(AssayMetricArea.PLATE, "exportTSV");
                 fileBytes = PlateManager.get().exportPlateData(getContainer(), getUser(), cf, form.getPlateIds(), TSVWriter.DELIM.TAB);
                 fileExtension = TSVWriter.DELIM.TAB.extension;
             }
             else
             {
-                metricsService.increment(AssayModule.NAME, "plate", "exportMAP");
+                metricsService.increment(AssayMetricArea.PLATE, "exportMAP");
                 fileBytes = PlateManager.get().exportPlateMaps(getContainer(), getUser(), cf, form.getPlateIds());
                 fileExtension = "xlsx";
             }
@@ -1911,7 +1840,7 @@ public class PlateController extends SpringActionController
             }
             else if (fileBytes.size() == 1)
             {
-                PlateManager.PlateFileBytes plateFileBytes = fileBytes.get(0);
+                PlateManager.PlateFileBytes plateFileBytes = fileBytes.getFirst();
                 String fileName = FileUtil.makeLegalName(plateFileBytes.plateName() + mapSuffix + "." + fileExtension);
                 PageFlowUtil.streamFileBytes(getViewContext().getResponse(), fileName, plateFileBytes.bytes().toByteArray(), true);
                 return null;

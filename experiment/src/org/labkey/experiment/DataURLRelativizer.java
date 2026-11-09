@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.labkey.experiment;
 
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
@@ -25,7 +24,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 /**
@@ -74,7 +72,7 @@ public enum DataURLRelativizer
             return new URLRewriter()
             {
                 @Override
-                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun expRun, User user, String rootFilePath) throws ExperimentException
+                public String rewriteURL(Path path, ExpData data, String roleName, ExpRun expRun, User user, String rootFilePath)
                 {
                     if (path == null)
                         return null;

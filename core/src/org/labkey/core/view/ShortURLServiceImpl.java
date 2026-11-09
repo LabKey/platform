@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class ShortURLServiceImpl implements ShortURLService
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoShortURL(), "s");
-        sql.append(" WHERE LOWER(ShortURL) = LOWER(?)");
+        sql.unsafeAppend(" WHERE LOWER(ShortURL) = LOWER(?)");
         sql.add(shortURL);
         return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getObject(ShortURLRecord.class);
     }
@@ -79,7 +79,7 @@ public class ShortURLServiceImpl implements ShortURLService
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoShortURL(), "s");
-        sql.append(" ORDER BY LOWER(ShortURL)");
+        sql.unsafeAppend(" ORDER BY LOWER(ShortURL)");
         return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ShortURLRecord.class);
     }
 

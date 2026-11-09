@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,12 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-
-/**
- * User: matthewb
- * Date: 2012-01-24
- * Time: 3:03 PM
- */
 public class SessionHelper
 {
     private static final LockManager<HttpSession> LOCK_MANAGER = new LockManager<>();

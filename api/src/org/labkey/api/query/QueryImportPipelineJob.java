@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2020-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
@@ -14,9 +29,9 @@ import org.labkey.api.pipeline.PipelineJobNotificationProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
 
 import java.util.HashMap;
@@ -35,6 +50,8 @@ public class QueryImportPipelineJob extends PipelineJob
     private QueryImportAsyncContextBuilder _importContextBuilder;
 
     private long _transactionAuditId;
+
+    private Map<String, Object> _additionalJobResponseInfo;
 
     protected QueryImportPipelineJob()
     {}
@@ -279,7 +296,7 @@ public class QueryImportPipelineJob extends PipelineJob
             }
 
             url =  target.getGridURL(getContainer());
-            if (_transactionAuditId > 0)
+            if (url != null && _transactionAuditId > 0)
                 url.addParameter("transactionAuditId", String.valueOf(_transactionAuditId));
 
             return url;
@@ -305,7 +322,7 @@ public class QueryImportPipelineJob extends PipelineJob
         try
         {
             setStatus(TaskStatus.running);
-            getLogger().info("Starting import " + getDescription());
+            getLogger().info("Starting import {}", getDescription());
 
             if (notificationProvider != null)
                 notificationProvider.onJobStart(this);
@@ -324,27 +341,30 @@ public class QueryImportPipelineJob extends PipelineJob
 
             DataIteratorContext diContext = createDataIteratorContext(ve, getContainer());
 
-            if (_importContextBuilder.getWorkflowParams() != null && WorkflowService.get() != null)
+            QueryWorkflowHandler workflowHandler = QueryWorkflowHandler.get();
+            if (_importContextBuilder.getWorkflowParams() != null && workflowHandler != null)
             {
-                WorkflowService.get().populateConfigParams(_importContextBuilder.getWorkflowParams(), diContext.getConfigParameters());
+                workflowHandler.populateConfigParams(_importContextBuilder.getWorkflowParams(), diContext.getConfigParameters());
             }
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))
                 auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction, _importContextBuilder.getTransactionDetails());
 
-            int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
-
-            if (ve.hasErrors())
+            int importedCount;
+            try (TracedOperation op = AbstractQueryImportAction.importDataOperation(target, getContainer()).start())
             {
-                AbstractQueryImportAction.addImportValidationErrorMetric(_importContextBuilder.getInsertOption(), target, null);
-                throw ve;
+                importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
+
+                if (ve.hasErrors())
+                {
+                    AbstractQueryImportAction.addImportValidationErrorMetric(_importContextBuilder.getInsertOption(), target, null);
+                    throw ve;
+                }
+                op.completed(importedCount);
             }
 
             if (auditEvent != null)
                 _transactionAuditId = auditEvent.getRowId();
-
-            setStatus(TaskStatus.complete);
-            getLogger().info("Done importing " + getDescription() + ". " + importedCount + " row(s) imported.");
 
             if (notificationProvider != null)
             {
@@ -359,8 +379,15 @@ public class QueryImportPipelineJob extends PipelineJob
 
                 if (!diContext.getResponseInfo().isEmpty())
                     results.putAll(diContext.getResponseInfo());
-                notificationProvider.onJobSuccess(this, results);
+
+                _additionalJobResponseInfo = results;
             }
+
+            setStatus(TaskStatus.complete);
+            getLogger().info("Done importing {}. {} row(s) imported.", getDescription(), importedCount);
+
+            if (notificationProvider != null)
+                notificationProvider.onJobSuccess(this, getAdditionalJobResponseInfo());
         }
         catch (QueryImportJobCancelledException e)
         {
@@ -413,6 +440,17 @@ public class QueryImportPipelineJob extends PipelineJob
     public long getTransactionAuditId()
     {
         return _transactionAuditId;
+    }
+
+    public Map<String, Object> getAdditionalJobResponseInfo()
+    {
+        return _additionalJobResponseInfo;
+    }
+
+    public String getImportSourceDescription()
+    {
+        FileLike primaryFile = _importContextBuilder == null ? null : _importContextBuilder.getPrimaryFile();
+        return primaryFile != null ? primaryFile.getName() : "";
     }
 
 }

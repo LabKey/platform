@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,10 +197,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());
         if (null == def)
-            return new SQLFragment("NULL");
+            return SQLFragment.unsafe("NULL");
         TableInfo ti = def.getStorageTableInfo(false);
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT O.ObjectId FROM ").append(ti).append(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
+        sql.unsafeAppend("SELECT O.ObjectId FROM ").append(ti).unsafeAppend(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
         sql.add(def.getContainer());
         return sql;
     }
@@ -302,9 +302,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
         return Collections.unmodifiableSet(fields);
     }
-
-    @Override
-    public abstract @NotNull Set<String> getReservedPropertyNames(Domain domain, User user);
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)

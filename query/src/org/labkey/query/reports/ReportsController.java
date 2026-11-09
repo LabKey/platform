@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -77,11 +76,8 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.actions.ReportForm;
-import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.model.ViewInfo;
-import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
@@ -102,7 +98,6 @@ import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.report.view.AjaxScriptReportView;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
-import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
@@ -112,7 +107,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -123,9 +117,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.reports.CrosstabReport;
-import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
@@ -160,6 +152,10 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.query.DataViewsWebPartFactory;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.reports.model.DataViewEditForm;
+import org.labkey.query.reports.model.ViewInfo;
+import org.labkey.query.reports.report.view.RenderBackgroundRReportView;
+import org.labkey.query.thumbnail.BaseThumbnailAction;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.PropertyValue;
@@ -174,7 +170,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -283,16 +278,6 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlShareReport(Container c, Report r)
-        {
-            if (r.getDescriptor().getReportId() == null)
-                return null;
-            ActionURL url = new ActionURL(ShareReportAction.class, c);
-            url.addParameter("reportId", r.getDescriptor().getReportId().toString());
-            return url;
-        }
-
-        @Override
         public ActionURL urlImage(Container c, Report r, ImageType type, @Nullable Integer revision)
         {
             ActionURL url = new ActionURL(ThumbnailAction.class, c);
@@ -308,12 +293,6 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlReportInfo(Container c)
-        {
-            return new ActionURL(ReportInfoAction.class, c);
-        }
-
-        @Override
         public ActionURL urlAttachmentReport(Container c, ActionURL returnUrl)
         {
             return getCreateAttachmentReportURL(c, returnUrl);
@@ -326,9 +305,12 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlReportDetails(Container c, Report r)
+        public ActionURL urlReportDetails(Container c, @Nullable Report report)
         {
-            return new ActionURL(DetailsAction.class, c).addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+            ActionURL url = new ActionURL(DetailsAction.class, c);
+            if (report != null)
+                url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
+            return url;
         }
 
         @Override
@@ -837,7 +819,7 @@ public class ReportsController extends SpringActionController
             Report report = bean.getReport(getViewContext());
             if (report != null)
             {
-                _log.trace("Executing report: " + report.getClass().getSimpleName());
+                _log.trace("Executing report: {}", report.getClass().getSimpleName());
                 if (bean.getIsDirty())
                     report.clearCache();
 
@@ -852,9 +834,9 @@ public class ReportsController extends SpringActionController
                 else
                 {
                     HttpView<?> renderedReport = report.renderReport(getViewContext());
-                    _log.trace("Report views: " + (renderedReport == null ? null : (
+                    _log.trace("Report views: {}", renderedReport == null ? null : (
                             renderedReport.getViews() == null ? renderedReport.getClass().getSimpleName() :
-                                    renderedReport.getViews().stream().map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", ")))));
+                                    renderedReport.getViews().stream().map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", "))));
                     resultsView.addView(renderedReport);
                 }
             }
@@ -894,13 +876,13 @@ public class ReportsController extends SpringActionController
 
             if (mr.getStatus() != HttpServletResponse.SC_OK)
             {
-                _log.trace("Report error. Status: " + mr.getStatus());
+                _log.trace("Report error. Status: {}", mr.getStatus());
                 resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
                 return null;
             }
 
             final String html = mr.getContentAsString();
-            _log.trace("Report rendered. Size: " + html.length());
+            _log.trace("Report rendered. Size: {}", html.length());
             resultProperties.put("html", html);
             resultProperties.put("requiredJsScripts", includes);
             resultProperties.put("requiredCssScripts", cssScripts);
@@ -1040,115 +1022,6 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ShareReportPermission.class)
-    public static class ShareReportAction extends FormViewAction<ShareReportForm>
-    {
-        Report _report = null;
-        List<User> _validRecipients = new ArrayList<>();
-
-        @Override
-        public ModelAndView getView(ShareReportForm form, boolean reshow, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/reports/view/shareReport.jsp", form, errors);
-        }
-
-        @Override
-        public void validateCommand(ShareReportForm form, Errors errors)
-        {
-            _validRecipients = SecurityManager.parseRecipientListForContainer(getContainer(), form.getRecipientList(), errors);
-        }
-
-        @Override
-        public boolean handlePost(ShareReportForm form, BindException errors) throws Exception
-        {
-            if (null != form.getReportId())
-                _report = form.getReportId().getReport(getViewContext());
-
-            if (!errors.hasErrors() && !_validRecipients.isEmpty() && _report != null)
-            {
-                for (User recipient : _validRecipients)
-                {
-                    NotificationService.get().sendMessageForRecipient(
-                        getContainer(), getUser(), recipient,
-                        form.getMessageSubject(), form.getMessageBody(), _report.getRunReportURL(getViewContext()),
-                        form.getReportId().toString(), Report.SHARE_REPORT_TYPE
-                    );
-
-                    // if the report is already public, send the notification but don't update the policy
-                    if (!ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(_report.getDescriptor().getAccess()))
-                        ReportUtil.updateReportSecurityPolicy(getViewContext(), _report, recipient.getUserId(), true);
-
-                    String auditMsg = "The following report was shared: recipient: " + recipient.getName() + " (" + recipient.getUserId() + ")"
-                            + ", reportId: " + _report.getDescriptor().getReportId()
-                            + ", name: " + _report.getDescriptor().getReportName();
-                    StudyService.get().addStudyAuditEvent(getContainer(), getUser(), auditMsg);
-                }
-            }
-
-            return !errors.hasErrors();
-        }
-
-        @Override
-        public URLHelper getSuccessURL(ShareReportForm form)
-        {
-            if (_report != null && getContainer().hasPermission(getUser(), AdminPermission.class))
-            {
-                return urlProvider(StudyUrls.class).getManageReportPermissions(getContainer()).
-                        addParameter(ReportDescriptor.Prop.reportId, _report.getDescriptor().getReportId().toString());
-            }
-
-            return form.getReturnActionURL(form.getDefaultUrl(getContainer()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Share Report");
-        }
-    }
-
-    public static class ShareReportForm extends ReportDesignBean<Report>
-    {
-        private String _recipientList;
-        private String _messageSubject;
-        private String _messageBody;
-
-        public String getRecipientList()
-        {
-            return _recipientList;
-        }
-
-        public void setRecipientList(String recipientList)
-        {
-            _recipientList = recipientList;
-        }
-
-        public String getMessageSubject()
-        {
-            return _messageSubject;
-        }
-
-        public void setMessageSubject(String messageSubject)
-        {
-            _messageSubject = messageSubject;
-        }
-
-        public String getMessageBody()
-        {
-            return _messageBody;
-        }
-
-        public void setMessageBody(String messageBody)
-        {
-            _messageBody = messageBody;
-        }
-
-        public ActionURL getDefaultUrl(Container container)
-        {
-            return new ActionURL(ManageViewsAction.class, container);
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<ReportDesignBean<?>>
     {
@@ -1173,66 +1046,6 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public static class ReportInfoAction extends SimpleViewAction<ReportDesignBean<?>>
-    {
-        @Override
-        public ModelAndView getView(ReportDesignBean<?> form, BindException errors) throws Exception
-        {
-            return new ReportInfoView(form.getReport(getViewContext()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Report Debug Information");
-        }
-    }
-
-
-    public static class ReportInfoView extends HttpView<Object>
-    {
-        private final Report _report;
-
-        public ReportInfoView(Report report)
-        {
-            _report = report;
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out)
-        {
-            if (_report != null)
-            {
-                out.write("<table>");
-                addRow(out, "Name", PageFlowUtil.filter(_report.getDescriptor().getReportName()));
-
-                User user = UserManager.getUser(_report.getDescriptor().getCreatedBy());
-                if (user != null)
-                    addRow(out, "Created By", PageFlowUtil.filter(user.getDisplayName(getViewContext().getUser())));
-
-                addRow(out, "Key", PageFlowUtil.filter(_report.getDescriptor().getReportKey()));
-                for (Map.Entry<String, Object> prop : _report.getDescriptor().getProperties().entrySet())
-                {
-                    addRow(out, PageFlowUtil.filter(prop.getKey()), PageFlowUtil.filter(Objects.toString(prop.getValue(), "")));
-                }
-                out.write("<table>");
-            }
-            else
-                out.write("Report not found");
-        }
-
-        private void addRow(PrintWriter out, String key, String value)
-        {
-            out.write("<tr><td>");
-            out.write(key);
-            out.write("</td><td>");
-            out.write(value);
-            out.write("</td></tr>");
-        }
-    }
-
-
     protected void validatePermissions(ViewContext context, ScriptReport report, List<ValidationError> errors)
     {
         if (report != null)
@@ -1245,7 +1058,7 @@ public class ReportsController extends SpringActionController
 
                     if (engine != null)
                     {
-                        if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().get(0)))
+                        if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().getFirst()))
                             //TODO update the message text
                             errors.add(new SimpleValidationError("Only users with the site Analyst permission are allowed to create script views."));
                     }
@@ -1505,10 +1318,10 @@ public class ReportsController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String sessionKey = (String) getViewContext().get(ImageUtil.FILE_SESSION_PARAM);
-            String deleteFile = (String) getViewContext().get(ImageUtil.DELETE_FILE_PARAM);
-            String attachment = (String) getViewContext().get(ImageUtil.ATTACHMENT_PARAM);
-            String cacheFile = (String) getViewContext().get(ImageUtil.CACHE_FILE_PARAM);
+            String sessionKey = getViewContext().getString(ImageUtil.FILE_SESSION_PARAM);
+            String deleteFile = getViewContext().getString(ImageUtil.DELETE_FILE_PARAM);
+            String attachment = getViewContext().getString(ImageUtil.ATTACHMENT_PARAM);
+            String cacheFile = getViewContext().getString(ImageUtil.CACHE_FILE_PARAM);
             if (sessionKey != null)
             {
                 FileLike file = ImageUtil.getFileFromSession(getViewContext().getRequest(), sessionKey);
@@ -1521,13 +1334,13 @@ public class ReportsController extends SpringActionController
 
                         responseHeaders.put("Pragma", "private");
                         responseHeaders.put("Cache-Control", "private, max-age=3600");
-                        _log.debug("Caching file: " + file);
+                        _log.debug("Caching file: {}", file);
                     }
                     PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file, BooleanUtils.toBoolean(attachment));
                     if (BooleanUtils.toBoolean(deleteFile))
                     {
                         file.delete();
-                        _log.debug("Deleting file: " + file);
+                        _log.debug("Deleting file: {}", file);
                     }
                     return null;
                 }
@@ -1718,7 +1531,7 @@ public class ReportsController extends SpringActionController
                     {
                         // Convey previous state to save code, otherwise admins will be denied the ability to unshare.
                         descriptor.setWasShared();
-                        descriptor.setOwner(descriptor.getCreatedBy());
+                        descriptor.setOwner(descriptor.getCreatedBy() != 0 ? descriptor.getCreatedBy() : getUser().getUserId());
                     }
                 }
                 else
@@ -2421,8 +2234,8 @@ public class ReportsController extends SpringActionController
         public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier((String)getViewContext().get(ReportDescriptor.Prop.reportId.name()), getViewContext().getUser(), getViewContext().getContainer());
-            String sections = (String)getViewContext().get(Report.renderParam.showSection.name());
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(getViewContext().getString(ReportDescriptor.Prop.reportId.name()), getViewContext().getUser(), getViewContext().getContainer());
+            String sections = getViewContext().getString(Report.renderParam.showSection.name());
             if (reportId != null)
             {
                 Report report = reportId.getReport(getViewContext());

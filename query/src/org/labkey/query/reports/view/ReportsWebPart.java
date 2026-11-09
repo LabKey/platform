@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
-import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -32,8 +31,8 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.HtmlWriter;
+import org.labkey.query.reports.report.view.RenderBackgroundRReportView;
 
-import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Objects;
 
@@ -87,7 +86,7 @@ public class ReportsWebPart extends WebPartView<Object>
                 getViewContext().put(Report.renderParam.reportSessionId.name(), properties.get(Report.renderParam.reportSessionId.name()));
         }
 
-        if (_report != null)
+        if (_report != null && _report.isShowInReportsWebPart())
         {
             HttpView view;
 

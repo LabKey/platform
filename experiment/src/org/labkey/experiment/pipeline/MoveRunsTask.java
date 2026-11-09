@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 if (newData != null)
                 {
                     ExperimentDataHandler handler = newData.findDataHandler();
-                    handler.runMoved(newData, experimentRun.getContainer(), job.getContainer(), experimentRun.getLSID(), runLSIDs.get(0), job.getUser(), dataFiles.get(dataURL));
+                    handler.runMoved(newData, experimentRun.getContainer(), job.getContainer(), experimentRun.getLSID(), runLSIDs.getFirst(), job.getUser(), dataFiles.get(dataURL));
                 }
             }
             transaction.commit();

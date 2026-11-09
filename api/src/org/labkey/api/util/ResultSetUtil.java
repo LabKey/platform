@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2003-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,21 +130,21 @@ public class ResultSetUtil
 
             for (int i = 1; i <= md.getColumnCount(); i++)
             {
-                _log.info("Name: " + md.getColumnName(i));
-                _log.info("Label: " + md.getColumnLabel(i));
-                _log.info("Type: " + md.getColumnType(i));
-                _log.info("Display Size: " + md.getColumnDisplaySize(i));
-                _log.info("Type Name: " + md.getColumnTypeName(i));
-                _log.info("Precision: " + md.getPrecision(i));
-                _log.info("Scale: " + md.getScale(i));
-                _log.info("Schema: " + md.getSchemaName(i));
-                _log.info("Table: " + md.getTableName(i));
+                _log.info("Name: {}", md.getColumnName(i));
+                _log.info("Label: {}", md.getColumnLabel(i));
+                _log.info("Type: {}", md.getColumnType(i));
+                _log.info("Display Size: {}", md.getColumnDisplaySize(i));
+                _log.info("Type Name: {}", md.getColumnTypeName(i));
+                _log.info("Precision: {}", md.getPrecision(i));
+                _log.info("Scale: {}", md.getScale(i));
+                _log.info("Schema: {}", md.getSchemaName(i));
+                _log.info("Table: {}", md.getTableName(i));
                 _log.info("========================");
             }
         }
         catch (SQLException e)
         {
-            _log.error("logMetaData: " + e);
+            _log.error("logMetaData: {}", String.valueOf(e));
         }
     }
 

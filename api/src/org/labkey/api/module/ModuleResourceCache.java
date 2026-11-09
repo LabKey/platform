@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
             }
         };
 
-        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, _loader);  // Cache is one entry per module
+        _cache = CacheManager.getBlockingCache(String.class, Constants.getMaxModules(), CacheManager.DAY, description, _loader);  // Cache is one entry per module
         _handler = handler;
 
         ContextListener.addModuleChangeListener(this);
@@ -261,7 +261,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
         if (_pathsWithListeners.add(getPathsWithListenersKey(module, mdr.getDir().toPath())))
         {
-            LOG.debug("registering a listener on: " + resource);
+            LOG.debug("registering a listener on: {}", resource);
             mdr.registerListener(_watcher, getListener(module), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,10 +102,10 @@ public class LineageClause extends CompareType.CompareClause
             return new SQLFragment("(1 = 2)");
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(").appendIdentifier(alias).append(") IN (");
-        sql.append("SELECT ").append(getLsidColumn()).append(" FROM (");
+        sql.unsafeAppend("(").appendIdentifier(alias).unsafeAppend(") IN (");
+        sql.unsafeAppend("SELECT ").append(getLsidColumn()).unsafeAppend(" FROM (");
         sql.append(tree);
-        sql.append(") AS X)");
+        sql.unsafeAppend(") AS X)");
 
         return sql;
     }

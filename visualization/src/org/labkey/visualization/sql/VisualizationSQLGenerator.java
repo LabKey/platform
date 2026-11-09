@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.labkey.visualization.sql;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -46,6 +46,7 @@ import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationAggregateColumn;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.VisualizationController;
 import org.labkey.visualization.test.VisTestSchema;
@@ -61,7 +62,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -108,11 +108,11 @@ public class VisualizationSQLGenerator implements HasViewContext
     }
 
 
-    private final Map<String, VisualizationProvider> _providers = new CaseInsensitiveHashMap<>();
+    private final Map<String, VisualizationProvider<?>> _providers = new CaseInsensitiveHashMap<>();
 
-    public VisualizationProvider ensureVisualizationProvider(String schemaName, VisualizationProvider.ChartType type)
+    public VisualizationProvider<?> ensureVisualizationProvider(String schemaName, VisualizationProvider.ChartType type)
     {
-        VisualizationProvider provider = _providers.get(schemaName);
+        VisualizationProvider<?> provider = _providers.get(schemaName);
         if (provider == null)
         {
             UserSchema userSchema = QueryService.get().getUserSchema(_viewContext.getUser(), _viewContext.getContainer(), schemaName);
@@ -120,7 +120,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             {
                 throw new IllegalArgumentException("No such schema: " + schemaName);
             }
-            provider = userSchema.createVisualizationProvider();
+            provider = VisualizationSchema.getProvider(userSchema);
             if (provider == null)
             {
                 throw new IllegalArgumentException("No provider available for schema: " + userSchema.getSchemaPath());
@@ -136,9 +136,9 @@ public class VisualizationSQLGenerator implements HasViewContext
         return provider;
     }
 
-    public @NotNull VisualizationProvider getVisualizationProvider(String schema)
+    public @NotNull VisualizationProvider<?> getVisualizationProvider(String schema)
     {
-        VisualizationProvider provider = _providers.get(schema);
+        VisualizationProvider<?> provider = _providers.get(schema);
         if (provider == null)
             throw new IllegalStateException("No provider configured for schema " + schema);
         return provider;
@@ -213,7 +213,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 else
                     throw new IllegalArgumentException("Only time charts are currently supported: expected 'time' property on each measure.");
 
-                VisualizationProvider provider = ensureVisualizationProvider(query.getSchemaName(), type);
+                VisualizationProvider<?> provider = ensureVisualizationProvider(query.getSchemaName(), type);
                 VisualizationIntervalColumn newInterval = null;
                 switch (type)
                 {
@@ -241,23 +241,9 @@ public class VisualizationSQLGenerator implements HasViewContext
 
                                 newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval, false);
                             }
-                            else if (dateOptions.isZeroDayVisitTagSet())
-                            {
-                                VisualizationSourceColumn zeroDayCol = null;
-                                boolean useProtocolDay = dateOptions.isUseProtocolDay();
-
-                                //  Issue 20459: handle 'Unaligned' (i.e. null zero day) case for calculating weeks/months
-                                if (null != dateOptions.getZeroDayVisitTag())
-                                {
-                                    zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", false, dateOptions);
-                                    ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
-                                }
-
-                                newInterval = new VisualizationIntervalColumn(zeroDayCol, measureCol, interval, true);
-                            }
                             else
                             {
-                                throw new IllegalArgumentException("The 'zeroDayVisitTag' property or the 'dateCol' and 'zeroDateCol' properties are required.");
+                                throw new IllegalArgumentException("Either 'dateCol' or 'zeroDateCol' must be specified for date-based charts");
                             }
 
                             if (interval != null)
@@ -270,6 +256,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                                         if (existingInterval.getStartCol() == newInterval.getStartCol() && existingInterval.getInterval() == newInterval.getInterval())
                                         {
                                             foundMatch = true;
+                                            break;
                                         }
                                     }
                                     if (!foundMatch)
@@ -358,7 +345,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         {
             _groupBys.addAll(groupBys.stream()
                     .map(additionalSelectInfo -> _columnFactory.create(getViewContext(), additionalSelectInfo))
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         ensureJoinColumns();
@@ -484,7 +471,6 @@ public class VisualizationSQLGenerator implements HasViewContext
 
 
     private String wrapInGroupBy(IVisualizationSourceQuery joinQuery, List<IVisualizationSourceQuery> queries, String sql)
-            throws SQLGenerationException
     {
         Map<String, Set<VisualizationSourceColumn>> columnAliases = getColumnMapping(_columnFactory, queries);
 
@@ -512,7 +498,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         }
         selectSQL.append(groupByAndOrderBySQL);
 
-        for (VisualizationProvider provider : _providers.values())
+        for (VisualizationProvider<?> provider : _providers.values())
         {
             provider.appendAggregates(groupByAndOrderBySQL, columnAliases, _intervals, "x", joinQuery, false);
             provider.appendAggregates(selectSQL, columnAliases, _intervals, "x", joinQuery, true);
@@ -557,7 +543,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 aggregatedSQL.append(separator);
                 separator = " AND ";
                 aggregatedSQL.append("x.");
-                VisualizationSourceColumn vsc = (VisualizationSourceColumn)pickFirst(columnAliases.get(pair.getKey().getOriginalName()));
+                VisualizationSourceColumn vsc = pickFirst(columnAliases.get(pair.getKey().getOriginalName()));
                 aggregatedSQL.append(vsc.getSQLAlias());
                 aggregatedSQL.append(" = ");
                 aggregatedSQL.append(groupByQuery.getSQLAlias());
@@ -610,7 +596,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         {
             if (query.getJoinTarget() == null)
             {
-                reorderedQueries.add(0, query);
+                reorderedQueries.addFirst(query);
             }
             else
             {
@@ -628,7 +614,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 boolean isJoinColumn = true;
                 for (VisualizationSourceColumn select : entry.getValue())
                 {
-                    VisualizationProvider provider = getVisualizationProvider(select.getSchemaName());
+                    VisualizationProvider<?> provider = getVisualizationProvider(select.getSchemaName());
                     if (!provider.isJoinColumn(select, getViewContext().getContainer()))
                     {
                         isJoinColumn = false;
@@ -685,9 +671,9 @@ public class VisualizationSQLGenerator implements HasViewContext
                 selectAlias = parentQuery.getSelectListName(selectAliases);
             else
             {
-                VisualizationSourceColumn col = (VisualizationSourceColumn)pickFirst(selectAliases);
+                VisualizationSourceColumn col = pickFirst(selectAliases);
                 String label = col.getLabel();
-                selectAlias = col.getSQLAlias() + (null == label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'", "''") + "'");
+                selectAlias = col.getSQLAlias() + (null == label ? " @preservetitle" : " @title='" + Strings.CS.replace(label,"'", "''") + "'");
                 if (col.isHidden())
                     selectAlias += " @hidden";
 
@@ -941,7 +927,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         // The default column mapping references the first available valid alias:
         for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
-            result.addAll(entry.getValue().stream().collect(Collectors.toList()));
+            result.addAll(entry.getValue().stream().toList());
         }
 
         return new ArrayList<>(result);
@@ -964,7 +950,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             {
                 for (VisualizationSourceColumn select : columnSet)
                 {
-                    VisualizationProvider provider = getVisualizationProvider(select.getSchemaName());
+                    VisualizationProvider<?> provider = getVisualizationProvider(select.getSchemaName());
                     if (!provider.isJoinColumn(select, getViewContext().getContainer()))
                         result.add(select.toJSON());
                 }
@@ -994,7 +980,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             {
                 for (VisualizationSourceColumn select : entry.getValue())
                 {
-                    VisualizationProvider provider = getVisualizationProvider(select.getSchemaName());
+                    VisualizationProvider<?> provider = getVisualizationProvider(select.getSchemaName());
                     if (!provider.isJoinColumn(select, getViewContext().getContainer()))
                         colMap.put(select.getAlias(), select.getAlias());
                 }
@@ -1006,12 +992,7 @@ public class VisualizationSQLGenerator implements HasViewContext
 
     private static void addToColMap(Map<String, Set<VisualizationSourceColumn>> colMap, String name, Set<VisualizationSourceColumn> newAliases)
     {
-        Set<VisualizationSourceColumn> aliases = colMap.get(name);
-        if (aliases == null)
-        {
-            aliases = new LinkedHashSet<>();
-            colMap.put(name, aliases);
-        }
+        Set<VisualizationSourceColumn> aliases = colMap.computeIfAbsent(name, _ -> new LinkedHashSet<>());
         aliases.addAll(newAliases);
     }
 
@@ -1042,7 +1023,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         {
             throw new NotFoundException("No primary schema found.");
         }
-        VisualizationSourceQuery firstQuery = (VisualizationSourceQuery)pickFirst(_sourceQueries.values());
+        VisualizationSourceQuery firstQuery = pickFirst(_sourceQueries.values());
         return firstQuery.getSchema();
     }
 
@@ -1064,7 +1045,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         return builder.toString();
     }
 
-    static Object pickFirst(Collection set)
+    static <T> T pickFirst(Collection<T> set)
     {
         set.iterator().hasNext();
         return set.iterator().next();
@@ -1146,7 +1127,8 @@ public class VisualizationSQLGenerator implements HasViewContext
             VisualizationSQLGenerator gen = getVSQL(q);
             UserSchema schema = new VisTestSchema(context.getUser(), context.getContainer());
             String sql = gen.getSQL();
-            return QueryService.get().selectResults(schema, sql, null, null, true, true);
+            // Pass true for a cached, scrollable result set so callers can use getSize() and beforeFirst()
+            return QueryService.get().getSelectBuilder(schema, sql, true).select(true);
         }
 
 
@@ -1171,7 +1153,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 assertEquals(48,r.getSize());
                 assertEquals(3, r.getMetaData().getColumnCount());
                 ColumnInfo ci = r.getColumnInfo(1);
-                assertTrue(StringUtils.endsWith(ci.getName(), "_age"));
+                assertTrue(Strings.CS.endsWith(ci.getName(), "_age"));
             }
 
             q.addMeasure(ptid);
@@ -1180,7 +1162,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 assertEquals(48,r.getSize());
                 assertEquals(3, r.getMetaData().getColumnCount());
                 ColumnInfo ci = r.getColumnInfo(2);
-                assertTrue(StringUtils.endsWith(ci.getName(), "_participantid"));
+                assertTrue(Strings.CS.endsWith(ci.getName(), "_participantid"));
             }
 
             q.addMeasure(gender);
@@ -1224,7 +1206,7 @@ public class VisualizationSQLGenerator implements HasViewContext
 
             // it seems strange to filter by using a sort?  but OK
             VisDataRequest.Measure ptidList = new VisDataRequest.Measure("vis_junit", "demographics", "participantid");
-            ptidList.setValues((List)VisTestSchema.humans);
+            ptidList.setValues(VisTestSchema.humans);
             q.addSort(ptidList);
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
@@ -1258,7 +1240,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
                 // this is a surprise! we're implicitly grouping by participant,visit as well as gender
-                assertTrue(48 == r.getSize());        // Female, female, Male, male, null
+                assertEquals(48, r.getSize());        // Female, female, Male, male, null
                 assertEquals(8, r.getMetaData().getColumnCount());  // gender, count(*), avg(), stddev(), stderr()
             }
 
@@ -1315,7 +1297,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             q.addMeasure(ptid).addMeasure(condition);
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
-                assertTrue(48 == r.getSize());
+                assertEquals(48, r.getSize());
                 assertEquals(4, r.getMetaData().getColumnCount());
             }
 

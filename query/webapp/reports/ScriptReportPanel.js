@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -598,19 +598,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             scope: this,
             handler: function() {
                 this.showSaveReportPrompt(this.saveURL, 'Save Report As', true);
-            }
-        });
-
-        items.push({
-            xtype: 'button',
-            text: 'Share Report',
-            hidden: !this.allowShareReport || this.reportConfig.reportId == null,
-            style: 'margin-left: 5px;',
-            scope: this,
-            handler: function() {
-                window.location = LABKEY.ActionURL.buildURL('reports', 'shareReport', null, {
-                    reportId: this.reportConfig.reportId
-                });
             }
         });
 

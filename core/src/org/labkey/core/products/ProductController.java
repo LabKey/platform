@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.products.MenuSection;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -28,6 +30,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -92,14 +95,23 @@ public class ProductController extends SpringActionController
                 _productIds = Arrays.asList(menuItemsForm.getProductIds().split(","));
                 String missingProducts = _productIds.stream().filter(productId -> !registry.containsProductId(productId)).collect(Collectors.joining(", "));
                 if (!missingProducts.isEmpty())
-                    _log.warn("No such products: " + missingProducts);
+                    _log.warn("No such products: {}", missingProducts);
             }
         }
 
         @Override
         public Object execute(MenuItemsForm menuItemsForm, BindException errors) throws Exception
         {
-            return success(ProductRegistry.get().getProductMenuSections(getViewContext(), _productIds));
+            List<MenuSection> sections;
+
+            // Items otherwise load lazily during serialization, one borrow per query
+            try (Connection ignored = DbScope.getLabKeyScope().getConnection())
+            {
+                sections = ProductRegistry.get().getProductMenuSections(getViewContext(), _productIds);
+                sections.forEach(MenuSection::getItems);
+            }
+
+            return success(sections);
         }
     }
 

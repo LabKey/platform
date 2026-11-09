@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
@@ -28,6 +30,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExpectedException;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -40,6 +43,7 @@ import org.springframework.validation.ObjectError;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 import java.util.Stack;
@@ -232,6 +236,12 @@ public abstract class ApiResponseWriter implements AutoCloseable
         if (ex instanceof HttpStatusException statusEx)
             return statusEx.getStatus();
 
+        if (ex instanceof FileUtil.InvalidPathReferenceException)
+            return HttpServletResponse.SC_NOT_FOUND;
+
+        if (ExceptionUtil.isRequestTimeout(ex))
+            return HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+
         if (ex instanceof BatchValidationException || ex instanceof ValidationException)
             return defaultErrorStatus;
 
@@ -262,12 +272,13 @@ public abstract class ApiResponseWriter implements AutoCloseable
     public void writeResponse(Throwable e) throws IOException
     {
         int status = getErrorResponseStatus(e);
+        boolean timedOut = ExceptionUtil.isRequestTimeout(e);
         e = ExceptionUtil.unwrapException(e);
 
         try
         {
             setResponseStatus(status);
-            var json = toJSON(e);
+            var json = timedOut ? new JSONObject().put("exception", ExceptionUtil.REQUEST_TIMEOUT_MESSAGE) : toJSON(e);
             json.put("success", false);
             writeObject(json);
         }
@@ -453,7 +464,6 @@ public abstract class ApiResponseWriter implements AutoCloseable
         JSONObject json = new JSONObject();
         json.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
         json.put("exceptionClass", e.getClass().getName());
-        json.put("stackTrace", e.getStackTrace());
         return json;
     }
 
@@ -607,5 +617,16 @@ public abstract class ApiResponseWriter implements AutoCloseable
     public void setSerializeViaJacksonAnnotations(boolean serializeViaJacksonAnnotations)
     {
         this.serializeViaJacksonAnnotations = serializeViaJacksonAnnotations;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testErrorResponseStatus() throws IOException
+        {
+            ApiResponseWriter writer = new ApiJsonWriter(new StringWriter());
+            assertEquals(HttpServletResponse.SC_NOT_FOUND, writer.getErrorResponseStatus(new FileUtil.InvalidPathReferenceException("../x", "Path to parent not allowed")));
+            assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, writer.getErrorResponseStatus(new IllegalArgumentException()));
+        }
     }
 }

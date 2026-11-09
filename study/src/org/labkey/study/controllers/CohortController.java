@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -60,6 +59,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
@@ -427,10 +427,10 @@ public class CohortController extends BaseStudyController
 
                     boolean labelChanged = (newLabel != null && !cohort.getLabel().equals(newLabel));
                     boolean enrolledChanged = cohort.isEnrolled() != newEnrolled;
-                    boolean subjectCountChanged = !PropertyUtil.nullSafeEquals(cohort.getSubjectCount(), newSubjectCount);
-                    boolean desciprtionChanged = !Strings.CS.equals(cohort.getDescription(), newDescription);
+                    boolean subjectCountChanged = !Objects.equals(cohort.getSubjectCount(), newSubjectCount);
+                    boolean descriptionChanged = !Strings.CS.equals(cohort.getDescription(), newDescription);
 
-                    if (labelChanged || enrolledChanged || subjectCountChanged || desciprtionChanged)
+                    if (labelChanged || enrolledChanged || subjectCountChanged || descriptionChanged)
                     {
                         cohort = cohort.createMutable();
 

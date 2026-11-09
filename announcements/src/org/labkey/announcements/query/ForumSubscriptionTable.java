@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -37,18 +38,13 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: jeckels
- * Date: Feb 6, 2012
- */
 public class ForumSubscriptionTable extends AbstractSubscriptionTable
 {
     public ForumSubscriptionTable(AnnouncementSchema schema, ContainerFilter cf)
@@ -87,25 +83,16 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    protected void applyContainerFilter(ContainerFilter filter)
     {
-        return hasPermission(user, perm, getContainer());
+        super.applyContainerFilter(filter);
+        applyUserFilter(filter, SQLFragment.unsafe("Container"));
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm, Container container)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        // Guests can't subscribe to anything, or edit anyone else's subscriptions, but they can read the table
-        // It'll have no rows for them
-        if (user.isGuest() && !ReadPermission.class.equals(perm))
-        {
-            return false;
-        }
-
-        // For authenticated users, if they have read access, that's enough to edit their own subscription level
-        // The QueryUpdateService implementation will make sure they have permission to insert/update/delete at the row
-        // level.
-        return container.hasPermission(user, ReadPermission.class);
+        return hasPermission(user, perm, getContainer());
     }
 
     @Override
@@ -168,7 +155,6 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
     private class ForumSubscriptionUpdateService extends AbstractQueryUpdateService
     {
-
         protected ForumSubscriptionUpdateService(TableInfo queryTable)
         {
             super(queryTable);
@@ -176,24 +162,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
         private SubscriptionTarget getTargets(Map<String, Object> row, User user, Container container) throws InvalidKeyException
         {
-            // Assume that if no User is specified, we should apply it to the current user
-            User targetUser = user;
-            Object userId = row.get("User");
-            if (userId == null)
-            {
-                userId = row.get("_user");
-            }
-            if (userId != null)
-            {
-                try
-                {
-                    targetUser = UserManager.getUser(Integer.parseInt(userId.toString()));
-                }
-                catch (NumberFormatException e)
-                {
-                    throw new InvalidKeyException("Invalid User value: " + userId);
-                }
-            }
+            User targetUser = getTargetUser(row, user);
 
             // Assume that if no Folder is specified, we should apply it to the current container
             Container targetContainer = container;
@@ -266,19 +235,18 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException
         {
-            Map<String, Object> existingRow = getRow(user, container, oldRow);
-            if (existingRow != null)
-            {
-                SubscriptionTarget oldTargets = getTargets(oldRow, user, container);
-                SubscriptionTarget newTargets = getTargets(row, user, container);
-                Map<String, Object> pks = new CaseInsensitiveHashMap<>();
-                pks.put("UserId", oldTargets.getUser().getUserId());
-                pks.put("Container", oldTargets.getContainer().getEntityId());
-                pks.put("Type", "messages");
-                pks.put("SrcIdentifier", oldTargets.getSrcIdentifier());
-                checkDuplicateUpdate(pks);
-                Table.update(user, CoreSchema.getInstance().getTableInfoEmailPrefs(), createDatabaseMap(user, row, newTargets), pks);
-            }
+            if (getRow(user, container, oldRow) == null)
+                throw new NotFoundException("The existing row was not found.");
+
+            SubscriptionTarget oldTargets = getTargets(oldRow, user, container);
+            SubscriptionTarget newTargets = getTargets(row, user, container);
+            Map<String, Object> pks = new CaseInsensitiveHashMap<>();
+            pks.put("UserId", oldTargets.getUser().getUserId());
+            pks.put("Container", oldTargets.getContainer().getEntityId());
+            pks.put("Type", "messages");
+            pks.put("SrcIdentifier", oldTargets.getSrcIdentifier());
+            checkDuplicateUpdate(pks);
+            Table.update(user, CoreSchema.getInstance().getTableInfoEmailPrefs(), createDatabaseMap(user, row, newTargets), pks);
 
             return getRow(user, container, row);
         }

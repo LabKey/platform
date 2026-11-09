@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,5 +18,5 @@
 -- NOTE: Don't remove any of these drop statements, even if we stop re-creating the view in *-create.sql. Drop statements must
 -- remain in place so we can correctly upgrade from older versions, which we commit to for two years after each release.
 
-SELECT core.fn_dropifexists('ActiveUsers', 'core', 'VIEW', NULL);
-SELECT core.fn_dropifexists('Users', 'core', 'VIEW', NULL);
+DROP VIEW IF EXISTS core.ActiveUsers;
+DROP VIEW IF EXISTS core.Users;

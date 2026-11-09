@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ public class Material extends RunItem
     private Long rootMaterialRowId;
     private String aliquotedFromLSID;
     private Long sampleState;
+    private Long expMaterialColor;
 
     private Date materialExpDate;
     private Double storedAmount;
@@ -110,6 +111,16 @@ public class Material extends RunItem
     public void setSampleState(Long sampleState)
     {
         this.sampleState = sampleState;
+    }
+
+    public Long getExpMaterialColor()
+    {
+        return expMaterialColor;
+    }
+
+    public void setExpMaterialColor(Long expMaterialColor)
+    {
+        this.expMaterialColor = expMaterialColor;
     }
 
     public Integer getAliquotCount()

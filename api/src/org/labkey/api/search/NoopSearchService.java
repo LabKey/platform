@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -363,6 +363,13 @@ public class NoopSearchService implements SearchService
     @Override
     public void pauseCrawler()
     {
+    }
+
+    @Override
+    public boolean isSearchIconVisible()
+    {
+        // No persisted setting to consult, so don't be the reason the header hides the icon
+        return true;
     }
 
     @Override

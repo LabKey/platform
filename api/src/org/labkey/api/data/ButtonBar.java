@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2017 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ public class ButtonBar extends DisplayElement
     public DataRegion.ButtonBarPosition getConfiguredPosition()
     {
         if (_configs != null && !_configs.isEmpty())
-            return _configs.get(_configs.size() - 1).getPosition();
+            return _configs.getLast().getPosition();
         return null;
     }
 

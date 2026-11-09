@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ public class ImageOutput extends AbstractParamReplacement
             }
             else
             {
-                LOG.debug("No file exists for parameter: " + getName());
+                LOG.debug("No file exists for parameter: {}", getName());
             }
 
             return imgUrl;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -55,6 +56,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.LookAheadDataIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
@@ -96,13 +98,13 @@ import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.File;
@@ -127,7 +129,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
 import static org.labkey.api.exp.OntologyManager.NO_OP_ROW_CALLBACK;
-import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.SAMPLE_CONCEPT_URI;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 
 public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentDataHandler implements ValidationDataHandler
@@ -206,7 +208,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DataLoaderSettings settings
     ) throws ExperimentException
     {
-        ExpProtocol protocol = data.getRun().getProtocol();
+        // Transforms may run before the run is saved, so prefer the upload's protocol
+        ExpProtocol protocol = context instanceof AssayUploadXarContext uploadContext ? uploadContext.getContext().getProtocol() : data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
         DataIteratorBuilder dataRows;
 
@@ -381,9 +384,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         throw new IllegalStateException("Assay results table expected to have dataId lookup column and " + assayResultLsidFieldKey + " column");
 
                     // select the assay results LSID column for all rows referenced by the data
-                    assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).append(" AS ObjectURI")
-                            .append(" FROM ").append(assayDataTable.getFromSQL("X"))
-                            .append(" WHERE ").append(dataIdCol.getValueSql("X")).appendInClause(dataIds, assayDataTable.getSqlDialect());
+                    assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).unsafeAppend(" AS ObjectURI")
+                            .unsafeAppend(" FROM ").append(assayDataTable.getFromSQL("X"))
+                            .unsafeAppend(" WHERE ").append(dataIdCol.getValueSql("X")).appendInClause(dataIds, assayDataTable.getSqlDialect());
                 }
             }
             else
@@ -409,11 +412,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (LOG.isDebugEnabled())
                 {
                     SQLFragment t = new SQLFragment("SELECT o.*")
-                            .append(" FROM ").append(OntologyManager.getTinfoObject(), "o")
-                            .append(" WHERE Container = ?").add(run.getContainer())
-                            .append(" AND ObjectURI IN (")
+                            .unsafeAppend(" FROM ").append(OntologyManager.getTinfoObject(), "o")
+                            .unsafeAppend(" WHERE Container = ?").add(run.getContainer())
+                            .unsafeAppend(" AND ObjectURI IN (")
                             .append(assayResultLsidSql)
-                            .append(")");
+                            .unsafeAppend(")");
                     SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), t);
                     try (TableResultSet rs = ss.getResultSet())
                     {
@@ -427,22 +430,22 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
 
                 // delete provenance for assay result rows
-                ProvenanceService.get().deleteProvenanceByLsids(run.getContainer(), user, new SQLFragment(" IN (").append(assayResultLsidSql).append(")"), true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
+                ProvenanceService.get().deleteProvenanceByLsids(run.getContainer(), user, new SQLFragment(" IN (").append(assayResultLsidSql).unsafeAppend(")"), true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
 
                 int count = OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer());
-                LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " ontology objects for assay result lsids");
+                LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted {} ontology objects for assay result lsids", count);
             }
 
             if (domain != null && domain.getStorageTableName() != null)
             {
                 SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
                 deleteSQL.appendDottedIdentifiers(domain.getDomainKind().getStorageSchemaName(),domain.getStorageTableName());
-                deleteSQL.append(" WHERE DataId ").appendInClause(dataIds, ExperimentService.get().getSchema().getSqlDialect());
+                deleteSQL.unsafeAppend(" WHERE DataId ").appendInClause(dataIds, ExperimentService.get().getSchema().getSqlDialect());
 
                 try
                 {
                     int count = new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned)).execute(deleteSQL);
-                    LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " assay result rows");
+                    LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted {} assay result rows", count);
                 }
                 catch (BadSqlGrammarException x)
                 {
@@ -513,7 +516,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             Map<ExpMaterial, String> rowBasedInputMaterials = new LinkedHashMap<>();
 
-            DataIterator fileData = checkData(container, user, provider, protocol, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, cf, rowBasedInputMaterials);
+            DataIterator fileData = checkData(container, user, provider, protocol, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, rowBasedInputMaterials);
             fileData = convertPropertyNamesToURIs(fileData, dataDomain);
 
             OntologyManager.RowCallback rowCallback = NO_OP_ROW_CALLBACK;
@@ -522,13 +525,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (provider.getResultRowLSIDPrefix() == null)
                 {
-                    LOG.info("Import failed for run '" + run.getName() + "; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+                    LOG.info("Import failed for run '{}; Assay provider '{}' for assay '{}' has no result row lsid prefix", run.getName(), provider.getName(), protocol.getName());
                     transaction.commit();
                     return;
                 }
 
                 // Attach run's final protocol application with output LSIDs for Assay Result rows
-                rowCallback = rowCallback.chain(pvs.getAssayRowCallback(run, container));
+                rowCallback = rowCallback.chain(pvs.getAssayRowCallback(user, run, container));
             }
 
             try
@@ -688,7 +691,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             DataLoaderSettings settings,
             ParticipantVisitResolver resolver,
             Map<String, ExpMaterial> inputMaterials,
-            ContainerFilter containerFilter,
             Map<ExpMaterial, String> rowBasedInputMaterials
     ) throws BatchValidationException
     {
@@ -710,7 +712,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         RemapCache cacheWithoutPkLookup = new RemapCache();
         RemapCache cacheWithPkLookup = new RemapCache();
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
-        Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
+        // GH Issue 1781: separate caches for various lookup types
+        Map<Pair<Container, ExpSampleType>, Map<Long, ExpMaterial>> materialCacheByLookup = new HashMap<>();
+        Map<Long, ExpMaterial> plateMaterialCache = new LongHashMap<>();
         Map<Long, Map<String, Long>> plateWellCache = new LongHashMap<>();
 
         Map<DomainProperty, ExpSampleType> lookupToSampleTypeByName = new HashMap<>();
@@ -823,7 +827,88 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         boolean resolvePlateSamples = isPlateMetadataEnabled && platePD != null && wellLocationPD != null && wellLsidPD != null;
 
-        return DataIteratorUtil.mapTransformer(rawData, inputCols ->
+        Function<DomainProperty, Pair<Container, ExpSampleType>> sampleLookupKey = pd -> {
+            ExpSampleType sampleType = lookupToSampleTypeByName.get(pd);
+            if (sampleType == null)
+                sampleType = lookupToSampleTypeById.get(pd);
+            Container lookupContainer = pd.getLookup().getContainer();
+            if (lookupContainer == null)
+                lookupContainer = container;
+            return Pair.of(lookupContainer, sampleType);
+        };
+
+        // Columns whose values reach findExpMaterial below, and by-ID columns that reach getExpMaterial instead
+        Map<Integer, DomainProperty> sampleLookupColumns = new HashMap<>();
+        Map<Integer, DomainProperty> sampleIdColumns = new HashMap<>();
+        for (Map.Entry<String, Integer> entry : DataIteratorUtil.createColumnNameMap(rawData).entrySet())
+        {
+            DomainProperty pd = aliasMap.get(entry.getKey());
+            if (pd == null)
+                continue;
+
+            boolean byName = lookupToAllSamplesByName.contains(pd) || lookupToSampleTypeByName.containsKey(pd);
+            boolean byId = lookupToAllSamplesById.contains(pd) || lookupToSampleTypeById.containsKey(pd);
+            if (byName || (byId && settings.getLookupResolutionType().useAlternateKey()))
+                sampleLookupColumns.put(entry.getValue(), pd);
+            else if (byId)
+                sampleIdColumns.put(entry.getValue(), pd);
+        }
+
+        // GH Issue 1746: resolve each window's samples in bulk, so the per-row lookups below hit the caches
+        DataIterator data = rawData;
+        if (!sampleLookupColumns.isEmpty() || !sampleIdColumns.isEmpty())
+        {
+            data = new LookAheadDataIterator(rawData, BatchSize.get(BatchSize.Kind.ROWS))
+            {
+                final Map<Pair<Container, ExpSampleType>, Set<String>> sampleNames = new HashMap<>();
+                final Map<Pair<Container, ExpSampleType>, Set<Long>> sampleIds = new HashMap<>();
+
+                @Override
+                protected void collectRow()
+                {
+                    sampleLookupColumns.forEach((index, pd) -> {
+                        Object value = get(index);
+                        if (value instanceof MvFieldWrapper mvWrapper)
+                            value = mvWrapper.getValue();
+                        if (value instanceof String s)
+                            value = StringUtils.trimToNull(s);
+                        if (value == null || value instanceof Collection)
+                            return;
+
+                        String sampleName = value.toString();
+                        if (!inputMaterials.containsKey(sampleName))
+                            sampleNames.computeIfAbsent(sampleLookupKey.apply(pd), k -> new LinkedHashSet<>()).add(sampleName);
+                    });
+
+                    sampleIdColumns.forEach((index, pd) -> {
+                        if (asLongElseNull(get(index)) instanceof Long rowId)
+                        {
+                            Pair<Container, ExpSampleType> lookup = sampleLookupKey.apply(pd);
+                            if (!materialCacheByLookup.getOrDefault(lookup, Map.of()).containsKey(rowId))
+                                sampleIds.computeIfAbsent(lookup, k -> new LinkedHashSet<>()).add(rowId);
+                        }
+                    });
+                }
+
+                @Override
+                protected void prefetch()
+                {
+                    sampleNames.forEach((lookup, names) -> {
+                        var materialCache = materialCacheByLookup.computeIfAbsent(lookup, k -> new LongHashMap<>());
+                        exp.prefetchExpMaterials(lookup.first, user, names, lookup.second, cacheWithoutPkLookup, materialCache);
+                    });
+                    sampleNames.clear();
+
+                    sampleIds.forEach((lookup, rowIds) -> {
+                        var materialCache = materialCacheByLookup.computeIfAbsent(lookup, k -> new LongHashMap<>());
+                        exp.getExpMaterials(lookup.first, user, rowIds, lookup.second).forEach(m -> materialCache.putIfAbsent(m.getRowId(), m));
+                    });
+                    sampleIds.clear();
+                }
+            };
+        }
+
+        return DataIteratorUtil.mapTransformer(data, inputCols ->
         {
             List<String> result = new ArrayList<>(inputCols);
             result.addAll(aliasMap.values().stream().map(ImportAliasable::getName).toList());
@@ -1032,8 +1117,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     // Add any sample inputs to the rowInputLSIDs
                     if (o != null && (isSampleLookupById || isSampleLookupByName))
                     {
-                        ExpSampleType byNameSS = isSampleLookupByName ? lookupToSampleTypeByName.get(pd) : lookupToSampleTypeById.get(pd);
-                        Container lookupContainer = pd.getLookup().getContainer() != null ? pd.getLookup().getContainer() : container;
+                        Pair<Container, ExpSampleType> sampleLookup = sampleLookupKey.apply(pd);
+                        Container lookupContainer = sampleLookup.first;
+                        ExpSampleType lookupSampleType = sampleLookup.second;
 
                         // Issue 47509: When samples have names that are numbers, they can be incorrectly interpreted as rowIds during the insert.
                         // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
@@ -1047,7 +1133,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             try
                             {
                                 if (material == null)
-                                    material = exp.findExpMaterial(lookupContainer, user, materialName, byNameSS, cacheWithoutPkLookup, materialCache);
+                                {
+                                    var materialCache = materialCacheByLookup.computeIfAbsent(sampleLookup, k -> new LongHashMap<>());
+                                    material = exp.findExpMaterial(lookupContainer, user, materialName, lookupSampleType, cacheWithoutPkLookup, materialCache);
+                                }
                             }
                             catch (ValidationException ve)
                             {
@@ -1055,7 +1144,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             }
                         }
                         else if (asLongElseNull(o) instanceof Long n)
-                            material = materialCache.computeIfAbsent(n, (id) -> exp.getExpMaterial(id, containerFilter));
+                        {
+                            var materialCache = materialCacheByLookup.computeIfAbsent(sampleLookup, k -> new LongHashMap<>());
+                            material = materialCache.computeIfAbsent(n, (id) -> exp.getExpMaterial(lookupContainer, user, id, lookupSampleType));
+                        }
 
                         if (material != null)
                         {
@@ -1103,23 +1195,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         Map<String, Long> wellSampleCache = plateWellCache.computeIfAbsent(plateId, (id) -> AssayPlateMetadataService.get().getWellLocationToSampleIdMap(plateId));
 
                         // If we had to load the wellSampleCache we should also preload the ExpMaterials into the
-                        // materialCache, so we don't need to fetch them with individual queries. This has a large
+                        // plateMaterialCache, so we don't need to fetch them with individual queries. This has a large
                         // impact on performance.
                         if (loadMaterialsCache)
                         {
                             Set<Long> samplesToFetch = wellSampleCache.values().stream()
-                                    .filter(id -> !materialCache.containsKey(id))
+                                    .filter(id -> !plateMaterialCache.containsKey(id))
                                     .collect(Collectors.toSet());
 
                             for (ExpMaterial m : exp.getExpMaterials(samplesToFetch))
-                                materialCache.put(m.getRowId(), m);
+                                plateMaterialCache.put(m.getRowId(), m);
                         }
                         sampleId = wellSampleCache.get(wellLocation);
                     }
 
                     if (sampleId != null)
                     {
-                        material = materialCache.get(sampleId);
+                        material = plateMaterialCache.get(sampleId);
                     }
 
                     if (material != null)

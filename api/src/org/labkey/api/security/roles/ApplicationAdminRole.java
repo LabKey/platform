@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /**
- * A step down from site admins, app admins have broad access but don't get to control native resources on the server.
+ * A step-down from site admins, app admins have broad access but don't get to control native resources on the server.
  */
 public class ApplicationAdminRole extends AbstractRootContainerRole implements AdminRoleListener
 {

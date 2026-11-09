@@ -1,7 +1,21 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -675,7 +689,7 @@ public class NameGeneratorState implements AutoCloseable
             ctx.putAll(inputValues);
 
             Map<FieldKey, Object> lookupValues = new HashMap<>();
-            inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : (value.size() == 1 ? value.iterator().next() : null)));
+            inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : (value.size() == 1 ? value.getFirst() : null)));
             ctx.putAll(lookupValues);
         }
 
@@ -696,7 +710,7 @@ public class NameGeneratorState implements AutoCloseable
                     if (pkCols.size() != 1)
                         continue;
 
-                    ColumnInfo pkCol = pkCols.get(0);
+                    ColumnInfo pkCol = pkCols.getFirst();
                     // convert the rootValue to the target pkColumn type
                     if (rootValue instanceof String && !pkCol.isStringType())
                     {

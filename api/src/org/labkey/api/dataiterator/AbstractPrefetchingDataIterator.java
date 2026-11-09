@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +29,7 @@ import java.util.function.Supplier;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
+// TODO: replace the mark/read-ahead/reset with LookAheadDataIterator (added for GH Issue 1746)
 /**
  * Abstract base for data iterators that prefetch data in batches using a single primary key column.
  * Provides {@link #buildBatch()} to collect up to 50 rows and their keys into lookup maps,
@@ -86,7 +102,15 @@ public abstract class AbstractPrefetchingDataIterator extends WrapperDataIterato
         {
             lastPrefetchRowNumber = asInteger(_delegate.get(0));
             Object keyObj = pkSupplier.get();
-            Object key = jdbcType.convert(keyObj);
+            Object key;
+            try
+            {
+                key = jdbcType.convert(keyObj);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalArgumentException(keyFieldName + " value not valid on row " + lastPrefetchRowNumber);
+            }
 
             if (numericKey)
             {

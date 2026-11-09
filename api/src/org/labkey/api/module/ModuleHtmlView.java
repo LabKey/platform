@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,7 @@ public class ModuleHtmlView extends HtmlView
                 .mapToInt(Map::size)
                 .sum();
 
-            LOG.info(viewCount + " HTML view definitions defined in all modules");
+            LOG.info("{} HTML view definitions defined in all modules", viewCount);
 
             // Make sure the cache retrieves the expected number of HTML view definitions from the simpletest module, if present
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -281,7 +281,7 @@ public class JsonWriter
             if (cinfo.getNameExpression() != null)
                 props.put("nameExpression", cinfo.getNameExpression());
 
-            IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(cinfo, PropertyValidatorType.TextChoice);
+            PropertyValidatorDef textChoiceValidator = PropertyService.get().getValidatorForColumn(cinfo, PropertyValidatorType.TextChoice);
             if (textChoiceValidator != null)
                 props.put("validValues", PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator));
         }
@@ -413,10 +413,7 @@ public class JsonWriter
                         TableInfo parentTable = columnInfo.getParentTable();
                         UserSchema userSchema = parentTable.getUserSchema();
                         String containerInfo = userSchema == null ? "" : " in container " + userSchema.getContainer().getPath();
-                        LOG.warn("Unable to resolve column '" + key + "' on lookup target " + schemaName + "." +
-                                queryName + " referenced by column '" + columnInfo.getName() + "' from table " +
-                                parentTable.getPublicSchemaName() + "." + parentTable.getPublicName() + containerInfo +
-                                ". Using the table's PK instead");
+                        LOG.warn("Unable to resolve column '{}' on lookup target {}.{} referenced by column '{}' from table {}.{}{}. Using the table's PK instead", key, schemaName, queryName, columnInfo.getName(), parentTable.getPublicSchemaName(), parentTable.getPublicName(), containerInfo);
                         key = null;
                     }
                 }

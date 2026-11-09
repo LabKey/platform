@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.reports.report.ScriptPackageUsageTracker;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.URIUtil;
@@ -37,6 +43,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
+import javax.script.SimpleScriptContext;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -47,8 +54,10 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,11 +66,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/*
-* User: Karl Lum
-* Date: Dec 2, 2008
-* Time: 4:33:23 PM
-*/
+import static org.labkey.api.reports.report.r.ParamReplacementSvc.SubstitutionSyntax.INLINE;
+
 public class ExternalScriptEngine extends AbstractScriptEngine implements LabKeyScriptEngine
 {
     /**
@@ -70,6 +76,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      */
     public static final String WORKING_DIRECTORY = "external.script.engine.workingDirectory";
     public static final String PARAM_REPLACEMENT_MAP = "external.script.engine.replacementMap";
+    public static final String FAIL_ON_UNREPLACED_PARAMS = "external.script.engine.failOnUnreplacedParams";
 
     public static final String PARAM_SCRIPT = "scriptFile";
     public static final String SCRIPT_PATH = "scriptPath";
@@ -79,10 +86,18 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     /** Timeout in seconds. */
     public static final String TIMEOUT = "external.script.engine.timeout";
 
+    /** Caller-supplied identity for the invocation log; the engine knows the duration but not which report or assay design it ran for. */
+    public static final String INVOCATION_LABEL = "external.script.engine.invocationLabel";
+
     public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
 
+    private static final int MAX_PACKAGES_PER_RUN = 250;
+
     private FileLike _workingDirectory;
+
+    /** Set when runProcess() kills the script, so the kill's exit code isn't logged as a second, separate failure. */
+    private boolean _timedOut;
 
     protected ExternalScriptEngineDefinition _def;
     protected Writer _originalWriter;
@@ -109,24 +124,141 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     }
 
     @Override
-    public Object eval(String script, ScriptContext context) throws ScriptException
+    public final Object eval(String script, ScriptContext context) throws ScriptException
+    {
+        // final so every engine in this hierarchy is timed from one place; subclasses override evalScript()
+        _timedOut = false;
+        return ScriptInvocationLog.time(getClass().getSimpleName(), ScriptInvocationLog.label(context),
+                () -> evalScript(script, context));
+    }
+
+    protected Object evalScript(String script, ScriptContext context) throws ScriptException
     {
         List<String> extensions = getFactory().getExtensions();
-
-        if (!extensions.isEmpty())
-        {
-            // write out the script file to disk using the first extension as the default
-            FileLike scriptFile = writeScriptFile(script, context, extensions);
-            return eval(scriptFile, context);
-        }
-        else
+        if (extensions.isEmpty())
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
+
+        FileLike scriptFile = prepareScriptFile(appendPackageCaptureEpilog(script, context), context, extensions);
+        Object result = eval(scriptFile, context);
+
+        // Only reached when the script succeeded; a failed run reports no package usage
+        recordPackageUsage(context);
+
+        return result;
+    }
+
+    /**
+     * Prepare the on-disk script file that will be executed. The default writes the script as-is; subclasses (e.g. the
+     * R engine's knitr handling) may wrap it in a different driver script.
+     */
+    protected FileLike prepareScriptFile(String script, ScriptContext context, List<String> extensions) throws ScriptException
+    {
+        return writeScriptFile(script, context, extensions);
+    }
+
+    /**
+     * GitHub Issue #1130
+     * Script appended to the end of the user script (running in the same process) that captures the loaded
+     * packages/modules, writing them one per line to a sidecar file in the working directory for
+     * {@link #recordPackageUsage} to read back. The default returns null (no capture); language-specific engines
+     * (e.g. R, Python) override this.
+     */
+    protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
+    {
+        return null;
+    }
+
+    /**
+     * GitHub Issue #1130
+     * Append this engine's package capture epilog, if it has one, to the end of the given script.
+     * Never throws: package tracking must not affect script execution.
+     */
+    protected String appendPackageCaptureEpilog(String script, ScriptContext context)
+    {
+        try
+        {
+            String epilog = getPackageCaptureEpilog(context);
+            if (epilog != null)
+                return script + "\n" + epilog;
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Failed to build the script package capture epilog", e);
+        }
+
+        return script;
+    }
+
+    /**
+     * GitHub Issue #1130
+     * Called after a script has run successfully (eval returned without throwing), to record the packages it loaded.
+     * The default does nothing; language-specific engines override this, typically delegating to
+     * {@link #readPackageSidecar}.
+     */
+    protected void recordPackageUsage(ScriptContext context)
+    {
+    }
+
+    /**
+     * GitHub Issue #1130
+     * Read a sidecar file of package names (one per line) from the working directory and record each under the given
+     * language in {@link ScriptPackageUsageTracker}, up to {@link #MAX_PACKAGES_PER_RUN} per run. Never throws. A
+     * missing file means the capture code never ran (or was skipped) - nothing to do.
+     * The file is deleted after reading.
+     */
+    protected void readPackageSidecar(ScriptContext context, String fileName, String language)
+    {
+        FileLike packagesFile;
+        try
+        {
+            packagesFile = getWorkingDir(context).resolveChild(fileName);
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Failed to locate " + language + " package usage sidecar", e);
+            return;
+        }
+
+        if (!packagesFile.exists())
+            return;
+
+        try (BufferedReader reader = Readers.getReader(packagesFile.openInputStream()))
+        {
+            String packageName;
+            int recorded = 0;
+            while ((packageName = reader.readLine()) != null)
+            {
+                if (recorded >= MAX_PACKAGES_PER_RUN)
+                {
+                    LOG.warn("Recorded the first {} {} packages for this script run and ignored the rest", MAX_PACKAGES_PER_RUN, language);
+                    ScriptPackageUsageTracker.record(language, "~~packageLimitReached~~");
+                    break;
+                }
+                ScriptPackageUsageTracker.record(language, packageName);
+                recorded++;
+            }
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Failed to record " + language + " package usage", e);
+        }
+        finally
+        {
+            try
+            {
+                packagesFile.delete();
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Failed to delete " + language + " package usage sidecar", e);
+            }
+        }
     }
 
     protected Object eval(FileLike scriptFile, ScriptContext context) throws ScriptException
     {
         String[] params = formatCommand(scriptFile, context);
-        ProcessBuilder pb = new ProcessBuilder(params);
+        LabKeyProcessBuilder pb = new LabKeyProcessBuilder(params);
         pb = pb.directory(getWorkingDir(context).toNioPathForRead().toFile());
 
         final long timeout = getTimeout(context);
@@ -138,6 +270,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             int exitCode = runProcess(context, pb, output, timeout, TimeUnit.SECONDS);
             if (exitCode != 0)
             {
+                if (!_timedOut)
+                    ScriptInvocationLog.nonZeroExit(getClass().getSimpleName(), ScriptInvocationLog.label(context), exitCode);
                 throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', exit code: " + exitCode + ".\n" + output);
             }
             else
@@ -318,7 +452,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      * Execute the external script engine in separate process
      * @return the exit code for the invocation - 0 if the process completed successfully.
      */
-    protected int runProcess(ScriptContext context, ProcessBuilder pb, StringBuffer output, long timeout, TimeUnit timeoutUnit)
+    protected int runProcess(ScriptContext context, LabKeyProcessBuilder pb, StringBuffer output, long timeout, TimeUnit timeoutUnit)
     {
         Process proc;
         try
@@ -383,6 +517,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
                         String msg = "Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase() + "\n";
                         output.append(msg);
+                        _timedOut = true;
+                        ScriptInvocationLog.timedOut(getClass().getSimpleName(), ScriptInvocationLog.label(context), timeout, timeoutUnit);
                         if (writer != null)
                             writer.write(msg);
                     }
@@ -421,7 +557,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         }
     }
 
-    protected FileLike writeScriptFile(String script, ScriptContext context, List<String> extensions)
+    protected FileLike writeScriptFile(String script, ScriptContext context, List<String> extensions) throws ScriptException
     {
         // write out the script file to disk using the first extension as the default
         FileLike scriptFile;
@@ -442,7 +578,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                 scriptFile = getWorkingDir(context).resolveChild(path.getName());
         }
         else
-            scriptFile = getWorkingDir(context).resolveChild("script." + extensions.get(0));
+            scriptFile = getWorkingDir(context).resolveChild("script." + extensions.getFirst());
 
         bindings.put(REWRITTEN_SCRIPT_FILE, scriptFile);
 
@@ -459,11 +595,29 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                     }
                 }
 
+                // If requested, fail fast when unreplaced substitutions remain to provide a much better user-facing
+                // error message. This is set in the assay transform case, but not in the pipeline case, where further
+                // substitutions may be performed after this.
+                if (Boolean.TRUE.equals(bindings.get(FAIL_ON_UNREPLACED_PARAMS)))
+                {
+                    Matcher matcher = INLINE.getMatchPattern().matcher(script);
+                    Set<String> unreplaced = new LinkedHashSet<>();
+                    while (matcher.find())
+                        unreplaced.add(matcher.group(1));
+
+                    if (!unreplaced.isEmpty())
+                        throw new ScriptException("Unreplaced substitution parameter(s) found in script: " + String.join(", ", unreplaced));
+                }
+
                 try (PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(scriptFile.openOutputStream(), StandardCharsets.UTF_8))))
                 {
                     pw.write(script);
                 }
             }
+        }
+        catch (ScriptException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -573,5 +727,59 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     public boolean supportsContext(LabKeyScriptEngineManager.EngineContext context)
     {
         return true;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final String KNOWN_PARAM = "knownParam";
+        private static final String KNOWN_VALUE = "replacement value";
+
+        private ExternalScriptEngine _engine;
+        private ScriptContext _context;
+        private FileLike _scriptFile;
+
+        @Before
+        public void setUp()
+        {
+            _engine = new ExternalScriptEngine(null);
+            _context = new SimpleScriptContext();
+            Bindings bindings = _engine.createBindings();
+            bindings.put(PARAM_REPLACEMENT_MAP, Map.of(KNOWN_PARAM, KNOWN_VALUE));
+            bindings.put(FAIL_ON_UNREPLACED_PARAMS, true);
+            _context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+        }
+
+        @After
+        public void tearDown() throws IOException
+        {
+            if (null != _scriptFile && _scriptFile.exists())
+                _scriptFile.delete();
+        }
+
+        @Test
+        public void testFullyReplacedScriptSucceeds() throws ScriptException
+        {
+            String script = "print(\"${" + KNOWN_PARAM + "}\")";
+            _scriptFile = _engine.writeScriptFile(script, _context, List.of("R"));
+            assertTrue("Script file should have been written", _scriptFile.exists());
+        }
+
+        @Test
+        public void testUnreplacedSubstitutionThrows()
+        {
+            String script = "print(\"${unknownParam}\")";
+            ScriptException e = assertThrows(ScriptException.class, () -> _engine.writeScriptFile(script, _context, List.of("R")));
+            assertTrue("Exception message should name the unreplaced parameter", e.getMessage().contains("unknownParam"));
+        }
+
+        @Test
+        public void testMultipleUnreplacedSubstitutionsAreAllNamed()
+        {
+            String script = "${firstUnknown} and ${" + KNOWN_PARAM + "} and ${secondUnknown}";
+            ScriptException e = assertThrows(ScriptException.class, () -> _engine.writeScriptFile(script, _context, List.of("R")));
+            assertTrue("Exception message should name the first unreplaced parameter", e.getMessage().contains("firstUnknown"));
+            assertTrue("Exception message should name the second unreplaced parameter", e.getMessage().contains("secondUnknown"));
+            assertFalse("Exception message should not include the known, replaced parameter", e.getMessage().contains(KNOWN_PARAM));
+        }
     }
 }

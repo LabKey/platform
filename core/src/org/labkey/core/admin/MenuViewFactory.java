@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -342,7 +342,7 @@ public class MenuViewFactory
     {
         List<List<Renderable>> lists = Lists.partition(renderables, MAX_PER_COLUMN);
         int columns = lists.size();
-        int rows = lists.get(0).size();
+        int rows = lists.getFirst().size();
         for (int i = 0; i < rows; i++)
         {
             int idx = i;

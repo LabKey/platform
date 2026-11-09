@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public class ExperimentPipelineJob extends PipelineJob
             }
             catch (IOException e)
             {
-                _log.error("Failed to get log file for " + _xarFile, e);
+                _log.error("Failed to get log file for {}", _xarFile, e);
             }
         }
         return _xarSource;
@@ -144,7 +144,7 @@ public class ExperimentPipelineJob extends PipelineJob
                 List<ExpRun> runs = ExperimentService.get().importXar(source, job, deleteExistingRuns);
                 if (!runs.isEmpty())
                 {
-                    source.setExperimentRunRowId(runs.get(0).getRowId());
+                    source.setExperimentRunRowId(runs.getFirst().getRowId());
                 }
 
                 job.getLogger().info("");

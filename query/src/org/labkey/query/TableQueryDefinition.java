@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,21 +90,14 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         TableInfo table = getTable(errors, true);
         if (table != null)
         {
-            switch (action)
+            url = switch (action)
             {
-                case insertQueryRow:
-                    url = table.getInsertURL(container);
-                    break;
-                case deleteQueryRows:
-                    url = table.getDeleteURL(container);
-                    break;
-                case executeQuery:
-                    url = table.getGridURL(container);
-                    break;
-                case importData:
-                    url = table.getImportDataURL(container);
-                    break;
-            }
+                case insertQueryRow -> table.getInsertURL(container);
+                case deleteQueryRows -> table.getDeleteURL(container);
+                case executeQuery -> table.getGridURL(container);
+                case importData -> table.getImportDataURL(container);
+                default -> url;
+            };
         }
 
         if (url == AbstractTableInfo.LINK_DISABLER_ACTION_URL)
@@ -188,7 +181,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         }
         catch (QueryParseException e)
         {
-            log.warn("Exception creating table '" + getName() + "': " + e.getMessage(), e);
+            log.warn("Exception creating table '{}': {}", getName(), e.getMessage(), e);
             if (null != errors)
             {
                 errors.add(new QueryParseException("Exception creating table '" + getName() + "': " + e.getMessage(), e, 0, 0));

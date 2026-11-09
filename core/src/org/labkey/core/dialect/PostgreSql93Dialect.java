@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.SQLFragment;
 
 import java.util.Set;
 
@@ -33,5 +35,17 @@ abstract class PostgreSql93Dialect extends PostgreSql92Dialect
         words.add("lateral");
 
         return words;
+    }
+
+    @Override
+    public boolean supportsLateralJoin()
+    {
+        return true;
+    }
+
+    @Override
+    public void appendLateralJoin(SQLFragment sql, LookupColumn.JoinType joinType, SQLFragment aliasedSubquery)
+    {
+        sql.append(joinType.getSQL()).unsafeAppend(" JOIN LATERAL ").append(aliasedSubquery).unsafeAppend(" ON TRUE");
     }
 }

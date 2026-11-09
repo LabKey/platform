@@ -1,6 +1,6 @@
 <%--
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 --%>
 <%@ page buffer="none" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
@@ -34,9 +35,6 @@
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
     ViewContext context = getViewContext();
-
-    if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
-        response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
 
     boolean isExplicitNoIndex = null != url && "1".equals(url.getParameter(ActionURL.Param._noindex.name()));
     if (isExplicitNoIndex)
@@ -82,7 +80,7 @@
 </head>
 <body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
-    if (context.isRobot() && StringUtils.contains(robotsTag, "noindex") && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
+    if (context.isRobot() && Strings.CS.contains(robotsTag, "noindex") && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
     {
         %></body></html><%
         return;

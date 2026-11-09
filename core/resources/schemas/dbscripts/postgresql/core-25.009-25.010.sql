@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 -- In 2019, we added support for multiple authentication configurations per provider and, at that time, attached
 -- authentication logos to each configuration. This deletes any old, orphaned, one-per-provider authentication logos
 -- that were attached directly to the root container.

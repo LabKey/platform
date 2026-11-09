@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment.pipeline;
 
 import org.apache.commons.io.FileUtils;
@@ -492,7 +507,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
                 if (duration > timeout)
                 {
                     //NOTE: it's possible a job could time out on a busy cluster.  rather than fail, continue in case there's a second engine to test
-                    _log.warn("timed out waiting for job: " + job1.getDescription());
+                    _log.warn("timed out waiting for job: {}", job1.getDescription());
                     break;
                 }
             }
@@ -503,7 +518,7 @@ public class XarTestPipelineJob extends PipelineJob implements FileAnalysisJobSu
             List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForJobId(sf.getRowId());
             Assert.assertEquals("Wrong run number", 1, runs.size());
 
-            ExpRun run = runs.get(0);
+            ExpRun run = runs.getFirst();
             List<? extends ExpData> inputs = run.getInputDatas(INPUT_ROLE, null);
             Assert.assertEquals("Wrong input number", inputFiles.size(), inputs.size());
 

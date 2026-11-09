@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ public class DbSchemaCache
     {
         public DbSchemaBlockingCache(String dsName)
         {
-            super(CacheManager.getCache(1000, CacheManager.UNLIMITED, "DbSchemas for " + dsName), new DbSchemaLoader());
+            super(CacheManager.getCache(String.class, 1000, CacheManager.UNLIMITED, "DbSchemas for " + dsName), new DbSchemaLoader());
             setCacheTimeChooser(SCHEMA_CACHE_TIME_CHOOSER);
         }
     }

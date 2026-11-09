@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,10 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -94,9 +96,11 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -121,20 +125,20 @@ public class AnnouncementManager
     {
     }
 
-    private static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, @NotNull SimpleFilter filter)
+    private static @Nullable AnnouncementFullModel getAnnouncement(@Nullable Container c, @NotNull SimpleFilter filter)
     {
         if (c != null)
             filter.addCondition(FieldKey.fromParts("Container"), c);
 
-        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementModel.class);
+        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementFullModel.class);
     }
 
-    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, long rowId)
+    public static @Nullable AnnouncementFullModel getAnnouncement(@Nullable Container c, long rowId)
     {
         return getAnnouncement(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
     }
 
-    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, String entityId)
+    public static @Nullable AnnouncementFullModel getAnnouncement(@Nullable Container c, String entityId)
     {
         try
         {
@@ -239,10 +243,9 @@ public class AnnouncementManager
 
     public static @Nullable Integer getLatestPostId(AnnouncementModel parent)
     {
-        SQLFragment sql = new SQLFragment( "SELECT LatestId FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT LatestId FROM ");
         sql.append(_comm.getTableInfoThreads(), "t");
-        sql.append(" WHERE RowId = ?");
-        sql.add(parent.getRowId());
+        sql.unsafeAppend(" WHERE RowId = ?", parent.getRowId());
         return new SqlSelector(_comm.getSchema(), sql).getObject(Integer.class);
     }
 
@@ -383,7 +386,7 @@ public class AnnouncementManager
 
         if (toList.isEmpty())
         {
-            LOG.warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: " + c.getPath());
+            LOG.warn("New {} requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: {}", name.toLowerCase(), c.getPath());
         }
         else
         {
@@ -522,7 +525,7 @@ public class AnnouncementManager
     }
 
     // Magic date value used to mark an announcement that a moderator has reviewed and marked as spam
-    private static final Date SPAM_MAGIC_DATE = new Date(0);
+    static final Date SPAM_MAGIC_DATE = new Date(0);
 
     // Standard filters for retrieving specific classes of messages (approved, spam, needs review)
     public static final SimpleFilter IS_APPROVED_FILTER = new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.GT);
@@ -532,11 +535,6 @@ public class AnnouncementManager
     public static void markAsSpam(Container c, AnnouncementModel ann)
     {
         updateApproved(c, ann, SPAM_MAGIC_DATE);
-    }
-
-    public static boolean isSpam(AnnouncementModel ann)
-    {
-        return SPAM_MAGIC_DATE.equals(ann.getApproved());
     }
 
     // Execute direct SQL (not Table.update())... I don't think we want to change Modified or ModifiedBy. Could consider adding column for Moderator, though.
@@ -654,8 +652,14 @@ public class AnnouncementManager
     // Most recent member list is attached to the most recent approved post
     static List<Integer> getMemberList(AnnouncementModel ann)
     {
-        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?",
-                AnnouncementManager.getLatestPostId(ann) != null ? AnnouncementManager.getLatestPostId(ann) : ann.getRowId());
+        Integer latestPostId = getLatestPostId(ann);
+        return getPostMemberList(latestPostId != null ? latestPostId : ann.getRowId());
+    }
+
+    // The member list saved on this specific post, which is the thread's current list only if it's the latest post
+    public static List<Integer> getPostMemberList(int messageId)
+    {
+        SQLFragment sql = SQLFragment.unsafe("SELECT UserId FROM ").append(_comm.getTableInfoMemberList()).unsafeAppend(" WHERE MessageId = ?", messageId);
 
         return new SqlSelector(_comm.getSchema(), sql).getArrayList(Integer.class);
     }
@@ -664,9 +668,14 @@ public class AnnouncementManager
     public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
         Container c = ContainerManager.getForId(update.getContainerId());
-        update = validateModelWithSideEffects(update, ContainerManager.getForId(update.getContainerId()), user, false);
+        if (c == null)
+            throw new NotFoundException("No container with id " + update.getContainerId());
+        AnnouncementModel current = getAnnouncement(c, update.getRowId());
+        if (current == null)
+            throw new NotFoundException("No announcement with id " + update.getRowId());
+        update = validateModelWithSideEffects(update, c, user, false);
 
-        update.beforeUpdate(user);
+        update.beforeUpdate(user, current); // This preserves Created, CreatedBy, EntityId, etc.
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
         notifyDiscussionProviderOfChange(c, user, result, Change.Update);
 
@@ -759,7 +768,7 @@ public class AnnouncementManager
 
     public static long getMessageCount(Container c)
     {
-        return new TableSelector( _comm.getTableInfoAnnouncements(), SimpleFilter.createContainerFilter(c), null).getRowCount();
+        return new TableSelector(_comm.getTableInfoAnnouncements(), SimpleFilter.createContainerFilter(c), null).getRowCount();
     }
 
     public static Collection<? extends NotificationOption> getEmailOptions()
@@ -801,7 +810,7 @@ public class AnnouncementManager
             return EmailOption.MESSAGES_NONE.getValue();
     }
 
-    private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
+    public static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
     public static void saveMessageBoardSettings(Container c, Settings settings)
     {
@@ -845,12 +854,11 @@ public class AnnouncementManager
         // Note: Attachments are handled by AttachmentServiceImpl
 
         // Delete rows from UserList first because of the FK
-        SQLFragment sql = new SQLFragment("DELETE FROM ")
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
             .append(CommSchema.getInstance().getTableInfoMemberList())
-            .append(" WHERE MessageId IN (SELECT RowId FROM ")
+            .unsafeAppend(" WHERE MessageId IN (SELECT RowId FROM ")
             .append(CommSchema.getInstance().getTableInfoAnnouncements())
-            .append(" WHERE Container = ?)")
-            .add(c);
+            .unsafeAppend(" WHERE Container = ?)", c);
         new SqlExecutor(CommSchema.getInstance().getSchema()).execute(sql);
 
         // Now delete the announcements
@@ -872,21 +880,18 @@ public class AnnouncementManager
         if (null == c || isSecure(c))
             return;
 
-        SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads() + " _t_ ");
-        sql.append(" WHERE Container = ?");
-        sql.add(c);
-        String and = " AND ";
+        SQLFragment sql = SQLFragment.unsafe("SELECT EntityId FROM ").append(_comm.getTableInfoThreads()).unsafeAppend(" _t_ ");
+        sql.unsafeAppend(" WHERE Container = ?", c);
 
         if (null != threadId)
         {
-            sql.append(and).append(" EntityId = ?");
-            sql.add(threadId);
+            sql.unsafeAppend(" AND EntityId = ?", threadId);
         }
         else
         {
             SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, "_t_").toSQLFragment(null, null);
             if (!modified.isEmpty())
-                sql.append(and).append(modified);
+                sql.unsafeAppend(" AND ").append(modified);
         }
 
         // Push a ViewContext onto the stack before translating the bodies; announcements may need this to render embedded webparts.
@@ -939,23 +944,19 @@ public class AnnouncementManager
         // Get the attachments... unfortunately, they're attached to individual announcementModels, not to the thread,
         // so we need a different query.
         // find all messages that have attachments
-        sql = new SQLFragment("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent");
-        sql.append("\nWHERE a.container = ?");
-        sql.add(c);
-        and = " AND ";
+        sql = SQLFragment.unsafe("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM ").append(_comm.getTableInfoAnnouncements()).unsafeAppend(" a INNER JOIN core.Documents d ON a.entityid = d.parent");
+        sql.unsafeAppend("\nWHERE a.container = ?", c);
         if (null != threadId)
         {
-            sql.append(and).append("(a.entityId = ? OR a.parent = ?)");
-            sql.add(threadId);
-            sql.add(threadId);
+            sql.unsafeAppend(" AND (a.entityId = ? OR a.parent = ?)", threadId, threadId);
         }
         else
         {
             SQLFragment modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoDocuments(), modifiedSince, "d").toSQLFragment(null, null);
             if (!modified.isEmpty())
-                sql.append(and).append(modified);
+                sql.unsafeAppend(" AND ").append(modified);
         }
-        sql.append("\nGROUP BY a.EntityId");
+        sql.unsafeAppend("\nGROUP BY a.EntityId");
 
         final Collection<String> annIds = new HashSet<>();
         final Map<String, AnnouncementModel> map = new HashMap<>();
@@ -1137,6 +1138,51 @@ public class AnnouncementManager
             // UNDONE: attachments, update, responses, ....
 
             purgeAnnouncements(c, true);
+        }
+    }
+
+    // Not testing container scoping, but AbstractContainerScopingTest provides useful helper methods
+    public static class UpdateTest extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testUpdateFields() throws Exception
+        {
+            // Create a new message as admin
+            Container folder = JunitUtil.getTestContainer();
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Test message update");
+            insert.setBody("body");
+            User admin = getAdmin();
+            final AnnouncementModel model = AnnouncementManager.insertAnnouncement(folder, admin, insert, null, false);
+            Date created = model.getCreated();
+            String entityId = model.getEntityId();
+
+            // GH Issue #1461: Users should not be able to override EntityId, Created, CreatedBy, Modified, or
+            // ModifiedBy properties. Create new Reader and attempt to override the model properties and update.
+            // This simulates values coming from URL parameters.
+            Calendar calendar = new GregorianCalendar(1999, Calendar.SEPTEMBER, 9);
+            Date bogusDate = calendar.getTime();
+            User reader = createUserInRole(folder, ReaderRole.class);
+            // Entity.setEntityId() should block setting a new EntityId
+            Assert.assertThrows(IllegalStateException.class, () -> model.setEntityId(GUID.makeGUID()));
+            model.setCreatedBy(reader.getUserId());
+            model.setCreated(bogusDate);
+            model.setModifiedBy(reader.getUserId());
+            model.setModified(bogusDate);
+            Thread.sleep(10); // Quick sleep to ensure Modified > Created, even on a very fast test run
+            AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
+
+            // Re-select updated model
+            AnnouncementModel updated = AnnouncementManager.getAnnouncement(folder, model.getRowId());
+            assertNotNull(updated);
+            assertEquals(entityId, updated.getEntityId());                         // EntityId hasn't changed
+            assertEquals(admin.getUserId(), updated.getCreatedBy());               // CreatedBy hasn't changed
+            assertEquals(created, updated.getCreated());                           // Created hasn't changed
+            assertEquals(admin.getUserId(), updated.getModifiedBy());              // ModifiedBy hasn't changed
+            assertNotEquals(bogusDate, updated.getModified());                     // Modified is not our bogus value
+            assertTrue(updated.getModified().compareTo(updated.getCreated()) > 0); // Modified > Created
+
+            AnnouncementManager.deleteAnnouncement(updated);
         }
     }
 

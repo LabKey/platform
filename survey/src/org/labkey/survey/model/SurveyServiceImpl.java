@@ -19,11 +19,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.api.survey.SurveyService;
-import org.labkey.api.survey.model.Survey;
-import org.labkey.api.survey.model.SurveyDesign;
-import org.labkey.api.survey.model.SurveyListener;
 import org.labkey.survey.SurveyManager;
+import org.labkey.survey.SurveyService;
 
 /**
  * User: cnathe
@@ -64,7 +61,7 @@ public class SurveyServiceImpl implements SurveyService
     @Override
     public SurveyDesign getSurveyDesign(Container container, User user, int surveyDesignId)
     {
-        return SurveyManager.get().getSurveyDesign(container, user, surveyDesignId);
+        return SurveyManager.get().getSurveyDesignForRead(container, user, surveyDesignId);
     }
 
     @Override

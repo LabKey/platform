@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,6 @@ public class TabContainerType extends NormalContainerType
     }
 
     @Override
-    public boolean shouldRemoveFromPortal()
-    {
-        return true;
-    }
-
-    @Override
     public boolean includePropertiesAsChild(boolean includeTabs)
     {
         return includeTabs;
@@ -60,14 +54,11 @@ public class TabContainerType extends NormalContainerType
     @Override
     public Container getContainerFor(DataType dataType, Container currentContainer)
     {
-        switch (dataType)
+        return switch (dataType)
         {
-            case fileRoot:
-            case tabParent:
-                return currentContainer.getParent();
-            default:
-                return currentContainer;
-        }
+            case fileRoot, tabParent -> currentContainer.getParent();
+            default -> currentContainer;
+        };
     }
 
 }

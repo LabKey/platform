@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public interface WebPartFactory
 
     void setModule(Module module);
 
-    /** For backwards compatibility, names that this web part might have been previously called and should still match it for existing portal configurations */
+    /** For backwards compatibility, names that this web part might have been previously called and should still match for existing portal configurations */
     List<String> getLegacyNames();
 
     boolean isAvailable(Container c, String scope, String location);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,21 @@
  */
 package org.labkey.api.search;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.query.ExprColumn;
@@ -67,6 +70,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.ToLongFunction;
 
 public interface SearchService extends SearchMXBean
 {
@@ -75,6 +79,7 @@ public interface SearchService extends SearchMXBean
     Logger _log = LogHelper.getLogger(SearchService.class, "Full text search service");
 
     long DEFAULT_FILE_SIZE_LIMIT = 100L; // 100 MB
+    int INDEXING_LIMIT = 1_000;
 
     /**
      * Returns the max file size indexed
@@ -148,7 +153,7 @@ public interface SearchService extends SearchMXBean
         /** Intended for content that needed indexing or reindexing because it was modified or created */
         modified,
         /** Highest priority. Used for removing documents from the index, which is generally faster than adding */
-        delete;
+        delete
     }
 
 
@@ -239,7 +244,7 @@ public interface SearchService extends SearchMXBean
     //
     // plug in interfaces
     //
-    
+
     interface ResourceResolver
     {
         default WebdavResource resolve(@NotNull String resourceIdentifier) { return null; }
@@ -288,7 +293,7 @@ public interface SearchService extends SearchMXBean
         {
             return _name;
         }
-        
+
         public String getDescription()
         {
             return _description;
@@ -300,19 +305,14 @@ public interface SearchService extends SearchMXBean
             return _name;
         }
 
-        protected Set<String> getPermittedContainerIds(User user, Map<String, Container> containers, @NotNull Class<? extends Permission> perm)
+        /**
+         * Permission required, beyond base container Read (which every searchable container already has), for this
+         * category's documents to be visible. Return null if base Read is sufficient.
+         */
+        @Nullable
+        public Class<? extends Permission> getRequiredPermission()
         {
-            Set<String> containerIds = new HashSet<>();
-            containers.forEach((id, container) -> {
-                if (container.hasPermission(user, perm))
-                    containerIds.add(id);
-            });
-            return containerIds.size() == containers.size() ? containers.keySet() : containerIds;
-        }
-
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return containers.keySet();
+            return null;
         }
 
         public boolean isShowInAdvancedSearch()
@@ -326,7 +326,7 @@ public interface SearchService extends SearchMXBean
     // search
     //
 
-    
+
     class SearchResult
     {
         public long totalHits;
@@ -425,7 +425,7 @@ public interface SearchService extends SearchMXBean
     @Nullable SearchHit find(String docId) throws IOException;
 
     String escapeTerm(String term);
-    
+
     List<SearchCategory> getSearchCategories();
 
     //
@@ -437,6 +437,9 @@ public interface SearchService extends SearchMXBean
     void resetIndex();
     void startCrawler();
     void pauseCrawler();
+
+    /** @return should the search icon be shown in the page header; controlled from the Full-Text Search admin page */
+    boolean isSearchIconVisible();
     void updateIndex(String reason);
     void refreshNow();
 
@@ -464,7 +467,7 @@ public interface SearchService extends SearchMXBean
 
     void waitForIdle() throws InterruptedException;
 
-    
+
     /** default implementation saving lastIndexed */
     void setLastIndexedForPath(Path path, long indexed, long modified);
 
@@ -475,9 +478,9 @@ public interface SearchService extends SearchMXBean
     void maintenance();
 
     //
-    // configuration, plugins 
+    // configuration, plugins
     //
-    
+
     void addSearchCategory(SearchCategory category);
     List<SearchCategory> getAllCategories();
     List<SearchCategory> getCategories(String categories);
@@ -494,12 +497,16 @@ public interface SearchService extends SearchMXBean
     interface DocumentProvider
     {
         /**
-         * Enumerate documents for full-text search. Unless it's known there will be a small number of documents
-         * added to the queue, add Runnable to the IndexTask that adds the Resources from the container to the queue.
-         * If there are potentially many documents for a container, add resources in batches of 1,000 or so to avoid
-         * a huge memory footprint.
+         * Enumerate documents for full-text search indexing. Do NOT fetch an unbounded result set into memory.
          *
-         * @param modifiedSince when null, do a full reindex; otherwise incremental (either modified > modifiedSince, or modified > lastIndexed)
+         * <p>Use the <em>recursive-requeue pattern</em>: create an {@link IndexBatchCursor} from {@code minRowId = 0},
+         * call {@link IndexBatchCursor#createSelector} (for {@code TableSelector}-based callers) or build a
+         * raw SQL query with {@code RowId > minRowId ORDER BY RowId LIMIT} {@link SearchService#INDEXING_LIMIT},
+         * process the batch with {@link IndexBatchCursor#forEach}, then call {@link IndexBatchCursor#wasFull()}
+         * and requeue only if it returns {@code true}. This keeps the ResultSet closed between batches and
+         * interleaves indexing with other queue work.</p>
+         *
+         * @param modifiedSince when null, do a full reindex; otherwise incremental (either modified &gt; modifiedSince, or modified &gt; lastIndexed)
          */
         void enumerateDocuments(TaskIndexingQueue adder, @Nullable Date modifiedSince);
 
@@ -540,18 +547,81 @@ public interface SearchService extends SearchMXBean
         boolean detect(WebdavResource resource, String contentType, byte[] buf) throws IOException;
         void parse(InputStream stream, ContentHandler handler) throws IOException, SAXException;
     }
-    
+
+
+    /**
+     * Keyset-pagination cursor for the recursive-requeue batch-indexing pattern.
+     * Tracks position (max RowId seen) and batch fullness across one round of indexing.
+     * Intended for use in {@link DocumentProvider#enumerateDocuments} implementations.
+     */
+    class IndexBatchCursor
+    {
+        private long _maxRowId;
+        private int _count;
+
+        public IndexBatchCursor(long minRowId)
+        {
+            _maxRowId = minRowId;
+        }
+
+        /** Records {@code rowId} as processed. Throws if results are not strictly ascending by RowId. */
+        public void advance(long rowId)
+        {
+            if (rowId <= _maxRowId)
+                throw new IllegalStateException("Expected results strictly ordered by RowId but got " + rowId + " after " + _maxRowId);
+            _maxRowId = rowId;
+            _count++;
+        }
+
+        /** Returns the maximum RowId seen so far, suitable for passing as {@code minRowId} to the next batch. */
+        public long getMaxRowId()
+        {
+            return _maxRowId;
+        }
+
+        /**
+         * Adds {@code RowId > current max} to {@code filter} and returns a {@link TableSelector} ordered by RowId
+         * and limited to {@link #INDEXING_LIMIT} rows. Callers should pass the result to {@link #forEach} and
+         * then call {@link #wasFull} to decide whether to requeue.
+         */
+        public TableSelector createSelector(TableInfo tableInfo, SimpleFilter filter)
+        {
+            filter.addCondition(FieldKey.fromParts("RowId"), _maxRowId, CompareType.GT);
+            TableSelector selector = new TableSelector(tableInfo, filter, new Sort("RowId"));
+            selector.setMaxRows(INDEXING_LIMIT);
+            return selector;
+        }
+
+        /**
+         * Iterates {@code batch}, calling {@link #advance} with the item's RowId and then invoking
+         * {@code action} on each item. {@code advance} is called unconditionally before each action so the
+         * count stays accurate even when the action throws.
+         */
+        public <T> void forEach(List<? extends T> batch, ToLongFunction<T> rowIdOf, Consumer<T> action)
+        {
+            batch.forEach(item -> {
+                advance(rowIdOf.applyAsLong(item));
+                action.accept(item);
+            });
+        }
+
+        /** Returns {@code true} if the batch was full, meaning more rows may remain and a requeue is needed. */
+        public boolean wasFull()
+        {
+            return _count == INDEXING_LIMIT;
+        }
+    }
 
     // an interface that enumerates documents in a container (not recursive)
     void addDocumentProvider(DocumentProvider provider);
 
     void addDocumentParser(DocumentParser parser);
 
-    
+
     //
     // helpers
     //
-    
+
 
     /**
      * filter for documents modified since the provided date
@@ -592,7 +662,7 @@ public interface SearchService extends SearchMXBean
 
             // Incremental if modifiedSince is set and is more recent than 1967-10-04
             boolean incremental = modifiedSince != null && modifiedSince.compareTo(oldDate) > 0;
-            
+
             // no filter
             if (!incremental)
                 return;
@@ -607,7 +677,7 @@ public interface SearchService extends SearchMXBean
             String or = "";
             if (null != lastIndexed)
             {
-                _sqlf.append(lastIndexed.getValueSql(lastIndexedTableAlias)).append(" IS NULL");
+                _sqlf.append(lastIndexed.getValueSql(lastIndexedTableAlias)).unsafeAppend(" IS NULL");
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
             }
@@ -615,7 +685,7 @@ public interface SearchService extends SearchMXBean
             if (null != modified && null != lastIndexed)
             {
                 _sqlf.append(or);
-                _sqlf.append(modified.getValueSql(modifiedTableAlias)).append(">").append(lastIndexed.getValueSql(lastIndexedTableAlias));
+                _sqlf.append(modified.getValueSql(modifiedTableAlias)).unsafeAppend(">").append(lastIndexed.getValueSql(lastIndexedTableAlias));
                 _fieldKeys.add(modified.getFieldKey());
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
@@ -624,19 +694,19 @@ public interface SearchService extends SearchMXBean
             if (null != modifiedSince && null != modified)
             {
                 _sqlf.append(or);
-                _sqlf.append(modified.getValueSql(modifiedTableAlias)).append("> ?");
+                _sqlf.append(modified.getValueSql(modifiedTableAlias)).unsafeAppend("> ?");
                 _sqlf.add(modifiedSince);
                 _fieldKeys.add(modified.getFieldKey());
             }
 
             if (_sqlf.isEmpty())
             {
-                _sqlf.append("1=1");
+                _sqlf.unsafeAppend("1=1");
             }
             else
             {
                 _sqlf.insert(0, "(");
-                _sqlf.append(")");
+                _sqlf.unsafeAppend(")");
             }
         }
 
@@ -664,7 +734,7 @@ public interface SearchService extends SearchMXBean
             assert tableAliasProvidedInConstructor || tableAlias != null;
             if (this._sqlf.isEmpty() || null == tableAlias)
                 return _sqlf;
-            String sql = StringUtils.replace(_sqlf.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
+            String sql = Strings.CS.replace(_sqlf.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
             SQLFragment ret = new SQLFragment(sql);
             ret.addAll(_sqlf.getParams());
             return ret;
@@ -766,7 +836,7 @@ public interface SearchService extends SearchMXBean
             {
                 var list = SearchService.get().getCategories(categories);
                 if (null != list && !list.isEmpty())
-                this.categories = list;
+                    this.categories = list;
                 return this;
             }
 

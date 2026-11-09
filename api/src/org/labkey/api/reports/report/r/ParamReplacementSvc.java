@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -538,7 +538,7 @@ public class ParamReplacementSvc
                     // NOTE: dollar signs in the path will cause "java.lang.IllegalArgumentException: Illegal group reference" from Matcher.appendReplacement
                     resultFileName = resultFileName.replaceAll("\\$", "\\\\\\$");
 
-                    _log.debug("Found output parameter '" + param.getName() + "'.  Mapping local file '" + resultFile + "' to '" + resultFileName + "'");
+                    _log.debug("Found output parameter '{}'.  Mapping local file '{}' to '{}'", param.getName(), resultFile, resultFileName);
                 }
                 String replacementStr = pattern.getReplacementStr(resultFileName, m.group(0), param.getName());
                 outputReplacements.add(param);

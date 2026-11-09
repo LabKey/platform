@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class QuerySnapshotCache
 {
-    private static final Cache<Container, QuerySnapshotCollections> QUERY_SNAPSHOT_DEF_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Query snapshots", (c, argument) -> new QuerySnapshotCollections(c));
+    private static final Cache<Container, QuerySnapshotCollections> QUERY_SNAPSHOT_DEF_CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxContainers(), CacheManager.DAY, "Query snapshots", (c, argument) -> new QuerySnapshotCollections(c));
 
     static @NotNull Collection<QuerySnapshotDef> getQuerySnapshotDefs(@Nullable Container c, @Nullable String schemaName)
     {

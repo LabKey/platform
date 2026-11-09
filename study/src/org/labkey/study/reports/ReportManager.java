@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         });
 
         // add the default grid as the first element
-        labels.add(0, new Pair<>("Default Grid View", ""));
+        labels.addFirst(new Pair<>("Default Grid View", ""));
 
         return labels;
     }
@@ -223,7 +223,7 @@ public class ReportManager implements DatasetManager.DatasetListener
     {
         if (def != null)
         {
-            _log.debug("Cache cleared notification on dataset : " + def.getDatasetId());
+            _log.debug("Cache cleared notification on dataset : {}", def.getDatasetId());
             String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
             for (Report report : ReportUtil.getReportsIncludingInherited(def.getContainer(), null, reportKey))
             {

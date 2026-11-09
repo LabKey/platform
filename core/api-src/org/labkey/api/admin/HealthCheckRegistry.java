@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ public class HealthCheckRegistry
 
     public static final String DEFAULT_CATEGORY = "default";
     public static final String TRIAL_INSTANCES_CATEGORY = "trial";
+    public static final String EXTERNAL_DATA_SOURCES_CATEGORY = "externalDataSources";
 
     private final Map<String, Map<String, HealthCheck>> _healthCheckCategories = new HashMap<>();
     private static final HealthCheckRegistry _instance = new HealthCheckRegistry();
@@ -78,7 +79,7 @@ public class HealthCheckRegistry
         Map<String, HealthCheck> categoryChecks = _healthCheckCategories.get(category);
         if (categoryChecks.containsKey(name))
         {
-            LOG.error("Health check with name '" + name + "' already exists in category '" + category + "'.  New check not registered.");
+            LOG.error("Health check with name '{}' already exists in category '{}'.  New check not registered.", name, category);
             return;
         }
         _healthCheckCategories.get(category).put(name, healthCheck);

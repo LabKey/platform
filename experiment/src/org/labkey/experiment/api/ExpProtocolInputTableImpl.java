@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         clearConditions(containerFK);
         SQLFragment sqlFragment = new SQLFragment("(SELECT p.Container FROM ");
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoProtocol(), "p");
-        sqlFragment.append(" WHERE p.RowId = ProtocolId)");
+        sqlFragment.unsafeAppend(" WHERE p.RowId = ProtocolId)");
 
         addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, false), containerFK);
     }

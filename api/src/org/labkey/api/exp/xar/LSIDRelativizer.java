@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.labkey.api.exp.xar;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ContainerManager;
@@ -162,7 +163,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (ExpMaterial.DEFAULT_CPAS_TYPE.equals(prefix))
             {
-                if (StringUtils.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
+                if (Strings.CS.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }
@@ -173,7 +174,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (ExpData.DEFAULT_CPAS_TYPE.equals(prefix))
             {
-                if (StringUtils.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
+                if (Strings.CS.startsWith(lsid.getNamespaceSuffix(),"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }
@@ -184,7 +185,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else
             {
-                if (StringUtils.startsWith(suffix,"Folder-"))
+                if (Strings.CS.startsWith(suffix,"Folder-"))
                 {
                     return stripFolderSuffix(lsid, lsids);
                 }

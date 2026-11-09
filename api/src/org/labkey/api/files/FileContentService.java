@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,10 +68,19 @@ public interface FileContentService
     }
 
     /**
-     * Returns a list of Container in which the path resides.
+     * Returns the container whose file root holds the path, or null if none does.
      */
+    @Nullable
+    Container getContainerForFilePath(java.nio.file.Path path);
+
+    /** @deprecated use {@link #getContainerForFilePath(java.nio.file.Path)} */
+    @Deprecated
     @NotNull
-    List<Container> getContainersForFilePath(java.nio.file.Path path);
+    default List<Container> getContainersForFilePath(java.nio.file.Path path)
+    {
+        Container c = getContainerForFilePath(path);
+        return c == null ? List.of() : List.of(c);
+    }
 
     /**
      * Returns the file root of the specified container. If not explicitly defined,
@@ -91,6 +100,13 @@ public interface FileContentService
 
     @Nullable
     java.nio.file.Path getFileRootPath(@NotNull Container c, @NotNull ContentType type);
+
+    /**
+     * Like {@link #getFileRootPath(Container, ContentType)} but resolves the configured root even when the file root
+     * is disabled, and never creates directories.
+     */
+    @Nullable
+    java.nio.file.Path getConfiguredFileRootPath(@NotNull Container c, @NotNull ContentType type);
 
     @Nullable
     URI getFileRootUri(@NotNull Container c, @NotNull ContentType type, @Nullable String filePath);
@@ -161,10 +177,10 @@ public interface FileContentService
      * @return AttachmentParent that can be passed to other methods of this interface
      */
     @Nullable
-    AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
+    AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException;
 
     @Nullable
-    AttachmentDirectory getMappedAttachmentDirectory(Container c, ContentType contentType, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
+    AttachmentDirectory getMappedAttachmentDirectory(Container c, ContentType contentType, boolean createDir) throws UnsetRootDirectoryException;
 
     /**
      * Return a named AttachmentParent for files in the directory mapped to this container

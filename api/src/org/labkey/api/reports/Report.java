@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,6 @@ import java.util.Map;
 
 public interface Report extends AttachmentParent, ThumbnailProvider
 {
-    String SHARE_REPORT_TYPE = "Report.ShareReport";
-
     Report clone();
     String getType();
     String getTypeDescription();
@@ -55,7 +53,7 @@ public interface Report extends AttachmentParent, ThumbnailProvider
     /**
      * Render this report in the specified context
      */
-    HttpView renderReport(ViewContext context) throws Exception;
+    HttpView<?> renderReport(ViewContext context) throws Exception;
 
     /**
      * Return the data view (if any) for this report. Many reports are created from a source
@@ -83,11 +81,6 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      */
     boolean canShare(User user, Container container);
     boolean canShare(User user, Container container, List<ValidationError> errors);
-
-    /**
-     * Determine if this report type allows sharing via the shareReport action.
-     */
-    boolean allowShareButton(User user, Container container);
 
     /**
      * Determines whether the user can delete this report
@@ -221,4 +214,12 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      * e.g. This report can run code that runs outside labkey's security context
      */
     boolean isSandboxed();
+
+    /* Reports that require a redirect (e.g., Sample Finder saved searches) should return false
+     * to prevent them from causing invalid redirects during web part rendering.
+     */
+    default boolean isShowInReportsWebPart()
+    {
+        return true;
+    }
 }

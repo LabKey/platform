@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.TimeUnit;
 
-/**
-* User: adam
-* Date: 6/11/13
-* Time: 10:05 AM
-*/
 public class Rate
 {
     private final double _rate;
@@ -45,9 +40,9 @@ public class Rate
         _rate = (double)count / (double)unit.toMillis(duration);
 
         if (duration == 1)
-            _toString = "" + count + "/" + StringUtils.stripEnd(unit.toString(), "S");
+            _toString = count + "/" + StringUtils.stripEnd(unit.toString(), "S");
         else
-            _toString = "" + count + "/(" + duration + " "  + unit + ")";
+            _toString = count + "/(" + duration + " "  + unit + ")";
     }
 
     // Count per millisecond

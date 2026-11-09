@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
 
         // guaranteed to only have a single file
         assert support.getInputFiles().size() == 1;
-        FileLike dataFile = support.getInputFiles().get(0);
+        FileLike dataFile = support.getInputFiles().getFirst();
         PipeRoot pr = PipelineService.get().findPipelineRoot(job.getContainer());
 
         if (pr != null)

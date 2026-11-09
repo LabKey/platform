@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class XarExportPipelineJob extends PipelineJob
 
         try
         {
-            getLogger().info("Starting to write XAR to " + _exportFile.getPath());
+            getLogger().info("Starting to write XAR to {}", _exportFile.getPath());
             XarExporter exporter = new XarExporter(_lsidRelativizer, _selection, getUser(), _xarXmlFileName, getLogger(), getContainer());
             FileUtil.mkdirs(_exportFile.getParentFile());
             try (FileOutputStream fOut = new FileOutputStream(_exportFile);

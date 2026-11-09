@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ public class RenderAssayBean extends RenderAssayForm
             List<ExpQCFlag> qcFlags = AssayService.get().getFlags(_assay.getProvider(), getRunId(), ExpQCFlag.class);
             if (!qcFlags.isEmpty())
             {
-                ExpQCFlag flag = qcFlags.iterator().next();
+                ExpQCFlag flag = qcFlags.getFirst();
                 User user = UserManager.getUser(flag.getModifiedBy());
                 if (user != null)
                 {
@@ -231,7 +231,7 @@ public class RenderAssayBean extends RenderAssayForm
                 return new DuplicateDataFileRunView(schema, setting, _assay, _assay.getRun());
             }
             else
-                LOG.error("The assay: '" + _assay.getProtocol().getName() + "' run: " + _assay.getRun().getRowId() + " folder: '" + context.getContainer().getPath() + "' uses a data file by the same name as other runs but the data file could not be found");
+                LOG.error("The assay: '{}' run: {} folder: '{}' uses a data file by the same name as other runs but the data file could not be found", _assay.getProtocol().getName(), _assay.getRun().getRowId(), context.getContainer().getPath());
 
         }
         return null;

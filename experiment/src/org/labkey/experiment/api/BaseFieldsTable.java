@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +29,6 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.Permission;
 
 public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
 {
@@ -57,7 +71,7 @@ public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
         // Show only folders where current user has admin permissions
-        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class);
     }
 
     @Override
@@ -66,18 +80,18 @@ public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
     {
         SQLFragment result = new SQLFragment();
         result.appendComment("<" + _tableName + ">", getSqlDialect());
-        result.append("(SELECT dd.Name AS DomainName, dd.DomainUri, pd.*");
+        result.unsafeAppend("(SELECT dd.Name AS DomainName, dd.DomainUri, pd.*");
 
         addColumnSQL(result);
 
-        result.append(" FROM ")
+        result.unsafeAppend(" FROM ")
             .append(super.getFromSQL("pd"))
-            .append("""
+            .unsafeAppend("""
 
                 JOIN exp.PropertyDomain AS pdom ON pdom.PropertyId = pd.PropertyId
                 JOIN exp.DomainDescriptor AS dd ON dd.DomainId = pdom.DomainId""");
 
-        result.append(")\n")
+        result.unsafeAppend(")\n")
             .appendIdentifier(alias)
             .appendComment("</" + _tableName + ">", getSqlDialect());
 

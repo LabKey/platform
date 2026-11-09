@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -168,7 +168,7 @@ public class AppBar extends NavTree
             if (selected == null)
             {
                 // No matches for previously selected tab, so just choose the first one
-                selected = buttons.get(0);
+                selected = buttons.getFirst();
             }
         }
         else if (selected != null)
@@ -188,7 +188,7 @@ public class AppBar extends NavTree
         else if (!crumbTrail.isEmpty())
         {
             // Last item is page title, strip it off the crumb trail
-            setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getText());
+            setPageTitle(crumbTrail.getLast().getText());
 
             List<NavTree> result = new ArrayList<>();
             boolean stopLooking = false;

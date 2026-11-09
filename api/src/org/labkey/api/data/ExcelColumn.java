@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,7 +183,7 @@ public class ExcelColumn extends RenderColumn
         if (_simpleType == ExcelCellUtils.TYPE_UNKNOWN)
         {
             Class<?> valueClass = dc.getDisplayValueClass();
-            _log.error("init: Unknown Class " + valueClass + " " + getName());
+            _log.error("init: Unknown Class {} {}", valueClass, getName());
         }
     }
 
@@ -385,13 +385,13 @@ public class ExcelColumn extends RenderColumn
         }
         catch(ClassCastException cce)
         {
-            _log.error("Can't cast '" + o + "', class '" + o.getClass().getName() + "', to class corresponding to simple type '" + _simpleType + "'");
-            _log.error("DisplayColumn.getCaption(): " + _dc.getCaption());
-            _log.error("DisplayColumn.getClass().getName(): " + _dc.getClass().getName());
-            _log.error("DisplayColumn.getDisplayValueClass(): " + _dc.getDisplayValueClass());
-            _log.error("DisplayColumn.getValueClass(): " + _dc.getValueClass());
-            _log.error("DisplayColumn.getColumnInfo().getJdbcType(): " + columnInfo.getJdbcType());
-            _log.error("DisplayColumn.getColumnInfo().getSqlTypeName(): " + columnInfo.getSqlTypeName());
+            _log.error("Can't cast '{}', class '{}', to class corresponding to simple type '{}'", o, o.getClass().getName(), _simpleType);
+            _log.error("DisplayColumn.getCaption(): {}", _dc.getCaption());
+            _log.error("DisplayColumn.getClass().getName(): {}", _dc.getClass().getName());
+            _log.error("DisplayColumn.getDisplayValueClass(): {}", _dc.getDisplayValueClass());
+            _log.error("DisplayColumn.getValueClass(): {}", _dc.getValueClass());
+            _log.error("DisplayColumn.getColumnInfo().getJdbcType(): {}", columnInfo.getJdbcType());
+            _log.error("DisplayColumn.getColumnInfo().getSqlTypeName(): {}", columnInfo.getSqlTypeName());
 
             throw cce;
         }

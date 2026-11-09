@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
 {
     boolean isComplete();
 
+    /**
+     * Only supported by CachedResultSet. Other implementations will throw UnsupportedOperationException
+     */
     Map<String, Object> getRowMap() throws SQLException;
 
     @Override
@@ -47,7 +50,7 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
      * Implementations should prefer to return ConnectionWrapper instead of the underlying connection as it has
      * more context. */
     @Nullable
-    Connection getConnection() throws SQLException;
+    Connection getConnection();
 
     default <T> T getWrapped(Class<T> clz)
     {

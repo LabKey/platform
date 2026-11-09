@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ import java.util.Objects;
             throw new IllegalArgumentException("parts contains null: " + StringUtils.join(parts, "."));
 
         T parent = QueryKey.fromParts(factory, parts.subList(0, parts.size() - 1));
-        return factory.create(parent, parts.get(parts.size() - 1));
+        return factory.create(parent, parts.getLast());
     }
 
     static public <T extends QueryKey<T>> T fromParts(Factory<T> factory, T... parts)

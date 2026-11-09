@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -315,7 +314,7 @@ public interface Dataset extends StudyEntity
 
     Dataset createMutable(); // See Issue 52211
 
-    void save(User user) throws SQLException;
+    void save(User user);
 
     boolean isQueryDataset();
 
@@ -341,6 +340,7 @@ public interface Dataset extends StudyEntity
      */
     boolean canUpdateDefinition(User user);
 
+    // TODO: Return a Stream instead like other permissions methods
     Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
     KeyType getKeyType();

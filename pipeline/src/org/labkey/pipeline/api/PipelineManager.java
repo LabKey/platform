@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -61,6 +60,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.trigger.TriggerConfiguration;
@@ -96,6 +96,7 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -113,20 +114,23 @@ public class PipelineManager
 {
     private static final Logger _log = LogManager.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
-    private static final BlockingCache<String, PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots",
-        (key, argument) -> new TableSelector(pipeline.getTableInfoPipelineRoots(), (Filter)argument, null).getObject(PipelineRoot.class));
+    // The table is sparse, so cache every row in one entry (container id -> type -> root) rather than a hit or miss per container
+    private static final String CACHE_KEY = "AllRoots";
+    private static final BlockingCache<String, Map<String, Map<String, PipelineRoot>>> CACHE = CacheManager.getBlockingCache(String.class, 1, CacheManager.DAY, "Pipeline roots",
+        (key, argument) -> {
+            Map<String, Map<String, PipelineRoot>> roots = new HashMap<>();
+            new TableSelector(pipeline.getTableInfoPipelineRoots()).forEach(PipelineRoot.class, root -> roots.computeIfAbsent(root.getContainerId(), id -> new HashMap<>()).put(root.getType(), root));
+            return Collections.unmodifiableMap(roots);
+        });
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Type"), type);
-
-        return CACHE.get(getCacheKey(container, type), filter);
+        return CACHE.get(CACHE_KEY).getOrDefault(container.getId(), Collections.emptyMap()).get(type);
     }
 
-    private static String getCacheKey(Container c, @Nullable String type)
+    private static void uncache()
     {
-        return c.getId() + "/" + StringUtils.trimToEmpty(type);
+        CACHE.remove(CACHE_KEY);
     }
 
     @Nullable
@@ -201,7 +205,7 @@ public class PipelineManager
         }
         finally
         {
-            CACHE.remove(getCacheKey(container, type));
+            uncache();
         }
 
         ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(
@@ -211,10 +215,10 @@ public class PipelineManager
     static public void purge(Container container, User user)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun()).
-                append(" SET JobId = NULL WHERE JobId IN (SELECT RowId FROM ").
+        sql.unsafeAppend("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun()).
+                unsafeAppend(" SET JobId = NULL WHERE JobId IN (SELECT RowId FROM ").
                 append(pipeline.getTableInfoStatusFiles(), "p").
-                append(" WHERE container = ?)");
+                unsafeAppend(" WHERE container = ?)");
         sql.add(container.getId());
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
@@ -233,7 +237,7 @@ public class PipelineManager
         }
         finally
         {
-            CACHE.remove(getCacheKey(container, null));
+            uncache();
         }
 
         // Delete trigger configurations through the UserSchema so that we stop any associated listeners. See issue 33986
@@ -287,7 +291,7 @@ public class PipelineManager
             String interval = PipelineEmailPreferences.get().getFailureNotificationInterval(c);
             if (!"0".equals(interval) && interval != null)
             {
-                _log.info("Deciding not to send error notification email based on interval " + interval);
+                _log.info("Deciding not to send error notification email based on interval {}", interval);
                 return;
             }
 
@@ -369,7 +373,7 @@ public class PipelineManager
                 }
                 catch (ValidEmail.InvalidEmailException e)
                 {
-                    _log.warn("Pipeline job status file uses an invalid email: " + statusFile.getEmail() + ". RowId: " + statusFile.getRowId());
+                    _log.warn("Pipeline job status file uses an invalid email: {}. RowId: {}", statusFile.getEmail(), statusFile.getRowId());
                 }
             }
 
@@ -698,8 +702,15 @@ public class PipelineManager
         String pipelineId = config.getPipelineId();
         boolean isEnabled = config.isEnabled();
 
+        // validate that the file regular expression is not blank
+        if (StringUtils.isBlank(config.getFilePattern()))
+        {
+            errors.rejectValue("FilePattern", null, "File Pattern cannot be blank.");
+            return;
+        }
+
         // validate that the config name is unique for this container
-        if (StringUtils.isNotEmpty(name))
+        if (StringUtils.isNotBlank(name))
         {
             if (name.length() > 255)
                 errors.rejectValue("Name", null, "Name must be less than 256 characters");
@@ -783,6 +794,41 @@ public class PipelineManager
             for (Pair<String, String> msg : configErrors)
                 errors.rejectValue(msg.first, null, msg.second);
         }
+    }
+
+    /** Returns an error message if the configuration names a run-as user that the saving user may not run as. */
+    public static @Nullable String validateTriggerRunAsUser(Container container, User user, @Nullable String configuration, @Nullable String customConfiguration)
+    {
+        List<String> names = new ArrayList<>();
+        try
+        {
+            if (StringUtils.isNotBlank(configuration))
+            {
+                JSONObject params = new JSONObject(configuration).optJSONObject("parameters");
+                if (params != null)
+                    names.add(params.optString(PipelineJob.PIPELINE_USERNAME_PARAM, null));
+            }
+            // Custom params are copied into the job's parameters, where a parameter function run promotes this key to the run-as user
+            if (StringUtils.isNotBlank(customConfiguration))
+                names.add(new JSONObject(customConfiguration).optString(PipelineJob.PIPELINE_USERNAME_PARAM, null));
+        }
+        catch (JSONException e)
+        {
+            return "Invalid JSON object for the configuration field: " + e.getMessage();
+        }
+
+        for (String name : names)
+        {
+            if (StringUtils.isBlank(name))
+                continue;
+
+            User runAsUser = UserManager.getUserByDisplayName(name);
+            if (runAsUser == null)
+                return "Unknown run-as user: " + name;
+            if (!PipelineTriggerConfig.canRunAs(container, user, runAsUser))
+                return "You do not have permission to run this trigger as user: " + name;
+        }
+        return null;
     }
 
     public static Path validateFolderImportFileNioPath(String archiveFilePath, PipeRoot pipeRoot, Errors errors)

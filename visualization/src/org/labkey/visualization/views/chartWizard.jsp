@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@
     String numberFormatFn = numberFormat != null ? ExtUtil.toExtNumberFormatFn(numberFormat) : null;
 
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
-    boolean isDeveloper = user.isBrowserDev();
+    boolean isDeveloper = user.isTrustedBrowserDev();
     boolean allowEditMode = !user.isGuest() && form.allowToggleMode();
     boolean allowInherit = user.hasRootAdminPermission() || ReportUtil.isInRole(user, c, ProjectAdminRole.class);
     boolean canEdit = false;

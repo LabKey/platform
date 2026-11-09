@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2016-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import org.labkey.gradle.util.BuildUtils
 import org.labkey.gradle.util.ExternalDependency
 
@@ -56,9 +71,6 @@ configurations.configureEach {
 }
 
 configurations {
-    // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
-    all*.exclude group: "org.apache.geronimo.bundles", module: "json"
-
     // this configuration and its artifact are declared because the default outgoing variant for the api
     // module (runtimeElements) does not include all the class files since the classes compiled from
     // the XSDs are produced in a separate classes directory.  The name is chosen to be the same as
@@ -74,7 +86,7 @@ configurations {
 sourceSets {
   main {
     java {
-      srcDirs = ["src", "gwtsrc", "${BuildUtils.getBuildDirPath(project)}/xb"]
+      srcDirs = ["src", "${BuildUtils.getBuildDirPath(project)}/xb"]
     }
     // TODO move resources files into resources directory to avoid this overlap
     resources {
@@ -358,10 +370,10 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "net.sf.ehcache:ehcache-core:${ehcacheCoreVersion}",
+            "net.sf.ehcache:ehcache:${ehcacheVersion}",
             "Ehcache",
             "Terracotta",
-            "http://ehcache.org/documentation/overview.html",
+            "https://www.ehcache.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Caching library",
@@ -417,19 +429,6 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Collections Library",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.gwtproject:gwt-servlet-jakarta:${gwtServletJakartaVersion}",
-            "Server Support for Google Web Toolkit",
-            "Google",
-            "http://code.google.com/webtoolkit/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Support for rich web apps",
         )
     )
 
@@ -562,7 +561,7 @@ dependencies {
             "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
             "Jackson support for org.json",
             "Jackson",
-            "https://github.com/FasterXML/jackson-datatype-json-org",
+            "https://github.com/FasterXML/jackson-modules-java8",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Add-on module to support JSR-310 (Java 8 Date & Time API) data types",
@@ -1007,20 +1006,11 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Just detection of file content types and extraction of text (no parsers)",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "jakarta.validation:jakarta.validation-api:${validationJakartaApiVersion}",
-            "Bean Validation API (JSR 303)",
-            "JCP",
-            "http://jcp.org/en/jsr/detail?id=303",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Validation of objects, requirement of GWT",
-        )
+        ),
+        {
+            // Only Tika's Markdown content handler needs commonmark; core module ships its own copy
+            exclude group: "org.commonmark"
+        }
     )
 
     BuildUtils.addExternalDependency(
@@ -1078,45 +1068,6 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.springframework.ai:spring-ai-starter-model-google-genai:${springAiVersion}",
-            "spring-ai-starter-google-genai",
-            "spring-ai",
-            "https://github.com/spring-projects/spring-ai",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "LLM Chat Client integration for Gemini"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.springframework.ai:spring-ai-anthropic:${springAiVersion}",
-            "spring-ai-anthropic",
-            "spring-ai",
-            "https://github.com/spring-projects/spring-ai",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "LLM Chat Client integration for Claude"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.springframework.ai:spring-ai-openai:${springAiVersion}",
-            "spring-ai-openai",
-            "spring-ai",
-            "https://github.com/spring-projects/spring-ai",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "LLM Chat Client integration for ChatGPT"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
             "org.springframework.ai:spring-ai-client-chat:${springAiVersion}",
             "spring-ai-client-chat",
             "spring-ai",
@@ -1130,21 +1081,8 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.springframework.ai:spring-ai-advisors-vector-store:${springAiVersion}",
-            "spring-ai-advisors-vector-store",
-            "spring-ai",
-            "https://github.com/spring-projects/spring-ai",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Vector store integration"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.springframework.ai:spring-ai-starter-model-google-genai-embedding:${springAiVersion}",
-            "spring-ai-starter-model-google-genai-embedding",
+            "org.springframework.ai:spring-ai-vector-store:${springAiVersion}",
+            "spring-ai-vector-store",
             "spring-ai",
             "https://github.com/spring-projects/spring-ai",
             ExternalDependency.APACHE_2_LICENSE_NAME,

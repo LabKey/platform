@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,20 +192,20 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
                 // We need to join differently if this is a specimen table, since the subject column name is 'PTID'
                 // rather than 'ParticipantId'.
                 boolean specimenTable = getParentTable() instanceof AbstractSpecimenTable || getParentTable() instanceof SpecimenSummaryTable;
-                sqlf.append(" AND ");
-                sqlf.append(getTableAlias(baseAliasName)).append(".SequenceNum IN (select pv.sequencenum " +
+                sqlf.unsafeAppend(" AND ");
+                sqlf.appendIdentifier(getTableAlias(baseAliasName)).unsafeAppend(".SequenceNum IN (select pv.sequencenum " +
                     "from " +
                     "study.participantvisit pv " +
                     "where " +
                     "pv.participantid = (");
-                sqlf.append(baseAliasName + "." + (specimenTable ? "PTID" : "ParticipantId"));
-                sqlf.append(") and pv.visitrowid = ?)");
+                sqlf.appendDottedIdentifiers(baseAliasName, specimenTable ? "PTID" : "ParticipantId");
+                sqlf.unsafeAppend(") and pv.visitrowid = ?)");
                 sqlf.add(_visit.getRowId());
             }
             else if (_study.getTimepointType() == TimepointType.VISIT)
             {
-                sqlf.append(" AND ");
-                sqlf.append(getTableAlias(baseAliasName)).append(".SequenceNum=CAST(? AS NUMERIC(15,4))");
+                sqlf.unsafeAppend(" AND ");
+                sqlf.appendIdentifier(getTableAlias(baseAliasName)).unsafeAppend(".SequenceNum=CAST(? AS NUMERIC(15,4))");
                 sqlf.add(_sequenceNum);
             }
             else

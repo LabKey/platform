@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,6 @@ import org.labkey.api.view.WebPartView;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Nov 5, 2008
- * Time: 10:51:27 AM
- */
 public class WikiTOCFactory extends BaseWebPartFactory
 {
     public WikiTOCFactory()

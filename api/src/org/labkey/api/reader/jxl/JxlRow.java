@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 
@@ -147,7 +148,7 @@ public class JxlRow implements Row
     }
 
     @Override
-    public Iterator<Cell> iterator()
+    public @NotNull Iterator<Cell> iterator()
     {
         return new JxlCellIterator();
     }

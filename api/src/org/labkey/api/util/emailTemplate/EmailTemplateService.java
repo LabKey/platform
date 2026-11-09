@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class EmailTemplateService
     {
         synchronized(_templates)
         {
-            _log.debug("Registering email template " + templateClass.getName());
+            _log.debug("Registering email template {}", templateClass.getName());
             if (_templates.contains(templateClass))
                 throw new IllegalStateException("Template : " + templateClass.getName() + " has previously been registered.");
 
@@ -258,12 +258,12 @@ public class EmailTemplateService
     public void relocateEmailTemplateProperties(String oldClassName, String newClassName)
     {
         TableInfo tinfo = PropertySchema.getInstance().getTableInfoProperties();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo).append(" SET Name = REPLACE(Name, ?, ?) WHERE Name LIKE ?");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo).unsafeAppend(" SET Name = REPLACE(Name, ?, ?) WHERE Name LIKE ?");
         sql.add(oldClassName);
         sql.add(newClassName);
         sql.add(oldClassName + "%");
 
         int updated = new SqlExecutor(tinfo.getSchema()).execute(sql);
-        _log.info("Migrated " + StringUtilsLabKey.pluralize(updated, "template property", "template properties") + " from " + oldClassName + " to " + newClassName);
+        _log.info("Migrated {} from {} to {}", StringUtilsLabKey.pluralize(updated, "template property", "template properties"), oldClassName, newClassName);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2016 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import org.labkey.api.util.URLHelper;
 /**
  * When thrown in the context of an HTTP request, sends the client a *temporary* redirect in the HTTP response. Not
  * treated as a loggable error. See {@link PermanentRedirectException} if a permanent redirect is desired.
- * Note: This always redirects to the local server. If an external redirect is needed (this is rare), use
- * {@link ExternalRedirectException} or (even rarer) {@link UnsafeExternalRedirectException}.
+ * Note: Instances of this specific class always redirect to the local server. If an external redirect is needed (this
+ * is rare), use {@link ExternalRedirectException} or (even rarer) {@link UnsafeExternalRedirectException}.
  */
 public class RedirectException extends RuntimeException implements SkipMothershipLogging
 {

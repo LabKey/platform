@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,6 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.api.DomainKindDesign;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
@@ -96,7 +95,6 @@ import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
@@ -108,6 +106,8 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.experiment.api.VocabularyDomainKind;
+import org.labkey.experiment.exp.api.DomainKindDesign;
+import org.labkey.experiment.util.SessionTempFileHolder;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
@@ -116,7 +116,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.File;
@@ -762,7 +761,7 @@ public class PropertyController extends SpringActionController
                 }
 
                 if (domains.size() == 1)
-                    _domain = domains.get(0);
+                    _domain = domains.getFirst();
             }
 
             if (_domain == null)
@@ -1364,12 +1363,12 @@ public class PropertyController extends SpringActionController
             _checkCommentLineCount = checkCommentLineCount;
         }
 
-        public Collection<String> getDistinctValueColumns()
+        public @Nullable Collection<String> getDistinctValueColumns()
         {
             return _distinctValueColumns;
         }
 
-        public void setDistinctValueColumns(Collection<String> distinctValueColumns)
+        public void setDistinctValueColumns(@Nullable Collection<String> distinctValueColumns)
         {
             _distinctValueColumns = distinctValueColumns;
         }
@@ -2107,12 +2106,12 @@ public class PropertyController extends SpringActionController
             this.domainNames = domainNames;
         }
 
-        public String getSearch()
+        public @Nullable String getSearch()
         {
             return search;
         }
 
-        public void setSearch(String search)
+        public void setSearch(@Nullable String search)
         {
             this.search = search;
         }
@@ -2196,7 +2195,7 @@ public class PropertyController extends SpringActionController
             List<OntologyManager.PropertyUsages> usages = null;
             if (form.getPropertyIds() != null)
             {
-                usages = OntologyManager.findPropertyUsages(getUser(), form.getPropertyIds(), form.maxUsageCount);
+                usages = OntologyManager.findPropertyUsagesByIds(getUser(), getContainer(), form.getPropertyIds(), form.maxUsageCount);
             }
             else if (form.getPropertyURIs() != null)
             {
@@ -2322,20 +2321,20 @@ public class PropertyController extends SpringActionController
             domains = OntologyManager.getDomains(c, user, Set.of(domain.getTypeId()), null, null);
             pds = OntologyManager.getPropertyDescriptors(c, user, domains,"howdy", null, null, null, null);
             assertEquals(1, pds.size());
-            assertEquals("testStringField", pds.get(0).getName());
+            assertEquals("testStringField", pds.getFirst().getName());
 
             // find by domainId and property descriptor feature
             domains = OntologyManager.getDomains(c, user, Set.of(domain.getTypeId()), null, null);
             pds = OntologyManager.getPropertyDescriptors(c, user, domains, null, new SimpleFilter(FieldKey.fromParts("propertyId", "dimension"), true), null, null, null);
             assertEquals(1, pds.size());
-            assertEquals("testIntField", pds.get(0).getName());
+            assertEquals("testIntField", pds.getFirst().getName());
 
             // pagination
             domains = OntologyManager.getDomains(c, user, Set.of(domain.getTypeId()), null, null);
             pds = OntologyManager.getPropertyDescriptors(c, user, domains, null, null, null, 1, 1L);
             assertEquals(1, pds.size());
             // sorted by propertyId, testStringField is after testIntField
-            assertEquals("testStringField", pds.get(0).getName());
+            assertEquals("testStringField", pds.getFirst().getName());
 
             long totalCount = OntologyManager.getPropertyDescriptorsRowCount(c, user, domains, null, null);
             assertEquals(domain.getProperties().size(), totalCount);
@@ -2377,7 +2376,7 @@ public class PropertyController extends SpringActionController
             var intPropUsages = OntologyManager.findPropertyUsages(user, intProp.getPropertyDescriptor(), 1);
             assertEquals(1, intPropUsages.usageCount);
             assertEquals(1, intPropUsages.objects.size());
-            assertEquals(a1Lsid.toString(), intPropUsages.objects.get(0).getLSID());
+            assertEquals(a1Lsid.toString(), intPropUsages.objects.getFirst().getLSID());
         }
     }
 }

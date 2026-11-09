@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class JavaScriptReport extends ScriptReport
     {
         try
         {
-            return (new JspTemplate("/org/labkey/api/reports/report/view/javaScriptReportExample.jsp")).render();
+            return (new JspTemplate<>("/org/labkey/api/reports/report/view/javaScriptReportExample.jsp")).render();
         }
         catch (Exception e)
         {
@@ -76,17 +76,11 @@ public class JavaScriptReport extends ScriptReport
     }
 
     @Override
-    public boolean hasClientDependencies()
-    {
-        return false;
-    }
-
-    @Override
     public @NotNull String getDesignerHelpHtml()
     {
         try
         {
-            return new JspTemplate("/org/labkey/api/reports/report/view/javaScriptReportHelp.jsp").render();
+            return new JspTemplate<>("/org/labkey/api/reports/report/view/javaScriptReportHelp.jsp").render();
         }
         catch (Exception e)
         {

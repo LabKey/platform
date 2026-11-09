@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class ReportImporter implements FolderImporter
 
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             int count = 0;
 
@@ -78,7 +78,7 @@ public class ReportImporter implements FolderImporter
                     if (ReportService.get().importReport(ctx, reportsDir.getXmlBean(reportFileName), reportsDir, reportFileName) != null)
                         count++;
                     else
-                        ctx.getLogger().warn("Unable to import report file: " + reportFileName);
+                        ctx.getLogger().warn("Unable to import report file: {}", reportFileName);
                 }
                 catch (XmlValidationException e)
                 {
@@ -86,8 +86,8 @@ public class ReportImporter implements FolderImporter
                 }
             }
 
-            ctx.getLogger().info(StringUtilsLabKey.pluralize(count, "report") + " imported");
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("{} imported", StringUtilsLabKey.pluralize(count, "report"));
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

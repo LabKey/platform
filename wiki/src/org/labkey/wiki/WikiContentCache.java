@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.labkey.wiki.model.WikiVersion;
 
 public class WikiContentCache
 {
-    private static final Cache<String, FormattedHtml> CONTENT_CACHE = CacheManager.getStringKeyCache(5000, CacheManager.DAY, "Wiki Content");
+    private static final Cache<String, FormattedHtml> CONTENT_CACHE = CacheManager.getCache(String.class, 5000, CacheManager.DAY, "Wiki Content");
 
     public static FormattedHtml getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache)
     {

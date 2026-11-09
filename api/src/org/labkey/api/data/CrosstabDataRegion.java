@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
@@ -78,7 +79,7 @@ public class CrosstabDataRegion extends DataRegion
                         List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
 
                         // Output a group header for each column's crosstab member.
-                        CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
+                        CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().getFirst();
                         boolean alternate = true;
                         for (Pair<CrosstabMember, List<DisplayColumn>> group : groupedByMember)
                         {
@@ -105,7 +106,7 @@ public class CrosstabDataRegion extends DataRegion
                                 {
                                     String memberCaption = currentMember.getCaption();
                                     String innerCaption = renderer.getCaption(ctx);
-                                    if (StringUtils.startsWith(innerCaption, memberCaption))
+                                    if (Strings.CS.startsWith(innerCaption, memberCaption))
                                         renderer.setCaption(StringUtils.trim(innerCaption.substring(memberCaption.length())));
                                 }
                             }

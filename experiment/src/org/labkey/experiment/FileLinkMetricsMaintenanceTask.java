@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
@@ -39,8 +54,6 @@ public class FileLinkMetricsMaintenanceTask implements MaintenanceTask
             Map<String, Map<String, MissingFilesCheckInfo>> results = ExperimentServiceImpl.get().doMissingFilesCheck(getTaskUser(), ContainerManager.getRoot(), false);
             Map<String, Object> missingFilesMetrics = new HashMap<>();
             missingFilesMetrics.put("Run time", new Date());
-            Map<String, Object> metrics = new HashMap<>();
-            metrics.put(NAME, missingFilesMetrics);
             long missingFilesCount = 0;
             Map<String, Long> validFilesCount = new HashMap<>();
             if (null != results)
@@ -63,7 +76,7 @@ public class FileLinkMetricsMaintenanceTask implements MaintenanceTask
             }
             missingFilesMetrics.put("Missing files count", missingFilesCount);
             missingFilesMetrics.put("Valid files count", validFilesCount);
-            FileLinkMetricsProvider.getInstance().updateMetrics(metrics);
+            FileLinkMetricsProvider.getInstance().updateMetrics(missingFilesMetrics);
         }
         catch (Exception e)
         {

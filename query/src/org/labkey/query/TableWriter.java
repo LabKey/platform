@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,7 +191,7 @@ public class TableWriter
         {
             super.writeTable(tableXml);
             if (!_tableInfo.getPkColumnNames().isEmpty())
-                tableXml.setPkColumnName(_tableInfo.getPkColumnNames().get(0));
+                tableXml.setPkColumnName(_tableInfo.getPkColumnNames().getFirst());
         }
 
         @Override
@@ -201,7 +201,7 @@ public class TableWriter
 
             String columnName = column.getName();
 
-            if (!_tableInfo.getPkColumnNames().isEmpty() && columnName.equals(_tableInfo.getPkColumnNames().get(0)))
+            if (!_tableInfo.getPkColumnNames().isEmpty() && columnName.equals(_tableInfo.getPkColumnNames().getFirst()))
             {
                 columnXml.setIsKeyField(true);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,10 +130,10 @@ public interface PropertyService
 
     ValidatorKind getValidatorKind(String typeURI);
 
-    IPropertyValidator createValidator(String typeURI);
+    PropertyValidatorDef createValidator(String typeURI);
 
     @NotNull
-    List<? extends IPropertyValidator> getPropertyValidators(PropertyDescriptor desc);
+    List<? extends PropertyValidatorDef> getPropertyValidators(PropertyDescriptor desc);
 
     void deleteValidatorsAndFormats(Container c, int propertyDescriptorId);
 
@@ -142,9 +142,9 @@ public interface PropertyService
     /**
      * Get the first property validator of a given type from the ColumnInfo.
      */
-    IPropertyValidator getValidatorForColumn(ColumnInfo col, PropertyValidatorType type);
+    PropertyValidatorDef getValidatorForColumn(ColumnInfo col, PropertyValidatorType type);
 
-    List<String> getTextChoiceValidatorOptions(IPropertyValidator validator);
+    List<String> getTextChoiceValidatorOptions(PropertyValidatorDef validator);
 
     @NotNull
     List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc);

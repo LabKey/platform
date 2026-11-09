@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -653,8 +653,8 @@ ALTER TABLE exp.List ADD ListId INT NULL;
 ALTER TABLE exp.List ALTER ListId SET NOT NULL;
 ALTER TABLE exp.List ADD CONSTRAINT PK_List PRIMARY KEY (Container, ListId);
 
-SELECT core.fn_dropifexists('list', 'exp', 'CONSTRAINT', 'UQ_RowId');
-SELECT core.fn_dropifexists('list', 'exp', 'COLUMN', 'rowid');
+ALTER TABLE exp.list DROP CONSTRAINT IF EXISTS UQ_RowId;
+ALTER TABLE exp.list DROP COLUMN IF EXISTS rowid CASCADE;
 
 ALTER TABLE exp.list ADD FileAttachmentIndex BOOLEAN NOT NULL DEFAULT FALSE;
 

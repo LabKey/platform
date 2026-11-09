@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class TabFileType extends FileType
 
     // CONSIDER: sniff for the actual separator and quote character in TabLoader instead?
     @Override
-    public boolean isHeaderMatch(@NotNull byte[] header)
+    public boolean isHeaderMatch(byte @NotNull [] header)
     {
         String s = new String(header, StringUtilsLabKey.DEFAULT_CHARSET); // TODO: Detect encoding
 

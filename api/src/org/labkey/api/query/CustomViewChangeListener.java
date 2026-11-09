@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,7 +154,7 @@ public interface CustomViewChangeListener
                 }
                 else
                 {
-                    keyParts.add(0, currentParent.getName());
+                    keyParts.addFirst(currentParent.getName());
                 }
                 currentParent = nextParent;
             }

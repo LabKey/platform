@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,13 +191,13 @@ public class SecurityPolicy
     }
 
     // Throttle that limits warning logging to once per hour per permission class
-    private static final Throttle<Class<? extends Permission>> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>("unregistered permissions", 100, CacheManager.HOUR, permission -> LOG.warn(permission + " is not registered!"));
+    private static final Throttle<String> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>(String.class, "unregistered permissions warnings", 100, CacheManager.HOUR, permission -> LOG.warn("{} is not registered!", permission));
 
     static void testPermissionIsRegistered(Class<? extends Permission> permission)
     {
         if (!RoleManager.isPermissionRegistered(permission))
         {
-            NOT_REGISTERED_PERMISSION_THROTTLE.execute(permission);
+            NOT_REGISTERED_PERMISSION_THROTTLE.execute(permission.getName());
         }
     }
 
@@ -211,8 +211,8 @@ public class SecurityPolicy
 
     /**
      * Does not return any contextual roles, just the roles explicitly granted by this SecurityPolicy.
-     * Note: The returned stream may duplicate some roles; if a distinct stream of roles is required, callers should
-     * invoke {@code distinct()} or collect to a set.
+     * Note: The returned stream may contain duplicate roles; if a distinct stream of roles is required,
+     * callers should invoke {@code distinct()} or collect to a set.
      **/
     @NotNull
     public Stream<Role> getRoles(PrincipalArray principalArray)

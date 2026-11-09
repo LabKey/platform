@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
                 lookupCol = childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
                 if (lookupCol == null)
                 {
-                    LOG.warn("Failed to create lookup column from '" + childKey.getName() + "' to '" + childKeyFk.getLookupSchemaName() + "." + childKeyFk.getLookupTableName() + "." + childKeyFk.getLookupColumnName() + "'");
+                    LOG.warn("Failed to create lookup column from '{}' to '{}.{}.{}'", childKey.getName(), childKeyFk.getLookupSchemaName(), childKeyFk.getLookupTableName(), childKeyFk.getLookupColumnName());
                 }
                 else
                 {

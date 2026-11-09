@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.Writer;
 
@@ -30,7 +32,7 @@ public class StringBuilderWriter extends Writer
     }
 
     @Override
-    public void write(char cbuf[], int off, int len) throws IOException
+    public void write(char @NotNull[] cbuf, int off, int len) throws IOException
     {
         if (_closed)
             throw new IOException("Cannot write to closed writer.");

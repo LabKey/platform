@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -306,13 +306,13 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
 
             DataRegionTable datasetTable = isDataset ? gotoDataset(name) : gotoList(name);
             List<String> columnLabels = datasetTable.getColumnLabels();
-            Assert.assertTrue(name + " columns are not as expected", columnLabels.size() == data.getColumns().size());
+            Assert.assertEquals(name + " columns are not as expected", columnLabels.size(), data.getColumns().size());
             for (String expectedColumn : data.getColumns())
             {
                 Assert.assertTrue(name + " doesn't contain column " + expectedColumn, columnLabels.contains(expectedColumn));
             }
 
-            Assert.assertTrue(name + " row count is not as expected: " + datasetTable.getDataRowCount(), data.getRowCount() == datasetTable.getDataRowCount());
+            Assert.assertEquals(name + " row count is not as expected: " + datasetTable.getDataRowCount(), data.getRowCount(), datasetTable.getDataRowCount());
 
             String columnToVerify = data.getColumnNameToVerify();
             if (!StringUtils.isEmpty(columnToVerify) && data.getColumnValuesToVerify() != null)

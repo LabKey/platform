@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ public class PortalJUnitTest extends Assert
         //Make sure we have a part on our new page
         parts = Portal.getParts(folder, newPageGuid);
         assertEquals(1, parts.size());
-        Map<String,String> props = parts.get(0).getPropertyMap();
+        Map<String,String> props = parts.getFirst().getPropertyMap();
         assertEquals("testPage", props.get("pageName"));
         Portal.addPart(folder,  newPageGuid, filesFactory, location_body, -1, null);
         parts = Portal.getEditableParts(folder, newPageGuid);

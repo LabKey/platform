@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.api.visualization.VisualizationService;
+import org.labkey.visualization.report.ChartMetricsVisitor;
 import org.labkey.visualization.report.DimensionBarChartAnalyticsProvider;
 import org.labkey.visualization.report.DimensionPieChartAnalyticsProvider;
 import org.labkey.visualization.report.GenericChartReportImpl;
@@ -68,6 +69,7 @@ public class VisualizationModule extends CodeOnlyModule
     {
         Set<Class<?>> set = new LinkedHashSet<>();
         set.add(VisualizationController.TestCase.class);
+        set.add(VisualizationController.PointClickFnTestCase.class);
         set.add(VisualizationSQLGenerator.GetDataTestCase.class);
         set.add(VisualizationCDSGenerator.TestCase.class);
 
@@ -101,6 +103,7 @@ public class VisualizationModule extends CodeOnlyModule
 
         ReportService.get().addUIProvider(new VisualizationUIProvider());
         ReportService.get().addGlobalItemFilterType(GenericChartReport.TYPE);
+        ReportService.get().registerReportMetricsVisitor(ChartMetricsVisitor::new);
 
         VisualizationService.setInstance(new VisualizationServiceImpl());
     }

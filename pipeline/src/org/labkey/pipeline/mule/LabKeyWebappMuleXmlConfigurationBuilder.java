@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2023-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.pipeline.mule;
 
 import org.apache.logging.log4j.Logger;
@@ -42,11 +57,11 @@ public class LabKeyWebappMuleXmlConfigurationBuilder extends MuleXmlConfiguratio
 
         if (is != null)
         {
-            LOG.debug("Resource " + resource + " is found in Servlet Context.");
+            LOG.debug("Resource {} is found in Servlet Context.", resource);
         }
         else
         {
-            LOG.debug("Resource " + resourcePath + " is not found in Servlet Context, loading from classpath or as external file");
+            LOG.debug("Resource {} is not found in Servlet Context, loading from classpath or as external file", resourcePath);
         }
 
         if (is == null && webappClasspath != null)
@@ -59,7 +74,7 @@ public class LabKeyWebappMuleXmlConfigurationBuilder extends MuleXmlConfiguratio
             }
             catch (ConfigurationException e)
             {
-                LOG.debug("Resource " + resourcePath + " is not found in filesystem");
+                LOG.debug("Resource {} is not found in filesystem", resourcePath);
             }
         }
 

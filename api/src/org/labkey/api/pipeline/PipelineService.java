@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -121,7 +120,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     @Nullable
     PipeRoot getPipelineRootSetting(Container container, String type);
 
-    void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots) throws SQLException;
+    void setPipelineRoot(User user, Container container, String type, boolean searchable, URI... roots);
 
     boolean canModifyPipelineRoot(User user, Container container);
 
@@ -266,6 +265,10 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName);
 
     Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName, @Nullable ContainerFilter cf);
+
+    record ActiveJob(String provider, String description) {}
+
+    List<ActiveJob> getActivePipelineJobs(User u, Container c, Collection<String> providerNames, @Nullable ContainerFilter cf);
 
     interface PipelineProviderSupplier
     {

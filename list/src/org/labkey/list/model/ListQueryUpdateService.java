@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,14 @@
  */
 package org.labkey.list.model;
 
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
@@ -27,6 +32,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -45,13 +51,13 @@ import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ImportProgress;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
@@ -73,11 +79,14 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.test.TestTimeout;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
@@ -88,11 +97,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.BatchSize.Kind.AUDIT;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.util.IntegerUtils.isIntegral;
 
 /**
@@ -102,6 +114,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 {
     private final ListDefinitionImpl _list;
     private static final String ID = "entityId";
+    private static final String AUDIT_COMMENT_INSERT = "A new list record was inserted";
+    private static final String AUDIT_COMMENT_UPDATE = "An existing list record was modified";
+    private static final String AUDIT_COMMENT_DELETE = "An existing list record was deleted";
+
+    /** Non-null while a multi-row operation is in flight; see {@link RowAuditBatch}. */
+    private RowAuditBatch _auditBatch;
 
     public ListQueryUpdateService(ListTable queryTable, TableInfo dbTable, @NotNull ListDefinition list)
     {
@@ -142,25 +160,70 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 Map<String, Object> raw = new TableSelector(queryTable, keyFilter, null).getMap();
 
                 if (null != raw && !raw.isEmpty())
-                {
-                    ret = new CaseInsensitiveHashMap<>();
-
-                    // EntityId
-                    ret.put("EntityId", raw.get("entityid"));
-
-                    for (DomainProperty prop : _list.getDomainOrThrow().getProperties())
-                    {
-                        String propName = prop.getName();
-                        ColumnInfo column = queryTable.getColumn(propName);
-                        Object value = column.getValue(raw);
-                        if (value != null)
-                            ret.put(propName, value);
-                    }
-                }
+                    ret = toListRow(getListColumns(queryTable), raw);
             }
         }
 
         return ret;
+    }
+
+    private Map<String, ColumnInfo> getListColumns(TableInfo queryTable)
+    {
+        Map<String, ColumnInfo> columns = new LinkedHashMap<>();
+        for (DomainProperty prop : _list.getDomainOrThrow().getProperties())
+            columns.put(prop.getName(), queryTable.getColumn(prop.getName()));
+        return columns;
+    }
+
+    private Map<String, Object> toListRow(Map<String, ColumnInfo> listColumns, Map<String, Object> raw)
+    {
+        Map<String, Object> ret = new CaseInsensitiveHashMap<>();
+        ret.put("EntityId", raw.get("entityid"));
+
+        listColumns.forEach((propName, column) -> {
+            Object value = column.getValue(raw);
+            if (value != null)
+                ret.put(propName, value);
+        });
+
+        return ret;
+    }
+
+    /** Batched {@link #getRow}: one result per found key, in key order, so a reselect of N rows isn't N queries. */
+    @Override
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException
+    {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+
+        List<Object> keyValues = new ArrayList<>(keys.size());
+        for (Map<String, Object> rowKeys : keys)
+            keyValues.add(null == rowKeys ? null : getKeyValue(rowKeys));
+
+        TableInfo queryTable = getQueryTable();
+        FieldKey keyField = FieldKey.fromParts(_list.getKeyName());
+        ColumnInfo keyColumn = queryTable.getColumn(keyField);
+        Map<String, ColumnInfo> listColumns = getListColumns(queryTable);
+        List<Object> distinctKeys = keyValues.stream().filter(Objects::nonNull).distinct().toList();
+
+        // Keyed by string because the request may carry a Long where the column returns an Integer
+        Map<String, Map<String, Object>> rowsByKey = new HashMap<>();
+        for (List<Object> batch : ListUtils.partition(distinctKeys, BatchSize.get(ROWS)))
+        {
+            SimpleFilter filter = new SimpleFilter(keyField, batch, CompareType.IN);
+            new TableSelector(queryTable, filter, null).forEachMap(raw ->
+                    rowsByKey.put(String.valueOf(keyColumn.getValue(raw)), toListRow(listColumns, raw)));
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>(keys.size());
+        for (Object keyValue : keyValues)
+        {
+            Map<String, Object> row = null == keyValue ? null : rowsByKey.get(String.valueOf(keyValue));
+            if (null != row)
+                result.add(row);
+        }
+
+        return result;
     }
 
 
@@ -179,25 +242,110 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != result)
         {
-            ListManager mgr = ListManager.get();
-
-            for (Map<String, Object> row : result)
+            try (RowAuditBatch ignored = beginAuditBatch(user))
             {
-                if (null != row.get(ID))
+                for (Map<String, Object> row : result)
                 {
-                    // Audit each row
-                    String entityId = (String) row.get(ID);
-                    String newRecord = mgr.formatAuditItem(_list, user, row);
+                    if (null != row.get(ID))
+                    {
+                        // Audit each row
+                        String entityId = (String) row.get(ID);
 
-                    mgr.addAuditEvent(_list, user, container, "A new list record was inserted", entityId, null, newRecord);
+                        auditRowChange(user, container, AUDIT_COMMENT_INSERT, entityId, null, row);
+                    }
                 }
             }
 
             if (!result.isEmpty() && !errors.hasErrors())
-                mgr.indexList(_list);
+                ListManager.get().indexList(_list);
         }
 
         return result;
+    }
+
+    /**
+     * Accumulates row audit events so one operation writes them with a single batched statement.
+     */
+    private class RowAuditBatch implements AutoCloseable
+    {
+        private final User _user;
+        private final ListManager.AuditItemFormatter _formatter;
+        private final List<ListAuditProvider.ListAuditEvent> _events = new ArrayList<>();
+
+        RowAuditBatch(User user)
+        {
+            _user = user;
+            _formatter = ListManager.get().getAuditItemFormatter(_list, user);
+        }
+
+        String format(Map<String, Object> props)
+        {
+            return _formatter.format(props);
+        }
+
+        void add(Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
+        {
+            _events.add(ListManager.get().createAuditEvent(_list, c, comment, entityId, oldRecord, newRecord));
+
+            if (_events.size() >= BatchSize.get(AUDIT))
+                flush();
+        }
+
+        void flush()
+        {
+            if (_events.isEmpty())
+                return;
+
+            // close() flushes again on the way out of a failed operation, so hand off before writing to avoid re-inserting
+            List<ListAuditProvider.ListAuditEvent> toWrite = new ArrayList<>(_events);
+            _events.clear();
+
+            AuditLogService.get().addEvents(_user, toWrite);
+        }
+
+        @Override
+        public void close()
+        {
+            try
+            {
+                flush();
+            }
+            finally
+            {
+                if (this == _auditBatch)
+                    _auditBatch = null;
+            }
+        }
+    }
+
+    /** @return a batch to close when the operation completes, or null if an enclosing operation already owns one */
+    private @Nullable RowAuditBatch beginAuditBatch(User user)
+    {
+        if (null != _auditBatch)
+            return null;
+
+        _auditBatch = new RowAuditBatch(user);
+
+        return _auditBatch;
+    }
+
+    private void auditRowChange(User user, Container container, String comment, String entityId, @Nullable Map<String, Object> oldRow, @Nullable Map<String, Object> newRow)
+    {
+        RowAuditBatch batch = _auditBatch;
+
+        if (null == batch)
+        {
+            ListManager mgr = ListManager.get();
+            mgr.addAuditEvent(_list, user, container, comment, entityId,
+                    null == oldRow ? null : mgr.formatAuditItem(_list, user, oldRow),
+                    null == newRow ? null : mgr.formatAuditItem(_list, user, newRow));
+        }
+        else
+        {
+            batch.add(container, comment, entityId,
+                    null == oldRow ? null : batch.format(oldRow),
+                    null == newRow ? null : batch.format(newRow));
+        }
     }
 
     private User getListUser(User user, Container container)
@@ -306,7 +454,15 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to update data into this table.");
 
-        List<Map<String, Object>> result = super.updateRows(getListUser(user, container), container, rows, oldKeys, errors, configParameters, extraScriptContext);
+        List<Map<String, Object>> result;
+        User listUser = getListUser(user, container);
+
+        // updateRow() audits as the list user, so the batch must format and log as that user too
+        try (RowAuditBatch ignored = beginAuditBatch(listUser))
+        {
+            result = super.updateRows(listUser, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+        }
+
         if (!result.isEmpty())
             ListManager.get().indexList(_list);
         return result;
@@ -394,7 +550,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
             if (null != result && null != result.get(ID))
             {
-                ListManager mgr = ListManager.get();
                 String entityId = (String) result.get(ID);
 
                 try
@@ -430,11 +585,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     }
                 }
 
-                String oldRecord = mgr.formatAuditItem(_list, user, oldRow);
-                String newRecord = mgr.formatAuditItem(_list, user, result);
-
                 // Audit
-                mgr.addAuditEvent(_list, user, container, "An existing list record was modified", entityId, oldRecord, newRecord);
+                auditRowChange(user, container, AUDIT_COMMENT_UPDATE, entityId, oldRow, result);
             }
         }
 
@@ -461,7 +613,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != value)
         {
-            for (IPropertyValidator validator : prop.getValidators())
+            for (PropertyValidatorDef validator : prop.getValidators())
             {
                 if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache))
                     return false;
@@ -513,7 +665,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 .anyMatch(prop -> PropertyType.ATTACHMENT.equals(prop.getPropertyType()));
 
         ListAuditProvider listAuditProvider = new ListAuditProvider();
-        final int BATCH_SIZE = 5_000;
+        final int batchSize = BatchSize.get(ROWS);
         boolean isAuditEnabled = auditBehavior != null && AuditBehaviorType.NONE != auditBehavior;
 
         try (DbScope.Transaction tx = getDbTable().getSchema().getScope().ensureTransaction())
@@ -543,9 +695,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 List<ListRecord> records = containerRows.get(containerId);
                 int numRecords = records.size();
 
-                for (int start = 0; start < numRecords; start += BATCH_SIZE)
+                for (int start = 0; start < numRecords; start += batchSize)
                 {
-                    int end = Math.min(start + BATCH_SIZE, numRecords);
+                    int end = Math.min(start + batchSize, numRecords);
                     List<ListRecord> batch = records.subList(start, end);
                     List<Object> rowPks = batch.stream().map(ListRecord::key).toList();
 
@@ -608,7 +760,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
             tx.commit();
 
-            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "list");
+            SimpleMetricsService.get().increment(ExperimentMetricArea.MOVE_ENTITIES, "list");
         }
 
         return moveRowsCounts(fileAttachmentsMovedCount, listAuditEventsCreatedCount, listAuditEventsMovedCount, listRecordsCount, queryAuditEventsMovedCount);
@@ -729,6 +881,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        try (RowAuditBatch ignored = beginAuditBatch(user))
+        {
+            return super.deleteRows(user, container, keys, configParameters, extraScriptContext);
+        }
+    }
+
+    @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         if (!_list.isVisible(user))
@@ -743,10 +905,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             if (null != entityId)
             {
                 ListManager mgr = ListManager.get();
-                String deletedRecord = mgr.formatAuditItem(_list, user, result);
 
                 // Audit
-                mgr.addAuditEvent(_list, user, container, "An existing list record was deleted", entityId, deletedRecord, null);
+                auditRowChange(user, container, AUDIT_COMMENT_DELETE, entityId, result, null);
 
                 // Remove attachments
                 if (hasAttachmentProperties())
@@ -813,6 +974,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     @Nullable
     public SimpleFilter getKeyFilter(Map<String, Object> map) throws InvalidKeyException
     {
+        Object key = getKeyValue(map);
+        return null == key ? null : new SimpleFilter(FieldKey.fromParts(_list.getKeyName()), key);
+    }
+
+    private @Nullable Object getKeyValue(Map<String, Object> map) throws InvalidKeyException
+    {
         String keyName = _list.getKeyName();
         Object key = getField(map, keyName);
 
@@ -824,7 +991,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             throw new InvalidKeyException("No " + keyName + " provided for list \"" + _list.getName() + "\"");
         }
 
-        return new SimpleFilter(FieldKey.fromParts(keyName), getKeyFilterValue(key));
+        return getKeyFilterValue(key);
     }
 
     @NotNull
@@ -875,5 +1042,206 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return _list != null?
                 _list.getDomain() :
                 super.getDomain();
+    }
+
+    /**
+     * RowAuditBatch accumulates row audit events and flushes in AUDIT batch size chunks, so an operation has to
+     * cross that boundary for the mid-operation flush to run at all. A batch that gets dropped, or replayed by the
+     * flush in close(), changes the audit row count - which is what these assertions watch.
+     */
+    @TestTimeout(TestTimeout.DEFAULT * 5)
+    public static class AuditBatchTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "ListAuditBatchTest Project";
+        private static final String LIST_NAME = "Audit batch list";
+        private static final String KEY_NAME = "Key";
+        private static final String VALUE_FIELD = "value";
+
+        private static final int BATCH_SIZE = 5;
+        // Enough to force flushes from add() and leave a partial batch for close()
+        private static final int ROW_COUNT = BATCH_SIZE * 2 + 2;
+
+        private static User _user;
+        private static Container _container;
+        private static ListDefinition _list;
+
+        @BeforeClass
+        public static void setup() throws Exception
+        {
+            _user = TestContext.get().getUser();
+
+            deleteTestContainer();
+            _container = ContainerManager.ensureContainer(PROJECT_NAME, _user);
+
+            _list = ListService.get().createList(_container, LIST_NAME, ListDefinition.KeyType.AutoIncrementInteger);
+            _list.setKeyName(KEY_NAME);
+
+            DomainProperty dp = _list.getDomain().addProperty();
+            dp.setName(VALUE_FIELD);
+            dp.setType(PropertyService.get().getType(_container, PropertyType.STRING.getXmlName()));
+            dp.setPropertyURI(ListDomainKind.createPropertyURI(LIST_NAME, VALUE_FIELD, _container, _list.getKeyType()).toString());
+            _list.save(_user);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            _list = null;
+            _container = null;
+            _user = null;
+
+            deleteTestContainer();
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+        }
+
+        private int auditCount(String comment)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ListAuditProvider.COLUMN_NAME_LIST_ID), _list.getListId());
+            filter.addCondition(FieldKey.fromParts("Comment"), comment);
+
+            return AuditLogService.get().getAuditEvents(_container, _user, ListManager.LIST_AUDIT_EVENT, filter, null).size();
+        }
+
+        @Test
+        public void auditsEveryRowAcrossTheBatchBoundary() throws Exception
+        {
+            TableInfo table = _list.getTable(_user);
+            assertNotNull("expected the list table to resolve", table);
+
+            List<Map<String, Object>> rows = new ArrayList<>(ROW_COUNT);
+            for (int i = 0; i < ROW_COUNT; i++)
+                rows.add(CaseInsensitiveHashMap.<Object>of(VALUE_FIELD, "row-" + i));
+
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> inserted;
+            List<Map<String, Object>> deleted;
+
+            try (AutoCloseable ignored = BatchSize.override(AUDIT, BATCH_SIZE))
+            {
+                // Without a transaction LogManager declines to batch, so the batched insert path only runs inside one
+                try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+                {
+                    inserted = table.getUpdateService().insertRows(_user, _container, rows, errors, null, null);
+                    if (errors.hasErrors())
+                        throw errors.getLastRowError();
+                    tx.commit();
+                }
+
+                assertEquals("expected every row to be inserted", ROW_COUNT, inserted.size());
+                assertEquals("one insert audit event per row", ROW_COUNT, auditCount(AUDIT_COMMENT_INSERT));
+
+                List<Map<String, Object>> keys = new ArrayList<>(ROW_COUNT);
+                for (Map<String, Object> row : inserted)
+                    keys.add(CaseInsensitiveHashMap.<Object>of(KEY_NAME, row.get(KEY_NAME)));
+
+                try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+                {
+                    deleted = table.getUpdateService().deleteRows(_user, _container, keys, null, null);
+                    tx.commit();
+                }
+            }
+
+            assertEquals("expected every row to be deleted", ROW_COUNT, deleted.size());
+            assertEquals("one delete audit event per row", ROW_COUNT, auditCount(AUDIT_COMMENT_DELETE));
+            assertEquals("deleting rows must not emit insert events", ROW_COUNT, auditCount(AUDIT_COMMENT_INSERT));
+        }
+    }
+
+    @TestTimeout(TestTimeout.DEFAULT * 5)
+    public static class GetRowsTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "ListGetRowsTest Project";
+        private static final String LIST_NAME = "Get rows list";
+        private static final String KEY_NAME = "Key";
+        private static final String VALUE_FIELD = "value";
+
+        private static final int BATCH_SIZE = 4;
+        // Crosses batch boundaries so results from separate queries have to merge back into key order
+        private static final int ROW_COUNT = BATCH_SIZE * 2 + 2;
+
+        private static User _user;
+        private static Container _container;
+        private static ListDefinition _list;
+
+        @BeforeClass
+        public static void setup() throws Exception
+        {
+            _user = TestContext.get().getUser();
+
+            deleteTestContainer();
+            _container = ContainerManager.ensureContainer(PROJECT_NAME, _user);
+
+            _list = ListService.get().createList(_container, LIST_NAME, ListDefinition.KeyType.AutoIncrementInteger);
+            _list.setKeyName(KEY_NAME);
+
+            DomainProperty dp = _list.getDomain().addProperty();
+            dp.setName(VALUE_FIELD);
+            dp.setType(PropertyService.get().getType(_container, PropertyType.STRING.getXmlName()));
+            dp.setPropertyURI(ListDomainKind.createPropertyURI(LIST_NAME, VALUE_FIELD, _container, _list.getKeyType()).toString());
+            _list.save(_user);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            _list = null;
+            _container = null;
+            _user = null;
+
+            deleteTestContainer();
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+        }
+
+        @Test
+        public void matchesGetRowInKeyOrder() throws Exception
+        {
+            TableInfo table = _list.getTable(_user);
+            assertNotNull("expected the list table to resolve", table);
+            ListQueryUpdateService qus = (ListQueryUpdateService) table.getUpdateService();
+            assertNotNull(qus);
+
+            List<Map<String, Object>> rows = new ArrayList<>(ROW_COUNT);
+            for (int i = 0; i < ROW_COUNT; i++)
+                rows.add(CaseInsensitiveHashMap.<Object>of(VALUE_FIELD, "row-" + i));
+
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> inserted = qus.insertRows(_user, _container, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors.getLastRowError();
+
+            // Reversed to prove request order wins over DB order; Long keys exercise the Integer column match
+            List<Map<String, Object>> keys = new ArrayList<>();
+            for (Map<String, Object> row : inserted.reversed())
+                keys.add(CaseInsensitiveHashMap.<Object>of(KEY_NAME, ((Number) row.get(KEY_NAME)).longValue()));
+            keys.add(CaseInsensitiveHashMap.<Object>of(KEY_NAME, -1L)); // absent key is skipped, as getRow() returns null
+
+            List<Map<String, Object>> expected = new ArrayList<>();
+            for (Map<String, Object> key : keys)
+            {
+                Map<String, Object> row = qus.getRow(_user, _container, key);
+                if (null != row)
+                    expected.add(row);
+            }
+
+            assertEquals("absent key should be dropped", ROW_COUNT, expected.size());
+            try (AutoCloseable ignored = BatchSize.override(ROWS, BATCH_SIZE))
+            {
+                assertEquals(expected, qus.getRows(_user, _container, keys));
+            }
+        }
     }
 }

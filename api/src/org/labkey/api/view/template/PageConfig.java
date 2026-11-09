@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,7 +152,6 @@ public class PageConfig
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
-    private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
     private boolean _includePostParameters = false;
@@ -505,21 +504,6 @@ public class PageConfig
         return sb.getHtmlString();
     }
 
-    public enum FrameOption
-    {
-        ALLOW, SAMEORIGIN, DENY
-    }
-    
-    public void setFrameOption(FrameOption option)
-    {
-        _frameOption = option;
-    }
-
-    public FrameOption getFrameOption()
-    {
-        return null==_frameOption?FrameOption.ALLOW:_frameOption;
-    }
-
     public void setAllowTrackingScript(TrueFalse opt)
     {
         _trackingScript = opt != TrueFalse.False;
@@ -664,7 +648,7 @@ public class PageConfig
         {
             if (_eventHandlers.size() == MAX_EVENT_HANDLERS)
             {
-                LOG.error("Limit of " + MAX_EVENT_HANDLERS + " JavaScript event handlers reached. Subsequent handlers will be dropped. Current handler for " + eh.event + ": " + eh.handler);
+                LOG.error("Limit of " + MAX_EVENT_HANDLERS + " JavaScript event handlers reached. Subsequent handlers will be dropped. Current handler for {}: {}", eh.event, eh.handler);
             }
             var prev = _eventHandlers.put(eh.getKey(), eh);
             assert null == prev || prev.handler.equals(eh.handler) : "Duplicate handler registered. event:" + eh.getKey() + " handler:" + eh.handler();
@@ -737,7 +721,7 @@ public class PageConfig
                 final String eventId = h.getKey();
                 EventHandler prev = eventMap.put(eventId, h);
                 if (null != prev && !Strings.CS.equals(prev.handler, h.handler))
-                    LOG.error("Malformed page. Multiple JavaScript handlers defined for the same '<element_id>#<event>': " + eventId);
+                    LOG.error("Malformed page. Multiple JavaScript handlers defined for the same '<element_id>#<event>': {}", eventId);
             }
         }
 
@@ -751,7 +735,7 @@ public class PageConfig
             for (var l : _eventHandlers.values())
             {
                 var index = codeMap.size();
-                var handler = StringUtils.appendIfMissing(l.handler, ";");
+                var handler = Strings.CS.appendIfMissing(l.handler, ";");
                 var prev = codeMap.putIfAbsent(handler, index);
                 if (null == prev)
                     out.write("const h" + index + "=function (){\n" + handler + "\n};\n"); // newlines make it easier to set breakpoints

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,14 +268,13 @@ public interface ColumnRenderProperties extends ImportAliasable, SimpleConvert
 
     default Unit getDisplayUnit()
     {
-        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
+        // Called per exported cell, so test the name before the comparatively costly flag lookup
+        String name = getName();
+        var index = null == name ? -1 : name.lastIndexOf("__");
+        if (index < 0)
+            return null;
+        if (getJdbcType().isNumeric() && OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
         {
-            if (!getJdbcType().isNumeric())
-                return null;
-            String name = getName();
-            var index = name.lastIndexOf("__");
-            if (index < 0)
-                return null;
             var unitPart = name.substring(index + 2);
             try
             {

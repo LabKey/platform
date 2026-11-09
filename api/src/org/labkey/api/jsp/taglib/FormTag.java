@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.settings.AppProps;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UnexpectedException;
@@ -26,7 +26,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
@@ -69,7 +68,7 @@ public class FormTag extends BodyTagSupport
     @Deprecated // TODO: Eliminate all usages and remove
     public void setAction(String s)
     {
-        if (StringUtils.containsNone(s, "/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
+        if (StringUtils.containsNone(s, "/-") && (Strings.CS.endsWith(s, ".view") || Strings.CS.endsWith(s, ".post")))
         {
             ViewContext ctx = HttpView.getRootContext();
             if (null != ctx)
@@ -168,7 +167,7 @@ public class FormTag extends BodyTagSupport
     HtmlString endTag;
 
     @Override
-    public int doStartTag() throws JspException
+    public int doStartTag()
     {
         var pageConfig = HttpView.currentPageConfig();
         var id = getId();
@@ -206,7 +205,7 @@ public class FormTag extends BodyTagSupport
     }
 
     @Override
-    public int doEndTag() throws JspException
+    public int doEndTag()
     {
         try
         {

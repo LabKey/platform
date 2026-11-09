@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@
 package org.labkey.api.assay.actions;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayFileWriter;
@@ -51,6 +49,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.assay.transform.DefaultTransformResult;
+import org.labkey.api.assay.transform.PendingFileAudit;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.DefaultSchema;
@@ -108,6 +108,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     protected BindException _errors;
     private List<AssayDataCollector> _collectors;
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
+    private @Nullable PreparedTransform _preparedTransform;
+    private @Nullable List<PendingFileAudit> _pendingFileAudits;
     private ExpRun _reRun;
     private boolean _allowCrossRunFileInputs;
 
@@ -275,7 +277,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         }
         if (collectors.size() == 1)
         {
-            return collectors.get(0);
+            return collectors.getFirst();
         }
         return null;
     }
@@ -509,14 +511,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 List<ColumnInfo> pks = lookupTable.getPkColumns();
                 if (pks.size() == 1)
                 {
-                    ColumnInfo pk = pks.get(0);
+                    ColumnInfo pk = pks.getFirst();
                     try
                     {
                         Object filterValue = pk.convert(value);
                         SimpleFilter filter = new SimpleFilter(pk.getFieldKey(), filterValue);
                         Set<String> cols = new HashSet<>();
                         cols.add(lookupTable.getTitleColumn());
-                        cols.add(pks.get(0).getName());
+                        cols.add(pks.getFirst().getName());
                         Map<String, Object>[] maps = new TableSelector(lookupTable, cols, filter, null).setForDisplay(true).getMapArray();
                         if (maps.length > 0)
                         {
@@ -707,6 +709,36 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setTransformResult(TransformResult transformResult)
     {
         _transformResult = transformResult;
+    }
+
+    @Override
+    public boolean supportsPreparedTransform()
+    {
+        return true;
+    }
+
+    @Override
+    public @Nullable PreparedTransform getPreparedTransform()
+    {
+        return _preparedTransform;
+    }
+
+    @Override
+    public void setPreparedTransform(@Nullable PreparedTransform prepared)
+    {
+        _preparedTransform = prepared;
+    }
+
+    @Override
+    public @Nullable List<PendingFileAudit> getPendingFileAudits()
+    {
+        return _pendingFileAudits;
+    }
+
+    @Override
+    public void setPendingFileAudits(@Nullable List<PendingFileAudit> audits)
+    {
+        _pendingFileAudits = audits;
     }
 
     @Override

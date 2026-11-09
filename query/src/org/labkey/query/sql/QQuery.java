@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,12 +115,12 @@ public class QQuery extends QExpr
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("(");
+        builder.unsafeAppend("(");
         for (QNode node : children())
         {
             node.appendSource(builder);
         }
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override
@@ -133,16 +133,14 @@ public class QQuery extends QExpr
         SQLFragment f = _select.getSql();
         if (null == f)
         {
-            if (null != _select && !_select.getParseErrors().isEmpty())
-                return;
-            String message = "Unexpected error parsing subselect: " + getSourceText();
-            _select.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
-            builder.append("#ERROR:").append(message).append("#");
+            if (_select.getParseErrors().isEmpty())
+                _select.getParseErrors().add(new QueryParseException("Unexpected error parsing subselect: " + getSourceText(), null, getLine(), getColumn()));
+            builder.appendError();
             return;
         }
-        builder.append("(");
+        builder.unsafeAppend("(");
         builder.append(f);
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
 
@@ -165,6 +163,8 @@ public class QQuery extends QExpr
     public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
     {
         var relation = getQuerySelect();
+        if (null == relation)
+            return collect;
         AbstractQueryRelation.RelationColumn col = relation.getFirstColumn();
         if (null != col)
             col.gatherInvolvedSelectColumns(collect);

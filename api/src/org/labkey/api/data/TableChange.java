@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ public class TableChange
     private final Collection<PropertyStorageSpec> _columns = new LinkedHashSet<>();
     private final Map<String, String> _columnRenames = new LinkedHashMap<>();
     private final Map<String, Integer> _columnResizes = new LinkedHashMap<>();
-    private final Map<Index, Index> _indexRenames = new LinkedHashMap<>();
     private final Domain _domain;
 
     private Collection<Index> _indices = new LinkedHashSet<>();
@@ -90,7 +89,7 @@ public class TableChange
             {
                 for (SQLFragment sql : scope.getSqlDialect().getChangeStatements(this))
                 {
-                    LOG.debug("Will issue: " + sql.getSQL());
+                    LOG.debug("Will issue: {}", sql.getSQL());
                     executor.execute(sql);
                 }
                 success = true;
@@ -154,17 +153,7 @@ public class TableChange
                 {
                     List<String> columnNames = index.columns().stream().map(ColumnInfo::getName).collect(Collectors.toList());
 
-                    // CONSIDER: Move this re-classification of the non-unique index as a unique index into SchemaColumnMetaData.loadUniqueIndices()
-                    // SQLServer creates a non-unique index for single large text columns with a "_hashed_" prefix.
-                    // The uniqueness is enforced by a database trigger.
-                    boolean unique = index.indexType() == TableInfo.IndexType.Unique ||
-                            (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.get(0).startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX));
-
-                    // remove the _hashed_ column prefix for SQLServer
-                    if (schema.getSqlDialect().isSqlServer() && unique)
-                        columnNames = columnNames.stream().map(s -> s.startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX) ? s.substring(PropertyStorageSpec.HASHED_COLUMN_PREFIX.length()) : s).collect(Collectors.toList());
-
-                    Index idx = new Index(unique, columnNames);
+                    Index idx = new Index(index.indexType() == TableInfo.IndexType.Unique, columnNames);
 
                     for (String columnName : columnNames)
                     {
@@ -250,19 +239,6 @@ public class TableChange
         _columnRenames.put(oldName, newName);
     }
 
-    /**
-     * Index will be renamed using the columns listed in the Index.
-     * The columns used by the index won't be changed. We need to
-     * pass the list of columns since the index name is created by the dialect.
-     *
-     * @param oldIndex Old index to be renamed.
-     * @param newIndex New index to be renamed.
-     */
-    public void addIndexRename(Index oldIndex, Index newIndex)
-    {
-        _indexRenames.put(oldIndex, newIndex);
-    }
-
     public void dropColumnExactName(String name)
     {
         if (_type != ChangeType.DropColumns)
@@ -290,22 +266,9 @@ public class TableChange
         return Collections.unmodifiableMap(_columnRenames);
     }
 
-    /**
-     * @return  map where key = old index, value = new index
-     */
-    public Map<Index, Index> getIndexRenames()
-    {
-        return Collections.unmodifiableMap(_indexRenames);
-    }
-
     public Collection<Index> getIndexedColumns()
     {
         return _indices;
-    }
-
-    public void setIndexedColumns(Collection<Index> indices)
-    {
-        _indices = indices;
     }
 
     public void setIndexedColumns(Domain domain, Collection<Index> indices)

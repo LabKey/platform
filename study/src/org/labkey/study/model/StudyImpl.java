@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,6 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HTMLContentExtractor;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -77,6 +76,7 @@ import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.util.HTMLContentExtractor;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -1110,8 +1110,8 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     {
         Container c = getContainer();
         boolean userHasPerm = c.hasPermission(user, AdminPermission.class);
-        boolean allowForNonDataspace = !c.isDataspace();
-        boolean allowForDataspace = c.isProject() && c.isDataspace() && getTimepointType() == TimepointType.VISIT
+        boolean allowForNonDataspace = !StudyService.get().isDataspace(c);
+        boolean allowForDataspace = c.isProject() && StudyService.get().isDataspace(c) && getTimepointType() == TimepointType.VISIT
                                         && getShareDatasetDefinitions() && getShareVisitDefinitions();
         
         return userHasPerm && (allowForNonDataspace || allowForDataspace);
@@ -1258,13 +1258,9 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
             Container c = ContainerManager.createContainer(junit, name, _context.getUser());
             StudyImpl s = new StudyImpl(c, "Junit Study");
             s.setTimepointType(TimepointType.DATE);
-            s.setStartDate(new Date(DateUtil.parseISODateTime("2001-01-01")));
-            s.setSubjectColumnName("SubjectID");
-            s.setSubjectNounPlural("Subjects");
-            s.setSubjectNounSingular("Subject");
             s.setSecurityType(SecurityType.BASIC_WRITE);
-            s.setStartDate(new Date(DateUtil.parseDateTime(c, "1 Jan 2000")));
-            _testStudy = StudyManager.getInstance().createStudy(_context.getUser(), s);
+            s.setStartDate(new Date(DateUtil.parseDateTime("1 Jan 2000")));
+            _testStudy = StudyManager.getInstance().createTestStudy(_context.getUser(), s);
 
             MvUtil.assignMvIndicators(c,
                     new String[]{"X", "Y", "Z"},
@@ -1305,7 +1301,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
             testStudy.attachProtocolDocument(Collections.singletonList(file), _context.getUser());
             attachedFiles = testStudy.getProtocolDocuments();
             assertEquals("Expected 1 attached document", 1, attachedFiles.size());
-            assertTrue("Expected filename to be \"Protocol.txt\", but it was \"" + attachedFiles.get(0).getName() + "\"", attachedFiles.get(0).getName().equals("Protocol.txt"));
+            assertEquals("Expected filename to be \"Protocol.txt\", but it was \"" + attachedFiles.getFirst().getName() + "\"", "Protocol.txt", attachedFiles.getFirst().getName());
         }
 
         public void _testDeleteProtocolDoc(Study testStudy) throws SQLException, IOException

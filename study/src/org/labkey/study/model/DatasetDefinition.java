@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
@@ -170,6 +171,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.BatchSize.Kind.AUDIT;
 import static org.labkey.api.query.QueryService.AuditAction.DELETE;
 import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
@@ -541,12 +543,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      */
     private static final CacheLoader<String,Date> MODIFIED_DATES_LOADER = (key, argument) -> {
         StudySchema ss = StudySchema.getInstance();
-        SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataset() + " WHERE EntityId = ?",key);
+        SQLFragment sql = SQLFragment.unsafe("SELECT Modified FROM ").append(ss.getTableInfoDataset()).unsafeAppend(" WHERE EntityId = ?").add(key);
 
         return new SqlSelector(ss.getScope(),sql).getObject(Date.class);
     };
 
-    private static final Cache<String, Date> MODIFIED_DATES_CACHE = DatabaseCache.get(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Dataset modified", MODIFIED_DATES_LOADER);
+    private static final Cache<String, Date> MODIFIED_DATES_CACHE = DatabaseCache.get(String.class, StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Dataset modified", MODIFIED_DATES_LOADER);
 
     @Override
     public Date getModified()
@@ -562,7 +564,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public static void updateModified(DatasetDefinition def, Date modified)
     {
         StudySchema ss = StudySchema.getInstance();
-        SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataset() + " SET Modified = ? WHERE EntityId = ?", modified, def.getEntityId());
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(ss.getTableInfoDataset()).unsafeAppend(" SET Modified = ? WHERE EntityId = ?").addAll(modified, def.getEntityId());
         new SqlExecutor(ss.getScope()).execute(sql);
         MODIFIED_DATES_CACHE.remove(def.getEntityId());
     }
@@ -830,20 +832,19 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
-            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM ").append(getStorageTableInfo(false));
-            String and = "\nWHERE ";
+            SQLFragment studyDataFrag = SQLFragment.unsafe("DELETE FROM ").append(getStorageTableInfo(false));
+            var where = SQLFragment.sep("\nWHERE ", " AND ");
 
             // only apply a container filter on delete when this is a shared dataset definition
             // and we are not at the container where the definition lives (see issue 28224)
             if (isShared() && !getContainer().getId().equals(getDefinitionContainer().getId()))
             {
-                studyDataFrag.append(and).append("container=").appendValue(getContainer());
-                and = " AND ";
+                studyDataFrag.append(where.next()).unsafeAppend("container=").appendValue(getContainer());
             }
 
             if (cutoff != null)
             {
-                studyDataFrag.append(and).append(" AND _VisitDate > ?").add(cutoff);
+                studyDataFrag.append(where.next()).unsafeAppend("_VisitDate > ?").add(cutoff);
             }
 
             SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
@@ -853,7 +854,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             transaction.commit();
 
             time.stop();
-            _log.debug("purgeDataset " + getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
+            _log.debug("purgeDataset {} {}", getDisplayString(), DateUtil.formatDuration(time.getTotal() / 1000));
         }
 
         return count;
@@ -955,10 +956,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
-        return getPermissions(user, null);
+        return getPermissions(user, Set.of());
     }
 
-    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user, @Nullable Set<Role> contextualRoles)
+    private Set<Class<? extends Permission>> getPermissions(UserPrincipal user, @NotNull Set<Role> contextualRoles)
     {
         Set<Class<? extends Permission>> result = new HashSet<>();
 
@@ -968,7 +969,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         SecurityType securityType = getStudy().getSecurityType();
         SecurableResource securableResource = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ? getContainer() : getStudy();
 
-        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(securableResource, user, contextualRoles);
+        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(securableResource, user, contextualRoles)
+            .collect(Collectors.toSet());
 
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
@@ -998,7 +1000,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
-                    result.addAll(SecurityManager.getPermissions(this, user, contextualRoles));
+                    SecurityManager.getPermissions(this, user, contextualRoles)
+                        .forEach(result::add);
                 }
             }
         }
@@ -1016,12 +1019,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         READ_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
-    private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
+    private static final Set<Class<? extends Permission>> EDIT_PERMS = Set.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
 
     private void copyEditPerms(SecurableResource resource, UserPrincipal user, Set<Class<? extends Permission>> result)
     {
-        Set<Class<? extends Permission>> granted = SecurityManager.getPermissions(resource, user, Set.of());
-        EDIT_PERMS.stream().filter(granted::contains).forEach(result::add);
+        SecurityManager.getPermissions(resource, user, Set.of())
+            .filter(EDIT_PERMS::contains)
+            .forEach(result::add);
     }
 
     /** @deprecated use DatasetTableImpl.hasPermission()! */
@@ -1029,15 +1033,15 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return hasPermissions(user, Set.of(perm), null);
+        return hasPermissions(user, Set.of(perm), Set.of());
     }
 
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
         return hasPermissions(user, Set.of(perm), contextualRoles);
     }
 
-    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @Nullable Set<Role> contextualRoles)
+    private boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @NotNull Set<Role> contextualRoles)
     {
         if (perms.isEmpty())
             throw new IllegalStateException();
@@ -1065,12 +1069,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Deprecated
     public boolean canRead(UserPrincipal user)
     {
-        return hasPermission(user, ReadPermission.class, null);
+        return hasPermission(user, ReadPermission.class);
     }
 
     public boolean canReadInternal(UserPrincipal user)
     {
-        return hasPermission(user, ReadPermission.class, null);
+        return hasPermission(user, ReadPermission.class);
     }
 
 
@@ -1553,7 +1557,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
                 if (col == null)
                 {
-                    _log.error("didn't find column for property: " + p.getPropertyURI());
+                    _log.error("didn't find column for property: {}", p.getPropertyURI());
                     continue;
                 }
 
@@ -1611,7 +1615,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
             // Dataset
 
-            var datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ")"), JdbcType.VARCHAR);
+            SQLFragment datasetSql = SQLFragment.unsafe("CAST(").appendValue(def.getEntityId(), getSqlDialect()).unsafeAppend(" AS ").append(getSqlDialect().getGuidTypeAsSql()).unsafeAppend(")");
+            var datasetColumn = new ExprColumn(this, "Dataset", datasetSql, JdbcType.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
                 @Override
@@ -1654,14 +1659,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             {
                 SQLFragment from = new SQLFragment();
                 from.appendComment("<DatasetDefinition: " + getName() + ">", d); // UNDONE stash name
-                String comma = " ";
-                from.append("(SELECT ");
+                var comma = SQLFragment.sep(" ", ", ");
+                from.unsafeAppend("(SELECT ");
                 for (ColumnInfo ci : _template.getColumns())
                 {
-                    from.append(comma).append(NullColumnInfo.nullValue(ci.getSqlTypeName())).append(" AS ").append(ci.getName());
-                    comma = ", ";
+                    from.append(comma.next()).append(NullColumnInfo.nullValue(ci.getSqlTypeName())).unsafeAppend(" AS ").appendIdentifier(ci.getSelectIdentifier());
                 }
-                from.append("\nWHERE 0=1) AS ").appendIdentifier(alias);
+                from.unsafeAppend("\nWHERE 0=1) AS ").appendIdentifier(alias);
                 from.appendComment("</DatasetDefinition>", d);
                 return from;
             }
@@ -1671,14 +1675,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             {
                 SQLFragment ret = new SQLFragment();
                 ret.appendComment("<DatasetDefinition: " + getName() + (getDataSharingEnum() != DataSharing.NONE ? " sharing=" + getDataSharingEnum().name() : "") + ">", d);
-                ret.append("(SELECT * FROM ");
+                ret.unsafeAppend("(SELECT * FROM ");
                 ret.append(_storage.getFromSQL("_"));
-                ret.append(" WHERE container="); //?) ");
+                ret.unsafeAppend(" WHERE container="); //?) ");
                 if (getDataSharingEnum() == DataSharing.NONE)
                     ret.appendValue(getContainer());
                 else
                     ret.appendValue(getDefinitionContainer());
-                ret.append(")");
+                ret.unsafeAppend(")");
                 ret.appendIdentifier(alias);
                 ret.appendComment("</DatasetDefinition>", d);
                 return ret;
@@ -1790,9 +1794,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null==existingRows ? null : existingRows.get(i);
                         // note switched order (oldRecord, newRecord)
-                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null);
+                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null, List.of());
                         batch.add(event);
-                        if (batch.size() > 1000)
+                        if (batch.size() >= BatchSize.get(AUDIT))
                         {
                             auditLog.addEvents(user, batch);
                             batch.clear();
@@ -1808,7 +1812,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
 
         @Override
-        protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+        protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
         {
             throw new UnsupportedOperationException();
         }
@@ -1817,7 +1821,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
          * NOTE: userComment field is not supported for this domain and will be ignored
          */
         @Override
-        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord, Map<String, Object> providedValues)
+        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
         {
             String auditComment = switch (action)
                     {
@@ -1984,16 +1988,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     public DomainKind<DatasetDomainKindProperties> getDomainKind()
     {
-        switch (getStudy().getTimepointType())
+        return switch (getStudy().getTimepointType())
         {
-            case VISIT:
-                return new VisitDatasetDomainKind();
-            case DATE:
-            case CONTINUOUS:
-                return new DateDatasetDomainKind();
-            default:
-                return null;
-        }
+            case VISIT -> new VisitDatasetDomainKind();
+            case DATE, CONTINUOUS -> new DateDatasetDomainKind();
+            default -> null;
+        };
     }
 
 
@@ -2312,7 +2312,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             if (errors.hasErrors())
                 throw errors;
 
-            _log.debug("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
+            _log.debug("imported {} : {}", getName(), DateUtil.formatDuration(Math.max(0, end - start)));
             transaction.commit();
             if (logger != null) logger.debug("commit complete");
 
@@ -2437,33 +2437,34 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public SQLFragment generateLSIDSQL()
     {
         if (null == getStorageTableInfo(false))
-            return new SQLFragment("''");
+            return SQLFragment.unsafe("''");
 
+        SqlDialect dialect = StudySchema.getInstance().getSchema().getSqlDialect();
         List<SQLFragment> parts = new ArrayList<>();
-        parts.add(new SQLFragment("''"));
-        parts.add(new SQLFragment("?", "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-"));
-        parts.add(new SQLFragment("(SELECT CAST(RowId AS VARCHAR(15)) FROM Core.Containers WHERE EntityId = '" + getContainer().getId() + "')"));
-        parts.add(new SQLFragment("':" + String.valueOf(getDatasetId()) + ".'"));
-        parts.add(new SQLFragment("participantid"));
+        parts.add(SQLFragment.unsafe("''"));
+        parts.add(SQLFragment.unsafe("?").add("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-"));
+        parts.add(SQLFragment.unsafe("(SELECT CAST(RowId AS VARCHAR(15)) FROM Core.Containers WHERE EntityId = ").appendValue(getContainer()).unsafeAppend(")"));
+        parts.add(new SQLFragment().appendValue(":" + getDatasetId() + ".", dialect));
+        parts.add(SQLFragment.unsafe("participantid"));
 
         if (!isDemographicData())
         {
-            parts.add(new SQLFragment("'.'"));
+            parts.add(SQLFragment.unsafe("'.'"));
             if (!_study.getTimepointType().isVisitBased())
             {
                 SQLFragment seq = new SQLFragment();
-                seq.append("CAST((");
+                seq.unsafeAppend("CAST((");
                 seq.append(StudyUtils.sequenceNumFromDateSQL("date"));
-                seq.append(") AS VARCHAR(36))");
+                seq.unsafeAppend(") AS VARCHAR(36))");
                 parts.add(seq);
-                parts.add(new SQLFragment("'.0000'"));   // Match what insert/import does
+                parts.add(SQLFragment.unsafe("'.0000'"));   // Match what insert/import does
             }
             else
-                parts.add(new SQLFragment("CAST(CAST(sequencenum AS NUMERIC(15,4)) AS VARCHAR)"));
+                parts.add(SQLFragment.unsafe("CAST(CAST(sequencenum AS NUMERIC(15,4)) AS VARCHAR)"));
 
             if (!_study.getTimepointType().isVisitBased() && getUseTimeKeyField())
             {
-                parts.add(new SQLFragment("'.'"));
+                parts.add(SQLFragment.unsafe("'.'"));
                 parts.add(StudyManager.timePortionFromDateSQL("Date"));
             }
             else if (getKeyPropertyName() != null)
@@ -2473,13 +2474,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 {
                     // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
                     // so use COALESCE to get rid of NULLs
-                    parts.add(new SQLFragment("'.'"));
-                    parts.add(new SQLFragment("COALESCE(_key,'')"));
+                    parts.add(SQLFragment.unsafe("'.'"));
+                    parts.add(SQLFragment.unsafe("COALESCE(_key,'')"));
                 }
             }
         }
 
-        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[0]));
+        return dialect.concatenate(parts.toArray(new SQLFragment[0]));
     }
 
 
@@ -2499,7 +2500,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // duplicate keys found in error
             final LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<>();
 
-            StringBuilder sbIn = new StringBuilder();
+            ArrayList<String> idList = new ArrayList<>();
             final Map<String, Object[]> uriMap = new HashMap<>();
             int count = 0;
             while (rows.next())
@@ -2531,12 +2532,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     noDeleteMap.put(uniq,key);
 
                 // partial fix for 16647, we should handle the replace case differently (do we ever replace?)
-                String sep = "";
                 if (uriMap.size() < 10000 || Boolean.TRUE==replace)
                 {
-                    if (uniq.contains(("'")))
-                        uniq = uniq.replaceAll("'","''");
-                    sbIn.append(sep).append("'").append(uniq).append("'");
+                    idList.add(uniq);
                 }
                 count++;
             }
@@ -2553,7 +2551,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     return null;
             }
             else // also check target dataset
-                return checkTargetDupesAndDelete(isDemographic, noDeleteMap, sbIn, uriMap);
+                return checkTargetDupesAndDelete(isDemographic, noDeleteMap, idList, uriMap);
         }
         catch (BatchValidationException vex)
         {
@@ -2573,14 +2571,15 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
     }
 
-    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, StringBuilder sbIn, final Map<String, Object[]> uriMap)
+    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, ArrayList<String> idList, final Map<String, Object[]> uriMap)
     {
         // duplicate keys found that should be deleted
         final Set<String> deleteSet = new HashSet<>();
 
         TableInfo tinfo = getStorageTableInfo(false);
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause((demographic ?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
+        SQLFragment checkInClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment().appendIdentifier(demographic ? "ParticipantId" : "LSID"), idList);
+        filter.addWhereClause(checkInClause);
         if (isShared())
         {
             Container rowsContainer = getContainer();
@@ -2614,16 +2613,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return null;
 
         SimpleFilter deleteFilter = new SimpleFilter();
-        StringBuilder sbDelete = new StringBuilder();
-        String sep = "";
-        for (String s : deleteSet)
-        {
-            if (s.contains(("'")))
-                s = s.replaceAll("'","''");
-            sbDelete.append(sep).append("'").append(s).append("'");
-            sep = ", ";
-        }
-        deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
+        SQLFragment deleteInClause = tinfo.getSqlDialect().appendInClauseSql(SQLFragment.unsafe("LSID"), deleteSet);
+        deleteFilter.addWhereClause(deleteInClause);
         Table.delete(tinfo, deleteFilter);
 
         return null;
@@ -2636,7 +2627,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     int getMaxKeyValue()
     {
         TableInfo tInfo = getStorageTableInfo(false);
-        SQLFragment sqlf = new SQLFragment("SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM ").append(tInfo.getFromSQL("_"));
+        SQLFragment sqlf = SQLFragment.unsafe("SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM ").append(tInfo.getFromSQL("_"));
         Integer newKey = new SqlSelector(tInfo.getSchema(),sqlf).getObject(Integer.class);
         return newKey.intValue();
     }
@@ -2735,7 +2726,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return null;
         List<Map<String, Object>> rows = getDatasetRows(u, Collections.singleton(lsid));
         assert rows.size() <= 1 : "Expected zero or one matching row, but found " + rows.size();
-        return rows.isEmpty() ? null : rows.get(0);
+        return rows.isEmpty() ? null : rows.getFirst();
     }
 
 
@@ -2856,9 +2847,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 DomainDescriptor domainDescriptor = OntologyManager.getDomainDescriptor(domain.getTypeId());
                 if (domainDescriptor != null)
                 {
-                    _log.error("Likely domain project/container mismatch for " + domain + ". Container: " + domainDescriptor.getContainer().getPath() + ", marked as project: " + domainDescriptor.getProject().getPath());
+                    _log.error("Likely domain project/container mismatch for {}. Container: {}, marked as project: {}", domain, domainDescriptor.getContainer().getPath(), domainDescriptor.getProject().getPath());
                 }
-                _log.error("Failed to delete orphaned dataset domain " + domain + " in container " + domain.getContainer().getPath(), x);
+                _log.error("Failed to delete orphaned dataset domain {} in container {}", domain, domain.getContainer().getPath(), x);
             }
         }
     }

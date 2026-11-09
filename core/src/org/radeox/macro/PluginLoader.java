@@ -63,7 +63,7 @@ public abstract class PluginLoader<T> {
         try {
           T plugin = iterator.next();
           add(repository, plugin);
-          log.debug("PluginLoader: Loaded plugin: " + plugin.getClass());
+            log.debug("PluginLoader: Loaded plugin: {}", plugin.getClass());
         } catch (Exception e) {
           log.warn("PluginLoader: unable to load plugin", e);
         }

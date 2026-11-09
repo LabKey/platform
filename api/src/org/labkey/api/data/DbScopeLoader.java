@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.data;
 
 import org.apache.logging.log4j.Logger;
@@ -76,7 +91,7 @@ class DbScopeLoader
                     catch (Throwable t)
                     {
                         // Always log, but callers determine if null DbScope is fatal or not
-                        LOG.error("Cannot connect to DataSource \"" + getDsName() + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session unless a successful retry is initiated from the schema administration page.", t);
+                        LOG.error("Cannot connect to DataSource \"{}\" defined in {}. This DataSource will not be available during this server session unless a successful retry is initiated from the schema administration page.", getDsName(), AppProps.getInstance().getWebappConfigurationFilename(), t);
                         DbScope.addDataSourceFailure(getDsName(), t);
                         scope = BAD_SCOPE;
                     }

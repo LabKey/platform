@@ -1,1 +1,0 @@
-ALTER TABLE exp.PropertyDescriptor ADD URLTarget NVARCHAR(10) NULL;

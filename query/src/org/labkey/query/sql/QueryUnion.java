@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -385,7 +385,14 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
         if (!_query.getParseErrors().isEmpty())
             return null;
 
-		String unionOperator = "";
+        SQLFragment.SqlSeparator unionOperator = switch (_qunion.getTokenType())
+        {
+            case SqlBaseParser.UNION -> SQLFragment.sep("", "\nUNION\n");
+            case SqlBaseParser.UNION_ALL -> SQLFragment.sep("", "\nUNION ALL\n");
+            case SqlBaseParser.INTERSECT -> SQLFragment.sep("", "\nINTERSECT\n");
+            case SqlBaseParser.EXCEPT -> SQLFragment.sep("", "\nEXCEPT\n");
+            default -> throw new IllegalStateException("Unexpected set operator: " + SqlParser.tokenName(_qunion.getTokenType()));
+        };
         SqlBuilder unionSql = new SqlBuilder(dialect);
 
         assert unionSql.appendComment("<QueryUnion>", dialect);
@@ -453,14 +460,12 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
                 }
                 String message = "Unexpected error parsing union term: " + src;
                 _query.getParseErrors().add(new QueryParseException(message, null, line, col));
-                unionSql.append("#ERROR: ").append(message).append("#");
                 return null;
             }
-			unionSql.append(unionOperator);
-			unionSql.append("(");
+			unionSql.append(unionOperator.next());
+			unionSql.unsafeAppend("(");
 			unionSql.append(sql);
-			unionSql.append(")");
-			unionOperator = "\n" + SqlParser.tokenName(_qunion.getTokenType()) + "\n";
+			unionSql.unsafeAppend(")");
 		}
 
         List<QOrder.SortEntry> sort = null == _qorderBy ? null : _qorderBy.getSort();
@@ -468,24 +473,24 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
         if (null != sort && !sort.isEmpty() || null != _limit)
         {
             SqlBuilder wrap = new SqlBuilder(dialect);
-            wrap.append("SELECT * FROM (");
+            wrap.unsafeAppend("SELECT * FROM (");
             wrap.append(unionSql);
-            wrap.append(") u").appendValue(unionSql.hashCode() & 0x7fffffff);
+            wrap.unsafeAppend(") u").appendValue(unionSql.hashCode() & 0x7fffffff);
             unionSql = wrap;
         }
 
 		if (null != sort && !sort.isEmpty())
 		{
-            unionSql.append("\nORDER BY ");
-            String comma = "";
+            unionSql.unsafeAppend("\nORDER BY ");
+            boolean first = true;
             for (var entry : sort)
             {
                 QExpr expr = resolveFields(entry.expr());
-                unionSql.append(comma);
+                unionSql.unsafeAppend(first ? "" : ", ");
                 unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
                 if (!entry.direction())
-                    unionSql.append(" DESC");
-                comma = ", ";
+                    unionSql.unsafeAppend(" DESC");
+                first = false;
             }
             if (null == _limit)
                 dialect.appendSortOnSubqueryWithoutLimitQualifier(unionSql);
@@ -502,7 +507,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             public SQLFragment getFromSQL(String alias)
             {
                 SQLFragment f = new SQLFragment();
-                f.append("(").append(getSql()).append(") ").appendIdentifier(alias);
+                f.unsafeAppend("(").append(getSql()).unsafeAppend(") ").appendIdentifier(alias);
                 return f;
             }
 
@@ -604,7 +609,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
 				@Override
 				public void appendSql(SqlBuilder builder, Query query)
 				{
-                    builder.append(uc.getAlias());
+                    builder.appendIdentifier(uc.getAlias());
 				}
 			};
 		}

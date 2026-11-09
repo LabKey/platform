@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.labkey.query.olap;
 
-import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -31,14 +30,13 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.VisualizationSqlGenerator;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
-import org.labkey.api.visualization.SQLGenerationException;
-import org.labkey.api.visualization.VisualizationService;
 import org.labkey.query.olap.metadata.CachedCube;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.CellSet;
@@ -54,9 +52,7 @@ import org.olap4j.metadata.Member;
 import org.olap4j.metadata.MetadataElement;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
-import org.springframework.validation.BindException;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -229,7 +225,7 @@ public class BitSetQueryImpl
                 assert ((CachedCube._NamedList)h.getLevels()).isReadOnly();
                 qq.countDistinctLevel = h.getLevels().get(h.getName());
                 if (null == qq.countDistinctLevel)
-                    qq.countDistinctLevel = h.getLevels().get(h.getLevels().size() - 1);
+                    qq.countDistinctLevel = h.getLevels().getLast();
             }
         }
 
@@ -508,7 +504,7 @@ public class BitSetQueryImpl
         {
             if (results.size() == 1)
             {
-                results.get(0).toMdxSet(sb);
+                results.getFirst().toMdxSet(sb);
                 return;
             }
             sb.append(" UNION(");
@@ -562,7 +558,7 @@ public class BitSetQueryImpl
         {
             if (results.size() == 1)
             {
-                results.get(0).toMdxSet(sb);
+                results.getFirst().toMdxSet(sb);
             }
             else if (results.size() == 2)
             {
@@ -582,7 +578,7 @@ public class BitSetQueryImpl
         public String toString()
         {
             if (results.size() == 1)
-                return results.get(0).toString();
+                return results.getFirst().toString();
 
             StringBuilder sb = new StringBuilder();
             String x = "";
@@ -749,26 +745,13 @@ public class BitSetQueryImpl
                 String sql = expr.sql;
                 if (null != expr.getData || null != expr.getDataCDS)
                 {
-                    VisualizationService vs = VisualizationService.get();
-                    if (null == vs)
+                    VisualizationSqlGenerator generator = VisualizationSqlGenerator.get();
+                    if (null == generator)
                         throw new UnsupportedOperationException("VisualizationService not registered");
-                    try
-                    {
-                        if (null != expr.getData)
-                        {
-                            VisualizationService.SQLResponse r = vs.getDataGenerateSQL(container, user, expr.getData);
-                            sql = r.sql;
-                        }
-                        else
-                        {
-                            VisualizationService.SQLResponse r = vs.getDataCDSGenerateSQL(container, user, expr.getDataCDS);
-                            sql = r.sql;
-                        }
-                    }
-                    catch (SQLGenerationException|IOException|SQLException|BindException ex)
-                    {
-                        throw new IllegalArgumentException(ex);
-                    }
+                    if (null != expr.getData)
+                        sql = generator.getDataSql(container, user, expr.getData);
+                    else
+                        sql = generator.getDataCDSSql(container, user, expr.getDataCDS);
                 }
 
                 MemberSet set = ((SqlDataSourceHelper)_dataSourceHelper).sqlMembersQuery(expr.level, sql);
@@ -786,7 +769,7 @@ public class BitSetQueryImpl
     Result processExpr(QubeQuery.QubeExpr expr) throws SQLException
     {
         while (null != expr && null != expr.arguments && expr.arguments.size() == 1 && expr.op != QubeQuery.OP.MEMBERS)
-            expr = expr.arguments.get(0);
+            expr = expr.arguments.getFirst();
 
         if (null == expr)
             throw new IllegalArgumentException("Missing/malformed expression");
@@ -805,31 +788,14 @@ public class BitSetQueryImpl
             results.add(processExpr(in));
         }
 
-        switch (expr.op)
+        return switch (expr.op)
         {
-        case CROSSJOIN:
-        case XINTERSECT:
-        {
-            return crossjoin(expr.op, results);
-        }
-        case INTERSECT:
-        {
-            return intersect(expr.op, results);
-        }
-        case UNION:
-        {
-            return union(expr.op, results);
-        }
-        case EXCEPT:
-        {
-            return except(expr.op, results);
-        }
-        default:
-        case MEMBERS:
-        {
-            throw new IllegalStateException();
-        }
-        }
+            case CROSSJOIN, XINTERSECT -> crossjoin(expr.op, results);
+            case INTERSECT -> intersect(expr.op, results);
+            case UNION -> union(expr.op, results);
+            case EXCEPT -> except(expr.op, results);
+            default -> throw new IllegalStateException();
+        };
     }
 
 
@@ -851,10 +817,10 @@ public class BitSetQueryImpl
 
     Member getAllNullMember(Hierarchy h, int depth) throws OlapException
     {
-        if (1 != h.getRootMembers().size() || !h.getRootMembers().get(0).isAll())
+        if (1 != h.getRootMembers().size() || !h.getRootMembers().getFirst().isAll())
             return null;
 
-        Member ret = h.getRootMembers().get(0);
+        Member ret = h.getRootMembers().getFirst();
         while (ret.getLevel().getDepth() < depth)
         {
             ret = ret.getChildMembers().get("#null");
@@ -1307,7 +1273,7 @@ public class BitSetQueryImpl
         if (results.isEmpty())
             return new EmptyResult();
         if (results.size() == 1)
-            return results.get(0);
+            return results.getFirst();
 
         // if all members are part of the same hierarchy just return a simple MemberSetResult
         // if there is more than one hierarchy involved, return a UnionResult
@@ -1382,7 +1348,7 @@ public class BitSetQueryImpl
     }
 
 
-    static Cache<String, MemberSet> _resultsCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, TimeUnit.DAYS.toMillis(1), "olap - count distinct queries");
+    static Cache<String, MemberSet> _resultsCache = CacheManager.getCache(String.class, CacheManager.UNLIMITED, TimeUnit.DAYS.toMillis(1), "olap - count distinct queries");
 
     MemberSet resultsCacheGet(String query)
     {
@@ -1804,7 +1770,7 @@ public class BitSetQueryImpl
             try
             {
                 QuerySchema qs = DefaultSchema.get(user, container, Objects.toString(rolap.getQuerySchemaName(), "core"));
-                return QueryService.get().select(qs, query, null, true, false);
+                return QueryService.get().getSelectBuilder(qs, query, true).select();
             }
             catch (QueryParseException|AssertionError x)
             {
@@ -1994,7 +1960,7 @@ public class BitSetQueryImpl
                 }
                 // add in the all member
                 if (!union.isEmpty())
-                    union.add(outer.hierarchy.getLevels().get(0).getMembers().get(0));
+                    union.add(outer.hierarchy.getLevels().getFirst().getMembers().getFirst());
 
                 return union;
             }
@@ -2159,7 +2125,7 @@ public class BitSetQueryImpl
                 return set;
 
             int depth = level.getDepth();
-            CachedCube._Member all = (CachedCube._Member)level.getHierarchy().getLevels().get(0).getMembers().get(0);
+            CachedCube._Member all = (CachedCube._Member)level.getHierarchy().getLevels().getFirst().getMembers().getFirst();
 
             MemberSet ret = new MemberSet();
             try (ResultSet rs = execute(serviceUser, sql))
@@ -2209,7 +2175,7 @@ public class BitSetQueryImpl
 
                             if (null == child)
                             {
-                                _log.info("Child not found: parent=" + m.getUniqueName() + " key=" + String.valueOf(key));
+                                _log.info("Child not found: parent={} key={}", m.getUniqueName(), String.valueOf(key));
                                 continue resultLoop;
                             }
                             m = child;
@@ -2408,19 +2374,19 @@ public class BitSetQueryImpl
         @Override
         public Level getLevel()
         {
-            return cube.getMeasures().get(0).getLevel();
+            return cube.getMeasures().getFirst().getLevel();
         }
 
         @Override
         public Hierarchy getHierarchy()
         {
-            return cube.getMeasures().get(0).getHierarchy();
+            return cube.getMeasures().getFirst().getHierarchy();
         }
 
         @Override
         public Dimension getDimension()
         {
-            return cube.getMeasures().get(0).getDimension();
+            return cube.getMeasures().getFirst().getDimension();
         }
 
         @Override

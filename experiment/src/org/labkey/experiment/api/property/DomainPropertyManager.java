@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -64,10 +64,10 @@ public class DomainPropertyManager
         {
             SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
             sql.append(getExpSchema().getTable("ConditionalFormat"), "CF");
-            sql.append(" WHERE CF.PropertyId IN ");
-            sql.append("(SELECT PropertyId FROM ");
+            sql.unsafeAppend(" WHERE CF.PropertyId IN ");
+            sql.unsafeAppend("(SELECT PropertyId FROM ");
             sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-            sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
+            sql.unsafeAppend(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
             sql.add(container);
 
             return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
@@ -75,7 +75,7 @@ public class DomainPropertyManager
     }
 
     private static final ConditionalFormatLoader CONDITIONAL_FORMAT_LOADER = new ConditionalFormatLoader();
-    private static final BlockingCache<Container, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = DatabaseCache.get(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.DAY, "Conditional formats", CONDITIONAL_FORMAT_LOADER);
+    private static final BlockingCache<Container, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.DAY, "Conditional formats", CONDITIONAL_FORMAT_LOADER);
 
     private DomainPropertyManager(){}
 
@@ -104,12 +104,12 @@ public class DomainPropertyManager
         return getExpSchema().getTable("ConditionalFormat");
     }
 
-    public Collection<PropertyValidator> getValidators(DomainProperty property)
+    public Collection<PropertyValidatorBean> getValidators(DomainProperty property)
     {
         return getValidators(property.getContainer(), property.getPropertyId());
     }
 
-    public Collection<PropertyValidator> getValidators(PropertyDescriptor property)
+    public Collection<PropertyValidatorBean> getValidators(PropertyDescriptor property)
     {
         return getValidators(property.getContainer(), property.getPropertyId());
     }
@@ -156,8 +156,8 @@ public class DomainPropertyManager
         return CONDITIONAL_FORMAT_CACHE.get(container);
     }
 
-    // Container -> PropertyId -> Collection<PropertyValidator>
-    private static final CacheLoader<Container, MultiValuedMap<Integer, PropertyValidator>> PV_LOADER = (container, argument) -> {
+    // Container -> PropertyId -> Collection<PropertyValidatorBean>
+    private static final CacheLoader<Container, MultiValuedMap<Integer, PropertyValidatorBean>> PV_LOADER = (container, argument) -> {
         /*
          * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
          * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
@@ -166,14 +166,14 @@ public class DomainPropertyManager
                 "FROM " + getTinfoValidator() + " PV " +
                 "WHERE PV.Container=?\n";
 
-        final MultiValuedMap<Integer, PropertyValidator> validators = new ArrayListValuedHashMap<>();
+        final MultiValuedMap<Integer, PropertyValidatorBean> validators = new ArrayListValuedHashMap<>();
 
-        new SqlSelector(getExpSchema(), sql, container).forEach(PropertyValidator.class, pv -> {
+        new SqlSelector(getExpSchema(), sql, container).forEach(PropertyValidatorBean.class, pv -> {
             // Warn and skip property validators have unknown type URIs. Some instances in the field failed to run
             // upgrade code that cleared out obsolete 'urn:lsid:labkey.com:PropertyValidator:length' rows.
             if (PropertyService.get().getValidatorKind(pv.getTypeURI()) == null)
             {
-                LOG.error("Invalid property validator typeUri: {}", pv.getTypeURI());
+                LOG.warn("Invalid property validator typeUri: {}", pv.getTypeURI());
             }
             else
             {
@@ -184,17 +184,17 @@ public class DomainPropertyManager
         return validators.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(validators);
     };
 
-    private static final Cache<Container, MultiValuedMap<Integer, PropertyValidator>> VALIDATOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Property validators", PV_LOADER);
-    private static final Collection<PropertyValidator> EMPTY_COLLECTION = Collections.emptyList();
+    private static final Cache<Container, MultiValuedMap<Integer, PropertyValidatorBean>> VALIDATOR_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Property validators", PV_LOADER);
+    private static final Collection<PropertyValidatorBean> EMPTY_COLLECTION = Collections.emptyList();
 
 
-    private Collection<PropertyValidator> getValidators(@NotNull Container c, int propertyId)
+    private Collection<PropertyValidatorBean> getValidators(@NotNull Container c, int propertyId)
     {
         if (propertyId == 0)
             return EMPTY_COLLECTION;
 
-        MultiValuedMap<Integer, PropertyValidator> validators = VALIDATOR_CACHE.get(c); // No validators in c -> empty MultiValuedMap
-        Collection<PropertyValidator> coll = validators.get(propertyId); // No validators for propertyId -> empty collection
+        MultiValuedMap<Integer, PropertyValidatorBean> validators = VALIDATOR_CACHE.get(c); // No validators in c -> empty MultiValuedMap
+        Collection<PropertyValidatorBean> coll = validators.get(propertyId); // No validators for propertyId -> empty collection
         return Collections.unmodifiableCollection(coll);
     }
 
@@ -202,7 +202,7 @@ public class DomainPropertyManager
      * Remove a domain property reference to a validator and delete the validator if there are
      * no more references to it.
      */
-    void removePropertyValidator(DomainProperty property, IPropertyValidator validator)
+    void removePropertyValidator(DomainProperty property, PropertyValidatorDef validator)
     {
         if (property.getPropertyId() != 0)
         {
@@ -217,7 +217,7 @@ public class DomainPropertyManager
     }
 
 
-    void savePropertyValidator(User user, DomainProperty property, IPropertyValidator validator) throws ChangePropertyDescriptorException
+    void savePropertyValidator(User user, DomainProperty property, PropertyValidatorDef validator) throws ChangePropertyDescriptorException
     {
         if (property.getPropertyId() != 0)
         {

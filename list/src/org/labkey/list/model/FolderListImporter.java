@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class FolderListImporter implements FolderImporter
 
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             ListImporter importer = new ListImporter();
             Logger log = ctx.getLogger();
@@ -65,7 +65,7 @@ public class FolderListImporter implements FolderImporter
             for (String error : errors)
                 log.error(error);
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

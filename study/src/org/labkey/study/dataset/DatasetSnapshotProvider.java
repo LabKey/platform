@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.query.snapshot.AbstractSnapshotProvider;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -82,6 +81,7 @@ import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.snapshot.AbstractSnapshotProvider;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.springframework.validation.BindException;
 
@@ -341,7 +341,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 colMap.put(col.getFieldKey(), col);
             }
         }
-        return QueryService.get().select(tinfo, colMap.values(), filter, null);
+        return QueryService.get().getSelectBuilder(tinfo).columns(colMap.values()).filter(filter).select();
     }
 
     @Nullable
@@ -599,7 +599,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     @Override
     public void datasetChanged(final Dataset def)
     {
-        LOG.debug("Cache cleared notification on dataset : " + def.getDatasetId());
+        LOG.debug("Cache cleared notification on dataset : {}", def.getDatasetId());
 
         _sourceDataChanged(new SnapshotDependency.SourceDataType(def.getContainer(), SnapshotDependency.SourceDataType.Type.dataset, def));
     }
@@ -608,7 +608,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     {
         if (_coalesceMap.containsKey(type.getContainer()))
         {
-            LOG.debug("deferred source data changed " + type.getType());
+            LOG.debug("deferred source data changed {}", type.getType());
             deferReload(type);
         }
         else
@@ -628,7 +628,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     @Override
     public void categoryUpdated(User user, ParticipantCategoryImpl category)
     {
-        LOG.debug("Category updated notification on participant category : " + category.getLabel());
+        LOG.debug("Category updated notification on participant category : {}", category.getLabel());
 
         Container c = ContainerManager.getForId(category.getContainerId());
         _sourceDataChanged(new SnapshotDependency.SourceDataType(c, SnapshotDependency.SourceDataType.Type.participantCategory, category));
@@ -673,7 +673,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         List<QuerySnapshotDefinition> dependencies = getDependencies(data);
                         for (QuerySnapshotDefinition snapshotDef : dependencies)
                         {
-                            LOG.info("Scheduling update of snapshot data : " + snapshotDef.getName());
+                            LOG.info("Scheduling update of snapshot data : {}", snapshotDef.getName());
                             autoUpdateSnapshot(snapshotDef);
                         }
                     }
@@ -690,7 +690,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
             catch (InterruptedException e)
             {
-                LOG.info(getClass().getSimpleName() + " is terminating due to interruption");
+                LOG.info("{} is terminating due to interruption", getClass().getSimpleName());
             }
         }
 
@@ -763,7 +763,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         @Override
         public void run()
         {
-            LOG.info("Updating snapshot data : " + _def.getName());
+            LOG.info("Updating snapshot data : {}", _def.getName());
 
             try
             {
@@ -852,7 +852,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         DatasetDefinition deferredDataset = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
                         if (deferredDataset == null)
                         {
-                            LOG.warn("Unable to find dataset " + def.getName() + " to update for query snapshot " + def.getName() + " in study in " + snapshotContainer.getPath() + ", skipping");
+                            LOG.warn("Unable to find dataset {} to update for query snapshot {} in study in {}, skipping", def.getName(), def.getName(), snapshotContainer.getPath());
                         }
                         else
                         {

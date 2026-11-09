@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ import org.labkey.api.assay.transform.AnalysisScript;
 import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -51,7 +51,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
@@ -102,6 +101,7 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
@@ -112,6 +112,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
@@ -240,7 +241,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             ColumnInfo rowIdColumn = columns.get(objectIdFK);
             ColumnInfo runLSIDColumn = columns.get(runLSIDFK);
 
-            SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+            SQLFragment sql = QueryService.get().getSelectBuilder(dataTable).columns(columns.values()).filter(filter).buildSqlFragment();
 
             List<Map<String, Object>> dataMaps = new ArrayList<>();
             Container sourceContainer = null;
@@ -1271,6 +1272,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
             String ext = FileUtil.getExtension(scriptFile);
             if (scriptFile.isFile() && ext != null)
             {
+                validateScriptLocation(protocol.getContainer(), scriptFile, validationErrors);
+
                 ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
                 if (engine != null)
                 {
@@ -1325,6 +1328,51 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     /** Property name suffix used when storing transform scripts on assay protocol objects */
     public static final String TRANSFORM_SCRIPT_PROPERTY_NAME = "TransformScript";
+
+    /**
+     * Deprecated feature flag. When enabled, transform scripts may live at arbitrary file system paths instead of
+     * being confined to the assay design container's @scripts directory. Registered by AssayModule.
+     */
+    public static final String DEPRECATED_ARBITRARY_TRANSFORM_SCRIPT_PATHS = "arbitraryTransformScriptPaths";
+
+    /**
+     * GitHub Issue #159: transform scripts configured on an assay design must reside in that design's container's
+     * {@code @scripts} directory, which only platform developers can write to. Module-provided scripts are supplied
+     * via {@link Scope#ASSAY_TYPE} and never reach this code path, so every script persisted with a design must be
+     * under {@code @scripts}.
+     */
+    private void validateScriptLocation(Container container, FileLike scriptFile, ValidationException validationErrors)
+    {
+        if (OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_ARBITRARY_TRANSFORM_SCRIPT_PATHS))
+            return;
+
+        FileContentService fileContentService = FileContentService.get();
+        if (fileContentService == null)
+        {
+            LOG.warn("FileContentService is not available; unable to validate the location of transform script '{}'.", scriptFile.toNioPathForRead());
+            return;
+        }
+
+        // Returns null when there's no usable file root and for cloud roots, which have no @scripts directory at all
+        // (see ScriptsResourceProvider).
+        java.nio.file.Path scriptsDir = fileContentService.getFileRootPath(container, FileContentService.ContentType.scripts);
+        if (scriptsDir == null)
+        {
+            LOG.warn("Skipping the {} location check for transform script '{}': unable to resolve the directory for container '{}'.",
+                    FileContentService.SCRIPTS_LINK, scriptFile.toNioPathForRead(), container.getPath());
+            return;
+        }
+
+        // Normalize both sides (strip "." and "..", correct case on case-insensitive file systems) before comparing
+        File scriptsDirFile = FileUtil.getAbsoluteCaseSensitiveFile(scriptsDir.toFile());
+        File normalizedScriptFile = FileUtil.getAbsoluteCaseSensitiveFile(scriptFile.toNioPathForRead().toFile());
+
+        if (!URIUtil.isDescendant(scriptsDirFile.toURI(), normalizedScriptFile.toURI()))
+        {
+            validationErrors.addError(new SimpleValidationError("The transform script must exist within this folder's " +
+                    FileContentService.SCRIPTS_LINK + " directory.", null, SEVERITY.ERROR, new HelpTopic("programmaticQC")));
+        }
+    }
 
     @NotNull
     @Override
@@ -1610,7 +1658,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // Just need to check DesignAssayPermission here.
         // Experiment/ConfirmDelete.jsp checks for getRunsWithoutPermission
         // ExperimentServiceImpl.deleteProtocolByRowIds checks for AdminPermission for assay runs
-        return container.hasPermissions(viewContext.getUser(), Set.of(DesignAssayPermission.class));
+        return container.hasPermission(viewContext.getUser(), DesignAssayPermission.class);
     }
 
     @Override
@@ -1758,11 +1806,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return false;
     }
 
-    @Override
-    public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
-    {
-    }
-
     public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}
 
     public record AssayMoveData(Map<String, Integer> counts, Map<Long, List<AssayFileMoveData>> fileMovesByRunId) {}
@@ -1788,11 +1831,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         TableInfo runsTable = experimentService.getTinfoExperimentRun();
         List<Long> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
         SQLFragment updateSql = new SQLFragment("UPDATE ").append(runsTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(", filePathRoot = ").appendValue(filePathRoot)
-                .append(" WHERE rowid ");
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(", modified = ").appendValue(new Date())
+                .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
+                .unsafeAppend(", filePathRoot = ").appendValue(filePathRoot)
+                .unsafeAppend(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
         int updateRunsCount = new SqlExecutor(runsTable.getSchema()).execute(updateSql);
         // N.B. The name "runs" is used to extract data for creating a notification in the apps, so keep it in sync
@@ -1810,32 +1853,32 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // update Exp.Object where object.objecturi IN experimentrun.lsid
         TableInfo expObjectTable = OntologyManager.getTinfoObject();
         updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                 .append(runsTable)
-                .append(" WHERE rowid ");
+                .unsafeAppend(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
-        updateSql.append(")");
+        updateSql.unsafeAppend(")");
         int expObjectCount = new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
 
         // update Exp.Object where object.objecturi IN exp.data.lsid
         TableInfo expDataTable = experimentService.getTinfoData();
         updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                 .append(expDataTable)
-                .append(" WHERE runid ");
+                .unsafeAppend(" WHERE runid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
-        updateSql.append(")");
+        updateSql.unsafeAppend(")");
         expObjectCount += new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
         updateCounts.put("expObject", updateCounts.getOrDefault("expObject", 0) + expObjectCount);
 
         // update Exp.Data
         updateSql = new SQLFragment("UPDATE ").append(expDataTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE runid ");
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(", modified = ").appendValue(new Date())
+                .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
+                .unsafeAppend(" WHERE runid ");
         expDataTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
         int expDataCount = new SqlExecutor(expDataTable.getSchema()).execute(updateSql);
         updateCounts.put("expData", updateCounts.getOrDefault("expData", 0) + expDataCount);
@@ -1891,10 +1934,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // update exp.experiment
         SQLFragment updateExperimentSql = new SQLFragment("UPDATE ").append(experimentTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE rowid ");
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(", modified = ").appendValue(new Date())
+                .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
+                .unsafeAppend(" WHERE rowid ");
         experimentTable.getSchema().getSqlDialect().appendInClauseSql(updateExperimentSql, runBatchIds);
         int updateExpCount = new SqlExecutor(experimentTable.getSchema()).execute(updateExperimentSql);
         updateCounts.put("experiments", updateCounts.getOrDefault("experiments", 0) + updateExpCount);
@@ -1973,8 +2016,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // update Exp.Object where object.objecturi IN batchLsids
         TableInfo expObjectTable = OntologyManager.getTinfoObject();
         SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi ");
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(" WHERE objecturi ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, batchLsids);
         int expObjectCount = new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
         updateCounts.put("expObject", updateCounts.getOrDefault("expObject", 0) + expObjectCount);
@@ -2201,11 +2244,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 TableInfo expDataTable = ExperimentService.get().getTinfoData();
                 TableInfo expObjectTable = OntologyManager.getTinfoObject();
                 SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                        .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                        .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                        .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                        .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                         .append(expDataTable)
-                        .append(" WHERE datafileurl = ").appendValue(FileUtil.pathToString(sourceFile.toPath()));
-                updateSql.append(")");
+                        .unsafeAppend(" WHERE datafileurl = ").appendValue(FileUtil.pathToString(sourceFile.toPath()));
+                updateSql.unsafeAppend(")");
                 new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
 
                 fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
@@ -2213,10 +2256,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 var realTable = assayResultTable.getRealTable();
                 var realFileColumn = realTable.getColumn(fileField);
                 updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
-                        .append(" SET ")
+                        .unsafeAppend(" SET ")
                         .appendIdentifier(realFileColumn.getSelectIdentifier())
-                        .append(" = ").appendValue(updatedFile.getAbsolutePath())
-                        .append(" WHERE rowId ").appendInClause(fileMoveResultRowIds.get(sourceFileName), realTable.getSqlDialect());
+                        .unsafeAppend(" = ").appendValue(updatedFile.getAbsolutePath())
+                        .unsafeAppend(" WHERE rowId ").appendInClause(fileMoveResultRowIds.get(sourceFileName), realTable.getSqlDialect());
                 new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
 
                 FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");

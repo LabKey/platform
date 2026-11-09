@@ -59,7 +59,7 @@ public abstract class LocalePreserved extends Preserved implements LocaleMacro {
     try {
       description = messages.getString(getLocaleKey() + ".description");
     } catch (Exception e) {
-      log.warn("Cannot read description from properties " + inputName + " for " + getLocaleKey());
+        log.warn("Cannot read description from properties {} for {}", inputName, getLocaleKey());
     }
   }
 }

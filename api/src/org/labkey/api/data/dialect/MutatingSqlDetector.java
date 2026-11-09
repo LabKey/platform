@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.api.data.dialect;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.SqlScanner;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
@@ -65,7 +66,7 @@ public class MutatingSqlDetector
                     if (mutatingWord == null && sql.startsWith("? = CALL"))
                         mutatingWord = Boolean.TRUE;
 
-                    if (null == mutatingWord)
+                    if (null == mutatingWord && AppProps.getInstance().isDevMode())
                         LOG.warn("Unrecognized keyword: {} for SQL: {}", word, sql);
 
                     if (Boolean.TRUE == mutatingWord)
@@ -131,7 +132,8 @@ public class MutatingSqlDetector
             "ANALYZE", true,   // Typically executed after UPDATE, CREATE INDEX, et al
             "LOCK", true,      // Not technically mutating. However, it is currently only used in mutating TX.
             "VACUUM", true,    // VACUUM is mutating
-            "{call", true      // Execute a stored procedure, which is likely to be mutating
+            "{call", true,     // Execute a stored procedure, which is likely to be mutating
+            "REFRESH", true    // REFRESH MATERIALIZED VIEW - see JdbcMetaDataTest
         ));
 
         // Needed for SQL Server

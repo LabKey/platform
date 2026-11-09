@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,16 +28,14 @@ import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NullColumnInfo;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.CacheClearingQueryUpdateService;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -92,10 +90,6 @@ import java.util.Set;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
-/**
-* User: klum
-* Date: 9/19/12
-*/
 public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     private Set<String> _illegalColumns;
@@ -116,7 +110,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super(schema, table, null);
 
-        setDescription("Contains all users who are members of the current project." +
+        setDescription("Contains all users with read permissions in the current project." +
             " The data in this table are available only to users who are signed-in (not guests). Guests see no rows." +
             " Signed-in users see the columns UserId, EntityId, and DisplayName." +
             " Users granted the '" + SeeUserAndGroupDetailsRole.NAME + "' role see all standard and custom columns.");
@@ -300,7 +294,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                             if (!(col instanceof NullColumnInfo))
                             {
                                 if (col.getScale() != pd.getScale())
-                                    LOG.warn("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
+                                    LOG.warn("Scale doesn't match for column {}: {} vs {}", col.getName(), col.getScale(), pd.getScale());
                                 pd.copyTo( (ColumnRenderPropertiesImpl)col );
                                 if (!col.isHidden())
                                     defaultCols.add(FieldKey.fromParts(col.getName()));
@@ -414,6 +408,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             return super.hasPermission(user, perm);
     }
 
+    // Used by ShowUserHistoryAction only (is not applied to UsersTable)
     public static SimpleFilter authorizeAndGetProjectMemberFilter(@NotNull Container c, @NotNull User u, String userIdColumnName) throws UnauthorizedException
     {
         SimpleFilter filter = new SimpleFilter();
@@ -425,29 +420,10 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
         else
         {
-            SQLFragment sql = SecurityManager.getProjectUsersSQL(c.getProject());
-
             final FieldKey userIdColumnFieldKey = new FieldKey(null, userIdColumnName);
-            filter.addClause(new SimpleFilter.SQLClause(sql.getSQL(), sql.getParamsArray(), userIdColumnFieldKey)
-            {
-                @Override
-                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
-                {
-                    ColumnInfo col = columnMap.get(userIdColumnFieldKey);
-
-                    // NOTE: Ideally we would use col.getValueSql() here instead
-                    SQLFragment sql = new SQLFragment();
-
-                    if (col != null)
-                        sql.appendIdentifier(col.getAlias());
-                    else
-                        sql.append(userIdColumnFieldKey);
-                    sql.append(" IN (SELECT members.UserId ");
-                    sql.append(super.toSQLFragment(columnMap, dialect));
-                    sql.append(")");
-                    return sql;
-                }
-            });
+            // Consider: could short-circuit optimize if guests or all site users have read permissions
+            InClause clause = new InClause(userIdColumnFieldKey, SecurityManager.getUsersWithPermissions(c, Set.of(ReadPermission.class)));
+            filter.addClause(clause);
         }
         return filter;
     }
@@ -471,13 +447,13 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     private static class UsersTableQueryUpdateService extends SimpleQueryUpdateService
     {
-        public UsersTableQueryUpdateService(SimpleUserSchema.SimpleTable queryTable, TableInfo dbTable, DomainUpdateHelper helper)
+        public UsersTableQueryUpdateService(SimpleUserSchema.SimpleTable<?> queryTable, TableInfo dbTable, DomainUpdateHelper helper)
         {
             super(queryTable, dbTable, helper);
         }
 
         @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap)
         {
             throw new UnsupportedOperationException("Delete not supported.");
         }

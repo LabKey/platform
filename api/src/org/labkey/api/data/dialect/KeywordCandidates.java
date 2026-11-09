@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class KeywordCandidates
         if (notFound.isEmpty())
             return true;
 
-        LOG.error("Keywords from " + productName + " dialect need to be added to sqlKeywords.txt file: " + notFound);
+        LOG.error("Keywords from {} dialect need to be added to sqlKeywords.txt file: {}", productName, notFound);
 
         return false;
     }

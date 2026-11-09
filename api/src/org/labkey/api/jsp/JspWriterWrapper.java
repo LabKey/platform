@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,13 +205,13 @@ public class JspWriterWrapper extends JspWriter
     }
 
     @Override
-    public void write(@NotNull char[] cbuf) throws IOException
+    public void write(char @NotNull [] cbuf) throws IOException
     {
         _jspWriter.write(cbuf);
     }
 
     @Override
-    public void write(@NotNull char[] cbuf, int off, int len) throws IOException
+    public void write(char @NotNull [] cbuf, int off, int len) throws IOException
     {
         _jspWriter.write(cbuf, off, len);
     }

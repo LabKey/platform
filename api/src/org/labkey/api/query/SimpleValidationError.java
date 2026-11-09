@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ public class SimpleValidationError implements ValidationError
     }
 
     @Override
-    public HelpTopic getHelp()
+    public @Nullable HelpTopic getHelp()
     {
         return _help;
     }

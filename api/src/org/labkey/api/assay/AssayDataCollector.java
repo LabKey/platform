@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
     }
 
     /** @return the UI to plug into the import wizard for the user to somehow select/upload the file */
-    HttpView<?> getView(ContextType context) throws ExperimentException;
+    HttpView<?> getView(ContextType context);
 
     /** @return the name for this AssayDataCollector. Needs to be unique within the set of data collectors for any given import attempt */
     String getShortName();

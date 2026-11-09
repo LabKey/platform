@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.vfs.FileLike;
-
-import java.nio.file.Path;
 
 /*
 * User: jeckels

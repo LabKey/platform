@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,17 @@ import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
-import static java.sql.Connection.TRANSACTION_READ_UNCOMMITTED;
 
 public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
 {
@@ -47,13 +51,26 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         Map<Integer, Integer> identityMap = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId FROM comm.Announcements").getValueMap();
         assertTrue("Expected an identity map!", identityMap.entrySet().stream().allMatch(entry -> entry.getKey().equals(entry.getValue())));
 
-        // Verify that we can generate the supported execution plans
+        verifyExecutionPlans(selector);
+        verifyExecutionPlans(new SqlSelector(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT RowId FROM comm.Announcements WHERE RowId > ?", 0)));
+    }
+
+    // Verify that we can generate the supported execution plans and that they contain neither the query nor its results
+    private void verifyExecutionPlans(SqlSelector selector)
+    {
         for (SqlDialect.ExecutionPlanType type : SqlDialect.ExecutionPlanType.values())
         {
             if (CoreSchema.getInstance().getSqlDialect().canShowExecutionPlan(type))
             {
                 Collection<String> executionPlan = selector.getExecutionPlan(type);
-                assertFalse(executionPlan.isEmpty());
+                assertFalse(type + " plan is empty", executionPlan.isEmpty());
+
+                for (String line : executionPlan)
+                {
+                    String trimmed = line.trim();
+                    assertFalse(type + " plan repeats the query: " + line, trimmed.toUpperCase().startsWith("SELECT"));
+                    assertFalse(type + " plan contains a data row: " + line, trimmed.matches("\\d+"));
+                }
             }
         }
     }
@@ -67,6 +84,89 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         verifyResultSet(sqlSelector.getResultSet(false, false), expectedRowCount, expectedComplete);
         verifyResultSet(sqlSelector.getResultSet(false, true), expectedRowCount, expectedComplete);
         verifyResultSet(sqlSelector.getResultSet(true, true), expectedRowCount, expectedComplete);
+
+        // Verify getSize() and backward-scrolling behavior for each caching/scrollable combination. These behaviors
+        // differ between a cached result set (CachedResultSet, cache == true) and a non-cached result set
+        // (ResultSetImpl, cache == false), and silently switching a caller from cached to non-cached has caused
+        // regressions (getSize() called before iteration, or beforeFirst() used to re-iterate).
+        verifyCachedResultSet(sqlSelector, expectedRowCount);
+        verifyForwardOnlyResultSet(sqlSelector, expectedRowCount);
+        verifyScrollableUncachedResultSet(sqlSelector, expectedRowCount);
+    }
+
+    // A cached result set (getResultSet(true, true) -> CachedResultSet) knows its size without iterating and supports
+    // backward scrolling, so it can be re-iterated after beforeFirst().
+    private void verifyCachedResultSet(SqlSelector selector, int expectedRowCount) throws SQLException
+    {
+        try (TableResultSet rs = selector.getResultSet(true, true))
+        {
+            // getSize() must work before any iteration
+            assertEquals("Cached ResultSet should report its size before iteration", expectedRowCount, rs.getSize());
+
+            int count = 0;
+            while (rs.next())
+                count++;
+            assertEquals(expectedRowCount, count);
+
+            // Scroll back to the start and re-iterate
+            rs.beforeFirst();
+            int recount = 0;
+            while (rs.next())
+                recount++;
+            assertEquals("Cached ResultSet should be re-iterable after beforeFirst()", expectedRowCount, recount);
+        }
+    }
+
+    // A non-cached, forward-only result set (getResultSet(false, false) -> ResultSetImpl) cannot report its size until
+    // it has been completely iterated, and cannot scroll backward.
+    private void verifyForwardOnlyResultSet(SqlSelector selector, int expectedRowCount) throws SQLException
+    {
+        // getSize() throws until the result set has been completely iterated
+        try (TableResultSet rs = selector.getResultSet(false, false))
+        {
+            assertThrows("getSize() should throw before a non-cached ResultSet is fully iterated", IllegalStateException.class, rs::getSize);
+        }
+
+        // Backward scrolling is not supported on a forward-only result set
+        try (TableResultSet rs = selector.getResultSet(false, false))
+        {
+            assertThrows("beforeFirst() should throw on a forward-only ResultSet", SQLException.class, rs::beforeFirst);
+        }
+
+        // After complete iteration getSize() reports the row count
+        try (TableResultSet rs = selector.getResultSet(false, false))
+        {
+            int count = 0;
+            while (rs.next())
+                count++;
+            assertEquals(expectedRowCount, count);
+            assertEquals("getSize() should report the row count after complete iteration", expectedRowCount, rs.getSize());
+        }
+    }
+
+    // A non-cached but scrollable result set (getResultSet(false, true) -> ResultSetImpl over a scrollable JDBC
+    // ResultSet) supports backward scrolling, but still cannot report its size until completely iterated because
+    // getSize() depends on caching, not scrollability.
+    private void verifyScrollableUncachedResultSet(SqlSelector selector, int expectedRowCount) throws SQLException
+    {
+        try (TableResultSet rs = selector.getResultSet(false, true))
+        {
+            int count = 0;
+            while (rs.next())
+                count++;
+            assertEquals(expectedRowCount, count);
+
+            rs.beforeFirst();
+            int recount = 0;
+            while (rs.next())
+                recount++;
+            assertEquals("Scrollable ResultSet should be re-iterable after beforeFirst()", expectedRowCount, recount);
+        }
+
+        try (TableResultSet rs = selector.getResultSet(false, true))
+        {
+            assertThrows("getSize() should throw before a non-cached ResultSet is fully iterated", IllegalStateException.class, rs::getSize);
+        }
     }
 
     public static class TestClass
@@ -103,13 +203,15 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         DbScope scope = CoreSchema.getInstance().getScope();
         try (Connection conn = scope.getConnection())
         {
-            // Default setting is to cache and share the connection
+            // Default (no explicit setJdbcCaching() call) now auto-disables JDBC caching when it's safe: a separate,
+            // uncached Connection outside a transaction.
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
             {
-                assertEquals(conn, conn2);
+                assertNotEquals(conn, conn2);
+                assertFalse(conn2.getAutoCommit());
             }
 
-            // Same as the default setting
+            // Explicitly requesting caching shares the connection
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(true).getConnection())
             {
                 assertEquals(conn, conn2);
@@ -121,26 +223,158 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                 assertEquals(conn, conn2);
             }
 
-            // Here we expect a different Connection object on PostgreSQL, but still shared on SQL Server
+            // Here we expect a different Connection object
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false).getConnection())
             {
-                if (scope.getSqlDialect().isPostgreSQL())
-                {
-                    assertNotEquals(conn, conn2);
-                    assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
-                    assertFalse(conn2.getAutoCommit());
-                }
-                else
-                {
-                    assertEquals(conn, conn2);
-                    assertEquals(TRANSACTION_READ_COMMITTED, conn2.getTransactionIsolation());
-                    assertTrue(conn2.getAutoCommit());
-                }
+                assertNotEquals(conn, conn2);
+                assertFalse(conn2.getAutoCommit());
             }
+        }
+
+        // A "self-contained" read (getArrayList(), forEach(), getRowCount(), etc., which fully consume and close the
+        // ResultSet within the call) borrows the thread's shared connection rather than a dedicated one, so nested
+        // queries reuse it and connection-local state stays visible. The outermost borrower puts it into no-caching
+        // mode and restores it on release.
+        Connection borrowed = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true);
+        try
+        {
+            // A plain thread-connection acquisition returns the very same object (it was borrowed, not dedicated)
+            try (Connection threadConn = scope.getConnection())
+            {
+                assertEquals(borrowed, threadConn);
+            }
+
+            // A nested self-contained read reuses the same connection rather than grabbing another one
+            try (Connection nested = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true))
+            {
+                assertEquals(borrowed, nested);
+            }
+
+            assertFalse(borrowed.getAutoCommit());
+        }
+        finally
+        {
+            borrowed.close();
+        }
+
+        // Once the outermost borrower releases it, the thread connection is restored to normal caching mode
+        try (Connection restored = scope.getConnection())
+        {
+            assertTrue(restored.getAutoCommit());
+            assertEquals(TRANSACTION_READ_COMMITTED, restored.getTransactionIsolation());
+        }
+
+        // Inside a transaction, the default must NOT grab a separate Connection, even on PostgreSQL: the caller may be
+        // relying on reading its own uncommitted writes, so we fall back to the shared, transactional Connection.
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
+            {
+                assertEquals(scope.getConnection(), conn2);
+            }
+            tx.commit();
         }
     }
 
-    // Passing in a Connections and calling setJdbcCaching() should throw
+    // Verify that nested DB access from a row callback reuses that same borrowed connection (rather than grabbing a
+    // second one), returns correct results while the outer ResultSet is still open, doesn't truncate the outer
+    // iteration, and leaves the thread connection fully restored once forEach() completes.
+    @Test
+    public void testNestedQueryDuringForEach() throws SQLException
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+
+        // The borrow-and-disable-caching path only engages outside a transaction
+        assertFalse("Test assumes no active transaction on this thread", scope.isTransactionActive());
+
+        // core.Containers always has at least the root container
+        long expectedRows = new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers")).getRowCount();
+        assertTrue("core.Containers should never be empty", expectedRows > 0);
+
+        MutableInt visited = new MutableInt(0);
+        Set<Connection> callbackConnections = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers ORDER BY RowId")).forEach(Integer.class, rowId -> {
+            visited.increment();
+
+            // The callback runs while the outer ResultSet is open. Acquiring the thread connection must return the same
+            // borrowed connection, in no-caching mode — proving nested code shares the transction/conncetion.
+            try (Connection nested = scope.getConnection())
+            {
+                callbackConnections.add(nested);
+
+                assertFalse("Nested access during forEach() should run on the uncached borrowed connection", nested.getAutoCommit());
+            }
+
+            // A nested self-contained query must return correct results even though the outer server-side cursor is open
+            // on the same connection — this is the interleaving that would fail if the nested statement clobbered it.
+            Integer nestedRowId = new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers WHERE RowId = ?", rowId)).getObject(Integer.class);
+            assertEquals("Nested query should return exactly the matching row", rowId, nestedRowId);
+        });
+
+        assertEquals("forEach() should visit every row even with nested queries in the callback", expectedRows, visited.longValue());
+        assertEquals("Nested access should reuse the single borrowed connection across all rows", 1, callbackConnections.size());
+
+        // Once the outermost borrower (forEach) releases the connection, it must be restored to normal caching mode
+        try (Connection restored = scope.getConnection())
+        {
+            assertTrue(restored.getAutoCommit());
+            assertEquals(TRANSACTION_READ_COMMITTED, restored.getTransactionIsolation());
+        }
+    }
+
+    // More rows than the dialect's default fetch size (1000), so an uncached read leaves its cursor open after the first batch
+    private static final String STREAMING_SQL = "SELECT g FROM generate_series(1, 5000) g";
+    private static final String OPEN_CURSOR_SQL = "SELECT COUNT(*) FROM pg_cursors WHERE statement LIKE 'SELECT g FROM generate_series%'";
+
+    // pg_cursors is per-session, so each check runs on the connection that's streaming
+    @Test
+    public void testJdbcUncachedStreamsFromCursor() throws SQLException
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+        assertFalse("Test assumes no active transaction on this thread", scope.isTransactionActive());
+
+        // Control: with autoCommit on, pgjdbc buffers the whole result and leaves no cursor behind
+        try (Connection conn = scope.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(STREAMING_SQL))
+        {
+            assertTrue(conn.getAutoCommit());
+            assertTrue(rs.next());
+            assertEquals("Cached read should not hold a cursor open", 0, countOpenCursors(conn));
+        }
+
+        // Dedicated uncached connection
+        try (Connection conn = new SqlSelector(scope, STREAMING_SQL).getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(STREAMING_SQL))
+        {
+            assertTrue(rs.next());
+            assertEquals("Uncached read should stream from an open cursor", 1, countOpenCursors(conn));
+
+            int rows = 1;
+            while (rs.next())
+                rows++;
+            assertEquals(5000, rows);
+        }
+
+        // Shared thread connection borrowed by forEach(); the nested query reuses it, so it sees the outer cursor
+        MutableInt visited = new MutableInt(0);
+        MutableInt cursorsDuringIteration = new MutableInt(-1);
+        new SqlSelector(scope, STREAMING_SQL).forEach(Integer.class, g -> {
+            if (visited.getAndIncrement() == 0)
+                cursorsDuringIteration.setValue(new SqlSelector(scope, OPEN_CURSOR_SQL).getObject(Integer.class));
+        });
+        assertEquals(5000, visited.intValue());
+        assertEquals("forEach() should stream from an open cursor", 1, cursorsDuringIteration.intValue());
+    }
+
+    private static int countOpenCursors(Connection conn) throws SQLException
+    {
+        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(OPEN_CURSOR_SQL))
+        {
+            assertTrue(rs.next());
+            return rs.getInt(1);
+        }
+    }
+
+    // Passing in a Connection and calling setJdbcCaching() should throw
     @Test(expected = IllegalStateException.class)
     public void testJdbcUncachedTrue() throws SQLException
     {
@@ -151,7 +385,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         }
     }
 
-    // Passing in a Connections and calling setJdbcCaching() should throw
+    // Passing in a Connection and calling setJdbcCaching() should throw
     @Test(expected = IllegalStateException.class)
     public void testJdbcUncachedFalse() throws SQLException
     {

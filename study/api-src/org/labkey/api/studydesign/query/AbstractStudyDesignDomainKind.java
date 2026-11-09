@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package org.labkey.api.studydesign.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -105,7 +104,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     public Container getDomainContainer(Container c)
@@ -164,7 +163,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return RESERVED_PROPERTY_NAMES;
     }

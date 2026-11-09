@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.study.Study;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Used exclusively in dataset security, as a marker in the study policy to indicate a group has per-dataset permissions.
@@ -25,10 +29,14 @@ import org.labkey.api.study.Study;
  */
 public class RestrictedReaderRole extends AbstractRole
 {
+    static final Collection<Class<? extends Permission>> PERMISSIONS = List.of(
+        ReadSomePermission.class
+    );
+
     public RestrictedReaderRole()
     {
         super("Restricted Reader", "Restricted Readers may read some information, but not all.",
-                ReadSomePermission.class);
+            PERMISSIONS);
     }
 
     @Override

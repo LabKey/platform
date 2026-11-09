@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.Collection;
@@ -149,10 +148,6 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
     NavTree getSchemaBrowserLinks(User user);
 
     boolean isHidden();
-
-    /** @return the VisualizationProvider to be used for queries in this schema, or null if it's not supported */
-    @Nullable
-    VisualizationProvider createVisualizationProvider();
 
     // marker interface to indicate that this schema is bound to a container, does and does not itself have tables
     // e.g. DefaultSchema, FolderSchema, etc

@@ -1,0 +1,355 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.util;
+
+import datadog.trace.api.DDTags;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.data.Container;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.util.logging.LogHelper;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
+/**
+ * A Datadog APM span paired with a summary log line, for a unit of work whose row counts are known only once it has run.
+ * The span is activated, so database work performed inside nests under it.
+ *
+ * Callers report success with completed(), or hand the work to Builder.run(). An exception or early return closes the
+ * operation as incomplete. Incomplete alone is not tagged as an APM error. An enclosing request span already carries
+ * genuine failure info, and for the row APIs the common case is input the server rejected.
+ * run() does tag the exceptions it catches, since it can tell them apart.
+ */
+public class TracedOperation implements AutoCloseable
+{
+    private static final Logger LOG = LogHelper.getLogger(TracedOperation.class, "Target, row counts, and elapsed time for traced data operations");
+
+    /** Operations at least this slow log at INFO, so they're visible on the deployments that send no APM data */
+    private static final long SLOW_MS = 30_000;
+
+    /** Path rather than entity id, so it reads in Datadog; a folder rename splits its history */
+    public static final String CONTAINER_TAG = "labkey.container";
+
+    /**
+     * Caps a public schema name at two parts for use in a resource name. Deeper parts are admin-defined, like the
+     * protocol in assay.General.MyAssay, and would give every assay design its own resource.
+     */
+    public static @Nullable String boundedSchemaName(@Nullable String publicSchemaName)
+    {
+        if (null == publicSchemaName)
+            return null;
+        SchemaKey key = SchemaKey.fromString(publicSchemaName);
+        while (key.size() > 2)
+            key = key.getParent();
+        return key.toString();
+    }
+
+    private final Span _span;
+    private final Scope _scope;
+    private final long _startNanos;
+
+    private String _description;
+    private String _summary;
+    private boolean _completed;
+    private @Nullable Boolean _committed;
+    private boolean _closed;
+
+    /** Collects settings without touching the tracer, so nothing thrown while building can strand an active span */
+    public static class Builder
+    {
+        private final String _operationName;
+        private final Map<String, String> _tags = new LinkedHashMap<>();
+        private String _description;
+
+        private Builder(String operationName)
+        {
+            _operationName = operationName;
+            _description = operationName;
+        }
+
+        /** Groups the operation in APM. Keep the cardinality low - it's a trace metric dimension, so no user-defined names. */
+        public Builder resource(@NotNull String resourceName)
+        {
+            _tags.put(DDTags.RESOURCE_NAME, resourceName);
+            return this;
+        }
+
+        /** What the log line calls this operation. Free to carry detail too identifying or too high-cardinality to tag. */
+        public Builder describedAs(@NotNull String description)
+        {
+            _description = description;
+            return this;
+        }
+
+        public Builder tag(@NotNull String name, @Nullable Object value)
+        {
+            if (value != null)
+                _tags.put(name, value.toString());
+            return this;
+        }
+
+        public Builder container(@Nullable Container c)
+        {
+            return tag(CONTAINER_TAG, null == c ? null : c.getPath());
+        }
+
+        /** Starts and activates the span. Call only as the resource of a try-with-resources. */
+        public TracedOperation start()
+        {
+            return new TracedOperation(this);
+        }
+
+        /** Runs work that reports no row count, recording any exception on the span before letting it propagate */
+        public void run(@NotNull Runnable work)
+        {
+            run(op -> work.run());
+        }
+
+        /** Like run(Runnable), for work that tags the operation as it learns more */
+        public void run(@NotNull Consumer<TracedOperation> work)
+        {
+            try (TracedOperation op = start())
+            {
+                try
+                {
+                    work.accept(op);
+                }
+                catch (Throwable t)
+                {
+                    Tags.ERROR.set(op._span, true);
+                    op._span.log(Map.of(Fields.ERROR_OBJECT, t));
+                    throw t;
+                }
+                op._completed = true;
+            }
+        }
+    }
+
+    public static Builder builder(@NotNull String operationName)
+    {
+        return new Builder(operationName);
+    }
+
+    /**
+     * Tags the active span, usually the request's, for work that has no span of its own.
+     * Numbers stay numeric so Datadog can aggregate them.
+     */
+    public static void tagActiveSpan(@NotNull String name, @NotNull Object value)
+    {
+        Span span = GlobalTracer.get().activeSpan();
+        if (span == null)
+            return;
+        switch (value)
+        {
+            case Number n -> span.setTag(name, n);
+            case Boolean b -> span.setTag(name, b);
+            default -> span.setTag(name, value.toString());
+        }
+    }
+
+    private TracedOperation(Builder builder)
+    {
+        Tracer tracer = GlobalTracer.get();
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(builder._operationName)
+                // Never a service-entry span, so Datadog computes no hits/duration/error metrics for it without this
+                .withTag(DDTags.MEASURED, true);
+        builder._tags.forEach(spanBuilder::withTag);
+        _span = spanBuilder.start();
+        _scope = tracer.activateSpan(_span);
+        _startNanos = System.nanoTime();
+        _description = builder._description;
+    }
+
+    /** For details known only once the operation has started, like the target resolved from the request */
+    public TracedOperation resource(@NotNull String resourceName)
+    {
+        _span.setTag(DDTags.RESOURCE_NAME, resourceName);
+        return this;
+    }
+
+    public TracedOperation describedAs(@NotNull String description)
+    {
+        _description = description;
+        return this;
+    }
+
+    public TracedOperation tag(@NotNull String name, @Nullable Object value)
+    {
+        if (value != null)
+            _span.setTag(name, value.toString());
+        return this;
+    }
+
+    public TracedOperation container(@Nullable Container c)
+    {
+        return tag(CONTAINER_TAG, null == c ? null : c.getPath());
+    }
+
+    /** Unlike tag(), keeps the value numeric so Datadog can compute percentiles over it */
+    public TracedOperation measure(@NotNull String name, @Nullable Number value)
+    {
+        if (value != null)
+            _span.setTag(name, value);
+        return this;
+    }
+
+    /** For operations with no row count */
+    public void completed()
+    {
+        _completed = true;
+    }
+
+    public void completed(int rows)
+    {
+        _span.setTag("labkey.rows", rows);
+        _summary = rows + " rows";
+        _completed = true;
+    }
+
+    /** Leads the log line's summary in place of a row count, for work that ends in a status rather than rows */
+    public TracedOperation outcome(@NotNull String outcome)
+    {
+        _summary = outcome;
+        return this;
+    }
+
+    /** For operations that ran to the end but may have rolled back, like a rejected or validate-only save */
+    public void committed(boolean committed)
+    {
+        _committed = committed;
+    }
+
+    @Override
+    public void close()
+    {
+        if (_closed)
+            return;
+        _closed = true;
+
+        long elapsedMs = (System.nanoTime() - _startNanos) / 1_000_000;
+
+        try
+        {
+            // Written on both branches; a tag set only when true can't be grouped on in Datadog
+            _span.setTag("labkey.completed", _completed);
+            if (null != _committed)
+                _span.setTag("labkey.committed", _committed);
+            _scope.close();
+        }
+        finally
+        {
+            _span.finish();
+        }
+
+        String message = formatMessage(_description, _completed, _committed, _summary, elapsedMs);
+        if (elapsedMs >= SLOW_MS)
+            LOG.info(message);
+        else
+            LOG.debug(message);
+    }
+
+    static String formatMessage(String description, boolean completed, @Nullable Boolean committed, @Nullable String summary, long elapsedMs)
+    {
+        if (!completed)
+            return description + ": did not complete after " + elapsedMs + " ms";
+        return description + ": " + (null == summary ? "" : summary + ", ") + (Boolean.FALSE.equals(committed) ? "not committed, " : "") + elapsedMs + " ms";
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testMessage()
+        {
+            assertEquals("insert samples.Blood in /Home/Study: 500 rows, 20 ms",
+                    formatMessage("insert samples.Blood in /Home/Study", true, true, "500 rows", 20));
+            assertEquals("insert samples.Blood in /Home/Study: 500 rows, not committed, 20 ms",
+                    formatMessage("insert samples.Blood in /Home/Study", true, false, "500 rows", 20));
+            assertEquals("materialize exp.Material: 3 ms",
+                    formatMessage("materialize exp.Material", true, null, null, 3));
+            assertEquals("update lists.People in /Home: did not complete after 12 ms",
+                    formatMessage("update lists.People in /Home", false, null, null, 12));
+        }
+
+        @Test
+        public void testBoundedSchemaName()
+        {
+            assertNull(boundedSchemaName(null));
+            assertEquals("samples", boundedSchemaName("samples"));
+            assertEquals("exp.materials", boundedSchemaName("exp.materials"));
+            assertEquals("assay.General", boundedSchemaName("assay.General.MyAssay"));
+            assertEquals("assay.General", boundedSchemaName("assay.General.My$DAssay"));
+        }
+
+        @Test
+        public void testNoAgentAttached()
+        {
+            // GlobalTracer hands back a no-op implementation when the Datadog agent isn't attached
+            try (TracedOperation op = TracedOperation.builder("labkey.test").resource("test").describedAs("test").tag("labkey.query", "a.b").start())
+            {
+                op.tag("labkey.db_schema", "b").completed(1);
+                op.committed(false);
+                op.close();
+            }
+            try (TracedOperation op = TracedOperation.builder("labkey.test").start())
+            {
+                op.measure("labkey.test.ms", 5L).measure("labkey.test.ratio", 0.5).measure("labkey.test.none", null).completed();
+            }
+            TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(() -> {});
+            TracedOperation.tagActiveSpan("labkey.test.count", 1);
+            TracedOperation.tagActiveSpan("labkey.test.flag", true);
+            TracedOperation.tagActiveSpan("labkey.test.name", "a");
+        }
+
+        @Test
+        public void testRunWithOperation()
+        {
+            AtomicReference<TracedOperation> succeeded = new AtomicReference<>();
+            TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(op -> succeeded.set(op.tag("labkey.job_status", "COMPLETE").outcome("COMPLETE")));
+            assertTrue(succeeded.get()._completed);
+            assertEquals("COMPLETE", succeeded.get()._summary);
+            assertTrue(succeeded.get()._closed);
+
+            IllegalStateException thrown = new IllegalStateException("test");
+            AtomicReference<TracedOperation> failed = new AtomicReference<>();
+            try
+            {
+                TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(op -> {
+                    failed.set(op);
+                    throw thrown;
+                });
+                fail("Expected the work's exception to propagate");
+            }
+            catch (IllegalStateException e)
+            {
+                assertSame(thrown, e);
+            }
+            assertFalse(failed.get()._completed);
+            assertTrue(failed.get()._closed);
+        }
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2022-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,50 @@
  */
 package org.labkey.api.security.roles;
 
-public class EditorWithoutDeleteRole extends EditorRole
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.reports.permissions.EditSharedReportPermission;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.permissions.EditSharedViewPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
+
+import java.util.Collection;
+import java.util.stream.Stream;
+
+public class EditorWithoutDeleteRole extends AbstractRole
 {
+    static final Collection<Class<? extends Permission>> PERMISSIONS = Stream.concat(
+        AuthorRole.PERMISSIONS.stream(),
+        Stream.of(
+            EditSharedReportPermission.class,
+            EditSharedViewPermission.class,
+            ManagePicklistsPermission.class,
+            MoveEntitiesPermission.class,
+            SampleWorkflowJobPermission.class,
+            SharedParticipantGroupPermission.class,
+            UpdatePermission.class
+        )
+    ).toList();
+
     public EditorWithoutDeleteRole()
     {
-        super("Editor without Delete", "Editors in this role may read, add, and update information but not delete.", BASE_EDITOR_PERMISSIONS);
+        super("Editor without Delete", "Editors in this role may read, add, and update information but not delete.", PERMISSIONS);
+    }
+
+    protected EditorWithoutDeleteRole(String name, String description, Iterable<Class<? extends Permission>>... permCollections)
+    {
+        super(name, description, permCollections);
+    }
+
+    @Override
+    public boolean isApplicable(SecurableResource resource)
+    {
+        return super.isApplicable(resource) || resource instanceof PipeRoot || resource instanceof Study || resource instanceof Dataset;
     }
 }

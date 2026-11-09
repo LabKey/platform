@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class VisitImporter implements InternalStudyImporter
             }
 
             String visitMapFile = visitsXml.getFile();
-            ctx.getLogger().info("Loading visit map from " + visitMapFile);
+            ctx.getLogger().info("Loading visit map from {}", visitMapFile);
 
             VisitMapImporter importer = new VisitMapImporter();
             importer.setEnsureDatasets(_ensureDatasets);

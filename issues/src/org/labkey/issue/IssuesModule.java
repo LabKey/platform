@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,10 +63,8 @@ import org.labkey.issue.view.IssuesWebPartFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.issues.IssuesSchema.ISSUE_DEF_SCHEMA_NAME;
@@ -153,13 +151,11 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         UsageMetricsService svc = UsageMetricsService.get();
         if (svc != null)
         {
-            svc.registerUsageMetrics(getName(), () -> {
-                Map<String, Object> metric = new HashMap<>();
+            svc.registerUsageMetrics(getName(), metrics -> {
+                metrics.put("issueDefCount", () -> new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issueListDef").getObject(Long.class), "Issue list definitions across all containers");
+                metrics.put("issuesCount", () -> new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issues").getObject(Long.class), "Issues across all containers and issue lists, open and closed");
 
-                metric.put("issueDefCount", new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issueListDef").getObject(Long.class));
-                metric.put("issuesCount", new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issues").getObject(Long.class));
-
-                return metric;
+                return metrics;
             });
         }
     }
@@ -190,7 +186,12 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
-        return Collections.singleton(org.labkey.issue.model.IssueManager.TestCase.class);
+        return Set.of(
+            org.labkey.issue.model.IssueManager.TestCase.class,
+            org.labkey.issue.IssuesController.MoveActionContainerScopingTestCase.class,
+            org.labkey.issue.IssuesController.GetUsersForGroupScopingTestCase.class,
+            org.labkey.issue.IssuesController.GetIssuePermissionTestCase.class
+        );
     }
 
     @Override

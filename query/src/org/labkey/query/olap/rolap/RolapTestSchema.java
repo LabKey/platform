@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,15 +49,15 @@ public class RolapTestSchema extends UserSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        switch (name.toLowerCase())
+        return switch (name.toLowerCase())
         {
-            case "fact": return createFact();
-            case "study": return createStudy();
-            case "participant": return createParticipant();
-            case "visit": return createVisit();
-            case "assay": return createAssay();
-        }
-        return null;
+            case "fact" -> createFact();
+            case "study" -> createStudy();
+            case "participant" -> createParticipant();
+            case "visit" -> createVisit();
+            case "assay" -> createAssay();
+            default -> null;
+        };
     }
 
 
@@ -80,29 +80,27 @@ public class RolapTestSchema extends UserSchema
                 this.addColumn((BaseColumnInfo)c);
             }
             SqlDialect d = getDbSchema().getSqlDialect();
-            String union = "";
+            SQLFragment.SqlSeparator union = SQLFragment.sep("", "\nUNION\n");
             SQLFragment sql = new SQLFragment();
             for (Object[] row : data)
             {
-                sql.append(union);
-                union = "\nUNION\n";
-                sql.append("SELECT ");
-                String comma = "";
+                sql.append(union.next());
+                sql.SELECT();
+                SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
                 for (int i=0 ; i<columns.length ; i++)
                 {
                     ColumnInfo c = columns[i];
                     JdbcType t = c.getJdbcType();
                     Object v = t.convert(row[i]);
-                    sql.append(comma);
-                    comma = ", ";
+                    sql.append(comma.next());
                     if (null == v)
-                        sql.append("CAST(NULL AS " + d.getSqlTypeName(t) + (t.isText() ? "(100)" : "") + ")");
+                        sql.unsafeAppend("CAST(NULL AS ").append(d.getSqlTypeNameAsSql(t)).unsafeAppend(t.isText() ? "(100)" : "").unsafeAppend(")");
                     else
-                        sql.append(RolapCubeDef.toSqlLiteral(t,v));
-                    sql.append(" AS \"" + c.getName() + "\"");
+                        sql.append(new SQLFragment().setSqlUnsafe(RolapCubeDef.toSqlLiteral(t,v)));
+                    sql.unsafeAppend(" AS ").appendIdentifier(d.quoteIdentifier(c.getName()));
                 }
             }
-            sql.append("\n");
+            sql.unsafeAppend("\n");
             this.sql = sql;
         }
 

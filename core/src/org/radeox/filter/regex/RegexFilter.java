@@ -109,7 +109,7 @@ public abstract class RegexFilter extends FilterSupport
         }
         catch (Exception e)
         {
-            log.warn("bad pattern: " + regex + " -> " + substitute, e);
+            log.warn("bad pattern: {} -> {}", regex, substitute, e);
         }
     }
 

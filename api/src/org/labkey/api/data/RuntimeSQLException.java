@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2016 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import com.google.gwt.user.client.rpc.IsSerializable;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.dialect.SqlDialect;
 
@@ -31,7 +30,7 @@ import java.sql.SQLException;
  * User: mbellew
  * Date: Mar 23, 2005
  */
-public class RuntimeSQLException extends RuntimeException implements Serializable, IsSerializable
+public class RuntimeSQLException extends RuntimeException implements Serializable
 {
     // don't want to use cause, I want to impersonate the cause
     SQLException sqlx;

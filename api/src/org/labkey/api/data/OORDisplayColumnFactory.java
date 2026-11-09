@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,13 +84,13 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
 //        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);                                      // TODO: getValueSql   (oorIndicatorColumn)
 //        inRangeSQL.append(".");
 //        inRangeSQL.append(oorIndicatorColumn.getName());
-        inRangeSQL.append(" IS NULL THEN ");
+        inRangeSQL.unsafeAppend(" IS NULL THEN ");
         valueSql = numberColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS);
         inRangeSQL.append(valueSql);
 //        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);
 //        inRangeSQL.append(".");
 //        inRangeSQL.append(numberColumn.getName());
-        inRangeSQL.append(" ELSE NULL END");
+        inRangeSQL.unsafeAppend(" ELSE NULL END");
 
         var inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
                     inRangeSQL, numberColumn.getJdbcType(), wrappedNumberColumn, wrappedOORIndicatorCol));

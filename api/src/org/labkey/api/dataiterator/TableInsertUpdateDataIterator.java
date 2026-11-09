@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -422,23 +422,18 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             if (autoIncCol == null)
                 return;
 
-            if (_scope.getSqlDialect().isSqlServer())
-            {
-                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(t).append(" ").append(bound.toString());
-                new SqlExecutor(_scope, _conn).execute(check);
-            }
-            else if (_scope.getSqlDialect().isPostgreSQL() && bound == INSERT.OFF)
+            if (_scope.getSqlDialect().isPostgreSQL() && bound == INSERT.OFF)
             {
                 // Update the sequence for the serial column with the max+1 and handle empty tables
                 if (autoIncCol.getSelectIdentifier() != null)
                 {
                     var colSelectName = autoIncCol.getSelectIdentifier();
                     SQLFragment resetSeq = new SQLFragment();
-                    resetSeq.append("SELECT setval(\n");
-                    resetSeq.append("  pg_get_serial_sequence(").appendValue(t.getSelectName()).append(", ").appendValue(colSelectName.getId()).append("),\n");
-                    resetSeq.append("  COALESCE((SELECT MAX(").appendIdentifier(colSelectName).append(")+1 FROM ").append(t).append("), 1),\n");
-                    resetSeq.append("  false");
-                    resetSeq.append(")");
+                    resetSeq.unsafeAppend("SELECT setval(\n");
+                    resetSeq.unsafeAppend("  pg_get_serial_sequence(").appendValue(t.getSelectName()).unsafeAppend(", ").appendValue(colSelectName.getId()).unsafeAppend("),\n");
+                    resetSeq.unsafeAppend("  COALESCE((SELECT MAX(").appendIdentifier(colSelectName).unsafeAppend(")+1 FROM ").append(t).unsafeAppend("), 1),\n");
+                    resetSeq.unsafeAppend("  false");
+                    resetSeq.unsafeAppend(")");
                     new SqlExecutor(_scope, _conn).execute(resetSeq);
                 }
             }

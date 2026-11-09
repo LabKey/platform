@@ -1,14 +1,28 @@
+/*
+ * Copyright (c) 2019-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment.api;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Assume;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -48,6 +62,12 @@ public class ExperimentStressTest
         }
     }
 
+    @AfterClass
+    public static void tearDown()
+    {
+        JunitUtil.deleteTestContainer();
+    }
+
     private final Random random;
 
     public ExperimentStressTest()
@@ -76,7 +96,7 @@ public class ExperimentStressTest
             else
                 noun = "derived samples";
         }
-        LOG.info("** inserting " + rowCount + " " + noun + " " + "...");
+        LOG.info("** inserting {} {} ...", rowCount, noun);
         int existingNameCount = existingNames != null ? existingNames.size() : 0;
 
         // generate some data
@@ -120,7 +140,7 @@ public class ExperimentStressTest
                 throw errors;
 
             tx.commit();
-            LOG.info("** inserted " + inserted.size() + " " + noun);
+            LOG.info("** inserted {} {}", inserted.size(), noun);
 
             // get the inserted names
             return inserted.stream().map(row -> (String)row.get("name")).collect(Collectors.toList());
@@ -167,15 +187,7 @@ public class ExperimentStressTest
 
     private void _sampleTypeInserts(RunMode mode) throws Throwable
     {
-        /*
-         * Deadlock on recompute introduced by Issue 47033 has been fixed by Issue 47246.
-         * The tests are currently passing when run locally using sql server.
-         * However, there are more deadlocks with sql server when run on TC, now on ExperimentRun table.
-         */
-        Assume.assumeFalse("Issue 47033: Test does not yet pass on SQL Server. Skipping.",
-                CoreSchema.getInstance().getSqlDialect().isSqlServer());
-
-        LOG.info("** starting sample type insert test " + mode._description);
+        LOG.info("** starting sample type insert test {}", mode._description);
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();
 
@@ -199,7 +211,7 @@ public class ExperimentStressTest
 
         final int threads = mode._thread;
         final int races = mode._race;
-        LOG.info("** starting racy inserts (threads=" + threads + ", races=" + races + ", rows=" + rowsToInsert + ")");
+        LOG.info("** starting racy inserts (threads={}, races={}, rows=" + rowsToInsert + ")", threads, races);
         JunitUtil.createRaces(() -> {
 
             try

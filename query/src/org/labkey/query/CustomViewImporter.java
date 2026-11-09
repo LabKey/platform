@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,12 +54,12 @@ public class CustomViewImporter implements FolderImporter
 
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
-            
-            ctx.getLogger().info(count + " custom view" + (1 == count ? "" : "s") + " imported");
-            ctx.getLogger().info("Done importing " + getDescription());
+
+            ctx.getLogger().info("{} custom view{} imported", count, 1 == count ? "" : "s");
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

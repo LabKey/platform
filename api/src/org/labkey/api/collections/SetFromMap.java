@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.labkey.api.collections;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -60,20 +62,20 @@ class SetFromMap<E> extends AbstractSet<E> implements Set<E>, Serializable
     @Override
     public boolean add(E e) { return m.put(e, Boolean.TRUE) == null; }
     @Override
-    public Iterator<E> iterator()     { return s.iterator(); }
+    public @NotNull Iterator<E> iterator()     { return s.iterator(); }
     @Override
-    public Object[] toArray()         { return s.toArray(); }
+    public Object @NotNull [] toArray()         { return s.toArray(); }
     @Override
-    public <T> T[] toArray(T[] a)     { return s.toArray(a); }
+    public <T> T @NotNull [] toArray(T @NotNull [] a)     { return s.toArray(a); }
     public String toString()          { return s.toString(); }
     public int hashCode()             { return s.hashCode(); }
     public boolean equals(Object o)   { return o == this || s.equals(o); }
     @Override
-    public boolean containsAll(Collection<?> c) {return s.containsAll(c);}
+    public boolean containsAll(@NotNull Collection<?> c) {return s.containsAll(c);}
     @Override
-    public boolean removeAll(Collection<?> c)   {return s.removeAll(c);}
+    public boolean removeAll(@NotNull Collection<?> c)   {return s.removeAll(c);}
     @Override
-    public boolean retainAll(Collection<?> c)   {return s.retainAll(c);}
+    public boolean retainAll(@NotNull Collection<?> c)   {return s.retainAll(c);}
 // addAll is the only inherited implementation
 
     private static final long serialVersionUID = 2454657854757543876L;

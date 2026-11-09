@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2020-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.test.tests.experiment;
 
 import org.jetbrains.annotations.Nullable;
@@ -18,7 +33,6 @@ import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.experiment.SampleTypeDefinition;
-import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.SampleTypeHelper;
 
 import java.io.File;
@@ -27,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ProvenanceAssayHelper extends BaseWebDriverTest implements PostgresOnlyTest
+public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
 {
     protected static final String PROVENANCE_DATA_FILE = "AssayImportProvenanceRun.xls";
 
@@ -39,7 +53,7 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest implements
         SelectRowsCommand selectCmd = new SelectRowsCommand("exp", "Data");
         selectCmd.setColumns(List.of("LSID"));
         SelectRowsResponse selResp = selectCmd.execute(createDefaultConnection(), getProjectName());
-        Map<String, Object> dataTableRow = selResp.getRows().get(0);
+        Map<String, Object> dataTableRow = selResp.getRows().getFirst();
         return dataTableRow.get("LSID").toString();
     }
 
@@ -137,7 +151,7 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest implements
         SelectRowsCommand cmd = new SelectRowsCommand("assay.General.Provenance Assay", "Data");
         cmd.setColumns(List.of("LSID"));
         SelectRowsResponse response = cmd.execute(cn, getProjectName());
-        Map<String, Object> resultRow = response.getRows().get(0);
+        Map<String, Object> resultRow = response.getRows().getFirst();
         return resultRow.get("LSID").toString();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2016 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,17 +66,6 @@ public class WikiCollections
     private final List<NavTree> _adminNavTree;
     private final List<NavTree> _nonAdminNavTree;
 
-    private static final StringBuilder SQL = new StringBuilder();
-
-    static
-    {
-        SQL.append("SELECT pages.RowId, Name, Parent, Title FROM ");
-        SQL.append(CommSchema.getInstance().getTableInfoPages());
-        SQL.append(" pages LEFT OUTER JOIN ");
-        SQL.append(CommSchema.getInstance().getTableInfoPageVersions());
-        SQL.append(" versions ON pages.PageVersionId = versions.RowId WHERE Container = ? ORDER BY pages.DisplayOrder, pages.Rowid");
-    }
-
     // For each wiki:
     // Name
     // Title
@@ -94,7 +83,15 @@ public class WikiCollections
 
         treesByRowId.put(_root.getRowId(), _root);
 
-        new SqlSelector(CommSchema.getInstance().getSchema(), new SQLFragment(SQL, c)).forEach(rs -> {
+        SQLFragment sql = new SQLFragment()
+            .SELECT().unsafeAppend("pages.RowId, Name, Parent, Title")
+            .FROM().append(CommSchema.getInstance().getTableInfoPages(), "pages")
+                .LEFT_OUTER_JOIN().append(CommSchema.getInstance().getTableInfoPageVersions(), "versions")
+                .ON().unsafeAppend("pages.PageVersionId = versions.RowId")
+            .WHERE().unsafeAppend("Container = ?").add(c)
+            .ORDER_BY().unsafeAppend("pages.DisplayOrder, pages.Rowid");
+
+        new SqlSelector(CommSchema.getInstance().getSchema(), sql).forEach(rs -> {
             int rowId = rs.getInt(1);
             String name = rs.getString(2);
             Integer parentId = rs.getInt(3);

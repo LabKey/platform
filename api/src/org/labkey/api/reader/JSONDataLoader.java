@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public class JSONDataLoader extends DataLoader
          * @return True if the header looks like it will be a JSON selectRows response.
          */
         @Override
-        public boolean isHeaderMatch(@NotNull byte[] header)
+        public boolean isHeaderMatch(byte @NotNull [] header)
         {
             boolean foundSchemaName = false;
             boolean foundQueryName = false;
@@ -430,7 +430,7 @@ public class JSONDataLoader extends DataLoader
                 }
                 else
                 {
-                    LogManager.getLogger(JSONDataLoader.class).warn("Failed to find jdbc type for " + value);
+                    LogManager.getLogger(JSONDataLoader.class).warn("Failed to find jdbc type for {}", value);
                 }
 
                 parser.nextToken();
@@ -485,7 +485,7 @@ public class JSONDataLoader extends DataLoader
         // Use previously parsed rows if they exist
         if (_firstRows != null)
         {
-            row = _firstRows.remove(0);
+            row = _firstRows.removeFirst();
             if (_firstRows.isEmpty())
                 _firstRows = null;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public class CohortTable extends BaseStudyTable
         setDefaultVisibleColumns(visibleColumns);
 
         if (!StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
-            addCondition(new SQLFragment("0=1"));
+            addCondition(SQLFragment.unsafe("0=1"));
 
         ActionURL updateURL = new ActionURL(CohortController.UpdateAction.class, getContainer());
         setUpdateURL(new DetailsURL(updateURL, Collections.singletonMap("rowId", "rowId")));

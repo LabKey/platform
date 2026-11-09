@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParseException;
 
 /**
  * User: matthewb
@@ -49,7 +48,6 @@ public class QIfDefined extends QExpr
     @Override
     public FieldKey getFieldKey()
     {
-        assert null != select;
         return ((QExpr)getFirstChild()).getFieldKey();
     }
 
@@ -62,9 +60,9 @@ public class QIfDefined extends QExpr
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("IFDEFINED(");
+        builder.unsafeAppend("IFDEFINED(");
         getFirstChild().appendSource(builder);
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override
@@ -112,12 +110,6 @@ public class QIfDefined extends QExpr
     public BaseColumnInfo createColumnInfo(TableInfo table, String name, Query query)
     {
         throw new IllegalStateException();
-    }
-
-    @Override
-    public QueryParseException fieldCheck(QNode parent, SqlDialect d)
-    {
-        return null;
     }
 
     @Override

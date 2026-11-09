@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,10 @@ import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
-import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.python.IpynbReport;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
@@ -42,6 +41,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
 import org.labkey.query.reports.ReportsController;
+import org.labkey.query.reports.report.InternalScriptEngineReport;
 
 import javax.script.ScriptEngineFactory;
 import java.util.ArrayList;
@@ -161,11 +161,11 @@ public class ReportUIProvider extends DefaultReportUIProvider
             // don't add an entry for R, since we have a specific report type above.
             if (!factory.getLanguageName().equalsIgnoreCase("R"))
             {
-                if (!factory.getExtensions().isEmpty() && ReportUtil.canCreateScript(context, factory.getExtensions().get(0)) && manager.isFactoryEnabled(factory))
+                if (!factory.getExtensions().isEmpty() && ReportUtil.canCreateScript(context, factory.getExtensions().getFirst()) && manager.isFactoryEnabled(factory))
                 {
                     ScriptReportBean bean = new ScriptReportBean(settings);
                     bean.setRedirectUrl(returnUrl.getLocalURIString());
-                    bean.setScriptExtension(factory.getExtensions().get(0));
+                    bean.setScriptExtension(factory.getExtensions().getFirst());
 
                     if (factory instanceof ExternalScriptEngineFactory)
                     {

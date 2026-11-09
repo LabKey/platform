@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.mcp;
 
 import org.jetbrains.annotations.NotNull;
@@ -8,6 +23,8 @@ import org.labkey.api.util.QuietCloser;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.model.ToolContext;
+
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -17,13 +34,16 @@ import java.util.Map;
  */
 public class McpContext implements ContainerUser
 {
+    /** Attribute key under which AbstractAgentAction records its getAgentName(), for guardrail-denial logging. */
+    public static final String AGENT_NAME_ATTR = "agentName";
+
     final User user;
     final Container container;
+    final Map<String, Object> attributes = new HashMap<>();
 
     public McpContext(ContainerUser ctx)
     {
-        this.container = ctx.getContainer();
-        this.user = ctx.getUser();
+        this(ctx.getContainer(), ctx.getUser());
     }
 
     public McpContext(Container container, User user)
@@ -36,9 +56,24 @@ public class McpContext implements ContainerUser
 
     public ToolContext getToolContext()
     {
-        return new ToolContext(Map.of("container", getContainer(), "user", getUser()));
+        Map<String, Object> map = new HashMap<>(attributes);
+        map.put("container", getContainer());
+        map.put("user", getUser());
+        return new ToolContext(map);
     }
 
+    public McpContext put(String key, Object value)
+    {
+        if ("container".equals(key) || "user".equals(key))
+            throw new IllegalArgumentException("Reserved key: " + key);
+        attributes.put(key, value);
+        return this;
+    }
+
+    public Object get(String key)
+    {
+        return attributes.get(key);
+    }
 
     @Override
     public Container getContainer()
@@ -52,10 +87,9 @@ public class McpContext implements ContainerUser
         return user;
     }
 
-
     //
     // I'd like to get away from using ThreadLocal, but I haven't
-    // researched if there are other ways to pass context around to Tools registerd by McpService
+    // researched if there are other ways to pass context around to Tools registered by McpService
     //
 
     private static final ThreadLocal<McpContext> contexts = new ThreadLocal();

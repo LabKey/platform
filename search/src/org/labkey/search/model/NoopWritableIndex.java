@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
-import org.labkey.api.search.SearchMisconfiguredException;
+import org.labkey.search.SearchMisconfiguredException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -112,7 +112,7 @@ public class NoopWritableIndex implements WritableIndexManager
     private void log(String action)
     {
         if (0 == (_errors.get() % 10000))
-            _log.warn("Unable to " + action + "; " + _statusMessage);
+            _log.warn("Unable to {}; {}", action, _statusMessage);
 
         _errors.incrementAndGet();
     }

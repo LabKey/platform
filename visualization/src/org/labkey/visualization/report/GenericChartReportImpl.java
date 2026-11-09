@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.visualization.SvgThumbnailGenerator;
 import org.labkey.visualization.VisualizationController;
 
 /**

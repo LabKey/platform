@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,9 +54,9 @@ public enum Operator
                         if (paren)
                             builder.popPrefix(")");
                         if (i == 0)
-                            builder.append(" BETWEEN ");
+                            builder.unsafeAppend(" BETWEEN ");
                         else if (i == 1)
-                            builder.append(" AND ");
+                            builder.unsafeAppend(" AND ");
                         ++i;
                     }
                     builder.popPrefix("");
@@ -78,9 +78,9 @@ public enum Operator
                         if (paren)
                             builder.popPrefix(")");
                         if (i == 0)
-                            builder.append(" NOT BETWEEN ");
+                            builder.unsafeAppend(" NOT BETWEEN ");
                         else if (i == 1)
-                            builder.append(" AND ");
+                            builder.unsafeAppend(" AND ");
                         ++i;
                     }
                     builder.popPrefix("");
@@ -146,12 +146,12 @@ public enum Operator
                     Iterator<QNode> i = operands.iterator();
                     assert i.hasNext();
                     ((QExpr) i.next()).appendSql(builder, query);
-                    builder.append(" LIKE ");
+                    builder.unsafeAppend(" LIKE ");
                     assert i.hasNext();
                     ((QExpr) i.next()).appendSql(builder, query);
                     if (i.hasNext())
                     {
-                        builder.append(" ESCAPE ");
+                        builder.unsafeAppend(" ESCAPE ");
                         ((QExpr) i.next()).appendSql(builder, query);
                     }
                 }
@@ -164,12 +164,12 @@ public enum Operator
                     Iterator<QNode> i = operands.iterator();
                     assert i.hasNext();
                     ((QExpr) i.next()).appendSql(builder, query);
-                    builder.append(" NOT LIKE ");
+                    builder.unsafeAppend(" NOT LIKE ");
                     assert i.hasNext();
                     ((QExpr) i.next()).appendSql(builder, query);
                     if (i.hasNext())
                     {
-                        builder.append(" ESCAPE ");
+                        builder.unsafeAppend(" ESCAPE ");
                         ((QExpr) i.next()).appendSql(builder, query);
                     }
                 }
@@ -296,6 +296,11 @@ public enum Operator
         return _strOp;
     }
 
+    public SQLFragment getOperatorSql(SqlDialect d)
+    {
+        return new SQLFragment().setSqlUnsafe(getOperator(d));
+    }
+
     public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
     {
         _appendSql(builder,query,operands);
@@ -326,14 +331,14 @@ public enum Operator
 
     public void appendSqlUnary(SqlBuilder builder, Query query, Iterable<QNode> operands)
     {
-        builder.append(getOperator(builder.getDialect()));
-        builder.append("(");
+        builder.append(getOperatorSql(builder.getDialect()));
+        builder.unsafeAppend("(");
         Iterator<QNode> i = operands.iterator();
         assert i.hasNext();
         QExpr operand = (QExpr)i.next();
         operand.appendSql(builder, query);
         assert !i.hasNext();
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     public void appendSqlIN(SqlBuilder builder, Query query, Iterable<QNode> operandsIN)

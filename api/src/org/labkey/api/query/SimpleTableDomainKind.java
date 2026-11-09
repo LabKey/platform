@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
             if (objectUriColumn != null)
             {
                 SQLFragment sql = new SQLFragment();
-                sql.append("SELECT o.ObjectId FROM ").append(table.getFromSQL("me")).append(", exp.object o WHERE ").append(objectUriColumn.getValueSql("me")).append(" = o.ObjectURI AND me.Container = ?");
+                sql.unsafeAppend("SELECT o.ObjectId FROM ").append(table.getFromSQL("me")).unsafeAppend(", exp.object o WHERE ").append(objectUriColumn.getValueSql("me")).unsafeAppend(" = o.ObjectURI AND me.Container = ?");
                 sql.add(domain.getContainer().getId());
                 return sql;
             }
@@ -236,13 +236,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public boolean canEditDefinition(User user, Domain domain)
-    {
-        return domain.getContainer().hasPermission(user, AdminPermission.class);
-    }
-
-    @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         SimpleUserSchema.SimpleTable table = domain != null ? getTable(domain, user) : null;
         if (table != null)

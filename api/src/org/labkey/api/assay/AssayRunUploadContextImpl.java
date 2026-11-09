@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.assay.transform.DefaultTransformResult;
+import org.labkey.api.assay.transform.PendingFileAudit;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URIUtil;
@@ -93,6 +95,8 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
     // Mutable fields
     private TransformResult _transformResult;
+    private @Nullable PreparedTransform _preparedTransform;
+    private @Nullable List<PendingFileAudit> _pendingFileAudits;
 
     // async fields
     protected String _jobDescription;
@@ -253,7 +257,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                     throw new NotFoundException("No Vocabularies found for this property - " + property.getKey());
                 }
 
-                DomainProperty dp = vocabularyDomains.get(0).getPropertyByURI(property.getKey());
+                DomainProperty dp = vocabularyDomains.getFirst().getPropertyByURI(property.getKey());
                 if (!properties.containsKey(dp))
                 {
                     properties.put(dp, property.getValue().toString());
@@ -431,6 +435,36 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public void setTransformResult(TransformResult result)
     {
         _transformResult = result;
+    }
+
+    @Override
+    public boolean supportsPreparedTransform()
+    {
+        return true;
+    }
+
+    @Override
+    public @Nullable PreparedTransform getPreparedTransform()
+    {
+        return _preparedTransform;
+    }
+
+    @Override
+    public void setPreparedTransform(@Nullable PreparedTransform prepared)
+    {
+        _preparedTransform = prepared;
+    }
+
+    @Override
+    public @Nullable List<PendingFileAudit> getPendingFileAudits()
+    {
+        return _pendingFileAudits;
+    }
+
+    @Override
+    public void setPendingFileAudits(@Nullable List<PendingFileAudit> audits)
+    {
+        _pendingFileAudits = audits;
     }
 
     @Override

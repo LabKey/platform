@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,13 +187,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         List<ExpExperimentImpl> exps = getExperiments();
         if (!exps.contains(batch))
         {
-            LOG.warn("Expected batch '" + batch.getRowId() + "' to be in list of experiments: " + exps);
+            LOG.warn("Expected batch '{}' to be in list of experiments: {}", batch.getRowId(), exps);
             return false;
         }
 
         if (!getProtocol().equals(batch.getBatchProtocol()))
         {
-            LOG.warn("Expected batch '" + batch.getRowId() + "' to have same protocol as run.  Expected protocol '" + getProtocol() + "', but found '" + batch.getBatchProtocol() + "'");
+            LOG.warn("Expected batch '{}' to have same protocol as run.  Expected protocol '{}', but found '{}'", batch.getRowId(), getProtocol(), batch.getBatchProtocol());
             return false;
         }
 
@@ -241,22 +241,22 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public List<ExpDataImpl> getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType applicationType)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT exp.Data.* FROM exp.Data WHERE exp.Data.RowId IN ");
-        sql.append("\n(SELECT exp.DataInput.DataId FROM exp.DataInput ");
-        sql.append("\nINNER JOIN exp.ProtocolApplication ON exp.DataInput.TargetApplicationId = exp.ProtocolApplication.RowId");
-        sql.append("\nWHERE exp.ProtocolApplication.RunId = ?");
+        sql.unsafeAppend("SELECT exp.Data.* FROM exp.Data WHERE exp.Data.RowId IN ");
+        sql.unsafeAppend("\n(SELECT exp.DataInput.DataId FROM exp.DataInput ");
+        sql.unsafeAppend("\nINNER JOIN exp.ProtocolApplication ON exp.DataInput.TargetApplicationId = exp.ProtocolApplication.RowId");
+        sql.unsafeAppend("\nWHERE exp.ProtocolApplication.RunId = ?");
         sql.add(getRowId());
         if (inputRole != null)
         {
-            sql.append("\nAND exp.DataInput.Role = ? ");
+            sql.unsafeAppend("\nAND exp.DataInput.Role = ? ");
             sql.add(inputRole);
         }
         if (applicationType != null)
         {
-            sql.append("\nAND exp.ProtocolApplication.CpasType = ");
+            sql.unsafeAppend("\nAND exp.ProtocolApplication.CpasType = ");
             sql.appendValue(applicationType.toString());
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         return ExpDataImpl.fromDatas(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Data.class));
     }
 
@@ -548,7 +548,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
         deleteProtocolApplicationProvenance();
 
-        svc.beforeDeleteData(user, getContainer(), datasToDelete);
+        svc.beforeDeleteData(user, getContainer(), datasToDelete, null);
 
         deleteInputObjects(svc, dialect);
 
@@ -599,13 +599,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         // Build a single UNION to help reduce DB round trips
         SQLFragment unionSQL = new SQLFragment("(")
                 .append(materialSQL)
-                .append("\n UNION \n")
+                .unsafeAppend("\n UNION \n")
                     .append(materialInputSQL)
-                .append("\n UNION \n")
+                .unsafeAppend("\n UNION \n")
                 .append(dataSQL)
-                .append("\n UNION \n")
+                .unsafeAppend("\n UNION \n")
                 .append(dataInputSQL)
-                .append(")");
+                .unsafeAppend(")");
 
         OntologyManager.deleteOntologyObjects(svc.getSchema(), unionSQL, getContainer());
     }
@@ -619,16 +619,16 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private void deleteAppParametersAndInputs()
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
 
         //per Josh: break relation between all datas with this run id and don't delete them
-        sql.append("UPDATE exp.Data SET SourceApplicationId = NULL, RunId = NULL WHERE RunId = ?").add(getRowId()).appendEOS();
-        sql.append("UPDATE exp.Material SET SourceApplicationId = NULL, RunId = NULL WHERE RunId = ?").add(getRowId()).appendEOS();
+        sql.unsafeAppend("UPDATE exp.Data SET SourceApplicationId = NULL, RunId = NULL WHERE RunId = ?").add(getRowId()).appendEOS();
+        sql.unsafeAppend("UPDATE exp.Material SET SourceApplicationId = NULL, RunId = NULL WHERE RunId = ?").add(getRowId()).appendEOS();
 
-        sql.append("DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
-        sql.append("DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
-        sql.append("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = ?)").add(getRowId()).appendEOS();
-        sql.append("DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = ?)").add(getRowId()).appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = ?)").add(getRowId()).appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = ?)").add(getRowId()).appendEOS();
 
         new SqlExecutor(getExpSchema()).execute(sql);
     }
@@ -803,7 +803,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 listM.add(m);
                 if (getMaterialInputs().containsKey(m))
                 {
-                    ExpProtocolApplication runNode = getProtocolApplications().get(0);
+                    ExpProtocolApplication runNode = getProtocolApplications().getFirst();
                     assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
@@ -816,7 +816,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 listD.add(d);
                 if (getDataInputs().containsKey(d))
                 {
-                    ExpProtocolApplication runNode = getProtocolApplications().get(0);
+                    ExpProtocolApplication runNode = getProtocolApplications().getFirst();
                     assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
@@ -909,13 +909,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public List<ExpDataImpl> getAllDataUsedByRun()
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("select d.* from ");
+        sql.unsafeAppend("select d.* from ");
         sql.append(ExperimentServiceImpl.get().getTinfoDataInput(), "di");
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(ExperimentServiceImpl.get().getTinfoData(), "d");
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
-        sql.append(" where di.targetapplicationid=pa.rowid and pa.runid=? and di.dataid=d.rowid");
+        sql.unsafeAppend(" where di.targetapplicationid=pa.rowid and pa.runid=? and di.dataid=d.rowid");
         sql.add(getRowId());
         return ExpDataImpl.fromDatas(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql).getArrayList(Data.class));
     }
@@ -972,12 +972,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         // Warn if the move fails for some reason (file is open / file deleted during archive)
         catch (IOException e)
         {
-            LOG.warn("Unable to archive file:  " + e.getMessage());
+            LOG.warn("Unable to archive file:  {}", e.getMessage());
         }
         // Fail silently if the parent directory does not exist - archiving is a best effort action
         catch (ExperimentException e)
         {
-            LOG.warn("Unable to read parent directory: " + e.getMessage());
+            LOG.warn("Unable to read parent directory: {}", e.getMessage());
         }
     }
 

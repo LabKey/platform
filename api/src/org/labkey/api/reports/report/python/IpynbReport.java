@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.reports.report.python;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -18,7 +33,6 @@ import org.apache.xmlbeans.impl.common.IOUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.ApiModule;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleLoader;
@@ -32,6 +46,7 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.IpynbOutput;
 import org.labkey.api.security.SessionApiKeyManager;
+import org.labkey.api.usageMetrics.ApiMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
@@ -91,12 +106,7 @@ public class IpynbReport extends DockerScriptReport
 
     public IpynbReport()
     {
-        this(TYPE, IpynbReportDescriptor.DESCRIPTOR_TYPE);
-    }
-
-    IpynbReport(String reportType, String defaultDescriptorType)
-    {
-        super(reportType, defaultDescriptorType);
+        super(IpynbReportDescriptor.DESCRIPTOR_TYPE);
     }
 
     @Override
@@ -125,8 +135,8 @@ public class IpynbReport extends DockerScriptReport
             List<ExternalScriptEngineDefinition> defs = mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.Jupyter);
 
             // we currently only support a single site scoped engine
-            if (defs.size() == 1 && Arrays.asList(defs.get(0).getExtensions()).contains(EXTENSION))
-                return defs.get(0).isEnabled();
+            if (defs.size() == 1 && Arrays.asList(defs.getFirst().getExtensions()).contains(EXTENSION))
+                return defs.getFirst().isEnabled();
         }
         return false;
     }
@@ -199,9 +209,9 @@ public class IpynbReport extends DockerScriptReport
         ExecuteStrategy ex = new WebServiceExecuteStrategy();
 
         int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
-        LOG.trace("EXIT: " + exitCode);
+        LOG.trace("EXIT: {}", exitCode);
         FileLike outputFile = ex.getOutputDocument();
-        LOG.trace("OUTPUT: " + outputFile);
+        LOG.trace("OUTPUT: {}", outputFile);
         logFiles(workingDirectory, "AFTER");
 
         try
@@ -238,7 +248,7 @@ public class IpynbReport extends DockerScriptReport
             if (error.isFile() && error.getSize() > 0)
                 vbox.addView(new ConsoleOutput(error).getView(context));
 
-            LOG.trace("VIEWS: " + vbox.getViews().size());
+            LOG.trace("VIEWS: {}", vbox.getViews().size());
             return vbox;
         }
         catch (Exception x)
@@ -252,16 +262,8 @@ public class IpynbReport extends DockerScriptReport
     {
         File dir = parentDir.toNioPathForRead().toFile();
         Collection<File> files = FileUtils.listFiles(dir, null, true);
-        LOG.trace(label + ": " + dir.getPath() + "\n\t" +
-                StringUtils.join(files.stream().map(f ->
-                        f.getPath().replace(dir.getPath(), "") + " : " + f.length()).toArray(), "\n\t"));
-    }
-
-
-    @Override
-    protected JSONObject createReportConfig(ViewContext context, FileLike scriptFile)
-    {
-        return super.createReportConfig(context, scriptFile);
+        LOG.trace("{}: {}\n\t{}", label, dir.getPath(), StringUtils.join(files.stream().map(f ->
+                f.getPath().replace(dir.getPath(), "") + " : " + f.length()).toArray(), "\n\t"));
     }
 
 
@@ -378,7 +380,7 @@ public class IpynbReport extends DockerScriptReport
 
             tryPing(service);
 
-            SimpleMetricsService.get().increment(ModuleLoader.getInstance().getModule(ApiModule.class).getName(), ScriptEngineReport.METRIC_FEATURE_AREA, getClass().getSimpleName());
+            SimpleMetricsService.get().increment(ApiMetricArea.REPORT_INVOCATION, getClass().getSimpleName());
 
             try (CloseableHttpClient client = HttpClients.createDefault())
             {

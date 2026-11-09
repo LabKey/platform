@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class LibClientDependency extends FilePathClientDependency
 
                 //module contexts
                 if (libDoc.getLibraries().isSetRequiredModuleContext())
-                    _suppliers.addAll(getSuppliers(libDoc.getLibraries().getRequiredModuleContext().getModuleArray(), _filePath.getName(), x->true));
+                    _suppliers.addAll(getSuppliers(libDoc.getLibraries().getRequiredModuleContext().getModuleArray(), _filePath.getName(), _ ->true));
 
                 LibraryType library = libDoc.getLibraries().getLibrary();
 
@@ -100,7 +100,7 @@ public class LibClientDependency extends FilePathClientDependency
                         if (TYPE.lib != primaryType)
                             _suppliers.add(supplier);
                         else
-                            _log.error("Libraries cannot include other libraries: " + _filePath);
+                            _log.error("Libraries cannot include other libraries: {}", _filePath);
 
                         if (compileInProductionMode && mode != ModeTypeEnum.PRODUCTION)
                         {
@@ -128,7 +128,7 @@ public class LibClientDependency extends FilePathClientDependency
         }
         catch (Exception e)
         {
-            _log.error("Invalid client library XML file: " + _filePath + ". " + e.getMessage());
+            _log.error("Invalid client library XML file: {}. {}", _filePath, e.getMessage());
         }
     }
 }

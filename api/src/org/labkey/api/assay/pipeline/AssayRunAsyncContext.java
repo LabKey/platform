@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.assay.transform.DefaultTransformResult;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -88,6 +89,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private transient Map<DomainProperty, String> _batchProperties;
     private transient Set<Domain> _domains;
     private transient TransformResult _transformResult;
+    private transient @Nullable PreparedTransform _preparedTransform;
     private transient Logger _logger;
 
     // async fields
@@ -215,9 +217,9 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
                 valueText = entry.getValue();
 
             if(entry.getKey().getLabel() != null)
-                logger.info("\t"+entry.getKey().getLabel()+": " + valueText);
+                logger.info("\t{}: {}", entry.getKey().getLabel(), valueText);
             else
-                logger.info("\t"+entry.getKey().getName()+": " + valueText);
+                logger.info("\t{}: {}", entry.getKey().getName(), valueText);
         }
         logger.info("----- End Batch Properties -----");
 
@@ -226,18 +228,18 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
         for(Map.Entry<String, FileLike> entry : getUploadedData().entrySet())
         {
-            logger.info("\t\t* " + entry.getValue().getName());
+            logger.info("\t\t* {}", entry.getValue().getName());
         }
 
         if(_runName == null)
             logger.info("\tAssay ID: [Blank]");
         else
-            logger.info("\tAssay ID: " + _runName);
+            logger.info("\tAssay ID: {}", _runName);
 
         if(_runComments == null)
             logger.info("\tRun Comments: [Blank]");
         else
-            logger.info("\tRun Comments: " + _runComments);
+            logger.info("\tRun Comments: {}", _runComments);
 
         for (Map.Entry<DomainProperty, String> entry : _runProperties.entrySet())
         {
@@ -247,9 +249,9 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
                 valueText = entry.getValue();
 
             if(entry.getKey().getLabel() != null)
-                logger.info("\t"+entry.getKey().getLabel()+": " + valueText);
+                logger.info("\t{}: {}", entry.getKey().getLabel(), valueText);
             else
-                logger.info("\t"+entry.getKey().getName()+": " + valueText);
+                logger.info("\t{}: {}", entry.getKey().getName(), valueText);
         }
         logger.info("----- End Run Properties -----");
     }
@@ -382,6 +384,24 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public void setTransformResult(TransformResult result)
     {
         _transformResult = result;
+    }
+
+    @Override
+    public boolean supportsPreparedTransform()
+    {
+        return true;
+    }
+
+    @Override
+    public @Nullable PreparedTransform getPreparedTransform()
+    {
+        return _preparedTransform;
+    }
+
+    @Override
+    public void setPreparedTransform(@Nullable PreparedTransform prepared)
+    {
+        _preparedTransform = prepared;
     }
 
     @Override

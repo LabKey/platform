@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.PostgresOnlyTest;
 
 import java.io.File;
 import java.util.Arrays;
@@ -33,7 +32,7 @@ import static org.junit.Assert.fail;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
-public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTest
+public class SCHARPStudyTest extends BaseWebDriverTest
 {
     public static final String PROJECT_NAME="SCHARP Study Test";
 

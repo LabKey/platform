@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import java.util.List;
 
 /**
  * Responsible for executing SQL scripts as part of module install or upgrade at server startup-time.
- * User: arauch
- * Date: Jun 14, 2005
  */
 public class SqlScriptRunner
 {

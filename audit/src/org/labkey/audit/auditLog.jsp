@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@
     AuditTypeProvider selectedProvider = null;
     if (currentView == null)
     {
-        currentView = providers.get(0).getEventName();
-        selectedProvider = providers.get(0);
+        currentView = providers.getFirst().getEventName();
+        selectedProvider = providers.getFirst();
     }
 
     var selectId = makeId("formsSubmit");

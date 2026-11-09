@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             {
                 throw new IllegalStateException("Job exceeds serialization limit of " + SERIALIZATION_SIZE_LIMIT + " characters. It was " + serialized.length() + " characters long.");
             }
-            LOG.debug("Serialized JSON for " + job + " was " + serialized.length() + " characters");
+            LOG.debug("Serialized JSON for {} was {} characters", job, serialized.length());
 
             if (ensureDeserialize)          // Some callers round trip, so we don't need to here
             {
@@ -132,11 +132,11 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
                     PipelineJob unserialized = deserializeFromJSON(serialized, job.getClass());
                     List<String> errors = job.compareJobs(unserialized);
                     if (!errors.isEmpty())
-                        LOG.error("Deserialized object differs from original: " + StringUtils.join(errors, ","));
+                        LOG.error("Deserialized object differs from original: {}", StringUtils.join(errors, ","));
                 }
                 catch (Exception e)
                 {
-                    LOG.error("Serializing round-trip test failed: " + job.getClass(), e);
+                    LOG.error("Serializing round-trip test failed: {}", job.getClass(), e);
                 }
             }
             return serialized;
@@ -150,7 +150,9 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
     @Override
     public PipelineJob deserializeFromJSON(String json, Class<? extends PipelineJob> cls)
     {
-        ObjectMapper mapper = PipelineJob.createObjectMapper();
+        // Deny-by-default type allowlist: jobs arrive as JSON with polymorphic default typing, so an unrestricted mapper
+        // would let the wire pick the instantiated class. See PipelineJacksonTyping.
+        ObjectMapper mapper = PipelineJacksonTyping.createJobDeserializationMapper();
 
         try
         {

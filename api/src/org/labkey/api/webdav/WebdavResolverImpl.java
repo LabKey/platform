@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -135,8 +134,9 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
     }
 
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolverImpl is a singleton, so we
-    // end up with just one of these.
-    private final Cache<Path, WebFolderResource> _folderCache = CacheManager.getBlockingCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders", null);
+    // end up with just one of these. Bounded because Ehcache drops an expired entry only when it's read again, so
+    // crawling every container would otherwise keep one folder per container.
+    private final Cache<Path, WebFolderResource> _folderCache = CacheManager.getBlockingCache(Path.class, CacheManager.DEFAULT_CACHE_SIZE, 5 * CacheManager.MINUTE, "WebDAV folders", null);
 
     public class WebFolderResource extends AbstractWebFolderResource
     {
@@ -186,7 +186,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         private Container testContainer = null;
         
         @Test
-        public void testContainers() throws ValidationException
+        public void testContainers()
         {
             TestContext context = TestContext.get();
             User guest = UserManager.getGuestUser();

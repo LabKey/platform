@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.vfs.FileLike;
@@ -284,7 +285,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             List<TaskToCommandArgs> converters = getConverters();
             assert converters != null && !converters.isEmpty() :
                     "No converters found in " + getId();
-            TaskToCommandArgs commandNameConverter = converters.get(0);
+            TaskToCommandArgs commandNameConverter = converters.getFirst();
 
             CommandTaskImpl task = createTask(job);
             // Need to set up the work directory so that it can figure out what arguments will be used in the call
@@ -539,7 +540,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             List<String> originalFiles = getOriginalFiles(key);
             if (originalFiles.size() == 1)
             {
-                replacements.put(DataTransformService.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles.get(0).replaceAll("\\\\", "/")));
+                replacements.put(DataTransformService.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles.getFirst().replaceAll("\\\\", "/")));
             }
         }
 
@@ -621,7 +622,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             // Input file location must be determined before creating the process command.
             if (!_factory.getInputPaths().isEmpty())
             {
-                try (WorkDirectory.CopyingResource lock = _wd.ensureCopyingLock())
+                try (WorkDirectory.CopyingResource _ = _wd.ensureCopyingLock())
                 {
                     for (Map.Entry<String, TaskPath> entry : _factory.getInputPaths().entrySet())
                     {
@@ -690,7 +691,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     {
         Map<String, String> replacements = container == null ? Collections.emptyMap() : createReplacements(null, apiKey, container);
 
-        ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this, replacements));
+        LabKeyProcessBuilder pb = new LabKeyProcessBuilder(_factory.toArgs(this, replacements));
         applyEnvironment(pb);
 
         List<String> args = pb.command();
@@ -710,7 +711,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         // Just output the command line, if debug mode is set.
         if (_factory.isPreview())
         {
-            getJob().header(args.get(0) + " output");
+            getJob().header(args.getFirst() + " output");
             getJob().info(commandLine);
 
             return false;
@@ -777,7 +778,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
-    private void applyEnvironment(ProcessBuilder pb)
+    private void applyEnvironment(LabKeyProcessBuilder pb)
     {
         Map<String, String> originalEnvironment = new HashMap<>(pb.environment());
         for (Map.Entry<String, String> entry : _factory._environment.entrySet())

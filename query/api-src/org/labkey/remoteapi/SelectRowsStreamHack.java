@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ public class SelectRowsStreamHack
 
                     try (OutputStream os = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(tempFile))); InputStream ris = (alternateInputStream == null ? response.getInputStream() : alternateInputStream))
                     {
-                        _log.debug("Downloading SelectRows JSON to file: " + tempFile);
+                        _log.debug("Downloading SelectRows JSON to file: {}", tempFile);
                         IOUtils.copy(ris, os);
                         _log.debug("Finished saving SelectRows results");
                     }

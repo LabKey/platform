@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         {
             sql.append(separator);
             separator = " UNION ";
-            sql.append("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
+            sql.unsafeAppend("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
             sql.add(_valueGetter.getValue(e));
             sql.add(_rowIdGetter.getRowId(e));
             sql.add(e.ordinal());

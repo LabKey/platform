@@ -681,7 +681,6 @@
     Ext4.define('LABKEY.query.olap.MDX', {
         _cube : null,
         _filter : null,
-        _serverSets: {},
 
         constructor: function(cube)
         {
@@ -785,65 +784,8 @@
             return this._filter[name];
         },
 
-        serverSaveNamedSet : function(name, members, callback, scope) {
-            Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', 'saveNamedSet'),
-                method: 'POST',
-                jsonData: {
-                    setName: name,
-                    setList: members
-                },
-                success: function(response) {
-//                console.log('saved "' + name + '" in server cache. Contains', members.length, 'members.');
-                    this._serverSets[name] = members;
-                    if (Ext4.isFunction(callback)) {
-                        callback.call(scope || this, name);
-                    }
-                },
-                failure: function() {
-                    alert('ERROR: serverSaveNamedSet.');
-                },
-                scope: this
-            });
-        },
-
         allowMemberCaching : function() {
             return this._cube.useServerMemberCache === true;
-        },
-
-        serverDeleteNamedSet : function(name, callback, scope) {
-            Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', 'deleteNamedSet'),
-                method: 'POST',
-                jsonData: {
-                    setName: name
-                },
-                success: function() {
-//                console.log('deleted "' + name + '" in server cache.');
-                    if (this._serverSets[name]) {
-                        delete this._serverSets[name];
-                    }
-                    if (Ext4.isFunction(callback)) {
-                        callback.call(scope || this);
-                    }
-                },
-                failure: function() {
-                    alert('ERROR: serverDeleteNamedSet.');
-                },
-                scope: this
-            });
-        },
-
-        serverGetNamedSets : function() {
-            return Ext4.clone(this._serverSets);
-        },
-
-        serverGetNamedSet : function(name) {
-            return this._serverSets[name];
-        },
-
-        serverHasNamedSet : function(name) {
-            return Ext4.isArray(this._serverSets[name]);
         },
 
         resetNamedFilters : function()

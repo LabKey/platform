@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,24 +65,25 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     public List<ViewCategory> getAllCategories(Container c)
     {
-        return ViewCategoryCache.get().getAllCategories(c.getId());
+        return ViewCategoryCache.get().getAllCategories(c);
     }
 
     public List<ViewCategory> getTopLevelCategories(Container c)
     {
-        return ViewCategoryCache.get().getTopLevelCategories(c.getId());
+        return ViewCategoryCache.get().getTopLevelCategories(c);
     }
 
     @Nullable
     public ViewCategory getCategory(Container c, int rowId)
     {
-        return getCategory(c.getId(), rowId);
+        return ViewCategoryCache.get().getViewCategory(c, rowId);
     }
 
     @Nullable
     public ViewCategory getCategory(String containerId, int rowId)
     {
-        return ViewCategoryCache.get().getViewCategory(containerId, rowId);
+        Container c = ContainerManager.getForId(containerId);
+        return null == c ? null : getCategory(c, rowId);
     }
 
     /**
@@ -96,7 +97,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
     @Nullable
     public ViewCategory getCategory(Container c, String... parts)
     {
-        return ViewCategoryCache.get().getViewCategory(c.getId(), parts);
+        return ViewCategoryCache.get().getViewCategory(c, parts);
     }
 
     public void deleteCategory(Container c, User user, ViewCategory category)
@@ -116,8 +117,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         categoriesToDelete.addAll(category.getSubcategories());
 
         // delete the category definition (plus any subcategories) and fire the deleted event
-        SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
-        sql.append(" OR Parent = ?");
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").unsafeAppend(" WHERE RowId = ?");
+        sql.unsafeAppend(" OR Parent = ?");
         sql.addAll(category.getRowId(), category.getRowId());
 
         SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
@@ -131,7 +132,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
         if (!errors.isEmpty())
         {
-            Throwable first = errors.get(0);
+            Throwable first = errors.getFirst();
             if (first instanceof RuntimeException)
                 throw (RuntimeException)first;
             else
@@ -200,7 +201,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
         if (!errors.isEmpty())
         {
-            Throwable first = errors.get(0);
+            Throwable first = errors.getFirst();
             if (first instanceof RuntimeException)
                 throw (RuntimeException)first;
             else
@@ -211,7 +212,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
     public List<ViewCategory> getSubcategories(ViewCategory category)
     {
-        return ViewCategoryCache.get().getSubcategories(category.getContainerId(), category.getRowId());
+        return ViewCategoryCache.get().getSubcategories(ContainerManager.getForId(category.getContainerId()), category.getRowId());
     }
 
     public static void addCategoryListener(ViewCategoryListener listener)
@@ -345,7 +346,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         List<String> names = new ArrayList<>();
         String[] originalAmps;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String delim = "";
         String trailing = "";
 
@@ -376,7 +377,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                     case '&' :
                         // this is the section delimiter
                         names.add(sb.toString());
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                         break;
                     default :
                         sb.append(c);
@@ -484,9 +485,9 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
 
                 // test serialization encoding and decoding
                 String encoded = mgr.encode(cat);
-                String parts[] = mgr.decode(encoded);
+                String[] parts = mgr.decode(encoded);
 
-                assertTrue(parts.length == 1);
+                assertEquals(1, parts.length);
                 assertEquals(parts[0], cat.getLabel());
 
                 // create sub categories
@@ -508,7 +509,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                     encoded = mgr.encode(subcat);
                     parts = mgr.decode(encoded);
 
-                    assertTrue(parts.length == 2);
+                    assertEquals(2, parts.length);
                     assertEquals(parts[0], cat.getLabel());
                     assertEquals(parts[1], subLabel);
                 }
@@ -554,7 +555,7 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
                 for (ViewCategory subCategory : cat.getSubcategories())
                 {
                     assertTrue(subCategoryNames.contains(subCategory.getLabel()));
-                    assertTrue(subCategory.getParentCategory().getRowId() == cat.getRowId());
+                    assertEquals(subCategory.getParentCategory().getRowId(), cat.getRowId());
                 }
             }
 
@@ -577,8 +578,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             ViewCategory top = mgr.ensureViewCategory(c, user, "top");
 
             assertNotNull(top);
-            assertTrue(top.getParentCategory() == null);
-            assertTrue(top.getLabel().equals("top"));
+            assertNull(top.getParentCategory());
+            assertEquals("top", top.getLabel());
 
             ViewCategory subTop = mgr.ensureViewCategory(c, user, "top", "sub");
             // issue : 17123
@@ -586,14 +587,14 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             mgr.ensureViewCategory(c, user, "top");
 
             assertNotNull(subTop);
-            assertTrue(subTop.getParentCategory().getLabel().equals("top"));
-            assertTrue(subTop.getLabel().equals("sub"));
+            assertEquals("top", subTop.getParentCategory().getLabel());
+            assertEquals("sub", subTop.getLabel());
 
             ViewCategory subBottom = mgr.ensureViewCategory(c, user, "bottom", "sub");
 
             assertNotNull(subBottom);
-            assertTrue(subBottom.getParentCategory().getLabel().equals("bottom"));
-            assertTrue(subBottom.getLabel().equals("sub"));
+            assertEquals("bottom", subBottom.getParentCategory().getLabel());
+            assertEquals("sub", subBottom.getLabel());
 
             mgr.deleteCategory(c, user, top);
             mgr.deleteCategory(c, user, subBottom.getParentCategory());

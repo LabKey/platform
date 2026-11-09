@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
             PipelineJob job = PipelineJob.deserializeJob(statusFile.getJobStore());
             if (job != null)
             {
-                job.getLogger().info("Attempting to cancel job as requested by " + user + ".");
+                job.getLogger().info("Attempting to cancel job as requested by {}.", user);
                 PipelineJob.logStartStopInfo("Attempting to cancel job ID " + job.getJobGUID() + ", " + statusFile.getFilePath() + " as requested by " + user);
             }
 
@@ -147,13 +147,13 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
                 JobRunner.getDefault().execute(() -> {
                     try
                     {
-                        job.getLogger().info("Cancelling remote job by submitting request to " + engine);
+                        job.getLogger().info("Cancelling remote job by submitting request to {}", engine);
                         PipelineJob.logStartStopInfo("Cancelling job by submitting request to " + engine + ". Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
                         engine.cancelJob(job.getJobGUID());
                     }
                     catch (Exception e)
                     {
-                        _log.error("Error attempting to cancel job " + statusFile.getFilePath(), e);
+                        _log.error("Error attempting to cancel job {}", statusFile.getFilePath(), e);
                     }
                 });
                 return true;
@@ -211,7 +211,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         }
         catch (JMSException e)
         {
-            _log.error("Error browsing message queue at '" + ep.getEndpointURI(), e);
+            _log.error("Error browsing message queue at '{}", ep.getEndpointURI(), e);
         }
         finally
         {
@@ -255,7 +255,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         }
         catch (JMSException e)
         {
-            _log.error("Error browsing message queue at '" + ep.getEndpointURI(), e);
+            _log.error("Error browsing message queue at '{}", ep.getEndpointURI(), e);
         }
         finally
         {
@@ -313,13 +313,13 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         MuleClient client = null;
         try
         {
-            _log.debug("Dispatching job: " + job);
+            _log.debug("Dispatching job: {}", job);
             client = new MuleClient();
             client.dispatch(EPipelineQueueImpl.PIPELINE_QUEUE_NAME, job, null);
         }
         catch (Exception e)
         {
-            _log.debug("Error dispatching job: " + job, e);
+            _log.debug("Error dispatching job: {}", job, e);
             throw e;
         }
         finally
@@ -354,7 +354,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     // Trade a little latency in updating queue positions for performance. On some servers, this is queried
     // multiple times a second by a bunch of clients waiting for their import to complete
     private static final Object SINGLE_KEY = new Object();
-    private final BlockingCache<Object, Map<String, Integer>> POSITION_CACHE = CacheManager.getBlockingCache(1, 15_000, "Pipeline Queue Position",
+    private final BlockingCache<Object, Map<String, Integer>> POSITION_CACHE = CacheManager.getBlockingCache(Object.class, 1, 15_000, "Pipeline Queue Position",
             (k, v) -> Collections.unmodifiableMap(loadQueuePositions()));
 
 

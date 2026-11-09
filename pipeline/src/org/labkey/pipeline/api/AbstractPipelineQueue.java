@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
             throw new PipelineValidationException("User " + user + " does not have access to " + job.getContainer());
         }
 
-        LOG.debug("PENDING: " + job);
+        LOG.debug("PENDING: {}", job);
 
         // Make sure status file path and Job ID are in sync.
         Path logFile = job.getLogFilePath();
@@ -69,7 +69,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
                 PipelineStatusManager.setStatusFile(job, user, PipelineJob.TaskStatus.waiting, null, true);
             }
 
-            job.getLogger().debug("Resetting Job ID: " + job.getJobGUID());
+            job.getLogger().debug("Resetting Job ID: {}", job.getJobGUID());
             PipelineStatusManager.resetJobId(job.getContainer(), job.getLogFilePath(), job.getJobGUID());
         }
 
@@ -80,7 +80,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
         }
         else
         {
-            LOG.debug("Unable to set status to waiting for job: " + job + ", GUID: " + job.getJobGUID());
+            LOG.debug("Unable to set status to waiting for job: {}, GUID: {}", job, job.getJobGUID());
         }
     }
 

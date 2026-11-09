@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -49,21 +51,23 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.MultisetRateAccumulator;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.search.util.MultisetRateAccumulator;
 import org.labkey.search.view.DefaultSearchResultTemplate;
 
 import java.text.SimpleDateFormat;
@@ -252,7 +256,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
             return false;
         }
-        
+
 
         @Override
         public void setReady()
@@ -419,6 +423,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         String taskDescription = i._task != null ? i._task.getDescription() : "unknown";
         return "Search item: " + i._id + " (task: " + taskDescription + ")";
+    }
+
+    /** Names a runnable by the class that queued it, since its toString() is unique per instance */
+    static String getRunnableSource(Object r)
+    {
+        return StringUtils.substringBefore(StringUtils.substringAfterLast(r.getClass().getName(), "."), "$");
     }
 
     final Item _commitItem = new Item(null, (_) -> {}, PRIORITY.commit, null);
@@ -960,6 +970,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
+    @Override
+    public boolean isSearchIconVisible()
+    {
+        return SearchPropertyManager.getSearchIconState();
+    }
 
     @Override
     public void updateIndex(String reason)
@@ -1043,7 +1058,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         ContextListener.addShutdownListener(this);
     }
-    
+
     private void startThread(Thread t)
     {
         t.setDaemon(true);
@@ -1123,7 +1138,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     }
 
                     // Hand off a queue that piggybacks on the same priority as the original work
-                    item._run.accept(new TaskIndexingQueue()
+                    TaskIndexingQueue queue = new TaskIndexingQueue()
                     {
                         @Override
                         public void addRunnable(@NotNull Consumer<TaskIndexingQueue> r)
@@ -1146,22 +1161,31 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         {
                             return c;
                         }
-                    });
+                    };
+                    TracedOperation.builder("labkey.search.run")
+                            .resource(getRunnableSource(item._run))
+                            .describedAs(getSearchThreadDumpContext(item))
+                            .container(c)
+                            .tag("labkey.search.priority", item._pri)
+                            .run(() -> item._run.accept(queue));
                 }
             }
             catch (InterruptedException ignored) {}
             catch (Throwable x)
             {
                 success = false;
-                try
+                if (!(_shuttingDown || x instanceof ShuttingDownException))
                 {
-                    ExceptionUtil.logExceptionToMothership(null, x);
+                    try
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, x);
+                    }
+                    catch (Throwable t)
+                    {
+                        /* */
+                    }
+                    _log.error("Error running {}", null != i ? i._id : "", x);
                 }
-                catch (Throwable t)
-                {
-                    /* */
-                }
-                _log.error("Error running {}", null != i ? i._id : "", x);
             }
             finally
             {
@@ -1181,7 +1205,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
     };
-    
+
     Item getItemToIndex() throws InterruptedException
     {
         Item i = null;
@@ -1207,7 +1231,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             throw x;
         }
     }
-    
+
 
     final Object _commitLock = new Object(){ public String toString() { return "COMMIT LOCK"; } };
     int _countIndexedSinceCommit = 0;
@@ -1226,20 +1250,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     Runnable indexRunnable = () ->
     {
-        int consecutiveCommitFailures = 0;
+        int consecutiveLoopFailures = 0;
         while (!_shuttingDown)
         {
             try
             {
                 _indexLoop();
-                consecutiveCommitFailures = 0;
+                consecutiveLoopFailures = 0;
             }
             catch (Throwable e)
             {
                 if (!_shuttingDown)
                 {
-                    // Postincrement so that we don't start backing off until the second error
-                    postFailureDelay(e, "Error in indexer", _log, consecutiveCommitFailures++, INDEX_EVENT);
+                    // Don't start backing off until the second error
+                    postFailureDelay(e, "Error in indexer", _log, ++consecutiveLoopFailures, 1, INDEX_EVENT);
                 }
             }
         }
@@ -1255,7 +1279,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public static void postFailureDelay(Throwable e, String logPrefix, Logger log, int consecutiveFailures, final Object syncObject)
     {
-        long delayMs = TimeUnit.SECONDS.toMillis(30L * Math.min(10, consecutiveFailures));
+        postFailureDelay(e, logPrefix, log, consecutiveFailures, 0, syncObject);
+    }
+
+    /** @param failuresBeforeBackoff number of initial failures that retry immediately */
+    private static void postFailureDelay(Throwable e, String logPrefix, Logger log, int consecutiveFailures, int failuresBeforeBackoff, final Object syncObject)
+    {
+        long delayMs = TimeUnit.SECONDS.toMillis(30L * Math.min(10, Math.max(0, consecutiveFailures - failuresBeforeBackoff)));
         log.error("{}, delaying next attempt by {}s ({} consecutive failures)",
                 logPrefix,
                 TimeUnit.MILLISECONDS.toSeconds(delayMs),
@@ -1333,7 +1363,17 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             Throwable[] out = new Throwable[] {null};
 
-            success = processAndIndex(i._id, i._res, out);
+            String category = (String) r.getProperties().get(PROPERTY.categories.toString());
+            try (TracedOperation op = TracedOperation.builder("labkey.search.index")
+                    .resource(Objects.toString(category, "uncategorized"))
+                    .describedAs(getSearchThreadDumpContext(i))
+                    .container(ContainerManager.getForId(r.getContainerId()))
+                    .tag("labkey.search.priority", i._pri)
+                    .start())
+            {
+                success = processAndIndex(i._id, i._res, out);
+                op.tag("labkey.search.indexed", success).outcome(success ? "indexed" : "skipped").completed();
+            }
 
             if (null != out[0])
             {
@@ -1350,7 +1390,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 i._res.setLastIndexed(Math.max(i._start, i._modified), i._modified);
                 synchronized (_commitLock)
                 {
-                    String category = (String)i.getResource().getProperties().get(PROPERTY.categories.toString());
                     incrementIndexStat(ms, category);
                     _countIndexedSinceCommit++;
                     _lastIndexedTime = ms;
@@ -1362,7 +1401,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         GUID containerId = i._res.getContainerId();
                         Container c = ContainerManager.getForId(containerId);
                         String containerPath = c != null ? c.getPath() : "UNKNOWN PATH: Container not found!";
-                        categoryLogger.debug(category + " " + i._res.getDocumentId() + " " + containerPath + " " + containerId);
+                        categoryLogger.debug("{} {} {} {}", category, i._res.getDocumentId(), containerPath, containerId);
                     }
                 }
             }
@@ -1437,7 +1476,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         if (categories == null)
             return null;
-        
+
         List<SearchCategory> cats = _readonlyCategories;
         List<SearchCategory> usedCats = new ArrayList<>();
         String[] requestedCats = categories.split("\\+");
@@ -1546,7 +1585,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _current.accumulate(category);
     }
 
-    
+
     private static class IndexerRateAccumulator extends MultisetRateAccumulator<String>
     {
         public IndexerRateAccumulator(long start)
@@ -1684,5 +1723,139 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public long getFileSizeLimit()
     {
         return SearchPropertyManager.getFileSizeLimitMB() * (1024*1024);
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testRunnableSource()
+        {
+            Consumer<TaskIndexingQueue> lambda = _ -> {};
+            Consumer<TaskIndexingQueue> anonymous = new Consumer<>()
+            {
+                @Override
+                public void accept(TaskIndexingQueue q) {}
+            };
+            assertEquals("AbstractSearchService", getRunnableSource(lambda));
+            assertEquals("AbstractSearchService", getRunnableSource(anonymous));
+            assertEquals("AbstractSearchService", getRunnableSource((Consumer<TaskIndexingQueue>) TestCase::ignore));
+        }
+
+        private static void ignore(TaskIndexingQueue q) {}
+
+        @Test
+        public void testAdvanceTracksMaxRowId()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            assertEquals(0L, cursor.getMaxRowId());
+
+            cursor.advance(1);
+            assertEquals(1L, cursor.getMaxRowId());
+
+            cursor.advance(5);
+            assertEquals(5L, cursor.getMaxRowId());
+        }
+
+        @Test
+        public void testMinRowIdIsInitialMaxRowId()
+        {
+            var cursor = new SearchService.IndexBatchCursor(100);
+            assertEquals(100L, cursor.getMaxRowId());
+            assertFalse(cursor.wasFull());
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testAdvanceDuplicateRowIdThrows()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            cursor.advance(5);
+            cursor.advance(5);
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testAdvanceOutOfOrderRowIdThrows()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            cursor.advance(5);
+            cursor.advance(3);
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testAdvanceAtMinRowIdThrows()
+        {
+            var cursor = new SearchService.IndexBatchCursor(100);
+            cursor.advance(100); // equal is not strictly greater
+        }
+
+        @Test
+        public void testWasFullFalseInitially()
+        {
+            assertFalse(new SearchService.IndexBatchCursor(0).wasFull());
+        }
+
+        @Test
+        public void testWasFullFalseForPartialBatch()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            for (int i = 1; i < SearchService.INDEXING_LIMIT; i++)
+                cursor.advance(i);
+            assertFalse(cursor.wasFull());
+        }
+
+        @Test
+        public void testWasFullTrueForExactlyFullBatch()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            for (int i = 1; i <= SearchService.INDEXING_LIMIT; i++)
+                cursor.advance(i);
+            assertTrue(cursor.wasFull());
+        }
+
+        @Test
+        public void testForEachNormalBatch()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            List<Long> processed = new ArrayList<>();
+            cursor.forEach(List.of(10L, 20L, 30L), v -> v, processed::add);
+            assertEquals(List.of(10L, 20L, 30L), processed);
+            assertEquals(30L, cursor.getMaxRowId());
+            assertFalse(cursor.wasFull());
+        }
+
+        @Test
+        public void testForEachEmptyList()
+        {
+            var cursor = new SearchService.IndexBatchCursor(42);
+            cursor.forEach(List.of(), v -> (long) v, v -> fail("action must not be called for empty list"));
+            assertEquals(42L, cursor.getMaxRowId());
+            assertFalse(cursor.wasFull());
+        }
+
+        @Test
+        public void testForEachFullBatch()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            var items = new ArrayList<Long>(SearchService.INDEXING_LIMIT);
+            for (long i = 1; i <= SearchService.INDEXING_LIMIT; i++)
+                items.add(i);
+            cursor.forEach(items, v -> v, v -> {});
+            assertEquals((long) SearchService.INDEXING_LIMIT, cursor.getMaxRowId());
+            assertTrue(cursor.wasFull());
+        }
+
+        @Test
+        public void testForEachCountsItemEvenWhenActionThrows()
+        {
+            // advance is called before action, so the RowId is counted even if action throws
+            var cursor = new SearchService.IndexBatchCursor(0);
+            try
+            {
+                cursor.forEach(List.of(10L, 20L), v -> v, v -> { throw new RuntimeException("simulated failure"); });
+                fail("Expected RuntimeException");
+            }
+            catch (RuntimeException ignored) {}
+            assertEquals(10L, cursor.getMaxRowId());
+        }
     }
 }

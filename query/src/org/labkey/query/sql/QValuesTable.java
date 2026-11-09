@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query.sql;
 
 import org.apache.logging.log4j.LogManager;
@@ -34,16 +49,16 @@ public class QValuesTable extends QTable
         this.values = values;
         setAlias(alias);
         var rows = values.childList();
-        countOfColumns = rows.isEmpty() ? 0 : rows.get(0).childList().size();
+        countOfColumns = rows.isEmpty() ? 0 : rows.getFirst().childList().size();
         relation = new _QueryRelation();
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" VALUES ");
+        builder.unsafeAppend(" VALUES ");
         values.appendSource(builder,false);
-        builder.append(" AS ");
+        builder.unsafeAppend(" AS ");
         builder.append(_alias.getTokenText());
     }
 
@@ -126,7 +141,7 @@ public class QValuesTable extends QTable
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr)expr.childList().get(0);
+                methodName = (QExpr)expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -264,7 +279,7 @@ public class QValuesTable extends QTable
                     @Override
                     public @NotNull JdbcType getJdbcType()
                     {
-                        var firstRow = values.childList().get(0).childList();
+                        var firstRow = values.childList().getFirst().childList();
                         final QExpr expr = (QExpr)firstRow.get(index);
                         return expr.getJdbcType();
                     }
@@ -284,20 +299,18 @@ public class QValuesTable extends QTable
         public SQLFragment getFromSql()
         {
             SqlBuilder ret = new SqlBuilder(query.getSchema().getDbSchema().getSqlDialect());
-            ret.append("(");
+            ret.unsafeAppend("(");
             appendSql(ret);
-            ret.append(") ");
+            ret.unsafeAppend(") ");
             ret.appendIdentifier(getAlias());
-            ret.append(" (");
-            String comma = "";
+            ret.unsafeAppend(" (");
             // generate names consistent with PostgreSQL default name for VALUES
             // https://www.postgresql.org/docs/12/queries-values.html
             for (int i=1 ; i<= countOfColumns ; i++)
             {
-                ret.append(comma).append("column" + i);
-                comma = ",";
+                ret.unsafeAppend(i > 1 ? "," : "").unsafeAppend("column").appendValue(i);
             }
-            ret.append(")\n");
+            ret.unsafeAppend(")\n");
             return ret;
         }
 
@@ -309,7 +322,7 @@ public class QValuesTable extends QTable
 
         SqlBuilder appendSql(SqlBuilder sql)
         {
-            sql.append(" VALUES ");
+            sql.unsafeAppend(" VALUES ");
             values.appendSql(sql, query, false);
             return sql;
         }

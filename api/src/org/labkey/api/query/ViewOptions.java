@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2013 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.labkey.api.query;
 
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -30,8 +29,8 @@ public interface ViewOptions
     List<ViewFilterItem> getViewFilterItems();
     void setViewFilterItems(List<ViewFilterItem> items);
 
-    void save(User user) throws SQLException;
-    void delete(User user) throws SQLException;
+    void save(User user);
+    void delete(User user);
 
     interface ViewFilterItem
     {

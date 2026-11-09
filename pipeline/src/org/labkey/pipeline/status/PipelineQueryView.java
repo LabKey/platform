@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public class PipelineQueryView extends QueryView
             {
                 ActionButton button = new ActionButton(PipelineController.BrowseAction.class, "Process and Import Data");
                 button.setActionType(ActionButton.Action.LINK);
-                button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL()));
+                button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), _returnUrl == null ? getViewContext().getActionURL() : _returnUrl));
                 bar.add(button);
             }
         }
@@ -144,7 +144,7 @@ public class PipelineQueryView extends QueryView
             {
                 ActionButton button = new ActionButton(PipelineController.SetupAction.class, "Setup");
                 button.setActionType(ActionButton.Action.LINK);
-                button.setURL(PipelineController.urlSetup(getContainer(), getViewContext().getActionURL()));
+                button.setURL(PipelineController.urlSetup(getContainer(), _returnUrl == null ? getViewContext().getActionURL() : _returnUrl));
                 bar.add(button);
             }
         }

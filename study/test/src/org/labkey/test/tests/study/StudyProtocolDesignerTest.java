@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,7 +41,7 @@ import org.labkey.test.components.studydesigner.TreatmentDialog;
 import org.labkey.test.components.studydesigner.VaccineDesignWebpart;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
-import org.labkey.test.util.PostgresOnlyTest;
+import org.labkey.test.util.TestDataGenerator;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -58,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 9)
-public class StudyProtocolDesignerTest extends BaseWebDriverTest implements PostgresOnlyTest
+public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
     private static final File STUDY_ARCHIVE = TestFileUtils.getSampleData("studies/CohortStudy.zip");
     // Cohorts: defined in folder archive
@@ -92,9 +93,10 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         new BaseManageVaccineDesignVisitPage.Visit("Visit 3", 3.0, 3.0),
         new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4.0, 4.0)
     );
+
     private static final List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
-        new BaseManageVaccineDesignVisitPage.Visit("NewVisit1", 6.0, 7.0),
-        new BaseManageVaccineDesignVisitPage.Visit("NewVisit2", 8.0, 8.0)
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit1", 3, 3, TestDataGenerator.CHARSET_STRING, "").name(), 6.0, 7.0),
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit2", 3, 3, TestDataGenerator.CHARSET_STRING, "").name(), 8.0, 8.0)
     );
 
 
@@ -104,6 +106,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     public static void doSetup()
     {
         StudyProtocolDesignerTest initTest = getCurrentTest();
+
+        Assume.assumeTrue("Test requires specimen module", initTest._studyHelper.isSpecimenModulePresent());
 
         initTest._containerHelper.createProject(initTest.getProjectName(), null);
         initTest.importFolderFromZip(FOLDER_ARCHIVE);
@@ -225,7 +229,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         // add visit/treatment mappings for the Positive cohort
         treatmentsPage.addCohortTreatmentMapping(VISITS.get(0), TREATMENTS[0], 1);
         treatmentsPage.addCohortTreatmentMapping(VISITS.get(1), TREATMENTS[0], 1);
-        treatmentsPage.addCohortTreatmentMapping(NEW_VISITS.get(0), TREATMENTS[1], 1);
+        treatmentsPage.addCohortTreatmentMapping(NEW_VISITS.getFirst(), TREATMENTS[1], 1);
 
         // add the first new cohort and define the treatment/visit mappings for it
         treatmentsPage.addNewCohortRow(NEW_COHORTS[0], 2, 2);
@@ -258,7 +262,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         // add the first assay and define the properties for it
         assaySchedulePage.addNewAssayRow(NEW_ASSAYS[0] + " Label", null, 0);
         assaySchedulePage.setBaseProperties(LABS[0] + " Label", null, null, null, null, 0);
-        assaySchedulePage.selectVisits(Arrays.asList(VISITS.get(0), NEW_VISITS.get(0)), 0);
+        assaySchedulePage.selectVisits(Arrays.asList(VISITS.getFirst(), NEW_VISITS.getFirst()), 0);
 
         // add the second assay and define the properties for it
         assaySchedulePage.addNewAssayRow(NEW_ASSAYS[1] + " Label", null, 1);
@@ -288,7 +292,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     {
         ManageTreatmentsSingleTablePage singleManagementTable;
         TreatmentDialog treatmentDialog;
-        List<String> EXPECTED_HEADERS = new ArrayList<>(Arrays.asList("Group / Cohort", "Participant Count", "Enrollment", "Visit 1", "Visit 2", "NewVisit1", "NewVisit2"));
+        List<String> EXPECTED_HEADERS = new ArrayList<>(Arrays.asList("Group / Cohort", "Participant Count", "Enrollment", "Visit 1", "Visit 2", NEW_VISITS.get(0).getLabel(), NEW_VISITS.get(1).getLabel()));
         String tempText;
 
         // These are the expected Immunogen options:
@@ -341,6 +345,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         List<String> actualHeaders = singleManagementTable.columnHeaders();
         for(String expectedHeader : EXPECTED_HEADERS)
         {
+            // Workaround GitHub Issue 1335
+            expectedHeader = expectedHeader.replace("\\", "");
             Assert.assertTrue("Did not find header '" + expectedHeader + "'", actualHeaders.contains(expectedHeader));
         }
 
@@ -424,7 +430,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         treatmentDialog = singleManagementTable.clickCell(1,5);
         treatmentDialog.selectOption(TreatmentDialog.Sections.Immunogen, EXPECTED_IMMUNOGEN_VALUES.get(0))
                 .selectOption(TreatmentDialog.Sections.Immunogen, EXPECTED_IMMUNOGEN_VALUES.get(1))
-                .selectOption(TreatmentDialog.Sections.Adjuvant, EXPECTED_ADJUVANT_VALUES.get(0))
+                .selectOption(TreatmentDialog.Sections.Adjuvant, EXPECTED_ADJUVANT_VALUES.getFirst())
                 .selectOption(TreatmentDialog.Sections.Challenge, EXPECTED_CHALLENGE_VALUES.get(1));
         treatmentDialog.clickOk();
         sleep(500);
@@ -507,7 +513,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
 
         List<Map<String, Object>> rows = response.getRows();
         if (rows.size() == 1)
-            return Integer.parseInt(rows.get(0).get("RowId").toString());
+            return Integer.parseInt(rows.getFirst().get("RowId").toString());
 
         return null;
     }
@@ -602,14 +608,14 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         verifyCohortRow(immunizationScheduleWebpart, 0, COHORTS[1], null, visitTreatments, allVisitLabels);
 
         visitTreatments = new HashMap<>();
-        visitTreatments.put(VISITS.get(0).getLabel(), TREATMENTS[0]);
+        visitTreatments.put(VISITS.getFirst().getLabel(), TREATMENTS[0]);
         visitTreatments.put(NEW_VISITS.get(1).getLabel(), TREATMENTS[1]);
         verifyCohortRow(immunizationScheduleWebpart, 1, NEW_COHORTS[1], 5, visitTreatments, allVisitLabels);
 
         visitTreatments = new HashMap<>();
         visitTreatments.put(VISITS.get(0).getLabel(), TREATMENTS[0]);
         visitTreatments.put(VISITS.get(1).getLabel(), TREATMENTS[0]);
-        visitTreatments.put(NEW_VISITS.get(0).getLabel(), TREATMENTS[1]);
+        visitTreatments.put(NEW_VISITS.getFirst().getLabel(), TREATMENTS[1]);
         verifyCohortRow(immunizationScheduleWebpart, 2, COHORTS[0], null, visitTreatments, allVisitLabels);
 
         visitTreatments = new HashMap<>();
@@ -657,7 +663,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         assertFalse("Expected rows in the immunization schedule table", assayScheduleWebpart.isEmpty());
         assertEquals("Unexpected number of assay rows", NEW_ASSAYS.length + 1, assayScheduleWebpart.getAssayRowCount());
 
-        verifyAssayRow(assayScheduleWebpart, 0, NEW_ASSAYS[0] + " Label", LABS[0] + " Label", Arrays.asList(VISITS.get(0), NEW_VISITS.get(0)));
+        verifyAssayRow(assayScheduleWebpart, 0, NEW_ASSAYS[0] + " Label", LABS[0] + " Label", Arrays.asList(VISITS.get(0), NEW_VISITS.getFirst()));
         verifyAssayRow(assayScheduleWebpart, 1, NEW_ASSAYS[2] + " Label", LABS[2] + " Label", Arrays.asList(VISITS.get(2)));
         verifyAssayRow(assayScheduleWebpart, 2, NEW_ASSAYS[2] + " Label", LABS[3] + " Label", Collections.emptyList());
         verifyAssayRow(assayScheduleWebpart, 3, NEW_ASSAYS[1] + " Label", LABS[1] + " Label", Arrays.asList(VISITS.get(1), NEW_VISITS.get(1)));

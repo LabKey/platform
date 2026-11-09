@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import java.util.List;
 public class ProjectAndSiteGroupsCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final BlockingCache<Container, Collection<Integer>> CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.DAY, "Project Groups", null);
+    private static final BlockingCache<Container, Collection<Integer>> CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxProjects(), CacheManager.DAY, "Project Groups", null);
 
     private static final CacheLoader<Container, Collection<Integer>> GROUP_LIST_LOADER = (c, argument) -> {
         String containerClause = c.isRoot() ? "IS NULL" : "= ?";

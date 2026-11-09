@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class NormalPropertyStore extends AbstractPropertyStore
     @Override
     protected void appendWhereFilter(SQLFragment sql)
     {
-        sql.append("Encryption = ?");
+        sql.unsafeAppend("Encryption = ?");
         sql.add("None");
     }
 }

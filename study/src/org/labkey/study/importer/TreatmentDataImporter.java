@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -94,7 +95,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                 ctx.getLogger().info("Loading treatment data tables");
 
                 Container c = ctx.getContainer();
-                boolean isDataspaceProject = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
+                boolean isDataspaceProject = c.getProject() != null && StudyService.get().isDataspace(c.getProject()) && !StudyService.get().isDataspace(c);
 
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try (DbScope.Transaction transaction = scope.ensureTransaction())

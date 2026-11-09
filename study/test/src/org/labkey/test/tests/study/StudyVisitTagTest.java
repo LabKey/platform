@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package org.labkey.test.tests.study;
 
-import org.apache.commons.collections4.Bag;
-import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.util.FileUtil;
 import org.labkey.test.BaseWebDriverTest;
@@ -129,24 +129,24 @@ public class StudyVisitTagTest extends StudyBaseTest
     {
         final List<String> VISIT_TAG_NAMES = Arrays.asList("day0", "finalvaccination", "finalvisit", "firstvaccination", "notsingleuse", "peakimmunogenicity");
         final List<String> VISIT_TAG_CAPTIONS = Arrays.asList("Day 0 (meaning varies)", "Final Vaccination", "Final visit", "First Vaccination", "Not Single Use Tag", "Predicted peak immunogenicity visit");
-        Bag<List<String>> expectedRows = new HashBag<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_NAMES, VISIT_TAG_CAPTIONS));
+        MultiSet<List<String>> expectedRows = new HashMultiSet<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_NAMES, VISIT_TAG_CAPTIONS));
 
         goToProjectHome();
         goToModule("Query");
         viewQueryData("study", "VisitTag");
         DataRegionTable visitTags = new DataRegionTable("query", this);
-        Bag<List<String>> actualRows = new HashBag<>(visitTags.getRows("Name", "Caption"));
+        MultiSet<List<String>> actualRows = new HashMultiSet<>(visitTags.getRows("Name", "Caption"));
         assertEquals("Wrong Visit Tag Data", expectedRows, actualRows);
 
         final List<String> VISIT_TAG_MAP_TAGS = Arrays.asList("Day 0 (meaning varies)", "First Vaccination", "Final Vaccination", "First Vaccination", "Final Vaccination", "Final visit");
         final List<String> VISIT_TAG_MAP_VISITS = Arrays.asList("Visit1", "Visit2", "Visit3", "Visit3", "Visit4", "Visit5");
         final List<String> VISIT_TAG_MAP_COHORTS = Arrays.asList(" ", "Positive", "Negative", "Negative", "Positive", " ");
-        expectedRows = new HashBag<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_MAP_TAGS, VISIT_TAG_MAP_VISITS, VISIT_TAG_MAP_COHORTS));
+        expectedRows = new HashMultiSet<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_MAP_TAGS, VISIT_TAG_MAP_VISITS, VISIT_TAG_MAP_COHORTS));
 
         goToModule("Query");
         viewQueryData("study", "VisitTagMap");
         DataRegionTable visitTagMaps = new DataRegionTable("query", this);
-        actualRows = new HashBag<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
+        actualRows = new HashMultiSet<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
         assertEquals("Wrong Visit Tag Map Data", expectedRows, actualRows);
 
         // verify insert/edit of tags

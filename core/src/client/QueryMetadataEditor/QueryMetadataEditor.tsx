@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
  */
 
 import { List } from 'immutable';
-import React, { PureComponent } from 'react';
+import React, { FC, PureComponent } from 'react';
 import {
     Alert,
+    AppContexts,
     BeforeUnload,
     DomainDesign,
     DomainField,
@@ -25,7 +26,7 @@ import {
     IBannerMessage,
     LoadingSpinner,
     Modal,
-    withServerContext,
+    redirect,
     IFieldChange,
 } from '@labkey/components';
 import { ActionURL, getServerContext } from '@labkey/api';
@@ -107,7 +108,7 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
         }
     };
 
-    onChangeHandler = (newDomain: DomainDesign, dirty: boolean, rowIndexChange?, changes?: List<IFieldChange>) => {
+    onChangeHandler = (newDomain: DomainDesign, dirty: boolean, rowIndexChange?, changes?: IFieldChange[]) => {
         this._dirty = this._dirty || dirty; // if the state is already dirty, leave it as such
 
         if (newDomain) {
@@ -188,10 +189,12 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
         this._dirty = false;
 
         const { schemaName, queryName } = this.state;
-        window.location.href = ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {
-            schemaName,
-            'query.queryName': queryName,
-        });
+        redirect(
+            ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {
+                schemaName,
+                'query.queryName': queryName,
+            })
+        );
     };
 
     onConfirmViewData = () => {
@@ -231,11 +234,12 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
         this._dirty = false;
 
         const { schemaName, queryName } = this.state;
-        window.location.href =
+        redirect(
             ActionURL.buildURL('query', 'sourceQuery', getServerContext().container.path, {
                 schemaName,
                 'query.queryName': queryName,
-            }) + '#metadata';
+            }) + '#metadata'
+        );
     };
 
     editSourceBtnHandler = () => {
@@ -435,4 +439,8 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
     }
 }
 
-export const App = withServerContext(QueryMetadataEditor);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <QueryMetadataEditor />
+    </AppContexts>
+);

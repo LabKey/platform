@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
 import jakarta.servlet.ServletException;
-import java.sql.SQLException;
+
 import java.util.Map;
 
 /**
@@ -92,7 +92,7 @@ public abstract class PlateBasedUploadWizardAction <FormType extends PlateUpload
         }
 
         @Override
-        public boolean executeStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
+        public boolean executeStep(FormType form, BindException errors) throws ServletException, ExperimentException
         {
             form.setSampleProperties(_postedSampleProperties);
             for (Map.Entry<String, Map<DomainProperty, String>> entry : _postedSampleProperties.entrySet())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CrosstabMember;
 import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DisplayColumn;
@@ -27,7 +28,6 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.util.Pair;
 
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**

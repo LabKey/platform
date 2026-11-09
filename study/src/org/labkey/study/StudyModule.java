@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import com.google.common.base.Suppliers;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,8 +25,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParentType;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -66,12 +67,10 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
@@ -132,15 +131,18 @@ import org.labkey.study.assay.query.PublishAuditProvider;
 import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
+import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyPropertiesController;
+import org.labkey.study.controllers.publish.PublishConfirmContainerScopingTest;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
+import org.labkey.study.dataset.DataStatesTest;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -226,7 +228,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 26.000;
+        return 26.001;
     }
 
     @Override
@@ -381,7 +383,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         if (null != SpecimenService.get())
             SystemMaintenance.addTask(new SpecimenRefreshMaintenanceTask());
         SystemMaintenance.addTask(new DefragmentParticipantVisitIndexesTask());
-        SystemMaintenance.addTask(new MasterPatientIndexMaintenanceTask());
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
@@ -397,11 +398,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_LINKED_DATASET_CHECK,
             "Assay linked to study consistency check",
             "Flags rows in assay linked datasets where the subject and timepoint may be different from the source assay.",
-            false);
-
-        OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS,
-            "Allow merge of study dataset that uses server-managed additional key fields",
-            "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
             false);
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_QUERY_DATASETS,
@@ -430,104 +426,105 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(MODULE_NAME, () -> {
-                Map<String, Object> metric = new HashMap<>();
-                metric.put("studyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.study").getObject(Long.class));
-                metric.put("datasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class));
+            svc.registerUsageMetrics(MODULE_NAME, metrics -> {
+                metrics.put("studyCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.study").getObject(Long.class), "Studies across the server");
+                metrics.put("datasetCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class), "Datasets across all studies, all dataset types included");
 
-                metric.put("securityType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT SecurityType, COUNT(*) FROM study.Study GROUP BY SecurityType").getValueMap());
-                metric.put("timepointType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT TimepointType, COUNT(*) FROM study.Study GROUP BY TimepointType").getValueMap());
+                metrics.put("securityType", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT SecurityType, COUNT(*) FROM study.Study GROUP BY SecurityType").getValueMap(), "Studies by security type (BASIC_READ, BASIC_WRITE, ADVANCED_READ, ADVANCED_WRITE)");
+                metrics.put("timepointType", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT TimepointType, COUNT(*) FROM study.Study GROUP BY TimepointType").getValueMap(), "Studies by timepoint type (VISIT, DATE, CONTINUOUS)");
 
-                metric.put("linkedSampleTypeDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
-                metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
+                metrics.put("linkedSampleTypeDatasetCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class), "Datasets linked from sample types; same value as datasetsLinkedFromSamples");
+                metrics.put("linkedAssayDatasetCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class), "Datasets linked from assay results; same value as datasetsLinkedFromAssays");
 
-                metric.put("redcapCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM prop.PropertySets WHERE Category = 'RedcapConfigurationSettings'").getObject(Long.class));
+                metrics.put("redcapCount", () -> new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM prop.PropertySets WHERE Category = 'RedcapConfigurationSettings'").getObject(Long.class), "Saved REDCap configuration property sets across all containers");
 
                 // Note: study.StudySnapshot maintains a rows for deleted child studies (allowing re-creation of those child studies).
                 // In that case, Destination is set to null. COUNT(DISTINCT) skips these null values, so this returns the count of existing child studies.
-                metric.put("publishStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT destination) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class));
+                metrics.put("publishStudyCount", () -> new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT destination) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class), "Existing child studies created by publishing a study; deleted children excluded");
 
                 SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
-                metric.put("demographicsDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE DemographicData = " + dialect.getBooleanTRUE()).getObject(Long.class));
-                metric.put("standardDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE Type = 'Standard'").getObject(Long.class));
+                metrics.put("demographicsDatasetCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE DemographicData = " + dialect.getBooleanTRUE()).getObject(Long.class), "Demographics datasets across all studies");
+                metrics.put("standardDatasetCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE Type = 'Standard'").getObject(Long.class), "Datasets of type Standard across all studies; placeholder datasets excluded");
 
-                metric.put("managedThirdKeyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE KeyManagementType <> 'None'").getObject(Long.class));
-                metric.put("thirdKeyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE (KeyManagementType = 'None' AND KeyPropertyName IS NOT NULL) OR (UseTimeKeyField = " + dialect.getBooleanTRUE() + ")").getObject(Long.class));
+                metrics.put("managedThirdKeyCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE KeyManagementType <> 'None'").getObject(Long.class), "Datasets whose additional key is server-managed (RowId or GUID)");
+                metrics.put("thirdKeyCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE (KeyManagementType = 'None' AND KeyPropertyName IS NOT NULL) OR (UseTimeKeyField = " + dialect.getBooleanTRUE() + ")").getObject(Long.class), "Datasets with a user-managed additional key field or using time as the additional key");
 
-                metric.put("datasetsLinkedFromAssays", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
-                metric.put("datasetsLinkedFromSamples", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
+                metrics.put("datasetsLinkedFromAssays", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class), "Datasets linked from assay results; same value as linkedAssayDatasetCount");
+                metrics.put("datasetsLinkedFromSamples", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class), "Datasets linked from sample types; same value as linkedSampleTypeDatasetCount");
 
-                metric.put("assayScheduleCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.AssaySpecimen").getObject(Long.class));
+                metrics.put("assayScheduleCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.AssaySpecimen").getObject(Long.class), "Containers with at least one assay schedule entry");
 
-                metric.put("alternateParticipantIdCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AlternateIdPrefix IS NOT NULL").getObject(Long.class));
-                metric.put("participantIdMappingCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.Participant WHERE AlternateId IS NOT NULL").getObject(Long.class));
-                metric.put("participantAliasCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class));
+                metrics.put("alternateParticipantIdCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AlternateIdPrefix IS NOT NULL").getObject(Long.class), "Studies with an alternate participant ID prefix configured");
+                metrics.put("participantIdMappingCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.Participant WHERE AlternateId IS NOT NULL").getObject(Long.class), "Containers with at least one participant assigned an alternate ID");
+                metrics.put("participantAliasCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class), "Studies with a participant alias dataset configured");
 
-                metric.put("datasetsWithFileColumnCount", new SqlSelector(StudySchema.getInstance().getSchema(), """
+                metrics.put("datasetsWithFileColumnCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), """
                         SELECT COUNT(DISTINCT DD.DomainURI) FROM
                              exp.PropertyDescriptor D\s
                                  JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid
                                  JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId
-                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", StudySchema.getInstance().getDatasetSchemaName(), PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+                        WHERE DD.storageSchemaName = ? AND D.rangeURI = ?""", StudySchema.getInstance().getDatasetSchemaName(), PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class), "Datasets with at least one File column");
 
                 // grab the counts of report and dataset notification settings (by notification option)
-                Collection<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
-                Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
-                allStudies.forEach(study -> {
-                    Map<Integer, SortedSet<Integer>> settings = ReportContentEmailManager.getUserCategoryMap(study.getContainer());
-                    for (SortedSet<Integer> config : settings.values())
-                    {
-                        ReportContentEmailManager.NotifyOption option = ReportContentEmailManager.removeNotifyOption(config);
-                        notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
-                    }
-                });
-                Map<String, Integer> notificationMap = notifyOptionCounts.entrySet().stream()
-                    .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
-                metric.put("reportAndDatasetNotificationOptions", notificationMap);
+                Supplier<Collection<? extends StudyImpl>> allStudies = Suppliers.memoize(() -> StudyManager.getInstance().getAllStudies());
+                metrics.put("reportAndDatasetNotificationOptions", () -> {
+                    Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
+                    allStudies.get().forEach(study -> {
+                        Map<Integer, SortedSet<Integer>> settings = ReportContentEmailManager.getUserCategoryMap(study.getContainer());
+                        for (SortedSet<Integer> config : settings.values())
+                        {
+                            ReportContentEmailManager.NotifyOption option = ReportContentEmailManager.removeNotifyOption(config);
+                            notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
+                        }
+                    });
+                    return notifyOptionCounts.entrySet().stream()
+                        .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
+                }, "Users subscribed to report and dataset change notifications by option (NONE, ALL, CATEGORY, DATASET); a user counts once per study they subscribe in");
 
-                long cloudBackedStudies = allStudies.stream()
+                metrics.put("cloudBackedStudies", () -> allStudies.get().stream()
                     .filter(s -> {
                         PipeRoot pr = PipelineService.get().findPipelineRoot(s.getContainer());
                         return pr != null && pr.isCloudRoot();
                     })
-                    .count();
-                metric.put("cloudBackedStudies", cloudBackedStudies);
+                    .count(), "Studies whose pipeline root is in cloud storage");
 
                 // Count the studies that have configured at least one group for per-dataset access control
-                long studiesWithAnyPerDatasetGroup = allStudies.stream()
+                metrics.put("perDatasetSecurityStudyCount", () -> allStudies.get().stream()
                     .filter(study -> study.getSecurityType().isSupportsPerDatasetPermissions())
                     .filter(study -> SecurityManager.getGroups(study.getContainer().getProject(), true).stream()
                         .anyMatch(group -> GroupSecurityType.getTypeForGroup(group, study) == GroupSecurityType.PER_DATASET))
-                    .count();
-                metric.put("perDatasetSecurityStudyCount", studiesWithAnyPerDatasetGroup);
+                    .count(), "Studies with a security type supporting per-dataset permissions and at least one project group set to per-dataset access");
 
                 // Count the studies that use products and treatments
-                MutableInt hasProducts = new MutableInt(0);
-                MutableInt hasTreatments = new MutableInt(0);
+                record StudyDesignCounts(int products, int treatments) {}
+                Supplier<StudyDesignCounts> studyDesignCounts = Suppliers.memoize(() -> {
+                    MutableInt hasProducts = new MutableInt(0);
+                    MutableInt hasTreatments = new MutableInt(0);
 
-                allStudies.stream()
-                        .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
-                        .forEach(schema->{
-                            if (StudyDesignManager.get().isModuleActive(schema.getContainer()))
-                            {
-                                TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
-                                if (new TableSelector(products).exists())
-                                    hasProducts.increment();
+                    allStudies.get().stream()
+                            .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
+                            .forEach(schema->{
+                                if (StudyDesignManager.get().isModuleActive(schema.getContainer()))
+                                {
+                                    TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
+                                    if (new TableSelector(products).exists())
+                                        hasProducts.increment();
 
-                                TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
-                                if (new TableSelector(treatments).exists())
-                                    hasTreatments.increment();
-                            }
-                        });
+                                    TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
+                                    if (new TableSelector(treatments).exists())
+                                        hasTreatments.increment();
+                                }
+                            });
+                    return new StudyDesignCounts(hasProducts.intValue(), hasTreatments.intValue());
+                });
 
-                metric.put("studyProducts", hasProducts.intValue());
-                metric.put("studyTreatments", hasTreatments.intValue());
+                metrics.put("studyProducts", () -> studyDesignCounts.get().products(), "Studies with at least one study product, counted only in folders with the StudyDesign module active");
+                metrics.put("studyTreatments", () -> studyDesignCounts.get().treatments(), "Studies with at least one treatment, counted only in folders with the StudyDesign module active");
 
-                return metric;
+                return metrics;
             });
         }
 
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
     }
 
@@ -761,16 +758,21 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-            ParticipantGroupManager.ParticipantGroupTestCase.class,
-            StudyImpl.ProtocolDocumentTestCase.class,
-            StudyManager.StudySnapshotTestCase.class,
-            StudyManager.VisitCreationTestCase.class,
-            StudyModule.TestCase.class,
-            VisitImpl.TestCase.class,
-            DatasetUpdateService.TestCase.class,
-            DatasetLsidImportHelper.TestCase.class
-        );
+                DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                DataStatesTest.class,
+                ParticipantGroupManager.ContainerScopingTestCase.class,
+                StudyImpl.ProtocolDocumentTestCase.class,
+                StudyManager.StudySnapshotTestCase.class,
+                StudyManager.VisitCreationTestCase.class,
+                StudyModule.TestCase.class,
+                VisitImpl.TestCase.class,
+                DatasetController.DatasetAuditHistoryScopingTestCase.class,
+                DatasetUpdateService.TestCase.class,
+                DatasetLsidImportHelper.TestCase.class,
+                PublishConfirmContainerScopingTest.class,
+                CreateChildStudyAction.ContainerScopingTestCase.class,
+                StudyController.ContainerScopingTestCase.class,
+                ReportsController.ContainerScopingTestCase.class);
     }
 
     @Override
@@ -788,6 +790,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             DatasetDataWriter.TestCase.class,
             DefaultStudyDesignWriter.TestCase.class,
             ParticipantIdImportHelper.ParticipantIdTest.class,
+            ReportsController.TestCase.class,
             SequenceNumImportHelper.SequenceNumTest.class,
             StudyImpl.DateMathTestCase.class
         );

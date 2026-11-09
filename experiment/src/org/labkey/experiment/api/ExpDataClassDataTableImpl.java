@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -52,6 +51,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CachingDataIterator;
+import org.labkey.api.dataiterator.DataClassDataIteratorTransformer;
 import org.labkey.api.dataiterator.CoerceDataIterator;
 import org.labkey.api.dataiterator.DataClassUpdateAddColumnsDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -59,7 +59,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -85,6 +84,7 @@ import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -112,8 +112,8 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.PageFlowUtil;
@@ -122,11 +122,13 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.dataiterator.DropColumnsDataIterator;
 import org.labkey.experiment.lineage.LineageMethod;
 
 import java.io.IOException;
@@ -171,7 +173,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
     {
-        super(name, ExperimentService.get().getTinfoData(), schema, cf);
+        super(name, ExperimentService.get().getTinfoData(), schema, ExpDataClassDataTable.Column.class, cf);
         _dataClass = dataClass;
         _dataClassDataTableSupplier = new CachingSupplier<>(_dataClass::getTinfo);
         addAllowablePermission(InsertPermission.class);
@@ -493,7 +495,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         ColumnInfo colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
-        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _dataClass, false);
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo(this, _rootTable.getColumn("rowid"), _dataClass, false);
         addColumn(lineageLookup);
 
         ActionURL gridUrl = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());
@@ -690,13 +692,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT * FROM\n");
-        sql.append("(SELECT ");
+        sql.unsafeAppend("(SELECT * FROM\n");
+        sql.unsafeAppend("(SELECT ");
         String comma = "";
         for (String dataCol : dataCols)
         {
             sql.append(comma);
-            sql.append("d.").append(dataCol);
+            sql.unsafeAppend("d.").append(dataCol);
             comma = ", ";
         }
 
@@ -708,18 +710,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 sql.append(provisioned.getColumn(pCol).getValueSql("p"));
             }
         }
-        sql.append(" FROM ");
+        sql.unsafeAppend(" FROM ");
         sql.append(_rootTable, "d");
         if (hasProvisionedColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.RowId = p.rowId");
+            sql.unsafeAppend(" INNER JOIN ").append(provisioned, "p").unsafeAppend(" ON d.RowId = p.rowId");
         String subAlias = getSqlDialect().truncate(alias + "_dc_sub", 0);
-        sql.append(") ").appendIdentifier(subAlias);
-        sql.append("\n");
+        sql.unsafeAppend(") ").appendIdentifier(subAlias);
+        sql.unsafeAppend("\n");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        sql.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }
@@ -771,10 +773,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 url.addParameter("excludeColumn", excludeKey);
             url.addParameter("excludeColumn", "Flag");
             url.addParameter("filenamePrefix", this.getName());
-            if (templates.get(0).first.equals(DOWNLOAD_TEMPLATE_LABEL))
+            if (templates.getFirst().first.equals(DOWNLOAD_TEMPLATE_LABEL))
                 templates.set(0, Pair.of(DOWNLOAD_TEMPLATE_LABEL, url.toString()));
             else
-                templates.add(0, Pair.of(DOWNLOAD_TEMPLATE_LABEL, url.toString()));
+                templates.addFirst(Pair.of(DOWNLOAD_TEMPLATE_LABEL, url.toString()));
         }
 
 
@@ -820,7 +822,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass(), null);
+        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass());
     }
 
     private @NotNull Class<? extends Permission> getReadPermissionClass()
@@ -939,8 +941,24 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             }, DbScope.CommitTaskOption.POSTCOMMIT));
 
+
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
+            UserSchema userSchema = getUserSchema();
+            builder = LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
+            WorkflowService workService = WorkflowService.get();
+            if (workService != null && !context.getInsertOption().allowUpdate)
+            {
+                if (context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId) != null)
+                {
+                    Long actionId = (Long) context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId);
+
+                    if (workService.actionWillAddSources(actionId))
+                        builder = workService.getSourceCreationDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser());
+
+                    builder = workService.getActionAuditDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser());
+                }
+            }
+            return builder;
         }
         catch (IOException e)
         {
@@ -975,10 +993,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             _context = context;
-            DataIterator input = _in.getDataIterator(context);
-            if (null == input)
-                return null;           // Can happen if context has errors
+            return DataIteratorUtil.wrapOrClose(_in, context, input -> build(input, context));
+        }
 
+        /** Returning null here (after adding an error) or throwing leaves `input` to be closed by wrapOrClose. */
+        private DataIterator build(DataIterator input, DataIteratorContext context)
+        {
             boolean isMerge = context.getInsertOption() == QueryUpdateService.InsertOption.MERGE;
             boolean isUpdate = context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE;
 
@@ -991,10 +1011,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 boolean isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
                 if (isContainerField)
                 {
-                    if (isUpdate || !context.isCrossFolderImport())
-                        drop.add(name);
+                    drop.add(name);
+                    continue;
                 }
-                else if (ExpDataTable.Column.Name.name().equalsIgnoreCase(name))
+
+                if (ExpDataTable.Column.Name.name().equalsIgnoreCase(name))
                 {
                     keysCheck.add(ExpDataTable.Column.Name.name());
                 }
@@ -1006,9 +1027,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                         if (isUpdate)
                             continue;
 
-                        // While accepting RowId during merge is not our preferred behavior, we want to give users a way
-                        // to opt-in to the old behavior where RowId is accepted and ignored.
-                        if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE))
+                        if (isMerge)
                         {
                             context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging data. Specify only the data name instead.", Column.RowId.name()));
                             return null;
@@ -1119,9 +1138,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize, _dataClass.getMinGenId());
 
+            // Apply registered DataClass-specific DataIterator transformer (e.g., Molecule Component-N/X → components JSON)
+            DataIteratorBuilder step1 = step0;
+            DataClassDataIteratorTransformer transformer = ExperimentService.get().getDataClassDataIteratorTransformer(_dataClass.getName());
+            if (transformer != null)
+            {
+                if (transformer.prepareTranslator(step0, columnNameMap, context))
+                    step1 = LoggingDataIterator.wrap(transformer.wrapDataIterator(step0, context));
+                if (context.getErrors().hasErrors())
+                    return null;
+            }
+
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
-            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(step0, _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
+            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(step1, _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
             DataIterator di;
 
             // Generate names
@@ -1210,21 +1240,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-        }
-
-        @Override
-        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
-        {
-            try
-            {
-                configureCrossFolderImport(rows, context);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-            return super.loadRows(user, container, rows, context, extraScriptContext);
+            return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.IMPORT, configParameters), extraScriptContext);
         }
 
         @Override
@@ -1234,7 +1250,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws BatchValidationException, QueryUpdateServiceException
         {
             Map<String, Integer> allContainerResponse = new HashMap<>();
 
@@ -1260,7 +1276,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     }
                 }
 
-                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "sources");
+                SimpleMetricsService.get().increment(ExperimentMetricArea.MOVE_ENTITIES, "sources");
             }
             return new HashMap<>(allContainerResponse);
         }
@@ -1299,7 +1315,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            InsertOption insertOption = InsertOption.INSERT;
+            // allow caller to use InsertOption.IMPORT to useImportAliases
+            if (configParameters != null && configParameters.get(AbstractQueryImportAction.Params.insertOption) instanceof InsertOption option)
+                insertOption = option;
+            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, insertOption, configParameters), extraScriptContext);
         }
 
         @Override
@@ -1347,7 +1367,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         @Override
         public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
-                throws SQLException
+                throws SQLException, InvalidKeyException
         {
             if (!hasPermission(user, ReadPermission.class))
                 throw new UnauthorizedException("You do not have permission to read data from this table.");
@@ -1384,7 +1404,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        @Nullable protected Map<String, Object> getDataMap(Map<String, Object> keys, User user, Container container, boolean allowCrossContainer, boolean addInputs) throws SQLException
+        @Nullable protected Map<String, Object> getDataMap(Map<String, Object> keys, User user, Container container, boolean allowCrossContainer, boolean addInputs) throws SQLException, InvalidKeyException
         {
             Long rowId = (Long)JdbcType.BIGINT.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
@@ -1401,7 +1421,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // as expected to match row inserts and other querySchema data
             SimpleFilter filter = new SimpleFilter();
             if (null != rowId)
-                filter.addCondition(Column.RowId.fieldKey(), rowId);
+                filter.addCondition(Column.ClassId.fieldKey(), classId)
+                        .addCondition(Column.RowId.fieldKey(), rowId);
             else if (null != lsid)
                 filter.addCondition(Column.LSID.fieldKey(), lsid);
             else
@@ -1418,6 +1439,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 if (results.next())
                 {
                     dataRow = FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
+                }
+            }
+
+            if (dataRow == null && allowCrossContainer)
+            {
+                // data not found from queryTable but exist in exp.data, which happens when users lack of permission to data's container
+                if (new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton(ExpDataTable.Column.RowId.name()), filter, null).exists())
+                {
+                    String keyDisplay = name != null ? name : (rowId != null ? "{RowId=" + rowId + "}" : lsid);
+                    throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + keyDisplay + "'.");
                 }
             }
 
@@ -1454,7 +1485,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws BatchValidationException
         {
             if (rows == null || rows.isEmpty())
                 return Collections.emptyList();
@@ -1495,7 +1526,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         protected int truncateRows(User user, Container container)
         {
-            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container);
+            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container, null);
         }
 
         @Override
@@ -1524,9 +1555,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
-            if (context.isCrossFolderImport())
-                return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _dataClass, false);
-
             StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
             DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(standard, context);
             dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null,
@@ -1561,32 +1589,5 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return (entityId, c) -> new ExpDataClassAttachmentParent(c, Lsid.parse(entityId));
         }
 
-        @Override
-        public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-        {
-            Integer dataClassId = null;
-            Set<String> dataNames = new HashSet<>();
-            for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
-            {
-                Object oName = keyMap.getValue().get("Name");
-
-                if (oName != null)
-                    dataNames.add((String) oName);
-
-                if (dataClassId == null)
-                {
-                    Object oClassId = keyMap.getValue().get("ClassId");
-                    if (oClassId != null)
-                        dataClassId = _converter.convert(Integer.class, oClassId);
-                }
-
-            }
-
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataClassId);
-            filter.addCondition(FieldKey.fromParts("Name"), dataNames, CompareType.IN);
-            filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
-
-            return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
-        }
     }
 }

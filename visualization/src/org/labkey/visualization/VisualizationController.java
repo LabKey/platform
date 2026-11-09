@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -60,9 +61,10 @@ import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.ChartDesignerUrls;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -82,8 +84,12 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -102,15 +108,18 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SQLGenerationException;
-import org.labkey.api.visualization.SvgThumbnailGenerator;
+import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.visualization.sql.VisualizationCDSGenerator;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -133,7 +142,7 @@ public class VisualizationController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
     private static final Logger _log = LogManager.getLogger(VisualizationController.class);
 
-    public static class VisualizationUrlsImpl implements VisualizationUrls
+    public static class VisualizationUrlsImpl implements VisualizationUrls, ChartDesignerUrls
     {
         private static final String VISUALIZATION_NAME_PARAM = "name";
         private static final String VISUALIZATION_FILTER_URL = "filterUrl";
@@ -202,6 +211,12 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
+        public ActionURL getGenericChartDesignerURL(Container container, User user, @Nullable QuerySettings settings)
+        {
+            return getGenericChartDesignerURL(container, user, settings, null);
+        }
+
+        @Override
         public ActionURL getGenericChartDesignerURL(Container container, User user, @Nullable QuerySettings settings, @Nullable GenericChartReport.RenderType type)
         {
             ActionURL url = getBaseGenericChartURL(container, true);
@@ -267,7 +282,7 @@ public class VisualizationController extends SpringActionController
      * action.
      */
 
-    private static final Cache<String, Object> _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.UNLIMITED, "Static measures");
+    private static final Cache<String, Object> _getMeasuresCache = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.UNLIMITED, "Static measures");
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)
@@ -383,9 +398,9 @@ public class VisualizationController extends SpringActionController
                             }
 
                             QueryLogging queryLogging = new QueryLogging();
-                            SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+                            SQLFragment sql = QueryService.get().getSelectBuilder(tinfo).columns(Collections.singleton(col)).filter(filter).queryLogging(queryLogging).buildSqlFragment();
                             SQLFragment distinctSql = new SQLFragment(sql);
-                            int i = StringUtils.indexOf(sql.getSqlCharSequence(), "SELECT");
+                            int i = Strings.CS.indexOf(sql.getSqlCharSequence(), "SELECT");
                             if (i >= 0)
                                 distinctSql.insert(i + "SELECT".length(), " DISTINCT");
 
@@ -499,7 +514,7 @@ public class VisualizationController extends SpringActionController
     public static class GetDataAction extends MutatingApiAction<VisDataRequest>
     {
         @Override
-        protected ObjectReader getObjectReader(Class c)
+        protected ObjectReader getObjectReader(Class<?> c)
         {
             ObjectReader r = super.getObjectReader(c);
             return r.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -520,7 +535,7 @@ public class VisualizationController extends SpringActionController
             catch (SQLGenerationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
-                _log.warn("Unable to generate visualization SQL. " + e.getMessage());
+                _log.warn("Unable to generate visualization SQL. {}", e.getMessage());
                 return null;
             }
 
@@ -530,7 +545,7 @@ public class VisualizationController extends SpringActionController
             Map<String, Object> extraProperties = new HashMap<>();
             extraProperties.put("measureToColumn", sqlGenerator.getColumnMapping());
             extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
-            sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
+            VisualizationSchema.getProvider(sqlGenerator.getPrimarySchema()).addExtraResponseProperties(extraProperties);
             String filterDescription = sqlGenerator.getFilterDescription();
             if (filterDescription != null && !filterDescription.isEmpty())
                 extraProperties.put("filterDescription", filterDescription);
@@ -539,7 +554,7 @@ public class VisualizationController extends SpringActionController
             return response;
         }
 
-        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors)
+        protected ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors)
         {
             String schemaName = schema.getName();
             //create a temp query settings object initialized with the posted LabKey SQL
@@ -592,13 +607,6 @@ public class VisualizationController extends SpringActionController
     public class cdsGetDataAction extends GetDataAction
     {
         @Override
-        protected ObjectReader getObjectReader(Class c)
-        {
-            ObjectReader r = super.getObjectReader(c);
-            return r.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        }
-
-        @Override
         public ApiResponse execute(VisDataRequest form, BindException errors) throws Exception
         {
             VisualizationCDSGenerator sqlGenerator = new VisualizationCDSGenerator(getViewContext(), form);
@@ -611,7 +619,7 @@ public class VisualizationController extends SpringActionController
             catch (SQLGenerationException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
-                _log.warn("Unable to generate visualization SQL. " + e.getMessage());
+                _log.warn("Unable to generate visualization SQL. {}", e.getMessage());
                 return null;
             }
 
@@ -620,7 +628,7 @@ public class VisualizationController extends SpringActionController
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
             Map<String, Object> extraProperties = new HashMap<>();
             extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
-            sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
+            VisualizationSchema.getProvider(sqlGenerator.getPrimarySchema()).addExtraResponseProperties(extraProperties);
 
             String filterDescription = sqlGenerator.getFilterDescription();
             if (!filterDescription.isEmpty())
@@ -629,51 +637,11 @@ public class VisualizationController extends SpringActionController
 
             return response;
         }
-
-
-        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors)
-        {
-            String schemaName = schema.getName();
-            //create a temp query settings object initialized with the posted LabKey SQL
-            //this will provide a temporary QueryDefinition to Query
-
-            QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), schemaName, sql);
-
-            QuerySettings settings = new QuerySettings(context, "visualization", def.getName());
-
-            //need to explicitly turn off various UI options that will try to refer to the
-            //current URL and query string
-            settings.setAllowChooseView(false);
-            settings.setAllowCustomizeView(false);
-            settings.setBaseSort(sort);
-
-            //by default, return all rows
-            settings.setShowRows(ShowRows.ALL);
-
-            //build a query view using the schema and settings
-            QueryView view = new QueryView(schema, settings, errors);
-            view.setShowRecordSelectors(false);
-            view.setShowExportButtons(false);
-            view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
-
-            return new ExtendedApiQueryResponse(view, false,
-                    false, schemaName, def.getName(), 0, null, metaDataOnly, false, false);
-        }
     }
 
     @RequiresSiteAdmin
-    public static class cdsTestGetDataAction extends SimpleViewAction<Object>
+    public static class cdsTestGetDataAction extends TestGetDataAction
     {
-        @Override
-        public ModelAndView getView(Object noform, BindException errors)
-        {
-            return new JspView<>("/org/labkey/visualization/test/test.jsp");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
     }
 
     /**
@@ -692,7 +660,7 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public void validate(Object o, Errors errors)
+        public void validate(@NotNull Object o, @NotNull Errors errors)
         {
             return; //TODO: Validate XML
         }
@@ -1103,6 +1071,10 @@ public class VisualizationController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Report type \"" + form.getType() + "\" is not an available visualization type.");
             }
+            else if (_currentReport != null)
+            {
+                validatePointClickFn((VisualizationReportDescriptor) _currentReport.getDescriptor(), form.getJson(), report, errors);
+            }
         }
 
         @Override
@@ -1138,6 +1110,14 @@ public class VisualizationController extends SpringActionController
             resp.put("name", _currentReport.getDescriptor().getReportName());
             return resp;
         }
+    }
+
+    // ReportService repeats this check on save; running it here reports failures as 400s instead of 403s
+    private void validatePointClickFn(VisualizationReportDescriptor descriptor, @Nullable String json, @Nullable Report stored, Errors errors)
+    {
+        List<ValidationError> reportErrors = new ArrayList<>();
+        descriptor.validatePointClickFn(getUser(), json, stored != null ? stored.getDescriptor() : null, reportErrors);
+        ReportUtil.addErrors(reportErrors, errors);
     }
 
     private abstract class AbstractChartWizardAction extends SimpleViewAction<ChartWizardReportForm>
@@ -1239,6 +1219,13 @@ public class VisualizationController extends SpringActionController
                         if (form.isPublic() && !report.canShare(getUser(), getContainer(), reportErrors))
                             ReportUtil.addErrors(reportErrors, errors);
                     }
+                }
+
+                if (form.getJsonData() != null)
+                {
+                    Report stored = form.getReportId() != null ? form.getReportId().getReport(getViewContext()) : null;
+                    VisualizationReportDescriptor descriptor = stored != null && stored.getDescriptor() instanceof VisualizationReportDescriptor d ? d : new GenericChartReportDescriptor();
+                    validatePointClickFn(descriptor, form.getJsonData(), stored, errors);
                 }
             }
             catch (Exception e)
@@ -1606,14 +1593,14 @@ public class VisualizationController extends SpringActionController
                 throw new IllegalArgumentException("No such schema: " + schemaName);
             }
 
-            VisualizationProvider<?> provider = userSchema.createVisualizationProvider();
+            VisualizationProvider<?> provider = VisualizationSchema.getProvider(userSchema);
             if (provider == null)
             {
                 throw new IllegalArgumentException("No provider available for schema: " + userSchema.getSchemaPath());
             }
 
             Map<String, Integer> values = new HashMap<>();
-            try (ResultSet rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName)))
+            try (ResultSet rs = QueryService.get().getSelectBuilder(userSchema, provider.getSourceCountSql(sources, members, colName)).select())
             {
                 while (rs.next())
                 {
@@ -1661,7 +1648,7 @@ public class VisualizationController extends SpringActionController
             ObjectReader r = JsonUtil.DEFAULT_MAPPER.reader(VisDataRequest.class)
                     .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             String measure1 = "{\"allowNullResults\":true, \"aggregate\":\"MAX\", \"alias\":\"table_column\", " +
-                    "\"inNotNullSet\":true, \"name\":\"column\", \"nsvalues\":\"whatisthis\"," +
+                    "\"inNotNullSet\":true, \"name\":\"column\", " +
                     "\"queryName\":\"table\", \"requireLeftJoin\":true, \"schemaName\":\"schema\", \"values\":[1,2,3]}";
             String measure2 = "{\"allowNullResults\":false, \"aggregate\":\"MAX\", \"alias\":\"table_column2\", " +
                     "\"inNotNullSet\":false, \"name\":\"column2\"," +
@@ -1698,7 +1685,7 @@ public class VisualizationController extends SpringActionController
             assertTrue(vs.isMetaDataOnly());
             assertTrue(vs.isJoinToFirst());
             assertEquals(1, vs.getMeasures().size());
-            VisDataRequest.MeasureInfo mi = vs.getMeasures().get(0);
+            VisDataRequest.MeasureInfo mi = vs.getMeasures().getFirst();
             {
                 VisDataRequest.Measure m = mi.getMeasure();
                 assertNotNull(m);
@@ -1708,11 +1695,10 @@ public class VisualizationController extends SpringActionController
                 assertEquals("table_column", m.getAlias());
                 assertTrue(m.getInNotNullSet());
                 assertEquals("column", m.getName());
-                assertEquals("whatisthis", m.getNsvalues());
                 assertEquals("table", m.getQueryName());
                 assertTrue(m.getRequireLeftJoin());
                 assertEquals("schema", m.getSchemaName());
-                List<Object> values = m.getValues();
+                List<?> values = m.getValues();
                 assertNotNull(values);
                 assertEquals(3, values.size());
                 assertEquals("1", values.get(0).toString());
@@ -1732,7 +1718,6 @@ public class VisualizationController extends SpringActionController
             assertEquals("day",dopt.getInterval());
             assertEquals("visitday", dopt.getDateCol().getName());
             assertEquals("enrolldate", dopt.getZeroDateCol().getName());
-            assertEquals("ZERO", dopt.getZeroDayVisitTag());
             assertFalse(dopt.isUseProtocolDay());
             assertEquals(0,mi.getFilterArray().size());
             assertEquals(1, vs.getSorts().size());
@@ -1743,4 +1728,97 @@ public class VisualizationController extends SpringActionController
             assertEquals(1,vs.getGroupBys().size());
         }
     } /* TestCase */
+
+    // GH Issue 1649
+    public static class PointClickFnTestCase extends AbstractContainerScopingTest
+    {
+        private static final String FN = "function(data, measureInfo, clickEvent) { alert('clicked'); }";
+
+        @Test
+        public void testGenericChartRequiresTrustedDeveloper() throws Exception
+        {
+            Container folder = getSharedContainer("Charts", ModuleLoader.getInstance().getModule(VisualizationModule.NAME));
+            User author = createUserInRole(folder, AuthorRole.class);
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, author, "author-fn", null, genericChartJson(FN)));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, author, "author-dup", null,
+                    "{\"queryConfig\":{},\"chartConfig\":{\"measures\":{\"pointClickFn\":null,\"pointClickFn\":\"" + FN + "\"}}}"));
+            // The client no longer reads the legacy chartOptions.developer location, so a function there never runs
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, author, "author-legacy-fn", null,
+                    new JSONObject().put("queryConfig", new JSONObject())
+                            .put("chartConfig", new JSONObject().put("chartOptions", new JSONObject().put("developer", new JSONObject().put("pointClickFn", FN))))
+                            .toString()));
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, author, "author-no-fn", null, genericChartJson(null)));
+
+            grantRootRole(author, PlatformDeveloperRole.class);
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, author, "developer-fn", null, genericChartJson(FN)));
+        }
+
+        @Test
+        public void testEditorCanKeepButNotChangeExistingFn() throws Exception
+        {
+            Container folder = getSharedContainer("Charts", ModuleLoader.getInstance().getModule(VisualizationModule.NAME));
+            Report report = ReportService.get().createReportInstance(GenericChartReport.TYPE);
+            report.getDescriptor().setReportName("developer-chart");
+            report.getDescriptor().setProperty(ReportDescriptor.Prop.json, genericChartJson(FN));
+            int rowId = ReportService.get().saveReportEx(new DefaultContainerUser(folder, getAdmin()), ReportUtil.getReportKey("core", "Users"), report).getRowId();
+            String reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getAdmin(), folder).toString();
+
+            User editor = createUserInRole(folder, EditorRole.class);
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, editor, "developer-chart", reportId, genericChartJson(FN)));
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, editor, "developer-chart", reportId, genericChartJson(FN + " ")));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, editor, "developer-chart", reportId, genericChartJson("function() { alert('changed'); }")));
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, editor, "developer-chart", reportId, genericChartJson(null)));
+        }
+
+        @Test
+        public void testTimeChartRequiresTrustedDeveloper() throws Exception
+        {
+            Container folder = getSharedContainer("Charts", ModuleLoader.getInstance().getModule(VisualizationModule.NAME));
+            User author = createUserInRole(folder, AuthorRole.class);
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveTimeChart(folder, author, "time-author-fn", new JSONObject().put("pointClickFn", FN)));
+            assertStatus(HttpServletResponse.SC_OK, saveTimeChart(folder, author, "time-author-no-fn", new JSONObject()));
+
+            grantRootRole(author, PlatformDeveloperRole.class);
+            assertStatus(HttpServletResponse.SC_OK, saveTimeChart(folder, author, "time-developer-fn", new JSONObject().put("pointClickFn", FN)));
+        }
+
+        private static String genericChartJson(@Nullable String pointClickFn)
+        {
+            JSONObject measures = new JSONObject();
+            if (pointClickFn != null)
+                measures.put("pointClickFn", pointClickFn);
+            return new JSONObject()
+                    .put("queryConfig", new JSONObject().put("schemaName", "core").put("queryName", "Users"))
+                    .put("chartConfig", new JSONObject().put("geomOptions", new JSONObject()).put("measures", measures))
+                    .toString();
+        }
+
+        private MockHttpServletResponse saveGenericChart(Container folder, User user, String name, @Nullable String reportId, String jsonData) throws Exception
+        {
+            JSONObject body = new JSONObject()
+                    .put("name", name)
+                    .put("schemaName", "core")
+                    .put("queryName", "Users")
+                    .put("renderType", "scatter_plot")
+                    .put("public", true)
+                    .put("thumbnailType", ThumbnailType.NONE.name())
+                    .put("jsonData", jsonData);
+            if (reportId != null)
+                body.put("reportId", reportId);
+            return postJson(new ActionURL(SaveGenericReportAction.class, folder), user, body);
+        }
+
+        private MockHttpServletResponse saveTimeChart(Container folder, User user, String name, JSONObject config) throws Exception
+        {
+            JSONObject body = new JSONObject()
+                    .put("name", name)
+                    .put("type", TimeChartReport.TYPE)
+                    .put("shared", true)
+                    .put("thumbnailType", ThumbnailType.NONE.name())
+                    .put("json", config.toString());
+            return postJson(new ActionURL(SaveVisualizationAction.class, folder), user, body);
+        }
+    }
 }

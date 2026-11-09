@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @license Copyright (c) 2014-2019 LabKey Corporation
+ * @license Copyright (c) 2014-2026 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ LABKEY.Utils = new function(impl, $) {
         var html = [
             '<div class="modal-header">',
                 (!disableCloseBtn && supportsModal() ? '<button type="button" class="close" data-dismiss="modal">&times;</button>' : ''),
-                '<h4 class="modal-title">' + LABKEY.Utils.encodeHtml(title) + '</h4>',
+                '<h2 class="modal-title">' + LABKEY.Utils.encodeHtml(title) + '</h2>',
             '</div>',
             '<div class="modal-body">'
         ];

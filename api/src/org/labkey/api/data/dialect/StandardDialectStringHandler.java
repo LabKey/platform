@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Parameter;
@@ -28,30 +29,30 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-/*
-* User: adam
-* Date: Aug 13, 2011
-* Time: 3:55:55 PM
-*/
 public class StandardDialectStringHandler implements DialectStringHandler
 {
     @Override
     public String quoteStringLiteral(String str)
     {
-        return "'" + StringUtils.replace(str, "'", "''") + "'";
+        return "'" + Strings.CS.replace(str, "'", "''") + "'";
     }
 
 
     @Override
     public String substituteParameters(SQLFragment frag)
     {
+        return substituteParameters(frag.getSQL(), frag.getParams());
+    }
+
+    @Override
+    public String substituteParameters(String sql, List<Object> parameters)
+    {
         // Substitute the parameters into the SQL string, following the rules for quoted identifiers, string literals,
         // comments, etc. Previously, we used regular expressions to find (and ignore) string literals and quoted
         // identifiers while doing parameter substitution, but the first attempt exploded with long string literals
         // (#12866) and the second attempt occasionally failed to return. So, we wrote this dumb little parser instead.
-        String sql = frag.getSQL();
         StringBuilder ret = new StringBuilder();
-        List<Object> params = new LinkedList<>(frag.getParams());
+        List<Object> params = new LinkedList<>(parameters);
 
         int begin = 0;
         int current = 0;
@@ -68,7 +69,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
                     if (params.isEmpty())
                         ret.append("NULL /*?missing?*/");
                     else
-                        ret.append(formatParameter(params.remove(0)));
+                        ret.append(formatParameter(params.removeFirst()));
                     current++;
                     begin = current;
                 }

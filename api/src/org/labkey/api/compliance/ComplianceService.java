@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,16 +124,6 @@ public interface ComplianceService
         public boolean hasViewSignedSnapshotsPermission(@NotNull Container container, @NotNull User user)
         {
             return false;
-        }
-        @Override
-        @NotNull public PHI getMaxAllowedPhi(@NotNull Container container, @NotNull User user)
-        {
-            return PHI.Restricted;
-        }
-        @Override
-        public Activity getCurrentActivity(ViewContext viewContext)
-        {
-            return null;
         }
 
         @Override

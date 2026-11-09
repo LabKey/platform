@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,9 +72,9 @@ public class ListItemType implements AttachmentParentType
                             new SQLFragment("':'"),
                             new SQLFragment("CAST(")
                                 .append(dialect.makeDatabaseIdentifier(domain.getPropertyByName(v.getKeyName()).getPropertyDescriptor().getStorageColumnName().toLowerCase()).getSql()))
-                                .append(" AS VARCHAR)")
+                                .unsafeAppend(" AS VARCHAR)")
                         )
-                        .append(" AS Description FROM list.").append(domain.getStorageTableName())
+                        .unsafeAppend(" AS Description FROM list.").append(domain.getStorageTableName())
                     );
             });
         });

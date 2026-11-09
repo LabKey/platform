@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.labkey.core.wiki;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -32,16 +32,16 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.NavTreeMenu;
-import org.labkey.api.view.menu.ProjectAdminMenu;
-import org.labkey.api.view.menu.ProjectsMenu;
-import org.labkey.api.view.menu.SiteAdminMenu;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.core.view.menu.ContainerMenu;
+import org.labkey.core.view.menu.ProjectAdminMenu;
+import org.labkey.core.view.menu.ProjectsMenu;
+import org.labkey.core.view.menu.SiteAdminMenu;
 import org.radeox.api.engine.RenderEngine;
 import org.radeox.api.engine.WikiRenderEngine;
 import org.radeox.api.engine.context.InitialRenderContext;
@@ -313,7 +313,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                 buf.append(" class=\"").append(PageFlowUtil.filter(cssClass)).append("\"");
             if (cssStyle != null)
             {
-                if (StringUtils.containsIgnoreCase(cssStyle, "behavior"))
+                if (Strings.CI.contains(cssStyle, "behavior"))
                     cssStyle = null;
                 if (null != cssStyle)
                     buf.append(" style=\"").append(PageFlowUtil.filter(cssStyle)).append("\"");
@@ -838,7 +838,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                             }
                             catch (IOException e)
                             {
-                                log.debug("InterWiki " + extSpace + " not found.");
+                                log.debug("InterWiki {} not found.", extSpace);
                             }
                         }
                         else

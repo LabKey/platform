@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
         TaskPipeline<?> tp = super.getTaskPipeline();
         if (tp == null)
         {
-            LOG.warn("Task pipeline " + _taskPipelineId + " not found.");
+            LOG.warn("Task pipeline {} not found.", _taskPipelineId);
         }
         return (FileAnalysisTaskPipeline) tp; 
     }

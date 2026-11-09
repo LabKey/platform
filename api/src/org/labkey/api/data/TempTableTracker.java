@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public class TempTableTracker
         {
             if (!deleted)
             {
-                _log.debug("Deleting table " + schema.getName() + "." + tableName);
+                _log.debug("Deleting table {}.{}", schema.getName(), tableName);
                 schema.dropTableIfExists(tableName);
 
                 deleted = true;
@@ -130,7 +130,7 @@ public class TempTableTracker
 
     private static TempTableTracker track(TempTableTracker ttt)
     {
-        _log.debug("track(" + ttt.qualifiedName + ")");
+        _log.debug("track({})", ttt.qualifiedName);
 
         synchronized(createdTableNames)
         {
@@ -150,7 +150,7 @@ public class TempTableTracker
 
     private static void untrack(String qualifiedName, String schemaName, String tableName)
     {
-        _log.debug("untrack(" + qualifiedName + ")");
+        _log.debug("untrack({})", qualifiedName);
 
         synchronized(createdTableNames)
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import com.google.errorprone.annotations.CompileTimeConstant;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
@@ -57,7 +58,7 @@ public class Builder extends SQLFragment
      */
     public void popPrefix(String suffix)
     {
-        String cur = _prefix.remove(_prefix.size() - 1);
+        String cur = _prefix.removeLast();
         if (cur == null)
         {
             super.append(suffix);
@@ -75,7 +76,7 @@ public class Builder extends SQLFragment
      */
     public boolean nextPrefix(String newPrefix)
     {
-        String prefix = _prefix.get(_prefix.size() - 1);
+        String prefix = _prefix.getLast();
         if (prefix != null)
             return false;
         _prefix.set(_prefix.size() - 1, newPrefix);
@@ -103,6 +104,7 @@ public class Builder extends SQLFragment
         }
     }
 
+    @Deprecated
     @Override
     public Builder append(CharSequence cs)
     {
@@ -111,6 +113,17 @@ public class Builder extends SQLFragment
         appendPrefix();
         appendIndent();
         super.append(cs);
+        return this;
+    }
+
+    @Override
+    public Builder unsafeAppend(@CompileTimeConstant String str)
+    {
+        if (str == null || str.isEmpty())
+            return this;
+        appendPrefix();
+        appendIndent();
+        super.unsafeAppend(str);
         return this;
     }
 

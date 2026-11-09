@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public interface MapDataIterator extends DataIterator
                 _findMap.put(in.getColumnInfo(i).getName(),i);
             }
             if (null != duplicates)
-                LOGGER.warn("Data has duplicate columns: '" + StringUtils.join(duplicates.toArray(), ", ") + "'");
+                LOGGER.warn("Data has duplicate columns: '{}'", StringUtils.join(duplicates.toArray(), ", "));
         }
 
         @Override

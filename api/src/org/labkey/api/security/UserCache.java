@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class UserCache
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final String KEY = "USER_COLLECTIONS";
 
-    private static final Cache<String, UserCollections> CACHE = DatabaseCache.get(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections", new UserCollectionsLoader());
+    private static final Cache<String, UserCollections> CACHE = DatabaseCache.get(String.class, CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections", new UserCollectionsLoader());
 
     private UserCache()
     {

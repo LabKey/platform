@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiJsonForm;
@@ -55,7 +56,10 @@ import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -67,8 +71,10 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
@@ -123,7 +129,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 
 /**
@@ -464,6 +470,21 @@ public class OlapController extends SpringActionController
         }
 
         @Override
+        public void validateCommand(CustomOlapDescriptorForm form, Errors errors)
+        {
+            // Confirm definition lives in this container before touching it
+            Object pk = form.getPkVal();
+            if (pk == null)
+                throw new NotFoundException("Custom olap definition not found");
+            SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
+            filter.addCondition(FieldKey.fromParts("RowId"), pk);
+            if (!new TableSelector(QueryManager.get().getTableInfoOlapDef(), filter, null).exists())
+                throw new NotFoundException("Custom olap definition not found in this folder");
+
+            super.validateCommand(form, errors);
+        }
+
+        @Override
         protected boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws SQLException
         {
             form.doUpdate();
@@ -657,12 +678,12 @@ public class OlapController extends SpringActionController
                 OlapConnection conn = controller.getConnection(sd);
                 stmt = conn.createStatement();
                 String query = form.getQuery();
-                OlapController._log.debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
+                OlapController._log.debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n{}", query);
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
                 long d = System.currentTimeMillis() - ms;
                 QueryProfiler.getInstance().track(null, "-- MDX\n" + query + sd.getQueryTag(), null, d, null, true, QueryLogging.emptyQueryLogging());
-                OlapController._log.debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
+                OlapController._log.debug("\nEND executeOlapQuery: {} --------------------------    --------------------------    --------------------------\n", DateUtil.formatDuration(d));
 
                 StringWriter sw = new StringWriter();
                 Olap4Js.convertCellSet(cs, sw);
@@ -872,7 +893,7 @@ public class OlapController extends SpringActionController
                 {
                     QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q + "\n" + _olapSchemaDescriptor.getQueryTag(),
                             null, (0 == start || 0 == end) ? 0 : (end - start), null, true, QueryLogging.noValidationNeededQueryLogging());
-                    _log.debug("bitsetquery.executeQuery() took " + DateUtil.formatDuration(end - start));
+                    _log.debug("bitsetquery.executeQuery() took {}", DateUtil.formatDuration(end - start));
                 }
 
                 Olap4Js.convertCellSet(cs, sw);
@@ -1201,13 +1222,12 @@ public class OlapController extends SpringActionController
     {
         if (cf instanceof DataspaceContainerFilter dscf)
         {
-            Collection<GUID> guids = dscf.generateIds(getContainer(),ReadPermission.class, null);
-            List<String> ret = guids.stream().map(GUID::toString).collect(Collectors.toList());
-            return Collections.unmodifiableCollection(ret);
+            Collection<GUID> guids = dscf.generateIds(getContainer(),ReadPermission.class, Set.of());
+            return guids.stream().map(GUID::toString).toList();
         }
-        // TODO optimize, this is round-about since cf probabaly implements getIds() internally
+        // TODO optimize, this is round-about since cf probably implements getIds() internally
         DbSchema core = CoreSchema.getInstance().getSchema();
-        SQLFragment sqlf = new SQLFragment("SELECT entityid FROM core.containers WHERE ");
+        SQLFragment sqlf = SQLFragment.unsafe("SELECT entityid FROM core.containers WHERE ");
         sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), new HashMap<>()));
         ArrayList<String> list = new SqlSelector(core, sqlf).getArrayList(String.class);
         return Collections.unmodifiableCollection(list);
@@ -1593,6 +1613,52 @@ public class OlapController extends SpringActionController
                 controller.new SetActiveAppConfigAction(),
                 controller.new ListAppsAction()
             );
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testEditDefinitionContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A custom OLAP definition that lives in folder B. Its stored content need not be valid Rolap: the update
+            // action validates only the *submitted* form, and the container guard runs before that validation.
+            OlapDef def = new OlapDef();
+            def.beforeInsert(admin, folderB.getId());
+            def.setName("scoping-test-cube");
+            def.setModule("query");
+            def.setDefinition("<Schema/>");
+            def = Table.insert(admin, QueryManager.get().getTableInfoOlapDef(), def);
+            int rowId = def.getRowId();
+
+            // A caller who is folder admin in A (so the @RequiresPermission(AdminPermission.class) check passes) but
+            // has no rights in folder B.
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            // Editing B's definition through folder A must 404 rather than overwrite/re-home it. Without the
+            // validateCommand guard the unscoped doUpdate() would edit B's row and rewrite its container to A.
+            ActionURL foreignUrl = new ActionURL(EditDefinitionAction.class, folderA).addParameter("RowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, adminA));
+            // A site admin, who CAN administer folder B, still gets 404 through folder A (no cross-container write).
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, admin));
+
+            // The definition must be untouched in its own container.
+            OlapDef after = new TableSelector(QueryManager.get().getTableInfoOlapDef()).getObject(rowId, OlapDef.class);
+            assertNotNull("Definition must still exist", after);
+            assertEquals("Container must be unchanged after a cross-container edit", folderB.getId(), after.getContainerId());
+
+            // Positive control: a same-container request passes the container guard and proceeds to form validation. The
+            // submitted definition is intentionally invalid Rolap, so the action redisplays the form (200) instead of
+            // 404 -- proving the guard rejects only the cross-container case, not legitimate same-container edits.
+            ActionURL ownUrl = new ActionURL(EditDefinitionAction.class, folderB)
+                    .addParameter("RowId", String.valueOf(rowId))
+                    .addParameter("Module", "query")
+                    .addParameter("Definition", "not-valid-rolap-xml");
+            assertStatus(HttpServletResponse.SC_OK, post(ownUrl, admin));
         }
     }
 }

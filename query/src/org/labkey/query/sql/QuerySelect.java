@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -672,7 +672,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
         private QTable parseLineage(final QNode range)
         {
-            QMethodCall methodCall = (QMethodCall)range.childList().get(0);
+            QMethodCall methodCall = (QMethodCall)range.childList().getFirst();
             var methodIdentifier = methodCall.childList().get(0);
             int methodType = methodIdentifier.getTokenType();
             QQuery subQuery = (QQuery)methodCall.childList().get(1);
@@ -699,7 +699,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         private QTable parseValues(QNode node)
         {
             int countChildren = node.childList().size();
-            if (2 < countChildren || !(node.childList().get(0) instanceof QValues))
+            if (2 < countChildren || !(node.childList().getFirst() instanceof QValues))
             {
                 parseError("Syntax error in JOIN clause", node);
                 return null;
@@ -730,7 +730,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         private QTable parseRange(QNode node)
         {
             int countChildren = node.childList().size();
-            if (countChildren < 1 || 2 < countChildren || !(node.childList().get(0) instanceof QExpr))
+            if (countChildren < 1 || 2 < countChildren || !(node.childList().getFirst() instanceof QExpr))
             {
                 parseError("Syntax error in JOIN clause", node);
                 return null;
@@ -831,19 +831,19 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (children.size() > childIndex)
             {
                 on = children.get(childIndex);
-                if (on.childList().size() != 1 || !(on.childList().get(0) instanceof QExpr))
+                if (on.childList().size() != 1 || !(on.childList().getFirst() instanceof QExpr))
                 {
                     parseError("Error in ON expression", on);
                     return null;
                 }
-                _ons.add((QExpr) on.childList().get(0));
+                _ons.add((QExpr) on.childList().getFirst());
             }
 
             if (joinType == JoinType.cross && null != on)
                 parseError("ON unexpected in a CROSS JOIN", on);
             else if (joinType != JoinType.cross && null == on)
                 parseError("ON expected", rightNode);
-            QJoin qjoin = new QJoin(left, right, joinType, null == on ? null : (QExpr) on.childList().get(0));
+            QJoin qjoin = new QJoin(left, right, joinType, null == on ? null : (QExpr) on.childList().getFirst());
             return qjoin;
         }
     }
@@ -890,7 +890,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (isDebugEnabled)
             {
                 debugMsg = "getField( " + this.toStringDebug() + ", " + key.toDisplayString() + " )\n        referant: " + referant;
-                _log.debug(">>" + debugMsg);
+                _log.debug(">>{}", debugMsg);
             }
 
             if (!methodName)
@@ -929,7 +929,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         }
         finally
         {
-            _log.debug("<<" + debugMsg);
+            _log.debug("<<{}", debugMsg);
         }
     }
 
@@ -953,7 +953,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         if (parts.size() >= 2)
         {
             // Attempt to resolve a simple table prefix
-            tableKey = new FieldKey(null, parts.get(0));
+            tableKey = new FieldKey(null, parts.getFirst());
             table = getTable(tableKey);
 
             if (table == null)
@@ -976,7 +976,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
         if (null == table)
         {
-            String name = parts.get(0);
+            String name = parts.getFirst();
             for (Map.Entry<FieldKey,QueryRelation> e : _tables.entrySet())
             {
                 if (null != e.getValue().getColumn(name))
@@ -1018,7 +1018,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             qualified = false;
         }
 
-        FieldKey key = new FieldKey(tableKey, parts.get(0));
+        FieldKey key = new FieldKey(tableKey, parts.getFirst());
         RelationColumn colParent = _declaredFields.get(key);
         if (colParent == null)
         {
@@ -1132,7 +1132,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         if (_declareCalled)
             return;
         _declareCalled = true;
-        _log.debug("declareFields " + this.toStringDebug());
+        _log.debug("declareFields {}", this.toStringDebug());
 
         for (Map.Entry<FieldKey,QueryRelation> entry : _tables.entrySet())
             entry.getValue().declareFields();
@@ -1257,7 +1257,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         QExpr methodName = null;
         if (expr instanceof QMethodCall)
         {
-            methodName = (QExpr)expr.childList().get(0);
+            methodName = (QExpr)expr.childList().getFirst();
             if (null == methodName.getFieldKey())
                 methodName = null;
         }
@@ -1370,7 +1370,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                         markAllSelected(_query);
                         _sqlAllColumns = getSql();
                     }
-                    f.append("(").append(_sqlAllColumns).append(") ").appendIdentifier(alias);
+                    f.unsafeAppend("(").append(_sqlAllColumns).unsafeAppend(") ").appendIdentifier(alias);
                     return f;
                 }
             }
@@ -1403,9 +1403,9 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
                 SQLFragment s = getSql();
                 if (!getParseErrors().isEmpty())
-                    throw getParseErrors().get(0);
+                    throw getParseErrors().getFirst();
                 SQLFragment f = new SQLFragment();
-                f.append("(").append(s).append(") ").appendIdentifier(alias);
+                f.unsafeAppend("(").append(s).unsafeAppend(") ").appendIdentifier(alias);
 
                 return f;
             }
@@ -1639,11 +1639,11 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         int count = 0;
         boolean isDebugEnabled = _log.isDebugEnabled();
         if (isDebugEnabled)
-            _log.debug("SELECT COLUMN LIST: " + this.toStringDebug());
+            _log.debug("SELECT COLUMN LIST: {}", this.toStringDebug());
         for (SelectColumn col : _columns.values())
         {
             if (isDebugEnabled)
-                _log.debug("    " + col.getDebugString() + " ref=" + col.ref.count());
+                _log.debug("    {} ref={}", col.getDebugString(), col.ref.count());
             // NOTE: container columns are sometimes used by lookups without being explicitly REF'd
             if (col.getJdbcType() == JdbcType.GUID)
                 col.addRef(col);
@@ -1664,7 +1664,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         }
         if (_parsedJoins.isEmpty() && dialect.isOracle())
         {
-            fromSql.append(" sys.dual ");
+            fromSql.unsafeAppend(" sys.dual ");
         }
         fromSql.popPrefix();
 
@@ -1689,9 +1689,9 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 return null;
             }
             sql.append(col.getInternalSql());
-            sql.append(" AS ");
+            sql.unsafeAppend(" AS ");
             String sqlAlias = dialect.makeLegalIdentifier(colAlias);
-            sql.append(sqlAlias);
+            sql.appendIdentifier(sqlAlias);
             aliasMap.put(colAlias,sqlAlias);
             sql.nextPrefix(",\n");
             count++;
@@ -1707,10 +1707,10 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.pushPrefix("\nWHERE ");
             for (QNode expr : _where.children())
             {
-                sql.append("(");
+                sql.unsafeAppend("(");
                 QExpr term = resolveFields((QExpr)expr, null, _where);
                 term.appendSql(sql, _query);
-                sql.append(")");
+                sql.unsafeAppend(")");
                 sql.nextPrefix(" AND ");
             }
             sql.popPrefix();
@@ -1748,7 +1748,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.pushPrefix("\nGROUP BY ");
             for (QNode expr : _groupBy.children())
             {
-                sql.append("(");
+                sql.unsafeAppend("(");
                 QExpr gbExpr = resolveFields((QExpr)expr, _groupBy, _groupBy);
                 // check here again for constants, after resolveFields()
                 if (gbExpr.isConstant())
@@ -1768,7 +1768,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 {
                     gbExpr.appendSql(sql, _query);
                 }
-                sql.append(")");
+                sql.unsafeAppend(")");
                 sql.nextPrefix(",");
             }
             sql.popPrefix();
@@ -1781,10 +1781,10 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.pushPrefix("\nHAVING ");
             for (QNode expr : _having.children())
             {
-                sql.append("(");
+                sql.unsafeAppend("(");
                 QExpr term = resolveFields((QExpr)expr, null, _having);
                 term.appendSql(sql, _query);
-                sql.append(")");
+                sql.unsafeAppend(")");
                 sql.nextPrefix(" AND ");
             }
             sql.popPrefix();
@@ -1802,7 +1802,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 {
                     if (entry.expr() instanceof QIdentifier && aliasMap.containsKey(entry.expr().getTokenText()))
                     {
-                        sql.append(aliasMap.get(entry.expr().getTokenText()));
+                        sql.appendIdentifier(aliasMap.get(entry.expr().getTokenText()));
                     }
                     else
                     {
@@ -1812,7 +1812,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                         r.appendSql(sql, _query);
                     }
                     if (!entry.direction())
-                        sql.append(" DESC");
+                        sql.unsafeAppend(" DESC");
                     sql.nextPrefix(",");
                 }
                 sql.popPrefix();
@@ -1820,18 +1820,19 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                     getSqlDialect().appendSortOnSubqueryWithoutLimitQualifier(sql);
             }
         }
+        // Before limitRows(), which on SQL Server reads the SQL text and so throws for an error fragment
+        if (!getParseErrors().isEmpty())
+            return null;
         if (_limit != null)
         {
             getSqlDialect().limitRows(sql, _limit.getLimit());
         }
-        if (!getParseErrors().isEmpty())
-            return null;
 
         if (asFromSql)
         {
             // NOTE inserting the "(" earlier blows up limitRows()
             sql.insert(0,"(");
-            sql.append(") ").appendIdentifier(getAlias());
+            sql.unsafeAppend(") ").appendIdentifier(getAlias());
         }
 
         if (!AppProps.getInstance().isDevMode() || _inFromClause)
@@ -2268,9 +2269,9 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (expr instanceof QMethodCall mc && mc.getJdbcType() == JdbcType.BOOLEAN && b.getDialect().isSqlServer()
                 && !(mc.getMethod(b.getDialect()) instanceof Method.ConvertInfo))
             {
-                b.append("CASE WHEN (");
+                b.unsafeAppend("CASE WHEN (");
                 expr.appendSql(b, _query);
-                b.append(") THEN 1 ELSE 0 END");
+                b.unsafeAppend(") THEN 1 ELSE 0 END");
                 return b;
             }
 
@@ -2278,12 +2279,12 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (expr instanceof QString && b.getDialect().isPostgreSQL())
             {
                 int len = ((QString)expr).getValue().length();
-                b.append("CAST(");
+                b.unsafeAppend("CAST(");
                 expr.appendSql(b, _query);
-                b.append(" AS VARCHAR");
+                b.unsafeAppend(" AS VARCHAR");
                 if (len > 0)
-                    b.append("(").appendValue(len).append(")");
-                b.append(")");
+                    b.unsafeAppend("(").appendValue(len).unsafeAppend(")");
+                b.unsafeAppend(")");
                 return b;
             }
 
@@ -2477,7 +2478,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             _field.appendSource(builder);
             if (_explicitAliasForColumnName != null)
             {
-                builder.append(" AS ");
+                builder.unsafeAppend(" AS ");
                 _explicitAliasForColumnName.appendSource(builder);
             }
         }

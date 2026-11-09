@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,20 +191,10 @@ public class AliasManager
             String truncatedNums2 = m.decideAlias(nums);
             String truncatedNums3 = m.decideAlias(nums);
 
-            if (dialect.isSqlServer())
-            {
-                assertEquals(125, truncatedNums1.length());
-                assertEquals(126, truncatedNums2.length());
-                assertEquals(126, truncatedNums3.length());
-                assertEquals("X1483201190789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", truncatedNums1);
-            }
-            else
-            {
-                assertEquals(60, truncatedNums1.length());
-                assertEquals(61, truncatedNums2.length());
-                assertEquals(61, truncatedNums3.length());
-                assertEquals("X14832011902345678901234567890123456789012345678901234567890", truncatedNums1);
-            }
+            assertEquals(60, truncatedNums1.length());
+            assertEquals(61, truncatedNums2.length());
+            assertEquals(61, truncatedNums3.length());
+            assertEquals("X14832011902345678901234567890123456789012345678901234567890", truncatedNums1);
 
             // Not an interesting test at the moment since every non-alphanumeric gets replaced with _. But this will
             // become interesting if we start allowing Unicode characters in alias names in the future.

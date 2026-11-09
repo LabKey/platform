@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public abstract class MessageDigest
         AtomicReference<Exception> ref = new AtomicReference<>();
 
         // Issue 45978: Run in a background thread to better simulate being triggered by a timer
-        JobRunner.getDefault().execute(() -> {
+        Future<?> future = JobRunner.getDefault().execute(() -> {
             try
             {
                 Date prev = getLastSuccessful();
@@ -93,7 +93,8 @@ public abstract class MessageDigest
             }
         }, 0);
 
-        JobRunner.getDefault().waitForCompletion();
+        // Don't use JobRunner.waitForCompletion(); it blocks on every job queued on the shared default runner, including SimpleMetricsService's save, which is submitted with a 15 minute delay.
+        future.get();
 
         if (ref.get() != null)
         {
@@ -177,7 +178,7 @@ public abstract class MessageDigest
             {
                 JobDataMap map = context.getJobDetail().getJobDataMap();
                 MessageDigest digest = (MessageDigest)map.get(MESSAGE_DIGEST_KEY);
-                _log.debug("Sending message digest for " + digest.getName());
+                _log.debug("Sending message digest for {}", digest.getName());
                 digest.sendMessageDigest();
             }
             catch(Exception e)

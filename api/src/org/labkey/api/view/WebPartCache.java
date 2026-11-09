@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import java.util.Map;
 public class WebPartCache
 {
     private static final Logger LOG = LogManager.getLogger(WebPartCache.class);
-    private static final Cache<String, Map<String, Portal.PortalPage>> CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Webparts");
+    private static final Cache<String, Map<String, Portal.PortalPage>> CACHE = CacheManager.getCache(String.class, 10000, CacheManager.DAY, "Webparts");
 
     static public Portal.PortalPage getPortalPage(@NotNull Container c, @NotNull String pageId)
     {
@@ -97,7 +97,7 @@ public class WebPartCache
         final CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>();
         Container container = ContainerManager.getForId(containerId);
 
-        SQLFragment selectPages = new SQLFragment("SELECT * FROM ").append(Portal.getTableInfoPortalPages()).append(" WHERE Container = ? ORDER BY \"index\"").add(container);
+        SQLFragment selectPages = new SQLFragment("SELECT * FROM ").append(Portal.getTableInfoPortalPages()).unsafeAppend(" WHERE Container = ? ORDER BY \"index\"").add(container);
         Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
 
         Map<Integer, Portal.PortalPage> pagesByRowId = new IntHashMap<>();       // For webparts to lookup
@@ -106,14 +106,13 @@ public class WebPartCache
             if (null == p.getEntityId())
             {
                 GUID g = new GUID();
-                SQLFragment updateEntityId = new SQLFragment("UPDATE ").append(Portal.getTableInfoPortalPages()).append(" SET EntityId = ? WHERE Container = ? AND RowId = ? AND EntityId IS NULL")
+                SQLFragment updateEntityId = new SQLFragment("UPDATE ").append(Portal.getTableInfoPortalPages()).unsafeAppend(" SET EntityId = ? WHERE Container = ? AND RowId = ? AND EntityId IS NULL")
                     .addAll(g, containerId, p.getRowId());
                 new SqlExecutor(schema).execute(updateEntityId);
                 p.setEntityId(g);
             }
             if (pages.containsKey(p.getPageId()) && null != container)
-                LOG.warn("Page '" + p.getPageId() + "' in container '" + container.getPath() +
-                        "' is duplicated, meaning some expected web parts may be missing. Recommended to remove the page (tab), which should remove one of them, and set web parts as desired.");
+                LOG.warn("Page '{}' in container '{}' is duplicated, meaning some expected web parts may be missing. Recommended to remove the page (tab), which should remove one of them, and set web parts as desired.", p.getPageId(), container.getPath());
             pages.put(p.getPageId(), p);
             pagesByRowId.put(p.getRowId(), p);
         }

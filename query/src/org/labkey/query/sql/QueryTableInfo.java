@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,12 +76,12 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
             if (null == sql)
             {
                 if (!_relation._query.getParseErrors().isEmpty())
-                    throw _relation._query.getParseErrors().get(0);
+                    throw _relation._query.getParseErrors().getFirst();
                 else
                     throw new QueryException("Error generating SQL");
             }
             SQLFragment f = new SQLFragment();
-            f.append("(").append(sql).append(") ").appendIdentifier(alias);
+            f.unsafeAppend("(").append(sql).unsafeAppend(") ").appendIdentifier(alias);
             return f;
         }
     }

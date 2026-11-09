@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class WikiWebPart extends BaseWikiView
         String name = props.get("name");
         name = (name != null) ? name : "default";
 
-        init(c, name);
+        init(c, name, null);
 
         // display edit pencil in frameless webpart
         setShowFloatingCustomBtn(true);

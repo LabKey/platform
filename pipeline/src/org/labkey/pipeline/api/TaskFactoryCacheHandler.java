@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ import java.util.stream.Stream;
         }
         catch (IllegalArgumentException|IllegalStateException e)
         {
-            LOG.warn("Error registering '" + taskId + "' task: " + e.getMessage());
+            LOG.warn("Error registering '{}' task: {}", taskId, e.getMessage());
             return null;
         }
     }
@@ -111,7 +111,7 @@ import java.util.stream.Stream;
         }
         catch (XmlException |IOException e)
         {
-            LOG.error("Error loading task factory '" + taskConfig.getPath() + "':\n" + e.getMessage());
+            LOG.error("Error loading task factory '{}':\n{}", taskConfig.getPath(), e.getMessage());
             return null;
         }
 

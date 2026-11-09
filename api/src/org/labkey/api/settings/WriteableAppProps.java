@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +94,20 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(readOnlyHttpRequestTimeout, timeout);
     }
 
+    public void setScriptExecutionTimeout(int timeout)
+    {
+        if (timeout < 0)
+            throw new IllegalArgumentException("scriptExecutionTimeout must be >= 0");
+        storeIntValue(scriptExecutionTimeout, timeout);
+    }
+
+    public void setAssayTransformScriptTimeout(int timeout)
+    {
+        if (timeout < 0)
+            throw new IllegalArgumentException("assayTransformScriptTimeout must be >= 0");
+        storeIntValue(assayTransformScriptTimeout, timeout);
+    }
+
     public void setMaxBLOBSize(int maxSize)
     {
         if (maxSize < 0)
@@ -104,16 +118,6 @@ public class WriteableAppProps extends AppPropsImpl
     public void setSelfReportExceptions(boolean selfReport)
     {
         storeBooleanValue(selfReportExceptions, selfReport);
-    }
-
-    public void setExt3Required(boolean required)
-    {
-        storeBooleanValue(ext3Required, required);
-    }
-
-    public void setExt3APIRequired(boolean required)
-    {
-        storeBooleanValue(ext3APIRequired, required);
     }
 
     public void setBLASTServerBaseURL(String blastServerBaseURL)
@@ -196,6 +200,13 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(includeServerHttpHeader, b);
     }
 
+    public void setTermsOfUseFrequencySeconds(int seconds)
+    {
+        if (seconds < 0)
+            throw new IllegalArgumentException("termsOfUseFrequencySeconds must be >= 0");
+        storeIntValue(termsOfUseFrequencySeconds, seconds);
+    }
+
     public void setAdministratorContactEmail(String email)
     {
         storeStringValue(administratorContactEmail, email);
@@ -228,11 +239,6 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(allowSessionKeys, b);
     }
 
-    public void setXFrameOption(String option)
-    {
-        storeStringValue(XFrameOption, option);
-    }
-
     public void setExternalRedirectHosts(@NotNull Collection<String> externalRedirectHosts)
     {
         setAllowList(externalRedirectHostURLs, externalRedirectHosts);
@@ -252,6 +258,12 @@ public class WriteableAppProps extends AppPropsImpl
     public void setAllowedExternalResourceHosts(String jsonArray)
     {
         storeStringValue(ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES, jsonArray);
+    }
+
+    /** Uncached, for use only by {@link OptionalFeatureService}; everyone else should call it instead */
+    public static boolean isOptionalFeatureEnabledUncached(String feature)
+    {
+        return ((AppPropsImpl) AppProps.getInstance()).lookupOptionalFeature(feature);
     }
 
     public void setFeatureEnabled(String feature, boolean enabled)

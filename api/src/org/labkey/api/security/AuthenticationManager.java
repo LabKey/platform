@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
@@ -84,6 +86,7 @@ import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -92,6 +95,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -106,6 +110,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -117,6 +123,7 @@ import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -263,6 +270,41 @@ public class AuthenticationManager
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
+    public static boolean isLoginAttemptControlEnabled()
+    {
+        return getAuthSetting(LOGIN_ATTEMPT_ENABLED_KEY, false);
+    }
+
+    public static int getLoginAttemptLimit()
+    {
+        return getAuthenticationProperty(LOGIN_ATTEMPT_LIMIT_KEY, 3);
+    }
+
+    public static int getLoginAttemptPeriod()
+    {
+        return getAuthenticationProperty(LOGIN_ATTEMPT_PERIOD_KEY, 30);
+    }
+
+    public static int getLoginAttemptResetTime()
+    {
+        return getAuthenticationProperty(LOGIN_ATTEMPT_RESET_TIME_KEY, 5);
+    }
+
+    // Convenience method that returns the default value on missing or bad value
+    private static int getAuthenticationProperty(@NotNull String key, int defaultValue)
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String value = props.get(key);
+        try
+        {
+            return value == null ? defaultValue : Integer.parseInt(value);
+        }
+        catch (NumberFormatException e)
+        {
+            return defaultValue;
+        }
+    }
+
     public static @NotNull String getDefaultDomain()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
@@ -291,7 +333,7 @@ public class AuthenticationManager
         saveAuthSetting(user, key, Boolean.toString(value), value ? "enabled" : "disabled");
     }
 
-    private static void saveAuthSetting(User user, String key, String value, String action)
+    public static void saveAuthSetting(User user, String key, String value, String action)
     {
         WritablePropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(key, value);
@@ -306,6 +348,41 @@ public class AuthenticationManager
         map.entrySet().stream()
             .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
             .forEach(e->saveAuthSetting(user, e.getKey(), e.getValue()));
+    }
+
+    // Returns true if any setting changed
+    public static boolean saveLoginAttemptSettings(User user, boolean enabled, int limit, int period, int resetTime)
+    {
+        if (limit < 1 ||  period < 1 || resetTime < 1)
+            throw new IllegalArgumentException("limit, period, and resetTime values must be positive!");
+
+        // Use standard saveAuthSetting() methods to ensure audit logging
+        boolean changed = false;
+        try (Transaction t = DbScope.getLabKeyScope().beginTransaction())
+        {
+            if (enabled != isLoginAttemptControlEnabled())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, enabled);
+                changed = true;
+            }
+            if (limit != getLoginAttemptLimit())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit), "set to " + limit);
+                changed = true;
+            }
+            if (period != getLoginAttemptPeriod())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(period), "set to " + period);
+                changed = true;
+            }
+            if (resetTime != getLoginAttemptResetTime())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(resetTime), "set to " + resetTime);
+                changed = true;
+            }
+            t.commit();
+        }
+        return changed;
     }
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)
@@ -411,7 +488,7 @@ public class AuthenticationManager
     {
         Map<String, Object> config = new HashMap<>();
         config.put("registrationEnabled", isRegistrationEnabled());
-        config.put("requiresTermsOfUse", WikiTermsOfUseProvider.isTermsOfUseRequired(project));
+        config.put("requiresTermsOfUse", WikiTermsOfUseProvider.isTermsOfUseConfigured(project) && AppProps.getInstance().getTermsOfUseFrequencySeconds() == 0);
         config.put("hasOtherLoginMechanisms", hasSSOAuthenticationConfiguration());
         return config;
     }
@@ -477,16 +554,21 @@ public class AuthenticationManager
         public ModelAndView getView(FORM form, BindException errors) throws Exception
         {
             AuthenticationResponse response = validateAuthentication(form, errors);
+            return response.isReauth() ? getReauthView(response, errors) : getAuthView(response, errors);
+        }
 
+        // Normal primary authentication case
+        private ModelAndView getAuthView(AuthenticationResponse response, BindException errors)
+        {
             // Show validation error(s), if any
             if (errors.hasErrors() || !response.isAuthenticated())
             {
                 if (!errors.hasErrors())
-                    errors.addError(new LabKeyError("Bad credentials"));
+                    errors.addError(new LabKeyError(getFailureMessage(response)));
             }
             else
             {
-                HttpServletRequest request = getViewContext().getRequest();
+                HttpServletRequest request = getViewContext().getRequestOrThrow();
 
                 final PrimaryAuthenticationResult primaryResult;
 
@@ -514,6 +596,50 @@ public class AuthenticationManager
             return new SimpleErrorView(errors, false);
         }
 
+        // Most failures can't distinguish a bad password from an unknown user, so they share a deliberately vague
+        // message. reauthNotConfirmed is different: the user's credentials were never in question, so say what actually
+        // went wrong and who can fix it.
+        private String getFailureMessage(AuthenticationResponse response)
+        {
+            return FailureReason.reauthNotConfirmed == response.getFailureReason() ?
+                "Reauthentication failed: your identity provider did not re-verify your credentials. Please contact your administrator." :
+                "Bad credentials";
+        }
+
+        // Reauthentication case for electronic signing and other sensitive operations. Check that reauthentication
+        // was successful and re-auth user matches session user. Not currently verifying that the same authentication
+        // configuration was used to reauthenticate.
+        private ModelAndView getReauthView(AuthenticationResponse response, BindException errors)
+        {
+            String errorMessage = null;
+
+            if (!response.isAuthenticated())
+            {
+                errorMessage = errors.hasErrors() ? errors.getMessage() : "Reauthentication failed";
+            }
+
+            LoginReturnProperties properties = getLoginReturnProperties(getViewContext().getRequestOrThrow());
+
+            // We lost the return URL. Could happen on local session timeout.
+            if (properties == null)
+                throw new NotFoundException("Reauthentication failed");
+
+            URLHelper url = properties.getReturnUrl();
+
+            if (null == url)
+                throw new NotFoundException("Reauthentication failed: no return URL");
+
+            @Nullable User reauthUser = response.isAuthenticated() ? UserManager.getUser(response.getValidEmail()) : null;
+
+            AuthenticationManager.setReauthUser(reauthUser, response.isAuthenticated() ? response.getValidEmail().getEmailAddress() : null, getUser(), getViewContext().getRequestOrThrow(), errorMessage, url);
+
+            // A token on the URL means setReauthUser() accepted the reauthentication.
+            if (null != reauthUser && null != url.getParameter(REAUTH_TOKEN_NAME))
+                AuthenticationManager.auditReauthSuccess(reauthUser, response);
+
+            throw new RedirectException(url);
+        }
+
         @Override
         protected String getCommandClassMethodName()
         {
@@ -539,7 +665,7 @@ public class AuthenticationManager
     public static void registerProvider(AuthenticationProvider authProvider, Priority priority)
     {
         if (Priority.High == priority)
-            _allProviders.add(0, authProvider);
+            _allProviders.addFirst(authProvider);
         else
             _allProviders.add(authProvider);
 
@@ -551,6 +677,12 @@ public class AuthenticationManager
     {
         // Delete any logos attached to the configuration
         AuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+
+        if (null == configuration)
+        {
+            throw new NotFoundException("Unable to delete authentication configuration");
+        }
+
         AttachmentService.get().deleteAttachments(configuration);
 
         // Delete configuration
@@ -588,7 +720,8 @@ public class AuthenticationManager
         return AuthenticationProviderCache.getProvider(ResetPasswordProvider.class, name);
     }
 
-    public static @Nullable DisableLoginProvider getEnabledDisableLoginProviderForUser(String id)
+    // Return a DisableLoginProvider if it's enabled and applicable to this user
+    public static @Nullable DisableLoginProvider getDisableLoginProviderForUser(String id)
     {
         for (DisableLoginProvider provider : AuthenticationProviderCache.getProviders(DisableLoginProvider.class))
             if (provider.isEnabledForUser(id))
@@ -631,18 +764,27 @@ public class AuthenticationManager
 
     public static void setAcceptOnlyFicamProviders(User user, boolean enable)
     {
-        saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
-        AuthenticationConfigurationCache.clear();
+        if (isAcceptOnlyFicamProviders() != enable)
+        {
+            saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
+            AuthenticationProviderCache.clear();
+            AuthenticationConfigurationCache.clear();
+        }
     }
 
-    // Used by start-up properties
-    private static final String AUTHENTICATION_CATEGORY = "Authentication";
+    // Used by start-up properties and upgrade code
+    public static final String AUTHENTICATION_CATEGORY = "Authentication";
 
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String DEFAULT_DOMAIN = "DefaultDomain";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
+
+    public static final String LOGIN_ATTEMPT_ENABLED_KEY = "LoginAttemptEnabled";
+    public static final String LOGIN_ATTEMPT_LIMIT_KEY = "LoginAttemptLimit";
+    public static final String LOGIN_ATTEMPT_PERIOD_KEY = "LoginAttemptPeriod";
+    public static final String LOGIN_ATTEMPT_RESET_TIME_KEY = "LoginAttemptResetTime";
 
     public enum AuthenticationSettings implements StartupProperty
     {
@@ -931,7 +1073,7 @@ public class AuthenticationManager
         {
             BindException errors = new BindException(new Object(), "dummy");
             getStatus().addUserErrorMessage(errors, this, null, null, location);
-            return errors.hasErrors() ? errors.getAllErrors().get(0).getDefaultMessage() : null;
+            return errors.hasErrors() ? errors.getAllErrors().getFirst().getDefaultMessage() : null;
         }
     }
 
@@ -939,7 +1081,7 @@ public class AuthenticationManager
     public static long AUTH_LOGGING_THROTTLE_TTL = TimeUnit.MINUTES.toMillis(10);
 
     /** avoid spamming the audit log **/
-    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(1000, AUTH_LOGGING_THROTTLE_TTL, "Authentication messages");
+    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(String.class, 1000, AUTH_LOGGING_THROTTLE_TTL, "Authentication messages");
 
     public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
@@ -962,13 +1104,23 @@ public class AuthenticationManager
 
     public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnUrl, boolean logFailures) throws InvalidEmailException
     {
+        return authenticate(request, id, password, returnUrl, logFailures, false);
+    }
+
+
+    /**
+     * @param reauth True when reauthenticating an already signed-in user rather than logging one in. See
+     *               {@link #finalizePrimaryAuthentication(HttpServletRequest, AuthenticationResponse, boolean)}.
+     */
+    public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnUrl, boolean logFailures, boolean reauth) throws InvalidEmailException
+    {
         PrimaryAuthenticationResult result = null;
         try
         {
             result = _beforeAuthenticate(request, id, password);
             if (null != result)
                 return result;
-            result = _authenticate(request, id, password, returnUrl, logFailures);
+            result = _authenticate(request, id, password, returnUrl, logFailures, reauth);
             return result;
         }
         finally
@@ -978,7 +1130,7 @@ public class AuthenticationManager
     }
 
 
-    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, final String id, String password, URLHelper returnUrl, boolean logFailures) throws InvalidEmailException
+    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, final String id, String password, URLHelper returnUrl, boolean logFailures, boolean reauth) throws InvalidEmailException
     {
         if (areNotBlank(id, password))
         {
@@ -1002,7 +1154,7 @@ public class AuthenticationManager
 
                 if (authResponse.isAuthenticated())
                 {
-                    return finalizePrimaryAuthentication(request, authResponse);
+                    return finalizePrimaryAuthentication(request, authResponse, reauth);
                 }
                 else
                 {
@@ -1060,13 +1212,13 @@ public class AuthenticationManager
                 if (null != user)
                 {
                     addAuditEvent(user, request, user.getEmail() + message);
-                    _log.warn(user.getEmail() + message);
+                    _log.warn("{}{}", user.getEmail(), message);
                 }
                 else if (null != emailAddress)
                 {
                     // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
                     addAuditEvent(User.guest, request, emailAddress + message);
-                    _log.warn(emailAddress + message);
+                    _log.warn("{}{}", emailAddress, message);
                 }
                 else
                 {
@@ -1099,6 +1251,18 @@ public class AuthenticationManager
 
     @NotNull
     public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, AuthenticationResponse response)
+    {
+        return finalizePrimaryAuthentication(request, response, false);
+    }
+
+    /**
+     * @param reauth True when reauthenticating an already signed-in user rather than logging one in. Suppresses the
+     *               "logged in" audit event: no session is created and the user was already signed in, so recording a
+     *               login misstates what happened. Callers passing true are responsible for recording the
+     *               reauthentication via {@link #auditReauthSuccess(User, AuthenticationResponse)}.
+     */
+    @NotNull
+    public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, AuthenticationResponse response, boolean reauth)
     {
         User user = response.getUser();
         final String emailAddress;
@@ -1158,22 +1322,29 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        addAuditEvent(user, request, emailAddress + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
+        if (!reauth)
+            addAuditEvent(user, request, emailAddress + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
 
         return new PrimaryAuthenticationResult(user, response);
     }
 
     // limit one bad login per second averaged out over 60sec
-    private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
-    private static final Cache<Integer, RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "User limiter");
-    private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Password limiter");
-    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
+    private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(Integer.class, 1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
+    private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(Integer.class, 1001, TimeUnit.MINUTES.toMillis(5), "Password limiter");
+    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, _) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, _) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
-    private static Integer _toKey(String s)
+    private static final Cache<String, RateLimiter> userLimiter = CacheManager.getCache(String.class, 10000, TimeUnit.MINUTES.toMillis(5), "User limiter");
+    private static final CacheLoader<String, RateLimiter> userLoader = (key, _) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
+
+    private static Integer getIntCacheKey(String s)
     {
         return null==s ? 0 : s.toLowerCase().hashCode() % 1000;
+    }
+
+    public static String getEmailCacheKey(String s)
+    {
+        return StringUtils.trimToEmpty(s).toLowerCase();
     }
 
     private static PrimaryAuthenticationResult _beforeAuthenticate(HttpServletRequest request, String id, String pwd)
@@ -1184,12 +1355,12 @@ public class AuthenticationManager
         long delay = 0;
 
         // slow down login attempts when we detect more than 20/minute bad attempts per user, password, or ip address
-        rl = addrLimiter.get(_toKey(request == null ? null : request.getRemoteAddr()));
+        rl = addrLimiter.get(getIntCacheKey(request == null ? null : request.getRemoteAddr()));
         if (null != rl)
-            delay = Math.max(delay,rl.add(0, false));
-         rl = pwdLimiter.get(_toKey(pwd));
+            delay = Math.max(delay, rl.getDelay());
+         rl = pwdLimiter.get(getIntCacheKey(pwd));
         if (null != rl)
-            delay = Math.max(delay, rl.add(0, false));
+            delay = Math.max(delay, rl.getDelay());
 
         try
         {
@@ -1209,7 +1380,7 @@ public class AuthenticationManager
 
     private static long getUserLoginDelay(String id) throws LoginDisabledException
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             return provider.getUserDelay(id);
         return getDefaultUserLoginDelay(id);
@@ -1217,9 +1388,9 @@ public class AuthenticationManager
 
     private static long getDefaultUserLoginDelay(String id)
     {
-        RateLimiter rl = userLimiter.get(_toKey(id));
+        RateLimiter rl = userLimiter.get(getEmailCacheKey(id));
         if (null != rl)
-            return rl.add(0, false);
+            return rl.getDelay();
         return 0;
     }
 
@@ -1230,10 +1401,10 @@ public class AuthenticationManager
         if (result.getStatus() ==  AuthenticationStatus.BadCredentials || result.getStatus() == AuthenticationStatus.InactiveUser)
         {
             RateLimiter rl;
-            rl = addrLimiter.get(_toKey(request.getRemoteAddr()),request, addrLoader);
-            rl.add(1, false);
-            rl = pwdLimiter.get(_toKey(pwd),request, pwdLoader);
-            rl.add(1, false);
+            rl = addrLimiter.get(getIntCacheKey(request.getRemoteAddr()),request, addrLoader);
+            rl.tryAdd(1);
+            rl = pwdLimiter.get(getIntCacheKey(pwd),request, pwdLoader);
+            rl.tryAdd(1);
 
             addUserLoginDelay(request, id);
         }
@@ -1245,14 +1416,14 @@ public class AuthenticationManager
 
     private static void resetModuleUserLoginDelay(String id)
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             provider.resetUserDelay(id);
     }
 
     private static void addUserLoginDelay(HttpServletRequest request, String id)
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             provider.addUserDelay(request, id, 1);
         else
@@ -1261,8 +1432,8 @@ public class AuthenticationManager
 
     private static void addDefaultUserLoginDelay(HttpServletRequest request, String id)
     {
-        RateLimiter rl = userLimiter.get(_toKey(id),request, userLoader);
-        rl.add(1, false);
+        RateLimiter rl = userLimiter.get(getEmailCacheKey(id),request, userLoader);
+        rl.tryAdd(1);
     }
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP). This is for the case
@@ -1478,6 +1649,20 @@ public class AuthenticationManager
         return AUTHENTICATION_PROCESS_PREFIX + PrimaryAuthenticationConfiguration.class.getName() + "$" + configurationId;
     }
 
+    // Session-scoped marker that a forceReauth flow is in progress. Set by LoginApiAction before primary auth and
+    // consumed by handleAuthentication after primary auth succeeds, so the reauth token can be issued without
+    // replacing the existing authenticated session or running the full login completion flow.
+    private record ReauthFlow(boolean local) {}
+
+    private static String getReauthFlowSessionKey()
+    {
+        return AUTHENTICATION_PROCESS_PREFIX + ReauthFlow.class.getName();
+    }
+
+    public static void setReauthFlow(HttpServletRequest request, boolean local)
+    {
+        request.getSession(true).setAttribute(getReauthFlowSessionKey(), new ReauthFlow(local));
+    }
 
     // Clear all primary and secondary authentication results
     public static void clearAuthenticationProcessAttributes(HttpServletRequest request)
@@ -1533,6 +1718,11 @@ public class AuthenticationManager
 
     public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c)
     {
+        return handleAuthentication(request, c, true);
+    }
+
+    public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c, boolean setSession)
+    {
         HttpSession session = request.getSession(true);
         PrimaryAuthenticationResult primaryAuthResult = AuthenticationManager.getPrimaryAuthenticationResult(session);
         User primaryAuthUser;
@@ -1549,6 +1739,22 @@ public class AuthenticationManager
             {
                 return new AuthenticationResult(PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, null));
             }
+        }
+
+        // As per 21 CFR Part 11, reauth only requires primary credentials (email + password), so issue the token
+        // before normal login completion (secondary auth, profile-update redirects, validators, or session replacement).
+        ReauthFlow reauthFlow = (ReauthFlow)session.getAttribute(getReauthFlowSessionKey());
+        if (reauthFlow != null)
+        {
+            session.removeAttribute(getReauthFlowSessionKey());
+            URLHelper url = getAfterReauthURL(c, getLoginReturnProperties(request), primaryAuthUser);
+            setReauthUser(primaryAuthUser, null != primaryAuthUser ? primaryAuthUser.getEmail() : null, reauthFlow.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
+
+            // A token on the URL means setReauthUser() accepted the reauthentication.
+            if (null != url.getParameter(REAUTH_TOKEN_NAME))
+                auditReauthSuccess(primaryAuthUser, primaryAuthResult.getResponse());
+
+            return new AuthenticationResult(primaryAuthUser, url);
         }
 
         List<AuthenticationValidator> validators = new LinkedList<>();
@@ -1599,13 +1805,16 @@ public class AuthenticationManager
         LoginReturnProperties properties = getLoginReturnProperties(request);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
-        // Prep the new session and set the user & authentication-related attributes
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
-
-        if (session.isNew() && !primaryAuthUser.isGuest())
+        if (setSession)
         {
-            // notify the websocket clients a new http session for the user has been started
-            NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+            // Prep the new session and set the user & authentication-related attributes
+            session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
+
+            if (session.isNew() && !primaryAuthUser.isGuest())
+            {
+                // notify the websocket clients a new http session for the user has been started
+                NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+            }
         }
 
         // Set the authentication validators into the new session
@@ -1615,6 +1824,30 @@ public class AuthenticationManager
         SecurityManager.setValidators(session, validators);
 
         return new AuthenticationResult(primaryAuthUser, url);
+    }
+
+    // Builds the URL that receives the reauth token from setReauthUser().
+    // Unlike getAfterLoginURL(), this keeps the caller's return URL even if the user needs a profile update.
+    private static URLHelper getAfterReauthURL(Container current, @Nullable LoginReturnProperties properties, @NotNull User user)
+    {
+        URLHelper returnUrl;
+
+        if (null != properties && null != properties.getReturnUrl())
+        {
+            returnUrl = properties.getReturnUrl();
+        }
+        else
+        {
+            Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
+            returnUrl = !c.hasPermission(user, ReadPermission.class) ? getWelcomeURL() : c.getStartURL(user);
+        }
+
+        if (null != properties && null != properties.getUrlhash())
+        {
+            returnUrl.setFragment(properties.getUrlhash().replace("#", ""));
+        }
+
+        return returnUrl;
     }
 
 
@@ -1658,11 +1891,11 @@ public class AuthenticationManager
 
     public static void registerMetricsProvider()
     {
-        UsageMetricsService.get().registerUsageMetrics(ModuleLoader.getInstance().getCoreModule().getName(), () -> {
-            Map<String, Long> map = AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
+        UsageMetricsService.get().registerUsageMetrics(ModuleLoader.getInstance().getCoreModule().getName(), metrics -> {
+            Supplier<Map<String, Long>> supplier = () -> AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
                 .collect(Collectors.groupingBy(config->config.getAuthenticationProvider().getName(), Collectors.counting()));
 
-            return Collections.singletonMap("authenticationConfigurations", map);
+            return metrics.put("authenticationConfigurations", supplier, "Enabled authentication configurations by provider (Database, LDAP, SAML, CAS, etc.)");
         });
     }
 
@@ -1672,12 +1905,277 @@ public class AuthenticationManager
         return new URLHelper(true);
     }
 
+    public record ReauthContext(User user, Instant expiration)
+    {
+        public boolean isExpired()
+        {
+            return Instant.now().isAfter(expiration());
+        }
+    }
+
+    public static final String REAUTH_TOKEN_NAME = "reauthToken";           // URL parameter name for re-auth token
+    public static final String ERROR_MESSAGE = "errorMessage";              // URL parameter name for error message
+    public static final String REAUTH_TOKEN_MAP_NAME = "reauthTokenSet";    // Session attribute name for token map
+
+    /**
+     * @param reauthUser    Re-auth user to stash in session with the re-auth token
+     * @param assertedEmail Identity asserted by the authentication provider, which is not always resolvable to a user.
+     *                      Only used for diagnostics: when reauthUser is null this is the sole record of what was
+     *                      asserted, since the caller has already discarded the response by the time reauth fails.
+     * @param sessionUser   If not null, validate that this user and reauthUser are the same
+     * @param request       Request from which to retrieve the session
+     * @param errorMessage  Pre-existing error message to add to the URL
+     * @param redirectUrl   URL to which the token (on success) or error message (on failure) gets added
+     */
+    public static void setReauthUser(@Nullable User reauthUser, @Nullable String assertedEmail, @Nullable User sessionUser, HttpServletRequest request, @Nullable String errorMessage, URLHelper redirectUrl)
+    {
+        if (errorMessage == null && sessionUser != null && !sessionUser.equals(reauthUser))
+        {
+            // One condition in code, but three different problems in practice -- sign in as the right user, fix the
+            // IdP's claim mapping, or fix the session cookie -- so each gets a message that says which one it is.
+            if (sessionUser.isGuest())
+            {
+                // The SSO validate actions are @RequiresNoPermission, so getUser() returns guest whenever the request
+                // carries no signed-in session -- typically because the session cookie didn't accompany the IdP's
+                // cross-site POST to the validate action, or because the session timed out mid-flow.
+                // Deliberately does not claim the browser is signed out: the signed-in session usually still exists and
+                // works for same-site requests -- it just didn't accompany this one. Offers both remedies because the
+                // two causes (withheld cookie, expired session) are indistinguishable from here.
+                errorMessage = "Reauthentication failed: this request did not include your signed-in session. Try signing in again; if the problem persists, contact your administrator.";
+                // Names the remedy, not just the symptom: the only person who can act on this reads the server log,
+                // and the property is the same in dev and production even though the file's location is not.
+                _log.warn("Reauthentication failed for \"{}\": the identity provider's cross-site POST to the validate action carried no JSESSIONID, so the request had no signed-in session. Chromium-based browsers withhold a session cookie that has no explicit SameSite value from that POST once the cookie is more than a couple of minutes old. To fix, set server.servlet.session.cookie.same-site=none and server.servlet.session.cookie.secure=true in application.properties -- these require HTTPS -- and restart the server.", null != reauthUser ? reauthUser.getEmail() : "an unrecognized identity");
+            }
+            else if (null == reauthUser)
+            {
+                // Narrow, but sign-in and reauthentication resolve users differently: finalizePrimaryAuthentication()
+                // can auto-create an account, and reauthentication never does. Reaching here means the asserted
+                // identity has no account by the time reauth runs -- deleted or renamed mid-session, or the IdP
+                // asserting a different identifier than it did at sign-in.
+                errorMessage = "Reauthentication failed: the reauthenticated identity does not match a LabKey user account";
+                // The asserted identity is the whole diagnosis here and it appears nowhere else: no user resolved, so
+                // the audit log records nothing and the user-facing message can't name an account that doesn't exist.
+                _log.warn("Reauthentication failed for \"{}\": the identity provider asserted \"{}\", which matches no LabKey user account.", sessionUser.getEmail(), null != assertedEmail ? assertedEmail : "an unrecognized identity");
+            }
+            else
+            {
+                errorMessage = "Reauthentication failed: wrong user reauthenticated";
+                // The only place that knows both identities. The audit log records neither, since no reauthentication
+                // completed, so without this the pairing can't be reconstructed afterward.
+                _log.warn("Reauthentication failed for \"{}\": \"{}\" reauthenticated instead.", sessionUser.getEmail(), reauthUser.getEmail());
+            }
+        }
+
+        if (errorMessage != null)
+        {
+            redirectUrl.addParameter(ERROR_MESSAGE, errorMessage);
+        }
+        else
+        {
+            String reauthToken = GUID.makeHash();
+            redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
+            // The setReauthUser() and getAndClearReauthUser() should be invoked within a second of each other
+            // (browser redirects with no user interaction). Five minute expiration should be more than ample.
+            addToken(request, reauthUser, reauthToken, Instant.now().plus(5, ChronoUnit.MINUTES));
+        }
+    }
+
+    /**
+     * Records that a reauthentication happened. SSO reauth never reaches finalizePrimaryAuthentication(), so it left
+     * no server-side record at all, and local and signing reauth recorded themselves as logins. Mirrors the "logged
+     * in" event's phrasing so the two read alike in the audit log.
+     */
+    public static void auditReauthSuccess(@NotNull User reauthUser, @NotNull AuthenticationResponse response)
+    {
+        // Calls UserManager.addAuditEvent() directly rather than this class's addAuditEvent(), which drops a message
+        // identical to the previous one from the same user and address. Signing several records in a row produces
+        // exactly those identical messages, and dropping them would leave real reauthentications unrecorded.
+        UserManager.addAuditEvent(reauthUser, ContainerManager.getRoot(), reauthUser,
+            reauthUser.getEmail() + " " + UserManager.UserAuditEvent.REAUTHENTICATED + " successfully via " + response.getSuccessDetails() + ".");
+    }
+
+    // Separate method to allow unit testing
+    private static void addToken(HttpServletRequest request, User reauthUser, String reauthToken, Instant expiration)
+    {
+        // Very unlikely to have contention or even multiple elements, and synchronized map is lightweight
+        Map<String, ReauthContext> tokenMap = getTokenMap(request);
+        if (!tokenMap.isEmpty())
+            clearExpiredTokens(tokenMap);
+        tokenMap.put(reauthToken, new ReauthContext(reauthUser, expiration));
+    }
+
+    // Separate method to allow unit testing
+    private static Map<String, ReauthContext> getTokenMap(HttpServletRequest request)
+    {
+        return SessionHelper.getAttribute(request, REAUTH_TOKEN_MAP_NAME, () -> Collections.synchronizedMap(new HashMap<>(5)));
+    }
+
+    /**
+     * Retrieves and validates the re-auth context associated with the provided token. If the token has an associated
+     * context that's not expired and (if requested) the context user matches the provided user, then return the user.
+     * If there's no token, sessionUser is non-null, and the user's authentication configuration has disabled re-auth,
+     * return the session user.
+     * @param request      Request from which to retrieve the session
+     * @param token        Re-auth token to validate
+     * @param sessionUser  If non-null, causes validation that this user matches the reauth user. A null value also
+     *                     suppresses the skip-reauthentication exemption described above, so callers that require
+     *                     proof of an actual reauthentication (e.g. the CAS server's "renew" handling) must pass null.
+     * @return             The re-auth user, if the token is valid and the session user check passes, or the session
+     *                     user if reauthentication is disabled for the user's configuration. Otherwise, null.
+     */
+    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token, @Nullable User sessionUser)
+    {
+        HttpSession session = request.getSession(false);
+
+        if (session != null)
+        {
+            if (!StringUtils.isEmpty(token))
+            {
+                @SuppressWarnings("unchecked")
+                Map<String, ReauthContext> tokenMap = (Map<String, ReauthContext>) session.getAttribute(REAUTH_TOKEN_MAP_NAME);
+
+                if (tokenMap != null)
+                {
+                    clearExpiredTokens(tokenMap);
+                    ReauthContext context = tokenMap.remove(token);
+
+                    if (context != null && !context.isExpired())
+                    {
+                        User reauthUser = context.user();
+
+                        if (sessionUser == null || sessionUser.equals(reauthUser))
+                            return reauthUser;
+                    }
+                }
+            }
+            else if (sessionUser != null) // Skip the CAS IdP case where sessionUser is null
+            {
+                // Potential skip re-auth scenario. If we have a session but no token and the configuration has disabled
+                // re-auth, just return the session user.
+                PrimaryAuthenticationConfiguration<?> config = getConfiguration(session);
+                if (config instanceof AuthenticationConfiguration.SSOAuthenticationConfiguration<?> sso && !sso.isReauthenticationSupported())
+                    return SecurityManager.getSessionUser(request);
+            }
+        }
+
+        return null;
+    }
+
+    // Clear any abandoned tokens
+    private static void clearExpiredTokens(@NotNull Map<String, ReauthContext> tokenMap)
+    {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (tokenMap)
+        {
+            tokenMap.entrySet().removeIf(e -> e.getValue().isExpired());
+        }
+    }
+
+    public static class ReauthTokenTest extends Assert
+    {
+        @Test
+        public void testReauthTokens() throws InterruptedException
+        {
+            HttpServletRequest request = TestContext.get().getRequest();
+            User admin = TestContext.get().getUser();
+            Map<String, ReauthContext> map = getTokenMap(request);
+            clearExpiredTokens(map);
+            // Might have some unexpired tokens stashed away. Assume they won't expire during this test run.
+            int initialCount = map.size();
+            ActionURL url = new ActionURL("core", "begin.view", ContainerManager.getRoot());
+
+            ActionURL clone = url.clone();
+            setReauthUser(admin, admin.getEmail(), admin, request, null, clone);
+            assertEquals(initialCount + 1, map.size());
+            String token = clone.getParameter(REAUTH_TOKEN_NAME);
+            ReauthContext ctx = map.get(token);
+            assertFalse(ctx.isExpired());
+            assertEquals(admin, ctx.user());
+            assertEquals(admin, getAndClearReauthUser(request, token, admin));
+            assertEquals(initialCount, map.size());
+
+            // Try the same token again
+            assertNull(getAndClearReauthUser(request, token, admin));
+            // Try a bogus token
+            assertNull(getAndClearReauthUser(request, "xyz", admin));
+
+            // Wrong user on set case
+            clone = url.clone();
+            setReauthUser(admin, admin.getEmail(), new User(), request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals("Reauthentication failed: wrong user reauthenticated", clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // The remaining cases all fail the same way -- no token, no map entry -- but each reports a different
+            // problem, so assert the exact text. These messages are what an administrator greps for.
+            String noSessionMessage = "Reauthentication failed: this request did not include your signed-in session. Try signing in again; if the problem persists, contact your administrator.";
+            String noAccountMessage = "Reauthentication failed: the reauthenticated identity does not match a LabKey user account";
+
+            // Guest session: the request carried no signed-in session, so getUser() returned guest
+            clone = url.clone();
+            setReauthUser(admin, admin.getEmail(), User.guest, request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals(noSessionMessage, clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Same, with nothing to name in the warning -- covers the "unrecognized identity" fallback, which is
+            // impractical to reach against a live identity provider
+            clone = url.clone();
+            setReauthUser(null, null, User.guest, request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals(noSessionMessage, clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Asserted identity resolves to no LabKey account
+            clone = url.clone();
+            setReauthUser(null, "nobody@labkey.test", admin, request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals(noAccountMessage, clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Same, with no asserted identity to report
+            clone = url.clone();
+            setReauthUser(null, null, admin, request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals(noAccountMessage, clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // A pre-existing error message short-circuits the branch entirely, so the caller's text survives
+            clone = url.clone();
+            setReauthUser(admin, admin.getEmail(), new User(), request, "Reauthentication failed", clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals("Reauthentication failed", clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Wrong user on get case
+            clone = url.clone();
+            setReauthUser(admin, admin.getEmail(), admin, request, null, clone);
+            assertEquals(initialCount + 1, map.size());
+            token = clone.getParameter(REAUTH_TOKEN_NAME);
+            ctx = map.get(token);
+            assertFalse(ctx.isExpired());
+            assertEquals(admin, ctx.user());
+            assertNull(getAndClearReauthUser(request, token, new User()));
+            assertEquals(initialCount, map.size());
+
+            addToken(request, admin, "abc", Instant.now().plus(1, ChronoUnit.SECONDS));
+            addToken(request, admin, "xyz", Instant.now().plus(1, ChronoUnit.SECONDS));
+            addToken(request, admin, "123", Instant.now().plus(1, ChronoUnit.SECONDS));
+            assertEquals(initialCount + 3, map.size());
+
+            // Wait a second then add another one -- tokens above should all get removed
+            Thread.sleep(1000);
+            addToken(request, admin, "foo", Instant.now().plus(10, ChronoUnit.SECONDS));
+            assertEquals(initialCount + 1, map.size());
+            assertEquals(admin, getAndClearReauthUser(request, "foo", admin));
+            assertEquals(initialCount, map.size());
+        }
+    }
 
     // test() method should return true if the authentication is still valid
     public interface AuthenticationValidator extends Predicate<HttpServletRequest>
     {
     }
-
 
     public static class LinkFactory
     {
@@ -1765,7 +2263,7 @@ public class AuthenticationManager
             MockHttpServletRequest req = new MockHttpServletRequest("GET", "/home/project-begin.view")
             {
                 @Override
-                public String getRemoteAddr()
+                public @NotNull String getRemoteAddr()
                 {
                     return remoteAddr[0];
                 }

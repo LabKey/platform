@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,14 @@ import org.labkey.api.assay.DefaultAssaySaveHandler;
  * User: kevink
  * Date: 8/10/14
  */
-public class TsvAssaySaveHandler extends DefaultAssaySaveHandler
+public final class TsvAssaySaveHandler extends DefaultAssaySaveHandler
 {
+    @Override
+    protected boolean isPrepareTransformsSupported()
+    {
+        return true;
+    }
+
     @Override
     public void setProvider(AssayProvider provider)
     {

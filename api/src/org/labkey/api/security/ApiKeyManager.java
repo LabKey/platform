@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
@@ -39,6 +40,15 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.UserManager.SessionHandler;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -60,6 +70,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
@@ -85,9 +96,9 @@ public class ApiKeyManager
      * @param user User to be associated with the new API key.
      * @return An API key that expires after the admin-configured duration
      */
-    public @NotNull String createKey(@NotNull User user, @Nullable String description)
+    public @NotNull String createKey(@NotNull User user, @Nullable String description, @Nullable Class<? extends Role> restrictionRole)
     {
-        return createKey(user, AppProps.getInstance().getApiKeyExpirationSeconds(), description);
+        return createKey(user, AppProps.getInstance().getApiKeyExpirationSeconds(), description, restrictionRole);
     }
 
     /**
@@ -97,6 +108,26 @@ public class ApiKeyManager
      * @return An API key that expires after the specified number of seconds
      */
     public @NotNull String createKey(@NotNull User user, int expirationSeconds, @Nullable String description)
+    {
+        return createKey(user, expirationSeconds, description, null);
+    }
+
+    /**
+     * Create an API key associated with a user and persist it in the database.
+     * @param user User to be associated with the new API key.
+     * @param expirationSeconds Number of seconds until expiration. -1 means no expiration.
+     * @param restrictionRole Role class that limits this API key's permissions. null means no restrictions.
+     * @return An API key that expires after the specified number of seconds
+     */
+    public @NotNull String createKey(@NotNull User user, int expirationSeconds, @Nullable String description, @Nullable Class<? extends Role> restrictionRole)
+    {
+        return createKeyWithRowId(user, expirationSeconds, description, restrictionRole).apiKey();
+    }
+
+    public record CreatedApiKey(@NotNull String apiKey, int rowId) {}
+
+    /** Also returns the new key's RowId, which lets a caller delete the key later via {@link #deleteKey(User, int)} without retaining it */
+    public @NotNull CreatedApiKey createKeyWithRowId(@NotNull User user, int expirationSeconds, @Nullable String description, @Nullable Class<? extends Role> restrictionRole)
     {
         if (user.isGuest())
             throw new IllegalStateException("Can't create an API key for a guest");
@@ -120,13 +151,17 @@ public class ApiKeyManager
         if (description != null)
             map.put("Description", StringUtils.abbreviate(description.trim(), 256));
 
+        if (restrictionRole != null)
+            map.put("RestrictionRole", restrictionRole.getName());
+
+        Map<String, Object> inserted;
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
-            Table.insert(user, CoreSchema.getInstance().getTableAPIKeys(), map);
+            inserted = Table.insert(user, CoreSchema.getInstance().getTableAPIKeys(), map);
             t.commit();
         }
 
-        return apiKey;
+        return new CreatedApiKey(apiKey, asInteger(inserted.get("RowId")));
     }
 
     // Delete a single API key and clear any active sessions that were established using it
@@ -135,19 +170,27 @@ public class ApiKeyManager
         deleteKeys(new SimpleFilter(FieldKey.fromParts("Crypt"), crypt(apiKey)));
     }
 
+    // Delete a single API key by RowId, ignoring keys that belong to other users, and clear any active sessions that were established using it
+    public void deleteKey(@NotNull User user, int rowId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
+        filter.addCondition(FieldKey.fromParts("CreatedBy"), user);
+        deleteKeys(filter);
+    }
+
     // Delete all API keys that match the filter and clear all active sessions that were established using them
     public void deleteKeys(Filter filter)
     {
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
             new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), filter, null)
-                .forEach(ApiKeyAuthentication.class, auth -> deleteKey(auth.getUser(), auth.rowId()));
+                .forEach(ApiKeyAuthentication.class, auth -> deleteKeyAndSessions(auth.getUser(), auth.rowId()));
             t.commit();
         }
     }
 
     // Delete a single API key and clear all active sessions that were established using it
-    private void deleteKey(User user, int rowId)
+    private void deleteKeyAndSessions(User user, int rowId)
     {
         Table.delete(CoreSchema.getInstance().getTableAPIKeys(), rowId);
         UserManager.handleSessionsForUser(user, new SessionHandler()
@@ -183,17 +226,35 @@ public class ApiKeyManager
 
         try (Transaction t = scope.beginTransaction(TRANSACTION_KIND))
         {
-            SQLFragment sql = new SQLFragment("UPDATE " + CoreSchema.getInstance().getTableAPIKeys() + " SET LastUsed = ? WHERE Crypt = ?", new Date(), crypt(apikey));
+            SQLFragment sql = new SQLFragment("UPDATE ")
+                .append(CoreSchema.getInstance().getTableAPIKeys())
+                .unsafeAppend(" SET LastUsed = ? WHERE Crypt = ?")
+                .add(new Date())
+                .add(crypt(apikey));
             new SqlExecutor(scope).execute(sql);
             t.commit();
         }
     }
 
-    public record ApiKeyAuthentication(int createdBy, int rowId)
+    public record ApiKeyAuthentication(int createdBy, int rowId, @Nullable Class<? extends Role> restrictionRole)
     {
-        public User getUser()
+        public @Nullable User getUser()
         {
-            return UserManager.getUser(createdBy());
+            User user = UserManager.getUser(createdBy());
+            if (restrictionRole != null)
+            {
+                Role role = RoleManager.getRole(restrictionRole);
+                if (role == null)
+                {
+                    LOG.error("API key for {} specifies a restriction role {} that was not found", user, restrictionRole.getName());
+                    user = null;
+                }
+                else
+                {
+                    user = new PermissionsRestrictedUser(user, role.getPermissions());
+                }
+            }
+            return user;
         }
     }
 
@@ -212,7 +273,7 @@ public class ApiKeyManager
 
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
-            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId"), filter, null).getObject(ApiKeyAuthentication.class);
+            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId", "RestrictionRole"), filter, null).getObject(ApiKeyAuthentication.class);
             t.commit();
         }
 
@@ -298,6 +359,22 @@ public class ApiKeyManager
             assertNull(ApiKeyManager.get().authenticateFromApiKey(noExpireKey));
         }
 
+        @Test
+        public void testDeleteByRowId()
+        {
+            User user = TestContext.get().getUser();
+            CreatedApiKey created = ApiKeyManager.get().createKeyWithRowId(user, 10, "Created by ApiKeyManager.TestCase", null);
+            ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(created.apiKey());
+            assertNotNull(auth);
+            assertEquals(created.rowId(), auth.rowId());
+
+            ApiKeyManager.get().deleteKey(User.guest, created.rowId());
+            assertNotNull("Another user's key must not be deleted", ApiKeyManager.get().authenticateFromApiKey(created.apiKey()));
+
+            ApiKeyManager.get().deleteKey(user, created.rowId());
+            assertNull(ApiKeyManager.get().authenticateFromApiKey(created.apiKey()));
+        }
+
         @Test(expected = IllegalStateException.class)
         public void testGuest()
         {
@@ -326,6 +403,57 @@ public class ApiKeyManager
 
             ApiKeyManager.get().deleteKey(apikey);
             assertNull(ApiKeyManager.get().authenticateFromApiKey(apikey));
+        }
+
+        private record UserAndKey(User user, String apiKey){}
+
+        @Test
+        public void testRoleRestrictions()
+        {
+            User admin = TestContext.get().getUser();
+            UserAndKey readerUAK = createApiKeyAndRetrieveUser(admin, ReaderRole.class);
+            User reader = readerUAK.user();
+            UserAndKey editorUAK = createApiKeyAndRetrieveUser(admin, EditorRole.class);
+            User editor = editorUAK.user();
+
+            // Locked projects deny everyone but admins, so the restricted keys would fail every check there
+            ContainerManager.getAllChildren(ContainerManager.getRoot(), admin, AdminPermission.class).stream()
+                .filter(child -> null == child.getProject() || !child.getProject().getLockState().isLocked())
+                .limit(5)
+                .forEach(child -> {
+                    String path = child.getPath();
+                    assertTrue(path, child.hasPermission(admin, AdminPermission.class));
+                    assertFalse(path, child.hasPermission(editor, AdminPermission.class));
+                    assertFalse(path, child.hasPermission(reader, AdminPermission.class));
+                    Stream.of(DeletePermission.class, UpdatePermission.class, InsertPermission.class)
+                        .forEach(perm -> {
+                            String message = path + ": " + perm.getSimpleName();
+                            assertTrue(message, child.hasPermission(admin, perm));
+                            assertTrue(message, child.hasPermission(editor, perm));
+                            assertFalse(message, child.hasPermission(reader, perm));
+                        });
+                    assertTrue(path, child.hasPermission(admin, ReadPermission.class));
+                    assertTrue(path, child.hasPermission(editor, ReadPermission.class));
+                    assertTrue(path, child.hasPermission(reader, ReadPermission.class));
+                });
+
+            ApiKeyManager.get().deleteKey(readerUAK.apiKey());
+            ApiKeyManager.get().deleteKey(editorUAK.apiKey());
+            assertNull(ApiKeyManager.get().authenticateFromApiKey(readerUAK.apiKey()));
+            assertNull(ApiKeyManager.get().authenticateFromApiKey(editorUAK.apiKey()));
+        }
+
+        private UserAndKey createApiKeyAndRetrieveUser(User user, Class<? extends Role> restrictionRole)
+        {
+            String apiKey = ApiKeyManager.get().createKey(user, 10, "Created by ApiKeyManager.TestCase", restrictionRole);
+            ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(apiKey);
+            assertNotNull(auth);
+            User restrictedUser = auth.getUser();
+            assertNotNull(restrictedUser);
+            assertEquals(user.getUserId(), restrictedUser.getUserId());
+            assertTrue(restrictedUser instanceof PermissionsRestrictedUser);
+
+            return new UserAndKey(restrictedUser, apiKey);
         }
     }
 

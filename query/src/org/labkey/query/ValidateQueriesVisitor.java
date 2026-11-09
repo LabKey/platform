@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.labkey.query;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.SchemaTreeWalker;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.query.persist.QueryManager;
@@ -84,7 +83,7 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
             {
                 String msg = String.format("Query %s.%s failed validation!", table.getPublicSchemaName(), table.getName());
                 if (logger != null)
-                    logger.warn("VALIDATION ERROR: " + msg, error.getCause());
+                    logger.warn("VALIDATION ERROR: {}", msg, error.getCause());
                 _warnings.add(Pair.of(msg, error.getCause()));
             }
             return false;
@@ -102,7 +101,7 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
         _totalCount++;
         String msg = String.format("Query %s.%s failed validation!", schema.getName(), name);
         if (logger != null)
-            logger.warn("VALIDATION ERROR: " + msg, e);
+            logger.warn("VALIDATION ERROR: {}", msg, e);
         _warnings.add(Pair.of(msg, e));
         return false;
     }

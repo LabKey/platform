@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
@@ -22,7 +37,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.api.ExpProtocolAttachmentType;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.migration.AssaySkipContainers;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
@@ -32,6 +46,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.exp.api.ExpProtocolAttachmentType;
 
 import java.util.Collection;
 import java.util.List;
@@ -135,9 +150,9 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 {
                     SQLFragment newFragment = new SQLFragment("EXISTS (SELECT 1 FROM ")
                         .append(sql.substring(idx, idx + 46))
-                        .append(" WHERE ")
+                        .unsafeAppend(" WHERE ")
                         .append(sql.substring(1, sql.indexOf(" IN ")))
-                        .append(" = Id)");
+                        .unsafeAppend(" = Id)");
                     newFragment.addAll(fragment.getParams());
                     newFragment.addTempTokens(fragment);
                     fragment = newFragment;
@@ -185,7 +200,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             FilterClause replaceByRunIdClause = new SQLClause(
                 new SQLFragment("ReplacedByRunId IS NOT NULL AND ReplacedByRunId IN (SELECT RowId FROM exp.ExperimentRun WHERE ")
                     .append(assayRunClause.toSQLFragment(null, sourceSchema.getSqlDialect()))
-                    .append(")")
+                    .unsafeAppend(")")
             );
 
             // Selects assay runs that were replaced by assay runs that are being excluded because they were replaced
@@ -193,7 +208,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             FilterClause replaceByReplacedRunIdClause = new SQLClause(
                 new SQLFragment("ReplacedByRunId IS NOT NULL AND ReplacedByRunId IN (SELECT RowId FROM exp.ExperimentRun WHERE ")
                     .append(replaceByRunIdClause.toSQLFragment(null, sourceSchema.getSqlDialect()))
-                    .append(")")
+                    .unsafeAppend(")")
             );
 
             // Selects all assay runs that need to be included -- all rows in exp.ExperimentRuns in all copy containers,
@@ -254,9 +269,9 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             case "Alias" -> new SQLClause(
                 new SQLFragment("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
-                    .append(" UNION SELECT Alias FROM exp.DataAliasMap WHERE Container")
+                    .unsafeAppend(" UNION SELECT Alias FROM exp.DataAliasMap WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
-                    .append(")")
+                    .unsafeAppend(")")
             );
             case "MaterialAliasMap" -> new AndClause(
                 new InClause(FieldKey.fromParts("Container"), containers),
@@ -270,7 +285,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             case "ObjectLegacyNames" -> new SQLClause(
                 new SQLFragment("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
-                    .append(")")
+                    .unsafeAppend(")")
             );
             default -> super.getContainerClause(sourceTable, containers);
         };

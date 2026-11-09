@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import java.util.Map;
 public interface DefaultValueService
 {
     String DOMAIN_DEFAULT_VALUE_LSID_PREFIX = "DomainDefaultValue";
+    String USER_DEFAULT_VALUE_LSID_PREFIX = "UserDefaultValue";
 
     static DefaultValueService get()
     {

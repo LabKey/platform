@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
@@ -45,6 +60,7 @@ import java.util.stream.Collectors;
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
+// TODO: replace the mark/read-ahead/reset with LookAheadDataIterator (added for GH Issue 1746)
 public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 {
     public static final String EXISTING_RECORD_COLUMN_NAME = "_" + ExistingRecordDataIterator.class.getName() + "#EXISTING_RECORD_COLUMN_NAME";
@@ -204,7 +220,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
     protected void checkDuplicateKeys(List<String> pkKeys)
     {
-        Object pkKeysObj = pkKeys.size() == 1 ? pkKeys.get(0) : pkKeys;
+        Object pkKeysObj = pkKeys.size() == 1 ? pkKeys.getFirst() : pkKeys;
         if (_pkKeysSeen.contains(pkKeysObj))
             _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + StringUtils.join(pkKeys, ", ")));
         _pkKeysSeen.add(pkKeysObj);
@@ -288,12 +304,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                         container = (String) containerObj;
                 }
 
-                sqlf.append(comma).append("(").appendValue(lastPrefetchRowNumber);
+                sqlf.append(comma).unsafeAppend("(").appendValue(lastPrefetchRowNumber);
                 comma = "\n,";
                 List<String> pkKeys = new ArrayList<>();
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
-                    sqlf.append(",?");
+                    sqlf.unsafeAppend(",?");
                     Object pkVal = pkSuppliers.get(p).get();
 
                     // Issue 52922: Rows with blank key in the file are getting ignored in update from file
@@ -307,26 +323,26 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
                         pkKeys.add(pkVal.toString());
                 }
-                sqlf.append(")");
+                sqlf.unsafeAppend(")");
                 checkDuplicateKeys(pkKeys);
                 rowNumContainers.put(lastPrefetchRowNumber, container);
             }
             while (--rows > 0 && _delegate.next());
 
-            sqlf.append("\n) AS _values_ (_row_number_");
+            sqlf.unsafeAppend("\n) AS _values_ (_row_number_");
             for (int p = 0; p < pkColumns.size(); p++)
-                sqlf.append(",").append("key").appendValue(p);
-            sqlf.append("))\n");
+                sqlf.unsafeAppend(",").unsafeAppend("key").appendValue(p);
+            sqlf.unsafeAppend("))\n");
 
-            sqlf.append("SELECT _key_columns_._row_number_, _target_.* FROM ");
-            sqlf.append("_key_columns_ INNER JOIN ");
+            sqlf.unsafeAppend("SELECT _key_columns_._row_number_, _target_.* FROM ");
+            sqlf.unsafeAppend("_key_columns_ INNER JOIN ");
             sqlf.append(target.getFromSQL("_target_ "));
-            sqlf.append(" ON ");
+            sqlf.unsafeAppend(" ON ");
             String and = "";
             for (int p = 0; p < pkColumns.size(); p++)
             {
                 sqlf.append(and);
-                sqlf.append("(_key_columns_.key").appendValue(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
+                sqlf.unsafeAppend("(_key_columns_.key").appendValue(p).unsafeAppend("=(").append(pkColumns.get(p).getValueSql("_target_")).unsafeAppend("))");
                 and = " AND ";
             }
             return new Pair<>(sqlf, rowNumContainers);

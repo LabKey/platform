@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,7 @@ public class VisitMapImporter
         records.sort(Comparator.comparing(VisitMapRecord::getSequenceNumMin));
 
         // Initialize to less than the smallest min
-        BigDecimal max = records.get(0).getSequenceNumMin().subtract(BigDecimal.ONE);
+        BigDecimal max = records.getFirst().getSequenceNumMin().subtract(BigDecimal.ONE);
 
         for (VisitMapRecord r : records)
         {

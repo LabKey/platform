@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.labkey.study.query;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,7 +79,6 @@ import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
@@ -118,7 +116,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
-import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
@@ -479,7 +476,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             @Override
             public SQLFragment getValueSql(String tableAliasName)
             {
-                return new SQLFragment(String.valueOf(_dsd.getDatasetId()));
+                return new SQLFragment().appendValue(_dsd.getDatasetId());
             }
         };
         datasetId.setHidden(true);
@@ -492,7 +489,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
         addFolderColumn();
 
-        if(OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS) || getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
+        if (getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
         {
             setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
             setAllowedInsertOption(QueryUpdateService.InsertOption.REPLACE);
@@ -720,28 +717,28 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
             if (!includeParticipantVisit)
             {
-                sqlf.append("(SELECT * FROM ");
+                sqlf.unsafeAppend("(SELECT * FROM ");
                 sqlf.append(super.getFromSQL(innerAlias, true));
             }
             else
             {
                 TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-                sqlf.append("(SELECT * FROM (SELECT __DS__.*, __PV__.VisitRowId");
+                sqlf.unsafeAppend("(SELECT * FROM (SELECT __DS__.*, __PV__.VisitRowId");
                 if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
-                    sqlf.append(", __PV__.Day");
+                    sqlf.unsafeAppend(", __PV__.Day");
                 SQLFragment from = getRealTable().getFromSQL("__DS__");
-                sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("__PV__"))
-                        .append("\n" + "    ON __DS__.ParticipantId = __PV__.ParticipantId AND __DS__.SequenceNum = __PV__.SequenceNum");
+                sqlf.unsafeAppend("\n FROM ").append(from).unsafeAppend(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("__PV__"))
+                        .unsafeAppend("\n" + "    ON __DS__.ParticipantId = __PV__.ParticipantId AND __DS__.SequenceNum = __PV__.SequenceNum");
 
                 if (null != getRealTable().getColumn("container"))
                 {
-                    sqlf.append(" AND __PV__.Container = __DS__.Container");
+                    sqlf.unsafeAppend(" AND __PV__.Container = __DS__.Container");
                 }
                 else
                 {
-                    sqlf.append(" AND __PV__.Container = ").appendValue(getContainer());
+                    sqlf.unsafeAppend(" AND __PV__.Container = ").appendValue(getContainer());
                 }
-                sqlf.append(") ").appendIdentifier(innerAlias).append(" ");
+                sqlf.unsafeAppend(") ").appendIdentifier(innerAlias).unsafeAppend(" ");
 
                 Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
                 SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), innerAlias, columnMap);
@@ -767,14 +764,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
                     if (getDataset().getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
                     {
-                        sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+                        sqlf.unsafeAppend(hasWhere ? " AND " : " WHERE ").appendIdentifier(innerAlias).unsafeAppend(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).unsafeAppend(")");
                     }
                     else
                     {
                         // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
-                        if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(), "container"))
+                        if (!Strings.CI.startsWith(sqlCF.getRawSQL(), "container"))
                             throw new IllegalStateException("problem generating dataset SQL");
-                        sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".").append(sqlCF);
+                        sqlf.unsafeAppend(hasWhere ? " AND " : " WHERE ").appendIdentifier(innerAlias).unsafeAppend(".").append(sqlCF);
                         hasWhere = true;
                     }
                 }
@@ -796,8 +793,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
                     // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
                     // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
-                    String sql = StringUtils.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
-                    frag = new SQLFragment(sql, temp.getParams());
+                    String sql = Strings.CS.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
+                    frag = new SQLFragment().setSqlUnsafe(sql).addAll(temp.getParams());
                 }
                 else
                 {
@@ -806,14 +803,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     // participant group filter "ParticipantId/<category> = <group>" filter, we don't join on
                     // ParticipantGroupMap.Container to support project-level shared datasets.
                     frag = new SQLFragment();
-                    frag.append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)");
+                    frag.appendIdentifier(innerAlias).unsafeAppend(".ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)");
                     frag.add(group.getRowId());
                 }
 
-                sqlf.append("\n").append(hasWhere ? "AND " : "WHERE ").append(frag);
+                sqlf.unsafeAppend("\n").unsafeAppend(hasWhere ? "AND " : "WHERE ").append(frag);
             }
 
-            sqlf.append(") AS ").appendIdentifier(alias);
+            sqlf.unsafeAppend(") AS ").appendIdentifier(alias);
         }
 
         return sqlf;
@@ -885,13 +882,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 else
                 {
                     if (overlayMetadataIfExists(_dsd.getLabel(), schema, errors))
-                        LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
+                        LOG.warn("Rename the file - {}.query.xml to - {}", _dsd.getLabel(), _dsd.getName());
                 }
                 if (!tableName.equalsIgnoreCase(_dsd.getName()) && !tableName.equalsIgnoreCase(_dsd.getLabel()))
                 {
                     // TableName different than both name and label, so overlay it if found
                     if (overlayMetadataIfExists(tableName, schema, errors))
-                        LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
+                        LOG.warn("Rename the file - {}.query.xml to - {}", _dsd.getLabel(), _dsd.getName());
                 }
             }
         }

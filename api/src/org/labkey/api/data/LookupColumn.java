@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,37 +175,42 @@ public class LookupColumn extends BaseColumnInfo
             ColumnInfo fk = entry.getKey();
             ColumnInfo pk = entry.getValue().first;
             boolean equalOrIsNull = entry.getValue().second;
-            result.append("\n\t AND ");
+            result.unsafeAppend("\n\t AND ");
             result.append(getJoinCondition(tableAliasName, fk, pk, equalOrIsNull));
         }
-        result.append(")");
+        result.unsafeAppend(")");
         return result;
     }
 
     protected SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk, boolean equalOrIsNull)
     {
+        return getJoinCondition(tableAliasName, fk, getTableAlias(tableAliasName), pk, equalOrIsNull);
+    }
+
+    protected SQLFragment getJoinCondition(String fkTableAlias, ColumnInfo fk, String pkTableAlias, ColumnInfo pk, boolean equalOrIsNull)
+    {
         SQLFragment condition = new SQLFragment();
         if (equalOrIsNull)
-            condition.append("(");
+            condition.unsafeAppend("(");
 
         boolean addCast = fk.getJdbcType() != pk.getJdbcType() && getSqlDialect().isPostgreSQL();
-        SQLFragment fkSql = fk.getValueSql(tableAliasName);
+        SQLFragment fkSql = fk.getValueSql(fkTableAlias);
         if (addCast)
-            condition.append("CAST((").append(fkSql).append(") AS VARCHAR)");
+            condition.unsafeAppend("CAST((").append(fkSql).unsafeAppend(") AS VARCHAR)");
         else
             condition.append(fkSql);
-        condition.append(" = ");
+        condition.unsafeAppend(" = ");
 
-        SQLFragment pkSql = pk.getValueSql(getTableAlias(tableAliasName));
+        SQLFragment pkSql = pk.getValueSql(pkTableAlias);
         if (addCast)
-            condition.append("CAST((").append(pkSql).append(") AS VARCHAR)");
+            condition.unsafeAppend("CAST((").append(pkSql).unsafeAppend(") AS VARCHAR)");
         else
             condition.append(pkSql);
 
         if (equalOrIsNull)
         {
-            condition.append(" OR (").append(fkSql).append(" IS NULL");
-            condition.append(" AND ").append(pkSql).append(" IS NULL))");
+            condition.unsafeAppend(" OR (").append(fkSql).unsafeAppend(" IS NULL");
+            condition.unsafeAppend(" AND ").append(pkSql).unsafeAppend(" IS NULL))");
         }
 
         return condition;
@@ -216,12 +221,9 @@ public class LookupColumn extends BaseColumnInfo
     @SuppressWarnings({"ConstantConditions"})
     public void declareJoins(String baseAlias, Map<String, SQLFragment> map)
     {
-        boolean assertEnabled = false; // needed to generate SQL for logging
-        assert assertEnabled = true;
-
         String colTableAlias = getTableAlias(baseAlias);
 
-        if (assertEnabled || !map.containsKey(colTableAlias))
+        if (!map.containsKey(colTableAlias))
         {
             _foreignKey.declareJoins(baseAlias, map);
             for (ColumnInfo columnInfo : _additionalJoins.keySet())
@@ -229,12 +231,20 @@ public class LookupColumn extends BaseColumnInfo
                 columnInfo.declareJoins(baseAlias, map);
             }
             SQLFragment strJoin = new SQLFragment("\n\t");
-            strJoin.append(_joinType.getSQL());
-            strJoin.append(" JOIN ");
+            TableInfo lookupTable = _lookupKey.getParentTable();
+            if (isLateralJoin())
+            {
+                getSqlDialect().appendLateralJoin(strJoin, _joinType, getLateralLookupSql(lookupTable, colTableAlias, baseAlias));
+            }
+            else
+            {
+                strJoin.append(_joinType.getSQL());
+                strJoin.unsafeAppend(" JOIN ");
 
-            addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias);
-            strJoin.append(" ON ");
-            strJoin.append(getJoinCondition(baseAlias));
+                addLookupSql(strJoin, lookupTable, colTableAlias);
+                strJoin.unsafeAppend(" ON ");
+                strJoin.append(getJoinCondition(baseAlias));
+            }
             SQLFragment sqlJoinPrev = map.get(colTableAlias);
             if (null != sqlJoinPrev)
             {
@@ -245,6 +255,20 @@ public class LookupColumn extends BaseColumnInfo
 
         if (includeLookupJoins())
             _lookupColumn.declareJoins(colTableAlias, map);
+    }
+
+
+    /** When true, the join is a dialect-specific lateral join to {@link #getLateralLookupSql} */
+    protected boolean isLateralJoin()
+    {
+        return false;
+    }
+
+
+    /** @param baseAlias alias of the table on the left-hand side of the join, which the subquery correlates to */
+    protected SQLFragment getLateralLookupSql(TableInfo lookupTable, String alias, String baseAlias)
+    {
+        throw new UnsupportedOperationException();
     }
 
 

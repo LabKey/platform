@@ -19,11 +19,6 @@ package org.labkey.announcements.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
 
-/**
- * User: adam
- * Date: Nov 1, 2006
- * Time: 4:45:34 PM
- */
 public interface Permissions
 {
     boolean allowResponse(AnnouncementModel ann);

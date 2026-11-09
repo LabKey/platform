@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,9 +119,9 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     void setConditionalFormats(List<ConditionalFormat> formats);
 
     @NotNull
-    List<? extends IPropertyValidator> getValidators();
-    void addValidator(IPropertyValidator validator);
-    void removeValidator(IPropertyValidator validator);
+    List<? extends PropertyValidatorDef> getValidators();
+    void addValidator(PropertyValidatorDef validator);
+    void removeValidator(PropertyValidatorDef validator);
     void removeValidator(long validatorId);
 
     void copyFrom(DomainProperty propSrc, Container targetContainer);

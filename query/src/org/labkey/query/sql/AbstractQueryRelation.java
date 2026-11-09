@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2023-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,9 +142,9 @@ public abstract class AbstractQueryRelation implements QueryRelation
         if (null == sql)
             return null;
         SQLFragment ret = new SQLFragment();
-        ret.append("(");
+        ret.unsafeAppend("(");
         ret.append(sql);
-        ret.append(") ");
+        ret.unsafeAppend(") ");
         ret.appendIdentifier(getAlias());
         return ret;
     }
@@ -262,7 +262,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
             assert ref.count() > 0;
             String tableName = getTable().getAlias();
             String columnName = getDialect(this).makeLegalIdentifier(getAlias());
-            return new SQLFragment().appendIdentifier(tableName).append(".").appendIdentifier(columnName);
+            return new SQLFragment().appendIdentifier(tableName).unsafeAppend(".").appendIdentifier(columnName);
         }
 
         abstract void copyColumnAttributesTo(@NotNull BaseColumnInfo to);
@@ -317,7 +317,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
         public int addRef(@NotNull Object refer)
         {
             int i = ref.increment(refer);
-            _log.debug("addRef( " + this.getDebugString() + ", " + refer + " ) = " + i);
+            _log.debug("addRef( {}, {} ) = {}", this.getDebugString(), refer, i);
             return i;
         }
 

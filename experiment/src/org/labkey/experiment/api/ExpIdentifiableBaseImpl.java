@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -178,9 +176,9 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
             // Here we don't apply a container filter and instead rely on the "CpasType" of the associated data.
             // This allows for us to process max counter from all matching results within the provided type.
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT Name\n")
-                    .append("FROM ").append(tableInfo, "i")
-                    .append(" WHERE i.CpasType = ? AND i.NAME")
+                    .unsafeAppend("SELECT Name\n")
+                    .unsafeAppend("FROM ").append(tableInfo, "i")
+                    .unsafeAppend(" WHERE i.CpasType = ? AND i.NAME")
                     .add(dataTypeLsid);
 
             tableInfo.getSqlDialect().appendCaseInsensitiveStartsWith(sql, namePrefix);
@@ -194,11 +192,18 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
             for (String nameSuffix : nameSuffixes)
             {
+                // \d+ admits suffixes beyond Long.MAX_VALUE, so skip any that don't fit so generated sequence won't overflow
                 if (nameSuffix.matches("\\d+"))
                 {
-                    long id = Long.parseLong(nameSuffix);
-                    if (id > max)
-                        max = id;
+                    try
+                    {
+                        long id = Long.parseLong(nameSuffix);
+                        if (id > max)
+                            max = id;
+                    }
+                    catch (NumberFormatException ignored)
+                    {
+                    }
                 }
             }
 

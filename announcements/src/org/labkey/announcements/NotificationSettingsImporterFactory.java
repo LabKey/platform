@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
                 NotificationsType notifications = ctx.getXml().getNotifications();
                 if (notifications.isSetMessagesDefault())
                 {
@@ -70,7 +70,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
                     if (messagesOption != null)
                         AnnouncementManager.saveDefaultEmailOption(ctx.getContainer(), messagesDefault);
                     else
-                        ctx.getLogger().error("Unable to find default messages email option for id " + messagesDefault);
+                        ctx.getLogger().error("Unable to find default messages email option for id {}", messagesDefault);
                 }
                 if (notifications.isSetFilesDefault())
                 {
@@ -79,10 +79,10 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
                     if (filesOption != null)
                         EmailService.get().setDefaultEmailPref(ctx.getContainer(), new FileContentDefaultEmailPref(), String.valueOf(filesDefault));
                     else
-                        ctx.getLogger().error("Unable to find default files email option for id " + filesDefault);
+                        ctx.getLogger().error("Unable to find default files email option for id {}", filesDefault);
 
                 }
-                ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("Done importing {}", getDescription());
             }
         }
 

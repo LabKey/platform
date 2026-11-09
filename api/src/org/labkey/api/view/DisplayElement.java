@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2016 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public abstract class DisplayElement implements View
     /** The permission that the current user must have in order for this element to be rendered (shown as opposed to hidden) */
     private Class<? extends Permission> _displayPermission = ReadPermission.class;
     private boolean _visible = true;
-    private Set<Role> _contextualRoles = null;
+    private @NotNull Set<Role> _contextualRoles = Set.of();
 
     protected StringExpression _caption = null;
     /** Whether the object is considered immutable */
@@ -77,7 +77,7 @@ public abstract class DisplayElement implements View
     public void addContextualRole(Class<? extends Role> role)
     {
         checkLocked();
-        if (null == _contextualRoles)
+        if (_contextualRoles.isEmpty()) // If it's empty, it's unmodifiable
             _contextualRoles = new HashSet<>();
         _contextualRoles.add(RoleManager.getRole(role));
     }

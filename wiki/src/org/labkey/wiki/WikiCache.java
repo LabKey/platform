@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class WikiCache
 {
     private static final String WIKI_COLLECTIONS_KEY = "~~wiki_collections~~";
     private static final boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
-    private static final BlockingCache<String, Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(100000, CacheManager.DAY, "Wikis and wiki collections", null);
+    private static final BlockingCache<String, Object> BLOCKING_CACHE = CacheManager.getBlockingCache(String.class, 100000, CacheManager.DAY, "Wikis and wiki collections", null);
 
     // Passing in Container as "argument" eliminates need to create loader instances when caching collections (but doesn't help with individual wikis)
     public abstract static class WikiCacheLoader<V> implements CacheLoader<String, V>

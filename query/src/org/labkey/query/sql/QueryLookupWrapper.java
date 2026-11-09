@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,11 +148,10 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         _source.setAlias(getAlias() + "Wrapped");
     }
 
-    
     @Override
     public void declareFields()
     {
-        _log.debug("declareFields " + this.toStringDebug());
+        _log.debug("declareFields {}", this.toStringDebug());
 
         _source.declareFields();
     }
@@ -310,7 +309,6 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
     {
         return _selectedColumns.size();
     }
-    
 
     @Override
     public QLWColumn getColumn(@NotNull String name)
@@ -375,7 +373,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
 
 
     @Override
-    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, ColumnType.@NotNull Fk fk, @NotNull String name)
     {
         QLWColumn parent = (QLWColumn)parentRelCol;
         FieldKey k = new FieldKey(parent._key, name);
@@ -442,25 +440,25 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         SqlBuilder sql = new SqlBuilder(getSchema().getDbSchema());
         assert sql.appendComment("<QueryLookupWrapper>");
 
-        sql.append("SELECT ");
-        String comma = "";
+        sql.unsafeAppend("SELECT ");
+        boolean first = true;
         for (RelationColumn col : _selectedColumns.values())
         {
             if (0 == col.ref.count())
                 continue;
-            sql.append(comma);
+            sql.unsafeAppend(first ? "" : ", ");
             if (col instanceof QueryLookupColumn)
                 col.declareJoins(_source.getAlias(), joins);
             SQLFragment f = col.getInternalSql();
-            if (f.getSQL().length() > 40)
-                sql.append("\n").append(f).append("\n");
+            if (f.getSqlCharSequence().length() > 40)
+                sql.unsafeAppend("\n").append(f).unsafeAppend("\n");
             else
                 sql.append(f);
-            sql.append(" AS ");
-            sql.append(col.getAlias());
-            comma = ", ";
+            sql.unsafeAppend(" AS ");
+            sql.appendIdentifier(col.getAlias());
+            first = false;
         }
-        sql.append("\nFROM ");
+        sql.unsafeAppend("\nFROM ");
         sql.append(sourceFromSql);
 
         for (SQLFragment j : joins.values())
@@ -521,7 +519,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         final String _alias;
         ColumnLogging _columnLogging = null;
         PHI _phi;
-        
+
         QLWColumn(AbstractQueryRelation table, FieldKey key, String alias)
         {
             _table = table;

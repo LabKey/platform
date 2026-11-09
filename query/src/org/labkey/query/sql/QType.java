@@ -1,8 +1,24 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.query.QueryParseException;
 
 public class QType extends QExpr
 {
@@ -39,7 +55,17 @@ public class QType extends QExpr
     public void appendSql(SqlBuilder builder, Query query)
     {
         String typeName = builder.getDialect().getSqlTypeName(jdbcType);
-        builder.append(typeName);
+        if (null == typeName)
+        {
+            QueryParseException e = new QueryParseException("Unsupported CAST type: " + jdbcType.name(), null, getLine(), getColumn());
+            if (null != query)
+                query.getParseErrors().add(e);
+            else
+                throw e;
+            builder.appendError();
+            return;
+        }
+        builder.append(builder.getDialect().getSqlTypeNameAsSql(jdbcType));
         Integer len = length;
 
         // SQL Server silently truncates CAST(value AS NVARCHAR) to the first 30 characters.
@@ -50,10 +76,10 @@ public class QType extends QExpr
 
         if (null != len)
         {
-            builder.append("(").appendValue(len);
+            builder.unsafeAppend("(").appendValue(len);
             if (scale != null)
-                builder.append(",").appendValue(scale);
-            builder.append(")");
+                builder.unsafeAppend(",").appendValue(scale);
+            builder.unsafeAppend(")");
         }
     }
 
@@ -69,10 +95,10 @@ public class QType extends QExpr
         builder.append(jdbcType.name());
         if (null != length)
         {
-            builder.append("(").appendValue(length);
+            builder.unsafeAppend("(").appendValue(length);
             if (scale != null)
-                builder.append(",").appendValue(scale);
-            builder.append(")");
+                builder.unsafeAppend(",").appendValue(scale);
+            builder.unsafeAppend(")");
         }
     }
 }

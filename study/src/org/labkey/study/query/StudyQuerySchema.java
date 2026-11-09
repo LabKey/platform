@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Dataset;
@@ -59,6 +59,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -102,7 +103,7 @@ import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_WRAP
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIAL_REQUEST_TABLE_NAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIAL_TABLE_NAME;
 
-public class StudyQuerySchema extends UserSchema implements UserSchema.HasContextualRoles
+public class StudyQuerySchema extends UserSchema implements UserSchema.HasContextualRoles, VisualizationSchema
 {
     public static final String EXPERIMENTAL_STUDY_SUBSCHEMAS = "StudySubSchemas";
 
@@ -210,7 +211,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
     protected Set<String> getSubSchemaNames()
     {
-        if (!AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
+        if (!OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Set.of();
         var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
         if (SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
@@ -261,7 +262,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     @Override
     public Set<String> getTableNames()
     {
-        if (AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
+        if (OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Collections.emptySet();
 
         if (_tableNames == null)
@@ -960,7 +961,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (null != container)
         {
             Container project = container.getProject();
-            if (null != project && project.isDataspace())
+            if (null != project && StudyService.get().isDataspace(project))
                 return true;
         }
         return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,11 +100,5 @@ public class QIdentifier extends QFieldKey
     public boolean equalsNode(QNode other)
     {
         return other instanceof QIdentifier && getIdentifier().equalsIgnoreCase(((QIdentifier) other).getIdentifier());
-    }
-
-    @Override
-    public boolean isConstant()
-    {
-        return false;
     }
 }

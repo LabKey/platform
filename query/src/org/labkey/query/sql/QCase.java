@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,23 +33,23 @@ public class QCase extends QExpr
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append(" CASE ");
+        builder.unsafeAppend(" CASE ");
         for (QNode child : children())
         {
             ((QExpr)child).appendSql(builder, query);
         }
-        builder.append("\nEND");
+        builder.unsafeAppend("\nEND");
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" CASE ");
+        builder.unsafeAppend(" CASE ");
         for (QNode child : children())
         {
             child.appendSource(builder);
         }
-        builder.append("\nEND");
+        builder.unsafeAppend("\nEND");
     }
 
     @Override
@@ -60,7 +60,7 @@ public class QCase extends QExpr
 
         // skip the first expression
         ArrayList<QNode> list = new ArrayList<>(childList());
-        list.remove(0);
+        list.removeFirst();
         return getChildrenSqlType(list);
     }
 

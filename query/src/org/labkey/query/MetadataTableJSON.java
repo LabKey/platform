@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -69,7 +70,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.CALCULATED_CONCEPT_URI;
 
 /**
  * User: jeckels
@@ -82,12 +83,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     private String _definitionFolder;
 
     private static final Logger log = LogHelper.getLogger(MetadataTableJSON.class, "Visual editor support for table/query metadata");
-
-    @Override
-    public boolean isEditable(MetadataColumnJSON field)
-    {
-        return true;
-    }
 
     public boolean isUserDefinedQuery()
     {
@@ -129,7 +124,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             ArrayList<QueryException> errors = new ArrayList<>();
             TablesDocument doc = moduleQueryDef.getParsedMetadata().getTablesDocument(errors);
             if (!errors.isEmpty())
-                throw UnexpectedException.wrap(errors.get(0));
+                throw UnexpectedException.wrap(errors.getFirst());
 
             if (doc != null)
             {
@@ -139,7 +134,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     List<TableType> tableTypes = Collections.singletonList(tables.getTableArray(0));
                     tableInfo.overlayMetadata(tableTypes, schema, errors);
                     if (!errors.isEmpty())
-                        throw UnexpectedException.wrap(errors.get(0));
+                        throw UnexpectedException.wrap(errors.getFirst());
                 }
             }
         }
@@ -158,9 +153,14 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         TableInfo rawTableInfo = getRawTableInfo(schema, queryName, updatedQueryName);
         TablesDocument doc = null;
         TableType xmlTable = null;
+        String savedQueryName = updatedQueryName != null ? updatedQueryName : queryName;
 
         if (queryDef != null)
         {
+            // GH Issue 1736: make sure to put the updated query name into the queryDef
+            if (updatedQueryName != null)
+                queryDef.setName(updatedQueryName);
+
             try
             {
                 doc = parseDocument(queryDef.getMetaData());
@@ -186,7 +186,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             queryDef = new QueryDef();
             queryDef.setSchema(schemaName);
             queryDef.setContainer(container.getId());
-            queryDef.setName(queryName);
+            queryDef.setName(savedQueryName);
         }
 
         if (doc == null)
@@ -198,7 +198,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         {
             TablesType tables = doc.addNewTables();
             xmlTable = tables.addNewTable();
-            xmlTable.setTableName(queryName);
+            xmlTable.setTableName(savedQueryName);
         }
 
         if (xmlTable.getColumns() == null)
@@ -240,7 +240,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 }
                 else if (metadataColumnJSON.getValueExpression() == null)
                 {
-                    log.info("No such column: " + metadataColumnJSON.getName() + " in table: " + schemaName + "." + queryDef.getName() + " in folder: " + container.getName());
+                    log.info("No such column: {} in table: {}.{} in folder: {}", metadataColumnJSON.getName(), schemaName, queryDef.getName(), container.getName());
                 }
             }
 
@@ -380,7 +380,8 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             }
 
             // Set the label
-            if (shouldStoreValue(metadataColumnJSON.getLabel(), rawColumnInfo.getLabel()))
+            // GH Issue 1805: a cleared label arrives as "", which would store an empty title and blank the header
+            if (!StringUtils.isBlank(metadataColumnJSON.getLabel()) && shouldStoreValue(metadataColumnJSON.getLabel(), rawColumnInfo.getLabel()))
             {
                 xmlColumn.setColumnTitle(metadataColumnJSON.getLabel());
             }
@@ -484,7 +485,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                                     fk.setFkColumnName(rawLookupColumnName);
                                 // Issue 48973: don't overwrite existing target FK columns that were set via source
                                 else if (fk.getFkColumnName() == null)
-                                    fk.setFkColumnName(pkCols.get(0));
+                                    fk.setFkColumnName(pkCols.getFirst());
 
                                 if (targetContainer != null)
                                     fk.setFkFolderPath(targetContainer.getPath());
@@ -751,7 +752,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         if (queryDefs != null && !queryDefs.isEmpty())
         {
             // Use the last QueryDef's metadata -- this should be the user's metadata override in the database if it exists
-            QueryDef queryDef = queryDefs.get(queryDefs.size()-1);
+            QueryDef queryDef = queryDefs.getLast();
 
             if (!container.getId().equals(queryDef.getContainerId()))
             {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             {
                 if (FileUtil.deleteDir(analysisDir))
                 {
-                    getLogger().info(String.format("Job '%s' analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), analysisDir));
+                    getLogger().info("Job '{}' analysis directory no longer referenced by any runs and was moved to .deleted: {}", sf.getInfo(), analysisDir);
 
                     // Delete any ExpData remains
                     for (ExpData data : children)
@@ -190,7 +190,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                     {
                         if (FileUtil.deleteDir(parent))
                         {
-                            getLogger().info(String.format("Job '%s' parent analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), parent));
+                            getLogger().info("Job '{}' parent analysis directory no longer referenced by any runs and was moved to .deleted: {}", sf.getInfo(), parent);
                             parent = parent.getParentFile();
                             contents = parent.list();
                         }
@@ -198,7 +198,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                 }
                 else
                 {
-                    getLogger().warn(String.format("Failed to move job '%s' analysis directory to .deleted: %s", sf.getDescription(), analysisDir));
+                    getLogger().warn("Failed to move job '{}' analysis directory to .deleted: {}", sf.getDescription(), analysisDir);
                 }
             }
         }

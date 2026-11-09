@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.labkey.api.util.Pair;
 
 public class PortalBackgroundImageCache
 {
-    private static final BlockingCache<String, CacheableWriter> _cache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.YEAR, "Background Images", null);
+    private static final BlockingCache<String, CacheableWriter> _cache = CacheManager.getBlockingCache(String.class, 10000, CacheManager.YEAR, "Background Images", null);
     private static final ImageLoader _dynamicLoader = new ImageLoader();
 
     public static CacheableWriter getImageWriter(AttachmentParent parent, String imageName)

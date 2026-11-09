@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -232,7 +231,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return RESERVED_NAMES;
     }
@@ -361,20 +360,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             ExpDataClass dataClass = options.getRowId() >= 0 ? ExperimentService.get().getDataClass(options.getRowId()) : null;
             Domain stDomain = dataClass != null ? dataClass.getDomain() : null;
             Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
-            Set<String> existingAliases = new CaseInsensitiveHashSet();
-
-            try
-            {
-                if (dataClass != null)
-                    existingAliases = new CaseInsensitiveHashSet(dataClass.getImportAliases().keySet());
-            }
-            catch (IOException e)
-            {
-                // do nothing
-            }
-
-            final Set<String> finalExistingAliases = existingAliases;
-            ExperimentService.validateParentAlias(aliasMap, reservedNames, finalExistingAliases, updatedDomainDesign, "data class");
+            ExperimentService.validateParentAlias(aliasMap, reservedNames, updatedDomainDesign, "data class");
         }
 
     }
@@ -443,7 +429,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
-        LOG.debug("Getting tableInfo for table " + name);
+        LOG.debug("Getting tableInfo for table {}", name);
         UserSchema schema = new DataClassUserSchema(container, user);
         return schema.getTable(name, cf);
     }

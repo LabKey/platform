@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,34 +30,22 @@ import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.bootstrap.PipelineBootstrapConfig;
+import org.labkey.bootstrap.StartupEnvironment;
 import org.springframework.web.context.ContextLoaderListener;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * @see org.labkey.bootstrap.PipelineBootstrapConfig
- * @see org.labkey.bootstrap.LabKeyBootstrapClassLoader
- */
 public class ContextListener implements ServletContextListener
 {
     // this is among the earliest classes loaded (except for classes loaded via annotations @ClientEndpoint @ServerEndpoint etc)
 
-    // IMPORTANT see also LabKeyBootstrapClassLoader/PipelineBootstrapConfig which duplicates this code, keep them consistent
-    // On startup on some platforms, some modules will die if java.awt.headless is not set to false.
     static
     {
-        String headless = "java.awt.headless";
-        if (System.getProperty(headless) == null)
-            System.setProperty(headless, "true");
-        // On most installs, catalina.home and catalina.base point to the same directory. However, it's possible
-        // to have multiple instances share the Tomcat binaries but have their own ./logs, ./conf, etc. directories
-        // Thus, we want to use catalina.base for our place to find log files.
-        if (LogHelper.getLabKeyLogDir() == null)
-        {
-            // Set this only if the user hasn't overridden it
-            System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
-        }
+        StartupEnvironment.ensureHeadless();
+        // Covers launchers other than LabKeyServer.main, which sets this first
+        PipelineBootstrapConfig.ensureLogHomeSet("logs");
 
         // Adds non-standard TLDs to allowable values for Apache Commons Validator. See Issue 25041. Since this
         // is set statically, it must be called very early, before any reference to UrlValidator occurs. Any
@@ -131,7 +119,7 @@ public class ContextListener implements ServletContextListener
         {
             try
             {
-                log.info("Calling " + listener.getName() + " shutdownPre()");
+                log.info("Calling {} shutdownPre()", listener.getName());
                 listener.shutdownPre();
             }
             catch (Throwable t)
@@ -144,7 +132,7 @@ public class ContextListener implements ServletContextListener
         {
             try
             {
-                log.info("Calling " + listener.getName() + " shutdownStarted()");
+                log.info("Calling {} shutdownStarted()", listener.getName());
                 listener.shutdownStarted();
             }
             catch (Throwable t)

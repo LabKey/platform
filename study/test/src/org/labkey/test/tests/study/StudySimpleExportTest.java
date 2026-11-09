@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.labkey.test.tests.study;
 
 import org.apache.commons.collections4.MapUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -47,6 +48,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.EscapeUtil;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.StudyHelper;
+import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.ext4cmp.Ext4GridRef;
 
@@ -475,7 +477,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     @Test
     public void verifyVisitProperties()
     {
-        String visitLabel = "My visit label";
+        String visitLabel = TestDataGenerator.randomName("My visit label", 5, 5, TRICKY_CHARACTERS, "'").name();
         String visitSeqNumMin = "999.0";
         String visitSeqNumMax = "999.999";
         String visitProtocolDay = "999.001";
@@ -1097,6 +1099,8 @@ public class StudySimpleExportTest extends StudyBaseTest
     @Test
     public void verifySpecimenSettings()
     {
+        Assume.assumeTrue("Specimen module not present", _studyHelper.isSpecimenModulePresent());
+
         final String FOLDER_NAME = "Specimen Settings";
 
         log("Export specimen request settings");

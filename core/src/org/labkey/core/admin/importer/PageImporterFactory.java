@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
 
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 PagesDocument pagesDocXml;
                 String pagesFileName = pagesXml.getFile();
@@ -199,7 +199,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                 // Clear the cache one more time - attempt to avoid race condition on TeamCity
                 WebPartCache.remove(ctx.getContainer());
 
-                ctx.getLogger().info("Done importing " + pageXmls.size() + " page(s) with " + webpartCount + " webpart(s)");
+                ctx.getLogger().info("Done importing {} page(s) with {} webpart(s)", pageXmls.size(), webpartCount);
             }
         }
 

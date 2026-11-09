@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
 
                 if (job != null)
                     job.setStatus("IMPORT " + getDescription());
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 String studyFileName = "study.xml";
                 Container c = ctx.getContainer();
@@ -174,7 +174,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 // the final study import task handles registered study importers like: cohorts, participant comments, categories, etc.
                 StudyImportFinalTask.doImport(job, studyImportContext, errors);
 
-                ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("Done importing {}", getDescription());
             }
         }
 

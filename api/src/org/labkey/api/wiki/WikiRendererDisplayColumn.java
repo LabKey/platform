@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public class WikiRendererDisplayColumn extends DataColumn
                 }
                 catch (IllegalArgumentException err)
                 {
-                    _log.error("Bad wiki renderer type: " + rendererTypeName, err);
+                    _log.error("Bad wiki renderer type: {}", rendererTypeName, err);
                 }
             }
 

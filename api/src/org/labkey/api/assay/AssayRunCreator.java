@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -51,6 +52,18 @@ public interface AssayRunCreator<ProviderType extends AssayProvider>
 
     Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Long batchId, boolean forceAsync, Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails)
             throws ExperimentException, ValidationException;
+    /**
+     * Runs the assay's transform scripts ahead of the import transaction, when the provider supports it, so that
+     * saveExperimentRun only records their output. Call before opening a transaction around saveExperimentRun and
+     * close the result after that transaction ends. Don't call it for an import that will run in a background job.
+     * @return null when nothing ran
+     */
+    default @Nullable PreparedTransform prepareTransform(AssayRunUploadContext<ProviderType> context)
+            throws ExperimentException, ValidationException
+    {
+        return null;
+    }
+
     /**
      * @return the batch to which the run has been assigned
      */

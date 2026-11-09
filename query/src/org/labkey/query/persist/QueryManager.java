@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.labkey.query.persist;
 
-import org.apache.commons.collections4.Bag;
-import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -63,12 +64,15 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.GridViewAuditProvider.GridViewAuditEvent;
+import org.labkey.query.audit.QueryExportAuditProvider;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.net.URISyntaxException;
@@ -428,11 +432,12 @@ public class QueryManager
     // changes in any way (insert/update/delete).
     public void updateExternalSchemas(Container c)
     {
-        QueryService.get().updateLastModified();
         if (null != c)
         {
             ExternalSchemaDefCache.uncache(c);
             ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
+            // GH Issue 1512: a schema reload can change a source-table PK without touching the query row
+            QueryDefinitionImpl.clearHasPkColumnCache();
         }
     }
 
@@ -444,6 +449,7 @@ public class QueryManager
     public void reloadExternalSchema(ExternalSchemaDef def)
     {
         ExternalSchema.uncache(def);
+        QueryDefinitionImpl.clearHasPkColumnCache();
     }
 
     public boolean canInherit(int flag)
@@ -558,14 +564,12 @@ public class QueryManager
 
     public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
-        QueryService.get().updateLastModified();
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryCreated(user, container, scope, schema, queries);
     }
 
     public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
-        QueryService.get().updateLastModified();
         assert checkChanges(property, changes);
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryChanged(user, container, scope, schema, property, changes);
@@ -585,17 +589,17 @@ public class QueryManager
         {
             if (change.getProperty() != property)
             {
-               _log.error(String.format("Property '%s' doesn't match change property '%s'", property, change.getProperty()));
+               _log.error("Property '{}' doesn't match change property '{}'", property, change.getProperty());
                 valid = false;
             }
             if (change.getOldValue() != null && !property.getPropertyClass().isInstance(change.getOldValue()))
             {
-                _log.error(String.format("Old value '%s' isn't an instance of property '%s' class '%s'", change.getOldValue(), property, property.getPropertyClass()));
+                _log.error("Old value '{}' isn't an instance of property '{}' class '{}'", change.getOldValue(), property, property.getPropertyClass());
                 valid = false;
             }
             if (change.getNewValue() != null && !property.getPropertyClass().isInstance(change.getNewValue()))
             {
-                _log.error(String.format("New value '%s' isn't an instance of property '%s' class '%s'", change.getNewValue(), property, property.getPropertyClass()));
+                _log.error("New value '{}' isn't an instance of property '{}' class '{}'", change.getNewValue(), property, property.getPropertyClass());
                 valid = false;
             }
         }
@@ -604,7 +608,6 @@ public class QueryManager
 
     public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
-        QueryService.get().updateLastModified();
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryDeleted(user, container, scope, schema, queries);
     }
@@ -629,21 +632,18 @@ public class QueryManager
 
     public void fireViewCreated(CustomView view)
     {
-        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewCreated(view);
     }
 
     public void fireViewChanged(CustomView view)
     {
-        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewChanged(view);
     }
 
     public void fireViewDeleted(CustomView view)
     {
-        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewDeleted(view);
     }
@@ -1056,34 +1056,84 @@ public class QueryManager
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(moduleName, () -> {
-                Bag<String> bag = DbScope.getDbScopes().stream()
+            svc.registerUsageMetrics(moduleName, metrics -> {
+                String name = "externalDatasources";
+                metrics.put(name, NightlyRecalculatingSuppliers.get(name, () -> {
+                    MultiSet<String> multiSet = DbScope.getDbScopes().stream()
                         .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
-                        .collect(Collectors.toCollection(HashBag::new));
+                        .collect(Collectors.toCollection(HashMultiSet::new));
 
-                Map<String, Object> statsMap = bag.uniqueSet().stream()
-                        .collect(Collectors.toMap(Function.identity(), bag::getCount));
-
-                return Map.of("externalDatasources", statsMap,
-                        "customViewCounts",
-                        Map.of(
-                                "DataClasses", getSchemaCustomViewCounts("exp.data"),
-                                "SampleTypes", getSchemaCustomViewCounts("samples"),
-                                "Assays", getSchemaCustomViewCounts("assay"),
-                                "Inventory", getSchemaCustomViewCounts("inventory")
-                        ),
-                        "customViewWithLineageColumn", getLineageCustomViewMetrics(),
-                        "queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric()
+                    return Collections.unmodifiableMap(multiSet.uniqueSet().stream()
+                        .collect(Collectors.toMap(Function.identity(), multiSet::getCount)));
+                }), "External (non-LabKey) data sources by database product name");
+                metrics.put(
+                    "customViewCounts",
+                    () -> Map.of(
+                        "DataClasses", getSchemaCustomViewCounts("exp.data"),
+                        "SampleTypes", getSchemaCustomViewCounts("samples"),
+                        "Assays", getSchemaCustomViewCounts("assay"),
+                        "Inventory", getSchemaCustomViewCounts("inventory")
+                    ),
+                    "Saved custom views across all containers by schema area (DataClasses, SampleTypes, Assays, Inventory): defaultOverrides (unnamed) and namedViews exclude hidden and snapshot views, inheritable likewise, shared (no owner) and identifyingFieldsViews count all"
                 );
+                metrics.put("customViewWithLineageColumn", QueryManager::getLineageCustomViewMetrics, "Custom views with lineage (input, output, ancestor) columns, hidden and snapshot views excluded: view counts, plus total and min/percentile/max/avg columns per view when any exist");
+                metrics.put("queryDefWithCalculatedFieldsCounts", QueryManager::getCalculatedFieldsCountsMetric, "Query definitions whose metadata defines a calculated field, by schema (assay.* schemas grouped as assay)");
+
+                metrics.put("exportTypeCounts", QueryManager::getExportTypeCountsMetric, "Query export audit events by export type, from the audit log across all folders; \"Excel multi-tab\" approximates multi-tab Excel exports", UsageMetrics.Kind.CUMULATIVE);
+                return metrics;
             });
         }
+    }
+
+    // Issue #1179
+    private static Map<String, Object> getExportTypeCountsMetric()
+    {
+        User adminUser = User.getAdminServiceUser();
+        UserSchema schema = AuditLogService.getAuditLogSchema(adminUser, ContainerManager.getRoot());
+        Map<String, Object> counts = new HashMap<>();
+        if (schema != null)
+        {
+            DbSchema dbSchema = schema.getDbSchema();
+            TableInfo table = schema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT, new ContainerFilter.AllFolders(adminUser));
+            if (table != null)
+            {
+                SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) as ExportCount, Comment FROM ").append(table, "t")
+                        .unsafeAppend(" GROUP BY Comment");
+
+                new SqlSelector(dbSchema, sql)
+                        .getMapCollection().forEach(row -> {
+                            String comment = (String) row.get("Comment");
+                            if (comment == null)
+                                return;
+                            if (comment.startsWith("Exported to "))
+                                comment = comment.substring("Exported to ".length());
+                            if (comment.startsWith("Exported "))
+                                comment = comment.substring("Exported ".length());
+                            counts.put(comment, row.get("ExportCount"));
+                        });
+
+                // This is an approximation of the multi-tab export count. We record an audit log for each tab, and
+                // they are all likely to have the same timestamp. Not exact, but perhaps good enough for current purposes.
+                sql = SQLFragment.unsafe("SELECT COUNT(*) FROM (SELECT *\n" +
+                        "                      FROM (SELECT COUNT(*) as count, DATE_TRUNC('second', Created) as created, CreatedBy\n" +
+                        "                            FROM ").append(table, "t").unsafeAppend("\n" +
+                        "                            WHERE comment = 'Exported to Excel'\n" +
+                        "                            AND CreatedBy IS NOT NULL\n" +
+                        "                            GROUP BY CreatedBy, DATE_TRUNC('second', created)\n" +
+                        "                            ) AS subquery\n" +
+                        "                      WHERE subquery.count > 1) AS multitab");
+                counts.put("Excel multi-tab", new SqlSelector(dbSchema, sql)
+                        .getObject(Long.class));
+            }
+        }
+        return counts;
     }
 
     private static Map<String, Object> getCalculatedFieldsCountsMetric()
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
         return new SqlSelector(dbSchema,
-                new SQLFragment("SELECT \"schema\", COUNT(*) AS count FROM (\n" +
+                SQLFragment.unsafe("SELECT \"schema\", COUNT(*) AS count FROM (\n" +
                         "    SELECT CASE WHEN \"schema\" LIKE 'assay.%' THEN 'assay' ELSE \"schema\" END AS \"schema\" FROM query.querydef WHERE metadata LIKE '%<valueExpression%'\n" +
                         ") AS subquery GROUP BY \"schema\"")
         ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
@@ -1099,29 +1149,29 @@ public class QueryManager
         var schemaField = customView.getColumn("schema").getSelectIdentifier();
         SQLFragment schemaClause;
         if (schema.equalsIgnoreCase("assay"))
-            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).append(" LIKE 'assay.%'");
+            schemaClause = SQLFragment.unsafe("C.").appendIdentifier(schemaField).unsafeAppend(" LIKE 'assay.%'");
         else
-            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).append(" = ").appendValue(schema);
+            schemaClause = SQLFragment.unsafe("C.").appendIdentifier(schemaField).unsafeAppend(" = ").appendValue(schema);
         return Map.of(
                 "defaultOverrides", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags < 2 AND C.name IS NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags < 2 AND C.name IS NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "inheritable", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags = 1")).getObject(Long.class), // inheritable, not hidden, not snapshot
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags = 1")).getObject(Long.class), // inheritable, not hidden, not snapshot
                 "namedViews", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags < 2 AND C.name IS NOT NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.flags < 2 AND C.name IS NOT NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "shared", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.customviewowner IS NULL")).getObject(Long.class),
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.customviewowner IS NULL")).getObject(Long.class),
                 "identifyingFieldsViews", new SqlSelector(dbSchema,
-                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.name = '~~identifyingfields~~'")).getObject(Long.class)
+                        SQLFragment.unsafe("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).unsafeAppend(" AND C.name = '~~identifyingfields~~'")).getObject(Long.class)
         );
     }
 
 
     private static Long percentile(double percentile, List<Long> sortedCounts) {
         if (percentile <= 0.01)
-            return sortedCounts.get(0);
+            return sortedCounts.getFirst();
         if (percentile >= 99.99)
-            return sortedCounts.get(sortedCounts.size() - 1);
+            return sortedCounts.getLast();
         return sortedCounts.get((int) Math.round(percentile / 100.0 * (sortedCounts.size() - 1)));
     }
 
@@ -1156,7 +1206,7 @@ public class QueryManager
         DbSchema schema = DbSchema.get("query", DbSchemaType.Module);
         SqlDialect sqlDialect = schema.getSqlDialect();
         SQLFragment sql = new SQLFragment()
-                .append("SELECT columns FROM query.customview WHERE flags < 2 AND (columns LIKE ? OR columns LIKE ? OR columns LIKE ?)")
+                .unsafeAppend("SELECT columns FROM query.customview WHERE flags < 2 AND (columns LIKE ? OR columns LIKE ? OR columns LIKE ?)")
                 .add("%" + sqlDialect.encodeLikeOpSearchString("Ancestors%2F") + "%")
                 .add("%" + sqlDialect.encodeLikeOpSearchString("Inputs%2F") + "%")
                 .add("%" + sqlDialect.encodeLikeOpSearchString("Outputs%2F") + "%");

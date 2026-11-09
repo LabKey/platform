@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,6 @@ package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
 
-/**
- * User: adam
- * Date: Jul 8, 2010
- * Time: 10:44:59 AM
- */
 public interface Tracking
 {
     String getDebugName();

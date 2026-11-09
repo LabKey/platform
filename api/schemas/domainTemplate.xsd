@@ -46,6 +46,15 @@
                     <xs:field xpath="@columnName"/>
                 </xs:unique>
             </xs:element>
+            <xs:element name="reservedColumnNames" type="ColumnList" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation xml:lang="en">
+                        Additional column names that should be considered reserved by the DomainKind for any
+                        domain created from this template. These names are unioned with the DomainKind's
+                        statically reserved set.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="indices" type="IndicesType" minOccurs="0" maxOccurs="1" />
             <xs:element name="initialData" type="InitialDataType" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>

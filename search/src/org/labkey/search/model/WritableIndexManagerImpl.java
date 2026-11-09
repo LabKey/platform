@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.search.SearchModule;
+import org.labkey.search.SearchMetricArea;
 import org.quartz.DateBuilder;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
@@ -76,6 +76,9 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     private final IndexWriter _iw;
 
     private boolean _closed = false;
+
+    // For manual testing only: set via the debugger to make every index() call throw this exception
+    static volatile RuntimeException _testIndexFailure = null;
 
     static
     {
@@ -148,10 +151,18 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     @Override
     public void index(String id, Document doc) throws IOException
     {
+        RuntimeException testFailure = _testIndexFailure;
+        if (testFailure != null)
+            throw testFailure;
+
         synchronized (_writerLock)
         {
+            IndexWriter iw = getIndexWriter();
+            // A major failure, such as in a background merge, closes the writer on its own
+            if (!iw.isOpen())
+                throw new AlreadyClosedException("this IndexWriter is closed", iw.getTragicException());
             deleteDocument(id);
-            getIndexWriter().addDocument(doc);
+            iw.addDocument(doc);
             maybeRefresh(); // Make this document immediately available for searching (i.e., near-real-time searching), see #39330
         }
     }
@@ -189,19 +200,19 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (AlreadyClosedException e)
         {
-            if (e.getCause() instanceof IOException && e.getCause().getMessage() != null && e.getCause().getMessage().equalsIgnoreCase("No space left on device"))
+            if (isDiskFull(e))
             {
                 throw new ConfigurationException("Unable to write to search index, Disk is full", e);
             }
             else
             {
                 _log.error("Indexing error deleting {} indexer is already closed", StringUtils.trimToEmpty(currentId), e);
-                SimpleMetricsService.get().increment(SearchModule.NAME,"Delete", "IndexAlreadyClosed");
+                SimpleMetricsService.get().increment(SearchMetricArea.DELETE, "IndexAlreadyClosed");
             }
         }
         catch (Throwable e)
         {
-            _log.error("Indexing error deleting " + StringUtils.trimToEmpty(currentId), e);
+            _log.error("Indexing error deleting {}", StringUtils.trimToEmpty(currentId), e);
             ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
@@ -220,7 +231,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (AlreadyClosedException e)
         {
-            if (e.getCause() instanceof IOException && e.getCause().getMessage().equalsIgnoreCase("No space left on device"))
+            if (isDiskFull(e))
             {
                 throw new ConfigurationException("Unable to write to search index, Disk is full", e);
             }
@@ -231,6 +242,11 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         {
             // Configuration was changed
         }
+    }
+
+    static boolean isDiskFull(AlreadyClosedException e)
+    {
+        return e.getCause() instanceof IOException && "No space left on device".equalsIgnoreCase(e.getCause().getMessage());
     }
 
     @Override

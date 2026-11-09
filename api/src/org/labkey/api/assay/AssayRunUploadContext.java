@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.assay.transform.PendingFileAudit;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -36,7 +38,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -170,6 +172,34 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     TransformResult getTransformResult();
 
     void setTransformResult(TransformResult result);
+
+    /** Whether this context can carry transform output prepared before the import transaction. */
+    default boolean supportsPreparedTransform()
+    {
+        return false;
+    }
+
+    /** Transform output prepared before the import transaction, for run creation to record. */
+    default @Nullable PreparedTransform getPreparedTransform()
+    {
+        return null;
+    }
+
+    default void setPreparedTransform(@Nullable PreparedTransform prepared)
+    {
+        throw new UnsupportedOperationException(getClass().getName() + " can't carry a prepared transform");
+    }
+
+    /** Audits of files saved while a transform is prepared, or null to add each event as its file is saved. */
+    default @Nullable List<PendingFileAudit> getPendingFileAudits()
+    {
+        return null;
+    }
+
+    /** Contexts that can't hold audits ignore this and add each event as its file is saved. */
+    default void setPendingFileAudits(@Nullable List<PendingFileAudit> audits)
+    {
+    }
 
     /** The RowId for the run that is being deleted and reuploaded, or null if this is a new run */
     Long getReRunId();

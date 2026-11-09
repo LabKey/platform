@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,14 @@
 
 package org.labkey.api.security;
 
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionBindingEvent;
+import jakarta.servlet.http.HttpSessionBindingListener;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
@@ -31,14 +39,6 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SessionHelper;
 
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.HttpSessionBindingEvent;
-import jakarta.servlet.http.HttpSessionBindingListener;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -55,15 +55,12 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * User: matthewb
- * Date: Feb 5, 2009
- */
 public class AuthenticatedRequest extends HttpServletRequestWrapper implements AutoCloseable
 {
     private static final Logger _log = LogManager.getLogger(AuthenticatedRequest.class);
 
     private final User _user;
+
     private boolean _loggedIn;
     private HttpSession _session = null;
 
@@ -76,9 +73,15 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
 
     private AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull User user)
     {
-        super(request instanceof AuthenticatedRequest ? (HttpServletRequest)((AuthenticatedRequest)request).getRequest() : request);
+        super(request instanceof AuthenticatedRequest authRequest ? authRequest.getRequest() : request);
         _user = user;
         _loggedIn = !_user.isGuest();
+    }
+
+    @Override
+    public HttpServletRequest getRequest()
+    {
+        return (HttpServletRequest)super.getRequest();
     }
 
     @Override
@@ -216,7 +219,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
             }
             if (s.isNew())
             {
-                _log.debug("Created HttpSession: " + s.getId() + " " + _user.getEmail());
+                _log.debug("Created HttpSession: {} {}", s.getId(), _user.getEmail());
             }
             return s;
         }
@@ -334,7 +337,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         public void setAttribute(String s, Object o)
         {
             if (_log.isDebugEnabled())
-                _log.debug("Session.setAttribute(" + s + ", " + o + ")");
+                _log.debug("Session.setAttribute({}, {})", s, o);
             if (null==_real)
                 _attributes.put(s, o);
             else
@@ -465,7 +468,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
     }
 
     // helper to avoid filling the _log
-    private static final Cache<String, String> logMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(5), "Guest session messages");
+    private static final Cache<String, String> logMessages = CacheManager.getCache(String.class, 100, TimeUnit.MINUTES.toMillis(5), "Guest session messages");
 
     private static void _logGuestSession(String ip, String msg)
     {

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2019-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.test.tests.experiment;
 
 import org.jetbrains.annotations.Nullable;
@@ -259,8 +274,8 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
                         .findElement(runsTable.findCell(0, "Properties")));
 
         assertEquals("Embedded properties table", expectedProperties, propertiesTable.getTableData());
-        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", propValueLab, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0));
-        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", labLocation, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0));
+        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", propValueLab, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).getFirst());
+        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", labLocation, runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).getFirst());
     }
 
     private DataRegionTable createListForVocabPropertyLookup(String listName) throws IOException, CommandException

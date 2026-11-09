@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ public class QPivot extends QNode
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("PIVOT ");
+        builder.unsafeAppend("PIVOT ");
         List<QNode> children = childList();
 
         if (children.isEmpty())
             return;
-        QNode exprList = children.get(0);
+        QNode exprList = children.getFirst();
         // NO PARENS
         for (QNode child : exprList.children())
         {
@@ -59,7 +59,7 @@ public class QPivot extends QNode
 
         if (children.size() < 3)
             return;
-        builder.append(" IN " );
+        builder.unsafeAppend(" IN " );
         exprList = children.get(2);
         // PARENS OK
         exprList.appendSource(builder);

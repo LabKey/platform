@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
@@ -38,6 +39,7 @@ import java.util.List;
 public interface PlateService
 {
     long NO_RUNID = -1;
+    String DEPRECATE_PRIMARY_PLATE_SET_FLAG = "primaryPlateSets";
 
     class NameConflictException extends Exception
     {
@@ -68,6 +70,12 @@ public interface PlateService
      * @return A plate instance object with the applied data.
      */
     @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells, long runId, int plateNumber);
+
+    /**
+     * Instantiates a new plate instance whose well group statistics come from the run's stored DilutionData.
+     * This plate is not persisted to the database.
+     */
+    @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells, @NotNull ExpRun run, int plateNumber);
 
     /**
      * Instantiates a new plate instance based on the specified plate and well data.
@@ -240,7 +248,6 @@ public interface PlateService
      * @param percentCalculator A callback to allow the caller to determine the plottable value for a given WellData within its WellGroup.
      * @param type The Type of fit desired.
      * @return A DilutionCurve instance of the appropriate type, if a fit was possible.
-     * @throws FitFailedException Thrown if a curve cannot be fit to the data points.
      */
     DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException;
 
@@ -272,5 +279,10 @@ public interface PlateService
          * @return A valid and complete ActionURL if the plate is recognized, or null if it is not.
          */
         ActionURL getDetailsURL(Plate plate);
+    }
+
+    static boolean isPrimaryPlateSetsEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(DEPRECATE_PRIMARY_PLATE_SET_FLAG);
     }
 }

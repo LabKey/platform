@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,12 @@ public abstract class Job implements Future<Object>, Runnable
         //MemTracker.getInstance().put(this);
     }
 
+    /** What the runners call. Override to wrap run() in work its overrides can't skip. */
+    public void runJob()
+    {
+        run();
+    }
+
     protected void starting(Thread t)
     {
     }
@@ -45,7 +51,7 @@ public abstract class Job implements Future<Object>, Runnable
     protected void done(Throwable t)
     {
         if (null != t)
-            JobRunner._log.error("Uncaught exception in Job: " + this, t);
+            JobRunner._log.error("Uncaught exception in Job: {}", this, t);
     }
 
     //

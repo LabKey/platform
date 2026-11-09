@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class ValidateDomainsPipelineJob extends PipelineJob
         setStatus(TaskStatus.running);
         getLogger().info("Starting to check domains");
         StorageProvisioner.ProvisioningReport pr = StorageProvisioner.get().getProvisioningReport();
-        getLogger().info(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
+        getLogger().info("{} domains use Storage Provisioner", pr.getProvisionedDomains().size());
         int errorCount = 0;
         for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
         {
@@ -85,7 +85,7 @@ public class ValidateDomainsPipelineJob extends PipelineJob
             errorCount++;
             getLogger().error(error);
         }
-        getLogger().info("Check complete, " + errorCount + " errors found");
+        getLogger().info("Check complete, {} errors found", errorCount);
         setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
     }
 }

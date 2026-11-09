@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2017 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -290,7 +290,7 @@ public class RserveScriptEngine extends RScriptEngine
 
 
     @Override
-    public Object eval(String script, ScriptContext context) throws ScriptException
+    protected Object evalScript(String script, ScriptContext context) throws ScriptException
     {
         List<String> extensions = getFactory().getExtensions();
         RConnection rconn = null;
@@ -311,10 +311,13 @@ public class RserveScriptEngine extends RScriptEngine
             // if we have a session in the bindings then the connection holder better be there and marked as in use
             //
             assert (rh!=null) && (rh.isInUse());
-            LOG.info("Reusing RServe connection in use: " + rh.isInUse());
+            LOG.info("Reusing RServe connection in use: {}", rh.isInUse());
         }
 
-        FileLike scriptFile = prepareScriptFile(script, context, extensions);
+        // GitHub Issue #1130: capture the packages the script loaded (see RScriptEngine.getPackageCaptureEpilog). This
+        // has to run inside the script rather than as an exit hook, because the R session on the remote outlives the
+        // script and so wouldn't shut down until after copyWorkingDirectoryFromRemote() below.
+        FileLike scriptFile = prepareScriptFile(appendPackageCaptureEpilog(script, context), context, extensions);
 
         try
         {
@@ -324,7 +327,7 @@ public class RserveScriptEngine extends RScriptEngine
             copyWorkingDirectoryToRemote(rconn);
 
             String remoteInputFile = getInputFilename(scriptFile);
-            LOG.debug("Executing remote script '" + remoteInputFile + "'...");
+            LOG.debug("Executing remote script '{}'...", remoteInputFile);
             String cmdFormat = RReport.DEFAULT_RSERVE_CMD;
 
             // override our rserve invocation command if the exeCommand property is supplied in the engine definition
@@ -332,12 +335,16 @@ public class RserveScriptEngine extends RScriptEngine
                 cmdFormat = _def.getExeCommand();
 
             String rserveCmd = String.format(cmdFormat, remoteInputFile);
-            LOG.debug("Evaluating command:  " + rserveCmd);
+            LOG.debug("Evaluating command:  {}", rserveCmd);
             String output = eval(rconn, rserveCmd);
-            LOG.debug("Executed remote script '" + scriptFile + "' successfully");
+            LOG.debug("Executed remote script '{}' successfully", scriptFile);
 
             // no logging here, because this is a no-op by default
             copyWorkingDirectoryFromRemote(rconn);
+
+            // GitHub Issue #1130: only reached when the script succeeded, and has to follow the copy above so the
+            // sidecar file the epilog wrote on the remote is available locally
+            recordPackageUsage(context);
 
             return output;
         }
@@ -505,12 +512,12 @@ public class RserveScriptEngine extends RScriptEngine
         if (pathMap != null && !pathMap.getURIPathMap().isEmpty())
         {
             URI remoteURI = pathMap.localToRemote(localURI);
-            LOG.debug("Mapped path '" + localURI + "' ==> '" + remoteURI + "'");
+            LOG.debug("Mapped path '{}' ==> '{}'", localURI, remoteURI);
             return remoteURI;
         }
         else
         {
-            LOG.warn("No path mapping configured; using localURI '" + localURI + "' on remote RServe");
+            LOG.warn("No path mapping configured; using localURI '{}' on remote RServe", localURI);
         }
         return localURI;
     }
@@ -540,7 +547,7 @@ public class RserveScriptEngine extends RScriptEngine
         String workingDir = getRWorkingDir(context);
         if (workingDir != null)
         {
-            LOG.debug("Setting RServe working directory to '" + workingDir + "'");
+            LOG.debug("Setting RServe working directory to '{}'", workingDir);
             eval(rconn, "setwd(" + toR(workingDir) + ")\n");
         }
 
@@ -563,12 +570,12 @@ public class RserveScriptEngine extends RScriptEngine
                 //
                 // get a new connection (will HANG on a windows server)
                 //
-                LOG.debug("Creating new RServe connection to " + _def.getMachine() + ":" + _def.getPort());
+                LOG.debug("Creating new RServe connection to {}:{}", _def.getMachine(), _def.getPort());
                 rconn = new RConnection(_def.getMachine(), _def.getPort());
 
                 if (rconn.needLogin())
                 {
-                    LOG.debug("Logging in to RServe as '" + _def.getUser() + "'");
+                    LOG.debug("Logging in to RServe as '{}'", _def.getUser());
                     String password = _def.getPassword();
                     if (password == null)
                     {

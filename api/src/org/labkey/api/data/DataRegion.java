@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Aggregate.Result.FormattedValue;
 import org.labkey.api.query.AggregateRowConfig;
+import org.labkey.api.query.ChartDesignerUrls;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -48,6 +49,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM;
@@ -73,7 +75,6 @@ import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.HtmlWriter.AttributeValue;
 import org.springframework.validation.Errors;
@@ -81,7 +82,6 @@ import org.springframework.validation.Errors;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -190,6 +190,7 @@ public class DataRegion extends DisplayElement
     private boolean _horizontalGroups = true;
     private boolean _errorCreatingResults = false;
     private Long _totalRows = null; // total rows in the query or null if unknown
+    private boolean _totalRowsCapped = false; // true when _totalRows was capped at maxCount rather than counted exactly
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
     private boolean _buttonBarRendered = false;
@@ -852,16 +853,8 @@ public class DataRegion extends DisplayElement
 
                     newAggregates.add(Aggregate.createCountStar());
                     _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
-                    List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
-
-                    //Issue 14863: add null check
-                    if (result != null && !result.isEmpty())
-                    {
-                        Aggregate.Result countStarResult = result.get(0);
-                        _totalRows = 0L;
-                        if (countStarResult.getValue() instanceof Number)
-                            _totalRows = ((Number) countStarResult.getValue()).longValue();
-                    }
+                    // The cap only takes effect when count star is the sole aggregate (same precondition as the SELECT 1 optimization), so it never truncates a summary-stat query.
+                    setTotalRowsFromCountStar(_aggregateResults.remove(Aggregate.STAR), baseAggregates.isEmpty());
                 }
             }
             else
@@ -875,6 +868,49 @@ public class DataRegion extends DisplayElement
         }
 
         return _aggregateResults;
+    }
+
+    /** Sets the total row count from a COUNT(*) aggregate alone, without selecting any rows. */
+    public void loadTotalRowsOnly(RenderContext ctx)
+    {
+        if (!hasPermission(ctx, ReadPermission.class))
+            throw new UnauthorizedException();
+
+        TableInfo table = getTable();
+        if (null == table)
+            throw new NotFoundException("Table or query not found: " + getSettings().getQueryName());
+
+        DataRegion oldRegion = ctx.getCurrentRegion();
+        ctx.setCurrentRegion(this);
+        try
+        {
+            Map<String, List<Aggregate.Result>> aggregates = ctx.getAggregates(_displayColumns, table, getSettings(), getName(), List.of(Aggregate.createCountStar()), getQueryParameters(), isAllowAsync());
+            setTotalRowsFromCountStar(aggregates.get(Aggregate.STAR), true);
+            _aggregateResults = Collections.emptyMap();
+        }
+        finally
+        {
+            ctx.setCurrentRegion(oldRegion);
+        }
+    }
+
+    private void setTotalRowsFromCountStar(@Nullable List<Aggregate.Result> result, boolean allowCap)
+    {
+        //Issue 14863: add null check
+        if (result == null || result.isEmpty())
+            return;
+
+        Aggregate.Result countStarResult = result.getFirst();
+        _totalRows = 0L;
+        if (countStarResult.getValue() instanceof Number n)
+            _totalRows = n.longValue();
+
+        int maxCount = getSettings() != null ? getSettings().getMaxCount() : 0;
+        if (allowCap && maxCount > 0 && _totalRows > maxCount)
+        {
+            _totalRows = (long) maxCount;
+            _totalRowsCapped = true;
+        }
     }
 
     @NotNull
@@ -891,6 +927,11 @@ public class DataRegion extends DisplayElement
     public Long getTotalRows()
     {
         return _totalRows;
+    }
+
+    public boolean isTotalRowsCapped()
+    {
+        return _totalRowsCapped;
     }
 
     public void setTotalRows(Long totalRows)
@@ -1421,7 +1462,7 @@ public class DataRegion extends DisplayElement
         dataRegionJSON.put("rowCount", _rowCount);
         dataRegionJSON.put("showPagination", getShowPagination());
         dataRegionJSON.put("showPaginationCount", getShowPaginationCount());
-        if (getShowPaginationCount() && AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
+        if (getShowPaginationCount() && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
         {
             // Issue 51036: load totalRows count async for DataRegions
             dataRegionJSON.put("showPaginationCount", false);
@@ -1450,9 +1491,9 @@ public class DataRegion extends DisplayElement
             ignoreViewFilter = getSettings().getIgnoreViewFilter();
         dataRegionJSON.put("ignoreViewFilter", ignoreViewFilter);
 
-        VisualizationUrls visUrlProvider = PageFlowUtil.urlProviderOptional(VisualizationUrls.class);
-        if (visUrlProvider != null)
-            dataRegionJSON.put("chartWizardURL", visUrlProvider.getGenericChartDesignerURL(ctx.getContainer(), user, getSettings(), null));
+        ChartDesignerUrls chartUrls = PageFlowUtil.urlProviderOptional(ChartDesignerUrls.class);
+        if (chartUrls != null)
+            dataRegionJSON.put("chartWizardURL", chartUrls.getGenericChartDesignerURL(ctx.getContainer(), user, getSettings()));
 
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
@@ -1606,7 +1647,7 @@ public class DataRegion extends DisplayElement
     private void renderAggregatesTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
     {
         // Issue 51036: load totalRows count async for DataRegions
-        boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
+        boolean asyncTotalRows = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
         boolean showPaginationCount = getShowPaginationCount() && !asyncTotalRows;
 
         Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx, showPaginationCount);
@@ -2129,11 +2170,11 @@ public class DataRegion extends DisplayElement
         for (Map.Entry<FieldKey, ColumnInfo> entry : selectKeyMap.entrySet())
         {
             ColumnInfo col = entry.getValue();
-            SQLFragment selectSql = service.getSelectSQL(table, Collections.singletonList(col), pkFilter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+            SQLFragment selectSql = service.getSelectBuilder(table).columns(Collections.singletonList(col)).filter(pkFilter).queryLogging(queryLogging).buildSqlFragment();
 
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT ").appendIdentifier(col.getAlias()).unsafeAppend(" AS value FROM (");
             sql.append(selectSql);
-            sql.append(") AS D");
+            sql.unsafeAppend(") AS D");
 
             sql = table.getSqlDialect().limitRows(sql, 2);
 
@@ -2281,11 +2322,11 @@ public class DataRegion extends DisplayElement
                 //Make sure all pks are included
                 if (action == MODE_UPDATE)
                 {
-                    int span = (_groupTables.isEmpty() || _groupTables.get(0).getGroups().isEmpty()) ?
+                    int span = (_groupTables.isEmpty() || _groupTables.getFirst().getGroups().isEmpty()) ?
                         1 :
                         (_horizontalGroups ?
-                            _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
-                            _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
+                            _groupTables.getFirst().getGroups().getFirst().getColumns().size() + 1 :
+                            _groupTables.getFirst().getGroups().size()); // One extra one for the column to reuse the same value
 
                     TR(
                         TD(
@@ -2380,7 +2421,7 @@ public class DataRegion extends DisplayElement
                                 TD(),
                                 (Renderable) ret -> {
                                     for (DisplayColumnGroup group : groups)
-                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
+                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().getFirst());
                                     return ret;
                                 }
                             ).appendTo(out);
@@ -2413,7 +2454,7 @@ public class DataRegion extends DisplayElement
                             {
                                 TR(
                                     (Renderable) ret -> {
-                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
+                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().getFirst());
                                         if (group.isCopyable() && hasCopyableFinal)
                                         {
                                             group.writeSameCheckboxCell(ctx, out);
@@ -2694,7 +2735,7 @@ public class DataRegion extends DisplayElement
                     // 4. If there are multiple (and maybe even if not) then show the FieldKey.toString()
                     //    in the tooltip hover so the user has a chance to disambiguate.
 
-                    FieldKey filterKey = fieldKeys.get(0);
+                    FieldKey filterKey = fieldKeys.getFirst();
 
                     if (filterKey != null)
                     {
@@ -2946,7 +2987,7 @@ public class DataRegion extends DisplayElement
     {
         if (_groupTables.isEmpty())
             addGroupTable();
-        _groupTables.get(_groupTables.size() - 1).setGroupHeadings(headings);
+        _groupTables.getLast().setGroupHeadings(headings);
     }
 
     public boolean getShowPagination()
@@ -3040,8 +3081,8 @@ public class DataRegion extends DisplayElement
     {
         if (_groupTables.isEmpty())
             addGroupTable();
-        List<DisplayColumnGroup> groups = _groupTables.get(_groupTables.size() - 1).getGroups();        // always add to last (current)
-        assert groups.isEmpty() || groups.get(0).getColumns().size() == group.getColumns().size() : "Must have matching column counts";
+        List<DisplayColumnGroup> groups = _groupTables.getLast().getGroups();        // always add to last (current)
+        assert groups.isEmpty() || groups.getFirst().getColumns().size() == group.getColumns().size() : "Must have matching column counts";
         groups.add(group);
     }
 

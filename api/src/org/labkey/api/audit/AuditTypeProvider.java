@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -42,6 +43,14 @@ public interface AuditTypeProvider
     Domain getDomain(boolean forUpdate);
 
     TableInfo createTableInfo(UserSchema schema, ContainerFilter cf);
+
+    /**
+     * Provisioned storage TableInfo for the insert path. Implementations should cache - creating TableInfos is expensive.
+     * Never use this to read audit rows: it has no ContainerFilter and bypasses the CanSeeAuditLog check that
+     * {@link org.labkey.api.audit.query.DefaultAuditTypeTable} applies. Go through {@link #createTableInfo} for reads.
+     */
+    @NotNull
+    TableInfo getStorageTableInfoForInsert();
 
     <K extends AuditTypeEvent> Class<K> getEventClass();
 

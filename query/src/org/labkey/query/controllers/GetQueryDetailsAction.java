@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.formSchema.Field;
+import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -69,6 +71,7 @@ import org.labkey.query.persist.QueryDef;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -86,12 +89,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsAction.Form>
 {
     private static final Logger LOG = LogManager.getLogger(GetQueryDetailsAction.class);
-
-    @Override
-    protected long getLastModified(Form form)
-    {
-        return QueryService.get().metadataLastModified();
-    }
 
     @Override
     public ApiResponse execute(Form form, BindException errors)
@@ -149,7 +146,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             tinfo = queryDef.getTable(schema, qerrors, true, !form.isIncludeSuggestedQueryColumns());
             if (!qerrors.isEmpty())
             {
-                resp.put("exception", qerrors.get(0).getMessage());
+                resp.put("exception", qerrors.getFirst().getMessage());
                 return resp;
             }
         }
@@ -173,6 +170,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
         resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
         resp.put("supportMerge", tinfo.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
+
+        var namedParams = tinfo.getNamedParameters().stream().map(QueryService.ParameterDecl::toJSON).toList();
+        resp.put("namedParameters", new JSONArray(namedParams));
 
         // check if this query is shadowing a local table
         if (isUserDefined)
@@ -326,7 +326,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             fullMessage += message;
             resp.put("exception", fullMessage);
 
-            LOG.error("QueryParseException. Container: " + getContainer().getPath() + " Query: " + queryName, e);
+            LOG.error("QueryParseException. Container: {} Query: {}", getContainer().getPath(), queryName, e);
 
             return resp;
         }
@@ -560,7 +560,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 else if (value instanceof String str)
                     _viewName = new String[] { str };
                 else
-                    LOG.error("Unexpected viewName parameter type: " + value);
+                    LOG.error("Unexpected viewName parameter type: {}", value);
             }
             return BaseViewAction.springBindParameters(this, "form", params);
         }

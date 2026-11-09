@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -97,7 +98,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.workflow.WorkflowService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
@@ -215,19 +215,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (StringUtils.isEmpty(dataContainer))
                         dataContainer = (String) row.get("folder");
                     if (!container.getId().equals(dataContainer))
-                        throw new InvalidKeyException("Data does not belong to folder '" + container.getName() + "': " + key.getValue().values());
+                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + key.getValue().toString() + "'.");
                 }
             }
             else if (verifyExisting)
-                throw new InvalidKeyException("Data not found for " + key.getValue().values());
+                throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + key.getValue().toString() + "'.");
         }
         return result;
-    }
-
-    @Override
-    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-    {
-        return false;
     }
 
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
@@ -399,11 +393,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (extraScriptContext != null)
         {
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
+            if (extraScriptContext.containsKey(AbstractQueryImportAction.Params.useTransactionAuditCache.name()))
+            {
+                boolean useTransactionAuditCache = Boolean.TRUE.equals(extraScriptContext.get(AbstractQueryImportAction.Params.useTransactionAuditCache.name()));
+                context.setUseTransactionAuditCache(useTransactionAuditCache);
+            }
         }
 
         preImportDIBValidation(in, null);
 
-        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport() || context.isCrossFolderImport();
+        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport();
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
         if (!skipTriggers)
@@ -578,9 +577,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // TODO optimize ArrayListMap?
         Set<String> colNames;
 
-        if (!rows.isEmpty() && rows.get(0) instanceof ArrayListMap)
+        if (!rows.isEmpty() && rows.getFirst() instanceof ArrayListMap)
         {
-            colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
+            colNames = ((ArrayListMap)rows.getFirst()).getFindMap().keySet();
         }
         else
         {
@@ -597,7 +596,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     /** @deprecated switch to using DIB based method */
     @Deprecated
-    protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors,
+                                                                  @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasInsertRowsPermission(user))
@@ -635,7 +635,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
             catch (SQLException sqlx)
             {
-                if (StringUtils.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
+                if (Strings.CS.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
                 {
                     ValidationException vex = new ValidationException(sqlx.getMessage());
                     vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i+1);
@@ -665,7 +665,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, null, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result, null, providedValues);
+        addAuditEvent(user, container, QueryService.AuditAction.INSERT, configParameters, result, null, providedValues);
 
         return result;
     }
@@ -716,7 +716,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         try
         {
-            List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, extraScriptContext);
+            List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, configParameters, extraScriptContext);
             afterInsertUpdate(null==ret?0:ret.size(), errors);
             if (errors.hasErrors())
                 return null;
@@ -812,7 +812,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (rowsToUpdate.size() == 1)
             return true;
 
-        Set<String> keys = rowsToUpdate.get(0).keySet();
+        Set<String> keys = rowsToUpdate.getFirst().keySet();
         int keySize = keys.size();
 
         for (int i = 1 ; i < rowsToUpdate.size(); i ++)
@@ -893,6 +893,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         // Fire triggers, if any, and also throw if there are any errors
+        if (errors.hasErrors())
+            throw errors;
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, null, false, errors, extraScriptContext);
         afterInsertUpdate(null==result?0:result.size(), errors, true);
 
@@ -900,9 +902,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw errors;
 
         addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows, providedValues);
-        WorkflowService service = WorkflowService.get();
-        if (service != null && configParameters != null && configParameters.containsKey(WorkflowService.WorkflowConfigs.ActionId))
-            service.onActionComplete(container, user, (Long) configParameters.get(WorkflowService.WorkflowConfigs.ActionId));
+        QueryWorkflowHandler workflowHandler = QueryWorkflowHandler.get();
+        if (workflowHandler != null && configParameters != null)
+            workflowHandler.onUpdateComplete(container, user, configParameters);
 
         return result;
     }
@@ -1294,7 +1296,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     protected void _addSummaryAuditEvent(Container container, User user, DataIteratorContext context, int count)
     {
-        if (!context.isCrossTypeImport() && !context.isCrossFolderImport()) // audit handled at table level
+        if (!context.isCrossTypeImport()) // audit handled at table level
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
             String auditUserComment = (String) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
@@ -1542,7 +1544,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             int count=0;
             try (var tx = rTableInfo.getSchema().getScope().ensureTransaction())
             {
-                var ret = qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+                var ret = qus.mergeRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), errors, null, null);
                 if (!errors.hasErrors())
                 {
                     tx.commit();
@@ -1565,7 +1567,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows = new ArrayList<>();
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
-            qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+            qus.mergeRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), errors, null, null);
             assertTrue(errors.hasErrors());
             assertTrue("Duplicate key error: " + errors.getMessage(), errors.getMessage().contains("Duplicate key provided: 2"));
         }
@@ -1590,7 +1592,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.UPDATE);
-            var count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            var count = qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertFalse(context.getErrors().hasErrors());
             assertEquals(1, count);
             var rows = getRows();
@@ -1603,7 +1605,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows = new ArrayList<>();
             updateRows.add(CaseInsensitiveHashMap.of(pkName,123,colName,"NEW"));
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
-            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
 
             // Issue 52728: update should fail if duplicate key is provide
@@ -1614,7 +1616,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // use DIB
             context = new DataIteratorContext();
             context.setInsertOption(InsertOption.UPDATE);
-            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.getFirst().keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
             assertTrue("Duplicate key error: " + context.getErrors().getMessage(), context.getErrors().getMessage().contains("Duplicate key provided: 2"));
 
@@ -1655,7 +1657,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows.add(CaseInsensitiveHashMap.of(pkName,3,colName,"THREE"));
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(InsertOption.REPLACE);
-            var count = qus.loadRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), context, null);
+            var count = qus.loadRows(user, c, MapDataIterator.of(mergeRows.getFirst().keySet(), mergeRows), context, null);
             assertFalse(context.getErrors().hasErrors());
             assertEquals(2, count);
             var rows = getRows();

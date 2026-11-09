@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
                 }
                 else
                 {
-                    LOG.warn("Duplicate property name found with " + column.getName() + ", PropertyURI: " + entry.getValue().getPropertyURI());
+                    LOG.warn("Duplicate property name found with {}, PropertyURI: {}", column.getName(), entry.getValue().getPropertyURI());
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,7 +161,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 try
                 {
                     if (log)
-                        ctx.getLogger().info("Loading datasets manifest from " + datasetsXmlFilename);
+                        ctx.getLogger().info("Loading datasets manifest from {}", datasetsXmlFilename);
 
                     XmlObject doc = datasetDir.getXmlBean(datasetsXmlFilename);
                     if (doc instanceof DatasetsDocument)

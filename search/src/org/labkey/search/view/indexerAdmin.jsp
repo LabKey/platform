@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,6 +125,35 @@ else
         %>
         <tr><td><input type="hidden" name="start" value="1"></td></tr>
         <tr><td><%= button("Start Crawler").submit(true) %></td></tr><%
+        }
+    }
+    %>
+        </table>
+    </labkey:form></p>
+
+    <p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
+        <table><%
+
+    if (ss.isSearchIconVisible())
+    {
+        %><tr><td>The search icon is shown in the page header.</td></tr><%
+
+        if (hasAdminOpsPerms)
+        {
+        %>
+        <tr><td><input type="hidden" name="hideSearchIcon" value="1"></td></tr>
+        <tr><td><%= button("Hide Search Icon").submit(true) %></td></tr><%
+        }
+    }
+    else
+    {
+        %><tr><td>The search icon is hidden in the page header.</td></tr><%
+
+        if (hasAdminOpsPerms)
+        {
+        %>
+        <tr><td><input type="hidden" name="showSearchIcon" value="1"></td></tr>
+        <tr><td><%= button("Show Search Icon").submit(true) %></td></tr><%
         }
     }
     %>

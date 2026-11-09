@@ -1,3 +1,20 @@
+<%
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
 <%@ page import="com.fasterxml.jackson.databind.JsonNode" %>
 <%@ page import="com.fasterxml.jackson.databind.node.ArrayNode" %>
 <%@ page import="com.fasterxml.jackson.databind.node.ObjectNode" %>
@@ -33,8 +50,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.util.JsonUtil" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asInteger" %>
-<%@ page import="static org.labkey.api.exp.api.ExperimentService.asLong" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
+<%@ page import="static org.labkey.api.util.IntegerUtils.asLong" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
     final String aliasPrefix = "MultiValueTest-";
@@ -133,7 +150,7 @@
         );
         List<Map<String, Object>> insertedAntigens = antigensTable.getUpdateService().insertRows(getUser(), c, antigenRows, errors, null, null);
         throwErrors(errors);
-        Integer antigenId = asInteger(insertedAntigens.get(0).get("rowId"));
+        Integer antigenId = asInteger(insertedAntigens.getFirst().get("rowId"));
 
         // insert a Label
         errors = new BatchValidationException();
@@ -143,7 +160,7 @@
         );
         List<Map<String, Object>> insertedLabels = labelsTable.getUpdateService().insertRows(getUser(), c, labelRows, errors, null, null);
         throwErrors(errors);
-        Long labelId = asLong(insertedLabels.get(0).get("rowId"));
+        Long labelId = asLong(insertedLabels.getFirst().get("rowId"));
 
         // insert Species
         errors = new BatchValidationException();
@@ -169,7 +186,7 @@
         );
         List<Map<String, Object>> insertedReagents = reagentsTable.getUpdateService().insertRows(getUser(), c, reagentRows, errors, null, null);
         throwErrors(errors);
-        Long reagentId = asLong(insertedReagents.get(0).get("rowId"));
+        Long reagentId = asLong(insertedReagents.getFirst().get("rowId"));
 
         // insert ReagentSpecies
         errors = new BatchValidationException();

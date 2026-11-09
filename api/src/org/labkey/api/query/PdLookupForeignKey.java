@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +28,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
@@ -190,7 +190,17 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (table.getPkColumns().isEmpty() || table.getPkColumns().size() > 2)
             return null;
 
+        // GH Issue 438: the lookup join can't span data sources
+        if (table.getSchema().getScope() != getSourceScope())
+            return null;
+
         return table;
+    }
+
+    private DbScope getSourceScope()
+    {
+        DbSchema sourceDbSchema = null == _sourceSchema ? null : _sourceSchema.getDbSchema();
+        return null == sourceDbSchema ? DbScope.getLabKeyScope() : sourceDbSchema.getScope();
     }
 
     @Nullable
@@ -274,7 +284,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null)
             return null;
-        String columnName = lookupTable.getPkColumns().get(0).getName();
+        String columnName = lookupTable.getPkColumns().getFirst().getName();
         if (null == columnName)
             return null;
         return LookupForeignKey.getDetailsURL(parent, lookupTable, columnName);

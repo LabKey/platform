@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConversionException;
@@ -106,6 +121,22 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         return Collections.unmodifiableSet(_allFieldKeys);
     }
 
+    /* getValueSql() inlines the value SQL of every column the expression references, so any join those columns
+     * declare has to be declared here too -- otherwise the inlined SQL names a table alias that is not in the FROM.
+     * Lookups and self-reference are rejected during binding, so every referenced key is a plain column on this table.
+     */
+    @Override
+    public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+    {
+        getBoundExpression();   // populates _allFieldKeys
+        for (FieldKey key : getReferencedFieldKeys())
+        {
+            ColumnInfo col = getParentTable().getColumn(key);
+            if (null != col && col != this)
+                col.declareJoins(parentAlias, map);
+        }
+    }
+
     public void computeMetaData(Map<FieldKey,ColumnInfo> columns)
     {
         if (null == columns)
@@ -182,7 +213,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
                     .setFailOnUnrecognizedMethodName(true);
             QExpr expr = parser.parseExpr(_labKeySql, errors);
             if (!errors.isEmpty())
-                throw errors.get(0);
+                throw errors.getFirst();
             _parsedExpr = expr;
         }
 
@@ -271,7 +302,7 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         QExpr methodName = null;
         if (expr instanceof QMethodCall)
         {
-            methodName = (QExpr) expr.childList().get(0);
+            methodName = (QExpr) expr.childList().getFirst();
             if (null == methodName.getFieldKey())
                 methodName = null;
         }
@@ -353,9 +384,9 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
     {
         QExpr bound = getBoundExpression();
         SqlBuilder sql = new SqlBuilder(getSqlDialect());
-        sql.append("(");
+        sql.unsafeAppend("(");
         bound.appendSql(sql, new _Query(tableAliasName));
-        sql.append(")");
+        sql.unsafeAppend(")");
         sql.append(SQLFragment.unsafe(CALCULATED_COLUMN_SQL_TAG));
         return sql;
     }

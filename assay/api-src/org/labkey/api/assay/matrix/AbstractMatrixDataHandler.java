@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
                 sampleNames.add(name);
             }
         }
-        LOG.debug("All samples in matrix: " + StringUtils.join(sampleNames, ", "));
+        LOG.debug("All samples in matrix: {}", StringUtils.join(sampleNames, ", "));
 
         Set<String> unresolved = new HashSet<>();
         Map<String, ExpMaterial> sampleMap = new HashMap<>(sampleNames.size());
@@ -266,7 +266,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         }
         else if (sampleTypes.size() == 1)
         {
-            return sampleTypes.get(0);
+            return sampleTypes.getFirst();
         }
         else
         {
@@ -279,16 +279,9 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         // Create a new SampleSet in the current container
         List<GWTPropertyDescriptor> properties = new ArrayList<>();
         properties.add(new GWTPropertyDescriptor("Name", "http://www.w3.org/2001/XMLSchema#string"));
-        try
-        {
-            ExpSampleType sampleType = SampleTypeService.get().createSampleType(c, user, "Samples", null, properties, emptyList(), -1, -1, -1, -1, "${Name}");
-            LOG.info("Created new SampleType in " + c.getName() + ": " + sampleType.getLSID());
-            return sampleType;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ExpSampleType sampleType = SampleTypeService.get().createSampleType(c, user, "Samples", null, properties, emptyList(), -1, -1, -1, -1, "${Name}");
+        LOG.info("Created new SampleType in {}: {}", c.getName(), sampleType.getLSID());
+        return sampleType;
     }
 
     public  Map<String, String> getRunPropertyValues(ExpRun run, Domain domain)
@@ -315,7 +308,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         SqlExecutor executor = new SqlExecutor(DbSchema.get(_dbSchemaName));
         SQLFragment deleteDataSql = new SQLFragment("DELETE FROM " + _dbSchemaName);
         deleteDataSql.append("." + _dataTableName);
-        deleteDataSql.append(" WHERE DataId = ?").add(data.getRowId());
+        deleteDataSql.unsafeAppend(" WHERE DataId = ?").add(data.getRowId());
         executor.execute(deleteDataSql);
     }
 }

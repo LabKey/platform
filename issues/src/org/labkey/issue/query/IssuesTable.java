@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -336,7 +337,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                     {
                         ((BaseColumnInfo)col).setFk(new IssuesPdLookupForeignKey(schema, pd));
                         TableInfo target = col.getFk().getLookupTableInfo();
-                        if (null != target && target.getPkColumnNames().size() == 1 && Strings.CI.equals(target.getTitleColumn(),target.getPkColumnNames().get(0)))
+                        if (null != target && target.getPkColumnNames().size() == 1 && Strings.CI.equals(target.getTitleColumn(),target.getPkColumnNames().getFirst()))
                         {
                             ((BaseColumnInfo)col).setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
                         }
@@ -394,16 +395,16 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         TableInfo provisioned = _issueDef.createTable(getUserSchema().getUser());
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT * FROM\n");
-        sql.append("(SELECT i.issueid, i.duplicate, i.lastIndexed, i.issueDefId, p.* FROM ");
+        sql.unsafeAppend("(SELECT * FROM\n");
+        sql.unsafeAppend("(SELECT i.issueid, i.duplicate, i.lastIndexed, i.issueDefId, p.* FROM ");
         sql.append(_rootTable, "i");
-        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON i.entityId = p.entityId");
-        sql.append(") x");
+        sql.unsafeAppend(" INNER JOIN ").append(provisioned, "p").unsafeAppend(" ON i.entityId = p.entityId");
+        sql.unsafeAppend(") x");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), null, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        sql.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
 
         return sql;
     }
@@ -906,6 +907,9 @@ class PullRequestsDisplayColumn extends DataColumn
 {
     private static final Pattern GITHUB_HTTP_PR_URL = Pattern.compile("https://github.com/(?<org>[^/]*)/(?<project>[^/]*)/pull/(?<pullId>\\d*)");
 
+    // GH Issue 1332: parseGithubUrl is a per-cell static call; warn once per distinct unparseable url, not once per row
+    private static final Set<String> LOGGED_BAD_PR_URLS = ConcurrentHashMap.newKeySet();
+
     public PullRequestsDisplayColumn(ColumnInfo col)
     {
         super(col);
@@ -976,13 +980,16 @@ class PullRequestsDisplayColumn extends DataColumn
             }
             catch (NumberFormatException e)
             {
-                // The issueId value can be null if it the column isn't included in the select for a custom query
-                @Nullable Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
+                if (LOGGED_BAD_PR_URLS.add(url))
+                {
+                    // The issueId value can be null if it the column isn't included in the select for a custom query
+                    @Nullable Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
 
-                StringBuilder sb = new StringBuilder("Failed to parse pull request url '" + url + "'");
-                if (issueId != null)
-                    sb.append(" for issue ").append(issueId);
-                IssuesTable.LOG.warn(sb.toString());
+                    StringBuilder sb = new StringBuilder("Failed to parse pull request url '" + url + "'");
+                    if (issueId != null)
+                        sb.append(" for issue ").append(issueId);
+                    IssuesTable.LOG.warn(sb.toString());
+                }
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -274,7 +274,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         insertRowsCommand.addRow(row1);
         RowsResponse insertResponse = insertRowsCommand.execute(connection, getCurrentContainerPath());
         List<Map<String, Object>> responseRows = insertResponse.getRows();
-        dataClassRowIds[2] = (int)responseRows.get(0).get("rowid");
+        dataClassRowIds[2] = (int)responseRows.getFirst().get("rowid");
 
         _searchHelper.enqueueSearchItem("dataclass:" + DATA_CLASS_DOMAIN_1 + " AND " + DATA_CLASS_ICE_CREAM,
                 Locator.linkContainingText(DATA_CLASS_1_NAME_1));

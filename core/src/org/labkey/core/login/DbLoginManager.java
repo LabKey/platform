@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.LoginManager;
-import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -48,6 +47,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
+import org.labkey.core.security.PasswordExpiration;
 import org.springframework.validation.BindException;
 
 import java.util.Arrays;
@@ -147,7 +147,7 @@ public class DbLoginManager implements DbLoginService
         try
         {
             if (clearVerification)
-                LoginManager.setVerification(affectedUser, null);
+                LoginManager.clearVerification(affectedUser);
             UserManager.addToUserHistory(affectedUser, auditMessage);
         }
         catch (SecurityManager.UserManagementException e)
@@ -222,6 +222,6 @@ public class DbLoginManager implements DbLoginService
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () -> Map.of("databaseAuthentication", getProperties());
+        return metrics -> metrics.put("databaseAuthentication", DbLoginManager::getProperties, "Database authentication settings, such as password strength and expiration; empty if never saved");
     }
 }

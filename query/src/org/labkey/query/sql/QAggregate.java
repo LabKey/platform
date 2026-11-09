@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -296,6 +296,12 @@ public class QAggregate extends QExpr
             return name();
         }
 
+        SQLFragment getFunctionSql(SqlDialect d)
+        {
+            String function = getFunction(d);
+            return null == function ? null : new SQLFragment().setSqlUnsafe(function);
+        }
+
         boolean dialectSupports(@Nullable SqlDialect d)
         {
             return true;
@@ -339,6 +345,12 @@ public class QAggregate extends QExpr
             SqlBuilder nestedBuilder = new SqlBuilder(builder.getDialect());
             Iterator<QNode> iter = children().iterator();
             ((QExpr)iter.next()).appendSql(nestedBuilder, query);
+            // SQL Server's getGroupConcat() reads the SQL text, which throws for an error fragment
+            if (nestedBuilder.hasError())
+            {
+                builder.appendError();
+                return;
+            }
 
             SQLFragment gcSql;
 
@@ -358,7 +370,7 @@ public class QAggregate extends QExpr
             }
             else
             {
-                gcSql = new SQLFragment("'<GROUP_CONCAT function not supported on this database>'");
+                gcSql = SQLFragment.unsafe("'<GROUP_CONCAT function not supported on this database>'");
             }
 
             builder.append(gcSql);
@@ -369,74 +381,73 @@ public class QAggregate extends QExpr
             // verify that NULL/0 is NULL not #DIV0
             // postgres[ok]
             // sqlserver[?]
-            builder.append(" (").append(Type.STDDEV.getFunction(builder.getDialect())).append("(");
+            builder.unsafeAppend(" (").append(Type.STDDEV.getFunctionSql(builder.getDialect())).unsafeAppend("(");
             for (QNode child : children())
                 ((QExpr)child).appendSql(builder, query);
-            builder.append(")/SQRT(COUNT(");
+            builder.unsafeAppend(")/SQRT(COUNT(");
             for (QNode child : children())
                 ((QExpr)child).appendSql(builder, query);
-            builder.append(")))");
+            builder.unsafeAppend(")))");
         }
         else if (type == Type.MEDIAN)
         {
             assert !_distinct;
             QNode partitionBy = builder.getDialect().isSqlServer() ? getLastChild() : null;
 
-            builder.append(" (").append(type.getFunction(builder.getDialect())).append("(0.5) WITHIN GROUP (ORDER BY (");
+            builder.unsafeAppend(" (").append(type.getFunctionSql(builder.getDialect())).unsafeAppend("(0.5) WITHIN GROUP (ORDER BY (");
             for (QNode child : children())
             {
                 if (partitionBy != child)
                     ((QExpr) child).appendSql(builder, query);
             }
-            builder.append(")) ");
+            builder.unsafeAppend(")) ");
             if (builder.getDialect().isSqlServer() && partitionBy instanceof QPartitionBy)
             {
                 ((QPartitionBy)partitionBy).appendSql(builder, query);
             }
-            builder.append(")");
+            builder.unsafeAppend(")");
         }
         else if (type == Type.MODE)
         {
             assert !_distinct;
-            builder.append(" (").append(type.getFunction(builder.getDialect())).append("() WITHIN GROUP (ORDER BY (");
+            builder.unsafeAppend(" (").append(type.getFunctionSql(builder.getDialect())).unsafeAppend("() WITHIN GROUP (ORDER BY (");
             for (QNode child : children())
             {
                 ((QExpr)child).appendSql(builder, query);
             }
-            builder.append(")))");
+            builder.unsafeAppend(")))");
         }
         else
         {
-            String function = type.getFunction(builder.getDialect());
-            builder.append(" ").append(function).append("(");
+            builder.unsafeAppend(" ").append(type.getFunctionSql(builder.getDialect())).unsafeAppend("(");
             if (_distinct)
             {
-                builder.append("DISTINCT ");
+                builder.unsafeAppend("DISTINCT ");
             }
-            String sep = "";
+            boolean first = true;
             for (QNode child : children())
             {
-                builder.append(sep);
+                builder.unsafeAppend(first ? "" : ", ");
                 ((QExpr)child).appendSql(builder, query);
-                sep = ", ";
+                first = false;
             }
-            builder.append(")");
+            builder.unsafeAppend(")");
         }
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" ").append(getTokenText()).append("(");
+        builder.unsafeAppend(" ").append(getTokenText()).unsafeAppend("(");
         if (_distinct)
         {
-            builder.append("DISTINCT ");
+            builder.unsafeAppend("DISTINCT ");
         }
         for (QNode child : children())
         {
             child.appendSource(builder);
         }
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override @NotNull
@@ -466,7 +477,7 @@ public class QAggregate extends QExpr
     {
         var ret = (MutableColumnInfo)super.createColumnInfo(table, alias, query);
         List<QNode> children = childList();
-        if (children.size() == 1 && children.get(0) instanceof QField field)
+        if (children.size() == 1 && children.getFirst() instanceof QField field)
         {
             if (getType()._propagateAttributes)
             {

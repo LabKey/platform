@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,15 @@ import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Service for adding/getting/removing user notifications attached to specific objects.
  */
 public interface NotificationService
 {
+    String EXPERIMENTAL_NOTIFICATION_MENU = "experimental-notificationmenu";
+
     static void setInstance(NotificationService serviceImpl)
     {
         ServiceRegistry.get().registerService(NotificationService.class, serviceImpl);
@@ -62,34 +65,22 @@ public interface NotificationService
                                  ActionURL linkUrl, String id, String type) throws MessagingException, ValidationException, IOException;
 
     /*
-     * Returns a list of notifications for a specific user. Sorted descending by created date.
+     * Streams notifications for a specific user to the consumer without collecting them, optionally limited to the
+     * given type labels (e.g, 'Pipeline'). Sorted descending by created date.
      */
-    default List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly)
-    {
-        return getNotificationsByUser(container, notifyUserId, unreadOnly, null);
-    }
+    void forEachNotification(@Nullable Container container, int notifyUserId, @Nullable List<String> typeLabels, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer);
 
-    List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
     /*
-     * Returns just the count of notifications for a specific user. At any given instant, will match the length of the
-     * list returned by getNotificationsByUser(), and is significantly more efficient to query.
+     * Returns just the count of unread notifications for a specific user. At any given instant, will match the number
+     * of unread notifications streamed by forEachNotification().
      */
     long getUnreadNotificationCountByUser(@Nullable Container container, int notifyUserId);
 
     /*
-     * Returns a list of notifications for a specific user based on the specified type.
+     * Returns true if the user has at least one read notification.
      */
-    List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
+    boolean hasReadNotificationsByUser(@Nullable Container container, int notifyUserId);
 
-    /*
-     * Returns a list of notifications for a specific user based on the specified type labels (e.g, 'Pipeline').
-     */
-    default List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly)
-    {
-        return getNotificationsByTypeLabels(container, typeLabels, notifyUserId, unreadOnly, null);
-    }
-
-    List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
     /*
      * Returns a notification based on the notification's RowId.
      */

@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@
                     <%
                         if (protocolDocs.size() == 1)
                         {
-                            Attachment attachment = protocolDocs.get(0);
+                            Attachment attachment = protocolDocs.getFirst();
                     %>
                     <%=attachment.renderDownloadLink(StudyController.getProtocolDocumentDownloadURL(c, attachment.getName()), "Study Protocol Document")%>
                     <%

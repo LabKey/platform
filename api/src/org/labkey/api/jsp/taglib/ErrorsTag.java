@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class ErrorsTag extends TagSupport
                                 out.print(HtmlString.unsafe("Unknown error: " + m));
                                 ExceptionUtil.logExceptionToMothership((HttpServletRequest)pageContext.getRequest(), nsme);
                                 Logger log = LogManager.getLogger(ErrorsTag.class);
-                                log.error("Failed to find a message: " + m, nsme);
+                                log.error("Failed to find a message: {}", m, nsme);
                             }
                             out.println(HtmlString.BR);
                         }

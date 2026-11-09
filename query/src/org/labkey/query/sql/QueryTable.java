@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
     @Override
     public void declareFields()
     {
-        _log.debug("declareFields " + toStringDebug());
+        _log.debug("declareFields {}", toStringDebug());
     }
 
 
@@ -322,10 +322,10 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
 
         SQLFragment sql = _getSql();
         if (_generateSelectSQL)
-            ret.append("(");
+            ret.unsafeAppend("(");
         ret.append(sql);
         if (_generateSelectSQL)
-            ret.append(") ").appendIdentifier(getAlias());
+            ret.unsafeAppend(") ").appendIdentifier(getAlias());
 
         assert ret.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
         return ret;
@@ -400,8 +400,8 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
         if (null == _generateSelectSQL)
             _generateSelectSQL = false;
 
-        sql.append("SELECT ");
-        String comma = "";
+        sql.SELECT();
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
         int columnCount = 0;
         for (TableColumn col : _selectedColumns.values())
         {
@@ -415,19 +415,18 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             if (col._col instanceof PropertyColumn)
                 _generateSelectSQL = true;
             col.declareJoins(_innerAlias, joins);
-            sql.append(comma);
+            sql.append(comma.next());
             SQLFragment f = col.getInternalSql();
-            if (f.getSQL().length() > 80)
-                sql.append("\n").append(f).append("\n");
+            if (f.getSqlCharSequence().length() > 80)
+                sql.unsafeAppend("\n").append(f).unsafeAppend("\n");
             else
                 sql.append(f);
-            sql.append(" AS ");
-            sql.append(col.getAlias());
-            comma = ", ";
+            sql.unsafeAppend(" AS ");
+            sql.appendIdentifier(col.getAlias());
         }
         if (0 == columnCount)
-            sql.append("1 AS \"_ONE_\"");
-        sql.append("\nFROM ");
+            sql.unsafeAppend("1 AS \"_ONE_\"");
+        sql.unsafeAppend("\nFROM ");
 
         SQLFragment tableFromSql = _tableInfo.getFromSQL(_innerAlias, tableColumns);
 
@@ -518,7 +517,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             if (_generateSelectSQL == null)
             {
                 _query.getParseErrors().add(new QueryParseException("Missing from-clause entry: " + _originalAlias, null, 0, 0));
-                return new SQLFragment("NULL");
+                return SQLFragment.unsafe("NULL");
             }
             else if (_generateSelectSQL)
                 return super.getValueSql();

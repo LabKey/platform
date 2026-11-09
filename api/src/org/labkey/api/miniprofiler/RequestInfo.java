@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,16 +91,9 @@ public class RequestInfo implements AutoCloseable
                 s = ((MemTrackable)object).toMemTrackerString();
             else
                 s = object.getClass().getName();
-            Integer count = _objects.get(s);
-            _objects.put(s, count == null ? 1 : count.intValue() + 1);
+            _objects.compute(s, (_, count) -> count == null ? 1 : count.intValue() + 1);
             _current.addObject(s);
         }
-    }
-
-    /** Create new Timing step and set it as the current step. */
-    protected Timing step(String name)
-    {
-        return new Timing(this, _current, name);
     }
 
     /** Create new timed CustomTiming and add it to the current Timing step. */

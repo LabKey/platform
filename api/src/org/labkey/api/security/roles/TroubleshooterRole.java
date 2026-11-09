@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,10 @@ public class TroubleshooterRole extends AbstractRootContainerRole
         super("Troubleshooter", "Troubleshooters may view administration settings but may not change them.", PERMISSIONS);
     }
 
+    // Ensures this role gets all permissions (troubleshooter, read, user detail, audit read) in the root ONLY
     @Override
     public boolean isApplicableOutsideRoot()
     {
-        return false; // This ensures troubleshooters get these permissions (esp. ReadPermission) only in the root
+        return false;
     }
 }

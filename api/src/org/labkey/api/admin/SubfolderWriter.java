@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ public class SubfolderWriter extends BaseFolderWriter
             List<Container> noSubfolders = new ArrayList<>();
             writer.getChildrenToExport(fec, childList, noSubfolders);
             assertEquals("Expected one container tab subfolder", 1, noSubfolders.size());
-            assertEquals("containertab", noSubfolders.get(0).getName());
+            assertEquals("containertab", noSubfolders.getFirst().getName());
         }
     }
 }

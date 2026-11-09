@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package org.labkey.filecontent;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
@@ -104,7 +103,7 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return _reservedFieldSet;
     }

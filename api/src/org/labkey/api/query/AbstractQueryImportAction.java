@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -53,6 +54,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.usageMetrics.QueryMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
@@ -62,6 +64,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -69,8 +72,8 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
+import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -311,7 +314,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         crossTypeImport,
         allowCreateStorage,
         importLookupByAlternateKey, // deprecated. Prefer lookupResolutionType
-        crossFolderImport,
         useTransactionAuditCache,
         lookupResolutionType,
         auditDetails,
@@ -331,7 +333,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             _optionParamsMap.put(Params.importIdentity, Boolean.valueOf(getParam(Params.importIdentity)));
             _optionParamsMap.put(Params.crossTypeImport, Boolean.valueOf(getParam(Params.crossTypeImport)));
             _optionParamsMap.put(Params.allowCreateStorage, Boolean.valueOf(getParam(Params.allowCreateStorage)));
-            _optionParamsMap.put(Params.crossFolderImport, Boolean.valueOf(getParam(Params.crossFolderImport)));
             _optionParamsMap.put(Params.useTransactionAuditCache, Boolean.valueOf(getParam(Params.useTransactionAuditCache)));
         }
         return _optionParamsMap;
@@ -345,8 +346,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             importParams.add("backgroundImport");
         if (Boolean.valueOf(getParam(Params.crossTypeImport)))
             importParams.add(Params.crossTypeImport.name());
-        if (Boolean.valueOf(getParam(Params.crossFolderImport)))
-            importParams.add(Params.crossFolderImport.name());
         if (Boolean.valueOf(getParam(Params.useTransactionAuditCache)))
             importParams.add(Params.useTransactionAuditCache.name());
         if (Boolean.valueOf(getParam(Params.allowCreateStorage)))
@@ -439,7 +438,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (errors.hasErrors())
             throw errors;
 
-        FileLike dataFile = null;
+        List<FileLike> dataFiles = new ArrayList<>();
         boolean hasPostData = false;
         FileStream file = null;
         String originalName = null;
@@ -551,17 +550,19 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             {
                 Map<String, MultipartFile> files = getFileMap();
                 MultipartFile multipartfile = null==files ? null : files.get("file");
-                if (null != multipartfile && multipartfile.getSize() > 0)
+                List<MultipartFile> uploadedFiles = getUploadedFiles();
+                if (!uploadedFiles.isEmpty())
                 {
-                    transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, multipartfile.getOriginalFilename());
                     hasPostData = true;
-                    originalName = multipartfile.getOriginalFilename();
-                    // can't read the multipart file twice so create temp file (12800)
-                    dataFile = FileUtil.createTempFileLike("~upload", multipartfile.getOriginalFilename());
                     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    originalName = uploadedFiles.getFirst().getOriginalFilename();
+                    transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, originalName);
+
+                    FileLike dataFileDir = null;
+
                     if (null != root && (Boolean.parseBoolean(saveToPipeline) || _useAsync))
                     {
-                        FileLike dataFileDir = root.getRootFileLike().resolveChild("QueryImportFiles");
+                        dataFileDir = root.getRootFileLike().resolveChild("QueryImportFiles");
                         if (dataFileDir.isFile())
                         {
                             dataFileDir = FileUtil.findUniqueFileName("QueryImportFiles", root.getRootFileLike());
@@ -575,14 +576,24 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 throw new RuntimeException("Error attempting to create directory " + dataFileDir
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
                         }
-
-                        dataFile = FileUtil.findUniqueFileName(multipartfile.getOriginalFilename(), dataFileDir);
-
                     }
-                    multipartfile.transferTo(dataFile.toNioPathForWrite());
+
+                    for (MultipartFile uploadedFile : uploadedFiles)
+                    {
+                        // can't read the multipart file twice so create temp file (12800)
+                        FileLike uploaded = FileUtil.createTempFileLike("~upload", uploadedFile.getOriginalFilename());
+
+                        if (dataFileDir != null)
+                            uploaded = FileUtil.findUniqueFileName(uploadedFile.getOriginalFilename(), dataFileDir);
+
+                        uploadedFile.transferTo(uploaded.toNioPathForWrite());
+
+                        dataFiles.add(uploaded);
+                    }
+
                     if (_useAsync)
                     {
-                        if (!isBackgroundImportSupported())
+                        if (!isBackgroundImportSupported(dataFiles.getFirst().getName()))
                             throw new RuntimeException("Importing in background currently is not supported for this table");
 
                         ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), new ActionURL());
@@ -590,38 +601,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                         UserSchema schema = getTargetSchema();
                         if (schema != null)
                         {
-                            String schemaName = schema.getSchemaName();
-                            String queryName = getPipelineTargetQueryName();
+                            QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder = getBackgroundImportContext(dataFiles.getFirst(), multipartfile, behaviorType, transactionDetails);
 
-                            QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder = new QueryImportPipelineJob.QueryImportAsyncContextBuilder();
-                            importContextBuilder
-                                .setPrimaryFile(dataFile)
-                                .setHasColumnHeaders(_hasColumnHeaders)
-                                .setFileContentType(multipartfile.getContentType())
-                                .setSchemaName(schemaName)
-                                .setQueryName(queryName)
-                                .setRenamedColumns(getRenamedColumns())
-                                .setLineageImportAliases(getLineageImportAliases())
-                                .setInsertOption(_insertOption)
-                                .setAuditBehaviorType(behaviorType)
-                                .setAuditUserComment(_auditUserComment)
-                                .setOptionParamsMap(getOptionParamsMap())
-                                .setLookupResolutionType(getLookupResolutionType())
-                                .setAllowLineageColumns(allowLineageColumns())
-                                .setJobDescription(getQueryImportDescription())
-                                .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
-                            if (WorkflowService.get() != null)
-                            {
-                                Map<String, Object> workflowParams = WorkflowService.get().getConfigParameters(getViewContext().getRequest());
-                                importContextBuilder.setWorkflowParams(workflowParams);
-                            }
+                            PipelineJob job = getImportPipelineJob(dataFiles, info, root, importContextBuilder);
 
-                            importContextBuilder.setTransactionDetails(transactionDetails);
-                            QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
                             PipelineService.get().queueJob(job, getQueryImportJobNotificationProviderName());
 
                             if (_target != null)
-                                SimpleMetricsService.get().increment("query", "fileBackgroundImports", getMetricPrefix(_target));
+                                SimpleMetricsService.get().increment(QueryMetricArea.FILE_BACKGROUND_IMPORTS, getMetricPrefix(_target));
                             JSONObject response = new JSONObject();
                             response.put("success", true);
                             response.put("jobId", PipelineService.get().getJobId(user, getContainer(), job.getJobGUID()));
@@ -630,8 +617,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                     }
 
-                    loader = DataLoader.get().createLoader(dataFile.toNioPathForRead().toFile(), multipartfile.getContentType(), _hasColumnHeaders, null, null);
-                    file = new FileAttachmentFile(dataFile, multipartfile.getOriginalFilename());
+                    Pair<DataLoader, FileStream> loadedFile = prepareDataFileLoader(dataFiles.getFirst(), uploadedFiles.getFirst());
+                    loader = loadedFile.first;
+                    file = loadedFile.second;
                 }
             }
 
@@ -640,25 +628,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (errors.hasErrors())
                 throw errors;
 
-            BatchValidationException ve = new BatchValidationException();
-            //di = wrap(di, ve);
-            //importData(di, ve);
-
-            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases(), getOptionParamsMap());
-
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (isCrossTypeImport || (behaviorType != null && behaviorType != AuditBehaviorType.NONE))
                 auditEvent = createTransactionAuditEvent(getContainer(), _insertOption.auditAction, transactionDetails);
 
-            int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent, _auditUserComment);
-
-            if (ve.hasErrors())
+            JSONObject response;
+            try (TracedOperation op = importDataOperation(_target, getContainer()).start())
             {
-                addImportValidationErrorMetric(_insertOption, _target, (form instanceof QueryForm qf) ? qf.getQueryName() : null);
-                throw ve;
+                response = handleImportData(loader, dataFiles, file, originalName, behaviorType, auditEvent, (form instanceof QueryForm qf ? qf.getQueryName() : null));
+                op.completed(response.optInt("rowCount", 0));
             }
-
-            JSONObject response = createSuccessResponse(rowCount);
             if (auditEvent != null)
             {
                 response.put("transactionAuditId", auditEvent.getRowId());
@@ -679,10 +658,106 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 loader.close();
             if (null != file)
                 file.closeInputStream();
-            if (null != dataFile && !Boolean.parseBoolean(saveToPipeline) && !_useAsync)
-                dataFile.delete();
+            if (!dataFiles.isEmpty() && !Boolean.parseBoolean(saveToPipeline) && !_useAsync)
+            {
+                for (FileLike tmpFile : dataFiles)
+                    tmpFile.delete();
+            }
+
         }
 
+    }
+
+    /** Shared with background imports, so both report under one span resource and log line format */
+    public static TracedOperation.Builder importDataOperation(@Nullable TableInfo target, Container c)
+    {
+        String targetName = null == target ? "unknown" : target.getPublicSchemaName() + "." + target.getPublicName();
+        return TracedOperation.builder("labkey.importData")
+                .resource(null == target ? "importData" : "importData " + TracedOperation.boundedSchemaName(target.getPublicSchemaName()))
+                .describedAs("importData " + targetName + " in " + c.getPath())
+                .tag("labkey.query", null == target ? null : targetName)
+                .tag("labkey.db_schema", null == target || null == target.getSchema() ? null : target.getSchema().getName())
+                .container(c);
+    }
+
+    protected Pair<DataLoader, FileStream> prepareDataFileLoader(FileLike dataFile, MultipartFile multipartFile) throws IOException
+    {
+        DataLoader loader = DataLoader.get().createLoader(dataFile.toNioPathForRead().toFile(), multipartFile.getContentType(), _hasColumnHeaders, null, null);
+        FileStream file = new FileAttachmentFile(dataFile, multipartFile.getOriginalFilename());
+        return new Pair<>(loader, file);
+    }
+
+    protected JSONObject handleImportData(DataLoader loader, List<FileLike> dataFiles, FileStream file, String originalName, AuditBehaviorType behaviorType,
+                                          TransactionAuditProvider.TransactionAuditEvent auditEvent, String queryName) throws BatchValidationException, IOException
+    {
+        BatchValidationException ve = new BatchValidationException();
+
+        configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases(), getOptionParamsMap());
+
+        int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent, _auditUserComment);
+
+        if (ve.hasErrors())
+        {
+            addImportValidationErrorMetric(_insertOption, _target, queryName);
+            throw ve;
+        }
+
+        return createSuccessResponse(rowCount);
+    }
+
+    private @NotNull List<MultipartFile> getUploadedFiles()
+    {
+        MultiValueMap<String, MultipartFile> fileMap = PageFlowUtil.getMultiFileMap(getViewContext().getRequest());
+        List<MultipartFile> files = new ArrayList<>();
+        if (fileMap != null && fileMap.get("file") != null)
+        {
+            for (MultipartFile mf : fileMap.get("file"))
+            {
+                if (mf != null && mf.getSize() > 0)
+                    files.add(mf);
+            }
+        }
+        return files;
+    }
+
+    protected PipelineJob getImportPipelineJob(List<FileLike> dataFiles, ViewBackgroundInfo info, PipeRoot root, QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder)
+    {
+        return new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
+    }
+
+    protected QueryImportPipelineJob.QueryImportAsyncContextBuilder getBackgroundImportContext(FileLike dataFile, @Nullable MultipartFile multipartfile, AuditBehaviorType behaviorType, Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails) throws IOException, ValidationException
+    {
+        UserSchema schema = getTargetSchema();
+        String schemaName = schema.getSchemaName();
+        String queryName = getPipelineTargetQueryName();
+
+        QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder = new QueryImportPipelineJob.QueryImportAsyncContextBuilder();
+        importContextBuilder
+                .setPrimaryFile(dataFile)
+                .setHasColumnHeaders(_hasColumnHeaders)
+                .setFileContentType(multipartfile != null ? multipartfile.getContentType() : null)
+                .setSchemaName(schemaName)
+                .setQueryName(queryName)
+                .setRenamedColumns(getRenamedColumns())
+                .setLineageImportAliases(getLineageImportAliases())
+                .setInsertOption(_insertOption)
+                .setAuditBehaviorType(behaviorType)
+                .setAuditUserComment(_auditUserComment)
+                .setOptionParamsMap(getOptionParamsMap())
+                .setLookupResolutionType(getLookupResolutionType())
+                .setAllowLineageColumns(allowLineageColumns())
+                .setJobDescription(getQueryImportDescription())
+                .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
+        QueryWorkflowHandler workflowHandler = QueryWorkflowHandler.get();
+        if (workflowHandler != null)
+        {
+            Map<String, Object> workflowParams = workflowHandler.getConfigParameters(getViewContext().getRequest());
+            importContextBuilder.setWorkflowParams(workflowParams);
+        }
+
+        importContextBuilder.setTransactionDetails(transactionDetails);
+
+        return importContextBuilder;
     }
 
     public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns, @Nullable Set<String> lineageAliasNames, @Nullable Map<Params, Boolean> optionParamsMap) throws IOException
@@ -757,7 +832,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return null;
     }
 
-    protected boolean isBackgroundImportSupported()
+    protected boolean isBackgroundImportSupported(@NotNull String fileName)
     {
         return false;
     }
@@ -852,7 +927,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         boolean importIdentity = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
         boolean crossTypeImport = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
         boolean allowCreateStorage = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.allowCreateStorage, false);
-        boolean crossFolderImport = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.crossFolderImport, false);
         boolean useTransactionAuditCache = optionParamsMap.getOrDefault(Params.useTransactionAuditCache, false);
 
         DataIteratorContext context = new DataIteratorContext(errors);
@@ -874,7 +948,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             context.setSupportAutoIncrementKey(true);
         }
         context.setCrossTypeImport(crossTypeImport);
-        context.setCrossFolderImport(crossFolderImport && container != null && container.hasProductFolders());
         context.setAllowCreateStorage(allowCreateStorage);
         context.setUseTransactionAuditCache(useTransactionAuditCache);
         context.setLogger(logger);
@@ -934,14 +1007,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static void addImportValidationErrorMetric(QueryUpdateService.InsertOption insertOption, @Nullable TableInfo target, @Nullable String queryName)
     {
-        String featureArea =  insertOption.toString().toLowerCase() + "FailWithValidationError";
+        QueryMetricArea featureArea = QueryMetricArea.validationErrors(insertOption);
         String targetType = null;
         if (target != null)
             targetType = getMetricPrefix(target);
         else if (queryName != null)
             targetType = queryName.equalsIgnoreCase("materials") ? "samples" : queryName;
         if (targetType != null)
-            SimpleMetricsService.get().increment("query", featureArea, targetType);
+            SimpleMetricsService.get().increment(featureArea, targetType);
     }
 
     private static String getMetricPrefix(@NotNull TableInfo target)
@@ -952,16 +1025,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static void incrementRowCountMetric(int count, QueryUpdateService.InsertOption insertOption, String prefix)
     {
-        String featureArea = "file" + StringUtils.capitalize(insertOption.toString().toLowerCase()) + "Counts";
+        QueryMetricArea featureArea = QueryMetricArea.rowCounts(insertOption);
         String lcPrefix = prefix.toLowerCase();
         if (count <= 1000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "1to1000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "1to1000");
         else if (count <= 5000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "1001to5000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "1001to5000");
         else if (count <= 10000)
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "5001to10000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "5001to10000");
         else
-            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "GT10000");
+            SimpleMetricsService.get().increment(featureArea, lcPrefix + "GT10000");
     }
 
 

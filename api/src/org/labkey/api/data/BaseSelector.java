@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -366,7 +366,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         });
 
         if (list.size() == 1)
-            return list.get(0);
+            return list.getFirst();
         else if (list.isEmpty())
             return null;
         else

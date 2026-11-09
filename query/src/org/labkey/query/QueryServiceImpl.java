@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,10 @@ import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
@@ -52,28 +51,32 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SQLParameterException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -82,7 +85,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineJob;
@@ -94,7 +96,6 @@ import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidNamedSetException;
 import org.labkey.api.query.MetadataColumnJSON;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryAction;
@@ -114,9 +115,10 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
@@ -147,6 +149,7 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.data.SQLParameterException;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.ServerManager;
 import org.labkey.query.olap.rolap.RolapCubeDef;
@@ -191,7 +194,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -207,8 +209,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -235,48 +238,11 @@ public class QueryServiceImpl implements QueryService
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryDef>> MODULE_QUERY_DEF_CACHE = ModuleResourceCaches.create("Module query definitions", new QueryDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
-
-    private static final ModuleResourceCacheListener INVALIDATE_QUERY_METADATA_HANDLER = new ModuleResourceCacheListener()
-    {
-        @Override
-        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            QueryService.get().updateLastModified();
-        }
-
-        @Override
-        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            QueryService.get().updateLastModified();
-        }
-
-        @Override
-        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            QueryService.get().updateLastModified();
-        }
-
-        @Override
-        public void overflow()
-        {
-        }
-
-        @Override
-        public void moduleChanged(Module module)
-        {
-            QueryService.get().updateLastModified();
-        }
-    };
-
-    private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause");
-    private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
-
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module, String>> _schemaLinkActions = new ConcurrentHashMap<>();
     private QueryAnalysisService _queryAnalysisService;
 
     private final List<QueryIconURLProvider> _queryIconURLProviders = new CopyOnWriteArrayList<>();
-
-    private final AtomicLong _metadataLastModified = new AtomicLong(new Date().getTime());
+    private final List<FilterSuggestionProvider> _filterSuggestionProviders = new CopyOnWriteArrayList<>();
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -300,8 +266,6 @@ public class QueryServiceImpl implements QueryService
             CompareType.CONTAINS_NONE_OF,
             CompareType.IN,
             CompareType.NOT_IN,
-            CompareType.IN_NS,
-            CompareType.NOT_IN_NS,
             CompareType.BETWEEN,
             CompareType.NOT_BETWEEN,
             CompareType.MEMBER_OF,
@@ -371,7 +335,7 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
-    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Object value, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull List<ColumnInfo> selectColumns, boolean negate)
+    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Object value, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, boolean negate)
     {
         if (user == null || container == null)
             throw new NotFoundException("Invalid context");
@@ -393,15 +357,15 @@ public class QueryServiceImpl implements QueryService
         SQLFragment fromSql = t.getFromSQL("_");
 
         return new SQLFragment()
-            .append("(").appendIdentifier(col.getAlias())
-            .append(")")
-            .append(negate ? " NOT" : "")
-            .append(" IN (")
-            .append(" SELECT ")
-            .append(t.getColumns().get(0).getValueSql("_"))
-            .append(" FROM ")
+            .unsafeAppend("(").appendIdentifier(col.getAlias())
+            .unsafeAppend(")")
+            .unsafeAppend(negate ? " NOT" : "")
+            .unsafeAppend(" IN (")
+            .unsafeAppend(" SELECT ")
+            .append(t.getColumns().getFirst().getValueSql("_"))
+            .unsafeAppend(" FROM ")
             .append(fromSql)
-            .append(")");
+            .unsafeAppend(")");
     }
 
     /**
@@ -420,7 +384,7 @@ public class QueryServiceImpl implements QueryService
                 @Override
                 public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
                 {
-                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, false);
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, false);
                 }
             };
         }
@@ -442,7 +406,7 @@ public class QueryServiceImpl implements QueryService
                 @Override
                 public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
                 {
-                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, true);
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, true);
                 }
             };
         }
@@ -490,7 +454,7 @@ public class QueryServiceImpl implements QueryService
                 parseResult = new SqlParser(null, null).parseExpr(expression, errors);
             expr = parseResult;
             if (!errors.isEmpty())
-                throw new ConversionException(errors.get(0));
+                throw new ConversionException(errors.getFirst());
         }
 
         @Override
@@ -526,7 +490,7 @@ public class QueryServiceImpl implements QueryService
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr) expr.childList().get(0);
+                methodName = (QExpr) expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -555,12 +519,12 @@ public class QueryServiceImpl implements QueryService
             }
             String expression = (String) getParamVals()[0];
             if (isBlank(expression))
-                return new SQLFragment("1=1");
+                return SQLFragment.unsafe("1=1");
             // reparse because we have a dialect now
             List<QueryParseException> errors = new ArrayList<>();
             QExpr expr = new SqlParser(dialect, null).parseExpr(expression, errors);
             if (null == expr || !errors.isEmpty())
-                return new SQLFragment("0=1"); // UNDONE: error reporting
+                return SQLFragment.unsafe("0=1"); // UNDONE: error reporting
             QExpr bound = bind(expr, columnMap);
             SQLFragment ret = null;
             if (null != bound && query.getParseErrors().isEmpty())
@@ -569,7 +533,7 @@ public class QueryServiceImpl implements QueryService
             {
                 if (query.getParseErrors().isEmpty())
                     query.getParseErrors().add(new QueryException("Unexpected error parsing where filter"));
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
             }
             return ret;
         }
@@ -605,7 +569,7 @@ public class QueryServiceImpl implements QueryService
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr) expr.childList().get(0);
+                methodName = (QExpr) expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -631,7 +595,7 @@ public class QueryServiceImpl implements QueryService
     {
         static InLineageOfClause create(boolean parents, FieldKey fk, String value, boolean negate)
         {
-            if (null != fk.getParent() || !StringUtils.startsWithIgnoreCase(value, "SELECT "))
+            if (null != fk.getParent() || !Strings.CI.startsWith(value, "SELECT "))
                 throw new IllegalArgumentException("Bad filter syntax, value should start with 'SELECT '");
             return new InLineageOfClause(parents, value, negate);
         }
@@ -699,30 +663,6 @@ public class QueryServiceImpl implements QueryService
     static public QueryServiceImpl get()
     {
         return (QueryServiceImpl) QueryService.get();
-    }
-
-    static class CacheListener implements org.labkey.api.cache.CacheListener
-    {
-        @Override
-        public void clearCaches()
-        {
-            QueryServiceImpl.get().updateLastModified();
-        }
-    }
-
-    /** Get the value used for the "Last-Modified" time stamp in query metadata API responses. */
-    @Override
-    public long metadataLastModified()
-    {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_LAST_MODIFIED) ?
-                _metadataLastModified.get() : Long.MIN_VALUE;
-    }
-
-    /** Invalidate the value used for the "Last-Modified" time stamp. */
-    @Override
-    public void updateLastModified()
-    {
-        _metadataLastModified.set(new Date().getTime());
     }
 
     @Override
@@ -872,7 +812,7 @@ public class QueryServiceImpl implements QueryService
         // helper function to add a queryDef to the return map if it hasn't already been added
         Consumer<QueryDef> addQueryDefToMap = (queryDef) -> {
             Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-            ret.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, container, queryDef));
+            ret.computeIfAbsent(key, (_) -> new CustomQueryDefinitionImpl(user, container, queryDef));
         };
 
         // session queries have highest priority
@@ -967,7 +907,7 @@ public class QueryServiceImpl implements QueryService
     private void addCustomQueryDefToMap(User user, Container c, Map<Entry<String, String>, QueryDefinition> map, QueryDef queryDef)
     {
         Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-        map.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, c, queryDef));
+        map.computeIfAbsent(key, (_) -> new CustomQueryDefinitionImpl(user, c, queryDef));
     }
 
     @Override
@@ -989,7 +929,6 @@ public class QueryServiceImpl implements QueryService
         MODULE_QUERY_DEF_CACHE.onModuleChanged(module);
         MODULE_QUERY_METADATA_DEF_CACHE.onModuleChanged(module);
         MODULE_CUSTOM_VIEW_CACHE.onModuleChanged(module);
-        INVALIDATE_QUERY_METADATA_HANDLER.moduleChanged(module);
     }
 
     private static class QueryDefResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleQueryDef>>
@@ -1001,12 +940,6 @@ public class QueryServiceImpl implements QueryService
                     .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
                     .map(resource -> new ModuleQueryDef(module, resource))
                     .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
-        }
-
-        @Override
-        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
-        {
-            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
@@ -1362,7 +1295,7 @@ public class QueryServiceImpl implements QueryService
         {
             Container viewContainer = cstmView.lookupContainer();
             if (viewContainer != null)
-                containerViews.computeIfAbsent(viewContainer, k -> new ArrayList<>()).add(cstmView);
+                containerViews.computeIfAbsent(viewContainer, _ -> new ArrayList<>()).add(cstmView);
         }
 
         for (Map.Entry<Container, List<CstmView>> containerCstmViews: containerViews.entrySet())
@@ -1438,12 +1371,6 @@ public class QueryServiceImpl implements QueryService
                     .filter(resource -> Strings.CI.endsWith(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                     .map(ModuleCustomViewDef::new)
                     .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
-        }
-
-        @Override
-        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
-        {
-            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
@@ -1568,38 +1495,8 @@ public class QueryServiceImpl implements QueryService
                 .collect(Collectors.toList());
     }
 
-    private static class ContainerSchemaKey implements Serializable
+    private record ContainerSchemaKey(@NotNull Container container, @NotNull SchemaKey schema) implements Serializable
     {
-        @NotNull
-        private final Container _container;
-        @NotNull
-        private final SchemaKey _schema;
-
-        public ContainerSchemaKey(@NotNull Container container, @NotNull SchemaKey schema)
-        {
-            _container = container;
-            _schema = schema;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ContainerSchemaKey that = (ContainerSchemaKey) o;
-
-            if (!_container.equals(that._container)) return false;
-            return _schema.equals(that._schema);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = _container.hashCode();
-            result = 31 * result + _schema.hashCode();
-            return result;
-        }
     }
 
     @Override
@@ -1641,42 +1538,8 @@ public class QueryServiceImpl implements QueryService
 
     private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
 
-    private static class SessionQuery implements Serializable
+    private record SessionQuery(String sql, String metadata) implements Serializable
     {
-        private final String _sql;
-        private final String _metadata;
-
-        public SessionQuery(String sql, String metadata)
-        {
-            _sql = sql;
-            _metadata = metadata;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = _sql.hashCode();
-            if (_metadata != null)
-                result = 31 * result + _metadata.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            if (obj instanceof SessionQuery sq)
-            {
-                if (!_sql.equals(sq._sql))
-                    return false;
-                if (_metadata == null && sq._metadata != null)
-                    return false;
-                if (_metadata != null && !_metadata.equals(sq._metadata))
-                    return false;
-
-                return true;
-            }
-            return false;
-        }
     }
 
     private Map<String, SessionQuery> getSessionQueryMap(@NotNull HttpSession session, Container container, SchemaKey schemaName)
@@ -1698,12 +1561,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         ContainerSchemaKey key = new ContainerSchemaKey(container, schemaName);
-        Map<String, SessionQuery> queries = containerQueries.get(key);
-        if (queries == null)
-        {
-            queries = new ConcurrentHashMap<>();
-            containerQueries.put(key, queries);
-        }
+        Map<String, SessionQuery> queries = containerQueries.computeIfAbsent(key, _ -> new ConcurrentHashMap<>());
         return queries;
     }
 
@@ -1744,9 +1602,9 @@ public class QueryServiceImpl implements QueryService
         if (null == query || null == qdef)
             throw new IllegalStateException("Expected a QueryDefinition object.");
 
-        qdef.setSql(query._sql);
-        if (query._metadata != null)
-            qdef.setMetadataXml(query._metadata);
+        qdef.setSql(query.sql);
+        if (query.metadata != null)
+            qdef.setMetadataXml(query.metadata);
         qdef.setIsTemporary(true);
         qdef.setIsHidden(true);
         return qdef;
@@ -1979,29 +1837,23 @@ public class QueryServiceImpl implements QueryService
 
         if (filter != null)
         {
+            // Map fields to the single-field clauses that reference them, so resolveFieldKey() can detect a clause
+            // whose array-ness no longer matches its column (GitHUb Issue 946).
+            Map<FieldKey, List<SimpleFilter.FilterClause>> clausesByField = new HashMap<>();
             if (filter instanceof SimpleFilter simpleFilter)
             {
-                Map<FieldKey, List<SimpleFilter.FilterClause>> clausesByField = new HashMap<>();
                 for (SimpleFilter.FilterClause clause : simpleFilter.getClauses())
                 {
-                    for (FieldKey fk : clause.getFieldKeys())
-                        clausesByField.computeIfAbsent(fk, k -> new ArrayList<>()).add(clause);
-                }
-                for (FieldKey fieldKey : simpleFilter.getWhereParamFieldKeys())
-                {
-                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, clausesByField.get(fieldKey));
-                    if (col != null)
-                        ret.putIfAbsent(col.getFieldKey(), col);
+                    if (clause.getFieldKeys().size() == 1) // GitHub Issue 929: Clauses spanning multiple fields (e.g. the "Q" search clause, which references every searchable column) are deliberately excluded here
+                        clausesByField.computeIfAbsent(clause.getFieldKeys().get(0), k -> new ArrayList<>()).add(clause);
                 }
             }
-            else
+
+            for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
             {
-                for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
-                {
-                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, null);
-                    if (col != null)
-                        ret.putIfAbsent(col.getFieldKey(), col);
-                }
+                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, clausesByField.get(fieldKey));
+                if (col != null)
+                    ret.putIfAbsent(col.getFieldKey(), col);
             }
         }
 
@@ -2025,7 +1877,7 @@ public class QueryServiceImpl implements QueryService
 
         if (unresolvedColumns != null && !unresolvedColumns.isEmpty())
         {
-            LOG.debug("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns);
+            LOG.debug("Unable to resolve the following columns on table {}: {}", table.getName(), unresolvedColumns);
 
             for (FieldKey field : unresolvedColumns)
             {
@@ -2096,7 +1948,7 @@ public class QueryServiceImpl implements QueryService
         // This could be made more general, but I don't think there's a need.  To reduce testing
         // just handle expObject() for now, instead of table methods more generally.
         // Also, we could just expose "objectid" column on all of the experiment tables.
-        if (fieldKey.equals(expObjectIdFieldKey) && table instanceof ExpTable expTable)
+        if (fieldKey.equals(expObjectIdFieldKey) && table instanceof ExpTable<?> expTable)
         {
             ColumnInfo expObjectColumn = expTable.getExpObjectColumn();
             if (null != expObjectColumn)
@@ -2165,7 +2017,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema {} from {}", def.getSourceSchemaName(), def.getDataSource(), e);
             }
         }
 
@@ -2184,7 +2036,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema {} from {}", def.getSourceSchemaName(), def.getDataSource(), e);
             }
         }
 
@@ -2206,7 +2058,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema {}", def.getUserSchemaName(), e);
             }
         }
 
@@ -2226,7 +2078,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema {}", def.getUserSchemaName(), e);
             }
         }
 
@@ -2258,7 +2110,7 @@ public class QueryServiceImpl implements QueryService
         }
         catch (Exception e)
         {
-            LOG.error("Error deleting linked schema " + name, e);
+            LOG.error("Error deleting linked schema {}", name, e);
         }
     }
 
@@ -2285,7 +2137,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (XmlException | XmlValidationException | IOException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                            LOG.error("Skipping '{}' schema template file: {}", name, e.getMessage());
                         }
                     }
                 }
@@ -2322,7 +2174,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (XmlException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + XmlBeansUtil.getErrorMessage(e));
+                            LOG.error("Skipping '{}' schema template file: {}", name, XmlBeansUtil.getErrorMessage(e));
                         }
                         catch (XmlValidationException e)
                         {
@@ -2334,7 +2186,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (IOException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                            LOG.error("Skipping '{}' schema template file: {}", name, e.getMessage());
                         }
                     }
                 }
@@ -2462,46 +2314,35 @@ public class QueryServiceImpl implements QueryService
     // that the scope of the cache is very limited, and this is a very conservative cache.
     private final Map<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<>());
 
-    /** Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality */
-    private static class ObjectIdentityCacheKey
-    {
-        private final Object _object;
-        private final boolean _customQuery;
-        private final boolean _allModules;
-        private final Path _dir;
-
-        private ObjectIdentityCacheKey(UserSchema object, boolean customQuery, boolean allModules, @Nullable Path dir)
+    /**
+     * Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality
+     */
+        private record ObjectIdentityCacheKey(Object _object, boolean _customQuery, boolean _allModules, Path _dir)
         {
-            _object = object;
-            _customQuery = customQuery;
-            _allModules = allModules;
-            _dir = dir;
+            @Override
+            public boolean equals(Object o)
+            {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+
+                ObjectIdentityCacheKey that = (ObjectIdentityCacheKey) o;
+
+                if (_allModules != that._allModules) return false;
+                if (_customQuery != that._customQuery) return false;
+                if (!Objects.equals(_dir, that._dir)) return false;
+                return that._object == _object;
+            }
+
+            @Override
+            public int hashCode()
+            {
+                int result = System.identityHashCode(_object);
+                result = 31 * result + (_customQuery ? 1 : 0);
+                result = 31 * result + (_allModules ? 1 : 0);
+                result = 31 * result + (_dir != null ? _dir.hashCode() : 0);
+                return result;
+            }
         }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ObjectIdentityCacheKey that = (ObjectIdentityCacheKey) o;
-
-            if (_allModules != that._allModules) return false;
-            if (_customQuery != that._customQuery) return false;
-            if (_dir != null ? !_dir.equals(that._dir) : that._dir != null) return false;
-            return that._object == _object;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = System.identityHashCode(_object);
-            result = 31 * result + (_customQuery ? 1 : 0);
-            result = 31 * result + (_allModules ? 1 : 0);
-            result = 31 * result + (_dir != null ? _dir.hashCode() : 0);
-            return result;
-        }
-    }
 
     /**
      * Finds metadata overrides for the given schema and table and returns them in application order.
@@ -2646,34 +2487,6 @@ public class QueryServiceImpl implements QueryService
                     .map(ModuleQueryMetadataDef::new)
                     .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
-
-        @Override
-        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
-        {
-            return INVALIDATE_QUERY_METADATA_HANDLER;
-        }
-    }
-
-    @Override
-    public void saveNamedSet(String setName, List<String> setList)
-    {
-        NAMED_SET_CACHE.put(NAMED_SET_CACHE_ENTRY + setName, setList);
-    }
-
-    @Override
-    public void deleteNamedSet(String setName)
-    {
-        NAMED_SET_CACHE.remove(NAMED_SET_CACHE_ENTRY + setName);
-    }
-
-    @Override
-    public List<String> getNamedSet(String setName)
-    {
-        List<String> namedSet = NAMED_SET_CACHE.get(NAMED_SET_CACHE_ENTRY + setName);
-        if (namedSet == null)
-            throw new InvalidNamedSetException("Named set not found in cache: " + setName);
-
-        return Collections.unmodifiableList(namedSet);
     }
 
     @Override
@@ -2695,27 +2508,6 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    @NotNull
-    public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql)
-    {
-        return new LabKeyQuerySelector(schema, sql);
-    }
-
-    private static class LabKeyQuerySelector extends TableSelector
-    {
-        public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql)
-        {
-            super(QueryServiceImpl.get().getSelectBuilder(schema, sql).getTableInfo());
-        }
-
-        public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
-        {
-            super(QueryServiceImpl.get().getSelectBuilder(schema, sql).getTableInfo(), columnNames, filter, sort);
-        }
-    }
-
-
-    @Override
     public TableInfo createTable(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList)
     {
         Query q = new Query(schema);
@@ -2725,31 +2517,6 @@ public class QueryServiceImpl implements QueryService
 
         return getSelectBuilder(q).getTableInfo();
     }
-
-
-    @Override
-    public Results select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
-    {
-        Query q = new Query(schema);
-        q.setStrictColumnList(strictColumnList);
-        q.setTableMap(tableMap);
-        q.parse(sql);
-
-        return getSelectBuilder(q).select(Map.of(), cached);
-    }
-
-
-    @Override
-    public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached)
-    {
-        Query q = new Query(schema);
-        q.setStrictColumnList(strictColumnList);
-        q.setTableMap(tableMap);
-        q.parse(sql);
-
-        return getSelectBuilder(q).select(parameters, cached);
-    }
-
 
     @Override
     public void bindNamedParameters(SQLFragment frag, @Nullable Map<String, Object> in)
@@ -2812,45 +2579,6 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache)
-    {
-        return getSelectBuilder(table)
-                .columns(columns)
-                .filter(filter)
-                .sort(sort)
-                .select(parameters, cache);
-    }
-
-    @Override
-    public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                                    int maxRows, long offset, boolean forceSort)
-    {
-        return getSelectBuilder(table)
-                .columns(selectColumns)
-                .filter(filter)
-                .sort(sort)
-                .maxRows(maxRows)
-                .offset(offset)
-                .forceSort(forceSort)
-                .buildSqlFragment();
-    }
-
-    @Override
-    public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
-    {
-        return getSelectBuilder(table)
-                .columns(selectColumns)
-                .filter(filter)
-                .sort(sort)
-                .maxRows(maxRows)
-                .offset(offset)
-                .forceSort(forceSort)
-                .queryLogging(queryLogging)
-                .buildSqlFragment();
-    }
-
-    @Override
     public SelectBuilder getSelectBuilder(TableInfo table)
     {
         return new SelectBuilderImpl(table);
@@ -2864,9 +2592,21 @@ public class QueryServiceImpl implements QueryService
     @Override
     public SelectBuilder getSelectBuilder(QuerySchema schema, String sql)
     {
+        return getSelectBuilder(schema, sql, false);
+    }
+
+    @Override
+    public SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList)
+    {
+        return getSelectBuilder(schema, sql, strictColumnList, null);
+    }
+
+    @Override
+    public SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList, @Nullable Map<String, TableInfo> tableMap)
+    {
         Query q = new Query(schema);
-        q.setStrictColumnList(false);
-        q.setTableMap(null);
+        q.setStrictColumnList(strictColumnList);
+        q.setTableMap(tableMap);
         q.parse(sql);
         return getSelectBuilder(q);
     }
@@ -2884,6 +2624,7 @@ public class QueryServiceImpl implements QueryService
         boolean forceSort = false;
         QueryLogging queryLogging = new QueryLogging();
         boolean distinct = false;
+        boolean jdbcCaching = false;
 
         SelectBuilderImpl(TableInfo table)
         {
@@ -2896,12 +2637,12 @@ public class QueryServiceImpl implements QueryService
             this.query = query;
 
             if (!query.getParseErrors().isEmpty())
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
 
             this.table = query.getTableInfo();
 
             if (!query.getParseErrors().isEmpty())
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
         }
 
         @Override
@@ -2961,6 +2702,13 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
+        public SelectBuilder jdbcCaching(boolean jdbcCaching)
+        {
+            this.jdbcCaching = jdbcCaching;
+            return this;
+        }
+
+        @Override
         public SQLFragment buildSqlFragment()
         {
             if (null == queryLogging)
@@ -2975,7 +2723,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public SqlSelector buildSqlSelector(@Nullable Map<String, Object> parameters)
+        public SqlSelector buildSqlSelector(@NotNull Map<String, Object> parameters)
         {
             SQLFragment sql = buildSqlFragment();
             bindNamedParameters(sql, parameters);
@@ -2985,10 +2733,10 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public Results select(@Nullable Map<String, Object> parameters, boolean cache)
+        public Results select(boolean labkeyCachedResultSet, @NotNull Map<String, Object> parameters)
         {
-            SqlSelector selector = buildSqlSelector(parameters).setJdbcCaching(cache);
-            ResultSet rs = selector.getResultSet(cache, cache);
+            SqlSelector selector = buildSqlSelector(parameters).setJdbcCaching(jdbcCaching);
+            ResultSet rs = selector.getResultSet(labkeyCachedResultSet, labkeyCachedResultSet);
 
             // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
             // close the underlying ResultSet before returning since it won't be accessible anywhere else
@@ -3036,8 +2784,7 @@ public class QueryServiceImpl implements QueryService
     public MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType)
     {
         // TODO short-circuit parsing/binding in this code path
-        var ret = new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()), columnType);
-        return ret;
+        return new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()), columnType);
     }
 
      /** Compute and set the metadata for this column based on the source expression and the xml override */
@@ -3050,6 +2797,40 @@ public class QueryServiceImpl implements QueryService
             calc.validate(columns, referencedKeys);
         if (!validateOnly)
             calc.computeMetaData(columns);
+    }
+
+    public record CalculatedColumnParseResult(JdbcType jdbcType, Set<FieldKey> requiredColumns) { }
+
+    public CalculatedColumnParseResult parseCalculatedColumn(
+        Container container,
+        User user,
+        String expression,
+        Map<FieldKey, JdbcType> columnMap,
+        @Nullable List<FieldKey> phiColumns
+    ) throws QueryException
+    {
+        var schema = DefaultSchema.get(user, container).getUserSchema("core");
+        var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
+        ColumnInfo calculatedCol = createQueryExpressionColumn(table, new FieldKey(null, "expr"), expression, null);
+        Map<FieldKey, ColumnInfo> columns = new HashMap<>();
+
+        for (var entry : columnMap.entrySet())
+        {
+            BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
+            // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions,
+            // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
+            if (phiColumns != null && phiColumns.contains(entry.getKey()))
+                entryCol.setPHI(PHI.PHI);
+            columns.put(entry.getKey(), entryCol);
+            table.addColumn(entryCol);
+        }
+
+        // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
+        var requiredColumns = new HashSet<FieldKey>();
+        bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
+        var jdbcType = calculatedCol.getJdbcType();
+
+        return new CalculatedColumnParseResult(jdbcType, requiredColumns);
     }
 
     @Override
@@ -3142,6 +2923,18 @@ public class QueryServiceImpl implements QueryService
         return Collections.unmodifiableList(providers);
     }
 
+    @Override
+    public void registerFilterSuggestionProvider(FilterSuggestionProvider provider)
+    {
+        _filterSuggestionProviders.add(provider);
+    }
+
+    @Override
+    public @NotNull List<FilterSuggestionProvider> getFilterSuggestionProviders()
+    {
+        return Collections.unmodifiableList(_filterSuggestionProviders);
+    }
+
     private static class QAliasedColumn extends AliasedColumn
     {
         public QAliasedColumn(FieldKey key, String alias, ColumnInfo column, boolean forceKeepLabel)
@@ -3222,7 +3015,7 @@ public class QueryServiceImpl implements QueryService
         return new AbstractAuditHandler()
         {
             @Override
-            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row, null);
                 event.setUserComment(userComment);
@@ -3230,7 +3023,7 @@ public class QueryServiceImpl implements QueryService
             }
 
             @Override
-            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
+            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow, existingRow);
                 event.setUserComment(userComment);
@@ -3445,7 +3238,7 @@ public class QueryServiceImpl implements QueryService
 
         if (null == descriptor)
         {
-            LOG.warn("OLAP schema descriptor not found: " + configId);
+            LOG.warn("OLAP schema descriptor not found: {}", configId);
         }
         else
         {
@@ -3524,7 +3317,7 @@ public class QueryServiceImpl implements QueryService
             TableInfo target = fk.getLookupTableInfo();
             if (null == target)
                 continue;
-            if (!_includeLookupDependency(source, target))
+            if (!_includeLookupDependency(target))
                 continue;
             var type = target instanceof QueryTableInfo ? DependencyType.Query : DependencyType.Table;
             Container c = fk.getLookupContainer();
@@ -3548,7 +3341,7 @@ public class QueryServiceImpl implements QueryService
 
     final static SchemaKey coreSchemaKey = SchemaKey.fromParts("core");
 
-    private boolean _includeLookupDependency(TableInfo from, TableInfo to)
+    private boolean _includeLookupDependency(TableInfo to)
     {
         // ignore core schema
         if (to.getUserSchema() == null)
@@ -3671,19 +3464,19 @@ public class QueryServiceImpl implements QueryService
     @Override
     public boolean isProductFoldersAllFolderScopeEnabled()
     {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
     }
 
     @Override
     public boolean isProductFoldersDataListingScopedToProject()
     {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }
 
     @Override
     public boolean isTriggerManagedColumnsEnabled()
     {
-        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
+        return !OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert
@@ -3751,6 +3544,82 @@ public class QueryServiceImpl implements QueryService
                     assertEquals(4, rs.getMetaData().getColumnCount());
                 }
 	        }
+        }
+
+        @Test
+        public void testInClauseInnerJoin()
+        {
+            QueryService qs = QueryService.get();
+            TableInfo users = DbSchema.get("core", DbSchemaType.Module).getTable("users");
+            assertNotNull(users);
+            List<ColumnInfo> cols = List.of(users.getColumn("userid"), users.getColumn("displayname"));
+
+            List<Integer> ids = new ArrayList<>();
+            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
+                ids.add(i);
+            FieldKey pk = FieldKey.fromParts("userid");
+            Supplier<SimpleFilter> pkInFilter = () -> new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids));
+
+            // sorted + paged on a temp-table-backed PK IN: drive from the value set
+            String joinSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("Expected a driving INNER JOIN to the temp table, got:\n" + joinSql, joinSql.contains("INNER JOIN") && joinSql.contains("_drive_"));
+            assertFalse("Driving join should replace the PK IN (SELECT ...) semi-join:\n" + joinSql, joinSql.contains("IN (SELECT Id FROM"));
+
+            // unpaged: nothing for the planner to short-circuit, so leave the semi-join alone
+            String unpagedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).buildSqlFragment().getSQL();
+            assertFalse("Unpaged query should not produce a driving join:\n" + unpagedSql, unpagedSql.contains("_drive_"));
+            assertTrue("Unpaged query should keep the IN (SELECT ...) semi-join:\n" + unpagedSql, unpagedSql.contains("IN (SELECT Id FROM"));
+
+            // paged with no sort of its own: getSelectSQL() supplies a default sort, so the planner still sees ORDER BY + LIMIT
+            String unsortedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("A paged query picks up a default sort, so it should drive from the value set:\n" + unsortedSql, unsortedSql.contains("_drive_"));
+
+            // below the temp-table threshold there is no temp table to drive from
+            SimpleFilter smallFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids.subList(0, 10)));
+            String smallSql = qs.getSelectBuilder(users).columns(cols).filter(smallFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("A value set below the temp table threshold should not produce a driving join:\n" + smallSql, smallSql.contains("_drive_"));
+
+            // NOT IN cannot become a join
+            SimpleFilter negatedFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids, false, true));
+            String negatedSql = qs.getSelectBuilder(users).columns(cols).filter(negatedFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Negated IN should not produce a driving join:\n" + negatedSql, negatedSql.contains("_drive_"));
+
+            // non-PK column
+            SimpleFilter nonPkFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(FieldKey.fromParts("displayname"), ids));
+            String nonPkSql = qs.getSelectBuilder(users).columns(cols).filter(nonPkFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Non-PK IN should not produce a driving join:\n" + nonPkSql, nonPkSql.contains("_drive_"));
+        }
+
+        @Test
+        public void testSortTrimmedAfterPk()
+        {
+            TableInfo principals = CoreSchema.getInstance().getTableInfoPrincipals();
+            assertEquals(List.of("userid"), principals.getPkColumnNames().stream().map(String::toLowerCase).toList());
+
+            assertEquals("order by userid asc", orderBy(principals, "UserId,Name,-Type"));
+            assertEquals("order by name asc, userid desc", orderBy(principals, "Name,-UserId,Type"));
+            assertEquals("order by name asc, type asc, userid asc", orderBy(principals, "Name,Type"));
+
+            Sort sort = new Sort("UserId,Name");
+            orderBy(principals, sort);
+            assertEquals("Caller's sort was modified", 2, sort.getSortList().size());
+
+            // A view's PK is declared in schema XML, not enforced by the database
+            TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
+            assertEquals(List.of("userid"), users.getPkColumnNames().stream().map(String::toLowerCase).toList());
+            assertEquals("order by userid asc, email asc", orderBy(users, "UserId,Email"));
+        }
+
+        private String orderBy(TableInfo table, String sort)
+        {
+            return orderBy(table, new Sort(sort));
+        }
+
+        private String orderBy(TableInfo table, Sort sort)
+        {
+            String sql = QueryService.get().getSelectBuilder(table).sort(sort).maxRows(10).buildSqlFragment().getRawSQL();
+            String orderBy = sql.substring(sql.indexOf("ORDER BY"), sql.indexOf("LIMIT")).trim();
+            return orderBy.replaceAll("\\s+", " ").replace("\"", "").toLowerCase();
         }
 
         @Test
@@ -3846,19 +3715,19 @@ public class QueryServiceImpl implements QueryService
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleCustomViewCount + " custom views defined in all modules");
+            LOG.info("{} custom views defined in all modules", moduleCustomViewCount);
 
             int moduleQueryCount = MODULE_QUERY_DEF_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleQueryCount + " module queries defined in all modules");
+            LOG.info("{} module queries defined in all modules", moduleQueryCount);
 
             int moduleQueryMetadataCount = MODULE_QUERY_METADATA_DEF_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleQueryMetadataCount + " module query metadata overrides defined in all modules");
+            LOG.info("{} module query metadata overrides defined in all modules", moduleQueryMetadataCount);
 
             // Make sure the cache retrieves the expected number of custom views, queries, and metadata overrides from the simpletest module, if present
 
@@ -3890,6 +3759,256 @@ public class QueryServiceImpl implements QueryService
             {
                 assertTrue(e.getMessage().contains("Syntax error near 'UNION'"));
             }
+        }
+
+        @Test
+        public void testParseCalculatedColumn() throws QueryException
+        {
+            QueryServiceImpl qs = QueryServiceImpl.get();
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            FieldKey rowId = new FieldKey(null, "RowId");
+            FieldKey sortOrder = new FieldKey(null, "SortOrder");
+            FieldKey name = new FieldKey(null, "Name");
+            FieldKey title = new FieldKey(null, "Title");
+
+            // Integer arithmetic over existing core.Containers columns
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+                columnMap.put(sortOrder, JdbcType.INTEGER);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "RowId + SortOrder", columnMap, null);
+                assertEquals(JdbcType.INTEGER, result.jdbcType());
+                assertEquals(Set.of(rowId, sortOrder), result.requiredColumns());
+            }
+
+            // String concatenation; only references a subset of supplied columns
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(name, JdbcType.VARCHAR);
+                columnMap.put(title, JdbcType.VARCHAR);
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "Name || '_' || Title", columnMap, null);
+                assertEquals(JdbcType.VARCHAR, result.jdbcType());
+                assertEquals(Set.of(name, title), result.requiredColumns());
+            }
+
+            // Client-supplied columns that don't exist yet on the domain are honored — the parser
+            // trusts the supplied columnMap rather than the live schema.
+            {
+                FieldKey newColA = new FieldKey(null, "NewColA");
+                FieldKey newColB = new FieldKey(null, "NewColB");
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(newColA, JdbcType.DOUBLE);
+                columnMap.put(newColB, JdbcType.DOUBLE);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "NewColA * NewColB", columnMap, null);
+                assertEquals(JdbcType.DOUBLE, result.jdbcType());
+                assertEquals(Set.of(newColA, newColB), result.requiredColumns());
+            }
+
+            // Referencing a column that the client did not supply is an error
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId + Missing", columnMap, null);
+                    fail("Expected QueryException for reference to unknown column");
+                }
+                catch (QueryException _)
+                {
+                }
+            }
+
+            // Syntactically invalid expressions throw QueryException
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId +", columnMap, null);
+                    fail("Expected QueryException for syntactically invalid expression");
+                }
+                catch (QueryException _)
+                {
+                }
+            }
+
+            // PHI-flagged columns cannot be referenced from calculated column expressions
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+                columnMap.put(sortOrder, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId + SortOrder", columnMap, List.of(sortOrder));
+                    fail("Expected QueryException when expression references a PHI column");
+                }
+                catch (QueryException _)
+                {
+                }
+            }
+        }
+
+        @Test
+        public void testRightAndIsnumeric() throws SQLException
+        {
+            // Portable LabKey-SQL functions: right() dispatches via the JDBC {fn right} escape; isnumeric() yields 1/0
+            // -- ISNUMERIC(x) on SQL Server, a regex-based CASE on PostgreSQL.
+            String sql =
+                "SELECT " +
+                "  right('hello', 2) AS r1, " +
+                "  right('xy', 5) AS r2, " +
+                "  isnumeric('5') AS n1, " +
+                "  isnumeric('-3.14') AS n2, " +
+                "  isnumeric('abc') AS n3, " +
+                "  isnumeric(NULL) AS n4, " +
+                "  CASE WHEN isnumeric('5') = 1 THEN 1 ELSE 0 END AS n5, " +
+                "  CASE WHEN isnumeric('abc') = 1 THEN 1 ELSE 0 END AS n6 " +
+                "FROM core.Containers";
+
+            QueryDef qd = new QueryDef();
+            qd.setSchema("core");
+            qd.setName("junit" + GUID.makeHash());
+            qd.setContainer(JunitUtil.getTestContainer().getId());
+            qd.setSql(sql);
+            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(), JunitUtil.getTestContainer(), qd);
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo t = qdef.getTable(errors, false);
+            String dialect = t == null ? "?" : t.getSqlDialect().getProductName();
+            assertTrue("Query parse errors on " + dialect + ": " + errors, errors.isEmpty());
+
+            try (Results results = new TableSelector(t).getResults())
+            {
+                assertTrue("Expected at least one row from core.Containers", results.next());
+                assertEquals("right('hello', 2) on " + dialect, "lo", results.getString("r1"));
+                assertEquals("right('xy', 5) on " + dialect, "xy", results.getString("r2"));
+                assertEquals("isnumeric('5') on " + dialect, 1, results.getInt("n1"));
+                assertEquals("isnumeric('-3.14') on " + dialect, 1, results.getInt("n2"));
+                assertEquals("isnumeric('abc') on " + dialect, 0, results.getInt("n3"));
+                assertEquals("isnumeric(NULL) on " + dialect, 0, results.getInt("n4"));
+                assertEquals("isnumeric('5') = 1 on " + dialect, 1, results.getInt("n5"));
+                assertEquals("isnumeric('abc') = 1 on " + dialect, 0, results.getInt("n6"));
+            }
+        }
+
+        // 2026 (Jan 1 = Thursday) makes the two rules agree except on Sundays; 2027 (Jan 1 = Friday) puts them one
+        // apart every day and starts in the prior ISO year. A mid-year sample in a Mon-Thu year passes either way.
+        private static final String[] WEEK_DATES = {
+            "2026-01-01",   // Thursday
+            "2026-01-03",   // Saturday
+            "2026-01-04",   // Sunday
+            "2027-01-01",   // Friday
+            "2027-07-15"    // Thursday
+        };
+
+        @Test
+        public void testWeekUs() throws SQLException
+        {
+            // Weeks start Sunday and week 1 holds Jan 1, matching SQL Server's DATEPART(week, x) under DATEFIRST 7.
+            assertWeeks("weekus", 1, 1, 2, 1, 29);
+        }
+
+        @Test
+        public void testWeekIso() throws SQLException
+        {
+            // ISO 8601: weeks start Monday and week 1 holds the year's first Thursday, so 2027-01-01 lands in 2026's week 53.
+            assertWeeks("weekiso", 1, 1, 1, 53, 28);
+        }
+
+        private void assertWeeks(String method, int... expected) throws SQLException
+        {
+            StringBuilder sql = new StringBuilder("SELECT ");
+            for (int i = 0; i < WEEK_DATES.length; i++)
+                sql.append(i > 0 ? ", " : "").append(method)
+                   .append("(CAST('").append(WEEK_DATES[i]).append(" 00:00:00' AS TIMESTAMP)) AS w").append(i + 1);
+            sql.append(" FROM core.Containers");
+
+            QueryDef qd = new QueryDef();
+            qd.setSchema("core");
+            qd.setName("junit" + GUID.makeHash());
+            qd.setContainer(JunitUtil.getTestContainer().getId());
+            qd.setSql(sql.toString());
+            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(), JunitUtil.getTestContainer(), qd);
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo t = qdef.getTable(errors, false);
+            String dialect = t == null ? "?" : t.getSqlDialect().getProductName();
+            assertTrue("Query parse errors on " + dialect + ": " + errors, errors.isEmpty());
+
+            try (Results results = new TableSelector(t).getResults())
+            {
+                assertTrue("Expected at least one row from core.Containers", results.next());
+                for (int i = 0; i < expected.length; i++)
+                    assertEquals(method + "(" + WEEK_DATES[i] + ") on " + dialect, expected[i], results.getInt("w" + (i + 1)));
+            }
+        }
+
+        // GH Issue 1736
+        @Test
+        public void testRenameWithConcurrentCacheReload() throws Exception
+        {
+            DbScope scope = QueryManager.get().getDbSchema().getScope();
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            String oldName = "Users";
+            String newName = "junit" + GUID.makeHash();
+
+            QueryDef def = new QueryDef();
+            def.setSchema("core");
+            def.setName(oldName);
+            def.setContainer(c.getId());
+            def.setMetaData("<tables xmlns=\"http://labkey.org/data/xml\"><table tableName=\"" + oldName + "\" tableDbType=\"NOT_IN_DB\"><columns>" +
+                    "<column columnName=\"junitCalc\"><conceptURI>http://www.labkey.org/exp/xml#calculated</conceptURI><valueExpression>1</valueExpression></column>" +
+                    "</columns></table></tables>");
+            int queryDefId = QueryManager.get().insert(user, def).getQueryDefId();
+
+            GWTPropertyDescriptor calcField = new GWTPropertyDescriptor("junitCalc", PropertyType.INTEGER.getTypeUri());
+            calcField.setValueExpression("1");
+            // reloads the cache from committed data, as search indexing can while the rename is uncommitted
+            Runnable concurrentReload = () -> QueryManager.get().getQueryDef(c, "core", oldName, false);
+
+            try
+            {
+                try (DbScope.Transaction tx = scope.ensureTransaction())
+                {
+                    QueryManager.get().renameQuery(user, c, "core", oldName, newName);
+                    runOnOtherThread(concurrentReload);
+                    assertNull("Expected the cache to hold the pre-rename row", QueryManager.get().getQueryDef(c, "core", newName, false));
+
+                    QueryService.get().saveCalculatedFieldsMetadata("core", oldName, newName, List.of(calcField), true, user, c);
+                    runOnOtherThread(concurrentReload);
+                    tx.commit();
+                }
+
+                QueryDef saved = new TableSelector(QueryManager.get().getTableInfoQueryDef()).getObject(queryDefId, QueryDef.class);
+                assertEquals(newName, saved.getName());
+                assertTrue(saved.getMetaData(), saved.getMetaData().contains("tableName=\"" + newName + "\""));
+                assertTrue(saved.getMetaData(), saved.getMetaData().contains("junitCalc"));
+
+                assertNotNull("Cache should reload after commit", QueryManager.get().getQueryDef(c, "core", newName, false));
+                assertNull(QueryManager.get().getQueryDef(c, "core", oldName, false));
+            }
+            finally
+            {
+                QueryDef toDelete = new TableSelector(QueryManager.get().getTableInfoQueryDef()).getObject(queryDefId, QueryDef.class);
+                if (toDelete != null)
+                    QueryManager.get().delete(toDelete);
+            }
+        }
+
+        private void runOnOtherThread(Runnable r) throws InterruptedException
+        {
+            Thread t = new Thread(r);
+            t.start();
+            t.join(TimeUnit.SECONDS.toMillis(30));
+            assertFalse("Reader thread did not finish", t.isAlive());
         }
     }
 }

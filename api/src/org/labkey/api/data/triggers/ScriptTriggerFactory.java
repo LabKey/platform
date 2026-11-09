@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ public class ScriptTriggerFactory implements TriggerFactory
             scripts.addAll(titleTriggers);
 
             if (!titleTriggers.isEmpty())
-                LOG.warn("Rename the file from using title - " + title + ".js to use table name - " + name);
+                LOG.warn("Rename the file from using title - {}.js to use table name - {}", title, name);
 
         }
 

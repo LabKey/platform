@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.assay.sample;
 
 import org.jetbrains.annotations.NotNull;
@@ -377,7 +392,7 @@ public class AssaySampleLookupContext
                 if (first)
                     first = false;
                 else
-                    sql.append(" UNION\n");
+                    sql.unsafeAppend(" UNION\n");
 
                 sql.append(getLookupColumnSql(entry.getKey(), sampleLookup, expRunRowId));
             }
@@ -423,24 +438,24 @@ public class AssaySampleLookupContext
                     .columns(Set.of(column))
                     .filter(tableFilter)
                     .buildSqlFragment();
-            sql.append("SELECT WS.SampleId as MaterialRowId, ").appendValue(role).append(" AS MaterialInputRole\n");
-            sql.append("FROM assay.well WS WHERE LSID IN (").append(tableSql).append(")");
+            sql.unsafeAppend("SELECT WS.SampleId as MaterialRowId, ").appendValue(role).unsafeAppend(" AS MaterialInputRole\n");
+            sql.unsafeAppend("FROM assay.well WS WHERE LSID IN (").append(tableSql).unsafeAppend(")");
         }
         else if (column.getJdbcType().isInteger())
         {
-            sql.append("SELECT DA.").appendIdentifier(column.getAlias()).append(" AS MaterialRowId");
-            sql.append(", ?").add(role).append(" AS MaterialInputRole\n");
-            sql.append(" FROM (").append(tableSql).append(") DA");
+            sql.unsafeAppend("SELECT DA.").appendIdentifier(column.getAlias()).unsafeAppend(" AS MaterialRowId");
+            sql.unsafeAppend(", ?").add(role).unsafeAppend(" AS MaterialInputRole\n");
+            sql.unsafeAppend(" FROM (").append(tableSql).unsafeAppend(") DA");
         }
         else if (column.getJdbcType().isText())
         {
-            sql.append("SELECT MA.RowId AS MaterialRowId");
-            sql.append(", ").appendValue(role).append(" AS MaterialInputRole\n");
-            sql.append(" FROM exp.Material MA\n");
-            sql.append(" INNER JOIN (").append(tableSql).append(") DA ON MA.name = DA.").appendIdentifier(column.getAlias()).append("\n");
+            sql.unsafeAppend("SELECT MA.RowId AS MaterialRowId");
+            sql.unsafeAppend(", ").appendValue(role).unsafeAppend(" AS MaterialInputRole\n");
+            sql.unsafeAppend(" FROM exp.Material MA\n");
+            sql.unsafeAppend(" INNER JOIN (").append(tableSql).unsafeAppend(") DA ON MA.name = DA.").appendIdentifier(column.getAlias()).unsafeAppend("\n");
 
             if (sampleLookup.expSampleType != null)
-                sql.append(" WHERE MA.MaterialSourceId = ?").add(sampleLookup.expSampleType.getRowId()).append("\n");
+                sql.unsafeAppend(" WHERE MA.MaterialSourceId = ?").add(sampleLookup.expSampleType.getRowId()).unsafeAppend("\n");
         }
 
         return sql;

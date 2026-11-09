@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationSchema;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ import java.util.Set;
 /**
  * Created by matthew on 6/8/15.
  */
-public class VisTestSchema extends UserSchema
+public class VisTestSchema extends UserSchema implements VisualizationSchema
 {
     public VisTestSchema(User user, Container c)
     {
@@ -140,7 +141,7 @@ public class VisTestSchema extends UserSchema
             SQLFragment cte = new SQLFragment(this.sql);
             SQLFragment ret = new SQLFragment();
             String token = ret.addCommonTableExpression(getSqlDialect(), this.getName(), this.getName(), cte);
-            ret.append(token).append(" ").appendIdentifier(alias);
+            ret.append(token).unsafeAppend(" ").appendIdentifier(alias);
             return ret;
         }
 

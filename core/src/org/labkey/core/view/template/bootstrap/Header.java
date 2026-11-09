@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
  */
 package org.labkey.core.view.template.bootstrap;
 
-import org.labkey.api.notification.NotificationMenuView;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.core.notification.NotificationMenuView;
 
 
 /**
@@ -35,7 +36,7 @@ public class Header extends JspView<PageConfig>
 
     private void displayNotifications()
     {
-        if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+        if (OptionalFeatureService.get().isFeatureEnabled(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU))
         {
             this.setView("notifications", NotificationMenuView.createView(getViewContext()));
         }

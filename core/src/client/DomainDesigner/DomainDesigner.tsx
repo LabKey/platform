@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,37 +14,38 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { FC } from 'react';
 import { ActionURL, getServerContext } from '@labkey/api';
 import {
-    LoadingSpinner,
     Alert,
-    DomainForm,
+    AppContexts,
+    BeforeUnload,
     DomainDesign,
+    DomainException,
+    DomainForm,
     fetchDomain,
     FormButtons,
-    saveDomain,
-    BeforeUnload,
-    resolveErrorMessage,
-    DomainException,
+    LoadingSpinner,
     Modal,
-    withServerContext,
+    redirect,
+    resolveErrorMessage,
+    saveDomain,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
 
 interface IAppState {
+    badDomain: DomainDesign;
     domain: DomainDesign;
+    includeWarnings: boolean;
     message?: string;
     showConfirm: boolean;
-    submitting: boolean;
-    includeWarnings: boolean;
     showWarnings: boolean;
-    badDomain: DomainDesign;
+    submitting: boolean;
 }
 
 class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
-    private _dirty: boolean = false;
+    private _dirty = false;
 
     constructor(props) {
         super(props);
@@ -161,25 +162,25 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
 
     navigate = (): void => {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
+        redirect(ActionURL.getReturnUrl() || ActionURL.buildURL('project', 'begin', getServerContext().container.path));
     };
 
     renderWarningConfirm() {
         const { badDomain } = this.state;
         const errors = badDomain.domainException.errors;
         const question = <p> There are issues with the following fields that you may wish to resolve: </p>;
-        const warnings = errors.map(error => {
-            return <li> {error.message} </li>;
-        }).toArray();
+        const warnings = errors
+            .map(error => {
+                return <li> {error.message} </li>;
+            })
+            .toArray();
 
         // TODO this doc link is specimen specific, we should find a way to pass this in via the domain kind or something like that
         const rollupURI = getServerContext().helpLinkPrefix + 'specimenCustomProperties';
         const suggestion = (
             <p>
                 See the following documentation page for further details: <br />
-                <a href={rollupURI} target="_blank" rel="noopener noreferrer">
+                <a href={rollupURI} rel="noopener noreferrer" target="_blank">
                     {' '}
                     Specimen properties and rollup rules
                 </a>
@@ -188,12 +189,12 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
 
         return (
             <Modal
-                title="Save without resolving issues?"
-                confirmClass="btn-primary"
-                onConfirm={this.confirmWarningAndNavigate}
-                onCancel={this.onSubmitWarningsCancel}
                 cancelText="No, edit and resolve issues"
+                confirmClass="btn-primary"
                 confirmText="Yes, save changes"
+                onCancel={this.onSubmitWarningsCancel}
+                onConfirm={this.confirmWarningAndNavigate}
+                title="Save without resolving issues?"
             >
                 {question}
                 <ul>{warnings}</ul>
@@ -215,12 +216,12 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
                 <div className="domain-designer">
                     {showConfirm && (
                         <Modal
-                            title="Keep unsaved changes?"
-                            confirmClass="btn-primary"
-                            onConfirm={this.submitAndNavigate}
-                            onCancel={this.navigate}
                             cancelText="No, Discard Changes"
+                            confirmClass="btn-primary"
                             confirmText="Yes, Save Changes"
+                            onCancel={this.navigate}
+                            onConfirm={this.submitAndNavigate}
+                            title="Keep unsaved changes?"
                         >
                             You have made changes to this domain that have not yet been saved. Do you want to save these
                             changes before leaving?
@@ -235,11 +236,11 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
                     )}
                     {domain && (
                         <DomainForm
-                            headerTitle="Fields"
                             domain={domain}
                             domainFormDisplayOptions={{
                                 hideInferFromFile: true,
                             }}
+                            headerTitle="Fields"
                             onChange={this.onChangeHandler}
                         />
                     )}
@@ -269,4 +270,8 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
     }
 }
 
-export const App = withServerContext(DomainDesigner);
+export const App: FC = () => (
+    <AppContexts>
+        <DomainDesigner />
+    </AppContexts>
+);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,6 +153,17 @@ public class ListServiceImpl implements ListService
     @Override
     public ListDefinition getList(Domain domain)
     {
+        // Check the container's cached list definitions first to avoid a DB query
+        Container c = domain.getContainer();
+        if (c != null)
+        {
+            for (ListDef def : ListManager.get().getLists(c))
+            {
+                if (def.getDomainId() == domain.getTypeId())
+                    return new ListDefinitionImpl(def);
+            }
+        }
+
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("domainid"), domain.getTypeId());
         ListDef def = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDef.class);
         return ListDefinitionImpl.of(def);

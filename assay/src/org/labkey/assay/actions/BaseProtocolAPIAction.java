@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,18 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySaveHandler;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.transform.PreparedTransforms;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
@@ -132,7 +136,7 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
         if (protocols.size() > 1)
             throw new NotFoundException("More than one assay protocol named '" + protocolName + "' was found.");
 
-        return Pair.of(protocols.get(0), provider);
+        return Pair.of(protocols.getFirst(), provider);
     }
 
     protected abstract ApiResponse executeAction(ExpProtocol protocol, FORM form, BindException errors) throws Exception;
@@ -151,5 +155,13 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
             saveHandler = new DefaultExperimentSaveHandler();
 
         return saveHandler;
+    }
+
+    /** GH Issue 1720: run transform scripts before the save's transaction so their callbacks into the server can't deadlock with it */
+    protected PreparedTransforms prepareTransforms(ExperimentSaveHandler saveHandler, ExpProtocol protocol, List<JSONObject> runJsons) throws ExperimentException, ValidationException
+    {
+        if (saveHandler instanceof AssaySaveHandler assaySaveHandler)
+            return assaySaveHandler.prepareTransforms(getViewContext(), protocol, runJsons);
+        return new PreparedTransforms();
     }
 }

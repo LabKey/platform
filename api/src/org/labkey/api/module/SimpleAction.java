@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.data.Container;
@@ -76,7 +77,7 @@ public class SimpleAction extends BaseViewAction<Object> implements NavTrailActi
     }
 
     @Override
-    public void validate(Object target, Errors errors)
+    public void validate(@NotNull Object target, @NotNull Errors errors)
     {
         //since simple HTML views don't interact with permanent storage (i.e., the database)
         //we really don't need to do much validation here

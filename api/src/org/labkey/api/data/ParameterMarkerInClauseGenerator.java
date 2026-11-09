@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ public class ParameterMarkerInClauseGenerator implements InClauseGenerator
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         if (params.isEmpty())
-            return sql.append(" IN (NULL)");
-        sql.append(" IN (");
+            return sql.unsafeAppend(" IN (NULL)");
+        sql.unsafeAppend(" IN (");
         sql.append(StringUtils.repeat("?", ", ", params.size()));
-        sql.append(")");
+        sql.unsafeAppend(")");
         sql.addAll(params);
         return sql;
     }

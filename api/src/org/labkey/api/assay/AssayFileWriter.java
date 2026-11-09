@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.transform.PendingFileAudit;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CollectionUtils;
@@ -204,14 +205,14 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                 if (!root.isUnderRoot(file))
                 {
                     FileLike savedFile = dir.resolveChild(file.getName());
-                    LOG.debug("savePipelineFiles: file '" + file + "' is not under pipeline root. copying to savedFile=" + savedFile);
+                    LOG.debug("savePipelineFiles: file '{}' is not under pipeline root. copying to savedFile={}", file, savedFile);
                     FileUtils.copyFile(toFileForRead(file), toFileForWrite(savedFile));
                     savedFiles.put(key, savedFile);
                 }
                 else
                 {
                     savedFiles.put(key, file);
-                    LOG.debug("savePipelineFiles: file '" + file.getPath() + "' is already under pipeline root. not copying");
+                    LOG.debug("savePipelineFiles: file '{}' is already under pipeline root. not copying", file.getPath());
                 }
             }
         }
@@ -262,7 +263,11 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                                 event.setProvidedFileName(fileName);
                                 event.setFile(file.getName());
                                 event.setDirectory(dir.toURI().getPath());
-                                AuditLogService.get().addEvent(context.getUser(), event);
+                                List<PendingFileAudit> pending = context.getPendingFileAudits();
+                                if (pending != null)
+                                    pending.add(new PendingFileAudit(event, file));
+                                else
+                                    AuditLogService.get().addEvent(context.getUser(), event);
                             }
                             if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
                             {

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2020-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
@@ -73,27 +88,15 @@ public class QResolveTableColumn extends QIfDefined
         }
 
         /* have to call getColumn() so table knows column is in use */
-        return table.getColumn(list.get(0).getFieldKey().getName());
+        return table.getColumn(list.getFirst().getFieldKey().getName());
     }
 
-
-    @Override
-    public void appendSql(SqlBuilder builder, Query query)
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public boolean isConstant()
-    {
-        return false;
-    }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
         getFirstChild().appendSource(builder);
-        builder.append("(");
+        builder.unsafeAppend("(");
         builder.pushPrefix("");
 
         for (QNode n : getLastChild().children())
@@ -103,7 +106,7 @@ public class QResolveTableColumn extends QIfDefined
             builder.nextPrefix(",");
         }
         builder.popPrefix();
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override
@@ -158,6 +161,6 @@ public class QResolveTableColumn extends QIfDefined
     @Override
     public @NotNull JdbcType getJdbcType()
     {
-        return null!=_column ? JdbcType.VARCHAR : _column.getJdbcType();
+        return null==_column ? JdbcType.VARCHAR : _column.getJdbcType();
     }
 }

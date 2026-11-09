@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,37 +17,36 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.DatabaseIdentifier;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutingSelector.ConnectionFactory;
-import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
+import org.postgresql.core.BaseConnection;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -58,57 +57,32 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 
 // Base dialect for PostgreSQL AND Redshift. IMPORTANT: Make sure everything added here applies to Redshift as well;
 // if not, put it in PostgreSql92Dialect.
 public abstract class BasePostgreSqlDialect extends SqlDialect
 {
-    // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis
+    // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis. These names are also used
+    // by org.labkey.api.util.DebugInfoDumper, so they must stay in the api module even though the queries they back
+    // (see PostgreSql92Dialect) are Postgres-only, not Redshift.
     public static final String POSTGRES_SCHEMA_NAME = "postgres";
 
     public static final String POSTGRES_STAT_ACTIVITY_TABLE_NAME = "pg_stat_activity";
     public static final String POSTGRES_LOCKS_TABLE_NAME = "pg_locks";
     public static final String POSTGRES_TABLE_SIZES_TABLE_NAME = "pg_tablesizes";
 
-    private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
-
     private HtmlString _adminWarning = null;
 
     // Default to 9 and let newer versions be refreshed later
     private int _majorVersion = 9;
-
-    // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
-    // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
-    // standard_conforming_strings is on by default; before 9.1, it was off by default. We check the server setting
-    // when we prepare a new DbScope and use this when we escape and parse string literals.
-    private Boolean _standardConformingStrings = Boolean.TRUE;
-    private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
-
-    public boolean getStandardConformingStrings()
-    {
-        // make sure we're not calling this before finishing instance init
-        assert _standardConformingStrings != null;
-        return _standardConformingStrings == null || _standardConformingStrings;
-    }
-
-    public void setStandardConformingStrings(boolean standardConformingStrings)
-    {
-        _standardConformingStrings = standardConformingStrings;
-    }
-
-    public PostgreSqlServerType getServerType()
-    {
-        return _serverType;
-    }
-
-    public void setServerType(PostgreSqlServerType serverType)
-    {
-        _serverType = serverType;
-    }
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -133,9 +107,85 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getDatabaseSizeSql(String databaseName)
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate, Consumer<Runnable> signaller)
     {
-        return new SQLFragment("SELECT pg_database_size(?)", databaseName);
+        // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
+        String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
+
+        // Unpooled, since an exhausted pool is when a cancel is most needed and borrowing would wait out maxWaitMillis.
+        // pgjdbc waits forever to log in by default, and the request timeout sweep waits on this.
+        Properties props = new Properties();
+        props.setProperty("loginTimeout", "5");
+        props.setProperty("socketTimeout", "5");
+        try (Connection conn = scope.getUnpooledConnection(props))
+        {
+            // Spring's translator would hand back a DataAccessException, which the per-connection catch below can't narrow on
+            SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);
+            signaller.accept(() -> {
+                for (ConnectionWrapper connection : connections)
+                {
+                    Integer spid = connection.getSPID();
+
+                    // Re-check as late as possible: if the thread let go while we were getting the connection above, the pool
+                    // may have handed that physical connection, and this SPID, straight back out to someone else
+                    if (!connection.isAllocated())
+                    {
+                        LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Reports an already-exited backend by returning false, not by throwing
+                        boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
+
+                        if (!signalled)
+                        {
+                            // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
+                            LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                        }
+                    }
+                    catch (RuntimeSQLException e)
+                    {
+                        LOG.warn("{}({}) failed", function, spid, e);
+                    }
+                }
+            });
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return true;
+    }
+
+    @Override
+    public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
+    {
+        Set<ConnectionWrapper> signalled = new HashSet<>();
+        for (ConnectionWrapper connection : connections)
+        {
+            // Same reuse race as cancelQueries(): don't signal a session the pool may have handed to someone else
+            if (!connection.isAllocated())
+                continue;
+
+            // The driver's cancel request opens its own socket and authenticates with the session's secret key
+            if (connection.getPhysicalConnection() instanceof BaseConnection pgConnection)
+            {
+                try
+                {
+                    pgConnection.cancelQuery();
+                    signalled.add(connection);
+                }
+                catch (SQLException e)
+                {
+                    LOG.warn("Cancel request for SPID {} failed", connection.getSPID(), e);
+                }
+            }
+        }
+
+        return signalled;
     }
 
     @Override
@@ -246,9 +296,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
     {
         var columnIdentifier = column.getSelectIdentifier();
-        sql.append("\nRETURNING ").appendIdentifier(columnIdentifier);
+        sql.unsafeAppend("\nRETURNING ").appendIdentifier(columnIdentifier);
         if (null != proposedVariable)
-            sql.append(" INTO ").appendIdentifier(proposedVariable);
+            sql.unsafeAppend(" INTO ").appendIdentifier(proposedVariable);
 
         return proposedVariable;
     }
@@ -292,17 +342,13 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String execute(DbSchema schema, String procedureName, String parameters)
+    protected SQLFragment doExecute(SQLFragment qualifiedProcName, SQLFragment parameters)
     {
-        return "SELECT " + schema.getName() + "." + procedureName + "(" + parameters + ")";
-    }
-
-    @Override
-    public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
-    {
-        SQLFragment select = new SQLFragment("SELECT " + schema.getName() + "." + procedureName + "(");
+        SQLFragment select = new SQLFragment("SELECT ");
+        select.append(qualifiedProcName);
+        select.unsafeAppend("(");
         select.append(parameters);
-        select.append(")");
+        select.unsafeAppend(")");
         return select;
     }
 
@@ -380,9 +426,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         SQLFragment result = new SQLFragment("POSITION(");
         result.append(toFind);
-        result.append(" IN ");
+        result.unsafeAppend(" IN ");
         result.append(toSearch);
-        result.append(")");
+        result.unsafeAppend(")");
         return result;
     }
 
@@ -395,7 +441,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length)
     {
-        return new SQLFragment("substr(").append(s).append(", ").append(start).append(", ").append(length).append(")");
+        return new SQLFragment("substr(").append(s).unsafeAppend(", ").append(start).unsafeAppend(", ").append(length).unsafeAppend(")");
     }
 
     @Override
@@ -409,12 +455,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment wrapBooleanExpression(SQLFragment booleanSql)
     {
         return booleanSql;
-    }
-
-    @Override
-    protected String getSystemTableNames()
-    {
-        return "pg_logdir_ls";
     }
 
     @Override
@@ -489,11 +529,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             case Calendar.MONTH:
             {
-                return new SQLFragment("((EXTRACT(YEAR FROM ").append(value1).append(") - EXTRACT(YEAR FROM ").append(value2).append(")) * 12 + EXTRACT(MONTH FROM ").append(value1).append(") - EXTRACT(MONTH FROM ").append(value2).append("))::INT");
+                return new SQLFragment("((EXTRACT(YEAR FROM ").append(value1).unsafeAppend(") - EXTRACT(YEAR FROM ").append(value2).unsafeAppend(")) * 12 + EXTRACT(MONTH FROM ").append(value1).unsafeAppend(") - EXTRACT(MONTH FROM ").append(value2).unsafeAppend("))::INT");
             }
             case Calendar.YEAR:
             {
-                return new SQLFragment("(EXTRACT(YEAR FROM ").append(value1).append(") - EXTRACT(YEAR FROM ").append(value2).append("))::INT");
+                return new SQLFragment("(EXTRACT(YEAR FROM ").append(value1).unsafeAppend(") - EXTRACT(YEAR FROM ").append(value2).unsafeAppend("))::INT");
             }
             case Calendar.DATE:
             {
@@ -525,7 +565,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 throw new IllegalArgumentException("Unsupported time unit: " + part);
             }
         }
-        return new SQLFragment("(EXTRACT(EPOCH FROM (").append(value1).append(" - ").append(value2).append(")) / ").append(String.valueOf(divideBy)).append(")::INT");
+        return new SQLFragment("(EXTRACT(EPOCH FROM (").append(value1).unsafeAppend(" - ").append(value2).unsafeAppend(")) / ").append(String.valueOf(divideBy)).unsafeAppend(")::INT");
     }
 
     @Override
@@ -571,66 +611,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String prepare(DbScope scope)
-    {
-        initializeUserDefinedTypes(scope);
-        determineSettings(scope);
-        return super.prepare(scope);
-    }
-
-    @Override
     public void prepareConnection(Connection conn)
     {
-    }
-
-    // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
-    // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
-    // When the PostgreSQLColumnMetaDataReader reads metadata, it returns these scale values for all domains.
-    private void initializeUserDefinedTypes(DbScope scope)
-    {
-        // Skip domains query if connecting to LabKey Server - it has no user-defined types
-        if (getServerType().supportsSpecialMetadataQueries())
-        {
-            Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains");
-            selector.forEach(rs -> {
-                String schemaName = rs.getString("domain_schema");
-                String domainName = rs.getString("domain_name");
-                String dataType = rs.getString("data_type");
-                int scale;
-
-                if (dataType.startsWith("character"))
-                {
-                    String maxLength = rs.getString("character_maximum_length");
-
-                    // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
-                    scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
-                }
-                else
-                {
-                    // Assume everything else is an integer for now. We should support more types for better external schema handling.
-                    scale = 4;
-                }
-
-                String key = getDomainKey(schemaName, domainName);
-                _domainScaleMap.put(key, scale);
-            });
-        }
-    }
-
-    private String getDomainKey(String schemaName, String domainName)
-    {
-        // Domain names are returned from column metadata fully qualified and quoted, so save them that way. See #26149.
-        return ("public".equals(schemaName) ? domainName : "\"" + schemaName + "\".\"" + domainName + "\"");
-    }
-
-    // Query any settings that may affect dialect behavior. Right now, only "standard_conforming_strings".
-    protected void determineSettings(DbScope scope)
-    {
-        if (getServerType().supportsSpecialMetadataQueries())
-        {
-            Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
-            _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
-        }
     }
 
     /**
@@ -696,9 +678,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    protected @Nullable String getDatabaseMaintenanceSql()
+    protected SQLFragment getDatabaseMaintenanceSql()
     {
-        return "VACUUM ANALYZE;";
+        return new SQLFragment("VACUUM ANALYZE");
     }
 
     @Override
@@ -706,9 +688,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         SQLFragment ret = new SQLFragment(" POSITION(");
         ret.append(littleString);
-        ret.append(" IN ");
+        ret.unsafeAppend(" IN ");
         ret.append(bigString);
-        ret.append(") ");
+        ret.unsafeAppend(") ");
         return ret;
     }
 
@@ -717,20 +699,20 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         SQLFragment tmp = new SQLFragment("position(");
         tmp.append(littleString);
-        tmp.append(" in substring(");
+        tmp.unsafeAppend(" in substring(");
         tmp.append(bigString);
-        tmp.append(" from ");
+        tmp.unsafeAppend(" from ");
         tmp.append(startIndex);
-        tmp.append("))");
+        tmp.unsafeAppend("))");
         SQLFragment ret = new SQLFragment("((");
         ret.append(startIndex);
         // TODO: code review this: I believe that this -1 is necessary to produce the correct results.
-        ret.append(" - 1)");
-        ret.append(" * sign(");
+        ret.unsafeAppend(" - 1)");
+        ret.unsafeAppend(" * sign(");
         ret.append(tmp);
-        ret.append(")+");
+        ret.unsafeAppend(")+");
         ret.append(tmp);
-        ret.append(")");
+        ret.unsafeAppend(")");
 
         return ret;
     }
@@ -795,7 +777,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
-        // Retrieve and pass in the previously queried scale values for this scope.
         return new PostgreSqlColumnMetaDataReader(rsCols, table);
     }
 
@@ -858,24 +839,24 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
+    protected SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
+        SQLFragment sb = new SQLFragment();
+        sb.unsafeAppend("{");
         if (assignResult)
-            sb.append("? = ");
-        sb.append("CALL ").append(procSchema).append(".").append(procName).append("(");
+            sb.unsafeAppend("? = ");
+        sb.unsafeAppend("CALL ").append(qualifiedProcName).unsafeAppend("(");
         String comma = "";
         for (int i = 0; i < paramCount; i++)
         {
             sb.append(comma);
-            sb.append("?");
+            sb.unsafeAppend("?");
             comma = ",";
         }
-        sb.append(")}");
-        return sb.toString();
+        sb.unsafeAppend(")}");
+        return sb;
     }
 
     @Override
@@ -907,10 +888,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
-            int direction = paramInfo.getParamTraits().get(ParamTraits.direction).intValue();
+            int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
             if (direction == DatabaseMetaData.procedureColumnInOut)
                 paramInfo.setParamValue(rs.getObject(paramName));
-            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype).intValue() == Types.INTEGER)
+            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype) == Types.INTEGER)
                 returnVal = rs.getInt(paramName);
         }
         return returnVal;
@@ -928,9 +909,45 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         return true;
     }
 
-    private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
+    @Override
+    public boolean supportsNativeIsDistinctFrom()
     {
-        private final TableInfo _table;
+        return true;
+    }
+
+    @Override
+    public boolean supportsIsNumeric()
+    {
+        return true;
+    }
+
+    @Override
+    public SQLFragment isNumericExpr(SQLFragment expression)
+    {
+        // 1/0, matching what SQL Server's ISNUMERIC() passthrough returns.
+        return new SQLFragment("(CASE WHEN CAST((").append(expression)
+                .unsafeAppend(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
+    }
+
+    @Override
+    public SQLFragment weekIsoExpr(SQLFragment expression)
+    {
+        return new SQLFragment("CAST(EXTRACT(week FROM (").append(expression).unsafeAppend(")) AS INTEGER)");
+    }
+
+    @Override
+    public SQLFragment weekUsExpr(SQLFragment expression)
+    {
+        // Week 1 is whatever week contains Jan 1, and weeks start Sunday: (day of year + Sunday-based weekday of Jan 1 - 1) / 7, rounded down, plus one.
+        // The VALUES subquery names the argument so it is evaluated once; spelled out twice, a volatile argument could read either side of midnight.
+        return new SQLFragment("(SELECT CAST(FLOOR((EXTRACT(doy FROM v.d) + EXTRACT(dow FROM date_trunc('year', v.d)) - 1) / 7) + 1 AS INTEGER) FROM (VALUES (CAST(")
+                .append(expression)
+                .unsafeAppend(" AS TIMESTAMP))) AS v(d))");
+    }
+
+    public static class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
+    {
+        protected final TableInfo _table;
 
         public PostgreSqlColumnMetaDataReader(ResultSet rsCols, TableInfo table)
         {
@@ -970,39 +987,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 return sqlType;
         }
 
-        @Override
-        public int getScale() throws SQLException
-        {
-            int sqlType = super.getSqlType();
-
-            return Types.DISTINCT == sqlType ? getDomainScale(getSqlTypeName()) : super.getScale();
-        }
-
-        private int getDomainScale(String domainName) throws SQLException
-        {
-            Integer scale = _domainScaleMap.get(domainName);
-
-            if (null == scale)
-            {
-                // Some domain wasn't there when we initialized the datasource, so reload now. This will happen at bootstrap.
-                DbSchema schema = _table.getSchema();
-                initializeUserDefinedTypes(schema.getScope());
-                scale = _domainScaleMap.get(domainName);
-
-                // If scale is still null, then we have a problem. We've seen occasional exception reports showing this,
-                // but haven't had the information to track it down... so log additional info.
-                if (null == scale)
-                {
-                    String message = "Null scale for \"" + domainName + "\" in column \"" + _table.getName() + "." + getName() + "\" in schema \"" + schema.getName() + "\"";
-                    ExceptionUtil.logExceptionToMothership(null, new Exception(message));
-                    assert false : message;
-                    return 4;   // Return something on production servers so schema can continue to load
-                }
-            }
-
-            return scale.intValue();
-        }
-
         @Nullable
         @Override
         public String getDefault() throws SQLException
@@ -1019,18 +1003,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getExtraInfo(SQLException e)
-    {
-        // Deadlock between two different DB connections
-        if ("40P01".equals(e.getSQLState()))
-        {
-            return getOtherDatabaseThreads();
-        }
-        return null;
-    }
-
-    @Override
-    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
+    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         // Fiddle with the Connection settings only if asked to turn off JDBC caching, we're not inside a transaction,
         // and it's a read-only statement (a SELECT), so we won't mess up any state the caller is relying on.
@@ -1038,11 +1011,44 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             return null;
         }
+        else if (selfContained)
+        {
+            // Borrow the thread's shared, ref-counted connection via scope.getConnection() rather than a
+            // separate one, so nested queries reuse it (avoiding pool exhaustion) and connection-local state (temp tables,
+            // session settings, etc) stays visible. Only the outermost borrower — isThreadConnectionActive() ==
+            // false — disables JDBC caching and registers the restore via runOnClose (fired when the ref count returns to
+            // 0); nested borrows reuse it as-is.
+            return () -> {
+                boolean alreadyHeld = scope.isThreadConnectionActive();
+                Connection conn = scope.getConnection();
+
+                try
+                {
+                    if (!alreadyHeld && conn instanceof ConnectionWrapper cw && cw.getAutoCommit())
+                        cw.setRunOnClose(configureToDisableJdbcCaching(cw, scope));
+                }
+                catch (SQLException | RuntimeException e)
+                {
+                    // scope.getConnection() already bumped the ref count, so release it before propagating
+                    try
+                    {
+                        conn.close();
+                    }
+                    catch (SQLException suppressed)
+                    {
+                        e.addSuppressed(suppressed);
+                    }
+                    throw e;
+                }
+
+                return conn;
+            };
+        }
         else
         {
-            // Factory that gets a fresh, read-only connection directly from the pool (not shared with the thread) and
-            // configures it to not cache ResultSet data in the JDBC driver, making it suitable for streaming very large
-            // ResultSets. See #39753 and #39888.
+            // The connection escapes the selector call (a live, streaming ResultSet/Stream is handed back to the caller)
+            // or the caller explicitly disabled caching, so use a fresh, read-only connection directly from the pool
+            // (not shared with the thread) whose lifetime the caller controls. See #39753 and #39888.
             return () -> {
                 ConnectionWrapper conn = scope.getPooledConnection(DbScope.ConnectionType.Pooled, null);
                 Closer closer = configureToDisableJdbcCaching(conn, scope);
@@ -1058,9 +1064,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
         try
         {
-            // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
-            int previousTransactionIsolation = connection.getTransactionIsolation();
-            connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+            // pgjdbc streams through a server-side cursor only when autoCommit is off. See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
             connection.setAutoCommit(false);
 
             Closer previous = connection.getRunOnClose(); // We know this is a no-op closer, but do this just in case these get shared or wrapped in the future
@@ -1068,12 +1072,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return () -> {
                 previous.close();
                 connection.setAutoCommit(true);
-                connection.setTransactionIsolation(previousTransactionIsolation);
             };
         }
         catch (SQLException e)
         {
-            LOG.error("SQLException hit for " + connection);
+            LOG.error("SQLException hit for {}", connection);
             scope.logCurrentConnectionState();
             throw e;
         }
@@ -1085,7 +1088,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         // http://www.postgresql.org/docs/9.1/static/functions-formatting.html
         SQLFragment iso = new SQLFragment("to_char(CAST((");
         iso.append(date);
-        iso.append(") AS TIMESTAMP), 'YYYY-MM-DD HH24:MI:SS.MS')");
+        iso.unsafeAppend(") AS TIMESTAMP), 'YYYY-MM-DD HH24:MI:SS.MS')");
         return iso;
     }
 
@@ -1143,16 +1146,16 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return super.formatJdbcFunction("timestampdiff", arguments);
 
         SQLFragment epoch = new SQLFragment("EXTRACT(epoch FROM ");
-        epoch.append("(").append(arguments[2]).append(") - (").append(arguments[1]).append("))");
+        epoch.unsafeAppend("(").append(arguments[2]).unsafeAppend(") - (").append(arguments[1]).unsafeAppend("))");
 
         if (arguments[0].getSQL().equals("SQL_TSI_SECOND"))
             return epoch;
 
         if (arguments[0].getSQL().equals("SQL_TSI_MINUTE"))
-            return epoch.append("/60.0");
+            return epoch.unsafeAppend("/60.0");
 
         if (arguments[0].getSQL().equals("SQL_TSI_HOUR"))
-            return epoch.append("/3600.0");
+            return epoch.unsafeAppend("/3600.0");
 
         return super.formatJdbcFunction("timestampdiff", arguments);
     }
@@ -1182,20 +1185,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean isProcedureExists(DbScope scope, String schema, String name)
-    {
-        // Don't bother querying LabKey for stored procedures
-        return getServerType().supportsSpecialMetadataQueries() && super.isProcedureExists(scope, schema, name);
-    }
-
-    @Override
-    public boolean shouldTest()
-    {
-        // Don't test a LabKey data source
-        return getServerType().shouldTest();
-    }
-
-    @Override
     public @Nullable String getApplicationNameParameter()
     {
         return "ApplicationName";
@@ -1211,11 +1200,5 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public @Nullable String getDefaultApplicationName()
     {
         return "PostgreSQL JDBC Driver";
-    }
-
-    @Override
-    public @NotNull String getApplicationConnectionsSql()
-    {
-        return "SELECT pid, usename, client_addr, client_hostname, xact_start, query_start, state, application_name, query FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname = ? AND application_name = ?";
     }
 }

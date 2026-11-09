@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
         try
         {
             PipelineJob job = new MaintenancePipelineJob(vbi, root, tasksToRun);
-            LOG.info("Queuing MaintenancePipelineJob [thread " + Thread.currentThread().getName() + " to " + PipelineService.get().toString() + "]");
+            LOG.info("Queuing MaintenancePipelineJob [thread {} to {}]", Thread.currentThread().getName(), PipelineService.get().toString());
             PipelineService.get().queueJob(job);
             jobGuid = job.getJobGUID();
         }

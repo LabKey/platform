@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class UpgradeUtils
      */
     public static void uniquifyValues(ColumnInfo column, @Nullable ColumnInfo additionalGroupingColumn, @Nullable SimpleFilter filter, Sort sort, boolean caseSensitive, boolean ignoreNulls)
     {
-        LOG.info("Removing duplicate values from " + column.getParentTable().toString() + "." + column.getName());
+        LOG.info("Removing duplicate values from {}.{}", column.getParentTable().toString(), column.getName());
 
         // Do an aggregate query to determine all groups (containers or container + additional grouping column combinations) with uniqueness problems in this column
         List<SimpleFilter> groupFilters = getFiltersForGroupsWithDuplicateValues(column, additionalGroupingColumn, filter, caseSensitive, ignoreNulls);
@@ -81,7 +81,7 @@ public class UpgradeUtils
         String columnName = col.getName();
         Set<ColumnInfo> selectColumns = Collections.singleton(col);
 
-        LOG.info("  Updating duplicate values in group represented by: " + filter.getFilterText());
+        LOG.info("  Updating duplicate values in group represented by: {}", filter.getFilterText());
 
         // First, grab all the existing values so when we have to change a value we don't collide with another existing value.
         Set<String> existingValues = getSet(caseSensitive);
@@ -111,7 +111,7 @@ public class UpgradeUtils
                 }
                 while(newValues.contains(candidateValue) || existingValues.contains(candidateValue));
 
-                LOG.info("    Changing " + value + " to " + candidateValue);
+                LOG.info("    Changing {} to {}", value, candidateValue);
 
                 value = candidateValue;
 
@@ -155,16 +155,16 @@ public class UpgradeUtils
         }
 
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT DISTINCT ");
+        sql.unsafeAppend("SELECT DISTINCT ");
         sql.append(selectColumns);
-        sql.append(" FROM ");
+        sql.unsafeAppend(" FROM ");
         sql.append(table, "t");
 
         String where = " WHERE ";
 
         if (filter != null)
         {
-            sql.append(" ");
+            sql.unsafeAppend(" ");
             sql.append(filter.getSQLFragment(table, "t"));
             where = " AND ";
         }
@@ -173,12 +173,12 @@ public class UpgradeUtils
         {
             sql.append(where);
             sql.appendIdentifier(column.getSelectIdentifier());
-            sql.append(" IS NOT NULL");
+            sql.unsafeAppend(" IS NOT NULL");
         }
 
-        sql.append(" GROUP BY Container, ");
+        sql.unsafeAppend(" GROUP BY Container, ");
         sql.append(groupBy);
-        sql.append(" HAVING COUNT(*) > 1");
+        sql.unsafeAppend(" HAVING COUNT(*) > 1");
 
         final List<SimpleFilter> filters = new LinkedList<>();
 

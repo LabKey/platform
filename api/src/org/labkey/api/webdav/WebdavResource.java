@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package org.labkey.api.webdav;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
@@ -25,7 +25,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
-import org.springframework.util.MimeType;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -196,6 +195,14 @@ public interface WebdavResource extends Resource
     boolean canDelete(User user, boolean forDelete);
     boolean canDelete(User user, boolean forDelete, /* OUT */ List<String> message);
     /**
+     * A MOVE removes the resource from its source location, so it requires Delete permission there.
+     * Unlike {@link #canDelete}, it does not require the resource to be eligible for outright deletion
+     * (for example, a file that has been imported by an assay may still be relocated within the file root).
+     * @param user authenticated user
+     * @return true if the user has permission and server has capability
+     */
+    boolean canMove(User user);
+    /**
      * @param user authenticated user
      * @param forRename  true if user wants to rename, false if checking capabilities (affects logging)
      * @return true if the user has permission and server has capability
@@ -274,7 +281,7 @@ public interface WebdavResource extends Resource
             }
 
             @Override
-            public URL getURL() throws IOException
+            public @NotNull URL getURL() throws IOException
             {
                 // Nnot sure why getExceuteHref() takes a view context. We ay not need for the moment.
                 var href = r.getExecuteHref(null);
@@ -284,7 +291,7 @@ public interface WebdavResource extends Resource
             }
 
             @Override
-            public URI getURI() throws IOException
+            public @NotNull URI getURI() throws IOException
             {
                 // Not sure why getExecuteHref() takes a view context. We ay not need for the moment.
                 var href = r.getExecuteHref(null);
@@ -301,7 +308,7 @@ public interface WebdavResource extends Resource
             }
 
             @Override
-            public File getFile() throws IOException
+            public @NotNull File getFile() throws IOException
             {
 //                UnsupportedOperationException – if the resource is a file but cannot be exposed as a java.io.File; an alternative to FileNotFoundException
 //                FileNotFoundException – if the resource cannot be resolved as a file
@@ -324,7 +331,7 @@ public interface WebdavResource extends Resource
             }
 
             @Override
-            public org.springframework.core.io.Resource createRelative(String relativePath) throws IOException
+            public org.springframework.core.io.@NotNull Resource createRelative(@NotNull String relativePath) throws IOException
             {
                 // do we need this?
                 throw new UnsupportedOperationException();
@@ -337,13 +344,13 @@ public interface WebdavResource extends Resource
             }
 
             @Override
-            public String getDescription()
+            public @NotNull String getDescription()
             {
                 return r.getDescription();
             }
 
             @Override
-            public InputStream getInputStream() throws IOException
+            public @NotNull InputStream getInputStream() throws IOException
             {
                 // FileStream.openInputStream() enforces one stream per instance, so don't use 'fs'
                 var filestream = r.getFileStream(user);

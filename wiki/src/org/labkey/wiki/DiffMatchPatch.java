@@ -223,7 +223,7 @@ public class DiffMatchPatch
     ArrayList<String> linearray = null;
     if (checklines) {
       // Scan the text on a line-by-line basis first.
-      Object b[] = diff_linesToChars(text1, text2);
+      Object[] b = diff_linesToChars(text1, text2);
       text1 = (String) b[0];
       text2 = (String) b[1];
       // The following Java warning is harmless.
@@ -1580,13 +1580,10 @@ public class DiffMatchPatch
       for (int j = finish - 1; j >= start; j--) {
         if (d == 0) {
           // First pass: exact match.
-          rd[j] = ((rd[j + 1] << 1) | 1) & (s.containsKey(text.charAt(j))
-              ? s.get(text.charAt(j))
-              : 0);
+          rd[j] = ((rd[j + 1] << 1) | 1) & (s.getOrDefault(text.charAt(j), 0));
         } else {
           // Subsequent passes: fuzzy match.
-          rd[j] = ((rd[j + 1] << 1) | 1) & (s.containsKey(text.charAt(j))
-              ? s.get(text.charAt(j)) : 0) | ((last_rd[j + 1] << 1) | 1)
+          rd[j] = ((rd[j + 1] << 1) | 1) & (s.getOrDefault(text.charAt(j), 0)) | ((last_rd[j + 1] << 1) | 1)
               | ((last_rd[j] << 1) | 1) | last_rd[j + 1];
         }
         if ((rd[j] & matchmask) != 0) {

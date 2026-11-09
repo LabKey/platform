@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             }
             catch (IOException e)
             {
-                _log.error("Failed to insert wiki in " + c.getPath() + " from " + resource, e);
+                _log.error("Failed to insert wiki in {} from {}", c.getPath(), resource, e);
             }
         }
     }
@@ -198,7 +198,10 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            WikiManager.TestCase.class
+            WikiManager.TestCase.class,
+            WikiController.CopyWikiContainerScopingTestCase.class,
+            WikiController.PermissionTestCase.class,
+            WikiTOC.TestCase.class
         );
     }
 

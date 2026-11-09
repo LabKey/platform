@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -74,11 +74,6 @@ module.exports = {
         title: 'Concept Filter',
         generateLib: true, // used in FilterDialog.js
         path: './src/client/ConceptFilter'
-    }, {
-        name: 'querySelectInput',
-        title: 'Query Select Input',
-        generateLib: true, // used in TypeAheadSelectDisplayColumn.java
-        path: './src/client/QuerySelectInput'
     }, {
         name: 'apiKeys', // used in ApiKeyViewProvider.java
         title: 'API Keys',

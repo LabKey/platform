@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.survey.SurveyController;
 import org.springframework.validation.BindException;
+
+import java.util.Set;
 
 /**
  * User: klum
@@ -52,7 +55,7 @@ public class SurveyDesignQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        if (getContainer().hasPermission(getUser(), InsertPermission.class))
+        if (getContainer().hasPermissions(getUser(), Set.of(InsertPermission.class, BrowserDeveloperPermission.class)))
         {
             ActionURL insertURL = new ActionURL(SurveyController.SurveyDesignAction.class, getContainer());
             insertURL.addReturnUrl(getReturnUrl());

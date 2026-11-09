@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
             StudyImpl study = ctx.getStudyImpl();
             DatasetsDocument.Datasets datasets = DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false);
 
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             Container c = ctx.getContainer();
             User user = ctx.getUser();

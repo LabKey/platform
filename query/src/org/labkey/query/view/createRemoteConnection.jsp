@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2013-2018 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.remoteapi.RemoteConnections" %>
+<%@ page import="java.net.MalformedURLException" %>
+<%@ page import="java.net.URL" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -35,14 +37,32 @@
     String connectionKind = remoteConnectionForm.getConnectionKind();
     boolean editConnection = StringUtils.isNotEmpty(name);
     String nameToShow = editConnection ? name : remoteConnectionForm.getNewConnectionName();
+    boolean usingCleartextHttp = false;
+    if (url != null)
+    {
+        try
+        {
+            usingCleartextHttp = RemoteConnections.isCleartextHttpUrl(new URL(url));
+        }
+        catch (MalformedURLException ignored)
+        {
+            // Malformed URLs are surfaced by server-side validation in createOrEditRemoteConnection; suppress here.
+        }
+    }
 %>
 <p><%=h(RemoteConnections.MANAGEMENT_PAGE_INSTRUCTIONS)%></p>
 <labkey:errors/>
+<% if (usingCleartextHttp) { %>
+<p class="labkey-warning-messages">
+    Warning: this connection uses an http:// URL. The configured user and password will be sent to the remote
+    server in cleartext on every ETL run. Use https:// so credentials are encrypted in transit.
+</p>
+<% } %>
 <br>
 <labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlSaveRemoteConnection(c) %>" method="post" layout="horizontal">
     <labkey:input type="text" label="Connection Name *" name="newConnectionName" id="newConnectionName" size="50" value="<%=nameToShow%>" isRequired="true"/>
     <labkey:input type="text" label="Server URL *" name="url" id="url" size="50" value="<%=url%>" forceSmallContext="true"
-                  contextContent="Enter in the server URL. Include both the protocol (http:// or https://) and a context path if necessary. As an example, http://localhost:8080/labkey would be a valid name."
+                  contextContent="Enter the server URL, including the protocol and any context path. As an example, https://localhost:8080/labkey would be a valid name."
                   isRequired="true"/>
     <labkey:input type="text" label="User *" name="userEmail" id="userEmail" size="50" value="<%=userEmail%>" isRequired="true"/>
     <labkey:input type="password" label="Password *" name="password" id="password" size="50" isRequired="true"/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1008,7 +1008,7 @@ public class ExcelLoader extends DataLoader
                 assertEquals(18, map.size());
             }
 
-            Map<String, Object> firstRow = data.get(0);
+            Map<String, Object> firstRow = data.getFirst();
             checkFirstRow(firstRow);
         }
 
@@ -1321,9 +1321,9 @@ public class ExcelLoader extends DataLoader
                         }
                         else
                         {
-                            // Excel auto-converts lots of things that are not numbers, such particpantids and sometimes dates
+                            // Excel auto-converts lots of things that are not numbers, such participant ids and sometimes dates
                             // If the value is not explicitly formatted as a number then use Excel's stored string representation and let DataLoader sort it out
-                            // NOTE: if we it is formatted as a number we generate our own string representation,
+                            // NOTE: if it is formatted as a number, we generate our own string representation
                             // This helps when targeting a string column
                             //     a) to avoid Excel's trailing 0000001 and 9999999 format
                             //     b) avoid scientific notation if possible

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,10 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
                     ModelAndView mv = getSuccessView(form);
                     if (null != mv)
                         return mv;
-                    throw new RedirectException(getSuccessURL(form));
+                    URLHelper redirect = getSuccessURL(form);
+                    if (null != redirect)
+                        throw new RedirectException(redirect);
+                    return null;
                 }
             }
             else
@@ -112,7 +115,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
 
     public BindException bindParameters(PropertyValues m) throws Exception
     {
-        return defaultBindParameters(getCommand(), m);
+        return defaultBindParameters(m);
     }
 
     /**
@@ -129,7 +132,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
     public abstract boolean handlePost(FORM form, BindException errors) throws Exception;
 
     @Override
-    public void validate(Object form, Errors errors)
+    public void validate(@NotNull Object form, @NotNull Errors errors)
     {
         validateCommand((FORM)form, errors);
     }
@@ -137,7 +140,6 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
     /* Generic version of validate */
     public abstract void validateCommand(FORM form, Errors errors);
 
-    @NotNull
     public abstract URLHelper getSuccessURL(FORM form);
 
     // not usually used but some actions return views that close the current window etc...

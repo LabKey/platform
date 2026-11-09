@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
         {
             List<String> list = getTestList();
             exception.expect(IndexOutOfBoundsException.class);
-            list.get(0);
+            list.getFirst();
         }
 
         @Test
@@ -115,7 +115,7 @@ public class OneBasedList<E> extends IndexMappingList<OneBasedList<E>, E>
         {
             List<String> list = getTestList();
             exception.expect(IndexOutOfBoundsException.class);
-            list.add(0, "Foo");
+            list.addFirst("Foo");
         }
 
         private List<String> getTestList()

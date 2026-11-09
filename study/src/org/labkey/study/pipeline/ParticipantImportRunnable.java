@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         }
         catch (Exception x)
         {
-            _logger.error("Unexpected error importing file: " + _fileName, x);
+            _logger.error("Unexpected error importing file: {}", _fileName, x);
         }
     }
 
@@ -106,7 +106,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             String subjectIdCol = StudyService.get().getSubjectColumnName(container);
             if (!columnMap.containsKey(subjectIdCol))
             {
-                _logger.error("Dataset does not contain column " + subjectIdCol + ".");
+                _logger.error("Dataset does not contain column {}.", subjectIdCol);
                 return;
             }
 

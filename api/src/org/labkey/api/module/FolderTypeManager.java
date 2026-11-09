@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -369,7 +369,7 @@ public class FolderTypeManager
                 .mapToInt(Collection::size)
                 .sum();
 
-            LOG.info(folderTypeCount + " folder types defined in all modules");
+            LOG.info("{} folder types defined in all modules", folderTypeCount);
 
             // Make sure the cache retrieves the expected number of folder types from the simpletest module, if present
 

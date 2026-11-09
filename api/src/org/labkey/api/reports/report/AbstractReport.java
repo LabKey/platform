@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParentType;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -43,6 +43,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -476,13 +477,6 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
     @Override
-    public boolean allowShareButton(User user, Container container)
-    {
-        // See RReport, currently only allowing ShareReportAction for that report type
-        return false;
-    }
-
-    @Override
     public boolean canDelete(User user, Container container)
     {
         return canDelete(user, container, new ArrayList<>());
@@ -661,7 +655,8 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             }
             else
             {
-                return !isPrivate() || isOwner(user);
+                // owners or administrators can access private reports
+                return !isPrivate() || isOwner(user) || c.hasPermission(user, AdminPermission.class);
             }
         }
         return false;

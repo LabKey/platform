@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ public interface AdminUrls extends UrlProvider
 
     ActionURL getAllowedExternalRedirectHostsURL();
     ActionURL getDeleteEncryptedContentURL();
+    ActionURL getOptionalFeaturesURL();
 
     /**
      * Simply adds an "Admin Console" link to nav trail if invoked in the root container. Otherwise, root is unchanged.

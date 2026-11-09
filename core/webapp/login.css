@@ -82,8 +82,9 @@ ul.sso-list > li {
 
 .forgot-password-link {
     text-align: right;
-    width: 284px;
-    display: inline-block;
+    width: 350px;
+    margin-top: -10px;
+    margin-bottom: 10px;
 }
 
 .signing-in-msg {

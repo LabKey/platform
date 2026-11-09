@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ public class PageTemplate extends JspView<PageConfig>
         {
             // Add the main page for the workbook to the nav trail
             navTrail = new ArrayList<>(navTrail);
-            navTrail.add(0, new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
+            navTrail.addFirst(new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
         }
 
         List<NavTree> appNavTrail = appBar.setNavTrail(navTrail, context);

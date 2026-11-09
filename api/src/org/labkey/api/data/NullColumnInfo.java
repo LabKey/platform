@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 
 /**
@@ -48,15 +49,14 @@ public class NullColumnInfo extends BaseColumnInfo
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(nullValue(getSqlTypeName()));
+        return nullValue(getSqlTypeName());
     }
 
-    public static String nullValue(String typeName)
+    public static SQLFragment nullValue(@Nullable String typeName)
     {
         if (null == typeName)
-            return "NULL";
-        else
-            return "CAST(NULL AS " + typeName + ")";
+            return new SQLFragment("NULL");
+        return new SQLFragment("CAST(NULL AS ").append(new SQLFragment().setSqlUnsafe(typeName)).unsafeAppend(")");
     }
 }
 

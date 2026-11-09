@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -196,7 +196,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         {
             try
             {
-                _log.debug("Creating directory " + dir);
+                _log.debug("Creating directory {}", dir);
                 FileUtil.createDirectories(dir);
             }
             catch (IOException e)

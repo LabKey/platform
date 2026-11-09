@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2016 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.DynaClass;
+import org.labkey.api.action.BaseViewAction.BeanUtilsPropertyBindingResult;
 import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.NullSafeBindException;
+import org.springframework.validation.BindException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -84,6 +87,13 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean, HasBindP
     {
         ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
         setTypedValues(factory.toMap(bean, null), false);
+    }
+
+    @Override
+    public BindException createErrors()
+    {
+        // Teaches Spring to resolve field names via string lookups instead of getters. e.g., errors.rejectValue().
+        return new NullSafeBindException(new BeanUtilsPropertyBindingResult(this, "form"));
     }
 
     @Override

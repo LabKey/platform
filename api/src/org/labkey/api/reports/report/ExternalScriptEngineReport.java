@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.ApiModule;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService.NamedParameterNotProvided;
@@ -40,6 +38,7 @@ import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.usageMetrics.ApiMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -186,6 +185,30 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             return null;
         }
+    }
+
+    private Thumbnail getThumbnail(List<ParamReplacement> parameters) throws IOException
+    {
+        return handleParameters(this, parameters, new ParameterHandler<>()
+        {
+            private Thumbnail _thumbnail = null;
+
+            @Override
+            public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException
+            {
+                _thumbnail = param.renderThumbnail(context);
+
+                // Return true (keep iterating) if we can't render this output as a thumbnail
+                return null == _thumbnail;
+            }
+
+            @Override
+            public Thumbnail cleanup(ContainerUser context)
+            {
+                // TODO: Delete file?
+                return _thumbnail;
+            }
+        });
     }
 
 
@@ -344,6 +367,10 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).toNioPathForWrite().toString());
+            bindings.put(ExternalScriptEngine.INVOCATION_LABEL, "report id=" + getDescriptor().getReportId()
+                    + " type=" + getType()
+                    + " name='" + getDescriptor().getReportName() + "'"
+                    + " container=" + context.getContainer().getPath());
 
             Map<String, String> paramMap = new HashMap<>();
             DataTransformService.get().addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);
@@ -367,7 +394,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 // An empty session id is allowed; we just
                 // don't do any session sharing in this case
                 //
-                String reportSessionId = (String) context.get(renderParam.reportSessionId.name());
+                String reportSessionId = context.getString(renderParam.reportSessionId.name());
 
                 if (!StringUtils.isEmpty(reportSessionId))
                 {
@@ -390,7 +417,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 }
             }
 
-            SimpleMetricsService.get().increment(ModuleLoader.getInstance().getModule(ApiModule.class).getName(), METRIC_FEATURE_AREA, getClass().getSimpleName() + "-" + engine.getClass().getSimpleName());
+            SimpleMetricsService.get().increment(ApiMetricArea.REPORT_INVOCATION, getClass().getSimpleName() + "-" + engine.getClass().getSimpleName());
 
             return engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
         }

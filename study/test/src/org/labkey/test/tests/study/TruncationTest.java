@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,8 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
-import org.labkey.test.categories.Specimen;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.ManageDatasetsPage;
-import org.labkey.test.util.Ext4Helper;
 
 import java.io.File;
 import java.util.Arrays;
@@ -35,7 +33,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.labkey.test.util.PermissionsHelper.EDITOR_ROLE;
 
-@Category({Daily.class, Specimen.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class TruncationTest extends BaseWebDriverTest
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.labkey.api.data.Aggregate.Result;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.logging.LogHelper;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,6 +37,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -155,7 +157,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 if (null != column)
                     selectColumns.add(column);
                 else
-                    LOG.warn("Requested column does not exist in table '" + table.getSelectName() + "': " + name);
+                    LOG.warn("Requested column does not exist in table '{}': {}", table.getSelectName(), name);
             }
         }
 
@@ -379,10 +381,50 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return new ResultsImpl(rs, tableSqlFactory.getSelectedColumns());
     }
 
+    /** @return "schema.query", using the public (Query) names when the table has them, otherwise the DB schema and table */
+    private String getAsyncQueryName()
+    {
+        String schema = _table.getPublicSchemaName();
+        String name = _table.getPublicName();
+        if (null == schema || null == name)
+        {
+            schema = null != _table.getSchema() ? _table.getSchema().getName() : null;
+            name = _table.getName();
+        }
+        return (null != schema ? schema + "." : "") + name;
+    }
+
+    /** @return the schema name, preferring the public (Query) name over the DB schema, or null if the table has neither */
+    private @Nullable String getAsyncSchemaName()
+    {
+        String schema = _table.getPublicSchemaName();
+        if (null == schema && null != _table.getSchema())
+            schema = _table.getSchema().getName();
+        return schema;
+    }
+
+    /** Query names are user-defined and unbounded, and resource.name is a trace-metric dimension, so the resource stops at the schema and the query goes in a tag. */
+    private String getAsyncResourceName(String operation)
+    {
+        String schema = TracedOperation.boundedSchemaName(getAsyncSchemaName());
+        return null != schema ? operation + " " + schema : operation;
+    }
+
+    /** APM span tags. The only place the query being run is identified, since resource.name deliberately stops at the schema. */
+    private Map<String, String> getAsyncSpanTags()
+    {
+        Map<String, String> tags = new HashMap<>();
+        tags.put("labkey.query", getAsyncQueryName());
+        // A null value removes the tag, so a slower query's tags on the web span don't mix with a faster one's
+        tags.put("labkey.db_schema", null != _table.getSchema() ? _table.getSchema().getName() : null);
+        tags.put(TracedOperation.CONTAINER_TAG, null != _table.getUserSchema() ? _table.getUserSchema().getContainer().getPath() : null);
+        return tags;
+    }
+
     public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getResults"), getAsyncSpanTags());
         setAsyncRequest(asyncRequest);
 
         try
@@ -515,14 +557,31 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     // TODO: Convert to return Map<FieldKey, List<Aggregate.Result>>
     public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates)
     {
+        return getAggregates(aggregates, 0);
+    }
+
+    /**
+     * @param maxCount when > 0 and the only aggregate is COUNT(*), bounds the inner select to maxCount + 1 rows so the database can stop early.
+     */
+    public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates, int maxCount)
+    {
         // If we are only asking for the COUNT(*) aggregate, then we don't need to include all of the table columns in the subselect.
         // This can make a big performance difference for Sample Type and Data Class tables as they can then skip
         // the join between the exp schema base table and the materialized table for the given table.
-        Collection<ColumnInfo> aggColumns = aggregates.size() == 1 && aggregates.get(0).isCountStar() ? getRowCountingSelectColumns(_table) : _columns;
+        boolean countStarOnly = aggregates.size() == 1 && aggregates.getFirst().isCountStar();
+        Collection<ColumnInfo> aggColumns = countStarOnly ? getRowCountingSelectColumns(_table) : _columns;
 
         final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, aggColumns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
+        // Setting _maxRows threads LIMIT maxCount + 1 through TableSqlFactory.getSql() into the inner select; restore it after.
+        boolean cap = maxCount > 0 && countStarOnly;
+        var maxRows = _maxRows;
+        if (cap)
+            _maxRows = maxCount + 1;
+
+        try
+        {
         return resultSetFactory.handleResultSet((rs, conn) -> {
             Map<String, List<Result>> results = new CaseInsensitiveHashMap<>();
 
@@ -549,17 +608,28 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
             return results;
         });
+        }
+        finally
+        {
+            if (cap)
+                _maxRows = maxRows;
+        }
     }
 
     public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response)
     {
+        return getAggregatesAsync(aggregates, response, 0);
+    }
+
+    public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response, int maxCount)
+    {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getAggregates"), getAsyncSpanTags());
         setAsyncRequest(asyncRequest);
 
         try
         {
-            return asyncRequest.waitForResult(() -> getAggregates(aggregates));
+            return asyncRequest.waitForResult(() -> getAggregates(aggregates, maxCount));
         }
         catch (SQLException e)
         {
@@ -618,9 +688,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             {
                 Map<FieldKey, ColumnInfo> map = getDisplayColumnsList(_columns);
 
-                // QueryService.getSelectSQL() also calls ensureRequiredColumns, so this call is redundant. However, we
-                // need to know the actual select columns (e.g., if the caller is building a Results) and getSelectSQL()
-                // doesn't return them. TODO: Provide a way to return the selected columns from getSelectSQL()
+                // SelectBuilderImpl.buildSqlFragment() also calls ensureRequiredColumns, so this call is redundant.
+                // However, we need to know the actual select columns (e.g., if the caller is building a Results)
+                // and buildSqlFragment() doesn't return them.
                 Table.ensureRequiredColumns(_table, map, _filter, _sort, null);
                 _columns = map.values();
             }
@@ -646,7 +716,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             }
 
             int selectMaxRows = (Table.ALL_ROWS == _maxRows || Table.NO_ROWS == _maxRows) ? _maxRows : (int)_scrollOffset + _maxRows + _extraRows;
-            SQLFragment sql = QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, selectMaxRows, selectOffset, forceSort, getQueryLogging());
+            SQLFragment sql = QueryService.get().getSelectBuilder(_table).columns(_columns).filter(_filter).sort(_sort).maxRows(selectMaxRows).offset(selectOffset).forceSort(forceSort).queryLogging(getQueryLogging()).buildSqlFragment();
 
             // This is for SAS, which doesn't support a SQL LIMIT syntax, so we must set Statement.maxRows() instead
             _statementMaxRows = _table.getSqlDialect().requiresStatementMaxRows() ? selectMaxRows : null;
@@ -746,7 +816,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             SQLFragment innerSql = super.getSql();
 
             SQLFragment aggregateSql = new SQLFragment();
-            aggregateSql.append("SELECT ");
+            aggregateSql.unsafeAppend("SELECT ");
             int validAggregates = 0;
 
             for (Aggregate agg : _aggregates)
@@ -757,7 +827,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                     if (sql != null)
                     {
                         if (validAggregates > 0)
-                            aggregateSql.append(",\n");
+                            aggregateSql.unsafeAppend(",\n");
 
                         aggregateSql.append(sql);
                         validAggregates++;
@@ -769,7 +839,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             if (validAggregates == 0)
                 return null;
 
-            return aggregateSql.append(" FROM (").append(innerSql).append(") S");
+            return aggregateSql.unsafeAppend(" FROM (").append(innerSql).unsafeAppend(") S");
         }
     }
 }

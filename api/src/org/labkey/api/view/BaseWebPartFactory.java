@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,8 +152,9 @@ public abstract class BaseWebPartFactory implements WebPartFactory
                 catch (Exception e)
                 {
                     // Unfortunately, we have to catch Exception here, since BeanUtils throws RuntimeExceptions
-                    // for various failures.
-                    LOG.warn("Couldn't set property " + entry.getKey() + " on " + view.getClass() + " to value " + entry.getValue(), e);
+                    // for various failures. Log current URL, if we have one, to help track down culprits and issues.
+                    String url = HttpView.hasCurrentView() ? HttpView.getContextURLHelper().toString() + ": " : "";
+                    LOG.warn("{}Couldn't set property {} on {} to value {}", url, entry.getKey(), view.getClass(), entry.getValue(), e);
                 }
             }
             else

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ public class QuerySettings
     private boolean _ignoreViewFilter;
     private int _maxRows = 100;
     private boolean _maxRowsSet = false; // Explicitly track setting maxRows, allows for different defaults
+    private int _maxCount = 0; // 0 = count exactly (unbounded); >0 caps the pagination COUNT(*) at this many rows
     private long _offset = 0;
     private String _selectionKey = null;
 
@@ -284,6 +285,21 @@ public class QuerySettings
                 catch (NumberFormatException nfe)
                 {
                     throwParameterParseException(QueryParam.maxRows);
+                }
+            }
+
+            String maxCountParam = _getParameter(param(QueryParam.maxCount));
+            if (maxCountParam != null)
+            {
+                try
+                {
+                    int maxCount = Integer.parseInt(maxCountParam);
+                    if (maxCount > 0)
+                        setMaxCount(maxCount);
+                }
+                catch (NumberFormatException nfe)
+                {
+                    throwParameterParseException(QueryParam.maxCount);
                 }
             }
         }
@@ -507,13 +523,11 @@ public class QuerySettings
 
     public String param(QueryParam param)
     {
-        switch (param)
+        return switch (param)
         {
-            case schemaName:
-                return param.toString();
-            default:
-                return param(param.toString());
-        }
+            case schemaName -> param.toString();
+            default -> param(param.toString());
+        };
     }
 
     protected String param(String param)
@@ -632,6 +646,18 @@ public class QuerySettings
     public boolean isMaxRowsSet()
     {
         return _maxRowsSet;
+    }
+
+    /** @return The cap on the pagination COUNT(*), or 0 for an exact (unbounded) count. */
+    public int getMaxCount()
+    {
+        return _maxCount;
+    }
+
+    /** @param maxCount count no further than this many rows; 0 restores an exact count. */
+    public void setMaxCount(int maxCount)
+    {
+        _maxCount = maxCount;
     }
 
     /** @return The offset parameter when {@link ShowRows#PAGINATED}, otherwise 0. */

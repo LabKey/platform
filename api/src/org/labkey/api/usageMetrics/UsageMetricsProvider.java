@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,32 @@
  */
 package org.labkey.api.usageMetrics;
 
+import java.util.List;
 import java.util.Map;
 
 /**
- * Functional interface for modules to report their own usage metrics.
+ * Functional interface for modules to report their own usage metrics, together with their descriptions.
  * Register an implementation with UsageMetricsService at module startup.
  */
+@FunctionalInterface
 public interface UsageMetricsProvider
 {
-    Map<String, Object> getUsageMetrics();
+    UsageMetrics addUsageMetrics(UsageMetrics metrics);
+
+    default Map<String, Object> getUsageMetrics()
+    {
+        return collectUsageMetrics().getValues();
+    }
+
+    /** Skips values passed as suppliers; work done outside a supplier still runs */
+    default List<UsageMetrics.Description> getUsageMetricDescriptions()
+    {
+        return addUsageMetrics(UsageMetrics.describeOnly()).getDescriptions();
+    }
+
+    default UsageMetrics collectUsageMetrics()
+    {
+        UsageMetrics metrics = new UsageMetrics();
+        return addUsageMetrics(metrics);
+    }
 }

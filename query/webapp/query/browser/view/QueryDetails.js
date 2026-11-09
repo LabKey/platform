@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -483,6 +483,9 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     formatDependencies : function () {
 
         const dependencies = this.queriesCache.getDependencies(LABKEY.container.id, this.schemaName, this.queryName);
+        const heading = '<h3 style="padding-top: 1.0em">Dependency Report</h3>';
+        const subject = this.queryDetails.isUserDefined ? 'query' : 'table';
+        const scope = this.formatDependencyScope();
 
         // issue : 40993 sort dependencies by type, schemaName and name
         let sortFn = function(a, b){
@@ -505,8 +508,6 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             dependencies.dependents.sort(sortFn);
 
             let tpl = new Ext4.XTemplate(
-                '<h3 style="padding-top: 1.0em">Dependency Report</h3>',
-                '<span>The queries or tables that this query or table depends on and the queries or tables that depend on it.</span>',
                 '<table class="lk-qd-coltable" style="margin-top: 1em;">',
                     '<tr>',
                         '<td>',
@@ -619,9 +620,34 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             return {
                 tag: 'div',
                 cls: 'lk-qd-dependencies',
-                html: tpl.apply(dependencies)
+                // the heading and intro stay out of the XTemplate, which would parse a '{' in the scope's folder path
+                html: heading +
+                        '<span>The queries or tables that this ' + subject + ' depends on and the queries or tables ' +
+                        'that depend on it. ' + scope + '</span>' +
+                        tpl.apply(dependencies)
             };
         }
+
+        // the analysis ran and found nothing; a failed analysis renders its own message instead
+        return {
+            tag: 'div',
+            cls: 'lk-qd-dependencies',
+            html: heading + '<span>There are no dependencies to or from this ' + subject + '. ' + scope + '</span>'
+        };
+    },
+
+    // states which folders the cached dependency graph was built from, since it covers only the current folder until a
+    // cross folder analysis is run
+    formatDependencyScope : function() {
+        const scope = this.queriesCache.getAnalysisScope();
+
+        if (!scope.containerPath)
+            return 'Searched this folder only.';
+
+        if (scope.containerPath === '/')
+            return 'Searched all folders on this site.';
+
+        return 'Searched ' + Ext4.htmlEncode(scope.containerPath) + ' and its subfolders.';
     },
 
     hasProperties: function (o) {
@@ -839,6 +865,12 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     renderQueryDetails : function() {
         this.getContent().removeAll();
 
+        // analyzeQueries.api is backed by a premium service, and without it there is no graph to report on
+        if (!this.parent.hasQueryAnalysisService) {
+            this.getContent().add(this.formatQueryDetails(this.queryDetails));
+            return;
+        }
+
         // add a temporary placeholder for the query dependencies but don't block the entire page
         this.getContent().add(this.formatQueryDetails(this.queryDetails), {
             xtype : 'box',
@@ -849,14 +881,20 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                     scope : this,
                     fn : function(cmp) {
                         cmp.getEl().mask('loading dependencies');
-                        this.queriesCache.load(null, this.refreshQueryDependencies, LABKEY.Utils.getCallbackWrapper(function(error) {
+
+                        let onError = LABKEY.Utils.getCallbackWrapper(function(error) {
                             this.removeQueryDependencies();
                             this.getContent().add({
                                 xtype : 'box',
                                 itemId : 'lk-dependency-report',
                                 html : '<br/>Failed to load dependency information. ' + Ext4.htmlEncode(error.exception ? error.exception : ''),
                             });
-                       }, this, true), this);
+                        }, this, true);
+
+                        this.queriesCache.load(null, this.refreshQueryDependencies, function(result, response, options) {
+                            // load() leads with the accumulated result, but the server's message is on the response
+                            onError.call(this, response, options);
+                       }, this);
                     }
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class IssueCommentType implements AttachmentParentType
 
         return new SQLFragment("SELECT EntityId, ")
             .append(table.getSqlDialect().concatenate("'Issue #'", "CAST(IssueId AS VARCHAR)"))
-            .append(" AS Description FROM ")
+            .unsafeAppend(" AS Description FROM ")
             .append(table, "comments");
     }
 }

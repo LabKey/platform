@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.formSchema.CheckboxField;
 import org.labkey.api.formSchema.Field;
 import org.labkey.api.formSchema.FormSchema;
-import org.labkey.api.formSchema.NumberField;
 import org.labkey.api.formSchema.Option;
 import org.labkey.api.formSchema.RadioField;
-import org.labkey.api.formSchema.SelectField;
 import org.labkey.api.formSchema.TextField;
-import org.labkey.api.formSchema.TextareaField;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -56,6 +53,9 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.TaskPipelineImpl;
+import org.labkey.pipeline.formSchema.NumberField;
+import org.labkey.pipeline.formSchema.SelectField;
+import org.labkey.pipeline.formSchema.TextareaField;
 import org.labkey.pipeline.xml.PipelineDocument;
 import org.labkey.pipeline.xml.TaskPipelineType;
 import org.labkey.pipeline.xml.TaskRefType;
@@ -112,7 +112,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private static final List<Field<?>> _defaultFields = List.of(
             new TextField("location", "Location to Watch", "./", false, null, LOCATION_HELP_TEXT, LOCATION_HREF),
             new CheckboxField("recursive", "Include Child Folders", false, false),
-            new TextField("filePattern", "File Pattern", "(^\\D*)\\.(?:tsv|txt|xls|xlsx)", false, null, FILE_PATTERN_HELP_TEXT, FILE_PATTERN_HREF),
+            new TextField("filePattern", "File Pattern", "(^\\D*)\\.(?:tsv|txt|xls|xlsx)", true, null, FILE_PATTERN_HELP_TEXT, FILE_PATTERN_HREF),
             new NumberField("quiet", "Quiet Period (Seconds)", null, true, 1.0, QUIET_HELP_TEXT, QUIET_HREF),
             new TextField("moveContainer", "Move to Container", "/Other Project/Subfolder A", false, null, MOVE_CONTAINER_HELP_TEXT, MOVE_CONTAINER_HREF),
             new TextField("moveDirectory", "Move to Subdirectory", "My Watched Files/Move", false, null, MOVE_DIRECTORY_HELP_TEXT, MOVE_DIRECTORY_HREF),
@@ -396,7 +396,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         }
         catch (XmlException |IOException e)
         {
-            PipelineJobServiceImpl.LOG.error("Error loading task pipeline '" + pipelineConfig + "':\n", e);
+            PipelineJobServiceImpl.LOG.error("Error loading task pipeline '{}':\n", pipelineConfig, e);
             return null;
         }
 
@@ -490,7 +490,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (progression.isEmpty())
             throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
 
-        TaskFactory<?> initialTaskFactory = PipelineJobService.get().getTaskFactory(progression.get(0));
+        TaskFactory<?> initialTaskFactory = PipelineJobService.get().getTaskFactory(progression.getFirst());
         if (initialTaskFactory == null)
             throw new IllegalArgumentException("Expected at least one task factory in the task pipeline");
 

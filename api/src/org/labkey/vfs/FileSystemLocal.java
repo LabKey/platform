@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.vfs;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -76,13 +91,32 @@ public class FileSystemLocal extends AbstractFileSystemLike
     public FileLike resolveFile(Path path)
     {
         LOG.debug("Resolving {} against {}", path, nioRoot);
-        path = path.absolute().normalize();
-        if (null == path)
-            throw new IllegalArgumentException("Path could not be resolved");
+        var normalized = path.absolute().normalize();
+        if (null == normalized)
+            throw new FileUtil.InvalidPathReferenceException(path.toString(), "Path could not be resolved");
         var nioPath = nioRoot;
-        for (var s : path)
-            nioPath = nioPath.resolve(s);
-        return createFileLike(path, nioPath.toFile());
+        for (var s : normalized)
+            nioPath = nioPath.resolve(toNioName(s));
+        if (!nioPath.normalize().startsWith(nioRoot.normalize()))
+            throw new FileUtil.InvalidPathReferenceException(path.toString(), "Path is outside the file system root");
+        return createFileLike(normalized, nioPath.toFile());
+    }
+
+    // Each Path part must map to exactly one nio name; reject a part nio would split or treat as a root (e.g. "..\x" or "C:x" on Windows)
+    private java.nio.file.Path toNioName(String part)
+    {
+        java.nio.file.Path name;
+        try
+        {
+            name = nioRoot.getFileSystem().getPath(part);
+        }
+        catch (InvalidPathException x)
+        {
+            throw new FileUtil.InvalidPathReferenceException(part, x.getReason());
+        }
+        if (name.getRoot() != null || name.getNameCount() != 1 || ".".equals(part) || "..".equals(part))
+            throw new FileUtil.InvalidPathReferenceException(part, "Not a valid file name");
+        return name;
     }
 
 

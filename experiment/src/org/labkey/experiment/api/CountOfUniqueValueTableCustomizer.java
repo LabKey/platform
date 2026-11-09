@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  *     <javaCustomizer class="org.labkey.experiment.api.CountOfUniqueValueTableCustomizer">                 // Name of this customizer
  *         <properties>
  *             <property name="counterName">SampleCounter</property>                                        // Name of counter (required)
- *             <property name="counterType">org.labkey.api.data.UniqueValueCounterDefinition</property>     // Name of implementation of CounterDefinition (required)
+ *             <property name="counterType">org.labkey.experiment.data.UniqueValueCounterDefinition</property>     // Name of implementation of CounterDefinition (required)
  *
  *             <property name="pairedColumn">vessel</property>                                              // Zero or more pairedColumns (whose values are used to uniquify the DB sequence)
  * 	     	   <property name="pairedColumn">one</property>
@@ -91,13 +91,13 @@ public class CountOfUniqueValueTableCustomizer implements TableCustomizer
         }
         if (null == counterType)
         {
-            _log.warn("Error in counter definition '" + counterName + "': CounterType required");
+            _log.warn("Error in counter definition '{}': CounterType required", counterName);
             valid = false;
         }
 
         if (!Collections.disjoint(pairedColumnNames, attachedColumnNames))
         {
-            _log.warn("Error in counter definition '" + counterName + "': column included as both a paired and an attached column");
+            _log.warn("Error in counter definition '{}': column included as both a paired and an attached column", counterName);
             valid = false;
         }
 
@@ -112,7 +112,7 @@ public class CountOfUniqueValueTableCustomizer implements TableCustomizer
             }
             catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
             {
-                _log.warn("Error instantiating counter '" + counterName + "' of type " + counterType + ": " + e.getMessage(), e);
+                _log.warn("Error instantiating counter '{}' of type {}: {}", counterName, counterType, e.getMessage(), e);
             }
         }
         _counterDefinition = counterDefinition;

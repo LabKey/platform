@@ -1,8 +1,21 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.vfs;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -280,11 +293,7 @@ public interface FileSystemLike
     /** Helper for partially converted code. root must exist. */
     static FileLike wrapFile(File root, File f) throws IOException
     {
-        if (!root.isDirectory())
-            throw new FileNotFoundException(root.getPath());
-        FileSystemLike fs = new Builder(root.toURI()).build();
-        String rel = FileUtil.relativize(root, f, true);
-        return fs.getRoot().resolveFile(Path.parse(rel));
+        return wrapFile(FileUtil.getAbsoluteCaseSensitiveFile(root).toPath(), FileUtil.getAbsoluteCaseSensitiveFile(f).toPath());
     }
 
     /** Helper for partially converted code. root must exist. */
@@ -298,7 +307,7 @@ public interface FileSystemLike
         {
             throw new IOException("File '" + f.toUri().getPath() + "' is outside the allowed root '" + root.toUri().getPath() + "'");
         }
-        return fs.resolveFile(new Path(relative.getPath()));
+        return fs.resolveFile(Path.parse(relative.getPath()));
     }
 
     /** Helper for partially converted code. May throw if the FileLike does not wrap a local file system. */
@@ -395,7 +404,7 @@ public interface FileSystemLike
         }
 
         // if root = /a/b/c/ and file = /a/b/c/d/e/f.xlsx - among other things, this essentially checks if '/a/b/c/d/e/f.xlsx' starts with '/a/b/c/'
-        return allowedRoot.resolveFile(new Path(relativeURI.getPath()));
+        return allowedRoot.resolveFile(Path.parse(relativeURI.getPath()));
     }
 }
 

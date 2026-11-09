@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
@@ -76,16 +77,16 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     private static final String MEDIA_SEARCH_CATEGORY_NAME = "media";
     public static final SearchService.SearchCategory SEARCH_CATEGORY = new SearchService.SearchCategory(SEARCH_CATEGORY_NAME, "Collections of data objects", false) {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, DataClassReadPermission.class);
+            return DataClassReadPermission.class;
         }
     };
     public static final SearchService.SearchCategory MEDIA_SEARCH_CATEGORY = new SearchService.SearchCategory(MEDIA_SEARCH_CATEGORY_NAME, "Collections of media data and samples", false) {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+            return MediaReadPermission.class;
         }
     };
 

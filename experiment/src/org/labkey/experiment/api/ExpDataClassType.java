@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,9 +65,9 @@ public class ExpDataClassType implements AttachmentParentType
         TableInfo tableInfo = ExperimentService.get().getTinfoDataClass();
         SqlDialect dialect = tableInfo.getSqlDialect();
 
-        // Get a dialect-specific expression that can extract an ObjectId from the LSID column and a WHERE clause to
-        // filter the rows to LSIDs containing ObjectIds
-        Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(new SQLFragment("LSID"), tableInfo.getSqlDialect());
+        // Get an expression that can extract an ObjectId from the LSID column and a WHERE clause to filter the rows
+        // to LSIDs containing ObjectIds
+        Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(new SQLFragment("LSID"));
         SQLFragment expressionToExtractObjectId = pair.first;
         SQLFragment where = pair.second;
 
@@ -103,17 +103,17 @@ public class ExpDataClassType implements AttachmentParentType
                     selectStatements.add(
                         new SQLFragment("\n    SELECT ")
                             .append(expressionToExtractObjectId)
-                            .append(" AS EntityId, ")
+                            .unsafeAppend(" AS EntityId, ")
                             .append(dialect.concatenate(
                                 new SQLFragment("?", domain.getName()),
                                 new SQLFragment("':'"),
                                 new SQLFragment("Name")
                             ))
-                            .append(" AS Description FROM ")
+                            .unsafeAppend(" AS Description FROM ")
                             .append(ExperimentService.get().getTinfoData())
-                            .append(" WHERE classid = ")
+                            .unsafeAppend(" WHERE classid = ")
                             .appendValue(dataClass.getRowId())
-                            .append(" AND ")
+                            .unsafeAppend(" AND ")
                             .append(where)
                     );
                 }

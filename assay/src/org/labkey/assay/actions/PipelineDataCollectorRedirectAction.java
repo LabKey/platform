@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.usageMetrics.AssayMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.NetworkDrive;
@@ -46,7 +47,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.assay.AssayModule;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.MutablePropertyValues;
@@ -117,8 +117,8 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         {
             for (long dataId : DataRegionSelection.getSelectedIntegers(getViewContext(), true))
             {
-                ExpData data = ExperimentService.get().getExpData(dataId);
-                if (data == null || !data.getContainer().equals(container))
+                ExpData data = ExperimentService.get().getExpData(container, dataId);
+                if (data == null)
                 {
                     throw new NotFoundException("Could not find all selected datas");
                 }
@@ -182,7 +182,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         if (form.isAllowCrossRunFileInputs())
             url.addParameter("allowCrossRunFileInputs", "true");
 
-        SimpleMetricsService.get().increment(AssayModule.NAME, "AssayDesigner", "ImportFromFile");
+        SimpleMetricsService.get().increment(AssayMetricArea.ASSAY_DESIGNER, "ImportFromFile");
         throw new RedirectException(url);
     }
 
@@ -238,7 +238,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         {
             ExpData data = ExperimentService.get().getExpDataByURL(file, getContainer());
             if (data != null)
-                LOG.info("Found existing data: rowId=" + data.getRowId() + ", url=" + data.getDataFileUrl());
+                LOG.info("Found existing data: rowId={}, url={}", data.getRowId(), data.getDataFileUrl());
             if (data != null && data.getRun() != null)
             {
                 ExpRun previousRun = data.getRun();

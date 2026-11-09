@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2022-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -220,7 +220,7 @@ public class CommonTableExpressions
         {
             // Reference to With
             SQLFragment sql = new SQLFragment()
-                    .append(_cteToken).append(" ")
+                    .append(new SQLFragment().setSqlUnsafe(_cteToken)).unsafeAppend(" ")
                     .appendIdentifier(alias);
 
             if (!_parsingWith)

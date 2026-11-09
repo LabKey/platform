@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -221,12 +220,6 @@ public class ResultsQueryView extends AssayBaseQueryView
             }
 
         }
-    }
-
-    @Override
-    protected ColumnHeaderType getColumnHeaderType()
-    {
-        return ColumnHeaderType.Caption;
     }
 
     public static class ResultsDataRegion extends DataRegion

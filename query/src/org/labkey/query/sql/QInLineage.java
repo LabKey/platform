@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,12 +130,12 @@ final public class QInLineage extends QExpr
         options.setOnlySelectObjectId(true);    // generate one column SELECT, also don't join to material/data/protocolapplication
         SQLFragment lineage = ExperimentService.get().generateExperimentTreeSQL(subquery, options);
 
-        builder.append("((");
+        builder.unsafeAppend("((");
         LHS.appendSql(builder, query);
-        builder.append(")");
-        builder.append(_in ? " IN (" : " NOT IN (");
+        builder.unsafeAppend(")");
+        builder.unsafeAppend(_in ? " IN (" : " NOT IN (");
         builder.append(lineage);
-        builder.append("))");
+        builder.unsafeAppend("))");
     }
 
     @Override

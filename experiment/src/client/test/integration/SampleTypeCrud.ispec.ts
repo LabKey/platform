@@ -1,7 +1,20 @@
-import { ExperimentCRUDUtils, hookServer, RequestOptions, selectRandomN, successfulResponse } from '@labkey/test';
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+import {
+    ExperimentCRUDUtils,
+    hookServer,
+    RequestOptions,
+    selectRandomN,
+    successfulResponse,
+    testSeed
+} from '@labkey/test';
 import mock from 'mock-fs';
 import {
     checkDomainName,
+    checkDomainNameConflicts,
     checkLackDesignerOrReaderPerm,
     createSample,
     deleteSampleType,
@@ -14,6 +27,8 @@ const { importSample, insertRows } = ExperimentCRUDUtils;
 
 const server = hookServer(process.env);
 const PROJECT_NAME = 'SampleTypeCrudJestProject';
+
+console.log(`[SampleTypeCrud] Random seed: ${testSeed}  (rerun with: TEST_SEED=${testSeed})`);
 
 const SAMPLE_ALIQUOT_IMPORT_TYPE_NAME = "SampleType_Aliquots_Import";
 const SAMPLE_ALIQUOT_REQ_IMPORT_TYPE_NAME = "Aliquot_Import_RequiredProp";
@@ -147,6 +162,10 @@ describe('Sample Type Designer', () => {
     describe('Create/update/delete designs', () => {
         it('Sample type name and field name validation', async () => {
             await checkDomainName(server, 'SampleSet', true, topFolderOptions, designerReaderOptions);
+        });
+
+        it('Sample type field name and import alias conflict validation', async () => {
+            await checkDomainNameConflicts(server, 'SampleSet', topFolderOptions, designerReaderOptions);
         });
 
         it('Designer can create, update and delete empty design, reader and editors cannot create/update/delete design', async () => {
@@ -318,8 +337,7 @@ describe('Import with update / merge', () => {
     it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
         const BLANK_KEY_UPDATE_ERROR = 'Name value not provided';
         const BLANK_KEY_MERGE_ERROR_NO_EXPRESSION = 'SampleID or Name is required for sample';
-        const BOGUS_KEY_UPDATE_ERROR = 'Sample does not exist: bogus.';
-        const CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR = "Sample does not belong to ";
+        const BOGUS_KEY_UPDATE_ERROR = 'Sample does not exist in ';
 
         const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
         const dataName = "Data1";
@@ -369,11 +387,11 @@ describe('Import with update / merge', () => {
         successResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
         expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
 
-        // cross folder update not supported when folder type is "Collaboration"
+        // cross folder update not supported
         let crossFolderUpdateErrorResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
-        expect(crossFolderUpdateErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
+        expect(crossFolderUpdateErrorResp.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
         let crossFolderMergeErrorResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
-        expect(crossFolderMergeErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
+        expect(crossFolderMergeErrorResp.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
 
         // bogus name
         bogusKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nbogus\tisBogus", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);
@@ -487,7 +505,7 @@ describe('Import with update / merge', () => {
         // Assert
         // Verify that these rows are not updated
         expect(resp.body.success).toEqual(false);
-        expect(resp.body.exception).toContain('Sample does not exist: (RowId)');
+        expect(resp.body.exception).toContain('Sample does not exist in ' + PROJECT_NAME + ': (RowId)');
     })
 });
 
@@ -1171,7 +1189,7 @@ describe('Amount/Unit CRUD', () => {
         errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\n" + dataName + "\t-1.1\tkg", dataType, "MERGE", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
 
-        // Using row-by-row
+        // Using partitioned data iterator
         await server.post('query', 'updateRows', {
             schemaName: 'samples',
             queryName: dataType,
@@ -1438,4 +1456,41 @@ describe('Amount/Unit CRUD', () => {
     })
 
 });
+
+describe('Name expression', () => {
+    it('GitHub Issue 1431: withCounter generate long values', async () => {
+        const sampleTypeWithCount = 'SampleTypeWithCounterExp';
+
+        const createPayload = {
+            kind: 'SampleSet',
+            domainDesign: { name: sampleTypeWithCount, fields: [{ name: 'Name' }] },
+            options: {
+                name: sampleTypeWithCount,
+                metricUnit: 'g',
+                nameExpression: "${WCE-:withCounter(1,'00000')}",
+            }
+        };
+        await server.post('property', 'createDomain', createPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+
+        // insert a sample with a name whose counter suffix exceeds Integer.MAX_VALUE, seeding the counter above the int range
+        await insertRows(server, [{ name: 'WCE-123456789123456789' }], 'samples', sampleTypeWithCount, topFolderOptions, editorUserOptions);
+
+        // insert another sample without name, verify the generated name continues from the long seed
+        let inserted = await insertRows(server, [{description: 'withoutCounter with long value'}], 'samples', sampleTypeWithCount, topFolderOptions, editorUserOptions);
+        let rowId = caseInsensitive(inserted[0], 'rowId');
+        let data = await ExperimentCRUDUtils.getSamplesData(server, [rowId], sampleTypeWithCount, 'Name', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(data[0], 'name')).toEqual('WCE-123456789123456790');
+
+        // repeat insert without name, verify name is correct
+        inserted = await insertRows(server, [{description: 'withoutCounter with long value'}], 'samples', sampleTypeWithCount, topFolderOptions, editorUserOptions);
+        rowId = caseInsensitive(inserted[0], 'rowId');
+        data = await ExperimentCRUDUtils.getSamplesData(server, [rowId], sampleTypeWithCount, 'Name', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(data[0], 'name')).toEqual('WCE-123456789123456791');
+
+        // do import, without name, verify name is correct
+        await importSample(server, 'Name\tDescription\n\tgenerated via import', sampleTypeWithCount, 'IMPORT', topFolderOptions, editorUserOptions);
+        const importedSample = await ExperimentCRUDUtils.getSampleDataByName(server, 'WCE-123456789123456792', sampleTypeWithCount, 'Name', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(importedSample, 'name')).toEqual('WCE-123456789123456792');
+    })
+})
 

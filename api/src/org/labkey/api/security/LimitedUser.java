@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class LimitedUser extends ClonedUser
         @JsonProperty("_lastLogin") Date lastLogin,
         @JsonProperty("_phone") String phone,
         @JsonProperty("_lastActivity") Date lastActivity,
-        @JsonProperty("_impersonationContext") PermissionsContext ctx
+        @JsonProperty("_permissionsContext") PermissionsContext ctx
     )
     {
         super(name, userId, displayName, firstName, lastName, active, lastLogin, phone, lastActivity, ctx);
@@ -125,9 +125,9 @@ public class LimitedUser extends ClonedUser
             Container root = ContainerManager.getRoot();
 
             testPermissions(ElevatedUser.getElevatedUser(new LimitedUser(user, SubmitterRole.class, null), ReaderRole.class, null), 2, 0, true, true, false, false, false);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, 1, false, false, false, false, true);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, 1, true, false, false, false, true);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, 1, true, true, true, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, 0, false, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, 0, true, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, 0, true, true, true, false, true);
 
             int groupCount = user.getGroups().size();
             int roleCount = (int)user.getAssignedRoles(c).count();
@@ -173,12 +173,19 @@ public class LimitedUser extends ClonedUser
                 reconstitutedAdmin.getAssignedRoles(ContainerManager.getRoot()).collect(Collectors.toSet())
             );
 
-            // Serialize/deserialize search user
-            User user = User.getSearchUser();
+            // Test serialize/deserialize of some special users
+            testRoundTripping(User.getSearchUser());
+            testRoundTripping(User.guest);
+            testRoundTripping(User.nobody);
+        }
+
+        private void testRoundTripping(User user) throws JsonProcessingException
+        {
+            ObjectMapper mapper = PipelineJob.createObjectMapper();
             String json = mapper.writeValueAsString(user);
-            User limitedUser = mapper.readValue(json, LimitedUser.class);
-            assertEquals(user, limitedUser);
-            assertEquals(user.getEmail(), limitedUser.getEmail());
+            User reconstitutedUser = mapper.readValue(json, user.getClass());
+            assertEquals(user, reconstitutedUser);
+            assertEquals(user.getEmail(), reconstitutedUser.getEmail());
         }
     }
 }

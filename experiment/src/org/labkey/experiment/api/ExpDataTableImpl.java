@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,14 +34,12 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -77,7 +75,7 @@ import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -87,7 +85,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.experiment.FileLinkFileListener;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.lineage.LineageMethod;
 import org.labkey.vfs.FileLike;
@@ -121,7 +118,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public ExpDataTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, cf);
+        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, ExpDataTable.Column.class, cf);
 
         addAllowablePermission(UpdatePermission.class);
         addAllowablePermission(InsertPermission.class);
@@ -177,7 +174,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
-        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), null, false);
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo(this, _rootTable.getColumn("rowid"), null, false);
         addColumn(lineageLookup);
 
         addExpObjectMethod();
@@ -206,7 +203,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.FileExtension);
         addColumn(Column.WebDavUrl);
         addColumn(Column.WebDavUrlRelative);
-        if (AppProps.getInstance().isOptionalFeatureEnabled(ExpSchema.SAMPLE_FILES_TABLE))
+        if (OptionalFeatureService.get().isFeatureEnabled(ExpSchema.SAMPLE_FILES_TABLE))
             addColumn(getFileLinkReferenceCountColumn());
         var flagCol = addColumn(Column.Flag);
         if (isFilesTable)
@@ -314,8 +311,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             case LastIndexed:
                 SQLFragment lastIndexedSql = new SQLFragment("(SELECT LastIndexed FROM ").
                         append(ExperimentServiceImpl.get().getTinfoDataIndexed(), "di").
-                        append(" WHERE di.DataId = ").
-                        append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+                        unsafeAppend(" WHERE di.DataId = ").
+                        append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
                 var lastIndexed = new ExprColumn(this, Column.LastIndexed.name(), lastIndexedSql, JdbcType.TIMESTAMP);
                 lastIndexed.setDescription("Date when the data was last full-text search indexed in the system");
                 lastIndexed.setHidden(true);
@@ -362,9 +359,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             {
                 SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
-                        .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
-                        .append(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).append("'")
-                        .append(")");
+                        .unsafeAppend(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".runId")
+                        .unsafeAppend(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
+                        .unsafeAppend(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
                 col.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
@@ -618,14 +615,14 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 "\nAND ");
         if (role == null)
         {
-            sql.append("1 = 0");
+            sql.unsafeAppend("1 = 0");
         }
         else
         {
-            sql.append("exp.datainput.role = ?");
+            sql.unsafeAppend("exp.datainput.role = ?");
             sql.add(role);
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         ExprColumn ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         return doAdd(ret);
     }
@@ -639,10 +636,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             "\nWHERE " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId = exp.materialInput.TargetApplicationId");
         if (sampleType != null)
         {
-            sql.append("\nAND InputMaterial.CPASType = ?");
+            sql.unsafeAppend("\nAND InputMaterial.CPASType = ?");
             sql.add(sampleType.getLSID());
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         ExprColumn ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         ret.setFk(schema.materialIdForeignKey(sampleType, null));
         return doAdd(ret);

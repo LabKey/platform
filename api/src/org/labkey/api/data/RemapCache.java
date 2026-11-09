@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NotFoundException;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -34,6 +35,7 @@ import java.util.Objects;
 public class RemapCache
 {
     Map<Key, SimpleTranslator.RemapConverter> remaps = new HashMap<>();
+    private final Map<Container, ContainerFilter.Type> _findContainerFilterTypes = new HashMap<>();
     private final boolean _allowBulkLoads;
 
     public RemapCache()
@@ -166,11 +168,40 @@ public class RemapCache
     }
 
     /**
+     * Resolve many values in bulk, so {@link #remap(SchemaKey, String, User, Container, ContainerFilter.Type, String)} for them runs no queries.
+     */
+    public void prefetch(SchemaKey schemaName, String queryName, User user, Container c, ContainerFilter.Type filterType, Collection<String> values)
+    {
+        remapper(key(schemaName, queryName, user, c, filterType), remaps, false).prefetch(values);
+    }
+
+    /**
      * Convert the string value to the target table's PK value by using the table's unique indices and optionally pk.
      */
     public <V> V remap(TableInfo lookupTable, String value, boolean includePkLookup)
     {
         return remap(key(lookupTable), value, includePkLookup);
+    }
+
+    /**
+     * Memoized {@link #computeContainerFilterTypeForFind(Container)}, which resolves the container's active modules on every call.
+     */
+    @NotNull
+    public ContainerFilter.Type getContainerFilterTypeForFind(Container c)
+    {
+        return _findContainerFilterTypes.computeIfAbsent(c, RemapCache::computeContainerFilterTypeForFind);
+    }
+
+    /**
+     * Container filter type for resolving values from the given container.
+     */
+    @NotNull
+    public static ContainerFilter.Type computeContainerFilterTypeForFind(Container c)
+    {
+        ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(c);
+        if (type == null)
+            return ContainerFilter.Type.CurrentPlusProjectAndShared;
+        return type;
     }
 
 }

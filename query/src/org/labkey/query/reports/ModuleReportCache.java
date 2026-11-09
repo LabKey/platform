@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.labkey.query.reports;
 
 import org.apache.commons.collections4.ListValuedMap;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,16 +29,16 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
-import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
-import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
-import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
-import org.labkey.api.reports.report.r.ModuleQueryRReportDescriptor;
-import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
-import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.query.reports.report.ModuleJavaScriptReportDescriptor;
+import org.labkey.query.reports.report.ModuleQueryJavaScriptReportDescriptor;
+import org.labkey.query.reports.report.ModuleQueryReportDescriptor;
+import org.labkey.query.reports.report.python.ModuleIpynbReportDescriptor;
+import org.labkey.query.reports.report.r.ModuleQueryRReportDescriptor;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -165,7 +165,7 @@ public class ModuleReportCache
 
                 if (isResourceFile(name))
                 {
-                    if (StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION))
+                    if (Strings.CI.endsWith(name, ModuleQueryReportDescriptor.FILE_EXTENSION))
                         possibleQueryReportFiles.put(resource.getPath(), resource);
                     else
                         descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource));
@@ -189,8 +189,8 @@ public class ModuleReportCache
         {
             return ModuleRReportDescriptor.accept(filename) ||
                     ModuleIpynbReportDescriptor.accept(filename) ||
-                    StringUtils.endsWithIgnoreCase(filename, ModuleJavaScriptReportDescriptor.FILE_EXTENSION) ||
-                    StringUtils.endsWithIgnoreCase(filename, ModuleQueryReportDescriptor.FILE_EXTENSION);
+                    Strings.CI.endsWith(filename, ModuleJavaScriptReportDescriptor.FILE_EXTENSION) ||
+                    Strings.CI.endsWith(filename, ModuleQueryReportDescriptor.FILE_EXTENSION);
         }
 
         // TODO: Create and register factories for these descriptors
@@ -227,7 +227,7 @@ public class ModuleReportCache
                 .mapToInt(ReportCollections::size)
                 .sum();
 
-            LOG.info(descriptorCount + " report descriptors defined in all modules");
+            LOG.info("{} report descriptors defined in all modules", descriptorCount);
 
             // Make sure the cache retrieves the expected number of report descriptors from a couple test modules, if present
 

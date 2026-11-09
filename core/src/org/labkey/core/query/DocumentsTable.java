@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
@@ -54,18 +69,18 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
             .map(type -> new SQLFragment("SELECT ? AS ParentType, EntityId, Description FROM (")
                 .add(type.getUniqueName())
                 .append(type.getSelectEntityIdAndDescriptionSql())
-                .append(") ")
+                .unsafeAppend(") ")
                 .appendIdentifier(am.decideAlias("x")))
             .filter(Objects::nonNull)
             .collect(LabKeyCollectors.joining(new SQLFragment("\nUNION\n")));
 
         return new SQLFragment("(SELECT d.*, p.Description AS ParentDescription, ")
             .append(dialect.wrapBooleanExpression(new SQLFragment("EntityId IS NULL")))
-            .append(" AS Orphaned FROM ")
+            .unsafeAppend(" AS Orphaned FROM ")
             .append(super.getFromSQL("d")) // core.Documents with container filter applied
-            .append(" LEFT JOIN (\n")
+            .unsafeAppend(" LEFT JOIN (\n")
             .append(parents)
-            .append("\n) p ON d.Parent = p.EntityId AND d.ParentType = p.ParentType) ")
+            .unsafeAppend("\n) p ON d.Parent = p.EntityId AND d.ParentType = p.ParentType) ")
             .append(alias);
     }
 }

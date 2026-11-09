@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.labkey.assay;
 import jakarta.servlet.ServletContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayBatchDomainKind;
 import org.labkey.api.assay.AssayProvider;
@@ -46,7 +47,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.generator.DataGeneratorRegistry;
 import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.migration.AssaySkipContainers;
@@ -68,6 +68,10 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.usageMetrics.AssayMetricArea;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
@@ -116,6 +120,7 @@ import java.util.function.Supplier;
 
 import static org.labkey.api.assay.transform.DataTransformService.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
 import static org.labkey.api.assay.transform.DataTransformService.LEGACY_SESSION_ID_REPLACEMENT;
+import static org.labkey.api.assay.transform.DataTransformService.R_SESSIONID_REPLACEMENT;
 
 public class AssayModule extends SpringModule
 {
@@ -181,6 +186,8 @@ public class AssayModule extends SpringModule
 
         ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
         ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_ID_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
+        ParamReplacementSvc.get().registerDeprecated(R_SESSIONID_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
+        ParamReplacementSvc.get().registerDeprecated(SecurityManager.TRANSFORM_SESSION_ID, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
 
         RoleManager.registerRole(new AssayDesignerRole());
 
@@ -190,11 +197,30 @@ public class AssayModule extends SpringModule
 
         PropertyService.get().registerDomainKind(new PlateMetadataDomainKind());
         CacheManager.addListener(PlateCache::clearCache);
+
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+                AbstractAssayProvider.DEPRECATED_ARBITRARY_TRANSFORM_SCRIPT_PATHS,
+                "Allow assay transform scripts at arbitrary file system paths",
+                "Transform scripts configured on an assay design are normally required to reside in that design's container's @scripts directory, which only platform developers can write to. Enable this to allow assay designs to reference scripts anywhere on the server's file system. This option will be removed in a future release of LabKey Server.",
+                false,
+                false,
+                OptionalFeatureService.FeatureType.Deprecated));
+
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+                PlateService.DEPRECATE_PRIMARY_PLATE_SET_FLAG,
+                "Allow for Primary Plate Sets to be created",
+                "Enables the creation of Primary Plate Sets. This option will be removed in a future release of LabKey Server.",
+                false,
+                false,
+                OptionalFeatureService.FeatureType.Deprecated));
     }
 
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
+        SimpleMetricsService simpleMetrics = SimpleMetricsService.get();
+        simpleMetrics.describeFeatureAreas(AssayMetricArea.values());
+
         FolderTypeManager.get().registerFolderType(this, new AssayFolderType(this));
 
         PipelineJobService.get().registerTaskFactoryFactory(AssayImportRunTaskType.type, new AssayImportRunTask.FactoryFactory());
@@ -265,17 +291,12 @@ public class AssayModule extends SpringModule
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {
+                // Every active-modules lookup runs this, so use the provider recorded with each cached protocol rather than matching it again
                 ContainerManager.registerModuleDependencyProvider((dependencies, c) -> {
-                    AssayService svc = AssayService.get();
-                    List<ExpProtocol> activeProtocols = svc.getAssayProtocols(c);
-                    for (ExpProtocol p : activeProtocols)
+                    for (AssayProvider ap : AssayManager.get().getAssayProvidersInScope(c))
                     {
-                        AssayProvider ap = svc.getProvider(p);
-                        if (ap != null)
-                        {
-                            for (Module m : ap.getRequiredModules())
-                                dependencies.add(m);
-                        }
+                        for (Module m : ap.getRequiredModules())
+                            dependencies.add(m);
                     }
                 });
             }
@@ -323,7 +344,7 @@ public class AssayModule extends SpringModule
                 return new SQLClause(
                     new SQLFragment("LSID IN (SELECT LSID FROM assay.Well WHERE Container")
                         .appendInClause(AssaySkipContainers.getFilteredContainers(containers), sourceTable.getSqlDialect())
-                        .append(")")
+                        .unsafeAppend(")")
                 );
             }
         });
@@ -361,6 +382,7 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            AssayManager.TestCase.class,
             ModuleAssayCache.TestCase.class,
             PlateManagerTest.class,
             PlateSchemaTest.class

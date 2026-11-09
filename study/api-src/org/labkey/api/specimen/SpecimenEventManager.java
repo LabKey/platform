@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.specimen;
 
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +44,7 @@ public class SpecimenEventManager
     {
         if (!dateOrderedEvents.isEmpty())
         {
-            SpecimenEvent firstEvent = dateOrderedEvents.get(0);
+            SpecimenEvent firstEvent = dateOrderedEvents.getFirst();
             // walk backwards through the events until we find an event with at least one date field filled in that isn't
             // the first event.  Leaving all specimen event dates blank shouldn't make an event the processing location.
             for (int i = 1; i < dateOrderedEvents.size() - 1 && skipAsProcessingLocation(firstEvent); i++)
@@ -59,7 +74,7 @@ public class SpecimenEventManager
     {
         if (dateOrderedEvents.isEmpty())
             return null;
-        return dateOrderedEvents.get(dateOrderedEvents.size() - 1);
+        return dateOrderedEvents.getLast();
     }
 
     public List<SpecimenEvent> getSpecimenEvents(final Container container, Filter filter)

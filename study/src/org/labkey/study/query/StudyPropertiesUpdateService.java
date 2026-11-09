@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,11 +149,11 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
             VisitManager manager = StudyManager.getInstance().getVisitManager(study);
             StudySchema schema = StudySchema.getInstance();
 
-            SQLFragment sqlFragParticipantVisit = new SQLFragment("DELETE FROM " + schema.getTableInfoParticipantVisit() + " WHERE Container = ?").add(study.getContainer());
+            SQLFragment sqlFragParticipantVisit = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoParticipantVisit()).unsafeAppend(" WHERE Container = ?").add(study.getContainer());
             new SqlExecutor(schema.getSchema()).execute(sqlFragParticipantVisit);
-            SQLFragment sqlFragVisitMap = new SQLFragment("DELETE FROM " + schema.getTableInfoVisitMap() + " WHERE Container = ?").add(study.getContainer());
+            SQLFragment sqlFragVisitMap = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoVisitMap()).unsafeAppend(" WHERE Container = ?").add(study.getContainer());
             new SqlExecutor(schema.getSchema()).execute(sqlFragVisitMap);
-            SQLFragment sqlFragVisit = new SQLFragment("DELETE FROM " + schema.getTableInfoVisit() + " WHERE Container = ?").add(study.getContainer());
+            SQLFragment sqlFragVisit = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoVisit()).unsafeAppend(" WHERE Container = ?").add(study.getContainer());
             new SqlExecutor(schema.getSchema()).execute(sqlFragVisit);
 
             manager.updateParticipantVisits(user, study.getDatasets());

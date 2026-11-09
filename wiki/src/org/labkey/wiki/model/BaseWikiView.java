@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -31,6 +32,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
+import org.labkey.wiki.WikiController.PrintBranchAction;
 import org.labkey.wiki.WikiSelectManager;
 
 import java.util.Map;
@@ -51,8 +53,7 @@ public abstract class BaseWikiView extends JspView<Object>
     public ActionURL manageURL;
     public ActionURL customizeURL;
     public ActionURL printURL;
-
-    protected WikiVersion wikiVersion = null; // TODO: Used internally only?  Pass to init()?
+    public ActionURL printBranchURL;
 
     protected int _webPartId = 0;
 
@@ -62,7 +63,7 @@ public abstract class BaseWikiView extends JspView<Object>
     }
 
 
-    protected void init(Container c, String name)
+    protected void init(Container c, String name, WikiVersion wikiVersion)
     {
         ViewContext context = getViewContext();
         User user = context.getUser();
@@ -190,9 +191,15 @@ public abstract class BaseWikiView extends JspView<Object>
             }
         }
 
-        if (null == context.getRequest().getParameter(ActionURL.Param._print.name()))
+        if (null == context.getRequestOrThrow().getParameter(ActionURL.Param._print.name()))
         {
             printURL = wiki.getPageURL().addParameter(ActionURL.Param._print, 1);
+            // Must have update in the container, not just owner update on the wiki, since this is a folder-wide,
+            // potentially expensive operation. GitHub Issue #1415
+            if (wiki.hasChildren() && c.hasPermission(user, UpdatePermission.class))
+            {
+                printBranchURL = new ActionURL(PrintBranchAction.class, getContextContainer()).addParameter("name", wiki.getName());
+            }
         }
 
         // Initialize Custom Menus
@@ -245,7 +252,9 @@ public abstract class BaseWikiView extends JspView<Object>
         }
 
         setTitle(title);
-        setNavMenu(initNavMenu());
+        // No nav menu if you can't read. This suppresses "New" and "Print" menu options.
+        if (perms.allowRead(wiki))
+            setNavMenu(initNavMenu());
     }
 
 
@@ -273,9 +282,8 @@ public abstract class BaseWikiView extends JspView<Object>
                 NavTree print = new NavTree("Print", printURL);
                 print.setNoFollow(true);
                 menu.addChild(print);
-                if (wiki.hasChildren())
-                    menu.addChild("Print Branch", new ActionURL(WikiController.PrintBranchAction.class,
-                            getContextContainer()).addParameter("name", wiki.getName()));
+                if (null != printBranchURL)
+                    menu.addChild("Print Branch", printBranchURL);
             }
         }
         else if (!(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))

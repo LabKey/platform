@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.labkey.api.iterator;
 
 import org.apache.commons.collections4.iterators.ArrayIterator;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,12 +94,6 @@ public class MarkableIterator<T> implements Iterator<T>
         }
 
         return false;
-    }
-
-    @Override
-    public void remove()
-    {
-        throw new UnsupportedOperationException("remove");
     }
 
     public void mark()
@@ -208,7 +203,7 @@ public class MarkableIterator<T> implements Iterator<T>
         }
 
         @Override
-        public SimpleLinkedListIterator iterator()
+        public @NotNull SimpleLinkedListIterator iterator()
         {
             return new SimpleLinkedListIterator();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2016 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ public class QueryWriter extends BaseFolderWriter
                     }
                     catch (XmlValidationException e)
                     {
-                        _log.error("Invalid meta data set on query " + query.getSchemaName() + "." + query.getName() + ". Meta data will not be exported for this query.", e);
+                        _log.error("Invalid meta data set on query {}.{}. Meta data will not be exported for this query.", query.getSchemaName(), query.getName(), e);
                     }
                 }
 

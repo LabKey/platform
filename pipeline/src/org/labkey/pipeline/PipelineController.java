@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,14 @@
  */
 package org.labkey.pipeline;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -40,12 +43,17 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
@@ -56,15 +64,21 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineActionConfig;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
+import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresPermission;
@@ -75,17 +89,23 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.NetworkDrive;
@@ -94,6 +114,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
@@ -109,6 +130,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineManager;
+import org.labkey.pipeline.api.PipelineQuerySchema;
 import org.labkey.pipeline.api.PipelineSchema;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -124,6 +146,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -134,6 +157,7 @@ import java.util.Set;
 public class PipelineController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
+    private static final Logger LOG = LogHelper.getLogger(PipelineController.class, "Pipeline controller actions, including job cancellation");
 
     public enum Params { path, rootset, overrideRoot }
 
@@ -1079,6 +1103,8 @@ public class PipelineController extends SpringActionController
             catch (PipelineProvider.HandlerException e)
             {
                 _successURL = StatusController.urlDetails(getContainer(), form.getRowId(), e.getMessage());
+                // Help diagnose rare but recurring test failure in PipelineCancelTest
+                LOG.info("CancelJobAction.handlePost: cancel rejected for rowId {} ({}); _successURL set to details page {}", form.getRowId(), e.getMessage(), _successURL);
             }
             return true;
         }
@@ -1086,6 +1112,14 @@ public class PipelineController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(StatusController.RowIdForm rowIdForm)
         {
+            if (_successURL == null)
+            {
+                // Diagnostic (PipelineCancelTest intermittent blank page after cancel): capture the redirect target and the response state at the moment the framework
+                // decides between issuing the redirect and rendering an (empty) view. A null _successURL here, or a response
+                // that is already committed, would explain the observed 200/empty-body response instead of a 302.
+                HttpServletResponse response = getViewContext().getResponse();
+                LOG.info("CancelJobAction.getSuccessURL: returning _successURL={}, response.isCommitted={}, response.status={}", _successURL, response.isCommitted(), response.getStatus());
+            }
             return _successURL;
         }
     }
@@ -1434,6 +1468,13 @@ public class PipelineController extends SpringActionController
                     throw new NotFoundException("Pipeline trigger with id " + rowId + " could not be found");
                 }
             }
+            else
+            {
+                // GH Issue 1524: don't let a crafted link plant a function in the collapsed Advanced Settings. The
+                // reset regenerates a bound raw "configuration" from the fields, now without the function.
+                form.setParameterFunction(null);
+                form.resetConfiguration();
+            }
 
             if (form.getReturnUrl() == null)
                 form.setReturnUrl(getContainer().getStartURL(getUser()).toString());
@@ -1456,6 +1497,15 @@ public class PipelineController extends SpringActionController
         @Override
         public void validateForm(PipelineTriggerForm form, Errors errors)
         {
+            // Confirm the configuration belongs to this container
+            if (form.getRowId() != null)
+            {
+                SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
+                filter.addCondition(FieldKey.fromParts("RowId"), form.getRowId());
+                if (!new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), filter, null).exists())
+                    throw new NotFoundException("Pipeline trigger configuration not found in this folder");
+            }
+
             if (StringUtils.isBlank(form.getLocation()))
                 form.setLocation("./");
 
@@ -1507,7 +1557,7 @@ public class PipelineController extends SpringActionController
                     _customParamKey.add(String.valueOf(o));
             }
 
-            JSONArray paramValueJson = json.getJSONArray("customParamValue");
+            JSONArray paramValueJson = json.optJSONArray("customParamValue");
             if (paramValueJson != null)
             {
                 for (Object o : paramValueJson.toList())
@@ -1722,6 +1772,471 @@ public class PipelineController extends SpringActionController
                 controller.new UpdateRootPermissionsAction(),
                 controller.new SetupAction()
             );
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testSavePipelineTriggerContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A pipeline trigger configuration that lives in folder B (Type/PipelineId are NOT NULL columns; their
+            // values need not be valid registered names for the container guard to apply).
+            // uq_triggerconfigurations_name is unique on (container, name); a GUID keeps a leftover row from an
+            // interrupted prior run (which reuses the same container path) from colliding with this insert.
+            String triggerName = "scoping-test-trigger-" + GUID.makeGUID();
+            TriggerConfiguration config = new TriggerConfiguration();
+            config.beforeInsert(admin, folderB.getId());
+            config.setName(triggerName);
+            config.setType(FileAnalysisTaskPipeline.class.getName());
+            config.setPipelineId("scoping-test-pipeline");
+            config = Table.insert(admin, PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), config);
+            int rowId = config.getRowId();
+
+            // A folder admin in A only (no rights in B). @RequiresPermission(AdminPermission.class) passes in folder A,
+            // so without the validateForm guard the save -- keyed only by RowId -- would reconfigure/re-home B's trigger.
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            // Reconfiguring B's trigger through folder A must 404 rather than overwrite/re-home it.
+            ActionURL foreignUrl = new ActionURL(SavePipelineTriggerAction.class, folderA);
+            JSONObject attack = new JSONObject().put("rowId", rowId).put("name", "hacked").put("type", "x").put("pipelineId", "y");
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, postJson(foreignUrl, adminA, attack));
+            // A site admin (who CAN administer folder B) still gets 404 through folder A (no cross-container write).
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, postJson(foreignUrl, admin, attack));
+
+            // The configuration must be untouched in its own container
+            TriggerConfiguration after = new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations())
+                    .getObject(rowId, TriggerConfiguration.class);
+            assertNotNull("Trigger configuration must still exist", after);
+            assertEquals("Name must be unchanged after a cross-container save", triggerName, after.getName());
+            assertEquals("Container must be unchanged after a cross-container save", folderB.getId(), after.getContainerId());
+
+            // Positive control: a same-container request passes the container guard and proceeds to content validation.
+            // The submitted form omits a name/type, so the action returns a validation error (400) rather than 404 --
+            // proving the guard rejects only the cross-container case, not legitimate same-container edits.
+            ActionURL ownUrl = new ActionURL(SavePipelineTriggerAction.class, folderB);
+            JSONObject ownEdit = new JSONObject().put("rowId", rowId);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, postJson(ownUrl, admin, ownEdit));
+        }
+
+        // GH Issue 1466
+        @Test
+        public void testTriggerRunAsUser() throws Exception
+        {
+            User siteAdmin = getAdmin();
+            Container folder = createContainer("RunAs");
+            Container project = folder.getProject();
+            User reader = createUserInRole(project, ReaderRole.class);
+            User folderAdmin = createUserInRole(folder, FolderAdminRole.class);
+            User projectAdmin = createUserInRole(project, ProjectAdminRole.class);
+            // Project admin doesn't inherit into subfolders, and trigger configs require folder admin
+            grantRole(projectAdmin, folder, FolderAdminRole.class);
+
+            // A folder admin can't impersonate, so may run only as themselves
+            assertNotNull(saveTrigger(folder, folderAdmin, null, folderAdmin, null));
+            assertRunAsRejected(folder, folderAdmin, null, siteAdmin, null);
+            assertRunAsRejected(folder, folderAdmin, null, reader, null);
+            assertRunAsRejected(folder, folderAdmin, null, folderAdmin, siteAdmin);
+
+            // A project admin can run as project users, but not as a privileged user
+            assertNotNull(saveTrigger(folder, projectAdmin, null, reader, null));
+            assertRunAsRejected(folder, projectAdmin, null, siteAdmin, null);
+
+            // Updates are checked too, and the error is reported rather than dropped
+            Integer rowId = saveTrigger(folder, siteAdmin, null, siteAdmin, null);
+            assertNotNull(rowId);
+            assertRunAsRejected(folder, folderAdmin, rowId, siteAdmin, null);
+        }
+
+        private void assertRunAsRejected(Container c, User user, @Nullable Integer rowId, User runAs, @Nullable User customRunAs) throws Exception
+        {
+            try
+            {
+                saveTrigger(c, user, rowId, runAs, customRunAs);
+                fail(user.getEmail() + " should not be able to save a trigger that runs as " + runAs.getEmail());
+            }
+            catch (BatchValidationException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().contains("You do not have permission to run this trigger as user"));
+            }
+        }
+
+        private Integer saveTrigger(Container c, User user, @Nullable Integer rowId, User runAs, @Nullable User customRunAs) throws Exception
+        {
+            TriggerConfiguration config = new TriggerConfiguration();
+            if (rowId != null)
+                config.setRowId(rowId);
+            config.setName("run-as-test-trigger-" + GUID.makeGUID());
+            config.setType(FileAnalysisTaskPipeline.class.getName());
+            config.setPipelineId("run-as-test-pipeline");
+            config.setUsername(runAs.getDisplayName(getAdmin()));
+            // custom parameter that might set the user to run the trigger as
+            if (customRunAs != null)
+            {
+                config.setCustomParamKey(List.of(PipelineJob.PIPELINE_USERNAME_PARAM));
+                config.setCustomParamValue(List.of(customRunAs.getDisplayName(getAdmin())));
+            }
+            PipelineManager.insertOrUpdateTriggerConfiguration(user, c, config);
+            TriggerConfiguration saved = PipelineManager.getTriggerConfiguration(c, config.getName());
+
+            return saved == null ? null : saved.getRowId();
+        }
+
+        // An unregistered type keeps the update service from starting a listener for these rows.
+        private static final String TEST_TRIGGER_TYPE = "scoping-test-type";
+        private static final String PARAMETER_FUNCTION = "parameterFunction";
+        private static final String FUNCTION = "var x = 1;";
+        private static final String INVALID_JSON = "{not json";
+
+        @Test
+        public void testFolderAdminCanManageTriggerWithoutParameterFunction() throws Exception
+        {
+            Container c = createContainer("NoFunction");
+            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+            assertFalse(folderAdmin.isTrustedAnalyst());
+
+            Map<String, Object> row = triggerRow(configJson(null));
+            assertNoErrors(insert(folderAdmin, c, row));
+            int rowId = rowIdByName(c, (String) row.get("Name"));
+
+            Map<String, Object> edit = keyRow(rowId);
+            edit.put("Description", "edited");
+            edit.put("Configuration", new JSONObject(configJson(null)).put("location", "./moved").toString());
+            assertNoErrors(update(folderAdmin, c, edit));
+            assertEquals("edited", storedRow(rowId).get("Description"));
+        }
+
+        @Test
+        public void testFolderAdminCannotInsertParameterFunction() throws Exception
+        {
+            Container c = createContainer("InsertFunction");
+            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+
+            List<Object> configurations = List.of(
+                configJson(FUNCTION),
+                new JSONObject(configJson(FUNCTION)),
+                configJson(new JSONArray().put(FUNCTION))
+            );
+            for (Object configuration : configurations)
+            {
+                Map<String, Object> row = triggerRow(configuration);
+                assertTrue("Insert must be rejected: " + configuration, insert(folderAdmin, c, row).hasErrors());
+                assertFalse("No row may be written: " + configuration, triggerExists(c, (String) row.get("Name")));
+            }
+
+            // Table.insert may ignore an alias key rather than reject it; either way no function may be stored.
+            Map<String, Object> aliased = triggerRow(null);
+            aliased.remove("Configuration");
+            aliased.put(configurationPropertyURI(folderAdmin, c), configJson(FUNCTION));
+            insert(folderAdmin, c, aliased);
+            if (triggerExists(c, (String) aliased.get("Name")))
+                assertNull(storedFunction(rowIdByName(c, (String) aliased.get("Name"))));
+        }
+
+        @Test
+        public void testFolderAdminCannotChangeParameterFunction() throws Exception
+        {
+            Container c = createContainer("ChangeFunction");
+            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+            int rowId = seedTrigger(c, FUNCTION);
+
+            List<Object> configurations = Arrays.asList(
+                configJson("var y = 2;"),
+                configJson(null),
+                configJson(""),
+                null,
+                new JSONObject(configJson("var y = 2;")),
+                configJson(new JSONArray().put(FUNCTION))
+            );
+            for (Object configuration : configurations)
+            {
+                Map<String, Object> edit = keyRow(rowId);
+                edit.put("Configuration", configuration);
+                assertTrue("Update must be rejected: " + configuration, update(folderAdmin, c, edit).hasErrors());
+                assertEquals("Function must be unchanged: " + configuration, FUNCTION, storedFunction(rowId));
+            }
+
+            Map<String, Object> aliased = keyRow(rowId);
+            aliased.put(configurationPropertyURI(folderAdmin, c), configJson("var y = 2;"));
+            assertTrue("Update via propertyURI must be rejected", update(folderAdmin, c, aliased).hasErrors());
+            assertEquals(FUNCTION, storedFunction(rowId));
+
+            int noFunctionRowId = seedTrigger(c, null);
+            Map<String, Object> add = keyRow(noFunctionRowId);
+            add.put("Configuration", configJson(FUNCTION));
+            assertTrue("Adding a function must be rejected", update(folderAdmin, c, add).hasErrors());
+            assertNull(storedFunction(noFunctionRowId));
+        }
+
+        @Test
+        public void testFolderAdminCanEditTriggerWithUnchangedParameterFunction() throws Exception
+        {
+            Container c = createContainer("UnchangedFunction");
+            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+            int rowId = seedTrigger(c, FUNCTION);
+
+            // The wizard regenerates the whole Configuration, so other keys change around the unchanged function.
+            Map<String, Object> edit = keyRow(rowId);
+            edit.put("Description", "edited");
+            edit.put("Configuration", new JSONObject(configJson(FUNCTION)).put("location", "./moved").put("quiet", 5000).toString());
+            assertNoErrors(update(folderAdmin, c, edit));
+            assertEquals(FUNCTION, storedFunction(rowId));
+            assertEquals("./moved", new JSONObject((String) storedRow(rowId).get("Configuration")).getString("location"));
+
+            Map<String, Object> descriptionOnly = keyRow(rowId);
+            descriptionOnly.put("Description", "edited again");
+            assertNoErrors(update(folderAdmin, c, descriptionOnly));
+            assertEquals("edited again", storedRow(rowId).get("Description"));
+            assertEquals(FUNCTION, storedFunction(rowId));
+        }
+
+        @Test
+        public void testUpdateRowsContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("UpdateA");
+            Container folderB = createContainer("UpdateB");
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+            int rowId = seedTrigger(folderB, null);
+            String name = (String) storedRow(rowId).get("Name");
+
+            Map<String, Object> rename = keyRow(rowId);
+            rename.put("Name", "hacked");
+            Map<String, Object> rehome = keyRow(rowId);
+            rehome.put("Name", "hacked");
+            rehome.put("Container", folderA.getId());
+
+            for (User user : List.of(adminA, getAdmin()))
+            {
+                for (Map<String, Object> row : List.of(rename, rehome))
+                {
+                    assertTrue("Cross-container update must be rejected", update(user, folderA, new CaseInsensitiveHashMap<>(row)).hasErrors());
+                    assertUnchanged(rowId, name, folderB);
+                }
+            }
+
+            // Key supplied via oldKeys rather than the row
+            Map<String, Object> keyless = new CaseInsensitiveHashMap<>(Map.of("Name", "hacked"));
+            assertTrue("Cross-container update via oldKeys must be rejected", update(adminA, folderA, keyless, keyRow(rowId)).hasErrors());
+            assertUnchanged(rowId, name, folderB);
+        }
+
+        @Test
+        public void testTrustedAnalystCanManageParameterFunction() throws Exception
+        {
+            Container c = createContainer("TrustedFunction");
+            User developer = createUserInRole(c, FolderAdminRole.class);
+            grantRole(developer, ContainerManager.getRoot(), PlatformDeveloperRole.class);
+            assertTrue(developer.isTrustedAnalyst());
+
+            Map<String, Object> row = triggerRow(configJson(FUNCTION));
+            assertNoErrors(insert(developer, c, row));
+            int rowId = rowIdByName(c, (String) row.get("Name"));
+            assertEquals(FUNCTION, storedFunction(rowId));
+
+            Map<String, Object> change = keyRow(rowId);
+            change.put("Configuration", configJson("var y = 2;"));
+            assertNoErrors(update(developer, c, change));
+            assertEquals("var y = 2;", storedFunction(rowId));
+
+            Map<String, Object> clear = keyRow(rowId);
+            clear.put("Configuration", configJson(null));
+            assertNoErrors(update(developer, c, clear));
+            assertNull(storedFunction(rowId));
+        }
+
+        /** Trigger lookups parse both JSON columns of every matching row, so one invalid row breaks listener startup and management for all of them. */
+        @Test
+        public void testInvalidJsonRejectedForAllUsers() throws Exception
+        {
+            Container c = createContainer("InvalidJson");
+            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+            User developer = createUserInRole(c, FolderAdminRole.class);
+            grantRole(developer, ContainerManager.getRoot(), PlatformDeveloperRole.class);
+
+            for (User user : List.of(folderAdmin, developer))
+            {
+                for (String column : List.of("Configuration", "CustomConfiguration"))
+                {
+                    Map<String, Object> row = triggerRow(configJson(null));
+                    row.put(column, INVALID_JSON);
+                    assertTrue(column + " must be valid JSON on insert", insert(user, c, row).hasErrors());
+                    assertFalse(triggerExists(c, (String) row.get("Name")));
+
+                    int rowId = seedTrigger(c, null);
+                    Map<String, Object> change = keyRow(rowId);
+                    change.put(column, INVALID_JSON);
+                    assertTrue(column + " must be valid JSON on update", update(user, c, change).hasErrors());
+                    assertNotEquals(INVALID_JSON, storedRow(rowId).get(column));
+                }
+            }
+        }
+
+        /** A stored Configuration that isn't valid JSON can't run a function, so a folder admin may replace it with one that has none. */
+        @Test
+        public void testFolderAdminCanRepairInvalidConfiguration() throws Exception
+        {
+            Container c = createContainer("RepairJson");
+            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+            int rowId = seedTrigger(c, null);
+            Table.update(getAdmin(), triggerTable(), new CaseInsensitiveHashMap<>(Map.of("Configuration", INVALID_JSON)), rowId);
+
+            Map<String, Object> withFunction = keyRow(rowId);
+            withFunction.put("Configuration", configJson(FUNCTION));
+            assertTrue("Repair must not add a function", update(folderAdmin, c, withFunction).hasErrors());
+            assertEquals(INVALID_JSON, storedRow(rowId).get("Configuration"));
+
+            Map<String, Object> repair = keyRow(rowId);
+            repair.put("Configuration", configJson(null));
+            assertNoErrors(update(folderAdmin, c, repair));
+            assertNull(storedFunction(rowId));
+        }
+
+        /** loadRows skips insertRow/updateRow, and with them the Parameter Function check and listener startup, so it's rejected for every caller. */
+        @Test
+        public void testLoadRowsRejectedInFavorOfInsertRows() throws Exception
+        {
+            Container c = createContainer("LoadRows");
+            User developer = createUserInRole(c, FolderAdminRole.class);
+            grantRole(developer, ContainerManager.getRoot(), PlatformDeveloperRole.class);
+            Map<String, Object> row = triggerRow(configJson(null));
+
+            // IMPORT backs the import action; MERGE backs ETL targets
+            for (QueryUpdateService.InsertOption option : List.of(QueryUpdateService.InsertOption.IMPORT, QueryUpdateService.InsertOption.MERGE))
+            {
+                DataIteratorContext context = new DataIteratorContext();
+                context.setInsertOption(option);
+                updateService(developer, c).loadRows(developer, c, MapDataIterator.of(List.of(row)), context, null);
+                assertTrue(option + " via loadRows must be rejected", context.getErrors().hasErrors());
+                assertFalse(triggerExists(c, (String) row.get("Name")));
+            }
+
+            assertNoErrors(insert(developer, c, row));
+            assertTrue(triggerExists(c, (String) row.get("Name")));
+        }
+
+        private static TableInfo triggerTable()
+        {
+            return PipelineSchema.getInstance().getTableInfoTriggerConfigurations();
+        }
+
+        private static QueryUpdateService updateService(User user, Container c)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, c, PipelineQuerySchema.SCHEMA_NAME);
+            return schema.getTable(PipelineQuerySchema.TRIGGER_CONFIGURATIONS_TABLE_NAME).getUpdateService();
+        }
+
+        private static String configurationPropertyURI(User user, Container c)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, c, PipelineQuerySchema.SCHEMA_NAME);
+            return schema.getTable(PipelineQuerySchema.TRIGGER_CONFIGURATIONS_TABLE_NAME).getColumn("Configuration").getPropertyURI();
+        }
+
+        private static String configJson(@Nullable Object parameterFunction)
+        {
+            JSONObject json = new JSONObject().put("location", "./");
+            if (parameterFunction != null)
+                json.put(PARAMETER_FUNCTION, parameterFunction);
+            return json.toString();
+        }
+
+        private static Map<String, Object> triggerRow(@Nullable Object configuration)
+        {
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            row.put("Name", "trigger-" + GUID.makeGUID());
+            row.put("Type", TEST_TRIGGER_TYPE);
+            row.put("PipelineId", "scoping-test-pipeline");
+            row.put("Enabled", false);
+            row.put("Configuration", configuration);
+            return row;
+        }
+
+        private static Map<String, Object> keyRow(int rowId)
+        {
+            return new CaseInsensitiveHashMap<>(Map.of("RowId", rowId));
+        }
+
+        /** Writes directly to the table, bypassing the update service under test. */
+        private int seedTrigger(Container c, @Nullable String parameterFunction)
+        {
+            TriggerConfiguration config = new TriggerConfiguration();
+            config.beforeInsert(getAdmin(), c.getId());
+            config.setName("trigger-" + GUID.makeGUID());
+            config.setType(TEST_TRIGGER_TYPE);
+            config.setPipelineId("scoping-test-pipeline");
+            config.setConfiguration(configJson(parameterFunction));
+            return Table.insert(getAdmin(), triggerTable(), config).getRowId();
+        }
+
+        private static BatchValidationException insert(User user, Container c, Map<String, Object> row) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            updateService(user, c).insertRows(user, c, List.of(row), errors, null, null);
+            return errors;
+        }
+
+        private static BatchValidationException update(User user, Container c, Map<String, Object> row) throws Exception
+        {
+            return update(user, c, row, null);
+        }
+
+        private static BatchValidationException update(User user, Container c, Map<String, Object> row, @Nullable Map<String, Object> oldKey) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            try
+            {
+                updateService(user, c).updateRows(user, c, List.of(row), oldKey == null ? null : List.of(oldKey), errors, null, null);
+            }
+            catch (BatchValidationException e)
+            {
+                return e;
+            }
+            return errors;
+        }
+
+        private static void assertNoErrors(BatchValidationException errors)
+        {
+            assertFalse(errors.getMessage(), errors.hasErrors());
+        }
+
+        private static boolean triggerExists(Container c, String name)
+        {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("Name"), name);
+            return new TableSelector(triggerTable(), filter, null).exists();
+        }
+
+        private static int rowIdByName(Container c, String name)
+        {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c).addCondition(FieldKey.fromParts("Name"), name);
+            Integer rowId = new TableSelector(triggerTable().getColumn("RowId"), filter, null).getObject(Integer.class);
+            assertNotNull("Trigger " + name + " must exist", rowId);
+            return rowId;
+        }
+
+        private static Map<String, Object> storedRow(int rowId)
+        {
+            Map<String, Object> row = new TableSelector(triggerTable(), new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null).getMap();
+            assertNotNull("Trigger " + rowId + " must exist", row);
+            return new CaseInsensitiveHashMap<>(row);
+        }
+
+        /** Extracts the function the way FileWatcherPipelineTriggerConfig does. */
+        private static @Nullable String storedFunction(int rowId)
+        {
+            Object configuration = storedRow(rowId).get("Configuration");
+            if (configuration == null)
+                return null;
+            return Objects.toString(new JSONObject(configuration.toString()).toMap().get(PARAMETER_FUNCTION), null);
+        }
+
+        private static void assertUnchanged(int rowId, String name, Container container)
+        {
+            Map<String, Object> row = storedRow(rowId);
+            assertEquals("Name must be unchanged", name, row.get("Name"));
+            assertEquals("Container must be unchanged", container.getId(), row.get("Container"));
         }
     }
 }

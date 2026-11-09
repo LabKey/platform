@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.workflow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -12,6 +27,7 @@ import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
@@ -29,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class Job extends CreatedModified implements Identifiable
 {
@@ -47,6 +64,7 @@ public abstract class Job extends CreatedModified implements Identifiable
     protected Integer _assignee;
     protected List<Integer> _notifyList;
     protected boolean _isTemplate;
+    protected boolean _isArchived;
     protected Job _template;
     protected Integer _jobCount; // only applies to templates
     protected Integer _domainId;
@@ -238,6 +256,16 @@ public abstract class Job extends CreatedModified implements Identifiable
         _isTemplate = template;
     }
 
+    public boolean getIsArchived()
+    {
+        return _isArchived;
+    }
+
+    public void setIsArchived(boolean archived)
+    {
+        _isArchived = archived;
+    }
+
     public Integer getJobCount()
     {
         return _jobCount;
@@ -292,10 +320,22 @@ public abstract class Job extends CreatedModified implements Identifiable
         _attachments = attachments;
     }
 
+    @JsonIgnore
     public abstract List<WorkEntity> getEntities();
 
     @JsonIgnore
     public abstract @NotNull List<? extends ExpMaterial> getSamples();
+
+    // Backed by an open ResultSet; callers must close it
+    @JsonIgnore
+    public abstract @NotNull Stream<String> getSampleNames();
+
+    @JsonIgnore
+    public abstract @NotNull List<? extends ExpData> getSources();
+
+    // Backed by an open ResultSet; callers must close it
+    @JsonIgnore
+    public abstract @NotNull Stream<String> getSourceNames();
 
     public void setEntities(List<WorkEntity> entities)
     {
@@ -337,7 +377,7 @@ public abstract class Job extends CreatedModified implements Identifiable
         List<Task> subsequent = getSubsequentTasks(taskId);
         if (subsequent.isEmpty())
             return null;
-        return subsequent.get(0);
+        return subsequent.getFirst();
     }
 
     public boolean isComplete()

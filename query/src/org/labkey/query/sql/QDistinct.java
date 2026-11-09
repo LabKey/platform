@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,6 @@ public class QDistinct extends QNode
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" DISTINCT ");
+        builder.unsafeAppend(" DISTINCT ");
     }
 }

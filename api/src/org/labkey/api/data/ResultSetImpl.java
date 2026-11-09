@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         {
             if (!_wasClosed)
             {
-                _log.error("ResultSet was not closed. Created by thread " + _creatingThreadName + " with stacktrace: " + ExceptionUtil.renderStackTrace(_debugCreated));
+                _log.error("ResultSet was not closed. Created by thread {} with stacktrace: {}", _creatingThreadName, ExceptionUtil.renderStackTrace(_debugCreated));
                 close(true);
             }
         }

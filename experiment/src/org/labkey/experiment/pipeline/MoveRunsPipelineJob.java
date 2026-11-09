@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,11 +64,11 @@ public class MoveRunsPipelineJob extends PipelineJob
             ExpRun run = ExperimentService.get().getExpRun(runId);
             if (run == null)
             {
-                getLogger().info("No run found for RowId " + runId);
+                getLogger().info("No run found for RowId {}", runId);
             }
             else
             {
-                getLogger().info(run.getName() + " (RowId = " + runId + ")");
+                getLogger().info("{} (RowId = {})", run.getName(), runId);
             }
         }
     }

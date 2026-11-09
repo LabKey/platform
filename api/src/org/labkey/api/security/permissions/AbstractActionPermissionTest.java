@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -456,9 +456,11 @@ public abstract class AbstractActionPermissionTest extends Assert
 
     protected void assertNoPermission(Container c, PermissionCheckableAction action, User... users)
     {
+        // use POST by default, because MutableApiAction does not support GET and will throw BadRequestException
+        HttpUtil.Method method = supportedMethod(action, HttpUtil.Method.POST);
         for (User u : users)
         {
-            action.setViewContext(makeContext(u, c));
+            action.setViewContext(makeContext(u, c, method));
 
             try
             {
@@ -470,12 +472,6 @@ public abstract class AbstractActionPermissionTest extends Assert
                 // expected
             }
         }
-    }
-
-    private ViewContext makeContext(User u, Container c)
-    {
-        // use POST by default, because MutableApiAction does not support GET and will throw BadRequestException
-        return makeContext(u, c, HttpUtil.Method.POST);
     }
 
     private ViewContext makeContext(User u, Container c, final HttpUtil.Method method)

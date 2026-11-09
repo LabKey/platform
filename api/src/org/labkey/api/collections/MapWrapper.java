@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package org.labkey.api.collections;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -77,7 +79,7 @@ public abstract class MapWrapper<K, V> implements Map<K, V>, Serializable
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends V> m)
+    public void putAll(@NotNull Map<? extends K, ? extends V> m)
     {
         _map.putAll(m);
     }
@@ -89,19 +91,19 @@ public abstract class MapWrapper<K, V> implements Map<K, V>, Serializable
     }
 
     @Override
-    public Set<K> keySet()
+    public @NotNull Set<K> keySet()
     {
         return _map.keySet();
     }
 
     @Override
-    public Collection<V> values()
+    public @NotNull Collection<V> values()
     {
         return _map.values();
     }
 
     @Override
-    public Set<Entry<K, V>> entrySet()
+    public @NotNull Set<Entry<K, V>> entrySet()
     {
         return _map.entrySet();
     }

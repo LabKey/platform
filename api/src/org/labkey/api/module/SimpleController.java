@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -57,7 +59,7 @@ public class SimpleController extends SpringActionController implements SpringAc
     }
 
     @Override
-    public void addTime(Controller action, long elapsedTime)
+    public void addTime(Controller action, long elapsedTime, @Nullable ConnectionUsage.Snapshot connectionUsage)
     {
     }
 

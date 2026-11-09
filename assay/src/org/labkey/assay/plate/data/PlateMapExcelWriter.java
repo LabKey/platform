@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.assay.plate.data;
 
 import org.apache.logging.log4j.Logger;
@@ -130,7 +145,7 @@ public class PlateMapExcelWriter extends ExcelWriter
 
                 if (row == null)
                 {
-                    logger.error("Well data not found for row " + rowIdx);
+                    logger.error("Well data not found for row {}", rowIdx);
                     continue;
                 }
 
@@ -138,13 +153,13 @@ public class PlateMapExcelWriter extends ExcelWriter
 
                 if (well == null)
                 {
-                    logger.error("Well data not found for row: " + rowIdx + ", col: " + (colIdx - 1));
+                    logger.error("Well data not found for row: {}, col: {}", rowIdx, colIdx - 1);
                     continue;
                 }
 
                 if (displayColumns.size() == 1)
                 {
-                    DisplayColumn displayColumn = displayColumns.get(0);
+                    DisplayColumn displayColumn = displayColumns.getFirst();
                     var col = getDisplayFieldColumnInfo(displayColumn);
                     Object value = col.getValue(well);
 
@@ -220,7 +235,7 @@ public class PlateMapExcelWriter extends ExcelWriter
                 displayColumns = displayCols.stream().filter(dc -> !excludeFromSummary.contains(dc.getColumnInfo().getFieldKey())).toList();
             }
             else if (sheetNumber == 1) // Sample ID view
-                displayColumns = List.of(displayCols.get(0));
+                displayColumns = List.of(displayCols.getFirst());
             else // CustomField view
             {
                 PlateCustomField customField = getCustomFields().get(sheetNumber - 2);
@@ -232,7 +247,7 @@ public class PlateMapExcelWriter extends ExcelWriter
         }
         catch (Exception e)
         {
-            logger.error("Error rendering sheet " + sheetNumber + ": " + e.getMessage());
+            logger.error("Error rendering sheet {}: {}", sheetNumber, e.getMessage());
         }
     }
 

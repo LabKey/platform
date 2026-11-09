@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
@@ -41,11 +56,11 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         return new SQLClause(new SQLFragment()
             .appendIdentifier(joinColumnName)
-            .append(" IN (SELECT ")
+            .unsafeAppend(" IN (SELECT ")
             .appendIdentifier(joinColumnName)
-            .append(" FROM exp.Material WHERE Container")
+            .unsafeAppend(" FROM exp.Material WHERE Container")
             .appendInClause(containers, sourceTable.getSqlDialect())
-            .append(")")
+            .unsafeAppend(")")
         );
     }
 
@@ -61,11 +76,11 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             orClause.addClause(
                 new SQLClause(new SQLFragment()
                     .appendIdentifier(joinColumnName)
-                    .append(" IN (SELECT ")
+                    .unsafeAppend(" IN (SELECT ")
                     .appendIdentifier(joinColumnName)
-                    .append(" FROM exp.Material WHERE Container")
+                    .unsafeAppend(" FROM exp.Material WHERE Container")
                     .appendInClause(filter.containers(), sourceTable.getSqlDialect())
-                    .append(" AND ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))")
+                    .unsafeAppend(" AND ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))")
                     .add(filter.condition().getParamVals()[0])
                     .add(getCommentPropertyId(sourceTable.getSchema().getScope()))
                 )
@@ -95,13 +110,13 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         SQLFragment rowIdAndObjectIdSql = new SQLFragment("SELECT RowId, ObjectId FROM exp.Material WHERE ")
             .appendIdentifier(joinColumnName)
-            .append(" IN (SELECT ")
+            .unsafeAppend(" IN (SELECT ")
             .appendIdentifier(joinColumnName)
-            .append(" FROM ")
-            .appendIdentifier(sourceTable.getSelectName())
-            .append(" ")
+            .unsafeAppend(" FROM ")
+            .append(sourceTable.getSQLName())
+            .unsafeAppend(" ")
             .append(notCopiedFilter.getSQLFragment(dialect))
-            .append(")");
+            .unsafeAppend(")");
 
         Collection<Integer> notCopiedMaterialIds = new ArrayList<>();
         Collection<Long> notCopiedObjectIds = new ArrayList<>();
@@ -145,7 +160,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             executor.execute(
                 new SQLFragment("DELETE FROM exp.MaterialAliasMap WHERE LSID IN (SELECT LSID FROM exp.Material WHERE RowId")
                     .append(materialIdClause)
-                    .append(")")
+                    .unsafeAppend(")")
             );
             LOG.info("   assay.Well");
             executor.execute(

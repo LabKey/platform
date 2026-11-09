@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else
-                            ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                            ctx.getLogger().warn("No visit found matching the sequence num : {}", newRow.get("visitId.sequenceNumMin"));
                     }
                     else
                         ctx.getLogger().warn("Null sequence num found.");

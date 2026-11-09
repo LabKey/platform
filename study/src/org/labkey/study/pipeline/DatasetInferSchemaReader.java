@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
                 .toList();
 
             // next available dataset ID
-            int nextId = datasetIds.isEmpty() ? 1000 : datasetIds.get(datasetIds.size()-1) + 1;
+            int nextId = datasetIds.isEmpty() ? 1000 : datasetIds.getLast() + 1;
 
             for (DatasetImportRunnable runnable : getRunnables())
             {

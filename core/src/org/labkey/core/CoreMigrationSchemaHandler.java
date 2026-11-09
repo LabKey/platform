@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.core;
 
 import org.jetbrains.annotations.NotNull;
@@ -162,14 +177,14 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
                 if ("Principals".equals(tableName))
                 {
                     groupFilterFragment
-                        .append("Type <> 'g' OR (type = 'g' AND UserId ")
+                        .unsafeAppend("Type <> 'g' OR (type = 'g' AND UserId ")
                         .append(_groupFilterCondition)
-                        .append(")");
+                        .unsafeAppend(")");
                 }
                 else
                 {
                     groupFilterFragment
-                        .append("GroupId ")
+                        .unsafeAppend("GroupId ")
                         .append(_groupFilterCondition);
                 }
 
@@ -181,7 +196,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         {
             SQLFragment groupFilterFragment = new SQLFragment("UserId IN (SELECT UserId FROM core.Principals WHERE Type <> 'g' OR (type = 'g' AND UserId ")
                 .append(_groupFilterCondition)
-                .append("))");
+                .unsafeAppend("))");
             filterClause = new AndClause(filterClause, new SQLClause(groupFilterFragment));
         }
 
@@ -231,10 +246,10 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         else
         {
             // All containers
-            sql.append(" IN (SELECT EntityId FROM core.Containers)");
+            sql.unsafeAppend(" IN (SELECT EntityId FROM core.Containers)");
         }
 
-        sql.append(" AND (DocumentName IN (?, ?) OR ")
+        sql.unsafeAppend(" AND (DocumentName IN (?, ?) OR ")
             .add(AttachmentCache.FAVICON_FILE_NAME)
             .add(AttachmentCache.STYLESHEET_FILE_NAME)
             .append("DocumentName LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
@@ -296,11 +311,11 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
 
             //noinspection StringConcatenationInsideStringBufferAppend - SQLFragment flips out about unmatched quotes, so we're forced to use string concatenation
             return new SQLFragment("(SELECT CASE WHEN idx > 0 THEN SUBSTRING(Properties, 1, idx - 1) + LOWER(SUBSTRING(Properties, idx, 36)) + SUBSTRING(Properties, idx + 36, LEN(Properties) - idx - 35) ELSE Properties END")
-                .append(" FROM (SELECT CAST(")
+                .unsafeAppend(" FROM (SELECT CAST(")
                 .append(columnAlias)
                 .append(" AS VARCHAR(MAX)) AS Properties, PATINDEX('%" + GUID.SQL_LIKE_GUID_PATTERN + "%', ")
                 .append(columnAlias)
-                .append(") AS idx) AS Properties)");
+                .unsafeAppend(") AS idx) AS Properties)");
         }
     }
 }

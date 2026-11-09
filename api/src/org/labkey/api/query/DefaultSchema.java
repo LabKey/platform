@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.visualization.VisualizationProvider;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -413,12 +412,6 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
     public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
     {
         return visitor.visitDefaultSchema(this, path, param);
-    }
-
-    @Override
-    public VisualizationProvider<?> createVisualizationProvider()
-    {
-        return null;
     }
 
     @Override

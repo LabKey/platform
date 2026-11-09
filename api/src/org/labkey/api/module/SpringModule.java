@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,7 +215,7 @@ public abstract class SpringModule extends DefaultModule
         {
             ApplicationContext parentApplicationContext = getParentApplicationContext();
 
-            _log.info("Loading Spring configuration for the " + getName() + " module from " + contextConfigFiles);
+            _log.info("Loading Spring configuration for the {} module from {}", getName(), contextConfigFiles);
 
             try
             {
@@ -237,7 +237,7 @@ public abstract class SpringModule extends DefaultModule
             }
             catch (Exception x)
             {
-                _log.error("Failed to load spring application context for module: " + getName(), x);
+                _log.error("Failed to load spring application context for module: {}", getName(), x);
                 ModuleLoader.getInstance().addModuleFailure(getName(), x);
             }
         }
@@ -342,7 +342,7 @@ public abstract class SpringModule extends DefaultModule
                 }
                 catch (FileNotFoundException e)
                 {
-                    _log.debug("Could not find config override " + string);
+                    _log.debug("Could not find config override {}", string);
                 }
             }
 

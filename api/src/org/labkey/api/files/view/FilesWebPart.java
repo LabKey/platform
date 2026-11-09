@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.api.files.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +31,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.FilesAdminOptions;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -121,7 +121,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
         else if (legacyFileRoot != null) // legacy file root
         {
-            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encodeURIComponent(FileContentService.PIPELINE_LINK)))
+            if (isLegacyPipelineRoot(legacyFileRoot))
             {
                 _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
@@ -146,16 +146,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
                 if (dir != null)
                 {
-                    try
-                    {
-                        getModelBean().setRoot(dir);
-                        getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
-                    }
-                    catch (MissingRootDirectoryException e)
-                    {
-                        // this should never happen
-                        throw new RuntimeException(e);
-                    }
+                    getModelBean().setRoot(dir);
+                    getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
+
                 }
                 getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK, legacyFileRoot));
                 setTitle(legacyFileRoot);
@@ -200,7 +193,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             }
             catch (Throwable t)
             {
-                _log.warn("improper path passed to webpart: [" + path + "]");
+                _log.warn("improper path passed to webpart: [{}]", path);
             }
         }
 
@@ -413,6 +406,19 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         return rootPath;
     }
 
+    private static boolean isLegacyPipelineRoot(String legacyFileRoot)
+    {
+        return legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encodeURIComponent(FileContentService.PIPELINE_LINK));
+    }
+
+    /** Whether a Files web part with these trimmed property values displays a named file set, mirroring the constructor's precedence */
+    public static boolean usesNamedFileSet(@Nullable String legacyFileRoot, @Nullable String fileRoot)
+    {
+        if (fileRoot != null)
+            return StringUtils.stripStart(fileRoot, "/").startsWith(FileContentService.FILE_SETS_LINK);
+        return legacyFileRoot != null && !isLegacyPipelineRoot(legacyFileRoot) && !legacyFileRoot.startsWith(FileContentService.CLOUD_LINK);
+    }
+
     /** @param folderFileRoot not-yet-URI-encoded relative path */
     @NotNull
     public static URI getWebPartFolderRootPath(Container c, @Nullable String folderFileRoot)
@@ -422,30 +428,23 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     protected boolean canDisplayPipelineActions()
     {
-        try
+        if (_isPipelineFiles)
+            return true;
+        else if (_isRootNotFilesPipeline)
+            return false;
+
+        // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
+        // reference the same location, then import and customize actions should be disabled
+
+        FileContentService svc = FileContentService.get();
+        if (null == svc)
+            throw new IllegalStateException("FileContentService not found.");
+        AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
+        PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+
+        if (null != root && root.isValid() && null != dir && root.getRootNioPath().equals(dir.getFileSystemDirectoryPath()))
         {
-            if (_isPipelineFiles)
-                return true;
-            else if (_isRootNotFilesPipeline)
-                return false;
-
-            // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
-            // reference the same location, then import and customize actions should be disabled
-
-            FileContentService svc = FileContentService.get();
-            if (null == svc)
-                throw new IllegalStateException("FileContentService not found.");
-            AttachmentDirectory dir = svc.getMappedAttachmentDirectory(getViewContext().getContainer(), false);
-            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
-
-            if (null != root && root.isValid() && null != dir && root.getRootNioPath().equals(dir.getFileSystemDirectoryPath()))
-            {
-                return true;
-            }
-        }
-        catch (MissingRootDirectoryException e)
-        {
-            _log.error("Error determining whether pipeline actions can be shown", e);
+            return true;
         }
         return false;
     }
@@ -477,22 +476,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (null == svc)
             throw new IllegalStateException("FileContentService not found.");
 
-        try {
-            AttachmentDirectory dir;
-            if (null == fileSet)
-                dir = svc.getMappedAttachmentDirectory(container, false);
-            else
-                dir = svc.getRegisteredDirectory(container, fileSet);
+        AttachmentDirectory dir;
+        if (null == fileSet)
+            dir = svc.getMappedAttachmentDirectory(container, false);
+        else
+            dir = svc.getRegisteredDirectory(container, fileSet);
 
-            if (dir != null)
-            {
-                getModelBean().setRoot(dir);
-                getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
-            }
-        }
-        catch (MissingRootDirectoryException ex)
+        if (dir != null)
         {
-            setModelBean(null);
+            getModelBean().setRoot(dir);
+            getModelBean().setRootDirectory(dir.getFileSystemDirectoryPath());
         }
     }
 
@@ -775,17 +768,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean isCloudStoreEnabled(Container container)
         {
             String pathString = _rootPath.toString();
-            int cloudIndex = StringUtils.indexOf(pathString, CLOUD_PATTERN);
+            int cloudIndex = Strings.CS.indexOf(pathString, CLOUD_PATTERN);
             int cloudPatternLength = CLOUD_PATTERN.length();
             if (-1 == cloudIndex)
             {
-                cloudIndex = StringUtils.indexOf(pathString, CLOUD_PATTERN_ENCODED);
+                cloudIndex = Strings.CS.indexOf(pathString, CLOUD_PATTERN_ENCODED);
                 cloudPatternLength = CLOUD_PATTERN_ENCODED.length();
             }
             if (-1 != cloudIndex)
             {
                 String config = StringUtils.substring(pathString, cloudIndex + cloudPatternLength);
-                int slashIndex = StringUtils.indexOf(config, "/");
+                int slashIndex = Strings.CS.indexOf(config, "/");
                 if (-1 != slashIndex)
                     config = StringUtils.substring(config, 0, slashIndex);
 
@@ -807,15 +800,15 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public boolean isCloudRootPath()
         {
             String pathString = _rootPath.toString();
-            return -1 != StringUtils.indexOf(pathString, CLOUD_PATTERN) ||
-                   -1 != StringUtils.indexOf(pathString, CLOUD_PATTERN_ENCODED);
+            return -1 != Strings.CS.indexOf(pathString, CLOUD_PATTERN) ||
+                   -1 != Strings.CS.indexOf(pathString, CLOUD_PATTERN_ENCODED);
         }
 
         public boolean isAtFilesRootPath()
         {
             String pathString = _rootPath.toString();
-            return -1 != StringUtils.indexOf(pathString, "@files/") ||
-                   -1 != StringUtils.indexOf(pathString, "%40files/");
+            return -1 != Strings.CS.indexOf(pathString, "@files/") ||
+                   -1 != Strings.CS.indexOf(pathString, "%40files/");
         }
 
         @Nullable

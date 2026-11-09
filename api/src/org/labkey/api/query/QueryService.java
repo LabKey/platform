@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -50,6 +49,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
@@ -62,8 +62,6 @@ import org.labkey.data.xml.TableType;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -72,14 +70,12 @@ import java.util.Set;
 
 public interface QueryService
 {
-    String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
-    String EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS = "queryDisableManagedTriggerColumns";
+    String DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS = "queryDisableManagedTriggerColumns";
     String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
     String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
     String MAX_QUERY_SELECTION = "maxQuerySelection";
     String PRODUCT_FOLDERS_ENABLED = "isProductFoldersEnabled";
     String PRODUCT_FOLDERS_EXIST = "hasProductFolders";
-    String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
@@ -138,12 +134,6 @@ public interface QueryService
 
     // TODO: These probably need to change to support data source qualified schema names
 
-    /** Get the value used for the "Last-Modified" time stamp in query metadata API responses. */
-    long metadataLastModified();
-
-    /** Invalidate the value used for the "Last-Modified" time stamp. */
-    void updateLastModified();
-
     /** Get schema for SchemaKey encoded path. */
     UserSchema getUserSchema(User user, Container container, String schemaPath);
     /** Get schema for SchemaKey path. */
@@ -193,7 +183,7 @@ public interface QueryService
      */
     Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User user);
 
-    String getCustomViewNameFromEntityId(Container container, String entityId) throws SQLException;
+    String getCustomViewNameFromEntityId(Container container, String entityId);
 
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table
@@ -240,45 +230,12 @@ public interface QueryService
 
     void saveCalculatedFieldsMetadata(String schemaName, String queryName, @Nullable String updatedQueryName, List<? extends GWTPropertyDescriptor> fields, boolean hasExistingFields, User user, Container container) throws MetadataUnavailableException;
 
-    /**
-     * Create a TableSelector for a LabKey sql query string.
-     * @param schema The query schema context used to parse the sql query in.
-     * @param sql The LabKey query string.
-     * @return a TableSelector
-     *
-     * superseded by {@link QueryService#getSelectBuilder}
-     */
-    @NotNull
-    TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql);
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-	default ResultSet select(QuerySchema schema, String sql)
-    {
-        return select(schema, sql, null, false, true);
-    }
-
-    /* strictColumnList requires that query not add any addition columns to the query result */
-    Results select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached) throws SQLException;
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    default Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
-    {
-        return getSelectBuilder(table).columns(columns).filter(filter).sort(sort).select();
-    }
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cached);
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
-
     SelectBuilder getSelectBuilder(TableInfo table);
     SelectBuilder getSelectBuilder(QuerySchema schema, String sql);
+    /** Use when the query must not return extra hidden sort columns (e.g. HTTP endpoints that reflect column names to callers). */
+    SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList);
+    /** The tableMap binds named table references in the SQL (e.g. "__DATA") to TableInfos. It must be supplied here before the SQL is parsed. */
+    SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList, @Nullable Map<String, TableInfo> tableMap);
 
     MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType);
     MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType);
@@ -289,7 +246,7 @@ public interface QueryService
     Collection<CompareType> getCompareTypes();
 
     /**
-     * Gets all of the custom views from the given relative path defined in the set of active modules for the
+     * Gets all the custom views from the given relative path defined in the set of active modules for the
      * given container.
      * @param container Container to use to figure out the set of active modules
      * @param qd the query for which views should be fetched
@@ -330,6 +287,10 @@ public interface QueryService
 
     @NotNull List<QueryIconURLProvider> getQueryIconURLProviders();
 
+    void registerFilterSuggestionProvider(FilterSuggestionProvider provider);
+
+    @NotNull List<FilterSuggestionProvider> getFilterSuggestionProviders();
+
     //
     // Thread local environment for executing a query
     //
@@ -366,6 +327,18 @@ public interface QueryService
     {
         Object getDefault();
         boolean isRequired();
+
+        default JSONObject toJSON()
+        {
+            JSONObject json = new JSONObject();
+
+            json.put("name", getName());
+            json.put("defaultValue", getDefault());
+            json.put("isRequired", isRequired());
+            json.put("jdbcType", getJdbcType().toString());
+
+            return json;
+        }
     }
 
     class ParameterDeclaration extends ParameterDescriptionImpl implements ParameterDecl
@@ -538,10 +511,6 @@ public interface QueryService
      */
     Collection<Hierarchy> getOlapHierarchies(String configId, Container c, String cubeName, String dimension);
 
-    void saveNamedSet(String setName, List<String> setList);
-    void deleteNamedSet(String setName);
-    List<String> getNamedSet(String setName);
-
     /**
      * Add a pass-through method to the allow list for the primary LabKey database type. This enables modules to create
      * and enable custom database functions, for example.
@@ -698,13 +667,23 @@ public interface QueryService
         SelectBuilder forceSort(boolean b);
         SelectBuilder queryLogging(QueryLogging queryLogging);
         SelectBuilder distinct(boolean b);
+        /** Enable PostgreSQL JDBC-level result buffering. Rarely needed; defaults to false (streaming). */
+        SelectBuilder jdbcCaching(boolean jdbcCaching);
 
         SQLFragment buildSqlFragment();
-        SqlSelector buildSqlSelector(@Nullable Map<String, Object> parameters);
-        Results select(@Nullable Map<String, Object> parameters, boolean cache);
+        default SqlSelector buildSqlSelector()
+        {
+            return buildSqlSelector(Map.of());
+        }
+        SqlSelector buildSqlSelector(@NotNull Map<String, Object> parameters);
+        Results select(boolean labkeyCachedResultSet, @NotNull Map<String, Object> parameters);
+        default Results select(boolean labkeyCachedResultSet)
+        {
+            return select(labkeyCachedResultSet, Map.of());
+        }
         default Results select()
         {
-            return select(Map.of(), true);
+            return select(false);
         }
 
         QueryLogging getQueryLogging();

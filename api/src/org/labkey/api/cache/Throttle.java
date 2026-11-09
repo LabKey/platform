@@ -15,6 +15,9 @@
  */
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -25,7 +28,7 @@ import java.util.function.Consumer;
  *
  * <pre>
  * {@code
- * Throttle<User> THROTTLE = new Throttle<>("bad users", 100, CacheManager.HOUR, user -> LOG.warn(user + " is a bad hombre!"));}
+ * Throttle<User> THROTTLE = new Throttle<>(User.class, "bad users", 100, CacheManager.HOUR, user -> LOG.warn(user + " is a bad hombre!"));}
  * </pre>
  *
  * <p>And then attempt the logging like this:</p>
@@ -36,15 +39,21 @@ import java.util.function.Consumer;
  *        THROTTLE.execute(user);
  * }
  * </pre>
+ *
+ * <p>Tracks how many times the consumer actually ran ({@link #getExecutionCount()}) versus was throttled
+ * ({@link #getThrottledCount()}), useful for metrics and for tests asserting the throttling behavior.</p>
  */
 public class Throttle<K>
 {
     private final BlockingCache<K, K> _cache;
+    private final AtomicLong _executionCount = new AtomicLong();
+    private final AtomicLong _requestCount = new AtomicLong();
 
-    public Throttle(String name, int limit, long timeToLive, Consumer<K> consumer)
+    public Throttle(@NotNull Class<K> keyClass, String label, int limit, long timeToLive, Consumer<K> consumer)
     {
-        _cache = CacheManager.getBlockingCache(limit, timeToLive, "Throttle for " + name, (key, argument) ->
+        _cache = CacheManager.getBlockingCache(keyClass, limit, timeToLive, "Throttle for " + label, (key, _) ->
         {
+            _executionCount.incrementAndGet();
             consumer.accept(key);
             return key;
         });
@@ -52,6 +61,19 @@ public class Throttle<K>
 
     public void execute(K key)
     {
+        _requestCount.incrementAndGet();
         _cache.get(key);
+    }
+
+    /** @return the number of times the consumer actually ran (i.e., calls that were not throttled) */
+    public long getExecutionCount()
+    {
+        return _executionCount.get();
+    }
+
+    /** @return the number of {@link #execute} calls that were throttled (the consumer did not run) */
+    public long getThrottledCount()
+    {
+        return _requestCount.get() - _executionCount.get();
     }
 }

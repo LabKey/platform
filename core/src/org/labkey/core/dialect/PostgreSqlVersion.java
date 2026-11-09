@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2019-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
@@ -18,22 +33,22 @@ import static org.labkey.core.dialect.PostgreSql92Dialect.PRODUCT_NAME;
 public enum PostgreSqlVersion
 {
     POSTGRESQL_UNSUPPORTED(-1, true, false, null),
-    POSTGRESQL_13(130, true, true, PostgreSql_13_Dialect::new),
-    POSTGRESQL_14(140, false, true, PostgreSql_14_Dialect::new),
+    POSTGRESQL_14(140, true, true, PostgreSql_14_Dialect::new),
     POSTGRESQL_15(150, false, true, PostgreSql_15_Dialect::new),
     POSTGRESQL_16(160, false, true, PostgreSql_16_Dialect::new),
     POSTGRESQL_17(170, false, true, PostgreSql_17_Dialect::new),
     POSTGRESQL_18(180, false, true, PostgreSql_18_Dialect::new),
-    POSTGRESQL_FUTURE(Integer.MAX_VALUE, true, false, PostgreSql_18_Dialect::new);
+    POSTGRESQL_19(190, false, false, PostgreSql_19_Dialect::new),
+    POSTGRESQL_FUTURE(Integer.MAX_VALUE, false, false, PostgreSql_19_Dialect::new);
 
     public static final String RECOMMENDED = PRODUCT_NAME + " 18.x is the recommended version.";
 
     private final int _version;
     private final boolean _deprecated;
     private final boolean _tested;
-    private final Supplier<? extends PostgreSql_13_Dialect> _dialectFactory;
+    private final Supplier<? extends PostgreSql_14_Dialect> _dialectFactory;
 
-    PostgreSqlVersion(int version, boolean deprecated, boolean tested, Supplier<? extends PostgreSql_13_Dialect> dialectFactory)
+    PostgreSqlVersion(int version, boolean deprecated, boolean tested, Supplier<? extends PostgreSql_14_Dialect> dialectFactory)
     {
         _version = version;
         _deprecated = deprecated;
@@ -52,7 +67,7 @@ public enum PostgreSqlVersion
         return _tested;
     }
 
-    public PostgreSql_13_Dialect getDialect()
+    public PostgreSql_14_Dialect getDialect()
     {
         return _dialectFactory.get();
     }
@@ -87,40 +102,42 @@ public enum PostgreSqlVersion
         public void test()
         {
             // Good
-            test(130, POSTGRESQL_13);
-            test(140, POSTGRESQL_14);
-            test(150, POSTGRESQL_15);
-            test(160, POSTGRESQL_16);
-            test(170, POSTGRESQL_17);
-            test(180, POSTGRESQL_18);
+            test(140, POSTGRESQL_14, true);
+            test(150, POSTGRESQL_15, false);
+            test(160, POSTGRESQL_16, false);
+            test(170, POSTGRESQL_17, false);
+            test(180, POSTGRESQL_18, false);
+            test(190, POSTGRESQL_19, false);
 
             // Future
-            test(190, POSTGRESQL_FUTURE);
-            test(200, POSTGRESQL_FUTURE);
-            test(210, POSTGRESQL_FUTURE);
+            test(200, POSTGRESQL_FUTURE, false);
+            test(210, POSTGRESQL_FUTURE, false);
+            test(220, POSTGRESQL_FUTURE, false);
 
             // Bad
-            test(83, POSTGRESQL_UNSUPPORTED);
-            test(84, POSTGRESQL_UNSUPPORTED);
-            test(85, POSTGRESQL_UNSUPPORTED);
-            test(90, POSTGRESQL_UNSUPPORTED);
-            test(91, POSTGRESQL_UNSUPPORTED);
-            test(92, POSTGRESQL_UNSUPPORTED);
-            test(93, POSTGRESQL_UNSUPPORTED);
-            test(94, POSTGRESQL_UNSUPPORTED);
-            test(95, POSTGRESQL_UNSUPPORTED);
-            test(96, POSTGRESQL_UNSUPPORTED);
-            test(97, POSTGRESQL_UNSUPPORTED);
-            test(98, POSTGRESQL_UNSUPPORTED);
-            test(99, POSTGRESQL_UNSUPPORTED);
-            test(100, POSTGRESQL_UNSUPPORTED);
-            test(110, POSTGRESQL_UNSUPPORTED);
-            test(120, POSTGRESQL_UNSUPPORTED);
+            test(83, POSTGRESQL_UNSUPPORTED, true);
+            test(84, POSTGRESQL_UNSUPPORTED, true);
+            test(85, POSTGRESQL_UNSUPPORTED, true);
+            test(90, POSTGRESQL_UNSUPPORTED, true);
+            test(91, POSTGRESQL_UNSUPPORTED, true);
+            test(92, POSTGRESQL_UNSUPPORTED, true);
+            test(93, POSTGRESQL_UNSUPPORTED, true);
+            test(94, POSTGRESQL_UNSUPPORTED, true);
+            test(95, POSTGRESQL_UNSUPPORTED, true);
+            test(96, POSTGRESQL_UNSUPPORTED, true);
+            test(97, POSTGRESQL_UNSUPPORTED, true);
+            test(98, POSTGRESQL_UNSUPPORTED, true);
+            test(99, POSTGRESQL_UNSUPPORTED, true);
+            test(100, POSTGRESQL_UNSUPPORTED, true);
+            test(110, POSTGRESQL_UNSUPPORTED, true);
+            test(120, POSTGRESQL_UNSUPPORTED, true);
+            test(130, POSTGRESQL_UNSUPPORTED, true);
         }
 
-        private void test(int version, PostgreSqlVersion expectedVersion)
+        private void test(int version, PostgreSqlVersion expectedVersion, boolean expectedDeprecated)
         {
-            Assert.assertEquals(get(version), expectedVersion);
+            Assert.assertEquals(expectedVersion, get(version));
+            Assert.assertEquals(expectedDeprecated, get(version).isDeprecated());
         }
     }
 }

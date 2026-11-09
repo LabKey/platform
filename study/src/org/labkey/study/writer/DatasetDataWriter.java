@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.IndexInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -58,6 +57,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
+import org.labkey.study.data.IndexInfo;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -162,7 +162,7 @@ public class DatasetDataWriter implements InternalStudyWriter
             if (ctx.isDataspaceProject())
                 DefaultStudyDesignWriter.createExtraForeignKeyColumns(ti, columns);
             var select = QueryService.get().getSelectBuilder(ti).columns(columns).filter(filter).sort(sort);
-            ResultsFactory factory = ()->select.select(Map.of(),false);
+            ResultsFactory factory = ()->select.select(false);
             writeResultsToTSV(factory, vf, def.getFileName());
         }
     }
@@ -224,20 +224,20 @@ public class DatasetDataWriter implements InternalStudyWriter
     {
         // join to the study.participant table to get the participant's date offset number
         SQLFragment dateOffsetJoin = new SQLFragment();
-        dateOffsetJoin.append("(SELECT p.DateOffset FROM ");
+        dateOffsetJoin.unsafeAppend("(SELECT p.DateOffset FROM ");
         dateOffsetJoin.append(StudySchema.getInstance().getTableInfoParticipant());
-        dateOffsetJoin.append(" p  WHERE p.participantid = ");
-        dateOffsetJoin.append(ExprColumn.STR_TABLE_ALIAS);
-        dateOffsetJoin.append(".participantid  AND p.container = ?)");
+        dateOffsetJoin.unsafeAppend(" p  WHERE p.participantid = ");
+        dateOffsetJoin.appendIdentifier(ExprColumn.STR_TABLE_ALIAS);
+        dateOffsetJoin.unsafeAppend(".participantid  AND p.container = ?)");
         dateOffsetJoin.add(c);
 
         // use the timestampadd function to apply the date offset (subtracting the offset)
         SQLFragment sql = new SQLFragment ();
-        sql.append("{fn timestampadd(SQL_TSI_DAY, -");
+        sql.unsafeAppend("{fn timestampadd(SQL_TSI_DAY, -");
         sql.append(dateOffsetJoin);
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(col.getValueSql(ExprColumn.STR_TABLE_ALIAS));
-        sql.append(")}");
+        sql.unsafeAppend(")}");
 
         return sql;
     }
@@ -274,7 +274,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if (null == ptidColumn)
                     ptidColumn = in;
                 else
-                    LOG.error("More than one ptid column found: " + ptidColumn.getName() + " and " + in.getName());
+                    LOG.error("More than one ptid column found: {} and {}", ptidColumn.getName(), in.getName());
             }
 
             if (in.getPropertyURI().equals(sequenceURI))
@@ -282,7 +282,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if (null == sequenceColumn)
                     sequenceColumn = in;
                 else
-                    LOG.error("More than one sequence number column found: " + sequenceColumn.getName() + " and " + in.getName());
+                    LOG.error("More than one sequence number column found: {} and {}", sequenceColumn.getName(), in.getName());
             }
 
             if (in.getPropertyURI().equals(qcStateURI))
@@ -290,7 +290,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if (null == qcStateColumn)
                     qcStateColumn = in;
                 else
-                    LOG.error("More than one qc state column found: " + qcStateColumn.getName() + " and " + in.getName());
+                    LOG.error("More than one qc state column found: {} and {}", qcStateColumn.getName(), in.getName());
             }
         }
 

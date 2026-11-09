@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ public abstract class XarSource implements Serializable
         return result;
     }
 
-    protected abstract String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException;
+    protected abstract String canonicalizeDataFileURL(String dataFileURL);
 
     public abstract FileLike getLogFilePath() throws IOException;
 

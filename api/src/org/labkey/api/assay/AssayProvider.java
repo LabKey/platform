@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -241,7 +240,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @NotNull
     List<AnalysisScript> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
-    void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
+    void setSaveScriptFiles(ExpProtocol protocol, boolean save);
     boolean isSaveScriptFiles(ExpProtocol protocol);
 
     /** Whether the provider is capable of letting users edit existing result rows */
@@ -274,7 +273,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol);
     boolean hasFilterCriteria(ExpProtocol protocol);
-    void removeFilterCriteriaForProperty(PropertyDescriptor pd);
 
     /**
      * @return the data type that this run creates for its analyzed results
@@ -296,6 +294,16 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * Return the helper to handle data exchange between the server and external scripts.
      */
     DataExchangeHandler createDataExchangeHandler();
+
+    /**
+     * Whether transform scripts can run before the run is saved, so the import transaction isn't held open while
+     * they execute. The data exchange handler must then build the scripts' input without a saved run.
+     */
+    default boolean isTransformBeforeRunSupported(ExpProtocol protocol)
+    {
+        return false;
+    }
+
     /** Make a context that knows how to update a run that's already been stored in the database */
     AssayRunDatabaseContext<?> createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ public abstract class TabStripView extends JspView<TabStripView>
         {
             List<NavTree> tabs = getTabList();
             if (!tabs.isEmpty())
-                tabId = tabs.get(0).getId();
+                tabId = tabs.getFirst().getId();
         }
         return tabId;
     }

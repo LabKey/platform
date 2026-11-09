@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
@@ -76,8 +77,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 {
     public static final String TYPE = "reportDescriptor";
     public static final int FLAG_INHERITABLE = 0x01;
-
-    private final static int FLAG_HIDDEN = 0x02;
+    public static final int FLAG_HIDDEN = 0x02;
 
     private String _reportKey;
     private Integer _owner;
@@ -774,6 +774,11 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     public boolean isNew()
     {
         return getReportId() == null;
+    }
+
+    /** Adds errors if this user may not save this descriptor's content; stored is the saved version, null if new */
+    public void validateContent(User user, @Nullable ReportDescriptor stored, List<ValidationError> errors)
+    {
     }
 
     public boolean isInherited(Container c)

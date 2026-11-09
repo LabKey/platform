@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,22 @@ import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
@@ -47,21 +52,24 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
-import java.util.Calendar;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import static org.labkey.query.sql.Method.TimestampDiffInterval.SQL_TSI_FRAC_SECOND;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
@@ -147,7 +155,14 @@ public abstract class Method
                 return new PassthroughInfo("coalesce", null, JdbcType.OTHER);
             }
         });
-        labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("concat", new Method("concat", JdbcType.VARCHAR, 2, Integer.MAX_VALUE)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new ConcatInfo();
+            }
+        });
         labkeyMethod.put("contextpath", new Method("contextPath", JdbcType.VARCHAR, 0, 0)
         {
             @Override
@@ -167,7 +182,7 @@ public abstract class Method
         labkeyMethod.put("cos", new JdbcMethod("cos", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("cot", new JdbcMethod("cot", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
-        labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.DATE, 0, 0));
+        labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.TIME, 0, 0));
         labkeyMethod.put("dayofmonth", new JdbcMethod("dayofmonth", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("dayofweek", new JdbcMethod("dayofweek", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("dayofyear", new JdbcMethod("dayofyear", JdbcType.INTEGER, 1, 1));
@@ -214,6 +229,22 @@ public abstract class Method
                 };
             }
         });
+        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS);
+            }
+        });
+        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS_NOT);
+            }
+        });
         labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2)
         {
             @Override
@@ -238,9 +269,9 @@ public abstract class Method
                 super.validate(fn, args, parseErrors, parseWarnings);
                 if (args.size() != 1)
                     return;
-                int line = args.get(0).getLine();
-                int column = args.get(0).getColumn();
-                if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
+                int line = args.getFirst().getLine();
+                int column = args.getFirst().getColumn();
+                if (args.getFirst().getTokenType() != SqlBaseLexer.QUOTED_STRING)
                 {
                     parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, line, column));
                     return;
@@ -250,7 +281,7 @@ public abstract class Method
                 String propertyName = "";
                 try
                 {
-                    String param = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
+                    String param = toSimpleString(new SQLFragment(args.getFirst().getTokenText()));
                     int dot = param.lastIndexOf('.');
                     if (dot < 0)
                     {
@@ -330,7 +361,7 @@ public abstract class Method
                     return;
                 if (args.get(0).getTokenType() != SqlBaseLexer.QUOTED_STRING)
                 {
-                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.get(0).getLine(), args.get(0).getColumn()));
+                    parseErrors.add(new QueryParseException(_name.toUpperCase() + "() function expects quoted string arguments", null, args.getFirst().getLine(), args.getFirst().getColumn()));
                     return;
                 }
                 if (args.get(1).getTokenType() != SqlBaseLexer.QUOTED_STRING)
@@ -343,7 +374,7 @@ public abstract class Method
                 Module module = ModuleLoader.getInstance().getModule(moduleName);
                 if (null == module)
                 {
-                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module not found: " + moduleName, null, args.get(0).getLine(), args.get(0).getColumn()));
+                    parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module not found: " + moduleName, null, args.getFirst().getLine(), args.getFirst().getColumn()));
                     return;
                 }
                 String propertyName = toSimpleString(new SQLFragment(args.get(1).getTokenText()));
@@ -375,6 +406,7 @@ public abstract class Method
         labkeyMethod.put("radians", new JdbcMethod("radians", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("rand", new JdbcMethod("rand", JdbcType.DOUBLE, 0, 1));
         labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("right", new JdbcMethod("right", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
         {
             @Override
@@ -473,6 +505,25 @@ public abstract class Method
         // Put new methods below this line and move above after they're documented, i.e.,
         // added to https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql
 
+        // week() is a passthrough, so its numbering is whatever the database does. These two are defined by LabKey and return the same number on either dialect.
+        //   weekiso(x) -- ISO 8601, 1 to 53. Weeks start Monday and week 1 holds the year's first Thursday, so early January can number as the prior year's week 52 or 53.
+        //   weekus(x)  -- US, 1 to 54. Weeks start Sunday and week 1 holds Jan 1, so every date numbers within its own year.
+        labkeyMethod.put("weekiso", new Method("weekiso", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new WeekIsoInfo();
+            }
+        });
+        labkeyMethod.put("weekus", new Method("weekus", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new WeekUsInfo();
+            }
+        });
 
         // ========== Don't document these ==========
         labkeyMethod.put("__cte_two__", new Method(JdbcType.INTEGER, 0, 0)
@@ -485,10 +536,10 @@ public abstract class Method
                     @Override
                     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
-                        SQLFragment cte = new SQLFragment("SELECT 2 as x");
+                        SQLFragment cte = SQLFragment.unsafe("SELECT 2 as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, "__test__two__", "_two", cte);
-                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -504,10 +555,10 @@ public abstract class Method
                     @Override
                     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
-                        SQLFragment cte = new SQLFragment("SELECT 3 as x");
+                        SQLFragment cte = SQLFragment.unsafe("SELECT 3 as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, "__test_three__", "_three", cte);
-                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -524,10 +575,10 @@ public abstract class Method
                     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         SQLFragment cte = new SQLFragment();
-                        cte.append("SELECT (").append(arguments[0]).append(")*(").append(arguments[1]).append(") as x");
+                        cte.unsafeAppend("SELECT (").append(arguments[0]).unsafeAppend(")*(").append(arguments[1]).unsafeAppend(") as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, GUID.makeGUID(), "_times", cte);
-                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -562,10 +613,14 @@ public abstract class Method
         int count = args.size();
         if (count < _minArgs || count > _maxArgs)
         {
+            String message;
             if (_minArgs == _maxArgs)
-                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s"), null, fn.getLine(), fn.getCharPositionInLine()));
+                message = _name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s");
+            else if (_maxArgs == Integer.MAX_VALUE)
+                message = _name.toUpperCase() + " function expects at least " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s");
             else
-                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments", null, fn.getLine(), fn.getCharPositionInLine()));
+                message = _name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments";
+            parseErrors.add(new QueryParseException(message, null, fn.getLine(), fn.getCharPositionInLine()));
         }
     }
 
@@ -711,11 +766,11 @@ public abstract class Method
                     {
                         String s = toSimpleString(fragments[0]).toLowerCase();
                         if ("infinity".equals(s) || "+infinity".equals(s))
-                            fragments[0] = new SQLFragment("?", jdbcType == JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
+                            fragments[0] = SQLFragment.unsafe("?", jdbcType == JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
                         else if ("-infinity".equals(s))
-                            fragments[0] = new SQLFragment("?", jdbcType == JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
+                            fragments[0] = SQLFragment.unsafe("?", jdbcType == JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
                         else if ("nan".equals(s))
-                            fragments[0] = new SQLFragment("?", jdbcType == JdbcType.DOUBLE ? Double.NaN : Float.NaN);
+                            fragments[0] = SQLFragment.unsafe("?", jdbcType == JdbcType.DOUBLE ? Double.NaN : Float.NaN);
                     }
                 }
                 catch (IllegalArgumentException x)
@@ -725,15 +780,15 @@ public abstract class Method
             }
 
             SQLFragment ret = new SQLFragment();
-            ret.append("CAST(");
+            ret.unsafeAppend("CAST(");
             if (fragments.length > 0)
                 ret.append(fragments[0]);
             if (fragments.length > 1)
             {
-                ret.append(" AS ");
+                ret.unsafeAppend(" AS ");
                 ret.append(fragments[1]);
             }
-            ret.append(")");
+            ret.unsafeAppend(")");
             return ret;
         }
 
@@ -742,6 +797,8 @@ public abstract class Method
          */
         String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
+            if (typeSqlFragment.hasError())
+                throw new IllegalArgumentException("Invalid CAST type");
             String typeName = typeSqlFragment.getRawSQL();
             if (typeName.startsWith("SQL_"))
                 typeName = typeName.substring(4);
@@ -803,18 +860,17 @@ public abstract class Method
             SQLFragment ret = new SQLFragment();
             if (_declaringSchemaName != null)
             {
-                ret.append(_declaringSchemaName);
-                ret.append(".");
+                ret.appendIdentifier(_declaringSchemaName);
+                ret.unsafeAppend(".");
             }
-            ret.append(_name).append("(");
-            String comma = "";
+            ret.appendIdentifier(_name).unsafeAppend("(");
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
             for (SQLFragment arg : arguments)
             {
-                ret.append(comma);
+                ret.append(comma.next());
                 ret.append(arg);
-                comma = ",";
             }
-            ret.append(")");
+            ret.unsafeAppend(")");
             return ret;
         }
     }
@@ -837,7 +893,7 @@ public abstract class Method
             if (unitRound)
             {
                 if (supportsRoundDouble)
-                    return super.getSQL(dialect, new SQLFragment[]{arguments[0], new SQLFragment("0")});
+                    return super.getSQL(dialect, new SQLFragment[]{arguments[0], SQLFragment.unsafe("0")});
                 else
                     return super.getSQL(dialect, new SQLFragment[]{arguments[0]});
             }
@@ -852,7 +908,7 @@ public abstract class Method
                 // This CAST works because in postgres NUMERIC(unspecified) => up to 131072 digits before the decimal point; up to 16383 digits after the decimal point
                 // This is not SQL standard behavior
                 SQLFragment numeric = new SQLFragment();
-                numeric.append("CAST((").append(arguments[0]).append(") AS NUMERIC)");
+                numeric.unsafeAppend("CAST((").append(arguments[0]).unsafeAppend(") AS NUMERIC)");
                 return super.getSQL(dialect, new SQLFragment[]{numeric, arguments[1]});
             }
             else
@@ -872,9 +928,9 @@ public abstract class Method
                 if (n == Integer.MIN_VALUE)
                     return super.getSQL(dialect, arguments);
                 var scale = Math.pow(10, n);
-                SQLFragment scaled = new SQLFragment().append("(").append(arguments[0]).append(")*").appendValue(scale);
+                SQLFragment scaled = new SQLFragment().unsafeAppend("(").append(arguments[0]).unsafeAppend(")*").appendValue(scale);
                 SQLFragment ret = super.getSQL(dialect, new SQLFragment[]{scaled});
-                ret.append("/").appendValue(scale);
+                ret.unsafeAppend("/").appendValue(scale);
                 return ret;
             }
         }
@@ -930,15 +986,15 @@ public abstract class Method
             SQLFragment monthB = month.getSQL(dialect, new SQLFragment[]{arguments[1]});
             SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[]{arguments[1]});
 
-            ret.append("(CASE WHEN (")
-                    .append(monthA).append(">").append(monthB).append(" OR ")
-                    .append(monthA).append("=").append(monthB).append(" AND ")
-                    .append(dayA).append(">").append(dayB)
-                    .append(") THEN (")
-                    .append(yearB).append("-").append(yearA).append("-1")
-                    .append(") ELSE (")
-                    .append(yearB).append("-").append(yearA)
-                    .append(") END)");
+            ret.unsafeAppend("(CASE WHEN (")
+                    .append(monthA).unsafeAppend(">").append(monthB).unsafeAppend(" OR ")
+                    .append(monthA).unsafeAppend("=").append(monthB).unsafeAppend(" AND ")
+                    .append(dayA).unsafeAppend(">").append(dayB)
+                    .unsafeAppend(") THEN (")
+                    .append(yearB).unsafeAppend("-").append(yearA).unsafeAppend("-1")
+                    .unsafeAppend(") ELSE (")
+                    .append(yearB).unsafeAppend("-").append(yearA)
+                    .unsafeAppend(") END)");
             return ret;
         }
     }
@@ -967,17 +1023,17 @@ public abstract class Method
             SQLFragment monthB = month.getSQL(dialect, new SQLFragment[]{arguments[1]});
             SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[]{arguments[1]});
 
-            ret.append("(CASE WHEN (")
-                    .append(dayA).append(">").append(dayB)
-                    .append(") THEN (")
-                    .append("12*(").append(yearB).append("-").append(yearA).append(")")
-                    .append("+")
-                    .append(monthB).append("-").append(monthA).append("-1")
-                    .append(") ELSE (")
-                    .append("12*(").append(yearB).append("-").append(yearA).append(")")
-                    .append("+")
-                    .append(monthB).append("-").append(monthA)
-                    .append(") END)");
+            ret.unsafeAppend("(CASE WHEN (")
+                    .append(dayA).unsafeAppend(">").append(dayB)
+                    .unsafeAppend(") THEN (")
+                    .unsafeAppend("12*(").append(yearB).unsafeAppend("-").append(yearA).unsafeAppend(")")
+                    .unsafeAppend("+")
+                    .append(monthB).unsafeAppend("-").append(monthA).unsafeAppend("-1")
+                    .unsafeAppend(") ELSE (")
+                    .unsafeAppend("12*(").append(yearB).unsafeAppend("-").append(yearA).unsafeAppend(")")
+                    .unsafeAppend("+")
+                    .append(monthB).unsafeAppend("-").append(monthA)
+                    .unsafeAppend(") END)");
             return ret;
         }
     }
@@ -994,12 +1050,12 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             MethodInfo convert = labkeyMethod.get("convert").getMethodInfo();
-            SQLFragment dateType = new SQLFragment("DATE");
+            SQLFragment dateType = SQLFragment.unsafe("DATE");
             SQLFragment startDate = convert.getSQL(dialect, new SQLFragment[]{arguments[0], dateType});
             SQLFragment endDate = convert.getSQL(dialect, new SQLFragment[]{arguments[1], dateType});
 
             if (dialect.isPostgreSQL())
-                return new SQLFragment("(").append(endDate).append(" - ").append(startDate).append(")");
+                return SQLFragment.unsafe("(").append(endDate).unsafeAppend(" - ").append(startDate).unsafeAppend(")");
 
             return dialect.getDateDiff(Calendar.DATE, endDate, startDate);
         }
@@ -1020,25 +1076,43 @@ public abstract class Method
             SQLFragment pattern = escapeLikePattern(dialect, arguments[1], '!', null, "%");
             if (null != pattern)
             {
-                String like = dialect.getCaseInsensitiveLikeOperator();
                 SQLFragment ret = new SQLFragment();
-                ret.append("((").append(arguments[0]).append(") ").append(like).append(" ").append(pattern).append(" ESCAPE '!')");
+                ret.unsafeAppend("((").append(arguments[0]).unsafeAppend(") ").append(dialect.getCaseInsensitiveLikeOperatorAsSql()).unsafeAppend(" ").append(pattern).unsafeAppend(" ESCAPE '!')");
                 return ret;
             }
             else if (dialect.isCaseSensitive())
             {
                 SQLFragment ret = new SQLFragment();
-                ret.append("{fn lcase({fn left(").append(arguments[0]).append(",").append("{fn length(").append(arguments[1]).append(")})})}");
-                ret.append("={fn lcase(").append(arguments[1]).append(")}");
+                ret.unsafeAppend("{fn lcase({fn left(").append(arguments[0]).unsafeAppend(",").unsafeAppend("{fn length(").append(arguments[1]).unsafeAppend(")})})}");
+                ret.unsafeAppend("={fn lcase(").append(arguments[1]).unsafeAppend(")}");
                 return ret;
             }
             else
             {
                 SQLFragment ret = new SQLFragment();
-                ret.append("{fn left(").append(arguments[0]).append(",").append("{fn length(").append(arguments[1]).append(")})}");
-                ret.append("=(").append(arguments[1]).append(")");
+                ret.unsafeAppend("{fn left(").append(arguments[0]).unsafeAppend(",").unsafeAppend("{fn length(").append(arguments[1]).unsafeAppend(")})}");
+                ret.unsafeAppend("=(").append(arguments[1]).unsafeAppend(")");
                 return ret;
             }
+        }
+    }
+
+
+    // Same SQL as the || operator
+    static class ConcatInfo extends AbstractMethodInfo
+    {
+        ConcatInfo()
+        {
+            super(JdbcType.VARCHAR);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment[] terms = Arrays.stream(arguments)
+                    .map(arg -> SQLFragment.unsafe("(").append(arg).unsafeAppend(")"))
+                    .toArray(SQLFragment[]::new);
+            return SQLFragment.unsafe("(").append(dialect.concatenate(terms)).unsafeAppend(")");
         }
     }
 
@@ -1057,13 +1131,61 @@ public abstract class Method
             SQLFragment a = arguments[0];
             SQLFragment b = arguments[1];
 
-            ret.append("(");
-            ret.append("(").append(a).append(")=(").append(b).append(")");
-            ret.append(" OR (");
-            ret.append("(").append(a).append(") IS NULL AND (").append(b).append(") IS NULL");
-            ret.append("))");
+            ret.unsafeAppend("(");
+            ret.unsafeAppend("(").append(a).unsafeAppend(")=(").append(b).unsafeAppend(")");
+            ret.unsafeAppend(" OR (");
+            ret.unsafeAppend("(").append(a).unsafeAppend(") IS NULL AND (").append(b).unsafeAppend(") IS NULL");
+            ret.unsafeAppend("))");
 
             return ret;
+        }
+    }
+
+    // PostgreSQL only; SQL Server uses its native ISNUMERIC() via the mssqlMethods passthrough. Returns 1/0 like
+    // ISNUMERIC() because callers write isnumeric(x) = 1, which a true/false predicate would break.
+    static class IsNumericInfo extends AbstractMethodInfo
+    {
+        IsNumericInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment arg = arguments[0];
+            if (dialect.supportsIsNumeric())
+                return dialect.isNumericExpr(arg);
+
+            throw new IllegalStateException("isnumeric() is not supported for this database dialect: " + dialect.getProductName());
+        }
+    }
+
+    static class WeekIsoInfo extends AbstractMethodInfo
+    {
+        WeekIsoInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            return dialect.weekIsoExpr(arguments[0]);
+        }
+    }
+
+    static class WeekUsInfo extends AbstractMethodInfo
+    {
+        WeekUsInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            return dialect.weekUsExpr(arguments[0]);
         }
     }
 
@@ -1091,7 +1213,7 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
-            SQLFragment ret = new SQLFragment("?");
+            SQLFragment ret = SQLFragment.unsafe("?");
             ret.add((Callable<Integer>) () -> {
                 User user = (User) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 return null == user ? null : user.getUserId();
@@ -1122,7 +1244,7 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
-            SQLFragment ret = new SQLFragment("?");
+            SQLFragment ret = SQLFragment.unsafe("?");
             ret.add((Callable<String>) () -> {
                 User user = (User) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 if (null == user)
@@ -1154,7 +1276,7 @@ public abstract class Method
             v = null == cCompile ? null : path ? cCompile.getPath() : cCompile.getName();
 
             if (null == v)
-                return new SQLFragment("CAST(NULL AS VARCHAR)");
+                return SQLFragment.unsafe("CAST(NULL AS VARCHAR)");
             else
                 return new SQLFragment("CAST(? AS " + dialect.getSqlTypeName(JdbcType.VARCHAR) + ")", v);
         }
@@ -1194,7 +1316,7 @@ public abstract class Method
                 return new SQLFragment("CAST(? AS " + dialect.getSqlTypeName(JdbcType.VARCHAR) + ")", value);
             }
 
-            return new SQLFragment("CAST(NULL AS VARCHAR)");
+            return SQLFragment.unsafe("CAST(NULL AS VARCHAR)");
         }
     }
 
@@ -1261,7 +1383,7 @@ public abstract class Method
             }
 
             // no legal field found
-            return new SQLFragment("CAST(NULL AS VARCHAR)");
+            return SQLFragment.unsafe("CAST(NULL AS VARCHAR)");
         }
     }
 
@@ -1276,7 +1398,7 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
-            SQLFragment ret = new SQLFragment("?");
+            SQLFragment ret = SQLFragment.unsafe("?");
             ret.add(AppProps.getInstance().getContextPath());
             return ret;
         }
@@ -1306,9 +1428,12 @@ public abstract class Method
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
                 SQLFragment ret = new SQLFragment();
-                ret.append("(").append(groupArg).append(") IN (").append(
-                        user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
-                ).append(")");
+                // Inline the IDs: appendInClause() may create a temp table in the LabKey DB, but this SQL can run against an external data source
+                ret.unsafeAppend("(").append(groupArg).unsafeAppend(") IN (");
+                SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
+                for (int groupId : user.getGroups())
+                    ret.append(comma.next()).appendValue(groupId);
+                ret.unsafeAppend(")");
                 return ret;
             }
 
@@ -1396,9 +1521,9 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
-            ret.append("(").append(arguments[0]).append(",").append(arguments[1]).append(")");
-            ret.append(" overlaps ");
-            ret.append("(").append(arguments[2]).append(",").append(arguments[3]).append(")");
+            ret.unsafeAppend("(").append(arguments[0]).unsafeAppend(",").append(arguments[1]).unsafeAppend(")");
+            ret.unsafeAppend(" overlaps ");
+            ret.unsafeAppend("(").append(arguments[2]).unsafeAppend(",").append(arguments[3]).unsafeAppend(")");
             return ret;
         }
     }
@@ -1414,14 +1539,14 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
-            ret.append("((").append(arguments[0]).append(")");
-            ret.append(" SIMILAR TO ");
-            ret.append("(").append(arguments[1]).append(")");
+            ret.unsafeAppend("((").append(arguments[0]).unsafeAppend(")");
+            ret.unsafeAppend(" SIMILAR TO ");
+            ret.unsafeAppend("(").append(arguments[1]).unsafeAppend(")");
             if (arguments.length == 3)
             {
-                ret.append(" ESCAPE (").append(arguments[2]).append(")");
+                ret.unsafeAppend(" ESCAPE (").append(arguments[2]).unsafeAppend(")");
             }
-            ret.append(")");
+            ret.unsafeAppend(")");
             return ret;
         }
     }
@@ -1480,10 +1605,12 @@ public abstract class Method
      */
     public static boolean isSimpleString(SQLFragment f)
     {
+        if (f.hasError())
+            return false;
         String s = f.getSQL();
         // am I a simple bound parameter?
         if ("?".equals(s) && f.getParams().size() == 1)
-            return f.getParams().get(0) instanceof String;
+            return f.getParams().getFirst() instanceof String;
         if (!f.getParams().isEmpty())
             return false;
         if (s.endsWith("::VARCHAR"))
@@ -1506,7 +1633,7 @@ public abstract class Method
             throw new IllegalArgumentException(f.toDebugString());
         String s = f.getSQL();
         if ("?".equals(s) && f.getParams().size() == 1)
-            return (String) f.getParams().get(0);
+            return (String) f.getParams().getFirst();
         assert (s.startsWith("'") || s.startsWith("N'"));
         assert (s.endsWith("'") || s.endsWith("'::VARCHAR"));
         if (s.endsWith("::VARCHAR"))
@@ -1519,17 +1646,19 @@ public abstract class Method
     }
 
 
+    // GH Issue 1718: the query's own schema, not the thread-local, is authoritative for which query is being compiled.
+    // A lookup to a query in another folder compiles against that folder's schema, and reading the environment first
+    // made folder() report whichever query the thread compiled last.
     static Container getCompileTimeContainer(Query query)
     {
-        Container cCompile = (Container) QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
-        if (null == cCompile && null != query)
+        if (null != query)
         {
             // Issue 53355: A column may be erroneously constructed (e.g. invalid calculated column) which can result in the schema being null
             QuerySchema querySchema = query.getSchema();
             if (querySchema != null)
-                cCompile = querySchema.getContainer();
+                return querySchema.getContainer();
         }
-        return cCompile;
+        return (Container) QueryServiceImpl.get().getEnvironment(QueryService.Environment.CONTAINER);
     }
 
 
@@ -1601,7 +1730,7 @@ public abstract class Method
                 @Override
                 public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                 {
-                    return new SQLFragment("CAST(").append(dialect.array_construct(arguments)).append(" AS TEXT[])");
+                    return SQLFragment.unsafe("CAST(").append(dialect.array_construct(arguments)).unsafeAppend(" AS TEXT[])");
                 }
             };
         }
@@ -1649,6 +1778,14 @@ public abstract class Method
         postgresMethods.put("decode", new PassthroughMethod("decode", JdbcType.VARCHAR, 2, 2));
         postgresMethods.put("encode", new PassthroughMethod("encode", JdbcType.VARCHAR, 2, 2));
         postgresMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsNumericInfo();
+            }
+        });
         postgresMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2, 3));
         postgresMethods.put("md5", new PassthroughMethod("md5", JdbcType.VARCHAR, 1, 1));
         postgresMethods.put("octet_length", new PassthroughMethod("octet_length", JdbcType.INTEGER, 1, 1));
@@ -1682,7 +1819,7 @@ public abstract class Method
         postgresMethods.put("translate", new PassthroughMethod("translate", JdbcType.VARCHAR, 3, 3));
         postgresMethods.put("to_char", new PassthroughMethod("to_char", JdbcType.VARCHAR, 2, 2));
         postgresMethods.put("to_date", new PassthroughMethod("to_date", JdbcType.DATE, 2, 2));
-        postgresMethods.put("to_timestamp", new PassthroughMethod("to_timestamp", JdbcType.TIMESTAMP, 2, 2));
+        postgresMethods.put("to_timestamp", new PassthroughMethod("to_timestamp", JdbcType.TIMESTAMP, 1, 2));
         postgresMethods.put("to_number", new PassthroughMethod("to_number", JdbcType.DECIMAL, 2, 2));
         postgresMethods.put("string_to_array", new PassthroughMethod("string_to_array", JdbcType.VARCHAR, 2, 3));
         postgresMethods.put("unnest", new PassthroughMethod("unnest", JdbcType.VARCHAR, 1, 1));
@@ -1732,8 +1869,22 @@ public abstract class Method
             {
                 return new AbstractMethodInfo(JdbcType.VARCHAR)
                 {
-                    private static final Set<String> ALLOWED_OPERATORS = Set.of("->", "->>", "#>", "#>>", "@>", "<@",
-                            "?", "?|", "?&", "||", "-", "#-");
+                    private static final Map<String, SQLFragment> OPERATORS = Map.of(
+                            "->", SQLFragment.unsafe("->"),
+                            "->>", SQLFragment.unsafe("->>"),
+                            "#>", SQLFragment.unsafe("#>"),
+                            "#>>", SQLFragment.unsafe("#>>"),
+                            "@>", SQLFragment.unsafe("@>"),
+                            "<@", SQLFragment.unsafe("<@"),
+                            "||", SQLFragment.unsafe("||"),
+                            "-", SQLFragment.unsafe("-"),
+                            "#-", SQLFragment.unsafe("#-"));
+
+                    // The JDBC driver reads the ? in these operators as a parameter marker, so use the equivalent functions
+                    private static final Map<String, SQLFragment> FUNCTIONS = Map.of(
+                            "?", SQLFragment.unsafe("jsonb_exists"),
+                            "?|", SQLFragment.unsafe("jsonb_exists_any"),
+                            "?&", SQLFragment.unsafe("jsonb_exists_all"));
 
                     @Override
                     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
@@ -1745,22 +1896,30 @@ public abstract class Method
                             throw new QueryParseException("Unsupported JSON operator: " + strippedOperator, null, 0, 0);
                         }
 
-                        if (!ALLOWED_OPERATORS.contains(strippedOperator))
+                        SQLFragment function = FUNCTIONS.get(strippedOperator);
+                        if (null != function)
+                        {
+                            return new SQLFragment().append(function).
+                                    unsafeAppend("((").append(arguments[0]).unsafeAppend("), (").append(arguments[2]).unsafeAppend("))");
+                        }
+
+                        SQLFragment operator = OPERATORS.get(strippedOperator);
+                        if (null == operator)
                         {
                             throw new QueryParseException("Unsupported JSON operator: " + strippedOperator, null, 0, 0);
                         }
 
-                        return new SQLFragment("(").append(arguments[0]).append(")").
-                                append(strippedOperator).
-                                append("(").append(arguments[2]).append(")");
+                        return SQLFragment.unsafe("(").append(arguments[0]).unsafeAppend(")").
+                                append(operator).
+                                unsafeAppend("(").append(arguments[2]).unsafeAppend(")");
                     }
                 };
             }
         });
 
         // Special functions to cast an argument to the JSON or JSONB data types without needing to support as official datatype in CAST
-        postgresMethods.put("parse_json", new ParseJSONMethod("json"));
-        postgresMethods.put("parse_jsonb", new ParseJSONMethod("jsonb"));
+        postgresMethods.put("parse_json", new ParseJSONMethod(SQLFragment.unsafe("json")));
+        postgresMethods.put("parse_jsonb", new ParseJSONMethod(SQLFragment.unsafe("jsonb")));
 
         postgresMethods.put("to_json", new PassthroughMethod("to_json", JdbcType.OTHER, 1, 1));
         postgresMethods.put("to_jsonb", new PassthroughMethod("to_jsonb", JdbcType.OTHER, 1, 1));
@@ -1813,24 +1972,6 @@ public abstract class Method
         postgresMethods.put("jsonb_path_query_tz", new PassthroughMethod("jsonb_path_query_tz", JdbcType.VARCHAR, 2, 4));
         postgresMethods.put("jsonb_path_query_array_tz", new PassthroughMethod("jsonb_path_query_array_tz", JdbcType.VARCHAR, 2, 4));
         postgresMethods.put("jsonb_path_query_first_tz", new PassthroughMethod("jsonb_path_query_first_tz", JdbcType.VARCHAR, 2, 4));
-
-        // "is distinct from" and "is not distinct from" operators in method form
-        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
-        {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsDistinctFromMethodInfo(IS);
-            }
-        });
-        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
-        {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsDistinctFromMethodInfo(IS_NOT);
-            }
-        });
     }
 
     private static class IsDistinctFromMethodInfo extends AbstractMethodInfo
@@ -1846,13 +1987,37 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
+            SQLFragment a = arguments[0];
+            SQLFragment b = arguments[1];
             SQLFragment ret = new SQLFragment();
-            ret.append(" ((").append(arguments[0]).append(")");
-            if (token == IS)
-                ret.append(" IS DISTINCT FROM ");
+
+            if (dialect.supportsNativeIsDistinctFrom())
+            {
+                ret.unsafeAppend(" ((").append(a).unsafeAppend(")");
+                if (token == IS)
+                    ret.unsafeAppend(" IS DISTINCT FROM ");
+                else
+                    ret.unsafeAppend(" IS NOT DISTINCT FROM ");
+                ret.unsafeAppend("(").append(b).unsafeAppend(")) ");
+            }
             else
-                ret.append(" IS NOT DISTINCT FROM ");
-            ret.append("(").append(arguments[1]).append(")) ");
+            {
+                // "IS [NOT] DISTINCT FROM" isn't standard/portable SQL -- it's native only on PostgreSQL-family and
+                // Snowflake dialects (and recent SQL Server). Elsewhere rewrite as a CASE expression that always
+                // evaluates to a real TRUE/FALSE -- never NULL, even when exactly one side is null -- so it behaves
+                // the same as the native predicate would.
+
+                // This is more complicated than the obvious (a=b or a is null and b is null).
+                // That expression can return NULL, we need to return only TRUE/FALSE.
+                if (token == IS)
+                    ret.unsafeAppend(" NOT ");
+                ret.unsafeAppend("(");
+                ret.unsafeAppend("((").append(a).unsafeAppend(") IS NOT NULL AND (").append(b).unsafeAppend(") IS NOT NULL AND (").append(a).unsafeAppend(")=(").append(b).unsafeAppend("))");
+                ret.unsafeAppend(" OR ");
+                ret.unsafeAppend("((").append(a).unsafeAppend(") IS NULL AND (").append(b).unsafeAppend(") IS NULL)");
+                ret.unsafeAppend(")");
+            }
+
             return ret;
         }
     }
@@ -1881,7 +2046,6 @@ public abstract class Method
         mssqlMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 3, 3));
         mssqlMethods.put("replicate", new PassthroughMethod("replicate", JdbcType.VARCHAR, 2, 2));
         mssqlMethods.put("reverse", new PassthroughMethod("reverse", JdbcType.VARCHAR, 1, 1));
-        mssqlMethods.put("right", new PassthroughMethod("right", JdbcType.VARCHAR, 2, 2));
         mssqlMethods.put("soundex", new PassthroughMethod("soundex", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("space", new PassthroughMethod("space", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("str", new PassthroughMethod("str", JdbcType.VARCHAR, 1, 3));
@@ -1924,9 +2088,9 @@ public abstract class Method
 
     private static class ParseJSONMethod extends Method
     {
-        private final String _targetType;
+        private final SQLFragment _targetType;
 
-        ParseJSONMethod(String targetType)
+        ParseJSONMethod(SQLFragment targetType)
         {
             super(JdbcType.OTHER, 1, 1);
             _targetType = targetType;
@@ -1940,7 +2104,7 @@ public abstract class Method
                 @Override
                 public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                 {
-                    return new SQLFragment("(").append(arguments[0]).append(")::").append(_targetType);
+                    return SQLFragment.unsafe("(").append(arguments[0]).unsafeAppend(")::").append(_targetType);
                 }
             };
         }
@@ -1972,17 +2136,153 @@ public abstract class Method
                 assertIsSimpleString(s, new SQLFragment("'" + s + "'"));
                 assertIsSimpleString(s, new SQLFragment("N'" + s + "'"));
                 assertIsSimpleString(s, new SQLFragment("'" + s + "'::VARCHAR"));
-                assertIsSimpleString(s, new SQLFragment("?").add(s));
+                assertIsSimpleString(s, SQLFragment.unsafe("?").add(s));
             }
         }
 
         @Test
         public void testSimpleString()
         {
-            assertNotSimpleString(new SQLFragment("test ?").add("param"));
-            assertNotSimpleString(new SQLFragment("?").add(5));
-            assertNotSimpleString(new SQLFragment("SELECT 'test'"));
-            assertNotSimpleString(new SQLFragment("'test''string'"));
+            assertNotSimpleString(SQLFragment.unsafe("test ?").add("param"));
+            assertNotSimpleString(SQLFragment.unsafe("?").add(5));
+            assertNotSimpleString(SQLFragment.unsafe("SELECT 'test'"));
+            assertNotSimpleString(SQLFragment.unsafe("'test''string'"));
+        }
+
+        // Selects expr alongside real JDBC parameters, so the SQL goes through prepareStatement
+        private static String selectWithParameters(SQLFragment expr)
+        {
+            SQLFragment sql = new SQLFragment().SELECT()
+                    .unsafeAppend("? AS param1, ", 1)
+                    .unsafeAppend("CAST((").append(expr).unsafeAppend(") AS VARCHAR) AS result, ")
+                    .unsafeAppend("? AS param2", 2);
+            Map<String, Object> row = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getMap();
+            assertEquals(1, ((Number) row.get("param1")).intValue());
+            assertEquals(2, ((Number) row.get("param2")).intValue());
+            return (String) row.get("result");
+        }
+
+        // Selects expr with no JDBC parameters, so the SQL goes through createStatement
+        private static String selectWithoutParameters(SQLFragment expr)
+        {
+            SQLFragment sql = new SQLFragment().SELECT()
+                    .unsafeAppend("CAST((").append(expr).unsafeAppend(") AS VARCHAR) AS result");
+            assertTrue(sql.getParams().isEmpty());
+            return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getObject(String.class);
+        }
+
+        @Test
+        public void testJsonOperators()
+        {
+            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+            if (!d.isPostgreSQL())
+                return;
+
+            record Case(String json, String operator, String operand, String expected) {}
+            List<Case> cases = List.of(
+                new Case("{\"a\":1}", "->", "a", "1"),
+                new Case("{\"a\":1}", "->>", "a", "1"),
+                new Case("{\"a\":{\"b\":1}}", "#>", "{a,b}", "1"),
+                new Case("{\"a\":{\"b\":1}}", "#>>", "{a,b}", "1"),
+                new Case("{\"a\":1,\"b\":2}", "@>", "{\"a\":1}", "true"),
+                new Case("{\"a\":1}", "<@", "{\"a\":1,\"b\":2}", "true"),
+                new Case("{\"a\":1}", "?", "a", "true"),
+                new Case("{\"a\":1}", "?|", "{a,c}", "true"),
+                new Case("{\"a\":1,\"b\":2}", "?&", "{a,b}", "true"),
+                new Case("{\"a\":1}", "||", "{\"b\":2}", "{\"a\": 1, \"b\": 2}"),
+                new Case("{\"a\":1,\"b\":2}", "-", "a", "{\"b\": 2}"),
+                new Case("{\"a\":{\"b\":1,\"c\":2}}", "#-", "{a,b}", "{\"a\": {\"c\": 2}}"));
+
+            MethodInfo jsonOp = postgresMethods.get("json_op").getMethodInfo();
+            for (Case c : cases)
+            {
+                SQLFragment[] arguments = {
+                    SQLFragment.unsafe("CAST(").appendStringLiteral(c.json(), d).unsafeAppend(" AS JSONB)"),
+                    new SQLFragment().appendStringLiteral(c.operator(), d),
+                    new SQLFragment().appendStringLiteral(c.operand(), d)
+                };
+                try
+                {
+                    String result1 = selectWithoutParameters(jsonOp.getSQL(d, arguments));
+                    assertEquals(c.operator(), c.expected, result1);
+                    String result2 = selectWithParameters(jsonOp.getSQL(d, arguments));
+                    assertEquals(c.operator(), c.expected, result2);
+                }
+                catch (RuntimeException e)
+                {
+                    fail(c.operator() + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
+    public static class IsDistinctFromMethodTestCase extends Assert
+    {
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
+        {
+            return JunitUtil.getDbScopesTestParameters();
+        }
+
+        private final DbScope scope;
+
+        public IsDistinctFromMethodTestCase(DbScope scope, String displayName)
+        {
+            this.scope = scope;
+        }
+
+        // Exercises both the native and portable-fallback branches of IsDistinctFromMethodInfo.getSQL() against every
+        // dialect that's actually connected in this environment, not just whichever dialect the current CI leg happens
+        // to be running against. A FROM-less SELECT works everywhere except Oracle, which requires FROM DUAL.
+        //
+        // Covers both usage contexts: as a selected boolean value (where three-valued logic would otherwise leak NULL
+        // for the one-null-argument case) and as a WHERE clause filter (where three-valued logic normally treats NULL
+        // as non-matching, so this instead confirms the CASE-based rewrite still evaluates to a real TRUE/FALSE there).
+        @Test
+        public void testIsDistinctFrom()
+        {
+            record Case(String a, String b, boolean distinct) {}
+            List<Case> cases = List.of(
+                new Case("1", "2", true),
+                new Case("1", "1", false),
+                new Case("NULL", "NULL", false),
+                new Case("1", "NULL", true)
+            );
+
+            SqlDialect d = scope.getSqlDialect();
+
+            for (Case c : cases)
+            {
+                assertIsDistinctFrom(scope, d, IS, c.a(), c.b(), c.distinct());
+                assertIsDistinctFrom(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
+                assertIsDistinctFromWhere(scope, d, IS, c.a(), c.b(), c.distinct());
+                assertIsDistinctFromWhere(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
+            }
+        }
+
+        private void assertIsDistinctFrom(DbScope scope, SqlDialect d, int token, String a, String b, boolean expected)
+        {
+            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
+            SQLFragment T = new SQLFragment(d.getBooleanTRUE()), F = new SQLFragment(d.getBooleanFALSE());
+            SQLFragment sql = new SQLFragment().SELECT().unsafeAppend("CASE WHEN ").append(expr).unsafeAppend(" THEN ").append(T).unsafeAppend(" ELSE ").append(F).unsafeAppend(" END");
+            if (d.isOracle())
+                sql.unsafeAppend(" FROM DUAL");
+            Boolean result = new SqlSelector(scope, sql).getObject(Boolean.class);
+            assertEquals(d.getClass().getSimpleName() + ": " + sql.toDebugString(), expected, result);
+        }
+
+        private void assertIsDistinctFromWhere(DbScope scope, SqlDialect d, int token, String a, String b, boolean expected)
+        {
+            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
+            SQLFragment sql = SQLFragment.unsafe("SELECT 1");
+            if (d.isOracle())
+                sql.unsafeAppend(" FROM DUAL");
+            sql.unsafeAppend(" WHERE ").append(expr);
+
+            boolean matched = new SqlSelector(scope, sql).exists();
+            assertEquals(d.getClass().getSimpleName() + " (WHERE): " + sql.toDebugString(), expected, matched);
         }
     }
 }

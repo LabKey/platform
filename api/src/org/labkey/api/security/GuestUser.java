@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,5 +58,11 @@ class GuestUser extends User
     public void refreshGroups()
     {
         // Don't clear out GuestUser's groups since they're set in its constructor
+    }
+
+    @Override
+    public String getPermissionsRestrictions()
+    {
+        return "You are connected as a Guest user, which limits your permissions. Provide a valid API key to access more content.";
     }
 }

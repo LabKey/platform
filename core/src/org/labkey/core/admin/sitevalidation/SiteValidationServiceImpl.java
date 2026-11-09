@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ public class SiteValidationServiceImpl implements SiteValidationService
             {
                 parentList = ContainerManager.getProjects();
                 if (includeSubFolders)
-                    parentList.add(0, topLevel); // Validate the root as well
+                    parentList.addFirst(topLevel); // Validate the root as well
             }
             else
             {

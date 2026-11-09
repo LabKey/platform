@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationPro
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -45,6 +44,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.login.DbLoginManager.Key;
+import org.labkey.core.security.PasswordExpiration;
 
 import java.util.Collection;
 import java.util.EmptyStackException;
@@ -104,7 +104,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return true;
     }
 
-    private static final Throttle<String> API_KEY_LAST_USED_THROTTLE = new Throttle<>("API key LastUsed update throttle",
+    private static final Throttle<String> API_KEY_LAST_USED_THROTTLE = new Throttle<>(String.class, "API key LastUsed updates",
     1000, AUTH_LOGGING_THROTTLE_TTL, apiKey -> ApiKeyManager.get().updateLastUsed(apiKey));
 
     @Override
@@ -115,24 +115,21 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         if (API_KEY.equals(id))
         {
             ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(password);
-            final AuthenticationResponse ret;
 
             if (auth != null)
             {
-                // API keys are exempt from secondary authentication, Issue 48764
-                ret = AuthenticationResponse.success(configuration, auth.getUser()).setSuccessDetails(UserManager.UserAuditEvent.API_KEY)
-                    .setRequireSecondary(false)
-                    .setAuthenticationProperties(Map.of(ApiKeyManager.API_KEY_ROW_ID, auth.rowId()));
-
-                // Update core.ApiKeys.LastUsed (throttled)
-                API_KEY_LAST_USED_THROTTLE.execute(password);
-            }
-            else
-            {
-                ret = AuthenticationResponse.failure(configuration, FailureReason.badApiKey);
+                User user = auth.getUser();
+                if (user != null)
+                {
+                    // Update core.ApiKeys.LastUsed (throttled)
+                    API_KEY_LAST_USED_THROTTLE.execute(password);
+                    return AuthenticationResponse.success(configuration, user).setSuccessDetails(UserManager.UserAuditEvent.API_KEY)
+                        .setRequireSecondary(false) // API keys are exempt from secondary authentication, Issue 48764
+                        .setAuthenticationProperties(Map.of(ApiKeyManager.API_KEY_ROW_ID, auth.rowId()));
+                }
             }
 
-            return ret;
+            return AuthenticationResponse.failure(configuration, FailureReason.badApiKey);
         }
         else
         {
@@ -177,7 +174,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                     PasswordExpiration expiration = configuration.getExpiration();
                     User user2 = user;
 
-                    if (expiration.hasExpired(() -> LoginManager.getLastChanged(user2)))
+                    if (expiration.hasExpired(() -> LoginManager.getPasswordLastChanged(user2)))
                     {
                         return getChangePasswordResponse(configuration, user, returnUrl, FailureReason.expired);
                     }
@@ -218,7 +215,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             int c = _count.incrementAndGet();
 
             if (c % 10 == 0)
-                LogManager.getLogger(DbLoginAuthenticationProvider.class).info(c + " requests");
+                LogManager.getLogger(DbLoginAuthenticationProvider.class).info("{} requests", c);
 
             return c % 100 != 0;
         }

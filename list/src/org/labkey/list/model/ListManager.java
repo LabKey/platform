@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
@@ -105,17 +106,22 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
     public static final String LISTID_FIELD_NAME = "listId";
 
-    private final Cache<String, List<ListDef>> _listDefCache = DatabaseCache.get(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions", new ListDefCacheLoader()) ;
+    private final Cache<Container, List<ListDef>> _listDefCache = DatabaseCache.get(Container.class, CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions", new ListDefCacheLoader()) ;
 
-    private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
+    private class ListDefCacheLoader implements CacheLoader<Container, List<ListDef>>
     {
         @Override
-        public List<ListDef> load(@NotNull String entityId, @Nullable Object argument)
+        public List<ListDef> load(@NotNull Container c, @Nullable Object argument)
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), entityId);
-            ArrayList<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getArrayList(ListDef.class);
-            return ownLists.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ownLists);
+            return loadOwnLists(c);
         }
+    }
+
+    private List<ListDef> loadOwnLists(Container c)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        ArrayList<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getArrayList(ListDef.class);
+        return ownLists.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ownLists);
     }
 
     public static ListManager get()
@@ -177,18 +183,18 @@ public class ListManager implements SearchService.DocumentProvider
      */
     private Collection<ListDef> getAllScopedLists(@NotNull Container container, boolean includeProjectAndShared)
     {
-        List<ListDef> ownLists = _listDefCache.get(container.getId());
+        List<ListDef> ownLists = _listDefCache.get(container);
         Map<String, ListDef> listDefMap = new CaseInsensitiveHashMap<>();
 
         if (includeProjectAndShared)
         {
-            for (ListDef sharedList : _listDefCache.get(ContainerManager.getSharedContainer().getId()))
+            for (ListDef sharedList : _listDefCache.get(ContainerManager.getSharedContainer()))
                 listDefMap.put(sharedList.getName(), sharedList);
 
             Container project = container.getProject();
             if (project != null)
             {
-                for (ListDef projectList : _listDefCache.get(project.getId()))
+                for (ListDef projectList : _listDefCache.get(project))
                     listDefMap.put(projectList.getName(), projectList);
             }
         }
@@ -199,7 +205,7 @@ public class ListManager implements SearchService.DocumentProvider
             Container parent = container.getParent();
             if (parent != null)
             {
-                for (ListDef parentList : _listDefCache.get(parent.getId()))
+                for (ListDef parentList : _listDefCache.get(parent))
                     listDefMap.put(parentList.getName(), parentList);
             }
         }
@@ -287,7 +293,7 @@ public class ListManager implements SearchService.DocumentProvider
             builder.setListId((int)sequence.next());
 
         ListDef ret = Table.insert(user, tinfo, builder.build());
-        _listDefCache.remove(c.getId());
+        _listDefCache.remove(c);
         return ret;
     }
 
@@ -437,7 +443,7 @@ public class ListManager implements SearchService.DocumentProvider
                 {
                     SQLFragment sql = new SQLFragment("UPDATE ")
                         .append(getListMetadataTable().getSelectName())
-                        .append(" SET LastIndexed = NULL WHERE ListId = ? AND LastIndexed IS NOT NULL")
+                        .unsafeAppend(" SET LastIndexed = NULL WHERE ListId = ? AND LastIndexed IS NOT NULL")
                         .add(list.getListId());
 
                     new SqlExecutor(scope).execute(sql);
@@ -454,7 +460,7 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void queryChangeUpdate(User user, Container c, String oldName, String updatedName)
     {
-        _listDefCache.remove(c.getId());
+        _listDefCache.remove(c);
         QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldName, updatedName, new SchemaKey(null, ListQuerySchema.NAME), user, c);
     }
 
@@ -482,7 +488,7 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 // ok
             }
-            _listDefCache.remove(container.getId());
+            _listDefCache.remove(container);
 
             list.getDomainOrThrow().delete(user, auditUserComment);
             addAuditEvent(list, user, String.format("The list %s was deleted", listName));
@@ -537,14 +543,17 @@ public class ListManager implements SearchService.DocumentProvider
     public void enumerateDocuments(SearchService.TaskIndexingQueue queue, @Nullable Date since)
     {
         Consumer<SearchService.TaskIndexingQueue> r = (q) -> {
-            Map<String, ListDefinition> lists = ListService.get().getLists(q.getContainer(), null, false);
+            // Only this container's own lists: getLists() adds a workbook's parent lists, which each workbook crawl would
+            // then re-index. Uncached, so the crawl doesn't leave a cache entry for every container.
+            List<ListDef> lists = loadOwnLists(q.getContainer());
 
             try
             {
                 QueryService.get().setEnvironment(QueryService.Environment.USER, User.getSearchUser());
                 QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, q.getContainer());
-                for (ListDefinition list : lists.values())
+                for (ListDef def : lists)
                 {
+                    ListDefinition list = new ListDefinitionImpl(def);
                     try
                     {
                         boolean reindex = since == null;
@@ -552,7 +561,7 @@ public class ListManager implements SearchService.DocumentProvider
                     }
                     catch (Exception ex)
                     {
-                        LOG.error("Error indexing list '" + list.getName() + "' in container '" + q.getContainer().getPath() + "'.", ex);
+                        LOG.error("Error indexing list '{}' in container '{}'.", list.getName(), q.getContainer().getPath(), ex);
                     }
                 }
             }
@@ -579,7 +588,7 @@ public class ListManager implements SearchService.DocumentProvider
             Container c = def.lookupContainer();
             if (!ContainerManager.exists(c))
             {
-                LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
+                LOG.info("List container has been deleted or is being deleted; not indexing list \"{}\"", def.getName());
             }
             else
             {
@@ -593,7 +602,7 @@ public class ListManager implements SearchService.DocumentProvider
         Container c = def.lookupContainer();
         if (!ContainerManager.exists(c))
         {
-            LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
+            LOG.info("List container has been deleted or is being deleted; not indexing list \"{}\"", def.getName());
         }
         else
         {
@@ -622,20 +631,37 @@ public class ListManager implements SearchService.DocumentProvider
     {
         // Transaction-aware is good practice. But it happens to be critical in the case of calling indexEntireList()
         // because it turns off JDBC caching, using a non-transacted connection (bad news if we call it mid-transaction).
-        getListMetadataSchema().getScope().addCommitTask(() ->
+        new DeleteItemIndexTask(list).register(getListMetadataSchema().getScope(), List.of(entityId), DbScope.CommitTaskOption.POSTCOMMIT);
+    }
+
+    private record ListKey(Container container, int listId) {}
+
+    /** Deindexes every item deleted from one list in a transaction, then reindexes the whole list once */
+    private class DeleteItemIndexTask extends AccumulatingCommitTask<ListKey, String>
+    {
+        private final ListDefinition _list;
+
+        DeleteItemIndexTask(ListDefinition list)
         {
-            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(list.getContainer(), SearchService.PRIORITY.modified);
-            if (list.getEachItemIndex())
+            super(new ListKey(list.getContainer(), list.getListId()));
+            _list = list;
+        }
+
+        @Override
+        protected void process(@NotNull ListKey key, @NotNull Set<String> entityIds)
+        {
+            if (_list.getEachItemIndex())
             {
-                SearchService.get().deleteResource(getDocumentId(list, entityId));
+                SearchService.get().deleteResources(entityIds.stream().map(entityId -> getDocumentId(_list, entityId)).toList());
             }
 
             // Reindex the entire list document iff data is being indexed
-            if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
+            if (_list.getEntireListIndex() && _list.getEntireListIndexSetting().indexItemData())
             {
-                indexEntireList(queue, list, true);
+                SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(_list.getContainer(), SearchService.PRIORITY.modified);
+                indexEntireList(queue, _list, true);
             }
-        }, DbScope.CommitTaskOption.POSTCOMMIT);
+        }
     }
 
     private String getDocumentId(ListDefinition list)
@@ -679,6 +705,7 @@ public class ListManager implements SearchService.DocumentProvider
         {
             FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
             FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, "\"each item as a separate document\" custom indexing template", list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
+            List<ColumnInfo> arrayColumns = getArrayColumns(listTable);
 
             FieldKey keyKey = new FieldKey(null, list.getKeyName());
             FieldKey entityIdKey = new FieldKey(null, "EntityId");
@@ -710,7 +737,7 @@ public class ListManager implements SearchService.DocumentProvider
                 if (map.get(modifiedKey) instanceof Date)
                     modified = (Date) map.get(modifiedKey);
 
-                String body = bodyTemplate.eval(map);
+                String body = bodyTemplate.eval(flattenArrayValues(map, arrayColumns));
 
                 ActionURL itemURL;
 
@@ -763,7 +790,7 @@ public class ListManager implements SearchService.DocumentProvider
                 r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 queue.addResource(r);
-                LOG.debug("List \"" + list + "\": Queued indexing of item with PK = " + pk);
+                LOG.debug("List \"{}\": Queued indexing of item with PK = {}", list, pk);
             });
         }
     }
@@ -824,7 +851,7 @@ public class ListManager implements SearchService.DocumentProvider
 
                         attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                         queue.addResource(attachmentRes);
-                        LOG.debug("List \"" + list + "\": Queued indexing of attachment \"" + documentName + "\" for item with PK = " + map.get(list.getKeyName()));
+                        LOG.debug("List \"{}\": Queued indexing of attachment \"{}\" for item with PK = {}", list, documentName, map.get(list.getKeyName()));
                     });
                 });
             });
@@ -888,6 +915,7 @@ public class ListManager implements SearchService.DocumentProvider
                     {
                         body.append(sep);
                         FieldKeyStringExpression template = createBodyTemplate(list, "\"entire list as a single document\" custom indexing template", list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
+                        List<ColumnInfo> arrayColumns = getArrayColumns(ti);
 
                         // All columns, all rows, no filters, no sorts
                         new TableSelector(ti).setJdbcCaching(false).setForDisplay(true).forEachResults(new ForEachBlock<>()
@@ -895,7 +923,7 @@ public class ListManager implements SearchService.DocumentProvider
                             @Override
                             public void exec(Results results) throws StopIteratingException
                             {
-                                body.append(template.eval(results.getFieldKeyRowMap())).append("\n");
+                                body.append(template.eval(flattenArrayValues(results.getFieldKeyRowMap(), arrayColumns))).append("\n");
                                 // Issue 25366: Short circuit for very large list
                                 if (body.length() > fileSizeLimit)
                                 {
@@ -927,7 +955,7 @@ public class ListManager implements SearchService.DocumentProvider
                 };
 
                 queue.addResource(r);
-                LOG.debug("List \"" + list + "\": Queued indexing of entire list document");
+                LOG.debug("List \"{}\": Queued indexing of entire list document", list);
             }
         }
     }
@@ -1057,6 +1085,32 @@ public class ListManager implements SearchService.DocumentProvider
         return template;
     }
 
+    private static List<ColumnInfo> getArrayColumns(TableInfo table)
+    {
+        return table.getColumns().stream().filter(ci -> ci.getJdbcType() == JdbcType.ARRAY).toList();
+    }
+
+    // GitHub Issue 929: search list by MVTC value.
+    private static Map<FieldKey, Object> flattenArrayValues(Map<FieldKey, Object> rowMap, List<ColumnInfo> arrayColumns)
+    {
+        if (arrayColumns.isEmpty())
+            return rowMap;
+
+        Map<FieldKey, Object> flattened = new HashMap<>(rowMap);
+        for (ColumnInfo arrayColumn : arrayColumns)
+        {
+            FieldKey fieldKey = arrayColumn.getFieldKey();
+            Object value = rowMap.get(fieldKey);
+            if (value == null)
+                continue;
+
+            Object converted = arrayColumn.convert(value);
+            if (converted instanceof MultiChoice.Array mca)
+                flattened.put(fieldKey, mca.toString());
+        }
+        return flattened;
+    }
+
 
     // Issue 21726: Perform some simple validation of custom indexing template
     private @Nullable FieldKeyStringExpression createValidStringExpression(String template, StringBuilder error)
@@ -1101,8 +1155,8 @@ public class ListManager implements SearchService.DocumentProvider
             // Using EXISTS query should be reasonably efficient.
             SQLFragment sql = new SQLFragment("SELECT 1 FROM ");
             sql.append(getListTableName(table));
-            sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable());
-            sql.append(" WHERE ListId = ? AND Container = ?)");
+            sql.unsafeAppend(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable());
+            sql.unsafeAppend(" WHERE ListId = ? AND Container = ?)");
             sql.add(list.getListId());
             sql.add(list.getContainer().getEntityId());
 
@@ -1116,13 +1170,13 @@ public class ListManager implements SearchService.DocumentProvider
     {
         // list table does not have an index on listid, so we should include container in the WHERE
         SQLFragment update = new SQLFragment("UPDATE ").append(getListMetadataTable())
-                .append(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
+                .unsafeAppend(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
         new SqlExecutor(getListMetadataSchema()).execute(update);
-        _listDefCache.remove(list.getContainer().getId());
+        _listDefCache.remove(list.getContainer());
         list = ListDefinitionImpl.of(getList(list.getContainer(), list.getListId()));
         long modified = list.getModified().getTime();
         String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
-        LOG.debug("List \"" + list + "\": Set LastIndexed for entire list document" + warning);
+        LOG.debug("List \"{}\": Set LastIndexed for entire list document{}", list, warning);
     }
 
 
@@ -1138,12 +1192,12 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 var keySelectName = keyColumn.getSelectIdentifier();
                 SQLFragment sqlf = new SQLFragment("UPDATE ").appendIdentifier(getListTableName(sti))
-                        .append(" SET LastIndexed = ").appendValue(new Timestamp(ms))
-                        .append(" WHERE ").appendIdentifier(keySelectName).append(" = ?").add(pk);
+                        .unsafeAppend(" SET LastIndexed = ").appendValue(new Timestamp(ms))
+                        .unsafeAppend(" WHERE ").appendIdentifier(keySelectName).unsafeAppend(" = ?").add(pk);
                 new SqlExecutor(sti.getSchema()).execute(sqlf);
             }
             String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
-            LOG.debug("List \"" + list + "\": Set LastIndexed for item with PK = " + pk + warning);
+            LOG.debug("List \"{}\": Set LastIndexed for item with PK = {}{}", list, pk, warning);
         }
     }
 
@@ -1172,7 +1226,7 @@ public class ListManager implements SearchService.DocumentProvider
             Domain domain = list.getDomain();
             if (null != domain && null != domain.getStorageTableName())
             {
-                LOG.info("List " + listDef.getContainerPath() + " - " + listDef.getName() + ": Set to index each item, so clearing last indexed");
+                LOG.info("List {} - {}: Set to index each item, so clearing last indexed", listDef.getContainerPath(), listDef.getName());
                 clearLastIndexed(scope, listSchemaName + "." + domain.getStorageTableName());
             }
         }
@@ -1203,78 +1257,111 @@ public class ListManager implements SearchService.DocumentProvider
 
     void addAuditEvent(ListDefinitionImpl list, User user, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
     {
+        AuditLogService.get().addEvent(user, createAuditEvent(list, c, comment, entityId, oldRecord, newRecord));
+    }
+
+    ListAuditProvider.ListAuditEvent createAuditEvent(ListDefinitionImpl list, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
+    {
         ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(c, comment, list);
 
         event.setListItemEntityId(entityId);
         if (oldRecord != null) event.setOldRecordMap(oldRecord);
         if (newRecord != null) event.setNewRecordMap(newRecord);
 
-        AuditLogService.get().addEvent(user, event);
+        return event;
     }
 
     String formatAuditItem(ListDefinitionImpl list, User user, Map<String, Object> props)
     {
-        String itemRecord = "";
-        TableInfo ti = list.getTable(user);
+        return getAuditItemFormatter(list, user).format(props);
+    }
 
-        if (null != ti)
+    AuditItemFormatter getAuditItemFormatter(ListDefinitionImpl list, User user)
+    {
+        return new AuditItemFormatter(list, user);
+    }
+
+    /**
+     * Builds the audit record map for list rows. Resolve one instance per operation, not per row: the table, the
+     * reserved property names, and the name resolution for a given key are identical for every row of a list.
+     */
+    static class AuditItemFormatter
+    {
+        private final TableInfo _table;
+        private final Domain _domain;
+        private final Set<String> _reserved;
+        private final Map<String, String> _resolvedNames = new CaseInsensitiveHashMap<>();
+
+        AuditItemFormatter(ListDefinitionImpl list, User user)
         {
-            Map<String, Object> recordChangedMap = new CaseInsensitiveHashMap<>();
-            Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain(), user);
+            _table = list.getTable(user);
+            _domain = list.getDomain();
+            _reserved = null == _table ? Set.of() : new CaseInsensitiveHashSet(_domain.getDomainKind().getReservedPropertyNames(_domain, user));
+        }
 
-            // Match props to columns
+        String format(Map<String, Object> props)
+        {
+            if (null == _table)
+                return "";
+
+            Map<String, Object> recordChangedMap = new CaseInsensitiveHashMap<>();
+
             for (Map.Entry<String, Object> entry : props.entrySet())
             {
-                String baseKey = entry.getKey();
+                Object value = entry.getValue();
 
-                boolean isReserved = false;
-                for (String res : reserved)
-                {
-                    if (res.equalsIgnoreCase(baseKey))
-                    {
-                        isReserved = true;
-                        break;
-                    }
-                }
-
-                if (isReserved)
+                if (null == value)
                     continue;
 
-                ColumnInfo col = ti.getColumn(FieldKey.fromParts(baseKey));
-                Object value = entry.getValue();
-                String key = null;
+                String key = resolveName(entry.getKey());
 
-                if (null != col)
-                {
-                    // Found the column
-                    key = col.getName(); // best good
-                }
-                else
-                {
-                    // See if there is a match in the domain properties
-                    for (DomainProperty dp : list.getDomain().getProperties())
-                    {
-                        if (dp.getName().equalsIgnoreCase(baseKey))
-                        {
-                            key = dp.getName(); // middle good
-                        }
-                    }
-
-                    // Try by name
-                    DomainProperty dp = list.getDomain().getPropertyByName(baseKey);
-                    if (null != dp)
-                        key = dp.getName();
-                }
-
-                if (null != key && null != value)
+                if (null != key)
                     recordChangedMap.put(key, value);
             }
 
-            if (!recordChangedMap.isEmpty())
-                itemRecord = ListAuditProvider.encodeForDataMap(recordChangedMap);
+            return recordChangedMap.isEmpty() ? "" : ListAuditProvider.encodeForDataMap(recordChangedMap);
         }
 
-        return itemRecord;
+        /** @return the canonical property name to audit under, or null if the key is reserved or unknown */
+        private String resolveName(String baseKey)
+        {
+            if (_resolvedNames.containsKey(baseKey))
+                return _resolvedNames.get(baseKey);
+
+            String key = computeName(baseKey);
+            _resolvedNames.put(baseKey, key);
+
+            return key;
+        }
+
+        private String computeName(String baseKey)
+        {
+            if (_reserved.contains(baseKey))
+                return null;
+
+            ColumnInfo col = _table.getColumn(FieldKey.fromParts(baseKey));
+
+            if (null != col)
+                return col.getName(); // best good
+
+            String key = null;
+
+            // See if there is a match in the domain properties
+            for (DomainProperty dp : _domain.getProperties())
+            {
+                if (dp.getName().equalsIgnoreCase(baseKey))
+                {
+                    key = dp.getName(); // middle good
+                }
+            }
+
+            // Try by name
+            DomainProperty dp = _domain.getPropertyByName(baseKey);
+            if (null != dp)
+                key = dp.getName();
+
+            return key;
+        }
     }
 
     boolean importListSchema(

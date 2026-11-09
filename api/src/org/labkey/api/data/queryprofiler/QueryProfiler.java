@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.labkey.api.data.queryprofiler;
 
+import datadog.trace.api.interceptor.MutableSpan;
+import io.opentracing.util.GlobalTracer;
 import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
 import org.apache.commons.collections4.map.ReferenceMap;
 import org.apache.commons.lang3.StringUtils;
@@ -24,7 +26,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryLogging;
@@ -44,6 +49,7 @@ import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.TagRecordingSpan;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -62,6 +68,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,6 +85,12 @@ public class QueryProfiler
     private static final int LONG_SQL_LIMIT = 100_000;
     /** How many queries longer than our threshold above to keep around at a time */
     private static final int MAX_LONG_SQL_QUERIES = 5;
+
+    private static final long SLOW_SQL_SPAN_TAG_MS = 1000;
+    // Same hash as the Admin Console's sqlHash parameter, so a trace leads to the query's stack traces and execution plan
+    private static final String SLOW_SQL_HASH_TAG = "labkey.slow_sql.hash";
+    private static final String SLOW_SQL_MS_TAG = "labkey.slow_sql.ms";
+
     private final List<WeakReference<QueryTracker>> _longSqlTextQueries = new ArrayList<>();
 
     private final BlockingQueue<Query> _queue = new LinkedBlockingQueue<>(1000);
@@ -204,6 +217,11 @@ public class QueryProfiler
         _listeners.add(listener);
     }
 
+    public void removeListener(DatabaseQueryListener listener)
+    {
+        _listeners.remove(listener);
+    }
+
     @NotNull
     public Query preTrack(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters,
                           @Nullable StackTraceElement[] stackTrace, boolean requestThread)
@@ -236,13 +254,27 @@ public class QueryProfiler
 
         MiniProfiler.addQuery(elapsed, sql, stackTrace);
 
-        // Don't block if queue is full
         Query query = new Query(scope, sql, parameters, elapsed, stackTrace, requestThread);
+        // dd-trace's spans are MutableSpans, which can report the slowest statement tagged so far
+        if (elapsed >= SLOW_SQL_SPAN_TAG_MS && GlobalTracer.get().activeSpan() instanceof MutableSpan span)
+            tagActiveSpan(span, query);
+
+        // Don't block if queue is full
         if (!_queue.offer(query))
         {
             _droppedQueries++;
         }
         return query;
+    }
+
+    // The driver opens and closes the JDBC span itself, so the enclosing span carries the slowest statement's hash instead
+    private static void tagActiveSpan(MutableSpan span, Query query)
+    {
+        if (span.getTag(SLOW_SQL_MS_TAG) instanceof Number prior && prior.longValue() >= query.getElapsed())
+            return;
+
+        span.setTag(SLOW_SQL_HASH_TAG, HashHelpers.hash(query.getSql()));
+        span.setTag(SLOW_SQL_MS_TAG, query.getElapsed());
     }
 
     public void resetAllStatistics()
@@ -408,13 +440,18 @@ public class QueryProfiler
                 DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');")),
                 DOM.BR(),
                 Arrays.stream(ExecutionPlanType.values()).
-                    filter(tracker::canShowExecutionPlan).
-                    map(type -> DOM.DIV(
-                        LinkBuilder.labkeyLink("Show " + type.getDescription(),
-                            executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
-                        ExecutionPlanType.Actual == type ? DOM.DIV(LinkBuilder.labkeyLink("Log " + type.getDescription() + " to primary site log",
-                            executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
-                    )),
+                    map(type -> {
+                        String unavailableReason = tracker.getExecutionPlanUnavailableReason(type);
+                        if (null != unavailableReason)
+                            return DOM.DIV(DOM.cl("text-muted"), type.getDescription() + " isn't available. " + unavailableReason);
+
+                        return DOM.DIV(
+                            LinkBuilder.labkeyLink("Show " + type.getDescription(),
+                                executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
+                            ExecutionPlanType.Actual == type ? DOM.DIV(LinkBuilder.labkeyLink("Log " + type.getDescription() + " to primary site log",
+                                executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
+                        );
+                    }),
                 DOM.BR(),
                 tracker.renderStackTraces()
             ));
@@ -446,8 +483,9 @@ public class QueryProfiler
             if (null == tracker)
                 return new HtmlView(DOM.P(DOM.cl("labkey-error"), "Error: That query no longer exists"));
 
-            if (!tracker.canShowExecutionPlan(type))
-                throw new NotFoundException("Can't show the \"" + type.name() + "\" execution plan for this query");
+            String unavailableReason = tracker.getExecutionPlanUnavailableReason(type);
+            if (null != unavailableReason)
+                throw new NotFoundException("Can't show the \"" + type.name() + "\" execution plan for this query. " + unavailableReason);
 
             scope = tracker.getScope();
 
@@ -466,7 +504,7 @@ public class QueryProfiler
         {
             // The log option is useful for retrieving actual timing information about very long-running queries when
             // proxy timeouts prevent viewing the plan via the web page
-            LOG.info("An administrator initiated the logging of this query execution plan with actual timing:\n" + sqlWithParameters + fullPlan);
+            LOG.info("An administrator initiated the logging of this query execution plan with actual timing:\n{}{}", sqlWithParameters, fullPlan);
             view = new HtmlView(HtmlString.of("Execution plan with actual timing was logged to the primary site log file"));
         }
         else
@@ -584,7 +622,7 @@ public class QueryProfiler
 
                         if (null == tracker)
                         {
-                            tracker = new QueryTracker(query.getScope(), sql, hash, query.getElapsed(), query.getStackTrace(), query.isValidSql(), query.isTruncated());
+                            tracker = new QueryTracker(query.getScope(), sql, hash, query.getElapsed(), query.getStackTrace(), query.getNormalizationReason(), query.isTruncated());
                             if (sql.length() > LONG_SQL_LIMIT)
                             {
                                 manageLongSql(tracker);
@@ -619,7 +657,7 @@ public class QueryProfiler
             }
             catch (InterruptedException e)
             {
-                LOG.debug(getClass().getSimpleName() + " is terminating due to interruption");
+                LOG.debug("{} is terminating due to interruption", getClass().getSimpleName());
             }
         }
 
@@ -629,7 +667,7 @@ public class QueryProfiler
             {
                 while (_longSqlTextQueries.size() >= MAX_LONG_SQL_QUERIES)
                 {
-                    WeakReference<QueryTracker> ref = _longSqlTextQueries.remove(0);
+                    WeakReference<QueryTracker> ref = _longSqlTextQueries.removeFirst();
                     QueryTracker oldTracker = ref.get();
                     if (oldTracker != null)
                     {
@@ -703,5 +741,78 @@ public class QueryProfiler
     public interface ActionURLFactory
     {
         ActionURL getActionURL(String name);
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static Query query(String sql, long elapsed)
+        {
+            return new Query(null, sql, null, elapsed, null, false);
+        }
+
+        @Test
+        public void testSlowestStatementTagsSpan()
+        {
+            Map<String, Object> tags = new HashMap<>();
+            MutableSpan span = TagRecordingSpan.create(tags);
+
+            Query slow = query("SELECT * FROM core.containers", 2000);
+            tagActiveSpan(span, slow);
+            tagActiveSpan(span, query("SELECT 1", 1500));
+            tagActiveSpan(span, query("SELECT 2", 2000));
+            assertEquals(Map.of(SLOW_SQL_HASH_TAG, HashHelpers.hash(slow.getSql()), SLOW_SQL_MS_TAG, 2000L), tags);
+
+            Query slower = query("SELECT 3", 2500);
+            tagActiveSpan(span, slower);
+            assertEquals(Map.of(SLOW_SQL_HASH_TAG, HashHelpers.hash(slower.getSql()), SLOW_SQL_MS_TAG, 2500L), tags);
+        }
+
+        @Test
+        public void testHashIgnoresGeneratedNames()
+        {
+            Map<String, Object> first = new HashMap<>();
+            Map<String, Object> second = new HashMap<>();
+            tagActiveSpan(TagRecordingSpan.create(first), query("SELECT * FROM temp.tt_lsids$0123456789abcdef0123456789abcdef", 2000));
+            tagActiveSpan(TagRecordingSpan.create(second), query("SELECT * FROM temp.tt_lsids$fedcba9876543210fedcba9876543210", 2000));
+            assertEquals(first.get(SLOW_SQL_HASH_TAG), second.get(SLOW_SQL_HASH_TAG));
+        }
+    }
+
+    public static class ExecutionPlanUnavailableTestCase extends Assert
+    {
+        private static final String UPDATE = "UPDATE core.containers SET Name = ?";
+
+        private static @Nullable String reason(@Nullable DbScope scope, String sql, @Nullable String normalizationReason, boolean truncated, ExecutionPlanType type)
+        {
+            return new QueryTracker(scope, sql, "hash", 0, "", normalizationReason, truncated).getExecutionPlanUnavailableReason(type);
+        }
+
+        private static void assertStartsWith(String expectedPrefix, @Nullable String actual)
+        {
+            assertNotNull(actual);
+            assertTrue(actual, actual.startsWith(expectedPrefix));
+        }
+
+        @Test
+        public void testReasonPrecedence()
+        {
+            DbScope scope = CoreSchema.getInstance().getScope();
+
+            for (ExecutionPlanType type : ExecutionPlanType.values())
+            {
+                // Each case also has every later problem, so a reason checked out of order shows up as the wrong message
+                assertStartsWith("It isn't a SQL statement run against a database connection", reason(null, UPDATE, "Normalized", true, type));
+                assertStartsWith("Its SQL was truncated", reason(scope, UPDATE, "Normalized", true, type));
+                assertEquals("Normalized", reason(scope, UPDATE, "Normalized", false, type));
+
+                if (scope.getSqlDialect().canShowExecutionPlan(type))
+                    assertNull(reason(scope, "SELECT * FROM core.containers", null, false, type));
+            }
+
+            if (scope.getSqlDialect().canShowExecutionPlan(ExecutionPlanType.Actual))
+                assertStartsWith("It's not a SELECT (it starts with UPDATE)", reason(scope, UPDATE, null, false, ExecutionPlanType.Actual));
+            if (scope.getSqlDialect().canShowExecutionPlan(ExecutionPlanType.Estimated))
+                assertNull(reason(scope, UPDATE, null, false, ExecutionPlanType.Estimated));
+        }
     }
 }

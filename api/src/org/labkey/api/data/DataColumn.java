@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -33,7 +33,6 @@ import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM.Renderable;
@@ -53,7 +52,6 @@ import org.labkey.api.util.TextAreaBuilder;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.TypeAheadSelectDisplayColumn;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
 
@@ -77,8 +75,6 @@ import static org.labkey.api.util.DOM.id;
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
 {
-    public static final String EXPERIMENTAL_USE_QUERYSELECT_COMPONENT = "experimental-use-queryselect-component";
-
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;
     private List<FieldKey> _sortFieldKeys;
@@ -189,6 +185,12 @@ public class DataColumn extends DisplayColumn
             return col;
         ColumnInfo display = col.getDisplayField();
         return null==display ? col : display;
+    }
+
+    @Override
+    public void setWithLookup(boolean withLookup)
+    {
+        _displayColumn = withLookup ? getDisplayField(_boundColumn, true) : _boundColumn;
     }
 
     @Override
@@ -684,13 +686,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
-            if (OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_USE_QUERYSELECT_COMPONENT) && !"select.multiple".equalsIgnoreCase(_inputType))
-            {
-                TypeAheadSelectDisplayColumn displayColumn = new TypeAheadSelectDisplayColumn(_boundColumn, null);
-                displayColumn.renderInputHtml(ctx, out, value);
-            }
-            else
-                renderSelectFormInputFromFk(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderSelectFormInputFromFk(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
@@ -712,7 +708,7 @@ public class DataColumn extends DisplayColumn
             }
             else
             {
-                IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
+                PropertyValidatorDef textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
                 if (textChoiceValidator != null)
                     renderTextChoiceFormInput(out, formFieldName, value, toListForRender(strVal), disabledInput, textChoiceValidator);
                 else
@@ -756,7 +752,7 @@ public class DataColumn extends DisplayColumn
             options.add(new OptionBuilder().build());
 
         Set<String> selectedValues = strValues.isEmpty() ? Set.of() :
-                strValues.size()==1 ? (null == strValues.get(0) ? Set.of() : Set.of(strValues.get(0))) :
+                strValues.size()==1 ? (null == strValues.getFirst() ? Set.of() : Set.of(strValues.getFirst())) :
                 new HashSet<>(strValues);
         for (NamedObject entry : entryList)
         {
@@ -791,7 +787,7 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(out, formFieldName, value);
     }
 
-    protected void renderTextChoiceFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, IPropertyValidator textChoiceValidator)
+    protected void renderTextChoiceFormInput(HtmlWriter out, String formFieldName, Object value, List<String> strValues, boolean disabledInput, PropertyValidatorDef textChoiceValidator)
     {
         LinkedHashSet<String> choices = new LinkedHashSet<>(PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator));
 
@@ -1012,7 +1008,7 @@ public class DataColumn extends DisplayColumn
                         {
                             helpLines.add(HtmlString.of("Description: " + _boundColumn.getDescription()));
                         }
-                        for (IPropertyValidator validator : _boundColumn.getValidators())
+                        for (PropertyValidatorDef validator : _boundColumn.getValidators())
                             helpLines.add(HtmlString.of("Validator: " + validator));
                         if (renderRequiredIndicators() && _boundColumn.isRequired() && !_boundColumn.isBooleanType())
                         {

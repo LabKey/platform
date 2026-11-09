@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class JMSMessageToPipelineJob extends AbstractEventAwareTransformer
         String xml = (String) getJMSTransformer().doTransform(src, encoding);
         PipelineJob result = PipelineJob.deserializeJob(xml);
         if (null != result)
-            LOG.debug("Transformed XML to job: " + result);
+            LOG.debug("Transformed XML to job: {}", result);
         return result;
     }
 

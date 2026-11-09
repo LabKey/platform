@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,8 @@ public interface StudyService
      */
     @Nullable
     Study getStudy(Container container);
+
+    boolean isDataspace(Container container);
 
     Study createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets);
 
@@ -204,7 +206,7 @@ public interface StudyService
     // Do any of the tables that study manages reference this location?
     boolean isLocationInUse(Location loc);
 
-    void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists);
+    void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, SQLFragment exists);
 
     interface StudyTabProvider
     {

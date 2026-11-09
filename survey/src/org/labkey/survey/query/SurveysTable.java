@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,10 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.survey.model.Survey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.survey.SurveyController;
 import org.labkey.survey.SurveyManager;
+import org.labkey.survey.model.Survey;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -203,7 +203,7 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             List<Throwable> errors = SurveyManager.get().fireBeforeDeleteSurvey(c, user, survey);
             if (!errors.isEmpty())
-                throw new QueryUpdateServiceException(errors.get(0).getMessage());
+                throw new QueryUpdateServiceException(errors.getFirst().getMessage());
 
             Map<String, Object> row = super.deleteRow(user, c, oldRowMap);
 

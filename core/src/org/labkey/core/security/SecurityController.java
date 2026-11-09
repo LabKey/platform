@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2003-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.graphper.api.Graphviz;
 import org.graphper.draw.ExecuteException;
@@ -26,6 +27,8 @@ import org.graphper.parser.DotParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -42,11 +45,14 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportPermission;
+import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider.GroupAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -96,6 +102,7 @@ import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -115,19 +122,25 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.EditorWithoutDeleteRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HtmlView;
@@ -140,10 +153,14 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.core.admin.importer.SecurityGroupImporterFactory;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.user.SecurityAccessView;
 import org.labkey.core.user.UserController;
 import org.labkey.core.user.UserController.AccessDetailRow;
+import org.labkey.folder.xml.FolderDocument;
+import org.labkey.security.xml.GroupEnumType;
+import org.labkey.security.xml.GroupType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -152,6 +169,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -164,8 +182,12 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.at;
 
 public class SecurityController extends SpringActionController
 {
@@ -749,7 +771,6 @@ public class SecurityController extends SpringActionController
         @Override
         public boolean handlePost(UpdateMembersForm form, BindException errors) throws Exception
         {
-            // 0 - only site admins can modify members of system groups
             // 1 - only site admins can modify groups that are assigned a privileged role
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
@@ -763,7 +784,7 @@ public class SecurityController extends SpringActionController
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, container));
 
-            verifyUserCanModifyGroup(_group, getUser());
+            verifyUserCanModifyGroup(_group, getContainer(), getUser());
 
             _messages = new ArrayList<>();
 
@@ -906,18 +927,18 @@ public class SecurityController extends SpringActionController
     /**
      * Throws UnauthorizedException if user is not allowed to modify this group
      * @param group the Group being modified
+     * @param c the current container, which must own the group
      * @param user the current admin user
      */
-    public static void verifyUserCanModifyGroup(Group group, User user)
+    public static void verifyUserCanModifyGroup(Group group, Container c, User user)
     {
-        if (!user.hasSiteAdminPermission())
-        {
-            if (group.isSystemGroup())
-                throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+        ensureGroupInContainer(group, c);
 
-            if (group.hasPrivilegedRole())
-                throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + group.getName());
-        }
+        if (group.isSystemGroup())
+            throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+
+        if (!user.hasSiteAdminPermission() && group.hasPrivilegedRole())
+            throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + group.getName());
     }
 
     public static class CompleteMemberForm
@@ -1706,7 +1727,7 @@ public class SecurityController extends SpringActionController
 
             // We already have a spring error if targetUser parameter is blank
             if (!errors.hasErrors() && null == form.getTargetUserObject())
-                errors.reject(ERROR_MSG, "Unknown target user");
+                throw new NotFoundException("Unknown target user");
 
             return new JspView<>("/org/labkey/core/security/clonePermissions.jsp", form, errors);
         }
@@ -1783,12 +1804,47 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private abstract static class AbstractEmailAction extends SimpleViewAction<UserForm>
+    // Only a token hash is stored, so GET shows the email with the link masked; site admins can POST to replace the token and see the new link
+    private abstract static class AbstractEmailAction extends FormViewAction<UserForm>
     {
+        private String _verification = null;
+
         protected abstract SecurityMessage createMessage(UserForm form);
+        protected abstract @NotNull Duration getLinkTimeout();
 
         @Override
-        public ModelAndView getView(UserForm form, BindException errors) throws Exception
+        public void validateCommand(UserForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(UserForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return renderEmail(form);
+        }
+
+        @Override
+        public boolean handlePost(UserForm form, BindException errors) throws Exception
+        {
+            User affectedUser = form.getUser(true);
+            SecurityMessage message = createMessage(form); // permission check
+            if (!getUser().hasSiteAdminPermission())
+                throw new UnauthorizedException();
+            if (!LoginManager.isVerified(affectedUser))
+            {
+                _verification = LoginManager.createVerification(affectedUser, getLinkTimeout());
+                UserManager.addToUserHistory(affectedUser, getUser().getEmail() + " generated a new link for the " + message.getType().toLowerCase() + ".");
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(UserForm form)
+        {
+            return null;
+        }
+
+        private ModelAndView renderEmail(UserForm form) throws Exception
         {
             Writer out = getViewContext().getResponse().getWriter();
             User affectedUser = form.getUser();
@@ -1799,8 +1855,6 @@ public class SecurityController extends SpringActionController
             else
             {
                 SecurityMessage message = createMessage(form);
-
-                // Issue 33254: only allow Site Admins to see the verification token
                 message.setMaskToken(true);
 
                 if (LoginManager.isVerified(affectedUser))
@@ -1809,9 +1863,15 @@ public class SecurityController extends SpringActionController
                 }
                 else
                 {
-                    String verification = LoginManager.getVerification(affectedUser);
-                    ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), affectedUser, verification, null);
-                    SecurityManager.renderEmail(getContainer(), getUser(), message, affectedUser.getEmail(), verificationURL, out);
+                    ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), affectedUser, null != _verification ? _verification : "**********", null);
+                    SecurityManager.renderEmail(getContainer(), getUser(), message, affectedUser.getEmail(), verificationURL, getLinkTimeout(), out);
+
+                    if (null == _verification && getUser().hasSiteAdminPermission())
+                    {
+                        out.write(DOM.createHtml(DOM.LK.FORM(at(method, "POST"),
+                            DOM.P("To get a usable link, generate a new one. The link already sent will stop working."),
+                            DOM.BUTTON(at(type, "submit"), "Generate New Link"))).toString()); // No page template, so no script for a LabKey button
+                    }
                 }
             }
 
@@ -1841,6 +1901,12 @@ public class SecurityController extends SpringActionController
             }
             return SecurityManager.getRegistrationMessage(form.getMailPrefix(), false);
         }
+
+        @Override
+        protected @NotNull Duration getLinkTimeout()
+        {
+            return LoginManager.SETUP_LINK_TIMEOUT;
+        }
     }
 
 
@@ -1851,6 +1917,12 @@ public class SecurityController extends SpringActionController
         protected SecurityMessage createMessage(UserForm form)
         {
             return SecurityManager.getResetMessage(false);
+        }
+
+        @Override
+        protected @NotNull Duration getLinkTimeout()
+        {
+            return LoginManager.RESET_LINK_TIMEOUT;
         }
     }
 
@@ -2032,7 +2104,7 @@ public class SecurityController extends SpringActionController
             String ldapDetails = formConfigs.stream()
                 .filter(ac->null != ac.getDomain())
                 .filter(ac->!AuthenticationManager.ALL_DOMAINS.equals(ac.getDomain()))
-                .filter(ac->StringUtils.endsWithIgnoreCase(emailAddress, "@" + ac.getDomain()))
+                .filter(ac->Strings.CI.endsWith(emailAddress, "@" + ac.getDomain()))
                 .map(AuthenticationConfiguration::getDescription)
                 .collect(Collectors.joining(", "));
             if (!ldapDetails.isBlank())
@@ -2288,10 +2360,38 @@ public class SecurityController extends SpringActionController
         }
     }
 
+    record RestrictionRole(Class<? extends Role> roleClass)
+    {
+        String displayName()
+        {
+            return RoleManager.getRole(roleClass).getDisplayName();
+        }
+    }
+
+    private static final Map<String, RestrictionRole> RESTRICTION_ROLE_MAP = Stream.of(
+        ReaderRole.class,
+        AuthorRole.class,
+        EditorWithoutDeleteRole.class,
+        EditorRole.class
+    ).collect(LabKeyCollectors.toLinkedMap(Class::getName, RestrictionRole::new));
+
+    @RequiresLogin
+    public static class GetApiKeyRolesAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return RESTRICTION_ROLE_MAP.entrySet().stream()
+                .map(e -> new JSONObject(Map.of("uniqueName", e.getKey(), "displayName", e.getValue().displayName())))
+                .collect(LabKeyCollectors.toJSONArray());
+        }
+    }
+
     public static class CreateApiKeyForm
     {
         private String _type;
         private String _description;
+        private String _role;
 
         public String getType()
         {
@@ -2314,6 +2414,16 @@ public class SecurityController extends SpringActionController
         {
             _description = description;
         }
+
+        public String getRole()
+        {
+            return _role;
+        }
+
+        public void setRole(String role)
+        {
+            _role = role;
+        }
     }
 
     @RequiresLogin
@@ -2330,7 +2440,16 @@ public class SecurityController extends SpringActionController
                     if (!AppProps.getInstance().isAllowApiKeys())
                         throw new NotFoundException("Creation of API keys is disabled");
 
-                    apiKey = ApiKeyManager.get().createKey(getUser(), form.getDescription());
+                    RestrictionRole rr = null;
+
+                    if (form.getRole() != null)
+                    {
+                        rr = RESTRICTION_ROLE_MAP.get(form.getRole());
+                        if (rr == null)
+                            throw new NotFoundException("Restriction role was not found.");
+                    }
+
+                    apiKey = ApiKeyManager.get().createKey(getUser(), form.getDescription(), rr != null ? rr.roleClass() : null);
                     break;
                 case "session":
                     if (!AppProps.getInstance().isAllowSessionKeys())
@@ -2365,29 +2484,29 @@ public class SecurityController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                    new CompleteUserReadAction()
+                new CompleteUserReadAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                    new PermissionsAction(),
-                    new StandardDeleteGroupAction(),
+                new PermissionsAction(),
+                new StandardDeleteGroupAction(),
                 controller.new GroupAction(),
-                    new CompleteMemberAction(),
-                    new CompleteUserAction(),
-                    new GroupExportAction(),
-                    new GroupPermissionAction(),
-                    new UpdatePermissionsAction(),
-                    new ShowRegistrationEmailAction(),
-                    new GroupDiagramAction(),
-                    new FolderAccessAction()
+                new CompleteMemberAction(),
+                new CompleteUserAction(),
+                new GroupExportAction(),
+                new GroupPermissionAction(),
+                new UpdatePermissionsAction(),
+                new ShowRegistrationEmailAction(),
+                new GroupDiagramAction(),
+                new FolderAccessAction()
             );
 
             // @RequiresPermission(UserManagementPermission.class)
             assertForUserPermissions(user,
                 controller.new AddUsersAction(),
-                    new ShowResetEmailAction(),
-                    new AdminResetPasswordAction()
+                new ShowResetEmailAction(),
+                new AdminResetPasswordAction()
             );
         }
 
@@ -2424,6 +2543,115 @@ public class SecurityController extends SpringActionController
                 FolderExportPermission.class,
                 QCAnalystPermission.class
             );
+        }
+    }
+
+    /**
+     * GH Issue 1695 regression tests.
+     */
+    public static class GroupMembershipScopingTestCase extends AbstractContainerScopingTest
+    {
+        // ProjectAdminRole only applies to projects, so these fixtures are projects rather than /_junit children
+        private static final String PROJECT_NAME = "GroupMembershipScopingProject";
+        private static final String SITE_GROUP_NAME = "GroupMembershipScopingSiteGroup";
+
+        private Container _project;
+        private Group _siteGroup;
+        private User _siteGroupMember;
+        private User _projectAdmin;
+
+        @Before
+        public void setup() throws Exception
+        {
+            cleanup();
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, getAdmin());
+            _siteGroup = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_NAME, getAdmin());
+            _siteGroupMember = createUserInRole(_project, ReaderRole.class);
+            SecurityManager.addMember(_siteGroup, _siteGroupMember);
+            _projectAdmin = createUserInRole(_project, ProjectAdminRole.class);
+        }
+
+        @After
+        public void cleanup()
+        {
+            Container project = ContainerManager.getForPath("/" + PROJECT_NAME);
+            if (project != null)
+                ContainerManager.deleteAll(project, getAdmin());
+
+            Integer siteGroupId = SecurityManager.getGroupId(null, SITE_GROUP_NAME, false);
+            if (siteGroupId != null)
+                SecurityManager.deleteGroup(SecurityManager.getGroup(siteGroupId), getAdmin());
+        }
+
+        @Test
+        public void projectAdminCannotJoinSiteGroup() throws Exception
+        {
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(addMemberUrl(_project, _siteGroup, _projectAdmin), _projectAdmin));
+            assertFalse(isMember(_siteGroup, _projectAdmin));
+
+            // Positive control: a site admin can change the site group's membership from the root
+            assertStatus(HttpServletResponse.SC_FOUND, post(addMemberUrl(ContainerManager.getRoot(), _siteGroup, _projectAdmin), getAdmin()));
+            assertTrue(isMember(_siteGroup, _projectAdmin));
+        }
+
+        @Test
+        public void subfolderAdminCannotModifyProjectGroup() throws Exception
+        {
+            Container subfolder = ContainerManager.createContainer(_project, "sub", getAdmin());
+            User subfolderAdmin = createUserInRole(subfolder, FolderAdminRole.class);
+            Group projectGroup = SecurityManager.createGroup(_project, "ProjectGroup", getAdmin());
+
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(addMemberUrl(subfolder, projectGroup, subfolderAdmin), subfolderAdmin));
+            assertFalse(isMember(projectGroup, subfolderAdmin));
+
+            // Positive control: the project admin can change the project group's membership from the project
+            assertStatus(HttpServletResponse.SC_FOUND, post(addMemberUrl(_project, projectGroup, subfolderAdmin), _projectAdmin));
+            assertTrue(isMember(projectGroup, subfolderAdmin));
+        }
+
+        @Test
+        public void siteAdminCannotModifySystemGroups() throws Exception
+        {
+            Group siteUsers = SecurityManager.getGroup(Group.groupUsers);
+            ActionURL url = new ActionURL(GroupAction.class, ContainerManager.getRoot())
+                .addParameter("id", siteUsers.getUserId())
+                .addParameter("delete", _siteGroupMember.getEmail());
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, getAdmin()));
+
+            assertThrows(IllegalArgumentException.class, () -> SecurityManager.deleteMember(siteUsers, _siteGroupMember));
+        }
+
+        @Test
+        public void folderImportCannotTargetSiteGroup() throws Exception
+        {
+            FolderDocument doc = FolderDocument.Factory.newInstance();
+            GroupType xmlGroup = doc.addNewFolder().addNewGroups().addNewGroup();
+            xmlGroup.setName(SITE_GROUP_NAME);
+            xmlGroup.setType(GroupEnumType.SITE);
+            xmlGroup.addNewUsers().addNewUser().setName(_projectAdmin.getEmail());
+
+            FolderImportContext ctx = new FolderImportContext(_projectAdmin, _project, doc, null,
+                new StaticLoggerGetter(LogHelper.getLogger(GroupMembershipScopingTestCase.class, "Folder import test")), null);
+            new SecurityGroupImporterFactory.SecurityGroupImporter().process(null, ctx, null);
+
+            assertTrue(isMember(_siteGroup, _siteGroupMember));
+            assertFalse(isMember(_siteGroup, _projectAdmin));
+
+            // The archive's group lands as a project group of the same name instead
+            Group projectGroup = SecurityManager.getGroup(SecurityManager.getGroupId(_project, SITE_GROUP_NAME));
+            assertTrue(isMember(projectGroup, _projectAdmin));
+        }
+
+        private ActionURL addMemberUrl(Container c, Group group, User newMember)
+        {
+            return new ActionURL(GroupAction.class, c)
+                .addParameter("id", group.getUserId())
+                .addParameter("names", newMember.getEmail());
+        }
+
+        private boolean isMember(Group group, User user)
+        {
+            return SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS).contains(user);
         }
     }
 }

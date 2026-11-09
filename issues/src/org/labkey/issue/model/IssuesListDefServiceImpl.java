@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,11 +241,11 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         {
             Domain domain = issueListDef.getDomain(user, forUpdate);
             if (domain == null)
-                LOG.warn("Unable to find the domain for issue list definition id: " + issueDefId + " and container: " + container);
+                LOG.warn("Unable to find the domain for issue list definition id: {} and container: {}", issueDefId, container);
             return domain;
         }
         else
-            LOG.warn("Unable to find the issue list definition for id: " + issueDefId + " and container: " + container);
+            LOG.warn("Unable to find the issue list definition for id: {} and container: {}", issueDefId, container);
 
         return null;
     }

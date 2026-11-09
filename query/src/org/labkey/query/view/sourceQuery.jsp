@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@
     boolean canEdit = queryDef.canEdit(getUser());
     boolean canEditMetadata = queryDef.canEditMetadata(getUser());
     boolean canDelete = queryDef.canDelete(getUser());
-    boolean isChatReady = canEdit && McpService.get().isReady();
+    boolean isChatReady = false && canEdit && McpService.get().isAIFeaturesReady();
 %>
 <style type="text/css">
 
@@ -388,10 +388,15 @@
             addChatItem(chatItem);
         }
 
+        let firstChat = true;
+        let conversationId;
+
         async function queryAgent(prompt) {
             return new Promise((resolve, reject) => {
                 LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('query', 'queryagent.api', undefined, { prompt: prompt }),
+                    url: LABKEY.ActionURL.buildURL('query', 'queryAgent.api'),
+                    method: 'POST',
+                    jsonData: { conversationId, prompt },
                     success: LABKEY.Utils.getCallbackWrapper(response => {
                         resolve(response);
                     }),
@@ -401,8 +406,6 @@
                 });
             });
         }
-
-        let firstChat = true;
 
         function initialPrompt() {
             if (!firstChat)
@@ -445,6 +448,7 @@
                 startLoading();
 
                 const response = await queryAgent(initialPrompt() + prompt);
+                conversationId = response.conversationId;
 
                 if (response.sql) {
                     Ext4.getCmp('qep').getSourceEditor().setValue(response.sql);

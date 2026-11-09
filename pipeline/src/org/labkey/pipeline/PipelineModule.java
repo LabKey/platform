@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,9 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
@@ -71,6 +74,7 @@ import org.labkey.pipeline.analysis.ProtocolManagementWebPart;
 import org.labkey.pipeline.api.CommandLineTokenizer;
 import org.labkey.pipeline.api.ExecTaskFactory;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
+import org.labkey.pipeline.api.PipelineJacksonTyping;
 import org.labkey.pipeline.api.PipelineJobMarshaller;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineManager;
@@ -89,6 +93,7 @@ import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.RemoteServerStartup;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
+import org.labkey.pipeline.mule.transformers.PipelineXStreamSecurity;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.trigger.PipelineTriggerRegistryImpl;
 import org.labkey.pipeline.validators.PipelineSetupValidatorFactory;
@@ -206,6 +211,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         StatusController.registerAdminConsoleLinks();
         WebdavService.get().addProvider(new PipelineWebdavProvider());
 
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(PipelineJacksonTyping.FEATUREFLAG_DISABLE_JOB_TYPE_ALLOWLIST,
+            "Disable pipeline deserialization type allowlists",
+            "Reverts both pipeline deserialization channels to their historical unrestricted behavior: JSON jobs to unrestricted Jackson default typing, and the XStream JMS status channel to AnyTypePermission. Enable only as a temporary escape hatch if an allowlist rejects a legitimate type.", false, true, FeatureType.Deprecated));
+
         if (null != FileContentService.get())
             FileContentService.get().addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
         SiteValidationService svc = SiteValidationService.get();
@@ -216,49 +225,52 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
 
-        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
+        UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> {
             DbSchema pipelineSchema =  PipelineSchema.getInstance().getSchema();
             SqlDialect dialect = PipelineSchema.getInstance().getSchema().getSqlDialect();
-            Map<String, Object> result = new HashMap<>();
 
-            Map<String, Long> jobCounts = new HashMap<>();
-            SQLFragment jobSQL = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
-            jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
-            jobSQL.append(" GROUP BY Provider");
+            metrics.put("jobCounts", () -> {
+                Map<String, Long> jobCounts = new HashMap<>();
+                SQLFragment jobSQL = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
+                jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+                jobSQL.unsafeAppend(" GROUP BY Provider");
 
-            new SqlSelector(pipelineSchema, jobSQL).forEach(rs ->
-                    jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
-            result.put("jobCounts", jobCounts);
+                new SqlSelector(pipelineSchema, jobSQL).forEach(rs ->
+                        jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
+                return jobCounts;
+            }, "Pipeline jobs in the job status table across all containers, by provider; Unknown if no provider; jobs whose status rows were deleted aren't counted");
 
-            Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
-            SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).append(" THEN 1 ELSE 0 END) AS Enabled, ");
-            triggerSQL.append("SUM(CASE WHEN Enabled != ").appendValue(true,dialect).append(" THEN 1 ELSE 0 END) AS Disabled, ");
-            triggerSQL.append("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
-            triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");
-            triggerSQL.append(" LEFT OUTER JOIN \n");
-            triggerSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
-            triggerSQL.append(" ON tc.PipelineId = sf.TaskPipelineId\n");
-            triggerSQL.append(" GROUP BY PipelineId");
+            metrics.put("triggerCounts", () -> {
+                Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
+                SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Enabled, ");
+                triggerSQL.unsafeAppend("SUM(CASE WHEN Enabled != ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Disabled, ");
+                triggerSQL.unsafeAppend("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
+                triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");
+                triggerSQL.unsafeAppend(" LEFT OUTER JOIN \n");
+                triggerSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+                triggerSQL.unsafeAppend(" ON tc.PipelineId = sf.TaskPipelineId\n");
+                triggerSQL.unsafeAppend(" GROUP BY PipelineId");
 
-            new SqlSelector(pipelineSchema, triggerSQL).forEach((rs) ->
-                {
-                    String pipelineId = rs.getString("PipelineId");
-                    if (pipelineId.contains(":"))
+                new SqlSelector(pipelineSchema, triggerSQL).forEach((rs) ->
                     {
-                        pipelineId = pipelineId.split(":")[1];
-                    }
-                    Map<String, Long> m = triggerCounts.computeIfAbsent(pipelineId, x -> new HashMap<>());
-                    m.put("Enabled", rs.getLong("Enabled"));
-                    m.put("Disabled", rs.getLong("Disabled"));
-                    m.put("Jobs", rs.getLong("Jobs"));
-                });
-            result.put("triggerCounts", triggerCounts);
-            result.put("jmsType", PipelineService.get().getJmsType().toString());
+                        String pipelineId = rs.getString("PipelineId");
+                        if (pipelineId.contains(":"))
+                        {
+                            pipelineId = pipelineId.split(":")[1];
+                        }
+                        Map<String, Long> m = triggerCounts.computeIfAbsent(pipelineId, x -> new HashMap<>());
+                        m.put("Enabled", rs.getLong("Enabled"));
+                        m.put("Disabled", rs.getLong("Disabled"));
+                        m.put("Jobs", rs.getLong("Jobs"));
+                    });
+                return triggerCounts;
+            }, "Pipeline trigger configurations across all containers, by task pipeline: Enabled, Disabled, and Jobs run by that pipeline; computed over config-job join rows, so Enabled/Disabled are inflated when jobs exist");
+            metrics.put("jmsType", () -> PipelineService.get().getJmsType().toString(),"JMS queue type for pipeline jobs: none, inProcess, external, or unknown");
 
-            result.put("pipelineRootCount", PipelineService.get().getAllPipelineRoots().size());
-            result.put("supplementalDirectories", new TableSelector(PipelineSchema.getInstance().getTableInfoPipelineRoots(), new SimpleFilter("SupplementalPath", null, CompareType.NONBLANK), null).getRowCount());
+            metrics.put("pipelineRootCount", () -> PipelineService.get().getAllPipelineRoots().size(), "Containers with an explicitly configured primary pipeline root");
+            metrics.put("supplementalDirectories", () -> new TableSelector(PipelineSchema.getInstance().getTableInfoPipelineRoots(), new SimpleFilter("SupplementalPath", null, CompareType.NONBLANK), null).getRowCount(), "Configured pipeline roots that have a supplemental directory");
 
-            return result;
+            return metrics;
         });
     }
 
@@ -308,6 +320,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PipelineQueueImpl.TestCase.class,
             PipelineServiceImpl.TestCase.class,
             StatusController.TestCase.class,
+            StatusController.ContainerScopingTestCase.class,
+            PipelineController.ContainerScopingTestCase.class,
             ClusterStartup.TestCase.class
         );
     }
@@ -321,7 +335,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PathMapperImpl.TestCase.class,
             PipelineCommandTestCase.class,
             PipelineJobMarshaller.TestCase.class,
-            PipelineJobServiceImpl.TestCase.class
+            PipelineJacksonTyping.TestCase.class,
+            PipelineJobServiceImpl.TestCase.class,
+            PipelineXStreamSecurity.TestCase.class
         );
     }
 
@@ -399,7 +415,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             }
             catch (RuntimeSQLException e)
             {
-                _log.error("Unable to move job into error - " + incompleteFile.getFilePath(), e);
+                _log.error("Unable to move job into error - {}", incompleteFile.getFilePath(), e);
             }
         }
     }

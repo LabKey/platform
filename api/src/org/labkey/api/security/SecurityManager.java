@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,9 @@ import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -55,7 +56,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -90,7 +90,9 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
@@ -105,12 +107,14 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -130,6 +134,7 @@ import java.beans.PropertyChangeListener;
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -144,10 +149,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.security.PermissionsRestrictedUser.ALLOWED_PERMISSIONS_KEY;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
@@ -173,6 +180,10 @@ public class SecurityManager
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
+    /** GH Issue 1489: gates acceptance of the deprecated TRANSFORM_SESSION_ID cookie; default off */
+    public static final String FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID = "AllowTransformSessionIdAuth";
+    public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER = "AllowApiKeyParameter";
+    public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION = "Allow authentication via 'apikey' URL parameter";
     public static final String API_KEY = "apikey";
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
@@ -202,29 +213,32 @@ public class SecurityManager
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () -> {
-            MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
-            Set<Role> siteRoles = RoleManager.getSiteRoles();
-            for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
-            {
-                Role role = assignment.getRole();
-                if (siteRoles.contains(role))
+        return metrics -> {
+            Supplier<Map<String, Integer>> supplier = () -> {
+                MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
+                Set<Role> siteRoles = RoleManager.getSiteRoles();
+                for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
                 {
-                    UserPrincipal principal = getPrincipal(assignment.getUserId());
-                    if (principal != null && principal.isActive())
+                    Role role = assignment.getRole();
+                    if (siteRoles.contains(role))
                     {
-                        switch (principal.getPrincipalType())
+                        UserPrincipal principal = getPrincipal(assignment.getUserId());
+                        if (principal != null && principal.isActive())
                         {
-                            case USER -> mvm.put(role, principal);
-                            case GROUP -> mvm.putAll(role, getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS));
+                            switch (principal.getPrincipalType())
+                            {
+                                case USER -> mvm.put(role, principal);
+                                case GROUP ->
+                                        mvm.putAll(role, getAllGroupMembers((Group) principal, MemberType.ACTIVE_USERS));
+                            }
                         }
                     }
                 }
-            }
-            Map<String, Integer> roleCounts = mvm.keySet().stream()
-                .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
+                return mvm.keySet().stream()
+                    .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
+            };
 
-            return Map.of("SiteRoleUserCounts", roleCounts);
+            return metrics.put("SiteRoleUserCounts", supplier, "Active users holding each site-level role, directly or through group membership");
         };
     }
 
@@ -237,12 +251,12 @@ public class SecurityManager
         if (StringUtils.trimToNull(serviceURL) == null)
         {
             ContentSecurityPolicyFilter.unregisterAllowedSources(key, Directive.Connection);
-            LOG.trace(String.format("Unregistered [%1$s] as an allowed connection source", key));
+            LOG.trace("Unregistered [{}] as an allowed connection source", key);
             return;
         }
 
         ContentSecurityPolicyFilter.registerAllowedSources(key, Directive.Connection, serviceURL);
-        LOG.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
+        LOG.trace("Registered [{}] as an allowed connection source", serviceURL);
     }
 
     public enum PermissionTypes
@@ -416,11 +430,19 @@ public class SecurityManager
         }
     }
 
-    private static @Nullable Pair<String, String> getBasicCredentials(HttpServletRequest request)
+    private record Credentials(String username, String password, boolean shouldSetSessionCookie)
+    {
+        Credentials(String username, String password)
+        {
+            this(username, password, true);
+        }
+    }
+
+    private static @Nullable Credentials getBasicCredentials(HttpServletRequest request)
     {
         // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
         String authorization = request.getHeader("Authorization");
-        Pair<String, String> ret = null;
+        Credentials ret = null;
 
         if (null != authorization && authorization.startsWith("Basic"))
         {
@@ -433,21 +455,21 @@ public class SecurityManager
             String username = auth.substring(0, colon);
             String password = auth.substring(colon+1);
 
-            ret = new Pair<>(username, password);
+            ret = new Credentials(username, password);
         }
 
         return ret;
     }
 
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-    private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Pair<String, String> basicCredentials)
+    private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Credentials basicCredentials)
     {
         try
         {
-            String rawEmail = basicCredentials.getKey();
-            String password = basicCredentials.getValue();
+            String rawEmail = basicCredentials.username();
+            String password = basicCredentials.password();
             if (rawEmail.equalsIgnoreCase("guest"))
-                return User.guest;
+                return AuthFilter.getGuestUser();
 
             return AuthenticationManager.authenticate(request, rawEmail, password);
         }
@@ -517,37 +539,44 @@ public class SecurityManager
 
                 if (null != factory)
                 {
-                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                    sessionUser.setPermissionsContext(factory.getImpersonationContext());
                 }
+
+                //noinspection unchecked
+                Set<Class<? extends Permission>> allowedPermissions = (Set<Class<? extends Permission>>) session.getAttribute(ALLOWED_PERMISSIONS_KEY);
+                if (allowedPermissions != null)
+                    sessionUser = new PermissionsRestrictedUser(sessionUser, allowedPermissions);
             }
         }
 
         return sessionUser;
     }
 
-    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
+    public record AuthenticationAttempt(User user, HttpServletRequest request) {}
+
+    public static @Nullable AuthenticationAttempt attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
     {
-        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\"");
+        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"{}\"", request.getRequestURI());
 
         // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
         // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
-        @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
-        AUTH_LOG.debug("   " + (null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character password"));
+        @Nullable Credentials basicCredentials = getBasicCredentials(request);
+        AUTH_LOG.debug("   {}", null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.username() + " and " + basicCredentials.password().length() + " character password");
 
         if (null == basicCredentials)
         {
             basicCredentials = getApiKey(request);
-            AUTH_LOG.debug("   " + (null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character key"));
+            AUTH_LOG.debug("   {}", null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.username() + " and " + basicCredentials.password().length() + " character key");
         }
 
         // Handle session API key early, if present and valid
         if (basicCredentials != null)
         {
-            String username = basicCredentials.first;
+            String username = basicCredentials.username();
 
             if (API_KEY.equals(username))
             {
-                String apiKey = basicCredentials.second;
+                String apiKey = basicCredentials.password();
                 HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
 
                 if (null != session)
@@ -556,9 +585,16 @@ public class SecurityManager
                     String sessionId = PageFlowUtil.getCookieValue(request.getCookies(), JSESSIONID, null);
                     if (!session.getId().equals(sessionId))
                     {
-                        Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
-                        sessionCookie.setPath("/");
-                        response.addCookie(sessionCookie);
+                        // A URL can be planted in a victim's browser, so a URL parameter key must not set the session cookie
+                        if (basicCredentials.shouldSetSessionCookie())
+                        {
+                            Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
+                            sessionCookie.setPath("/");
+                            sessionCookie.setHttpOnly(true);
+                            if (AppProps.getInstance().isSSLRequired() || request.isSecure())
+                                sessionCookie.setSecure(true);
+                            response.addCookie(sessionCookie);
+                        }
                         request = new SessionReplacingRequest(request, session);
                     }
                 }
@@ -579,11 +615,11 @@ public class SecurityManager
 
             if (null != sessionUser)
             {
-                AUTH_LOG.debug("   Session user present: " + sessionUser);
+                AUTH_LOG.debug("   Session user present: {}", sessionUser);
 
                 if (!sessionUser.isImpersonated() && "true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
-                    sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
+                    sessionUser.setPermissionsContext(DisallowPrivilegedRolesContext.get());
                 }
 
                 HttpSession session = request.getSession(false);
@@ -627,10 +663,10 @@ public class SecurityManager
                 u = authenticateBasic(request, basicCredentials);
                 if (null != u)
                 {
-                    AUTH_LOG.debug("   Basic authentication succeeded: " + u);
+                    AUTH_LOG.debug("   Basic authentication succeeded: {}", u);
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
                     // accept Guest as valid credentials from authenticateBasic()
-                    return new Pair<>(u, request);
+                    return new AuthenticationAttempt(u, request);
                 }
                 else
                 {
@@ -644,26 +680,29 @@ public class SecurityManager
 //            u = AuthenticationManager.attemptRequestAuthentication(request);
 //        }
 
-            return null == u || u.isGuest() ? null : new Pair<>(u, request);
+            return null == u || u.isGuest() ? null : new AuthenticationAttempt(u, request);
         }
         finally
         {
-            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\". User: " + u);
+            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header for request \"{}\". User: {}", request.getRequestURI(), u);
         }
     }
 
     /**
-     * Determine if an API key is present, checking "apikey" header first and then the special "transform" cookie and
-     * parameters. Return a pair with the API key if it's present; otherwise return null.
+     * Determine if an API key is present, checking the "apikey" header first, then the deprecated
+     * "LabKeyTransformSessionId" cookie (gated behind {@link #FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID}), and finally
+     * the "apikey" GET parameter (supported since SSRS can't be made to use a header, but only if the optional feature
+     * flag is enabled). Return the credentials if an API key is present via any of these; otherwise return null.
      * @param request Current request
      * @return First API key found or null if an apikey is not present.
      */
-    private static @Nullable Pair<String, String> getApiKey(HttpServletRequest request) throws UnsupportedEncodingException
+    private static @Nullable Credentials getApiKey(HttpServletRequest request) throws UnsupportedEncodingException
     {
-        // Passing via the "apikey" HTTP header is our preferred approach and used by most
-        // LabKey client API implementations
+        // Passing via the "apikey" HTTP header is our preferred approach and used by most LabKey client API
+        // implementations
         String apiKey = request.getHeader(API_KEY);
-        
+        boolean shouldSetSessionCookie = true;
+
         if (null == apiKey)
         {
             String authorization = request.getHeader("Authorization");
@@ -673,32 +712,73 @@ public class SecurityManager
 
         if (null == apiKey)
         {
-            // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
-            // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-            apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-            if (null != apiKey)
+            // Issue 40482 / GH Issue 1489: Deprecate using 'LabKeyTransformSessionId' cookie in preference for 'apikey'
+            // header authentication.
+            String transformSessionId = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
+
+            if (null != transformSessionId)
             {
-                AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+                if (OptionalFeatureService.get().isFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+                {
+                    apiKey = transformSessionId;
+                    AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' header instead");
+                }
+                else
+                {
+                    AUTH_LOG.warn("Rejected deprecated \"" + TRANSFORM_SESSION_ID + "\" cookie authentication attempt; " +
+                        "enable the \"Allow script authentication via legacy substitution parameters\" feature flag temporarily, " +
+                        "or switch the script to 'apikey' header authentication.");
+                }
             }
             else
             {
-                // Support as a GET parameter as well, not just as a cookie, to support authentication
-                // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
-                // Do not use request.getParameter() since that will consume the POST body, #32711.
+                // Continue to support "apikey" as a GET parameter only if the optional feature flag is enabled. This
+                // supports authentication through SSRS, which can't be made to use BasicAuth, pass cookies, or use HTTP
+                // headers.
+                Map<String, String> params;
                 try
                 {
-                    Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
-                    apiKey = params.get(TRANSFORM_SESSION_ID);
+                    // Do not use request.getParameter() since that will consume the POST body, #32711.
+                    params = PageFlowUtil.mapFromQueryString(request.getQueryString());
                 }
                 catch (IllegalArgumentException e)
                 {
+                    // URLDecoder throws on malformed escapes; AuthFilter maps this to a 400
                     throw new UnsupportedEncodingException(e.getMessage());
+                }
+
+                String apiKeyParameter = params.get(API_KEY);
+
+                if (apiKeyParameter != null)
+                {
+                    if (OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
+                    {
+                        apiKey = apiKeyParameter;
+                        shouldSetSessionCookie = false;
+                    }
+                    else
+                    {
+                        API_KEY_PARAMETER_WARNING_THROTTLE.execute("Rejected \"" + API_KEY + "\" parameter; " +
+                            "enable the \"" + FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional feature " +
+                            "flag or authenticate via a different approach.");
+                    }
+                }
+                else if (params.get(TRANSFORM_SESSION_ID) != null)
+                {
+                    String message = "Rejected \"" + TRANSFORM_SESSION_ID + "\" parameter because it's no longer " +
+                        "supported. Enable the \"" + FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional " +
+                        "feature flag and use the \"" + API_KEY + "\" parameter instead.";
+                    API_KEY_PARAMETER_WARNING_THROTTLE.execute(message);
+                    throw new BadRequestException(message);
                 }
             }
         }
 
-        return null != apiKey ? Pair.of(API_KEY, apiKey) : null;
+        return null != apiKey ? new Credentials(API_KEY, apiKey, shouldSetSessionCookie) : null;
     }
+
+    // Unauthenticated callers can trigger these warnings on every request
+    private static final Throttle<String> API_KEY_PARAMETER_WARNING_THROTTLE = new Throttle<>(String.class, "API key parameter warnings", 10, CacheManager.HOUR, AUTH_LOG::warn);
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
@@ -813,6 +893,7 @@ public class SecurityManager
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
             newSession.setAttribute(USER_ATTRIBUTES_KEY, response.getUserAttributeMap());
             newSession.setAttribute(AUTHENTICATION_PROPERTIES, response.getAuthenticationProperties());
+            user.getPermissionsContext().modifySession(newSession);
         }
 
         return newSession;
@@ -1074,7 +1155,7 @@ public class SecurityManager
                 {
                     if (!"23000".equals(x.getSQLState()))
                     {
-                        LOG.debug("createUser: Something failed user: " + email, x);
+                        LOG.debug("createUser: Something failed user: {}", email, x);
                         throw x;
                     }
                 }
@@ -1116,12 +1197,8 @@ public class SecurityManager
         displayName = displayName.replace("@"," ");
         displayName = StringUtils.trimToEmpty(displayName);
 
-        // Issue 25813: if two users are being inserted at the same time through the addUser method above, we can get deadlock on SQLServer so we
-        // actively lock when doing this select to prevent it from promoting a lock up the chain.
-        SQLFragment select = new SQLFragment("SELECT UserId FROM " + core.getTableInfoUsersData());
-        if (core.getSchema().getScope().getSqlDialect().isSqlServer())
-            select.append(" WITH (UPDLOCK)");
-        select.append(" WHERE DisplayName = ? AND UserId != ?");
+        SQLFragment select = new SQLFragment("SELECT UserId FROM ").append(core.getTableInfoUsersData());
+        select.unsafeAppend(" WHERE DisplayName = ? AND UserId != ?");
         select.add(displayName);
         select.add(userId);
         Integer existingUserId = new SqlSelector(core.getSchema(), select).getObject(Integer.class);
@@ -1132,19 +1209,19 @@ public class SecurityManager
         return displayName;
     }
 
-    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
+    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout) throws ConfigurationException, MessagingException
     {
-        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL);
+        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
         MailHelper.send(m, fromUser, c);
     }
 
-    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
+    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout, Writer out) throws MessagingException
     {
-        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL);
+        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
         MailHelper.renderHtml(m, message.getType(), out);
     }
 
-    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
+    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout) throws MessagingException
     {
         try
         {
@@ -1153,6 +1230,7 @@ public class SecurityManager
                 verificationURL.replaceParameter("verification", "**********");
 
             message.setVerificationURL(verificationURL.getURIString());
+            message.setLinkTimeout(linkTimeout);
             message.setOriginatingUser(fromUser);
             if (message.getTo() == null)
                 message.setTo(to);
@@ -1366,6 +1444,9 @@ public class SecurityManager
 
         if (membersToDelete != null && !membersToDelete.isEmpty())
         {
+            if (group.isSystemGroup())
+                throw new IllegalArgumentException("Can't remove a member from the " + group.getName() + " group");
+
             SQLFragment sql = new SQLFragment(
             "DELETE FROM " + core.getTableInfoMembers() + "\nWHERE GroupId = ? AND UserId ");
             sql.add(groupId);
@@ -1487,7 +1568,7 @@ public class SecurityManager
         catch (DataIntegrityViolationException e)
         {
             // Assume this is a race condition and ignore, see #14795
-            LOG.warn("Member could not be added: " + e.getMessage());
+            LOG.warn("Member could not be added: {}", e.getMessage());
         }
 
         fireAddPrincipalToGroup(group, principal);
@@ -1638,11 +1719,6 @@ public class SecurityManager
                 return null;
             }
         }
-    }
-
-    public static @NotNull List<User> getProjectUsers(Container c)
-    {
-        return getProjectUsers(c, false);
     }
 
     /**
@@ -1884,128 +1960,6 @@ public class SecurityManager
             sb.append("<BR/>");
         }
         return sb.toString();
-    }    
-
-    // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
-    // TODO: Also redundant with getFolderUserids()
-    // TODO: Cache this set
-    public static Set<Integer> getProjectUsersIds(Container c)
-    {
-        SQLFragment sql = getProjectUsersSQL(c.getProject());
-        sql.insert(0, "SELECT DISTINCT members.UserId ");
-
-        Selector selector = new SqlSelector(core.getSchema(), sql);
-        return new HashSet<>(selector.getCollection(Integer.class));
-    }
-
-    // True fragment -- need to prepend SELECT DISTINCT() or IN () for this to be valid SQL
-    public static SQLFragment getProjectUsersSQL(Container c)
-    {
-        return new SQLFragment("FROM " + core.getTableInfoMembers() + " members INNER JOIN " + core.getTableInfoUsers() + " users ON members.UserId = users.UserId\n" +
-                                    "INNER JOIN " + core.getTableInfoPrincipals() + " groups ON members.GroupId = groups.UserId\n" +
-                                    "WHERE (groups.Container = ?)", c);
-    }
-
-    // TODO: Should return a set
-    // TODO: Why is the includeGlobal flag necessary?
-    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal)
-    {
-       return getProjectUsers(c, includeGlobal, true);
-    }
-
-    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeInactive)
-    {
-        if (c != null && !c.isProject())
-            c = c.getProject();
-
-        List<Group> groups = getGroups(c, includeGlobal);
-        Set<String> emails = new HashSet<>();
-
-        //get members for each group
-        ArrayList<User> projectUsers = new ArrayList<>();
-        Set<User> members;
-
-        for (Group g : groups)
-        {
-            if (g.isGuests() || g.isUsers())
-                continue;
-
-            // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-            members = getGroupMembers(g, includeInactive ? MemberType.ACTIVE_AND_INACTIVE_USERS : MemberType.ACTIVE_USERS);
-
-            //add this group's members to hashset
-            if (!members.isEmpty())
-            {
-                //get list of users from email
-                for (UserPrincipal member : members)
-                {
-                    User user = UserManager.getUser(member.getUserId());
-                    if (null != user && emails.add(user.getEmail()))
-                        projectUsers.add(user);
-                }
-            }
-        }
-
-        return projectUsers;
-    }
-
-    public static Collection<Integer> getFolderUserids(Container c)
-    {
-        Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
-        SecurityPolicy policy = c.getPolicy();
-
-        //don't filter if all site users is playing a role
-        Group allSiteUsers = getGroup(Group.groupUsers);
-        if (policy.getAssignedRoles(allSiteUsers).findAny().isPresent())
-        {
-            // Just select all users
-            SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
-            sql.append(core.getTableInfoPrincipals(), "u");
-            sql.append(" WHERE u.type='u'");
-
-            return new SqlSelector(core.getSchema(), sql).getCollection(Integer.class);
-        }
-
-        //users "in the project" consists of:
-        // - users who are members of a project group
-        // - users who belong to a site group that has a role assignment in the policy for the specified folder
-        // - users who have a direct role assignment in the policy for the specified folder
-
-        Set<Integer> userIds = new HashSet<>();
-
-        // Add all project groups
-        Set<Group> groupsToExpand = new HashSet<>(getGroups(project, false));
-
-        // Look for users and site groups that have direct assignment to the container
-        for (RoleAssignment roleAssignment : c.getPolicy().getAssignments())
-        {
-            User user = UserManager.getUser(roleAssignment.getUserId());
-            if (user != null)
-            {
-                userIds.add(user.getUserId());
-            }
-            else
-            {
-                Group assignedGroup = getGroup(roleAssignment.getUserId());
-                if (assignedGroup != null && !assignedGroup.isProjectGroup())
-                {
-                    // Add all site groups
-                    groupsToExpand.add(assignedGroup);
-                }
-            }
-        }
-
-        // Find the users who are members of all the relevant site groups
-        for (Group group : groupsToExpand)
-        {
-            Set<User> groupMembers = getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
-            for (User groupMember : groupMembers)
-            {
-                userIds.add(groupMember.getUserId());
-            }
-        }
-
-        return userIds;
     }
 
     /**
@@ -2014,7 +1968,7 @@ public class SecurityManager
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        return UserManager.getUsers(false).stream()
+        return UserManager.getActiveUsers().stream()
             .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
             .toList();
     }
@@ -2129,11 +2083,11 @@ public class SecurityManager
 
         if (c == null || c.isRoot())
         {
-            sql.append("IS NULL");
+            sql.unsafeAppend("IS NULL");
         }
         else
         {
-            sql.append("= ?");
+            sql.unsafeAppend("= ?");
             sql.add(c.getId());
             if (ownerId == null)
                 ownerId = c.isRoot() ? null : c.getId();
@@ -2141,11 +2095,11 @@ public class SecurityManager
 
         if (ownerId == null)
         {
-            sql.append(" AND OwnerId IS NULL");
+            sql.unsafeAppend(" AND OwnerId IS NULL");
         }
         else
         {
-            sql.append(" AND OwnerId = ?");
+            sql.unsafeAppend(" AND OwnerId = ?");
             sql.add(ownerId);
         }
 
@@ -2391,12 +2345,12 @@ public class SecurityManager
 
         ActionURL verificationURL = LoginManager.createModuleVerificationURL(context.getContainer(), newUser, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
 
-        sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
+        sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL, LoginManager.SETUP_LINK_TIMEOUT);
         if (!currentUser.isGuest() && !currentUser.equals(newUser))
         {
             SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
             msg.setTo(email.getEmailAddress());
-            sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
+            sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL, LoginManager.SETUP_LINK_TIMEOUT);
         }
     }
 
@@ -2565,6 +2519,7 @@ public class SecurityManager
         protected String _optionalPrefix;
         private String _verificationUrl = "";
         private String _recipient = "";
+        private @Nullable Duration _linkTimeout;
         protected boolean _verificationUrlRequired = true;
 
         protected SecurityEmailTemplate(@NotNull String name, String description, String subject, String body)
@@ -2575,12 +2530,20 @@ public class SecurityManager
         public void setOptionPrefix(String optionalPrefix){_optionalPrefix = optionalPrefix;}
         public void setVerificationUrl(String verificationUrl){_verificationUrl = verificationUrl;}
         public void setRecipient(String recipient){_recipient = recipient;}
+        public void setLinkTimeout(@Nullable Duration linkTimeout){_linkTimeout = linkTimeout;}
+
+        private static String formatLinkTimeout(Duration timeout)
+        {
+            long hours = timeout.toHours();
+            return hours > 24 && hours % 24 == 0 ? StringUtilsLabKey.pluralize(hours / 24, "day") : StringUtilsLabKey.pluralize(hours, "hour");
+        }
 
         @Override
         protected void addCustomReplacements(Replacements replacements)
         {
             super.addCustomReplacements(replacements);
             replacements.add("verificationURL", String.class, "Link for a user to set a password", ContentType.Plain, c -> _verificationUrl);
+            replacements.add("linkExpiration", String.class, "How long the verification link remains valid, e.g., \"7 days\"", ContentType.Plain, c -> null == _linkTimeout ? null : formatLinkTimeout(_linkTimeout));
             replacements.add("emailAddress", String.class, "The email address of the user performing the operation", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getEmail());
             replacements.add("recipient", String.class, "The email address on the 'to:' line", ContentType.Plain, c -> _recipient);
         }
@@ -2590,7 +2553,7 @@ public class SecurityManager
         {
             if (super.isValid(error))
             {
-                // add an additional requirement for the verification url
+                // add a requirement for the verification url
                 if (!_verificationUrlRequired || getBody().contains("^verificationURL^"))
                 {
                     return true;
@@ -2612,7 +2575,7 @@ public class SecurityManager
                 You now have an account on the ^organizationName^ ^siteShortName^ web site. We are sending \
                 you this message to verify your email address and to allow you to create a password that will provide secure \
                 access to your data on the web site. To complete the registration process, simply click the link below or \
-                copy it to your browser's address bar. You will then be asked to choose a password.
+                copy it to your browser's address bar. You will then be asked to choose a password.^linkExpiration| This link expires in %s.^
                 
                 ^verificationURL^
                 
@@ -2657,12 +2620,13 @@ public class SecurityManager
                 We have reset your password on the ^organizationName^ ^siteShortName^ web site. \
                 To sign in to the system you will need \
                 to specify a new password. Click the link below or copy it to your browser's address bar. You will then be \
-                asked to enter a new password.
+                asked to enter a new password.^linkExpiration| This link expires in %s.^
                 
                 ^verificationURL^
                 
                 The ^siteShortName^ home page is ^homePageURL^.""";
 
+        @SuppressWarnings("unused") // Called via reflection from EmailTemplateService
         public PasswordResetEmailTemplate()
         {
             this("Reset password", DEFAULT_SUBJECT, DEFAULT_BODY);
@@ -2676,6 +2640,7 @@ public class SecurityManager
 
     public static class PasswordResetAdminEmailTemplate extends PasswordResetEmailTemplate
     {
+        @SuppressWarnings("unused") // Called via reflection from EmailTemplateService
         public PasswordResetAdminEmailTemplate()
         {
             super("Reset password (bcc to admin)", "^recipient^ : " + DEFAULT_SUBJECT, "The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
@@ -2697,15 +2662,6 @@ public class SecurityManager
     public static boolean canSeeUserDetails(Container c, User user)
     {
         return c.hasPermission(user, SeeUserDetailsPermission.class) || user.hasRootPermission(SeeUserDetailsPermission.class);
-    }
-
-    public static boolean canSeeAuditLog(User user)
-    {
-        //
-        // Only returns true if the user has the site permission. If the user is an admin, then the permission
-        // check on the current container filter will return true
-        //
-        return user.hasRootPermission(CanSeeAuditLogPermission.class);
     }
 
     public static boolean canSeeFilePaths(Container c, User user)
@@ -2730,30 +2686,32 @@ public class SecurityManager
         try
         {
             String verification;
+            final Duration linkTimeout;
 
             if (loginExists)
             {
                 // Create a placeholder password that's impossible to guess and a separate email
                 // verification key that gets emailed.
-                verification = LoginManager.createTempPassword();
                 LoginManager.setPassword(affectedUser, LoginManager.createTempPassword());
-                LoginManager.setVerification(affectedUser, verification);
+                linkTimeout = LoginManager.RESET_LINK_TIMEOUT;
+                verification = LoginManager.createVerification(affectedUser, linkTimeout);
             }
             else
             {
+                linkTimeout = LoginManager.SETUP_LINK_TIMEOUT;
                 verification = LoginManager.createLogin(affectedUser.getUserId(), affectedUser.getEmail());
             }
 
             try
             {
                 ActionURL verificationURL = LoginManager.createVerificationURL(c, affectedUser, verification, null);
-                sendEmail(c, currentUser, getResetMessage(false), affectedUser.getEmail(), verificationURL);
+                sendEmail(c, currentUser, getResetMessage(false), affectedUser.getEmail(), verificationURL, linkTimeout);
 
                 if (!currentUser.equals(affectedUser))
                 {
                     SecurityMessage msg = getResetMessage(true);
                     msg.setTo(affectedUser.getEmail());
-                    sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
+                    sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL, linkTimeout);
                 }
                 UserManager.addToUserHistory(affectedUser, currentUser.getEmail() + " " + pastVerb + " the password.");
             }
@@ -2899,7 +2857,7 @@ public class SecurityManager
                         if (null == role)
                         {
                             // Issue 36611: The provisioner startup properties break deployment of older products
-                            LOG.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
+                            LOG.error("Invalid role for group specified in startup properties GroupRoles: {}", roleName);
                             continue;
                         }
                         policy.addRoleAssignment(group, role);
@@ -2952,7 +2910,7 @@ public class SecurityManager
                         if (null == role)
                         {
                             // Issue 36611: The provisioner startup properties break deployment of older products
-                            LOG.warn("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                            LOG.warn("Invalid role for user specified in startup properties UserRoles: {}", roleName);
                             continue;
                         }
                         policy.addRoleAssignment(user, role);
@@ -3043,7 +3001,9 @@ public class SecurityManager
 
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ALL);
+        // Short circuit for no permissions required -- always true.
+        // Optimize for one permission required (use ANY, which is more efficient than ALL).
+        return perms.isEmpty() || hasPermissions(logMsg, resource, principal, perms, contextualRoles, perms.size() == 1 ? HasPermissionOption.ANY : HasPermissionOption.ALL);
     }
 
     public static boolean hasAnyPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
@@ -3058,6 +3018,7 @@ public class SecurityManager
             SecurityLogger.indent(logMsg);
             permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
 
+            // Note: Must be a sequential stream (NOT parallel)
             var granted = getPermissions(resource, principal, contextualRoles);
             boolean ret = opt.accept(granted, permissions);
             SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, resource, ret);
@@ -3074,28 +3035,30 @@ public class SecurityManager
      * This is a choke point for computing permissions. It handles SecurityPolicy permissions, impersonation (via User
      * object), locked projects, and contextual roles. This lets the SecurityPolicy object just handle its own ACL-like
      * functionality e.g. computing the permissions that it explicitly assigns (resolving roles and groups).
+     * Note: The returned stream may contain duplicate permissions; if a distinct stream of permissions is required,
+     * callers should invoke {@code distinct()} or collect to a set.
      */
-    public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
+    public static Stream<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, @NotNull Set<Role> contextualRoles)
     {
         if (null == resource || null == principal || !principal.isActive())
-            return Set.of();
+            return Stream.empty();
 
         if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user, contextualRoles))
-            return Set.of();
+            return Stream.empty();
 
         return getPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles);
     }
 
     /**
      * This method exists to allow isForbiddenProject() to check permissions on the project without reentrancy loops.
-     * Do not call this method unless you're isForbiddenProject().
+     * isForbiddenProject() and getPermissions() are the only methods that should be calling this.
      */
-    public static Set<Class<? extends Permission>> getPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, Set<Role> contextualRoles)
+    public static Stream<Class<? extends Permission>> getPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, @NotNull Set<Role> contextualRoles)
     {
         Stream<Role> roles = principal.getAssignedRoles(resource)
             .filter(Objects::nonNull);
 
-        if (null != contextualRoles && !contextualRoles.isEmpty())
+        if (!contextualRoles.isEmpty())
             roles = Stream.concat(roles, contextualRoles.stream());
 
         Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
@@ -3103,21 +3066,17 @@ public class SecurityManager
         if (principal instanceof User user)
             permissions = user.getPermissionsContext().filterPermissions(permissions);
 
-        return permissions.collect(Collectors.toSet());
+        return permissions;
     }
 
     @NotNull
-    public static List<String> getPermissionNames(SecurableResource resource, @NotNull UserPrincipal principal)
+    public static Set<String> getPermissionNames(SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        Set<Class<? extends Permission>> perms = getPermissions(resource, principal, null);
-        List<String> names = new ArrayList<>(perms.size());
-        for (Class<? extends Permission> perm : perms)
-        {
-            Permission permInst = RoleManager.getPermission(perm);
-            if (null != permInst)
-                names.add(permInst.getUniqueName());
-        }
-        return names;
+        return getPermissions(resource, principal, Set.of())
+            .map(RoleManager::getPermission)
+            .filter(Objects::nonNull)
+            .map(Permission::getUniqueName)
+            .collect(Collectors.toSet());
     }
 
     /**
@@ -3127,7 +3086,7 @@ public class SecurityManager
      * appropriate only for generating reports about role assignments for administrators.
      * Returns the roles the principal is playing in this securable resource, either due to direct assignment or due
      * to membership in a group that is assigned the role.
-     * Note: The returned stream may duplicate some roles; if a distinct stream of roles is required, callers should
+     * Note: The returned stream may contain duplicate roles; if a distinct stream of roles is required, callers should
      * invoke {@code distinct()} or collect to a set.
      * @param principal The principal
      * @return The roles this principal is playing in the securable resource
@@ -3139,24 +3098,36 @@ public class SecurityManager
 
     private enum HasPermissionOption
     {
-        ANY()
+        ANY
         {
             @Override
-            boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            boolean accept(Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> desired)
             {
-                return required.stream().anyMatch(granted::contains);
+                // Short-circuits as soon as any desired permission is seen
+                return granted.anyMatch(desired::contains);
             }
         },
         ALL
         {
             @Override
-            boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            boolean accept(/* Must be a sequential stream (NOT parallel) */ Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
             {
-                return granted.containsAll(required);
+                // Check invariants: stream must not be parallel and required.size() < 2 should route through ANY
+                assert !granted.isParallel() && required.size() > 1;
+
+                // Create a mutable copy to track missing elements
+                Set<Class<? extends Permission>> remainder = new HashSet<>(required.size());
+                remainder.addAll(required);
+
+                // Short-circuits as soon as remainder.isEmpty() becomes true
+                return granted.anyMatch(perm -> {
+                    remainder.remove(perm);
+                    return remainder.isEmpty();
+                });
             }
         };
 
-        abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
+        abstract boolean accept(Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> desired);
     }
 
     public static class TestCase extends Assert
@@ -3333,7 +3304,20 @@ public class SecurityManager
                 assertNotNull(verifiedUser);
                 assertEquals(user, verifiedUser);
 
-                LoginManager.setVerification(user, null);
+                String stored = new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT PasswordVerification FROM ").append(CoreSchema.getInstance().getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId())).getObject(String.class);
+                assertNotNull(stored);
+                assertNotEquals("Verification token stored in plain text", status.getVerification(), stored);
+
+                String rotated = LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
+                assertNull("Replaced verification token still valid", LoginManager.verify(status.getVerification()));
+                assertEquals(user, LoginManager.verify(rotated));
+
+                String expired = LoginManager.createVerification(user, Duration.ofSeconds(-1));
+                assertNull("Expired verification token still valid", LoginManager.verify(expired));
+                assertFalse("User with only an expired token reported as verified", LoginManager.isVerified(user));
+
+                LoginManager.clearVerification(user);
+                assertTrue(LoginManager.isVerified(user));
 
                 String password = generateStrongPassword(user);
                 LoginManager.setPassword(user, password);
@@ -3369,6 +3353,78 @@ public class SecurityManager
             finally
             {
                 UserManager.deleteUser(user.getUserId());
+            }
+        }
+
+        // GH Issue 1778
+        @Test
+        public void testEmailChangeTokens() throws Exception
+        {
+            ValidEmail email;
+            ValidEmail newEmail;
+
+            do
+            {
+                String rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
+                email = new ValidEmail(rawEmail);
+                newEmail = new ValidEmail("changed_" + rawEmail);
+            }
+            while (UserManager.getUser(email) != null || UserManager.getUser(newEmail) != null);
+
+            User user = null;
+
+            try
+            {
+                NewUserStatus status = addUser(email, null);
+                user = status.getUser();
+                String setup = status.getVerification();
+
+                String emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                assertEquals("Email change request cancelled the pending setup link", user, LoginManager.verify(setup));
+                assertNull("Email-change token accepted as a set-password token", LoginManager.verify(emailChange));
+                assertTrue(LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertFalse("Setup token accepted as an email-change token", LoginManager.getVerifyEmail(user).isVerified(setup));
+
+                LoginManager.clearVerification(user);
+                assertTrue("Pending email change reported as an unverified user", LoginManager.isVerified(user));
+                assertTrue("Clearing the password token cancelled the email change", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+
+                String reset = LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
+                assertTrue("Reset cancelled the pending email change", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+
+                LoginManager.clearEmailVerification(user);
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+                assertFalse(LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertEquals("Clearing the email change cancelled the reset link", user, LoginManager.verify(reset));
+
+                emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                LoginManager.setPassword(user, generateStrongPassword(user));
+                assertFalse("Setting a password left the pending email change usable", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+
+                emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                try
+                {
+                    UserManager.changeEmail(user, user, false, newEmail.getEmailAddress(), reset);
+                    fail("Reset token completed an email change");
+                }
+                catch (UserManagementException expected)
+                {
+                }
+                assertEquals(email.getEmailAddress(), UserManager.getUser(user.getUserId()).getEmail());
+
+                UserManager.changeEmail(user, user, false, newEmail.getEmailAddress(), emailChange);
+                assertEquals(newEmail.getEmailAddress(), UserManager.getUser(user.getUserId()).getEmail());
+                assertNull("Reset link sent to the old address outlived the email change", LoginManager.verify(reset));
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+            }
+            finally
+            {
+                if (null != user)
+                    UserManager.deleteUser(user.getUserId());
             }
         }
 
@@ -3467,7 +3523,7 @@ public class SecurityManager
             final User testUser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
             User user = addUser(new ValidEmail("impersonate@test.net"), null, false).getUser();
-            user.setImpersonationContext(new ReadOnlyPermissionsContext());
+            user.setPermissionsContext(new ReadOnlyPermissionsContext());
 
             Container testFolder = null;
 
@@ -3501,6 +3557,64 @@ public class SecurityManager
                 assertTrue("read permission", hasAllPermissions(null, testFolder, User.guest, Set.of(ReadPermission.class), Set.of()));
                 assertFalse("no insert permission", hasAllPermissions(null, testFolder, User.guest, Set.of(InsertPermission.class), Set.of()));
                 assertFalse("no update permission", hasAllPermissions(null, testFolder, User.guest, Set.of(UpdatePermission.class), Set.of()));
+            }
+            finally
+            {
+                ContainerManager.delete(testFolder, testUser);
+                UserManager.deleteUser(user.getUserId());
+            }
+        }
+
+        @Test
+        public void testHasAllPermissionsEmptySet()
+        {
+            Container parentFolder = JunitUtil.getTestContainer();
+            User testUser = TestContext.get().getUser();
+            Container testFolder = null;
+
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "hasAllPermissions_empty", testUser);
+
+                // hasAllPermissions() of an empty required-permission set must always be true, regardless of grants
+                assertTrue("empty set, guest", hasAllPermissions(null, testFolder, User.guest, Set.of(), Set.of()));
+                assertTrue("empty set, admin user", hasAllPermissions(null, testFolder, testUser, Set.of(), Set.of()));
+            }
+            finally
+            {
+                if (null != testFolder)
+                    ContainerManager.delete(testFolder, testUser);
+            }
+        }
+
+        @Test
+        public void testHasAllPermissionsMultiplePermissions() throws InvalidEmailException, UserManagementException
+        {
+            Container parentFolder = JunitUtil.getTestContainer();
+            User testUser = TestContext.get().getUser();
+            User user = addUser(new ValidEmail("hasallperms@test.net"), null, false).getUser();
+            Container testFolder = null;
+
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "hasAllPermissions_multi", testUser);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, user, ReaderRole.class, testUser);
+
+                // Reader grants Read but not Insert -- requiring both should fail
+                assertFalse("Reader role should not satisfy {Read, Insert}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class), Set.of()));
+
+                addRoleAssignment(policy, user, EditorRole.class, testUser);
+
+                // Editor grants Read, Insert, Update, Delete -- multi-permission requirements should now succeed
+                assertTrue("Editor role should satisfy {Read, Insert}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class), Set.of()));
+                assertTrue("Editor role should satisfy {Read, Insert, Update}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class, UpdatePermission.class), Set.of()));
+                // ... but Editor does not grant AdminPermission, so a set requiring it should still fail
+                assertFalse("Editor role should not satisfy {Read, Admin}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, AdminPermission.class), Set.of()));
             }
             finally
             {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.labkey.api.security.User;
 // properties on a per-container basis and clear the entire cache on every change of look and feel settings.
 public class FolderSettingsCache
 {
-    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Folder settings", (c, argument) -> new FolderSettings(c));
+    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxContainers(), CacheManager.DAY, "Folder settings", (c, _) -> new FolderSettings(c));
 
     public static String getDefaultDateFormat(Container c)
     {

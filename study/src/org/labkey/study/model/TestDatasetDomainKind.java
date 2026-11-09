@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,12 +45,6 @@ public class TestDatasetDomainKind extends DatasetDomainKind
     public Priority getPriority(String domainURI)
     {
         return domainURI.contains(KIND_NAME) ? Priority.MEDIUM : null;
-    }
-
-    @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-    {
-        return Collections.emptySet();
     }
 
     @Override

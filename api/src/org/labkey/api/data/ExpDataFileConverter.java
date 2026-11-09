@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,17 @@ public class ExpDataFileConverter
 
     public static ExpData resolveExpData(JSONObject dataObject, @NotNull Container container, @NotNull User user, @NotNull Collection<AssayDataType> knownTypes)
     {
+        return resolveExpData(dataObject, container, user, knownTypes, true);
+    }
+
+    /** Like resolveExpData, but data for a file that has none yet comes back unsaved. */
+    public static ExpData resolveExpDataWithoutSaving(JSONObject dataObject, @NotNull Container container, @NotNull User user, @NotNull Collection<AssayDataType> knownTypes)
+    {
+        return resolveExpData(dataObject, container, user, knownTypes, false);
+    }
+
+    private static ExpData resolveExpData(JSONObject dataObject, @NotNull Container container, @NotNull User user, @NotNull Collection<AssayDataType> knownTypes, boolean save)
+    {
         ExperimentService expSvc = ExperimentService.get();
 
         PipeRoot pipelineRoot = PipelineService.get().getPipelineRootSetting(container);
@@ -122,7 +133,8 @@ public class ExpDataFileConverter
                 String lsid = expSvc.generateLSID(container, type, name);
                 data = expSvc.createData(container, name, lsid);
                 data.setDataFileURI(file.toPath().toUri());
-                data.save(user);
+                if (save)
+                    data.save(user);
             }
             return data;
         }
@@ -156,7 +168,7 @@ public class ExpDataFileConverter
         {
             String absolutePath = dataObject.getString(ExperimentJSONConverter.ABSOLUTE_PATH);
             File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(absolutePath));
-            if (pipelineRoot != null && !pipelineRoot.isUnderRoot(f))
+            if (pipelineRoot == null || !pipelineRoot.isUnderRoot(f))
             {
                 throw new IllegalArgumentException("File with path " + absolutePath + " is not under the pipeline root for this folder");
             }
@@ -170,7 +182,8 @@ public class ExpDataFileConverter
                 String lsid = expSvc.generateLSID(container, type, name);
                 data = expSvc.createData(container, name, lsid);
                 data.setDataFileURI(f.toURI());
-                data.save(user);
+                if (save)
+                    data.save(user);
             }
             return data;
         }

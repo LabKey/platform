@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -218,7 +219,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         {
             List<RecordedAction.DataFile> outputs = new ArrayList<>();
             FileLike dataFile = getDataFile(job);
-            job.getLogger().info("Importing output data file : " + dataFile.getName());
+            job.getLogger().info("Importing output data file : {}", dataFile.getName());
             outputs.add(new RecordedAction.DataFile(dataFile.toURI(), "RESULTS-DATA", false, false));
 
             return outputs;
@@ -230,7 +231,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             // guaranteed to have a single file upload
             assert support.getInputFiles().size() == 1;
-            return support.getInputFiles().get(0);
+            return support.getInputFiles().getFirst();
         }
 
         @Override
@@ -242,7 +243,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 if (ExcelLoader.isExcel(dataFile))
                 {
-                    job.getLogger().info("Processing excel file: " + dataFile.getName());
+                    job.getLogger().info("Processing excel file: {}", dataFile.getName());
                     // check to see if this is a multi-sheet format
                     try (ExcelLoader loader = new ExcelLoader(new BufferedInputStream(dataFile.openInputStream()), true, null))
                     {
@@ -272,8 +273,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
                     if (results.size() == 1)
                     {
-                        FileLike resultFile = results.get(0);
-                        job.getLogger().info("Found results file named : " + resultFile + ", loading into results data.");
+                        FileLike resultFile = results.getFirst();
+                        job.getLogger().info("Found results file named : {}, loading into results data.", resultFile);
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
                             return loader.load();
@@ -305,8 +306,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     List<FileLike> results = dir.getChildren((f) -> BATCH_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(f)));
                     if (results.size() == 1)
                     {
-                        FileLike resultFile = results.get(0);
-                        job.getLogger().info("Found batch properties file named : " + resultFile + ", loading into results data.");
+                        FileLike resultFile = results.getFirst();
+                        job.getLogger().info("Found batch properties file named : {}, loading into results data.", resultFile);
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
                             return loadProperties(loader);
@@ -338,8 +339,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     List<FileLike> results = dir.getChildren((f) -> RUN_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(f)));
                     if (results.size() == 1)
                     {
-                        FileLike resultFile = results.get(0);
-                        job.getLogger().info("Found run properties file named : " + resultFile + ", loading into results data.");
+                        FileLike resultFile = results.getFirst();
+                        job.getLogger().info("Found run properties file named : {}, loading into results data.", resultFile);
                         try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
                         {
                             return loadProperties(loader);
@@ -371,7 +372,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 if (loader.getSheetNames().contains(sheetName))
                 {
-                    log.info("Found sheet named : " + sheetName + ", loading properties from this sheet.");
+                    log.info("Found sheet named : {}, loading properties from this sheet.", sheetName);
 
                     loader.setSheetName(sheetName);
                     return loadProperties(loader);
@@ -530,7 +531,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             // If only one protocol exists in the container, use it
             if (protocols.size() == 1)
-                return protocols.get(0);
+                return protocols.getFirst();
 
             // Otherwise, we require a name
             String protocolName = _protocolName;
@@ -617,7 +618,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             outputs = new ArrayList<>();
 
-            RecordedAction lastAction = actions.get(actions.size()-1);
+            RecordedAction lastAction = actions.getLast();
             for (RecordedAction.DataFile dataFile : lastAction.getOutputs())
             {
                 if (dataFile.isTransient())
@@ -658,7 +659,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
         Map<File, String> inputs = new LinkedHashMap<>();
 
-        RecordedAction firstAction = actions.get(0);
+        RecordedAction firstAction = actions.getFirst();
         for (RecordedAction.DataFile dataFile : firstAction.getInputs())
         {
             if (dataFile.isTransient())
@@ -754,7 +755,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         ExpProtocol protocol = _factory.getProtocol(getJob(), provider);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
-        try (DbScope.Transaction tx = scope.ensureTransaction())
+        try
         {
             AssayDataType assayDataType = provider.getDataType();
             if (assayDataType == null)
@@ -777,22 +778,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             User user = getJob().getUser();
             Container container = getJob().getContainer();
-
-            String fileWatcherDescription = getJob().getDescription();
-            TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent = tx.getAuditEvent();
-            if (transactionAuditEvent != null)
-                transactionAuditEvent.addDetail(TransactionAuditProvider.TransactionDetail.FileWatcher, fileWatcherDescription);
-            else
-            {
-                transactionAuditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, QueryService.AuditAction.RELOAD, Map.of(TransactionAuditProvider.TransactionDetail.FileWatcher, fileWatcherDescription));
-                AbstractQueryUpdateService.addTransactionAuditEvent(tx, user, transactionAuditEvent);
-            }
-
-            // Issue 22587: Create ExpData for the output file from the RecordedActions if necessary so that we
-            // ensure the generated bit is set on the ExpData.  Otherwise, the DefaultAssayRunCreator will create
-            // the ExpData but without the generated bit.
-            createData(matchedFile, assayDataType);
-
 
             AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory<?, ?>> factory
                     = provider.createRunUploadFactory(protocol, user, container);
@@ -822,45 +807,65 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             AssayRunUploadContext<?> uploadContext = factory.create();
 
-            Long batchId = null;
-
-            // Import the assay run
-            Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = new HashMap<>();
-            transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, uploadedData.getName());
-            transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
-            transactionDetails.put(TransactionAuditProvider.TransactionDetail.Action, "AssayImportRunTask");
-            Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, false, transactionDetails);
-            ExpRun run = pair.second;
-
-            if (getJob() instanceof FileAnalysisJobSupport)
+            // GH Issue 1707: run transform scripts before the transaction so their callbacks into the server can't deadlock with it
+            try (PreparedTransform ignored = provider.getRunCreator().prepareTransform(uploadContext);
+                 DbScope.Transaction tx = scope.ensureTransaction())
             {
-                FileLike analysisDir = getJob().getJobSupport(FileAnalysisJobSupport.class).getAnalysisDirectory();
-                run.setFilePathRoot(analysisDir);
-            }
+                String fileWatcherDescription = getJob().getDescription();
+                TransactionAuditProvider.TransactionAuditEvent transactionAuditEvent = tx.getAuditEvent();
+                if (transactionAuditEvent != null)
+                    transactionAuditEvent.addDetail(TransactionAuditProvider.TransactionDetail.FileWatcher, fileWatcherDescription);
+                else
+                {
+                    transactionAuditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, QueryService.AuditAction.RELOAD, Map.of(TransactionAuditProvider.TransactionDetail.FileWatcher, fileWatcherDescription));
+                    AbstractQueryUpdateService.addTransactionAuditEvent(tx, user, transactionAuditEvent);
+                }
 
-            run.setJobId(PipelineService.get().getJobId(getJob().getUser(), getJob().getContainer(), getJob().getJobGUID()));
-            run.save(getJob().getUser());
+                // Issue 22587: Create ExpData for the output file from the RecordedActions if necessary so that we
+                // ensure the generated bit is set on the ExpData.  Otherwise, the DefaultAssayRunCreator will create
+                // the ExpData but without the generated bit.
+                createData(matchedFile, assayDataType);
 
-            // save any job-level custom properties from the run
+                Long batchId = null;
+
+                // Import the assay run
+                Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = new HashMap<>();
+                transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, uploadedData.getName());
+                transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportOptions, "BackgroundImport");
+                transactionDetails.put(TransactionAuditProvider.TransactionDetail.Action, "AssayImportRunTask");
+                Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, false, transactionDetails);
+                ExpRun run = pair.second;
+
+                if (getJob() instanceof FileAnalysisJobSupport)
+                {
+                    FileLike analysisDir = getJob().getJobSupport(FileAnalysisJobSupport.class).getAnalysisDirectory();
+                    run.setFilePathRoot(analysisDir);
+                }
+
+                run.setJobId(PipelineService.get().getJobId(getJob().getUser(), getJob().getContainer(), getJob().getJobGUID()));
+                run.save(getJob().getUser());
+
+                // save any job-level custom properties from the run
 //            PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);
 //            for (Map.Entry<PropertyDescriptor, Object> prop : jobSupport.getProps().entrySet())
 //            {
 //                run.setProperty(getJob().getUser(), prop.getKey(), prop.getValue());
 //            }
 
-            // Check if we've been cancelled. If so, delete any newly created runs from the database
-            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getContainer(), getJob().getLogFileLike());
-            if (statusFile != null && (PipelineJob.TaskStatus.cancelled.matches(statusFile.getStatus()) || PipelineJob.TaskStatus.cancelling.matches(statusFile.getStatus())))
-            {
-                getJob().info("Deleting run " + run.getName() + " due to cancellation request");
-                run.delete(getJob().getUser());
+                // Check if we've been cancelled. If so, delete any newly created runs from the database
+                PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getContainer(), getJob().getLogFileLike());
+                if (statusFile != null && (PipelineJob.TaskStatus.cancelled.matches(statusFile.getStatus()) || PipelineJob.TaskStatus.cancelling.matches(statusFile.getStatus())))
+                {
+                    getJob().info("Deleting run " + run.getName() + " due to cancellation request");
+                    run.delete(getJob().getUser());
+                }
+
+                // Consider these actions complete.  Saves the exp run's URL into the job status.
+                getJob().clearActionSet(run);
+                _factory.cleanUp(getJob());
+
+                tx.commit();
             }
-
-            // Consider these actions complete.  Saves the exp run's URL into the job status.
-            getJob().clearActionSet(run);
-            _factory.cleanUp(getJob());
-
-            tx.commit();
         }
         catch (ExperimentException | ValidationException | BatchValidationException e)
         {

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +46,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
     public enum ImportType {
         samples,
         sources,
+        registry,
         assays;
 
         public static ImportType getImportType(PipelineJob job)
@@ -41,7 +57,11 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                 if (schemaName.equalsIgnoreCase("samples"))
                     return samples;
                 else if (schemaName.equalsIgnoreCase("exp.data"))
+                {
+                    if ("Biologics".equalsIgnoreCase(queryImportPipelineJob.getImportContextBuilder().getJobNotificationProvider()))
+                        return registry;
                     return sources;
+                }
                 else if (schemaName.equalsIgnoreCase("exp"))
                 {
                     String queryName = queryImportPipelineJob.getImportContextBuilder().getQueryName();
@@ -125,29 +145,8 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             if (importType == null)
                 return null;
 
-            String urlFragment = "/" + importType.name();
-
-            ActionURL appURL = getAppURL(job.getContainer());
-
-            String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-            if (!"materials".equalsIgnoreCase(type) || !"exp".equalsIgnoreCase(queryImportPipelineJob.getImportContextBuilder().getSchemaName()))
-                urlFragment += "/" + type + "?";
-            else
-                urlFragment += "?";
-
-            String and = "";
-
-            if (queryImportPipelineJob.getTransactionAuditId() > 0)
-            {
-                urlFragment = urlFragment + "transactionAuditId=" + queryImportPipelineJob.getTransactionAuditId();
-                and = "&";
-            }
-
-            String filename = queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName();
-            if (!StringUtils.isEmpty(filename))
-                urlFragment = urlFragment + and + "importFile=" + PageFlowUtil.encode(filename);
-
-            return appURL.setFragment(urlFragment);
+            String urlFragment = buildQueryImportUrlFragment(queryImportPipelineJob, importType, queryImportPipelineJob.getAdditionalJobResponseInfo());
+            return getAppURL(job.getContainer()).setFragment(urlFragment);
         }
 
         return null;
@@ -183,7 +182,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                     .append(!crossTypeImport ? type + " " : "")
                     .append(importType.name())
                     .append(" from ")
-                    .append(queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName());
+                    .append(queryImportPipelineJob.getImportSourceDescription());
 
             if (job.getContainer().hasProductFolders())
             {
@@ -215,7 +214,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         return null;
     }
 
-    private String getJobErrorMsg(PipelineJob job, String rawErrorMsg)
+    private String getJobErrorMsg(PipelineJob job, @NotNull String errorMsg)
     {
         if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
@@ -225,51 +224,71 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             return "Failed to import " +
                     type +
                     " from " +
-                    queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName() +
-                    "\n" +
-                    rawErrorMsg;// resolveErrorMessage on client
+                    queryImportPipelineJob.getImportSourceDescription() +
+                    errorMsg;// resolveErrorMessage on client
         }
         else if (job instanceof AssayUploadPipelineJob<?> assayJob)
         {
             return "Failed to import assay run from " +
                     assayJob.getPrimaryFile().getName() +
-                    "\n" +
-                    rawErrorMsg;
+                    errorMsg;
         }
 
         return null;
     }
 
+    private String buildQueryImportUrlFragment(QueryImportPipelineJob queryImportPipelineJob, ImportType importType, @Nullable Map<String, Object> info)
+    {
+        String urlFragment = "/" + importType.name();
+
+        Boolean isCrossType = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().get(AbstractQueryImportAction.Params.crossTypeImport);
+        if (Boolean.TRUE.equals(isCrossType))
+            urlFragment = "/crossType/" + importType.name() + "?";
+        else if (info != null && info.containsKey("viewJobDataUrl"))
+        {
+            urlFragment = info.get("viewJobDataUrl").toString();
+            if (!urlFragment.endsWith("?") && !urlFragment.endsWith("&"))
+                urlFragment += "?";
+        }
+        else
+        {
+            String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
+            String schemaName = queryImportPipelineJob.getImportContextBuilder().getSchemaName();
+            if ("materials".equalsIgnoreCase(type) && "exp".equalsIgnoreCase(schemaName))
+                urlFragment += "?";
+            else
+                urlFragment += "/" + PageFlowUtil.encode(type) + "?";
+        }
+
+        String and = "";
+        if (info != null)
+        {
+            Long transactionAuditId = asLong(info.get("transactionAuditId"));
+            if (transactionAuditId != null && transactionAuditId > 0)
+            {
+                urlFragment = urlFragment + "transactionAuditId=" + transactionAuditId;
+                and = "&";
+            }
+        }
+
+        String filename = queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName();
+        if (!StringUtils.isEmpty(filename))
+            urlFragment = urlFragment + and + "importFile=" + PageFlowUtil.encode(filename);
+
+        return urlFragment;
+    }
+
     private String getJobSuccessUrl(PipelineJob job, @NotNull ImportType importType, @Nullable Map<String, Object> info)
     {
         ActionURL appURL = getAppURL(job.getContainer());
-        String urlFragment = "/" + importType.name();
+        String urlFragment;
         if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
-            Boolean isCrossType = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().get(AbstractQueryImportAction.Params.crossTypeImport);
-            if (isCrossType)
-                urlFragment = "/crossType/" + importType.name() + "?";
-            else
-            {
-                String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-                urlFragment += "/" + PageFlowUtil.encode(type) + "?";
-            }
-
-            String and = "";
-            if (info != null)
-            {
-                Long transactionAuditId = (Long) info.get("transactionAuditId");
-                urlFragment = urlFragment + "transactionAuditId=" + transactionAuditId ;
-                and = "&";
-            }
-
-            String filename = queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName();
-            if (!StringUtils.isEmpty(filename))
-                urlFragment = urlFragment + and + "importFile=" + PageFlowUtil.encode(filename);
-
+            urlFragment = buildQueryImportUrlFragment(queryImportPipelineJob, importType, info);
         }
         else if (job instanceof AssayUploadPipelineJob)
         {
+            urlFragment = "/" + importType.name();
             if (info != null)
             {
                 String provider = (String) info.get("provider");
@@ -277,6 +296,10 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                 long runId = asLong(info.get("runId"));
                 urlFragment = urlFragment + "/" + PageFlowUtil.encode(provider) + "/" + PageFlowUtil.encode(assayName) + "/runs/" + runId;
             }
+        }
+        else
+        {
+            urlFragment = "/" + importType.name();
         }
 
         return appURL.setFragment(urlFragment).getLocalURIString();
@@ -307,7 +330,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         }
         else
         {
-            n.setContent(getJobErrorMsg(job, msgContent), "text/plain");
+            n.setContent(getJobErrorMsg(job, msgContent == null ? "" : "\n" + msgContent), "text/plain");
             n.setActionLinkURL(getJobErrorUrl(job));
             n.setActionLinkText("view error details");
         }

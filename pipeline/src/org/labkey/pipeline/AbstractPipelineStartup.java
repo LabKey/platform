@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
@@ -81,7 +82,7 @@ public abstract class AbstractPipelineStartup
         if (pipelineModule != null)
         {
             modules.remove(pipelineModule);
-            modules.add(0, pipelineModule);
+            modules.addFirst(pipelineModule);
         }
         if (experimentModule != null)
         {
@@ -93,6 +94,7 @@ public abstract class AbstractPipelineStartup
 
         // Set up the PipelineJobService so that Spring can configure it
         PipelineJobServiceImpl.initDefaults(locationType);
+        OptionalFeatureService.setInstance(new RemoteOptionalFeatureService());
 
         for (final Module module : modules)
         {

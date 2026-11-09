@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
@@ -123,6 +124,8 @@ public interface SampleTypeService
 
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 
+    void auditSampleColorExclusion(Container container, long sampleTypeRowId, @Nullable String auditUserComment, User user);
+
     /**
      * Create a new SampleType with the provided properties.
      * If a 'Name' property exists in the list, it will be used as the 'id' property of the SampleType.
@@ -131,7 +134,7 @@ public interface SampleTypeService
      */
     @NotNull
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
-            throws ExperimentException, SQLException;
+            throws ExperimentException;
 
     /**
      * (MAB) todo need a builder interface, or at least  parameter bean
@@ -139,19 +142,19 @@ public interface SampleTypeService
     @NotNull
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                    String nameExpression, @Nullable TemplateInfo templateInfo)
-            throws ExperimentException, SQLException;
+            throws ExperimentException;
 
     @NotNull
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                    String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit)
-            throws ExperimentException, SQLException;
+            throws ExperimentException;
 
     @NotNull
     ExpSampleType createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
-                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable Map<String, Object> changeDetails)
-            throws ExperimentException, SQLException;
+                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable List<Integer> excludedSampleColorIds, @Nullable Map<String, Object> changeDetails)
+            throws ExperimentException;
 
     @NotNull
     ExpSampleType createSampleType();
@@ -201,6 +204,11 @@ public interface SampleTypeService
      */
     ExpSampleType getSampleType(@NotNull Container scope, long rowId, boolean includeOtherContainers);
 
+    /**
+     * Get a SampleType by LSID within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
+     */
+    ExpSampleType getSampleTypeByLsid(@NotNull Container scope, @NotNull String lsid, boolean includeOtherContainers);
+
     Lsid getSampleTypeLsid(String name, Container container);
 
     Pair<String, String> getSampleTypeSamplePrefixLsids(Container container);
@@ -247,6 +255,11 @@ public interface SampleTypeService
 
     void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
 
+    void addAuditEvents(User user, Container container, String comment, String userComment, Collection<? extends ExpMaterial> samples, Map<String, Object> metadata);
+
+    /** Builds the same event addAuditEvent() would write, for callers on row-scaling paths that need to batch the inserts themselves. */
+    SampleTimelineAuditEvent createTimelineAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
+
     // find the max sequence number with '${sampleName}-' prefix
     long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container);
 
@@ -254,11 +267,20 @@ public interface SampleTypeService
 
     String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation);
 
+    /** @param totalCount how many samples are blocked, which exceeds the sample list when the caller caps what it collects */
+    String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, int totalCount, SampleOperations operation);
+
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws SQLException;
 
     int recomputeSamplesRollup(Collection<Long> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException;
 
     int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Long> rootRowIds, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
+
+    /** Callers that delete exp.material rows directly must call this, or the sample type's materialized view keeps them. @param deletedRowIds null forces a full reconcile */
+    void refreshSampleTypeMaterializedViewAfterDelete(@NotNull ExpSampleType st, @Nullable Collection<Long> deletedRowIds);
+
+    /** @return a token that changes whenever the sample type's samples change; read it before reading the data it guards */
+    @NotNull String getDataChangeToken(@NotNull ExpSampleType sampleType);
 
     Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 

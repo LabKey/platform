@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.usageMetrics.AssayMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -71,7 +72,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         String[] files = request.getParameterValues("file");
         if (request.getParameter("isRedirect") == null && path != null && files != null && files.length == 1)
         {
-            SimpleMetricsService.get().increment("Assay", "AssayDesigner", "InferDesignFromFileAndImport");
+            SimpleMetricsService.get().increment(AssayMetricArea.ASSAY_DESIGNER, "InferDesignFromFileAndImport");
             ActionURL url = getViewContext().cloneActionURL();
             url.addParameter("file", files[0]);
             url.addParameter("isRedirect", true);

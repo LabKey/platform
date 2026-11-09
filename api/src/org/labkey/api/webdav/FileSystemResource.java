@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
@@ -212,7 +213,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (file.exists())
                 return file;
         }
-        return _files.get(0);
+        return _files.getFirst();
     }
 
     @Override
@@ -291,7 +292,7 @@ public class FileSystemResource extends AbstractWebdavResource
             }
             catch (IOException x)
             {
-                _log.error("Couldn't create file on server: " + file.getPath(), x);
+                _log.error("Couldn't create file on server: {}", file.getPath(), x);
                 throw new ConfigurationException("Couldn't create file on server", x);
             }
         }
@@ -433,7 +434,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (!f.canRead())
             {
                 SecurityLogger.log("File.canRead()==false",user,null,false);
-                _log.warn(user.getEmail() + " attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                _log.warn("{} attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: {}", user.getEmail(), f.getPath());
                 return false;
             }
             return canReadPerm;
@@ -464,7 +465,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (!f.canWrite())
             {
                 SecurityLogger.log("File.canWrite()==false",user,null,false);
-                _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                _log.warn("{} attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: {}", user.getEmail(), f.getPath());
                 return false;
             }
             return canWritePerm;
@@ -495,7 +496,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (!f.canWrite())
             {
                 SecurityLogger.log("File.canWrite()==false",user,null,false);
-                _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+                _log.warn("{} attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: {}", user.getEmail(), f.getPath());
                 return false;
             }
             return canCreatePerm;
@@ -507,27 +508,38 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    // Shared access checks for canDelete() and canMove(): Delete permission plus a writable file on disk.
+    // Deliberately does NOT apply the "imported by an assay" restriction, which is specific to outright
+    // deletion - a file that has been imported may still be relocated within the file root.
+    private boolean hasDeletePermissionAndWritableFile(User user, boolean forDelete, @Nullable List<String> message)
+    {
+        if (!super.canDelete(user, forDelete, message) || !hasFileSystem())
+            return false;
+        File f = getFile();
+        if (null == f)
+            return false;
+        if (!f.canWrite())
+        {
+            SecurityLogger.log("File.canWrite()==false",user,null,false);
+            if (forDelete)
+            {
+                if (null != message)
+                    message.add("File is not writable on server");
+                _log.warn("{} attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: {}", user.getEmail(), f.getPath());
+            }
+            return false;
+        }
+        return true;
+    }
+
+
     @Override
     public boolean canDelete(User user, boolean forDelete, @Nullable List<String> message)
     {
         try
         {
-            if (!super.canDelete(user, forDelete, message) || !hasFileSystem())
+            if (!hasDeletePermissionAndWritableFile(user, forDelete, message))
                 return false;
-            File f = getFile();
-            if (null == f)
-                return false;
-            if (!f.canWrite())
-            {
-                SecurityLogger.log("File.canWrite()==false",user,null,false);
-                if (forDelete)
-                {
-                    if (null != message)
-                        message.add("File is not writable on server");
-                    _log.warn(user.getEmail() + " attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
-                }
-                return false;
-            }
             // can't delete if already processed
             if (!getActions(user).isEmpty())
             {
@@ -543,6 +555,15 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
+
+    @Override
+    public boolean canMove(User user)
+    {
+        // A MOVE removes the file from its source location, so it requires Delete permission and a writable
+        // file. Unlike canDelete(), it does NOT require the file to be eligible for outright deletion: a file
+        // that has been imported by an assay may still be relocated within the file root.
+        return hasDeletePermissionAndWritableFile(user, false, null);
+    }
 
     @Override
     public boolean canRename(User user, boolean forRename)
@@ -569,34 +590,39 @@ public class FileSystemResource extends AbstractWebdavResource
         if (file == null || (null != user && !canDelete(user, true, null)))
             return false;
 
-        try {
-            FileContentService svc = FileContentService.get();
-            AttachmentDirectory dir;
-            dir = svc.getMappedAttachmentDirectory(getContainer(), false);
-            String fileDirPath = file.getParent();
-
-            // 23746: If file exists in parent with the same name it was deleted instead
-            if (dir != null && fileDirPath != null && dir.getFileSystemDirectoryPath().toAbsolutePath().toString().equals(fileDirPath))
+        // Resources that aren't in a container (e.g., module resources) can't have legacy file attachments
+        Container c = getContainer();
+        if (c != null)
+        {
+            try
             {
-                // legacy support for files added through the narrow files web part but deleted through
-                // the newer file browser (issue: 11396). This is the difference between files stored through
-                // webdav or via the attachments service.
-                //
-                Attachment attach = AttachmentService.get().getAttachment(dir, file.getName());
-                if (attach != null)
+                FileContentService svc = FileContentService.get();
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(c, false);
+                String fileDirPath = file.getParent();
+
+                // 23746: If file exists in parent with the same name it was deleted instead
+                if (dir != null && fileDirPath != null && dir.getFileSystemDirectoryPath().toAbsolutePath().toString().equals(fileDirPath))
                 {
-                    AttachmentService.get().deleteAttachment(dir, file.getName(), null);
-                    return (AttachmentService.get().getAttachment(dir, file.getName()) == null);
+                    // legacy support for files added through the narrow files web part but deleted through
+                    // the newer file browser (issue: 11396). This is the difference between files stored through
+                    // webdav or via the attachments service.
+                    //
+                    Attachment attach = AttachmentService.get().getAttachment(dir, file.getName());
+                    if (attach != null)
+                    {
+                        AttachmentService.get().deleteAttachment(dir, file.getName(), null);
+                        return (AttachmentService.get().getAttachment(dir, file.getName()) == null);
+                    }
                 }
             }
-        }
-        catch (Exception e)
-        {
-            _log.error(e);
+            catch (Exception e)
+            {
+                _log.error(e);
+            }
         }
         boolean deleted = file.delete();
         if (!deleted)
-            _log.warn("Unexpected file system error, could not delete file: " + file.getPath());
+            _log.warn("Unexpected file system error, could not delete file: {}", file.getPath());
         return deleted;
     }
 
@@ -690,7 +716,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
                     if (rows.size() == 1)
                     {
-                        for (Map.Entry<String, Object> entry : rows.get(0).entrySet())
+                        for (Map.Entry<String, Object> entry : rows.getFirst().entrySet())
                         {
                             Object value = entry.getValue();
 
@@ -708,7 +734,6 @@ public class FileSystemResource extends AbstractWebdavResource
                 {
                     throw UnexpectedException.wrap(re);
                 }
-                boolean b = false;
             }
         }
 

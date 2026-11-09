@@ -1,3 +1,21 @@
+<%
+/*
+ * Copyright (c) 2022-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
+<%@ page import="com.google.errorprone.annotations.CompileTimeConstant" %>
 <%@ page import="org.apache.commons.io.IOUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
@@ -18,11 +36,13 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.CoreSchema" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
 <%@ page import="org.labkey.api.data.Results" %>
 <%@ page import="org.labkey.api.data.RuntimeSQLException" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.data.dialect.BasePostgreSqlDialect" %>
@@ -37,6 +57,7 @@
 <%@ page import="org.labkey.api.iterator.CloseableIterator" %>
 <%@ page import="org.labkey.api.query.AliasManager" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page import="org.labkey.api.query.QueryException" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
@@ -62,13 +83,11 @@
 <%@ page import="org.springframework.mock.web.MockHttpServletResponse" %>
 <%@ page import="java.io.InputStream" %>
 <%@ page import="java.sql.ResultSet" %>
-<%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="java.sql.ResultSetMetaData" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.sql.Timestamp" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashMap" %>
@@ -77,10 +96,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.concurrent.Callable" %>
 <%@ page import="static java.util.Objects.requireNonNull" %>
-<%@ page import="static java.util.Objects.requireNonNull" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
 
@@ -557,6 +572,16 @@ d,seven,twelve,day,month,date,duration,guid
             FROM R
             GROUP BY seven, month
             PIVOT C BY month IN('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')"""),
+        // Regression test for escaping of string pivot values. The CASE expression QueryPivot generates compares the
+        // pivot column against each pivot value as an inline literal, so a value containing a single quote (or a
+        // backslash) must be escaped per the target dialect's string rules. If that escaping regresses, the generated
+        // SQL is malformed and the query throws against the database, failing this test on both PostgreSQL and SQL
+        // Server. 'O''Brien' and 'back\\slash' don't match any month data, so those pivot columns are simply all-NULL.
+        new SqlTest("""
+            SELECT seven, month, count(*) C
+            FROM R
+            GROUP BY seven, month
+            PIVOT C BY month IN ('January' AS jan, 'O''Brien' AS oBrien, 'back\\slash' AS bs)"""),
         // Regression tests for Issue 27910: pivot query summary columns not aggregated correctly
         new SqlTest("SELECT day, month, count(*) as total, " +
             "SUM(CASE WHEN month = 'April' THEN 1 ELSE 0 END) AS A, " +
@@ -651,7 +676,7 @@ d,seven,twelve,day,month,date,duration,guid
                 assertNotNull(table);
 
                 if (!errors.isEmpty())
-                    throw new RuntimeException(errors.get(0));
+                    throw new RuntimeException(errors.getFirst());
 
                 try (Results results = new TableSelector(table).getResults())
                 {
@@ -717,6 +742,8 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.DECIMAL, 2),
         new MethodSqlTest("SELECT COALESCE(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
+        new MethodSqlTest("SELECT concat('the', 'cat', 'in', 'the', 'hat') FROM R WHERE rowid=1", JdbcType.VARCHAR, "thecatinthehat"),
+        new MethodSqlTest("SELECT concat('hat', NULL) FROM R WHERE rowid=1", JdbcType.VARCHAR, null),
         new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
         new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
         new MethodSqlTest("SELECT CONVERT('+infinity', DOUBLE)", JdbcType.DOUBLE, Double.POSITIVE_INFINITY),
@@ -868,7 +895,7 @@ d,seven,twelve,day,month,date,duration,guid
                 assertNull(rs.getColumn(1).getFormat());
             }
         },
-        new SqlTest("SELECT 1 AS name @hidden'")
+        new SqlTest("SELECT 1 AS name @hidden")
         {
             @Override
             protected void validateResults(Results rs) throws Exception
@@ -887,8 +914,21 @@ d,seven,twelve,day,month,date,duration,guid
                 assertFalse(rs.getColumn(1).isHidden());
                 assertEquals("0.00", rs.getColumn(1).getFormat());
             }
-        }
+        },
 
+        // test operators in THEN expression
+        new SqlTest("SELECT CASE WHEN 1=1 THEN 'a' || 'b' ELSE 'x' || 'y' END"),
+
+        // is_distinct_from()/is_not_distinct_from() are portable: native "IS [NOT] DISTINCT FROM" on PostgreSQL and
+        // Snowflake, a CASE-based rewrite elsewhere (e.g. SQL Server) -- see IsDistinctFromMethodInfo.getSQL()
+        new MethodSqlTest("SELECT is_distinct_from(NULL,NULL)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_not_distinct_from(NULL,NULL)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_distinct_from(1,NULL)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,NULL)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_distinct_from(1,1)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,1)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_distinct_from(1,2)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,2)", JdbcType.BOOLEAN, false)
     );
 
     List<SqlTest> postgres = List.of(
@@ -898,16 +938,7 @@ d,seven,twelve,day,month,date,duration,guid
         new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE), CAST('2001-01-10' AS DATE), CAST('2001-01-05' AS DATE), CAST('2001-01-15' AS DATE))", 1, Rsize),
 
         // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
-        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1),
-
-        new MethodSqlTest("SELECT is_distinct_from(NULL,NULL)", JdbcType.BOOLEAN, false),
-        new MethodSqlTest("SELECT is_not_distinct_from(NULL,NULL)", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT is_distinct_from(1,NULL)", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT is_not_distinct_from(1,NULL)", JdbcType.BOOLEAN, false),
-        new MethodSqlTest("SELECT is_distinct_from(1,1)", JdbcType.BOOLEAN, false),
-        new MethodSqlTest("SELECT is_not_distinct_from(1,1)", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT is_distinct_from(1,2)", JdbcType.BOOLEAN, true),
-        new MethodSqlTest("SELECT is_not_distinct_from(1,2)", JdbcType.BOOLEAN, false)
+        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1)
     );
 
     List<SqlTest> postgresOnlyFunctions()
@@ -942,6 +973,11 @@ d,seven,twelve,day,month,date,duration,guid
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc','%(b|d)%')", 1, 1),
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
+
+                // GH Issue 1227: epoch form returns timestamptz, so the instant is independent of the session time zone
+                new MethodSqlTest("SELECT to_timestamp(1284352323)", JdbcType.TIMESTAMP, new Timestamp(1284352323000L)),
+                new MethodSqlTest("SELECT to_timestamp(1284352323.5)", JdbcType.TIMESTAMP, new Timestamp(1284352323500L)),
+                new MethodSqlTest("SELECT to_timestamp('2010-09-13 04:32:03', 'YYYY-MM-DD HH24:MI:SS')", JdbcType.TIMESTAMP, Timestamp.valueOf("2010-09-13 04:32:03")),
 
                 // parse_json, parse_jsonb, and json_op
                 new SqlTest("SELECT parse_jsonb('{\"a\":1, \"b\":null}')", 1, 1),
@@ -1089,6 +1125,12 @@ d,seven,twelve,day,month,date,duration,guid
             new FailTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0) UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),  // Can't have 2 recursive references
             new FailTest("WITH peeps AS (SELECT * FROM R), peeps2 AS (SELECT seven FROM peeps UNION ALL SELECT date FROM peeps) SELECT * FROM peeps2"),   // Column type mismatch
             new FailTest("WITH peeps2 AS (SELECT seven FROM R UNION SELECT seven FROM S WHERE S.seven IN (SELECT seven FROM peeps2) ) SELECT * FROM peeps2"),
+            // Subquery errors found during SQL generation must surface as parse errors, including inside method arguments
+            new FailTest("SELECT (SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b) AS x FROM R"),
+            new FailTest("SELECT CAST((SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b) AS DOUBLE) AS x FROM R"),
+            new FailTest("SELECT ROUND(1.5, (SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b)) AS x FROM R"),
+            new FailTest("SELECT (SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b) AS x FROM R LIMIT 5"),
+            new FailTest("SELECT GROUP_CONCAT((SELECT 1 AS a UNION SELECT 1 AS a, 2 AS b)) AS x FROM R"),
 
             // UNDONE: should work since R.seven and seven are the same
             new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),
@@ -1219,7 +1261,7 @@ d,seven,twelve,day,month,date,duration,guid
         DataIteratorContext context = new DataIteratorContext();
         rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null, null);
         if (context.getErrors().hasErrors())
-            Assert.fail(context.getErrors().getRowErrors().get(0).toString());
+            Assert.fail(context.getErrors().getRowErrors().getFirst().toString());
 
         ListDefinition S = listService.createList(qtest, "S", ListDefinition.KeyType.AutoIncrementInteger);
         S.setKeyName("rowid");
@@ -1230,7 +1272,7 @@ d,seven,twelve,day,month,date,duration,guid
         context = new DataIteratorContext();
         sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null, null);
         if (context.getErrors().hasErrors())
-            Assert.fail(context.getErrors().getRowErrors().get(0).toString());
+            Assert.fail(context.getErrors().getRowErrors().getFirst().toString());
     }
 
 
@@ -1289,7 +1331,7 @@ d,seven,twelve,day,month,date,duration,guid
 
         try
         {
-            Results rs = QueryService.get().select(schema, sql, null, true, true);
+            Results rs = QueryService.get().getSelectBuilder(schema, sql, true).select(true);
             assertNotNull(sql, rs);
             return rs;
         }
@@ -1406,11 +1448,11 @@ d,seven,twelve,day,month,date,duration,guid
             }
             else if (!qerrors.isEmpty())
             {
-                throw qerrors.get(0);
+                throw qerrors.getFirst();
             }
             else
             {
-                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                try (Results rs = QueryService.get().getSelectBuilder(t).select(true))
                 {
                     assertNotNull(sql, rs);
                     assertEquals(sql, Rsize, rs.getSize());
@@ -1443,11 +1485,11 @@ d,seven,twelve,day,month,date,duration,guid
             }
             else if (!qerrors.isEmpty())
             {
-                throw qerrors.get(0);
+                throw qerrors.getFirst();
             }
             else
             {
-                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                try (Results rs = QueryService.get().getSelectBuilder(t).select(true))
                 {
                     assertNotNull(sql, rs);
                     assertEquals(sql, Rsize, rs.getSize());
@@ -1588,6 +1630,98 @@ d,seven,twelve,day,month,date,duration,guid
         assertFalse(debugSql.contains(c.getId()));
         assertTrue(debugSql.contains("CONTAINERFILTER"));
         assertEquals(2, StringUtils.countMatches(debugSql, "CONTAINERFILTER"));
+    }
+
+    // GH Issue 1718: a lookup resolves its target query against the folder the field is defined in, so compiling a query
+    // in a folder other than the request's must not move the environment container there.
+    @Test
+    public void testCompileLeavesEnvironmentContainer() throws Exception
+    {
+        User user = TestContext.get().getUser();
+        Container c = JunitUtil.getTestContainer();
+        Container sub = getSubfolder();
+
+        Object savedContainer = QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
+        try
+        {
+            QueryDefinition q = QueryService.get().createQueryDef(user, c, SchemaKey.fromString("core"), "QEnvContainer");
+            q.setSql("SELECT Name, ID FROM core.Containers");
+            q.save(user, c);
+
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, sub);
+
+            // compile in c, the way a lookup resolves its target in the folder the field is defined in
+            UserSchema coreInC = QueryService.get().getUserSchema(user, c, "core");
+            assertNotNull(coreInC.getTable("QEnvContainer"));
+
+            assertEquals(sub, QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
+        }
+        finally
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, savedContainer);
+            deleteQueryDef(user, c, "QEnvContainer");
+        }
+    }
+
+    // GH Issue 1718: folderPath() reports the folder its own query is compiled in. It used to read the same environment
+    // container that cross-folder compilation moves, so a sub-query from another folder could answer for its parent.
+    @Test
+    public void testFolderPathAcrossContainers() throws Exception
+    {
+        User user = TestContext.get().getUser();
+        Container c = JunitUtil.getTestContainer();
+        Container sub = getSubfolder();
+
+        Object savedContainer = QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
+        try
+        {
+            saveQueryDef(user, c, "QFolderPathInherited", "SELECT folderPath() AS p FROM core.Containers", true);
+            saveQueryDef(user, sub, "QFolderPathInner", "SELECT Name, ID FROM core.Containers", false);
+
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
+
+            // an inherited query answers for the folder it runs in, not the one it is defined in
+            assertEquals(c.getPath(), selectFolderPath(user, c, "SELECT p FROM QFolderPathInherited"));
+            assertEquals(sub.getPath(), selectFolderPath(user, sub, "SELECT p FROM QFolderPathInherited"));
+
+            // compiling a sub-query from another folder must not answer for that folder
+            assertEquals(c.getPath(), selectFolderPath(user, c,
+                    "SELECT folderPath() AS p FROM Folder.qtest.core.QFolderPathInner"));
+
+            assertEquals(c, QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
+        }
+        finally
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, savedContainer);
+            deleteQueryDef(user, c, "QFolderPathInherited");
+            deleteQueryDef(user, sub, "QFolderPathInner");
+        }
+    }
+
+    private void saveQueryDef(User user, Container container, String name, String sql, boolean canInherit)
+    {
+        deleteQueryDef(user, container, name);
+        QueryDefinition q = QueryService.get().createQueryDef(user, container, SchemaKey.fromString("core"), name);
+        q.setSql(sql);
+        q.setCanInherit(canInherit);
+        q.save(user, container);
+    }
+
+    private void deleteQueryDef(User user, Container container, String name)
+    {
+        QueryDefinition q = QueryService.get().getQueryDef(user, container, "core", name);
+        if (null != q)
+            q.delete(user);
+    }
+
+    private String selectFolderPath(User user, Container container, String sql) throws Exception
+    {
+        QuerySchema schema = QueryService.get().getUserSchema(user, container, "core");
+        try (Results rs = QueryService.get().getSelectBuilder(schema, sql, true).select(true))
+        {
+            assertTrue(sql, rs.next());
+            return rs.getString("p");
+        }
     }
 
     @Test
@@ -1867,7 +2001,7 @@ d,seven,twelve,day,month,date,duration,guid
         q.parse(sql);
 
         if (!q.getParseErrors().isEmpty())
-            throw q.getParseErrors().get(0);
+            throw q.getParseErrors().getFirst();
 
         Map<String, QueryTable.TableColumn> involvedColumnMap = new CaseInsensitiveHashMap<>();
         for (QueryTable.TableColumn column : q.getInvolvedTableColumns())
@@ -1882,13 +2016,13 @@ d,seven,twelve,day,month,date,duration,guid
 
     Boolean booleanSelect(SQLFragment s)
     {
-        SQLFragment select = new SQLFragment("SELECT ").append(s);
+        SQLFragment select = new SQLFragment().SELECT().append(s);
         return new SqlSelector(DbScope.getLabKeyScope(), select).getObject(Boolean.class);
     }
 
-    SQLFragment array(String... strings)
+    SQLFragment array(@CompileTimeConstant String... strings)
     {
-        var args = Arrays.stream(strings).map(SQLFragment::unsafe).toList().toArray(new SQLFragment[0]);
+        var args = Arrays.stream(strings).map(s -> new SQLFragment().setSqlUnsafe(s)).toList().toArray(new SQLFragment[0]);
         return dialect.array_construct(args);
     }
 
@@ -1970,7 +2104,7 @@ d,seven,twelve,day,month,date,duration,guid
                 UNION ALL
                 SELECT 'g' as test, false as expected, array_contains_element( ARRAY['A','B'], 'X') as result
                 UNION ALL
-                SELECT 'h' as test, true as expected, array_contains_any(    ARRAY['\"A','X'], ARRAY['\"A','B'] ) as result
+                SELECT 'h' as test, true as expected, array_contains_any(    ARRAY['"A','X'], ARRAY['"A','B'] ) as result
                 UNION ALL
                 SELECT 'i' as test, true as expected, array_is_same(          ARRAY['A;','X'], ARRAY['A;','X'] ) as result
                 """;
@@ -1978,7 +2112,7 @@ d,seven,twelve,day,month,date,duration,guid
         Container container = JunitUtil.getTestContainer();
         User user = TestContext.get().getUser();
         var schema = DefaultSchema.get(user, container).getSchema("core");
-        try (var rs =QueryService.get().select(schema, testSql))
+        try (var rs = QueryService.get().getSelectBuilder(schema, testSql).select())
         {
             while (rs.next())
             {

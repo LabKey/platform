@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 LabKey Corporation
+ * Copyright (c) 2024-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 import React, { FC } from 'react';
-import { APIKeysPanel, AppContextProvider, ServerContextProvider, withAppUser } from '@labkey/components';
-import { getServerContext } from '@labkey/api';
+import { APIKeysPanel, AppContexts } from '@labkey/components';
 
 import '../DomainDesigner.scss';
 
-export const App: FC = () => {
-    const serverContext = withAppUser(getServerContext());
-
-    return (
-        <ServerContextProvider initialContext={serverContext}>
-            <AppContextProvider>
-                <APIKeysPanel includeSessionKeys />
-            </AppContextProvider>
-        </ServerContextProvider>
-    );
-};
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <APIKeysPanel includeSessionKeys />
+    </AppContexts>
+);
+App.displayName = 'App';

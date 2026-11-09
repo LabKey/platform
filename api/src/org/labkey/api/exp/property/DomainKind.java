@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,9 +61,9 @@ abstract public class DomainKind<T> implements Handler<String>
     abstract public String getKindName();
 
     /**
-     * Return a class of DomainKind's bean which carries domain specific properties.
-     * This class will be used when marshalling/unmarshalling via Jackson during Create and Save/Update Domain
-     * @return Class of DomainKind's bean with domain specific properties
+     * Return a class of DomainKind's bean which carries domain-specific properties.
+     * This class will be used when marshaling/unmarshaling via Jackson during Create and Save/Update Domain
+     * @return Class of DomainKind's bean with domain-specific properties
      */
     abstract public Class<? extends T> getTypeClass();
 
@@ -108,18 +108,82 @@ abstract public class DomainKind<T> implements Handler<String>
     abstract public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd);
 
     /**
-     * Return the set of names that should not be allowed for properties. E.g.
-     * the names of columns from the hard table underlying this type
+     * Return the set of names that should not be allowed for properties. E.g., the names of columns
+     * from the hard table underlying this type, unioned with any names declared in the
+     * {@link DomainTemplate}'s {@code <reservedColumnNames>} element that this domain was created from.
+     * <p>
+     * This method is {@code final}; subclasses contribute their kind-specific reserved set by overriding
+     * {@link #getKindReservedPropertyNames(Domain, User, boolean)}. The base class always unions that
+     * set with the template-declared set.
+     *
      * @return set of strings containing the names. This will be compared ignoring case
      */
-    abstract public Set<String> getReservedPropertyNames(Domain domain, User user);
-
-    public Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    @NotNull
+    public final Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        return getReservedPropertyNames(domain, user);
+        return getReservedPropertyNames(domain, user, false);
+    }
+
+    @NotNull
+    public final Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    {
+        Set<String> reserved = new CaseInsensitiveHashSet(getKindReservedPropertyNames(domain, user, forCreate));
+        reserved.addAll(getTemplateReservedPropertyNames(domain));
+        return reserved;
+    }
+
+    /**
+     * Return the kind-specific set of names that should not be allowed for properties. Subclasses override
+     * this to contribute their static/hard-coded reserved names. The base class will automatically union
+     * the result with any names declared in the {@link DomainTemplate}'s {@code <reservedColumnNames>}
+     * element via {@link #getReservedPropertyNames(Domain, User, boolean)}.
+     *
+     * @param forCreate true when validating names during domain creation; some kinds reserve additional
+     *                  names only at creation time.
+     * @return set of strings containing the names.
+     */
+    @NotNull
+    protected Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    {
+        return Collections.emptySet();
+    }
+
+    /**
+     * Returns reserved column names declared in the {@link DomainTemplate} that this domain was created from
+     * (if any). These extend the kind's statically reserved set.
+     */
+    @NotNull
+    protected Set<String> getTemplateReservedPropertyNames(@Nullable Domain domain)
+    {
+        if (domain == null)
+            return Collections.emptySet();
+
+        TemplateInfo info = domain.getTemplateInfo();
+        if (info == null)
+            return Collections.emptySet();
+
+        DomainTemplate template = DomainTemplate.findTemplate(info, getKindName());
+        if (template == null)
+            return Collections.emptySet();
+
+        return template.getReservedColumnNames();
     }
 
     public Set<String> getReservedPropertyNamePrefixes()
+    {
+        return Collections.emptySet();
+    }
+
+    /**
+     * Names this kind creates as real domain properties itself, even though it also reserves them, so they must not be
+     * reported as illegal user-chosen names. Override when the kind materializes its own required properties into every
+     * domain -- see PlateMetadataDomainKind.ensureDomainProperties and IssueListDef.ensureDomainProperties.
+     *
+     * GH Issue 1589. Deliberately takes no Domain: it is called by the nightly name scan, which has no Domain and must
+     * not build one, so a kind that could only answer from a live Domain simply does not participate.
+     */
+    @NotNull
+    public Set<String> getReservedNameExemptions()
     {
         return Collections.emptySet();
     }
@@ -132,14 +196,14 @@ abstract public class DomainKind<T> implements Handler<String>
     abstract public Set<String> getMandatoryPropertyNames(Domain domain);
 
     // CONSIDER: have DomainKind supply and IDomainInstance or similar
-    // so that it can hold instance data (e.g. a DatasetDefinition)
+    // so that it can hold instance data (e.g., a DatasetDefinition)
 
     /**
      * Get DomainKind specific properties.
      * @param domain The domain design.
      * @param container Container
      * @param user User
-     * @return Return object that holds DomainKind specific properties.
+     * @return Return an object that holds DomainKind specific properties.
      */
     abstract public @Nullable T getDomainKindProperties(GWTDomain<?> domain, Container container, User user);
 
@@ -239,12 +303,12 @@ abstract public class DomainKind<T> implements Handler<String>
 
         if (null != storageTableName)
         {
-            LOG.debug("Invalidating " + schemaName + "." + storageTableName);
+            LOG.debug("Invalidating {}.{}", schemaName, storageTableName);
             getScope().invalidateTable(schemaName, storageTableName, getSchemaType());
         }
         else
         {
-            LOG.debug("Invalidating " + schemaName);
+            LOG.debug("Invalidating {}", schemaName);
             getScope().invalidateSchema(schemaName, getSchemaType());
         }
     }

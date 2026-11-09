@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,11 +72,11 @@ public class VialTable extends BaseStudyTable
         checkReadBeforeExecute();
         SQLFragment ret = new SQLFragment();
         ret.appendComment("<org.labkey.study.query.VialTable>",getSqlDialect());
-        ret.append("(SELECT ");
-        ret.append(getColumn("Container").getValueSql("_")).append(" AS Container, *");
-        ret.append(" FROM ");
+        ret.unsafeAppend("(SELECT ");
+        ret.append(getColumn("Container").getValueSql("_")).unsafeAppend(" AS Container, *");
+        ret.unsafeAppend(" FROM ");
         ret.append(_rootTable.getFromSQL("_"));
-        ret.append(") ").appendIdentifier(alias);
+        ret.unsafeAppend(") ").appendIdentifier(alias);
         ret.appendComment("</org.labkey.study.query.VialTable>",getSqlDialect());
         return ret;
     }

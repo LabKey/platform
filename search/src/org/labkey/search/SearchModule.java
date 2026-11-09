@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
@@ -43,6 +42,8 @@ import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
@@ -59,11 +60,11 @@ import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.PlainTextDocumentParser;
 import org.labkey.search.model.SearchSchema;
 import org.labkey.search.model.SearchStartupProperties;
+import org.labkey.search.model.SecurityQuery;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.management.StandardMBean;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -102,14 +103,6 @@ public class SearchModule extends DefaultModule
 
     @Override
     @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        // Should test the "search" schema, but it differs between SQL Server & PostgreSQL
-        return Collections.emptySet();
-    }
-
-    @Override
-    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(new SearchWebPartFactory());
@@ -144,6 +137,8 @@ public class SearchModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        SimpleMetricsService.get().describeFeatureAreas(SearchMetricArea.values());
+
         ModuleLoader.getInstance().handleStartupProperties(
             new StandardStartupPropertyHandler<>("SearchSettings", SearchStartupProperties.class)
             {
@@ -185,16 +180,14 @@ public class SearchModule extends DefaultModule
 
         FolderManagement.addTab(FolderManagement.TYPE.FolderManagement, "Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
 
-        UsageMetricsService.get().registerUsageMetrics(getName(), () ->
+        UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> metrics.put("fullTextSearches", () ->
         {
             // Report the total number of search entries in the audit log
             User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.getUnsafeEverythingFilter());
-
-            long count = new TableSelector(auditTable).getRowCount();
-            return Collections.singletonMap("fullTextSearches", count);
-        });
+            return new TableSelector(auditTable).getRowCount();
+        }, "Full-text search events in the audit log across all containers; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE));
     }
 
     @Override
@@ -266,12 +259,20 @@ public class SearchModule extends DefaultModule
     }
 
     @Override
+    public @NotNull Set<Class<?>> getUnitTests()
+    {
+        return Set.of(AbstractSearchService.TestCase.class, SecurityQuery.TestCase.class);
+    }
+
+    @Override
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of
         (
             LuceneSearchServiceImpl.TestCase.class,
-            LuceneSearchServiceImpl.TikaTestCase.class
+            LuceneSearchServiceImpl.TikaTestCase.class,
+            LuceneSearchServiceImpl.IndexWriterTestCase.class,
+            SecurityQuery.FilterTestCase.class
         );
     }
 

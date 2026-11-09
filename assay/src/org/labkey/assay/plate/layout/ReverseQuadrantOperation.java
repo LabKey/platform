@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.assay.plate.layout;
 
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +32,7 @@ public class ReverseQuadrantOperation implements LayoutOperation
     @Override
     public List<WellLayout> execute(ExecutionContext context)
     {
-        Plate sourcePlate = context.sourcePlates().get(0);
+        Plate sourcePlate = context.sourcePlates().getFirst();
         Long plateRowId = sourcePlate.getRowId();
 
         List<WellLayout> layouts = new ArrayList<>();
@@ -69,7 +84,7 @@ public class ReverseQuadrantOperation implements LayoutOperation
         if (context.sourcePlates().size() != 1)
             throw new ValidationException("The reverse quadrant operation requires a single source plate.");
 
-        _targetPlateType = getTargetPlateType(context.sourcePlates().get(0).getPlateType(), context.allPlateTypes());
+        _targetPlateType = getTargetPlateType(context.sourcePlates().getFirst().getPlateType(), context.allPlateTypes());
     }
 
     private @NotNull PlateType getTargetPlateType(@NotNull PlateType sourcePlateType, List<? extends PlateType> allPlateTypes) throws ValidationException

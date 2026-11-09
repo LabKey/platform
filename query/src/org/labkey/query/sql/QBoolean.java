@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,13 +44,13 @@ public class QBoolean extends QExpr implements IConstant
     public void appendSql(SqlBuilder builder, Query query)
     {
         SqlDialect d = builder.getDialect();
-        builder.append(getValue() ? d.getBooleanTRUE() : d.getBooleanFALSE());
+        builder.appendValue(getValue(), d);
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(getValue().toString());
+        builder.unsafeAppend(getValue() ? "true" : "false");
     }
 
     @Override

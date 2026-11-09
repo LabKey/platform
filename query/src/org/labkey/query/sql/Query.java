@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import org.labkey.api.query.QueryNotFoundException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QuerySchemaWrapper;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -51,6 +50,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.QueryDefinitionImpl;
+import org.labkey.query.QuerySchemaWrapper;
 import org.labkey.query.controllers.QueryController;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 
@@ -221,7 +221,7 @@ public class Query
         if (null == _querySource)
             throw new IllegalStateException("SQL has not been specified");
 
-        LogManager.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
+        LogManager.getLogger(Query.class).debug("Query.parse()\n{}", _querySource);
         _parse(_querySource, skipSuggestedColumns);
         
         for (QueryException e : _parseErrors)
@@ -375,12 +375,12 @@ public class Query
 	public void setRootTable(FieldKey key)
 	{
 		SourceBuilder builder = new SourceBuilder();
-		builder.append("SELECT ");
+		builder.unsafeAppend("SELECT ");
 		builder.pushPrefix("");
 		QueryRelation relation = resolveTable(getSchema(), null, key, key.getName(), null);
 		if (relation == null)
 		{
-			builder.append("'Table not found' AS message");
+			builder.unsafeAppend("'Table not found' AS message");
 		}
 		else
 		{
@@ -430,7 +430,7 @@ public class Query
                 List<String> pkNames = null == table ? null : table.getPkColumnNames();
                 if (null == pkNames || pkNames.isEmpty())
                 {
-                    builder.append("'No columns selected' AS message");
+                    builder.unsafeAppend("'No columns selected' AS message");
                 }
                 else
                 {
@@ -447,11 +447,11 @@ public class Query
             }
 		}
 		builder.popPrefix();
-		builder.append("\nFROM ");
+		builder.unsafeAppend("\nFROM ");
 		QFieldKey.of(new FieldKey(key.getParent(), key.getName())).appendSource(builder);
 		if (key.getParent() != null)
 		{
-			builder.append(" AS ");
+			builder.unsafeAppend(" AS ");
 			new QIdentifier(key.getName()).appendSource(builder);
 		}
 		parse(builder.getText());
@@ -608,8 +608,6 @@ public class Query
             if (!_parseErrors.isEmpty())
                 return null;
 
-            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getSchema().getContainer());
-
             TableInfo tinfo = _queryRoot.getTableInfo();
 
             if (!_parseErrors.isEmpty())
@@ -715,7 +713,7 @@ public class Query
         {
             ArrayList<QueryException> list = new ArrayList<>();
             parseError(list, message, node);
-            throw list.get(0);
+            throw list.getFirst();
         }
         ai.incrementAndGet();
         return new QueryRecursionReturn();
@@ -771,7 +769,7 @@ public class Query
             }
         }
         if (null == firstError && !resolveExceptions.isEmpty())
-            firstError = resolveExceptions.get(0);
+            firstError = resolveExceptions.getFirst();
 
         if (null != firstError)
         {

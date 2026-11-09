@@ -30,7 +30,6 @@ public class OuterAliasedColumn extends AliasedColumn
     @Override
     public SQLFragment getValueSql(String tableAlias)
     {
-        return new SQLFragment(tableAlias + "." + getAlias());
+        return new SQLFragment().appendDottedIdentifiers(tableAlias,getAlias());
     }
-
 }

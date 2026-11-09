@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.workflow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -28,6 +43,7 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
 
     protected String _description;
     protected String _entityFilter;
+    protected WorkEntity.EntityType _inputEntityType;
     protected Integer _status;
     protected Date _startDate;
     protected Date _endDate;
@@ -76,6 +92,16 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
     public void setEntityFilter(String entityFilter)
     {
         _entityFilter = entityFilter;
+    }
+
+    public WorkEntity.EntityType getInputEntityType()
+    {
+        return _inputEntityType;
+    }
+
+    public void setInputEntityType(WorkEntity.EntityType inputEntityType)
+    {
+        _inputEntityType = inputEntityType;
     }
 
     @JsonProperty("assignee")
@@ -263,6 +289,8 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
             map.put("dueDate", getDueDate());
         if (getEntityId() != null)
             map.put("entityId", getEntityId().toString());
+        if (getInputEntityType() != null)
+            map.put("inputEntityType", getInputEntityType());
         map.put("ordinal", getOrdinal());
         int actionIndex = 1;
         for (Action action : getActions())

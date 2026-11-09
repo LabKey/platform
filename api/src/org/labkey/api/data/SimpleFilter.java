@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -223,7 +224,7 @@ public class SimpleFilter implements Filter
             if (sqlf.isEmpty())
                 sb.append("1=1");
             else
-                sb.append(sqlf);
+                sb.append(sqlf.getRawSQL());
             return result;
         }
 
@@ -275,6 +276,16 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             return toSQLFragment(columnMap, dialect);
+        }
+
+        /**
+         * Replace this clause with an equivalent join, added to joins keyed by its alias, and return true to drop it from the WHERE.
+         * Only return true when the join is exactly equivalent to this clause's predicate; in particular its right side must be unique, or rows multiply.
+         * The caller decides whether the query shape makes a join worthwhile, so implementations may assume the query is sorted and paged.
+         */
+        public boolean replaceWithJoin(@NotNull TableInfo table, @NotNull String tableAlias, @NotNull Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull Map<String, SQLFragment> joins)
+        {
+            return false;
         }
 
         @Override
@@ -473,9 +484,9 @@ public class SimpleFilter implements Filter
             {
                 sqlFragment.append(separator);
                 separator = _operation;
-                sqlFragment.append("(");
+                sqlFragment.unsafeAppend("(");
                 sqlFragment.append(clause.toSQLFragment(columnMap, dialect));
-                sqlFragment.append(")");
+                sqlFragment.unsafeAppend(")");
             }
             
             return sqlFragment;
@@ -582,9 +593,9 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             SQLFragment sqlFragment = new SQLFragment();
-            sqlFragment.append("NOT (");
+            sqlFragment.unsafeAppend("NOT (");
             sqlFragment.append(_clause.toSQLFragment(columnMap, dialect));
-            sqlFragment.append(")");
+            sqlFragment.unsafeAppend(")");
             return sqlFragment;
         }
 
@@ -719,11 +730,6 @@ public class SimpleFilter implements Filter
             _needsTypeConversion = urlClause;
         }
 
-        public InClause(FieldKey fieldKey, String namedSet, boolean urlClause)
-        {
-            this(fieldKey, QueryService.get().getNamedSet(namedSet), urlClause, false);
-        }
-
         @Override
         public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
@@ -810,7 +816,7 @@ public class SimpleFilter implements Filter
         private void handleEmptyParams(DatabaseIdentifier alias, SQLFragment in)
         {
             if (isIncludeNull())
-                in.appendIdentifier(alias).append(" IS ").append(isNegated() ? "NOT " : "").append("NULL");
+                in.appendIdentifier(alias).unsafeAppend(" IS ").append(isNegated() ? "NOT " : "").unsafeAppend("NULL");
             else
                 in.append(isNegated() ? "1 = 1" : "0 = 1");
         }
@@ -868,7 +874,7 @@ public class SimpleFilter implements Filter
             in.append(isIncludeNull() || isNegated() ? "((" : "(");
 
             if (isNegated())
-                in.append("NOT ");
+                in.unsafeAppend("NOT ");
 
             in.appendIdentifier(alias);
 
@@ -881,19 +887,80 @@ public class SimpleFilter implements Filter
             if (isIncludeNull())
             {
                 if (isNegated())
-                    in.append(") AND ").appendIdentifier(alias).append(" IS NOT NULL)");
+                    in.unsafeAppend(") AND ").appendIdentifier(alias).unsafeAppend(" IS NOT NULL)");
                 else
-                    in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
+                    in.unsafeAppend(") OR ").appendIdentifier(alias).unsafeAppend(" IS NULL)");
             }
             else
             {
                 if (isNegated())
-                    in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
+                    in.unsafeAppend(") OR ").appendIdentifier(alias).unsafeAppend(" IS NULL)");
                 else
-                    in.append(")");
+                    in.unsafeAppend(")");
             }
 
             return in;
+        }
+
+        @Override
+        public boolean replaceWithJoin(@NotNull TableInfo table, @NotNull String tableAlias, @NotNull Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull Map<String, SQLFragment> joins)
+        {
+            List<ColumnInfo> pkColumns = table.getPkColumns();
+            if (pkColumns.size() != 1)
+                return false;
+            ColumnInfo pkColumn = columnMap.get(pkColumns.get(0).getFieldKey());
+            if (null == pkColumn || !pkColumn.getFieldKey().equals(getFieldKey()))
+                return false;
+
+            // The temp table's Id values are unique, so the join selects exactly the rows the IN would have
+            TempTableInfo tempTable = getDrivingTempTable(table.getSqlDialect(), pkColumn);
+            if (null == tempTable)
+                return false;
+
+            AliasManager aliasManager = new AliasManager(table, null);
+            aliasManager.claimAlias(tableAlias, tableAlias);
+            joins.keySet().forEach(a -> aliasManager.claimAlias(a, a));
+            String alias = aliasManager.decideAlias("_drive_");
+
+            SQLFragment join = new SQLFragment("INNER JOIN ").append(tempTable).unsafeAppend(" ").append(alias)
+                .unsafeAppend(" ON ").append(pkColumn.getValueSql(tableAlias)).unsafeAppend(" = ").append(alias).unsafeAppend(".Id");
+            join.addTempToken(tempTable);
+            joins.put(alias, join);
+            return true;
+        }
+
+        private @Nullable TempTableInfo getDrivingTempTable(SqlDialect dialect, @Nullable ColumnInfo colInfo)
+        {
+            if (isNegated() || isIncludeNull())
+                return null;
+            Object[] params = getParamVals();
+
+            List<Object> convertedParams;
+            if (null == colInfo || !needsTypeConversion())
+            {
+                convertedParams = Arrays.asList(params);
+            }
+            else
+            {
+                convertedParams = new ArrayList<>();
+                for (Object param : params)
+                {
+                    try
+                    {
+                        convertedParams.add(CompareType.convertParamValue(colInfo, param));
+                    }
+                    catch (RuntimeSQLException e)
+                    {
+                        if (!(e.getSQLException() instanceof SQLGenerationException))
+                            throw e;
+                    }
+                }
+            }
+
+            if (convertedParams.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
+                return null;
+            InClauseGenerator generator = null != _tempTableGenerator ? _tempTableGenerator : dialect.getTempTableInClauseGenerator();
+            return null == generator ? null : generator.getTempTableInfo(convertedParams);
         }
 
         public void addInValue(Object... values)
@@ -914,7 +981,7 @@ public class SimpleFilter implements Filter
             for (Object params : getParamVals())
             {
                 // Loop through all the values and check if any of them are equals
-                FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().get(0), params);
+                FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().getFirst(), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
                     return !_negated;
@@ -1032,7 +1099,7 @@ public class SimpleFilter implements Filter
             for (Object params : getParamVals())
             {
                 // Loop through all the values and check if any of them are equals
-                FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getFieldKeys().get(0), params);
+                FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getFieldKeys().getFirst(), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
                     return !_negated;
@@ -1396,7 +1463,7 @@ public class SimpleFilter implements Filter
         for (FilterClause fc : _clauses)
         {
             ret.append(sAND);
-            ret.append("(");
+            ret.unsafeAppend("(");
             try
             {
                 ret.append(fc.toSQLFragment(tableAlias, columnMap, dialect));
@@ -1406,14 +1473,14 @@ public class SimpleFilter implements Filter
                 // Deal with unparseable filter values - see Issue 23321
                 if (e.getSQLException() instanceof SQLGenerationException)
                 {
-                    ret.append("0 = 1");
+                    ret.unsafeAppend("0 = 1");
                 }
                 else
                 {
                     throw e;
                 }
             }
-            ret.append(")");
+            ret.unsafeAppend(")");
             sAND = " AND ";
         }
 
@@ -1514,13 +1581,13 @@ public class SimpleFilter implements Filter
             {
                 if (compClause.getCompareType() == CompareType.EQUAL &&
                         compClause.getFieldKeys().size() == 1 &&
-                        CONTAINER_FIELD_KEY.equals(compClause.getFieldKeys().get(0)))
+                        CONTAINER_FIELD_KEY.equals(compClause.getFieldKeys().getFirst()))
                     return true;
             }
             if (clause instanceof InClause inClause)
             {
                 if (inClause.getFieldKeys().size() == 1 &&
-                        CONTAINER_FIELD_KEY.equals(inClause.getFieldKeys().get(0)))
+                        CONTAINER_FIELD_KEY.equals(inClause.getFieldKeys().getFirst()))
                 {
                     return true;
                 }
@@ -1544,7 +1611,7 @@ public class SimpleFilter implements Filter
             if (fieldKeys.size() > 1)
                 throw new IllegalArgumentException("Can't check filter criteria of multi-column clauses");
 
-            FieldKey fieldKey = fieldKeys.get(0);
+            FieldKey fieldKey = fieldKeys.getFirst();
             ColumnInfo col = cols.get(fieldKey);
             Object value = map.get(fieldKey);
             if (!clause.meetsCriteria(col, value))
@@ -1818,7 +1885,7 @@ public class SimpleFilter implements Filter
         {
             SimpleFilter f = new SimpleFilter();
             f.addUrlFilters(new URLHelper(url), "query");
-            InClause clause = (InClause)f.getClauses().get(0);
+            InClause clause = (InClause)f.getClauses().getFirst();
             assertEquals("negated didn't match for IN clause", negated, clause._negated);
             assertEquals("includeNull didn't match for IN clause", includeNull, clause._includeNull);
             // Convert to sets because we don't care about order for IN clauses

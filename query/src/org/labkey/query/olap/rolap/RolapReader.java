@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -303,7 +303,7 @@ public class RolapReader
                     break;
             }
         }
-        RolapCubeDef.LevelDef lowest = _currentHier.levels.get(_currentHier.levels.size()-1);
+        RolapCubeDef.LevelDef lowest = _currentHier.levels.getLast();
         lowest.isLeaf = true;
 
         _currentDim.hierarchies.add(_currentHier);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,16 +47,14 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.api.reports.report.r.RScriptEngineFactory;
 import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
-import org.labkey.api.reports.report.r.RserveScriptEngineFactory;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.Encryption;
+import org.labkey.api.security.Encryption.AESConfig;
 import org.labkey.api.security.Encryption.Algorithm;
 import org.labkey.api.security.Encryption.DecryptionException;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
-import org.labkey.api.security.Encryption.AESConfig;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -65,6 +63,9 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.core.reports.report.python.PythonScriptEngine;
+import org.labkey.core.reports.report.r.RDockerScriptEngineFactory;
+import org.labkey.core.reports.report.r.RserveScriptEngineFactory;
 import org.labkey.core.script.RhinoScriptEngine;
 
 import javax.script.ScriptEngine;
@@ -94,7 +95,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     // cache engine definitions by:
     // - "ALL" -> all engines
     // - container+context -> engines scoped to a single container and context enum
-    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "Script engine definitions", (key, argument) -> {
+    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingCache(String.class, 100, CacheManager.DAY, "Script engine definitions", (key, _) -> {
         if (ALL_ENGINES.equals(key))
         {
             // fetch all script engine definitions
@@ -110,9 +111,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             // fetch script engine definitions scoped to the container
             SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
-                .append(" WHERE RowId IN (SELECT EngineId FROM ")
+                .unsafeAppend(" WHERE RowId IN (SELECT EngineId FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .append(" WHERE Container = ? AND EngineContext = ?)")
+                .unsafeAppend(" WHERE Container = ? AND EngineContext = ?)")
                 .add(containerId)
                 .add(context);
 
@@ -345,13 +346,22 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             }
             else if (def.getType().equals(ExternalScriptEngineDefinition.Type.Jupyter) && !PremiumService.get().isEnabled())
             {
-                LOG.error(String.format("Jupyter Report engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
+                LOG.error("Jupyter Report engine [{}] requested, but premium module not available/enabled.", def.getName());
                 throw new PremiumFeatureNotEnabledException("Jupyter Reports are not available. Please talk to your account representative for additional information.");
             }
+            else if (isPythonEngine(def))
+                return new PythonScriptEngine(def);
             else
                 return new ExternalScriptEngineFactory(def).getScriptEngine();
         }
         return null;
+    }
+
+    // A Python engine is configured as a generic external engine (there is no dedicated Type.Python), so identify it by
+    // its ".py" file extension. R and Jupyter (.ipynb) are handled by earlier branches, so they won't match here.
+    private static boolean isPythonEngine(ExternalScriptEngineDefinition def)
+    {
+        return Arrays.stream(def.getExtensions()).anyMatch("py"::equalsIgnoreCase);
     }
 
     // Locates any specific engines scoped at either the container or project level for an engine context
@@ -421,7 +431,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
                 SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                        .append(" WHERE Container = ? AND EngineContext = ?")
+                        .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                         .add(container)
                         .add(context);
 
@@ -429,7 +439,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 {
                     SQLFragment insert = new SQLFragment("INSERT INTO ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                            .append(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
+                            .unsafeAppend(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
                             .add(def.getRowId())
                             .add(container)
                             .add(context);
@@ -440,8 +450,8 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 {
                     SQLFragment update = new SQLFragment("UPDATE ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                            .append(" SET EngineId = ? ")
-                            .append(" WHERE Container = ? AND EngineContext = ?")
+                            .unsafeAppend(" SET EngineId = ? ")
+                            .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                             .add(def.getRowId())
                             .add(container)
                             .add(context);
@@ -463,7 +473,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             SQLFragment sql = new SQLFragment("DELETE FROM ")
                     .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE Container = ? AND EngineContext = ?")
+                    .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                     .add(container)
                     .add(context);
 
@@ -557,7 +567,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             }
         }
         else
-            LOG.error("Script engine definition cannot be deleted: " + def.getName());
+            LOG.error("Script engine definition cannot be deleted: {}", def.getName());
     }
 
     @Override

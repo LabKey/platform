@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.labkey.query.controllers;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,7 +38,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.springframework.validation.BindException;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,12 +52,6 @@ import java.util.TreeMap;
 @Action(ActionType.SelectMetaData.class)
 public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTreeAction.Form>
 {
-    @Override
-    protected long getLastModified(Form form)
-    {
-        return QueryService.get().metadataLastModified();
-    }
-
     @Override
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {

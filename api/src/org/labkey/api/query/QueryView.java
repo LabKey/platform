@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ApiQueryResponse;
-import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractTableInfo;
@@ -85,6 +86,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -92,6 +94,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -105,8 +108,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
@@ -147,8 +148,6 @@ import static org.labkey.api.util.DOM.cl;
  */
 public class QueryView extends WebPartView<Object> implements ContainerUser
 {
-    public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
-
     public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
@@ -1132,17 +1131,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         return btnPrint;
     }
 
-    private ActionButton createShareButton(@NotNull ActionURL url, @Nullable String tooltip)
-    {
-        ActionButton shareBtn = new ActionButton(url, "Share");
-        shareBtn.setActionType(ActionButton.Action.LINK);
-        shareBtn.setIconCls("share");
-        if (tooltip != null)
-            shareBtn.setTooltip(tooltip);
-        
-        return shareBtn;
-    }
-
     /**
      * Make all links rendered in columns target the specified browser window/tab
      */
@@ -1724,7 +1712,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         {
             // don't pass getUser() as owner, we want the default view to appear as "public"
             CustomView defaultView = getQueryDef().createCustomView();
-            views.add(0, defaultView);
+            views.addFirst(defaultView);
         }
 
         // sort the grid view alphabetically, with default first (null name), then private views over public ones
@@ -1830,8 +1818,8 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null)
-                    && !report.getType().equals(TimeChartReport.TYPE)
-                    && !report.getType().equals(GenericChartReport.TYPE))
+                    && !report.getType().equals(ReportService.TIME_CHART_REPORT_TYPE)
+                    && !report.getType().equals(ReportService.GENERIC_CHART_REPORT_TYPE))
             {
                 if (canViewReport(getUser(), getContainer(), report) && !report.getDescriptor().isHidden())
                 {
@@ -1889,7 +1877,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null) &&
-                    (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE)))
+                    (report.getType().equals(ReportService.TIME_CHART_REPORT_TYPE) || report.getType().equals(ReportService.GENERIC_CHART_REPORT_TYPE)))
             {
                 if (canViewReport(getUser(), getContainer(), report))
                 {
@@ -2026,23 +2014,9 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
 
                     ButtonBar bar = new ButtonBar();
                     populateReportButtonBar(bar);
-
-                    if (_report.allowShareButton(getUser(), getContainer()))
-                    {
-                        ActionURL shareUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlShareReport(getContainer(), _report);
-                        if (shareUrl != null)
-                            bar.add(createShareButton(shareUrl, "Share report"));
-                    }
-
                     dr.setButtonBar(bar);
                 }
                 dr.render(ctx, request, response);
-
-                // if the user is viewing a shared report, remove any notifications related to it
-                NotificationService.get().removeNotifications(
-                    getContainer(), _report.getDescriptor().getReportId().toString(),
-                    Collections.singletonList(Report.SHARE_REPORT_TYPE), getUser().getUserId()
-                );
             }
             catch (Exception e)
             {
@@ -2160,18 +2134,16 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 //TableInfo and remove the * so that Query doesn't choke on it
                 if (keys.contains(starKey))
                 {
-                    rgn.addColumns(table.getColumns());
                     keys.remove(starKey);
+                    List<FieldKey> allKeys = new ArrayList<>(table.getColumns().stream().map(ColumnInfo::getFieldKey).toList());
+                    allKeys.addAll(keys);
+                    keys = allKeys;
                     // Since the client requested all columns, don't filter which ones get sent back
                     getSettings().setFieldKeys(null);
                 }
 
                 if (!keys.isEmpty())
-                {
-                    Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
-                    for (ColumnInfo col : selectedCols.values())
-                        rgn.addColumn(col);
-                }
+                    getFieldKeyDisplayColumns(table, keys).forEach(rgn::addDisplayColumn);
             }
         }
         else if (null != getSettings().getExtraFieldKeys())
@@ -2181,17 +2153,27 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             {
                 List<FieldKey> keys = getSettings().getExtraFieldKeys();
                 if (!keys.isEmpty())
-                {
-                    Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
-                    for (ColumnInfo col : selectedCols.values())
-                        rgn.addColumn(col);
-                }
+                    getFieldKeyDisplayColumns(table, keys).forEach(rgn::addDisplayColumn);
             }
         }
 
         GridView ret = new GridView(rgn, _errors);
         setupDataView(ret);
         return ret;
+    }
+
+    /** Display columns for explicitly requested field keys, carrying over the custom view's column properties (e.g., title). */
+    private List<DisplayColumn> getFieldKeyDisplayColumns(TableInfo table, List<FieldKey> keys)
+    {
+        Map<FieldKey, Map<CustomView.ColumnProperty, String>> viewProps = new HashMap<>();
+        if (_customView != null)
+            _customView.getColumnProperties().forEach(e -> viewProps.put(e.getKey(), e.getValue()));
+
+        Map<FieldKey, Map<CustomView.ColumnProperty, String>> fields = new LinkedHashMap<>();
+        for (FieldKey key : keys)
+            fields.putIfAbsent(key, viewProps.getOrDefault(key, Collections.emptyMap()));
+
+        return QueryService.get().getDisplayColumns(table, fields.entrySet());
     }
 
     protected void setupDataView(DataView ret)
@@ -2891,7 +2873,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             //table was null--try to get parse errors
             List<QueryException> errors = getParseErrors();
             if (null != errors && !errors.isEmpty())
-                throw errors.get(0);
+                throw errors.getFirst();
         }
     }
 
@@ -3038,12 +3020,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         return null;
     }
 
-    private boolean isShowExperimentalGenericDetailsURL()
-    {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_GENERIC_DETAILS_URL);
-    }
-
-
     List<DisplayColumn> _queryDefDisplayColumns = null;
 
     public List<DisplayColumn> getDisplayColumns()
@@ -3076,7 +3052,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         if (isPrintView() || isExportView())
             return;
 
-        if (_showDetailsColumn && (null != _detailsURL || table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
+        if (_showDetailsColumn && (null != _detailsURL || table.hasDetailsURL()))
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 
@@ -3096,7 +3072,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             {
                 DisplayColumn dc = createUpdateColumn(urlUpdate, table);
                 if (null != dc)
-                    ret.add(0, dc);
+                    ret.addFirst(dc);
             }
         }
     }
@@ -3423,5 +3399,119 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     public void setMessageSupplier(DataRegion.MessageSupplier messageSupplier)
     {
         _messageSupplier = messageSupplier;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final FieldKey NAME = FieldKey.fromParts("Name");
+        private static final FieldKey TITLE = FieldKey.fromParts("Title");
+        private static final FieldKey PARENT_NAME = FieldKey.fromParts("Parent", "Name");
+        private static final String CUSTOM_CAPTION = "Custom Name Caption";
+        private static final String CUSTOM_LOOKUP_CAPTION = "Custom Parent Caption";
+
+        @Test
+        public void testFieldKeysKeepCustomViewCaption() throws IOException
+        {
+            try (ViewContext.StackResetter resetter = pushContext())
+            {
+                QueryView view = createContainersView(resetter.getContext());
+                view.getSettings().setFieldKeys(new ArrayList<>(List.of(NAME, TITLE)));
+
+                assertEquals(List.of(CUSTOM_CAPTION, "Title"), getCaptions(view));
+                assertEquals(CUSTOM_CAPTION + "\tTitle", getTsvHeader(view, ColumnHeaderType.Caption));
+            }
+        }
+
+        @Test
+        public void testFieldKeysImportFieldIgnoresCustomViewCaption() throws IOException
+        {
+            try (ViewContext.StackResetter resetter = pushContext())
+            {
+                QueryView view = createContainersView(resetter.getContext(), List.of(
+                    Map.entry(NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_CAPTION)),
+                    Map.entry(PARENT_NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_LOOKUP_CAPTION))
+                ));
+                view.getSettings().setFieldKeys(new ArrayList<>(List.of(NAME, PARENT_NAME)));
+
+                assertEquals(CUSTOM_CAPTION + "\t" + CUSTOM_LOOKUP_CAPTION, getTsvHeader(view, ColumnHeaderType.Caption));
+                assertEquals("Name\tParent/Name", getTsvHeader(view, ColumnHeaderType.ImportField));
+            }
+        }
+
+        @Test
+        public void testStarFieldKeyKeepsCustomViewCaption()
+        {
+            try (ViewContext.StackResetter resetter = pushContext())
+            {
+                QueryView view = createContainersView(resetter.getContext(), List.of(
+                    Map.entry(NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_CAPTION)),
+                    Map.entry(PARENT_NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_LOOKUP_CAPTION))
+                ));
+                view.getSettings().setFieldKeys(new ArrayList<>(List.of(FieldKey.fromParts("*"), PARENT_NAME, NAME)));
+
+                List<String> captions = getCaptions(view);
+                assertNull(view.getSettings().getFieldKeys());
+                assertEquals(view.getTable().getColumns().size() + 1, captions.size());
+                assertEquals(1, Collections.frequency(captions, CUSTOM_CAPTION));
+                assertEquals(CUSTOM_LOOKUP_CAPTION, captions.getLast());
+                assertTrue(captions.contains("Title"));
+            }
+        }
+
+        @Test
+        public void testExtraFieldKeysKeepCustomViewCaption()
+        {
+            try (ViewContext.StackResetter resetter = pushContext())
+            {
+                QueryView view = createContainersView(resetter.getContext());
+                view.getSettings().setExtraFieldKeys(List.of(NAME));
+
+                assertEquals(List.of(CUSTOM_CAPTION, CUSTOM_CAPTION), getCaptions(view));
+            }
+        }
+
+        private ViewContext.StackResetter pushContext()
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            return ViewContext.pushMockViewContext(user, c, c.getStartURL(user));
+        }
+
+        /** core.Containers with an unsaved custom view that retitles only the Name column */
+        private QueryView createContainersView(ViewContext context)
+        {
+            return createContainersView(context, List.of(Map.entry(NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_CAPTION))));
+        }
+
+        private QueryView createContainersView(ViewContext context, List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> columnProperties)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "core");
+            QuerySettings settings = schema.getSettings(context, DATAREGIONNAME_DEFAULT, "Containers");
+            QueryView view = schema.createView(context, settings, null);
+            view.setShowDetailsColumn(false);
+            view.setShowUpdateColumn(false);
+
+            CustomView customView = view.getQueryDef().createCustomView(context.getUser(), "captionTest");
+            customView.setColumnProperties(columnProperties);
+            view.setCustomView(customView);
+            return view;
+        }
+
+        private List<String> getCaptions(QueryView view)
+        {
+            return view.createDataView().getDataRegion().getDisplayColumns().stream()
+                .map(ColumnHeaderType.Caption::getText)
+                .toList();
+        }
+
+        private String getTsvHeader(QueryView view, ColumnHeaderType headerType) throws IOException
+        {
+            StringBuilder sb = new StringBuilder();
+            try (TSVGridWriter tsv = view.getTsvWriter(headerType))
+            {
+                tsv.write(sb);
+            }
+            return sb.toString().lines().findFirst().orElseThrow();
+        }
     }
 }

@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,6 @@
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
     boolean readOnly = bean.isReadOnly() || !report.canEdit(user, c);
-    boolean allowShareReport = report.allowShareButton(user, c);
     Mode mode = bean.getMode();
     boolean sourceAndHelp = mode.showSourceAndHelp(ctx) || bean.isSourceTabVisible();
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
@@ -188,7 +187,6 @@
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
                 renderTo        : <%=q(renderId)%>,
                 readOnly        : <%=readOnly%>,
-                allowShareReport: <%=allowShareReport%>,
                 minHeight       : 500,
                 minWidth        : 500,
                 initialURL      : <%=q(initialViewURL)%>,

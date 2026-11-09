@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,13 +54,15 @@ public class QMethodCall extends QExpr
         {
 			QExpr expr = (QExpr)n;
             SQLFragment sqlf = expr.getSqlFragment(builder.getDialect(), query);
-            if (null == sqlf)
+            // MethodInfo implementations read argument SQL (CAST type, isSimpleString, ROUND), which throws for an error fragment
+            if (null == sqlf || sqlf.hasError())
             {
                 QueryParseException qpe = new QueryParseException("Unexpected error parsing query near method " + getFirstChild().getTokenText(), null, expr.getLine(), expr.getColumn());
                 if (null == query)
                     throw qpe;
                 if (query.getParseErrors().isEmpty())
                     query.getParseErrors().add(qpe);
+                builder.appendError();
                 return;
             }
             argumentsEx.add(new Pair<>(sqlf,expr.isConstant()));
@@ -112,7 +114,7 @@ public class QMethodCall extends QExpr
     public void appendSource(SourceBuilder builder)
     {
         getFirstChild().appendSource(builder);
-        builder.append("(");
+        builder.unsafeAppend("(");
         builder.pushPrefix("");
 
         for (QNode n : getLastChild().children())
@@ -122,7 +124,7 @@ public class QMethodCall extends QExpr
             builder.nextPrefix(",");
         }
         builder.popPrefix();
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     public QField getField()
@@ -139,7 +141,9 @@ public class QMethodCall extends QExpr
     {
         if (getMethod(d) == null)
         {
-            return new QueryParseException("Unknown method " + getField().getName(), null, getLine(), getColumn());
+            String name = getField().getName();
+            String hint = SqlParser.forUnknownMethod(name, d);
+            return new QueryParseException("Unknown method " + name + (null == hint ? "" : ". " + hint), null, getLine(), getColumn());
         }
         return null;
     }

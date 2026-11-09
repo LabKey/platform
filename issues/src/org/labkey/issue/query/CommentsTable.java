@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,9 +120,9 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         clearConditions(containerFieldKey);
         SQLFragment sql = new SQLFragment("IssueId IN (SELECT i.IssueId FROM ");
         sql.append(IssuesSchema.getInstance().getTableInfoIssues(), "i");
-        sql.append(" WHERE ");
+        sql.unsafeAppend(" WHERE ");
         sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("i.Container")));
-        sql.append(")");
+        sql.unsafeAppend(")");
         addCondition(sql, containerFieldKey);
     }
 

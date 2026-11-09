@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ public class PipelinePathForm extends ViewForm
         {
             throw new IllegalArgumentException("Expected a single file but got " + files.size());
         }
-        return files.get(0);
+        return files.getFirst();
     }
 
     /** Verifies that only a single file was selected and returns it, throwing an exception if there isn't exactly one */
@@ -185,6 +185,6 @@ public class PipelinePathForm extends ViewForm
         {
             throw new IllegalArgumentException("Expected a single file but got " + files.size());
         }
-        return files.get(0);
+        return files.getFirst();
     }
 }

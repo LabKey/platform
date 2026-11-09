@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (data == null || data.isEmpty())
             return null;
 
-        return data.get(0).getCreatedBy();
+        return data.getFirst().getCreatedBy();
     }
 
     @Override
@@ -169,7 +169,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (data == null || data.isEmpty())
             return null;
 
-        return data.get(0).getComment();
+        return data.getFirst().getComment();
     }
 
     @Override
@@ -179,7 +179,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (data == null || data.isEmpty())
             return null;
 
-        return data.get(0).getModifiedBy();
+        return data.getFirst().getModifiedBy();
     }
 
     @Override
@@ -359,7 +359,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
                 SecurityLogger.log("hasAccess()==false", user, null, false);
                 return false;
             }
-            return getPermissions(user).contains(ReadPermission.class);
+            return hasPermission(user, ReadPermission.class);
         }
         finally
         {
@@ -370,16 +370,15 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public boolean canWrite(User user, boolean forWrite)
     {
-        Set<Role> roles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
+        Set<Role> contextualRoles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), roles);
+            SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), contextualRoles);
     }
 
     @Override
     public boolean canCreate(User user, boolean forCreate)
     {
-        return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(InsertPermission.class), Set.of());
+        return hasAccess(user) && !user.isGuest() && getSecurableResource().hasPermission(user, InsertPermission.class);
     }
 
     @Override
@@ -399,8 +398,16 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         if (user.isGuest() || !hasAccess(user))
             return false;
-        Set<Class<? extends Permission>> perms = getPermissions(user);
-        return perms.contains(DeletePermission.class);
+        return hasPermission(user, DeletePermission.class);
+    }
+
+    @Override
+    public boolean canMove(User user)
+    {
+        // A MOVE removes the resource from its source location, so by default it requires the same rights
+        // as deleting it from there. Resource types where moving and deleting differ (see FileSystemResource)
+        // override this.
+        return canDelete(user, true, null);
     }
 
     @Override
@@ -409,9 +416,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
     }
 
-    public Set<Class<? extends Permission>> getPermissions(User user)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
-        return SecurityManager.getPermissions(getSecurableResource(), user, Set.of());
+        return getSecurableResource().hasPermission(user, perm);
     }
 
     @Override

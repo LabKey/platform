@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package org.labkey.filecontent;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
@@ -50,7 +53,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -61,7 +64,6 @@ import org.labkey.api.files.FileContentEmailPref;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.FilesAdminOptions;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
@@ -79,19 +81,27 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.NewUserStatus;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
@@ -108,6 +118,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavResource;
@@ -115,10 +126,13 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -211,6 +225,9 @@ public class FileContentController extends SpringActionController
 
             if (null == p)
                 throw new NotFoundException();
+
+            if (null != fileSet)
+                FileContentModule.incrementNamedFileSetMetric("legacySendFile");
 
             java.nio.file.Path dir = p.getFileSystemDirectoryPath();
             if (null == dir)
@@ -538,7 +555,7 @@ public class FileContentController extends SpringActionController
                            }
                            catch (Exception e)
                            {
-                               logger.error("Could not get canonical path for " + strPath + ", using path as entered.", e);
+                               logger.error("Could not get canonical path for {}, using path as entered.", strPath, e);
                            }
                        }
                        form.setRootPath(strPath);
@@ -720,6 +737,9 @@ public class FileContentController extends SpringActionController
             if (c == null)
                 c = ContainerManager.getRoot();
 
+            if (!c.hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to read this summary.");
+
             ActionURL browse = new ActionURL(BeginAction.class, c);
             Set<Map<String, Object>> children = FileContentServiceImpl.getInstance().getNodes(form.isShowOverridesOnly(), browse.getEncodedLocalURIString(), c);
 
@@ -756,6 +776,9 @@ public class FileContentController extends SpringActionController
             if (c == null)
                 c = ContainerManager.getRoot();
 
+            if (!c.hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to read this project summary.");
+
             Set<Map<String, Object>> children = new LinkedHashSet<>();
             FileContentService svc = FileContentService.get();
 
@@ -783,7 +806,7 @@ public class FileContentController extends SpringActionController
                     children.add(node);
                 }
             }
-            catch (MissingRootDirectoryException | UnsetRootDirectoryException ignored) {}
+            catch (UnsetRootDirectoryException ignored) {}
 
             // include all child containers
             for (Container child : c.getChildren())
@@ -924,7 +947,15 @@ public class FileContentController extends SpringActionController
                     {
                         FileContentServiceImpl fileContentService = FileContentServiceImpl.getInstance();
                         WebdavResource resource = fileContentService.getResource(String.valueOf(fileProps.get("id")));
-                        if (resource != null && !resource.getActions(getUser()).isEmpty())
+
+                        // GitHub Issue 1243: check resource container
+                        if (resource == null || !getContainer().getEntityId().equals(resource.getContainerId()))
+                        {
+                            errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, "Invalid file", fileProps.get("id")));
+                            return;
+                        }
+
+                        if (!resource.getActions(getUser()).isEmpty())
                         {
                             errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, resource.getName(), "has been previously processed, properties cannot be edited"));
                             return;
@@ -1003,7 +1034,7 @@ public class FileContentController extends SpringActionController
 
             boolean ret = true;
 
-            for (IPropertyValidator validator : prop.getValidators())
+            for (PropertyValidatorDef validator : prop.getValidators())
             {
                 if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
             }
@@ -1604,6 +1635,36 @@ public class FileContentController extends SpringActionController
             assertForRequiresSiteAdmin(user,
                     new SendShortDigestAction()
             );
+        }
+
+        @Test
+        public void testSummaryActions() throws Exception
+        {
+            Container folder = JunitUtil.getTestContainer();
+            User adminUser = TestContext.get().getUser();
+
+            // Happy path -- admin should be able to invoke summary actions in root
+            testAction(FileContentSummaryAction.class, folder, adminUser, HttpServletResponse.SC_OK);
+            testAction(FileContentProjectSummaryAction.class, folder, adminUser, HttpServletResponse.SC_OK);
+
+            NewUserStatus newUserStatus = SecurityManager.addUser(new ValidEmail("testSummaryActions@myDomain.com"), null);
+            User nonAdminUser = newUserStatus.getUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(folder.getPolicy());
+            policy.addRoleAssignment(nonAdminUser, ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, adminUser);
+
+            // Non-admin user should be forbidden
+            testAction(FileContentSummaryAction.class, folder, nonAdminUser, HttpServletResponse.SC_FORBIDDEN);
+            testAction(FileContentProjectSummaryAction.class, folder, nonAdminUser, HttpServletResponse.SC_FORBIDDEN);
+
+            UserManager.deleteUser(nonAdminUser.getUserId());
+        }
+
+        private void testAction(Class<? extends Controller> actionClass, Container folder, User user, int expectedResponseCode) throws Exception
+        {
+            HttpServletRequest request = ViewServlet.mockRequest(RequestMethod.POST.name(), new ActionURL(actionClass, folder), user, Map.of("Content-Type", "application/json"), null);
+            MockHttpServletResponse response = ViewServlet.mockDispatch(request, null);
+            assertEquals("Unexpected response code", expectedResponseCode, response.getStatus());
         }
     }
 }

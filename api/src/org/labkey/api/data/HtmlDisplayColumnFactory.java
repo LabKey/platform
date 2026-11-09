@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2017 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class HtmlDisplayColumnFactory implements DisplayColumnFactory
             if (errors.isEmpty())
                 return HtmlString.unsafe(tidyHtml);
             else
-                return HtmlString.of(errors.get(0));
+                return HtmlString.of(errors.getFirst());
         }
     }
 }

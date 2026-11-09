@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.RoleSet;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ImpersonatePermission;
@@ -103,7 +100,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     }
 
     @Override
-    public PermissionsContext getImpersonationContext()
+    public AbstractImpersonationContext getImpersonationContext()
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
@@ -208,7 +205,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     }
 
     // Throws if user is not authorized to impersonate all roles
-    private static void verifyPermissions(@Nullable Container project, User adminUser, Set<Role> roles, ImpersonationContextFactory factory)
+    private static void verifyPermissions(@Nullable Container project, User adminUser, @NotNull Set<Role> roles, ImpersonationContextFactory factory)
     {
         if (canImpersonate(project, adminUser))
         {

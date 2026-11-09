@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.labkey.api.data.dialect;
 
 import org.labkey.api.data.SQLFragment;
 
+import java.util.List;
+
 // Methods for escaping and parsing SQL identifiers and string literals, based on a particular database's rules.
 public interface DialectStringHandler
 {
@@ -30,4 +32,6 @@ public interface DialectStringHandler
      * debugging, or pasting into an external SQL tool. Not guaranteed to be valid or safe SQL!
      */
     String substituteParameters(SQLFragment frag);
+
+    String substituteParameters(String sql, List<Object> params);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2016 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.StudyDocument.Study;
@@ -59,6 +60,6 @@ public abstract class AbstractStudyContext extends AbstractImportExportContext<S
     public boolean isDataspaceProject()
     {
         Container project = getProject();
-        return project.isDataspace();
+        return StudyService.get().isDataspace(project);
     }
 }

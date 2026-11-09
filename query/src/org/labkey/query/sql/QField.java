@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,11 +115,9 @@ public class QField extends QInternalExpr
         AbstractQueryRelation.RelationColumn col = getRelationColumn();
         if (null == col)
         {
-            if (null != _table && !_table.getParseErrors().isEmpty())
-                return;
-            String message = "Unexpected error parsing field:" + getSourceText();
-            _table.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
-            builder.append("#ERROR: ").append(message).append("#");
+            if (_table.getParseErrors().isEmpty())
+                _table.getParseErrors().add(new QueryParseException("Unexpected error parsing field:" + getSourceText(), null, getLine(), getColumn()));
+            builder.appendError();
             return;
         }
         builder.append(col.getValueSql());

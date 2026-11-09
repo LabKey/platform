@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@ package org.labkey.api.util;
 
 // place to centralize some common usages
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.view.ViewContext;
-import org.springframework.http.ContentDisposition;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.http.ContentDisposition;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -164,21 +163,6 @@ public class ResponseHelper
     public static void setContentDisposition(HttpServletResponse response, ContentDispositionType type, @NotNull String filename)
     {
         response.setHeader("Content-Disposition", type.toHeaderValue(filename));
-    }
-
-
-    /**
-     * Check if the conditions specified in the optional If headers are
-     * satisfied.
-     *
-     * @return boolean true if the resource meets all the specified conditions,
-     *         and false if any of the conditions is not satisfied, in which case
-     *         request processing is stopped
-     */
-    public static boolean checkIfHeaders(ViewContext context, String eTag, long lastModified)
-            throws IOException
-    {
-        return checkIfHeaders(context.getRequest(), context.getResponse(), eTag, lastModified);
     }
 
     /**

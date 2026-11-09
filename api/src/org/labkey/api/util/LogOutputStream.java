@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,14 +54,14 @@ public class LogOutputStream extends ByteArrayOutputStream
     }
 
     @Override
-    public void write(@NotNull byte[] bytes)
+    public void write(@NotNull byte @NotNull [] bytes)
     {
         for (byte b : bytes)
             write(b);
     }
 
     @Override
-    public synchronized void write(byte[] bytes, int off, int len)
+    public synchronized void write(byte @NotNull [] bytes, int off, int len)
     {
         for (int i = off; i < len; i++)
             write(bytes[i]);

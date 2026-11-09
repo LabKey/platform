@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ import org.labkey.api.webdav.AbstractWebdavResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.webdav.WebdavResourceReadOnly;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.vfs.FileLike;
 
@@ -103,7 +102,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
     // DavController has a per request cache, but we want to aggressively cache static file resources
     // Do we really need the _allStaticFiles and CHILDREN_CACHE, it seems like we should be able to combine these
     StaticResource _root = null;
-    Cache<Path, WebdavResource> _allStaticFiles = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "WebDAV static files");
+    Cache<Path, WebdavResource> _allStaticFiles = CacheManager.getCache(Path.class, CacheManager.UNLIMITED, CacheManager.DAY, "WebDAV static files");
 
 
     @Override
@@ -165,9 +164,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         if (r.exists())
         {
             if (null != r.getFile())
-                _log.debug(normalized + " -> " + r.getFile().getPath());
+                _log.debug("{} -> {}", normalized, r.getFile().getPath());
             else
-                _log.debug(normalized + " -> " + r);
+                _log.debug("{} -> {}", normalized, r);
             if (r instanceof _PublicResource)
                 _allStaticFiles.put(normalized,r);
         }
@@ -393,7 +392,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
                 (!name.startsWith(".") || ALLOWED_DOT_NAMES.contains(name));
     }
 
-    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "Static resources");
+    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(Path.class, 1000, CacheManager.DAY, "Static resources");
 
     private class StaticResource extends _PublicResource implements SupportsFileSystemWatcher
     {

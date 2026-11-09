@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,6 @@ import java.util.List;
  */
 public abstract class AbstractExperimentDataHandler implements ExperimentDataHandler
 {
-    @Override
-    public String getFileName(ExpData data, String defaultName)
-    {
-        return defaultName;
-    }
 
     @Override
     public void exportFile(ExpData data, FileLike dataFile, User user, OutputStream out) throws ExperimentException

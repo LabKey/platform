@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,10 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileListener;
-import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -51,7 +49,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 public class WebFilesResolverImpl extends AbstractWebdavResolver implements FileListener
@@ -193,7 +190,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
 
     // Cache with short-lived entries to make webfiles perform reasonably.  WebFilesResolverImpl is a singleton, so we
     // end up with just one of these.
-    private final Cache<Path, WebdavResource> _webfilesCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebFiles");
+    private final Cache<Path, WebdavResource> _webfilesCache = CacheManager.getCache(Path.class, CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebFiles");
 
     @Override
     public boolean isEnabled()
@@ -222,19 +219,19 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
         {
             if ("/".equals(getPath()))
                 return true;
-            return getPermissions(user).contains(ReadPermission.class);
+            return hasPermission(user, ReadPermission.class);
         }
 
         @Override
         public boolean canWrite(User user, boolean forWrite)
         {
-            return !user.isGuest() && getPermissions(user).contains(UpdatePermission.class);
+            return !user.isGuest() && hasPermission(user, UpdatePermission.class);
         }
 
         @Override
         public boolean canCreate(User user, boolean forCreate)
         {
-            return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(InsertPermission.class);
+            return hasAccess(user) && !user.isGuest() && hasPermission(user, InsertPermission.class);
         }
 
         @Override
@@ -254,8 +251,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
         {
             if (user.isGuest() || !hasAccess(user))
                 return false;
-            Set<Class<? extends Permission>> perms = getPermissions(user);
-            return perms.contains(DeletePermission.class);
+            return hasPermission(user, DeletePermission.class);
         }
 
         @Override
@@ -449,16 +445,10 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
             FileContentService svc = FileContentService.get();
             if (svc != null)
             {
-                try
-                {
-                    AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, false);
-                    if (dir != null)
-                        return dir.getFileSystemDirectoryPath();
-                }
-                catch (MissingRootDirectoryException e)
-                {
-                    // Don't complain here, just hide the @files subfolders
-                }
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, false);
+                if (dir != null)
+                    return dir.getFileSystemDirectoryPath();
+
             }
             return null;
         }

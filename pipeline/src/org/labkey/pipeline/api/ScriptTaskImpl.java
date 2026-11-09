@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -171,6 +170,9 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toNioPathForRead().toFile().toString());
 
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().toNioPathForRead().toString());
+            bindings.put(ExternalScriptEngine.INVOCATION_LABEL, "pipeline task=" + _factory.getId()
+                    + " job=" + getJob().getJobGUID()
+                    + " container=" + container.getPath());
 
             // Thread the timeout option through to the external script engine
             if (_factory.getTimeout() != null && _factory.getTimeout() > 0)

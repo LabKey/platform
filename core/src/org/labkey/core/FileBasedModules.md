@@ -40,8 +40,7 @@ myModule/
     │   └── [view_name].webpart.xml
     ├── schemas/               # Database schema definitions
     │   └── dbscripts/
-    │       ├── postgresql/
-    │       └── sqlserver/
+    │       └── postgresql/
     ├── web/                   # JavaScript, CSS, images
     │   └── [moduleName]/
     │       ├── [moduleName].js
@@ -90,7 +89,6 @@ RequiredServerVersion: 23.11
 - **SchemaVersion**: Version number for SQL schema upgrade scripts (e.g., `1.00`)
 - **ManageVersion**: Boolean (true/false) for schema version management
 - **BuildType**: "Development" or "Production"
-- **SupportedDatabases**: "pgsql" or "mssql" (comma-separated)
 - **URL**: Homepage URL for the module
 
 ### Auto-Generated Properties (Don't Set)
@@ -363,7 +361,6 @@ Simply refresh your browser to see changes.
 ### Maintenance
 - Version your module.properties appropriately
 - Document breaking changes in your README
-- Test on both PostgreSQL and SQL Server if supporting both
 - Keep module.properties up to date with RequiredServerVersion
 
 ## Common Patterns
@@ -423,12 +420,8 @@ Simply refresh your browser to see changes.
 
 ## Documentation Resources
 
-For more information, see:
-- Simple Modules Overview: https://www.labkey.org/Documentation/wiki-page.view?name=simpleModules
-- File-Based Module Tutorial: https://www.labkey.org/Documentation/wiki-page.view?name=moduleqvr
 - JavaScript API Documentation: https://labkey.github.io/labkey-api-js/
-- Module Directory Structures: https://www.labkey.org/Documentation/wiki-page.view?name=moduleDirectoryStructures
-- Query Development: https://www.labkey.org/Documentation/wiki-page.view?name=addSQLQuery
+- For everything else (simple modules overview, the file-based module tutorial, module directory structures, query development), call `searchDocumentation` — e.g. `searchDocumentation("file-based module directory structure")` — then `retrieveDocument` for the full page.
 
 ## Quick Start Checklist
 

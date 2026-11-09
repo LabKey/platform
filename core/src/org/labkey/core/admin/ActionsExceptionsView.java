@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.util.CSRFException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;

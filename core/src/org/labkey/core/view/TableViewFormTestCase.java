@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -220,7 +220,7 @@ public class TableViewFormTestCase extends Assert
         tf.validateBind(errors);
         Assert.assertEquals("1 error", 1, errors.getErrorCount());
         Assert.assertEquals("Date conversion error", 1, errors.getFieldErrors("datetimeNull").size());
-        Assert.assertEquals("Date conversion error", "Could not convert value: garbage", errors.getFieldErrors("datetimeNull").get(0).getDefaultMessage());
+        Assert.assertEquals("Date conversion error", "Could not convert value: garbage", errors.getFieldErrors("datetimeNull").getFirst().getDefaultMessage());
 
         tf.setTypedValue("datetimeNull", new Date("6/20/2004"));
         Assert.assertTrue("Final form should be valid", tf.isValid());

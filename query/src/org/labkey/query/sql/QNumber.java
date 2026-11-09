@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,15 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.math.BigDecimal;
@@ -29,23 +34,8 @@ public class QNumber extends QExpr implements IConstant
 {
 	Number _value = null;
 	JdbcType _sqlType = JdbcType.DOUBLE;
-	
 
-	public QNumber(String s)
-	{
-		String substring = s;
-		if (s.startsWith("0x"))
-			setValue(convertInteger(s));
-		else if (s.startsWith("+") || s.startsWith("-"))
-			substring = s.substring(1);
 
-		if (StringUtils.containsOnly(substring,"0123456789"))
-			setValue(convertInteger(s));
-		else
-			setValue(convertDouble(s));
-	}
-
-	
     public QNumber(CommonTree n)
     {
 		super(false);
@@ -69,11 +59,12 @@ public class QNumber extends QExpr implements IConstant
 		}
 		catch (NumberFormatException x)
 		{
-			//
+			// QueryParseException (not IllegalArgumentException) yields a located parse error; null cause skips mothership logging
+			throw new QueryParseException("Invalid numeric literal: " + getTokenText(), null, getLine(), getColumn());
 		}
     }
 
-		
+
 	public QNumber(Number value)
     {
 		setValue(value);
@@ -102,7 +93,7 @@ public class QNumber extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append(getValueString());
+        builder.append(new SQLFragment().setSqlUnsafe(getValueString()));
     }
 
     @Override
@@ -144,7 +135,7 @@ public class QNumber extends QExpr implements IConstant
 			return new BigInteger(s, base);
 		}
 	}
-	
+
 
 	Number convertDouble(String s)
 	{
@@ -192,5 +183,79 @@ public class QNumber extends QExpr implements IConstant
     public boolean isConstant()
     {
         return true;
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        private static CommonTree token(int type, String text)
+        {
+            return new CommonTree(new CommonToken(type, text));
+        }
+
+        @Test
+        public void testValidIntegerToken()
+        {
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_INT, "42"));
+            assertEquals(42L, n.getValue());
+            assertEquals("42", n.getValueString());
+            assertEquals(JdbcType.INTEGER, n.getJdbcType());
+        }
+
+        @Test
+        public void testValidLongToken()
+        {
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_LONG, "9999999999"));
+            assertEquals(9999999999L, n.getValue());
+        }
+
+        @Test
+        public void testValidDoubleToken()
+        {
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_DOUBLE, "1.5"));
+            assertEquals(new BigDecimal("1.5"), n.getValue());
+            assertEquals(JdbcType.DECIMAL, n.getJdbcType());
+        }
+
+        @Test
+        public void testValidFloatScientificToken()
+        {
+            // 'e' in the token text triggers the floatish branch -> Double.parseDouble
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_FLOAT, "1.5e2"));
+            assertEquals(150.0, n.getValue().doubleValue(), 0.0);
+        }
+
+        /**
+         * An unparseable numeric token must surface as a parse-time QueryParseException so SqlParser
+         * routes it into _parseErrors as a user-facing error rather than silently emitting the raw lexeme.
+         */
+        @Test
+        public void testInvalidIntegerStrictThrows()
+        {
+            try
+            {
+                new QNumber(token(SqlBaseParser.NUM_INT, "1.2.3"));
+                fail("Expected QueryParseException for unparseable NUM_INT token");
+            }
+            catch (QueryParseException expected)
+            {
+                assertTrue("error message should include the bad token: " + expected.getMessage(),
+                        expected.getMessage().contains("1.2.3"));
+            }
+        }
+
+        @Test
+        public void testInvalidDoubleStrictThrows()
+        {
+            try
+            {
+                new QNumber(token(SqlBaseParser.NUM_DOUBLE, "1.2.3.4"));
+                fail("Expected QueryParseException for unparseable NUM_DOUBLE token");
+            }
+            catch (QueryParseException expected)
+            {
+                assertTrue(expected.getMessage().contains("1.2.3.4"));
+            }
+        }
     }
 }

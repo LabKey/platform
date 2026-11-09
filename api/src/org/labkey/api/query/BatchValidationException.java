@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class BatchValidationException extends Exception
     {
         if (rowErrors.isEmpty())
             return null;
-        return rowErrors.get(rowErrors.size()-1);
+        return rowErrors.getLast();
     }
 
     public void addToErrors(Errors errorsTarget)

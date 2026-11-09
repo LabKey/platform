@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import datadog.trace.api.CorrelationIdentifier;
-import datadog.trace.api.Trace;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -40,7 +40,6 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryKey;
@@ -54,8 +53,10 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.QuietCloser;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -82,7 +83,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -102,7 +102,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @JsonIgnoreProperties(value={"_logFilePathName"}, allowGetters = true)  //Property removed. Added here for backwards compatibility
 abstract public class PipelineJob extends Job implements Serializable, ContainerUser
 {
-    public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", Arrays.asList("text/plain"));
+    public static final FileType FT_LOG = new FileType(List.of(".log"), ".log", List.of("text/plain"));
 
     public static final String PIPELINE_EMAIL_ADDRESS_PARAM = "pipeline, email address";
     public static final String PIPELINE_USERNAME_PARAM = "pipeline, username";
@@ -825,13 +825,13 @@ abstract public class PipelineJob extends Job implements Serializable, Container
             try
             {
                 logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFilePath());
-                getLogger().info("Starting to run task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
+                getLogger().info("Starting to run task '{}' at location '{}'", factory.getId(), factory.getExecutionLocation());
                 if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
                 {
                     PipelineJobService.RemoteServerProperties remoteProps = PipelineJobService.get().getRemoteServerProperties();
                     if (remoteProps != null)
                     {
-                        getLogger().info("on host: '" + remoteProps.getHostName() + "'");
+                        getLogger().info("on host: '{}'", remoteProps.getHostName());
                     }
                 }
 
@@ -846,7 +846,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
             }
             finally
             {
-                getLogger().info((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "'");
+                getLogger().info("{} task '{}'", success ? "Successfully completed" : "Failed to complete", factory.getId());
                 logStartStopInfo((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFile());
 
                 try
@@ -887,7 +887,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         else
         {
             logStartStopInfo("Skipping already completed task '" + factory.getId() + "' for job '" + this + "' with log file " + getLogFile());
-            getLogger().info("Skipping already completed task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
+            getLogger().info("Skipping already completed task '{}' at location '{}'", factory.getId(), factory.getExecutionLocation());
         }
 
         if (getActiveTaskStatus() != TaskStatus.complete && getActiveTaskStatus() != TaskStatus.cancelled)
@@ -1070,18 +1070,52 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         return false;
     }
 
+    /** Traces here rather than in run(), which many subclasses override without calling super */
+    @Override
+    public final void runJob()
+    {
+        assert ThreadContext.isEmpty();  // Prevent/detect leaks
+        String jobType = StringUtils.substringAfterLast(getClass().getName(), ".");
+        Container c = getContainer();
+        try
+        {
+            TracedOperation.builder("labkey.pipelineJob")
+                    .resource(jobType)
+                    .describedAs(jobType + " \"" + getDescription() + "\"" + (null == c ? "" : " in " + c.getPath()))
+                    .container(c)
+                    .tag("labkey.job_id", getJobGUID())
+                    .run(op -> {
+                        // Connect log messages with the active trace and span, including the summary logged after run() returns
+                        ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+                        ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
+                        try
+                        {
+                            run();
+                        }
+                        finally
+                        {
+                            // run() catches its own failures, so the summary would otherwise read as success. Jobs
+                            // that override run() report via setStatus(), leaving the active status at waiting.
+                            TaskStatus status = getActiveTaskStatus();
+                            if (null != status && status != TaskStatus.waiting)
+                                op.tag("labkey.job_status", status).outcome(status.toString());
+                        }
+                    });
+        }
+        finally
+        {
+            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
+        }
+    }
+
     /**
      * Subclasses that override this method instead of defining a task pipeline are responsible for setting the job's
      * status at the end of their execution to either COMPLETE or ERROR
      */
-    @Override @Trace
+    @Override
     public void run()
     {
-        assert ThreadContext.isEmpty();  // Prevent/detect leaks
-        // Connect log messages with the active trace and span
-        ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
-        ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
-
         try
         {
             // The act of queueing the job runs the state machine for the first time.
@@ -1117,9 +1151,6 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         finally
         {
             PipelineService.get().getPipelineQueue().almostDone(this);
-
-            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
-            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
         }
     }
 
@@ -1260,7 +1291,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         }
     }
 
-    public void runSubProcess(ProcessBuilder pb, FileLike dirWork) throws PipelineJobException
+    public void runSubProcess(LabKeyProcessBuilder pb, FileLike dirWork) throws PipelineJobException
     {
         runSubProcess(pb, dirWork, null, 0, false);
     }
@@ -1269,18 +1300,18 @@ abstract public class PipelineJob extends Job implements Serializable, Container
      * If logLineInterval is greater than 1, the first logLineInterval lines of output will be written to the
      * job's main log file.
      */
-    public void runSubProcess(ProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append)
+    public void runSubProcess(LabKeyProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append)
             throws PipelineJobException
     {
         runSubProcess(pb, dirWork, outputFile, logLineInterval, append, 0, null);
     }
 
-    public void runSubProcess(ProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append, long timeout, TimeUnit timeoutUnit)
+    public void runSubProcess(LabKeyProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append, long timeout, TimeUnit timeoutUnit)
             throws PipelineJobException
     {
         Process proc;
 
-        String commandName = pb.command().get(0);
+        String commandName = pb.command().getFirst();
         commandName = commandName.substring(
                 Math.max(commandName.lastIndexOf('/'), commandName.lastIndexOf('\\')) + 1);
         header(commandName + " output");
@@ -1302,7 +1333,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
 
             // If the command has a path, then prepend its parent directory to the PATH
             // environment variable as well.
-            String exePath = pb.command().get(0);
+            String exePath = pb.command().getFirst();
             if (exePath != null && !exePath.isEmpty() && exePath.indexOf(File.separatorChar) != -1)
             {
                 File fileExe = new File(exePath);
@@ -1402,7 +1433,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
                     int result = proc.exitValue();
                     if (result != 0)
                     {
-                        throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
+                        throw new ToolExecutionException("Failed running " + pb.command().getFirst() + ", exit code " + result, result);
                     }
 
                     int count = output.get();
@@ -1899,11 +1930,29 @@ abstract public class PipelineJob extends Job implements Serializable, Container
 
     public static ObjectMapper createObjectMapper()
     {
+        return createObjectMapper(null);
+    }
+
+    /**
+     * Build the pipeline-job ObjectMapper. Polymorphic default typing (NON_FINAL) is always active so the concrete
+     * PipelineJob subclass and its field graph round-trip through {@code @class} type ids on the wire.
+     *
+     * @param typeValidator when non-null, default typing is activated with this {@link PolymorphicTypeValidator}
+     * (a deny-by-default allowlist) instead of the deprecated, unrestricted {@code enableDefaultTyping}. It is consulted
+     * only on deserialization, so only the pipeline-job deserialize path passes one (see {@code PipelineJacksonTyping});
+     * serialization and all other callers pass null and keep the historical permissive behavior.
+     */
+    public static ObjectMapper createObjectMapper(@Nullable PolymorphicTypeValidator typeValidator)
+    {
         ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy()
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-            .enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+
+        if (typeValidator != null)
+            mapper.activateDefaultTyping(typeValidator, ObjectMapper.DefaultTyping.NON_FINAL);
+        else
+            mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
 
         SimpleModule module = new SimpleModule();
         module.addSerializer(new SqlTimeSerialization.SqlTimeSerializer());
@@ -1977,28 +2026,28 @@ abstract public class PipelineJob extends Job implements Serializable, Container
     {
         PipelineJob job1 = this;
         List<String> errors = new ArrayList<>();
-        if (!PropertyUtil.nullSafeEquals(job1._activeTaskId, job2._activeTaskId))
+        if (!Objects.equals(job1._activeTaskId, job2._activeTaskId))
             errors.add("_activeTaskId");
         if (job1._activeTaskRetries != job2._activeTaskRetries)
             errors.add("_activeTaskRetries");
-        if (!PropertyUtil.nullSafeEquals(job1._activeTaskStatus, job2._activeTaskStatus))
+        if (!Objects.equals(job1._activeTaskStatus, job2._activeTaskStatus))
             errors.add("_activeTaskStatus");
         if (job1._errors != job2._errors)
             errors.add("_errors");
         if (job1._interrupted != job2._interrupted)
             errors.add("_interrupted");
-        if (!PropertyUtil.nullSafeEquals(job1._jobGUID, job2._jobGUID))
+        if (!Objects.equals(job1._jobGUID, job2._jobGUID))
             errors.add("_jobGUID");
-        if (!PropertyUtil.nullSafeEquals(job1._logFile, job2._logFile))
+        if (!Objects.equals(job1._logFile, job2._logFile))
         {
             if (null == job1._logFile || null == job2._logFile)
                 errors.add("_logFile");
             else if (!FileUtil.getAbsoluteCaseSensitiveFile(job1._logFile.toFile()).getAbsolutePath().equalsIgnoreCase(FileUtil.getAbsoluteCaseSensitiveFile(job2._logFile.toFile()).getAbsolutePath()))
                 errors.add("_logFile");
         }
-        if (!PropertyUtil.nullSafeEquals(job1._parentGUID, job2._parentGUID))
+        if (!Objects.equals(job1._parentGUID, job2._parentGUID))
             errors.add("_parentGUID");
-        if (!PropertyUtil.nullSafeEquals(job1._provider, job2._provider))
+        if (!Objects.equals(job1._provider, job2._provider))
             errors.add("_provider");
         if (job1._submitted != job2._submitted)
             errors.add("_submitted");

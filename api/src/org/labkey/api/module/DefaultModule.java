@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -181,7 +181,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 // database. This can be helpful on test and dev machines. See #23730.
                 DbScope scope = DbScope.getLabKeyScope();
 
-                _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
+                _log.warn("Module \"{}\" requires a data source called \"{}\". It's not configured, so it will be created against the primary labkey database (\"{}\") instead.", getName(), dsName, scope.getDatabaseName());
                 DbScope.addScope(dsName, scope.getLabKeyDataSource());
                 if (null == DbScope.getDbScope(dsName)) // Force immediate connection to test
                     throw new ConfigurationException("Failed to connect to data source \"" + dsName + "\", created against the labkey database (\"" + scope.getDatabaseName() + "\").");
@@ -189,7 +189,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             else
             {
                 // A module data source is missing and we're in production mode, so issue a warning. The data source might be optional, e.g., on staging servers. See #23830
-                _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\" but it's not configured. This module will be loaded, but it might not operate correctly.");
+                _log.warn("Module \"{}\" requires a data source called \"{}\" but it's not configured. This module will be loaded, but it might not operate correctly.", getName(), dsName);
             }
         }
 
@@ -236,6 +236,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     final public void startup(ModuleContext moduleContext)
     {
         doStartup(moduleContext);
+        // After doStartup() because Core registers SimpleMetricsService there
+        if (!_controllerNameToClass.isEmpty())
+            SimpleMetricsService.get().describeFeatureArea(getName(), "controllerHits", "Requests handled by this module's controllers, by controller name");
     }
 
     protected abstract void doStartup(ModuleContext moduleContext);
@@ -530,34 +533,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
-    protected static final Set<SupportedDatabase> ONLY_POSTGRESQL = Set.of(SupportedDatabase.pgsql);
-
-    private Set<SupportedDatabase> _supportedDatabases = ONLY_POSTGRESQL;
-
-    @NotNull
-    @Override
-    public final Set<SupportedDatabase> getSupportedDatabasesSet()
-    {
-        return _supportedDatabases;
-    }
-
-    // Used by Spring configuration reflection
-    @SuppressWarnings("UnusedDeclaration")
-    public final String getSupportedDatabases()
-    {
-        Set<SupportedDatabase> set = getSupportedDatabasesSet();
-        return StringUtils.join(set, ",");
-    }
-
-    // Used by Spring configuration reflection
-    @SuppressWarnings("UnusedDeclaration")
-    public final void setSupportedDatabases(String list)
-    {
-        Set<SupportedDatabase> supported = SupportedDatabase.parseSupportedDatabases(list);
-
-        if (!supported.isEmpty())
-            _supportedDatabases = supported;
-    }
 
     @Override
     public String getName()
@@ -1089,7 +1064,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             return;
         }
 
-        ViewContext rootContext = new ViewContext(request, response, url);
+        ViewContext rootContext;
+        try
+        {
+            rootContext = new ViewContext(request, response, url);
+        }
+        // First parameter read; unparseable parameters would otherwise escape to Tomcat's own error handling
+        catch (IllegalStateException x)
+        {
+            ExceptionUtil.handleException(request, response, x, null, false);
+            return;
+        }
 
         Container container = rootContext.getContainer();
         if (container != null && !isAvailable(container))

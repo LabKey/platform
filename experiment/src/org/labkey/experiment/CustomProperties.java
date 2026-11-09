@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,15 @@ import org.labkey.api.exp.ObjectProperty;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by adam on 9/4/2016.
  */
 public class CustomProperties
 {
-    public static void iterate(Container c, Collection<ObjectProperty> properties, Map<String, CustomPropertyRenderer> rendererMap, PropertyHandler handler)
+    private static final CustomPropertyRenderer RENDERER = new CustomPropertyRenderer();
+
+    public static void iterate(Container c, Collection<ObjectProperty> properties, PropertyHandler handler)
     {
         List<List<ObjectProperty>> stack = new ArrayList<>();
         stack.add(new ArrayList<>(properties));
@@ -37,23 +38,19 @@ public class CustomProperties
 
         while (!stack.isEmpty())
         {
-            List<ObjectProperty> values = stack.get(stack.size() - 1);
-            int currentIndex = indices.get(indices.size() - 1);
+            List<ObjectProperty> values = stack.getLast();
+            int currentIndex = indices.getLast();
             indices.set(indices.size() - 1, currentIndex + 1);
 
             if (currentIndex == values.size())
             {
-                stack.remove(stack.size() - 1);
-                indices.remove(indices.size() - 1);
+                stack.removeLast();
+                indices.removeLast();
             }
             else
             {
                 ObjectProperty value = values.get(currentIndex);
-                CustomPropertyRenderer renderer = rendererMap.get(value.getPropertyURI());
-                if (renderer.shouldRender(value, values))
-                {
-                    handler.handle(stack.size() - 1, renderer.getDescription(value, values), renderer.getValue(value, values, c));
-                }
+                handler.handle(stack.size() - 1, RENDERER.getDescription(value), RENDERER.getValue(value, c));
                 if (!value.retrieveChildProperties().isEmpty())
                 {
                     stack.add(new ArrayList<>(value.retrieveChildProperties().values()));

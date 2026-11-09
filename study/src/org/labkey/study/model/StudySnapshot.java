@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.study.writer.StudyExportContext;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -363,16 +362,9 @@ public class StudySnapshot
                 // write out view names instead of entityIds
                 for (String entityid : def.getViews())
                 {
-                    try
-                    {
-                        String viewName = QueryService.get().getCustomViewNameFromEntityId(ctx.getContainer(), entityid);
-                        if (viewName != null)
-                            views.add(viewName);
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    String viewName = QueryService.get().getCustomViewNameFromEntityId(ctx.getContainer(), entityid);
+                    if (viewName != null)
+                        views.add(viewName);
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.module.DefaultModule;
+import org.labkey.api.usageMetrics.CoreMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -88,7 +88,7 @@ public class HttpUtil
      * @param uri resource
      * @return A String for the content and the final URI.
      */
-    public static Pair<String, URI> getText(URI uri) throws IOException, URISyntaxException, ParseException
+    public static Pair<String, URI> getText(URI uri) throws IOException, URISyntaxException
     {
         try (CustomTiming ignored = MiniProfiler.custom("http", "HTTP get " + uri.getHost() + "/" + uri.getPath());
              CloseableHttpClient client = HttpClientBuilder.create().build())
@@ -109,7 +109,7 @@ public class HttpUtil
                     throw new HttpException("Bad URI", e);
                 }
 
-                LOG.debug("HTTP GET '" + uri + "' -> resolved to '" + finalURI + "'");
+                LOG.debug("HTTP GET '{}' -> resolved to '{}'", uri, finalURI);
                 HttpEntity entity = response.getEntity();
                 String content = EntityUtils.toString(entity);
 
@@ -135,13 +135,13 @@ public class HttpUtil
         Document document = JSoupUtil.convertHtmlToDocument(content, true, errors);
         if (!errors.isEmpty())
         {
-            LOG.warn("Error converting to XHTML document: " + uri + "\n" + errors.get(0));
+            LOG.warn("Error converting to XHTML document: {}\n{}", uri, errors.getFirst());
             return null;
         }
 
         if (document == null)
         {
-            LOG.warn("Error converting to XHTML document: " + uri);
+            LOG.warn("Error converting to XHTML document: {}", uri);
             return null;
         }
 
@@ -150,7 +150,7 @@ public class HttpUtil
         if (refresh != null)
         {
             URI redirectURI = finalURI.resolve(refresh);
-            LOG.info("following meta refresh: " + redirectURI);
+            LOG.info("following meta refresh: {}", redirectURI);
             return getXHTML(redirectURI);
         }
         else
@@ -255,7 +255,7 @@ public class HttpUtil
     {
         String clientLibrary = getClientLibrary(request);
         if (null != clientLibrary)
-            SimpleMetricsService.get().increment(DefaultModule.CORE_MODULE_NAME, "clientApiRequests", clientLibrary);
+            SimpleMetricsService.get().increment(CoreMetricArea.CLIENT_API_REQUESTS, clientLibrary);
     }
 
     public static @Nullable String getClientLibrary(HttpServletRequest request)

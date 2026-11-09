@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.lang3.Strings;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.view.AuditChangesView;
@@ -26,11 +29,15 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.EditDatasetRowForm;
 import org.labkey.api.study.InsertUpdateAction;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -42,6 +49,7 @@ import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -118,6 +126,8 @@ public class DatasetController extends BaseStudyController
 
             VBox view = new VBox();
 
+            // getAuditEvent() resolves against the current container's audit schema (default ContainerFilter.Current +
+            // CanSeeAuditLog clause), so a foreign auditRowId resolves to null and cannot disclose a record in another folder.
             DatasetAuditProvider.DatasetAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), DatasetAuditProvider.DATASET_AUDIT_EVENT, auditRowId);
             if (event != null)
             {
@@ -282,5 +292,59 @@ public class DatasetController extends BaseStudyController
         public int getAuditRowId() {return auditRowId;}
 
         public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
+    }
+
+    public static class DatasetAuditHistoryScopingTestCase extends AbstractContainerScopingTest
+    {
+        private static final String FIELD_VALUE = GUID.makeGUID();
+        private Container _requestContainer;
+        private long _foreignAuditRowId;
+
+        @Before
+        public void setup()
+        {
+            _requestContainer = createContainer("Request");
+            StudyImpl study = new StudyImpl(_requestContainer, "Request Study");
+            study.setTimepointType(TimepointType.VISIT);
+            StudyManager.getInstance().createTestStudy(getAdmin(), study);
+
+            _foreignAuditRowId = addDatasetAuditEvent(createContainer("Event"));
+        }
+
+        @Test
+        public void doesNotDiscloseForeignFolderDatasetAuditEvent() throws Exception
+        {
+            // Even the site auditor, who may see audit logs everywhere, must not be served another folder's dataset
+            // audit record when requesting it through this folder's URL: the lookup is scoped to the request container.
+            String content = requestAuditHistory(_foreignAuditRowId, getAdmin()).getContentAsString();
+
+            assertFalse("A foreign auditRowId must not disclose dataset audit record in another folder", content.contains(FIELD_VALUE));
+            assertTrue("Should fall through to the 'no additional details' view", content.contains("No additional details recorded"));
+        }
+
+        @Test
+        public void disclosesOwnFolderDatasetAuditEvent() throws Exception
+        {
+            // Control: an event in the request folder must be shown, proving the negative case isn't passing simply
+            // because the view never renders record data.
+            long localRowId = addDatasetAuditEvent(_requestContainer);
+            String content = requestAuditHistory(localRowId, getAdmin()).getContentAsString();
+            assertTrue("An audit event in the request folder must be shown", content.contains(FIELD_VALUE));
+        }
+
+        private long addDatasetAuditEvent(Container c)
+        {
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, "test dataset audit", 1);
+            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(Map.of("SecretField", FIELD_VALUE)));
+            event = AuditLogService.get().addEvent(getAdmin(), event);
+            return event.getRowId();
+        }
+
+        private MockHttpServletResponse requestAuditHistory(long auditRowId, User user) throws Exception
+        {
+            ActionURL url = new ActionURL(DatasetAuditHistoryAction.class, _requestContainer)
+                    .addParameter("auditRowId", auditRowId);
+            return get(url, user);
+        }
     }
 }

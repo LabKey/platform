@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.specimen.location;
 
 import org.jetbrains.annotations.Nullable;
@@ -130,36 +145,24 @@ public class LocationManager
 
     public boolean isLocationInUse(Location loc, TableInfo table, String... columnNames)
     {
-        List<Object> params = new ArrayList<>();
-        params.add(loc.getContainer().getId());
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(table).unsafeAppend(" WHERE ");
 
-        StringBuilder cols = new StringBuilder("(");
-        String or = "";
-        for (String columnName : columnNames)
-        {
-            cols.append(or).append(columnName).append(" = ?");
-            params.add(loc.getRowId());
-            or = " OR ";
-        }
-        cols.append(")");
-
-        String containerColumn = " = ? AND ";
         if (table.getName().contains("_vial") || table.getName().equals("_specimenevent"))
         {
             //vials and events use a column called fr_container instead of normal container.
-            containerColumn = "FR_Container" + containerColumn;
+            sql.unsafeAppend("FR_Container = ").appendValue(loc.getContainer()).unsafeAppend(" AND ");
         }
-        else if (table.getName().contains("_specimen"))
+        else if (!table.getName().contains("_specimen"))
         {
-            params.remove(0);
-            containerColumn = "";
+            sql.unsafeAppend("Container = ").appendValue(loc.getContainer()).unsafeAppend(" AND ");
         }
-        else
-        {
-            containerColumn = "Container" + containerColumn;
-        }
-        return new SqlSelector(table.getSchema(), new SQLFragment("SELECT * FROM " +
-                table + " WHERE " + containerColumn + cols, params)).exists();
+
+        var or = SQLFragment.sep("(", " OR ", ")");
+        for (String columnName : columnNames)
+            sql.append(or.next()).appendIdentifier(columnName).unsafeAppend(" = ").appendValue(loc.getRowId());
+        sql.append(or.last());
+
+        return new SqlSelector(table.getSchema(), sql).exists();
     }
 
     public boolean isLocationInUse(LocationImpl loc)
@@ -233,7 +236,7 @@ public class LocationManager
     {
         if (!dateOrderedEvents.isEmpty())
         {
-            SpecimenEvent lastEvent = dateOrderedEvents.get(dateOrderedEvents.size() - 1);
+            SpecimenEvent lastEvent = dateOrderedEvents.getLast();
 
             if (lastEvent.getShipDate() == null &&
                     (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber() == 0) &&
@@ -266,40 +269,40 @@ public class LocationManager
 
             SQLFragment existsSQL = new SQLFragment();
             existsSQL
-                .append(EXISTS)
+                .unsafeAppend(EXISTS)
                 .append(eventTableInfo, "se")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = se.LabId OR ")
-                .append(tableAlias)
-                .append(".RowId = se.OriginatingLocationId)) ");
+                .unsafeAppend(" WHERE (")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = se.LabId OR ")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = se.OriginatingLocationId)) ");
 
             existsSQL
-                .append(" OR\n")
-                .append(EXISTS)
+                .unsafeAppend(" OR\n")
+                .unsafeAppend(EXISTS)
                 .append(vialTableInfo, "v")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = v.CurrentLocation OR ")
-                .append(tableAlias)
-                .append(".RowId = v.ProcessingLocation)) ");
+                .unsafeAppend(" WHERE (")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = v.CurrentLocation OR ")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = v.ProcessingLocation)) ");
 
             existsSQL
-                .append(" OR\n")
-                .append(EXISTS)
+                .unsafeAppend(" OR\n")
+                .unsafeAppend(EXISTS)
                 .append(specimenTableInfo, "s")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = s.OriginatingLocationId OR ")
-                .append(tableAlias)
-                .append(".RowId = s.ProcessingLocation)) ");
+                .unsafeAppend(" WHERE (")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = s.OriginatingLocationId OR ")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = s.ProcessingLocation)) ");
 
-            SQLFragment updateSQL = new SQLFragment("UPDATE ");
+            SQLFragment updateSQL = SQLFragment.unsafe("UPDATE ");
             updateSQL
                 .append(locationTableInfo)
-                .append(" SET ")
+                .unsafeAppend(" SET ")
                 .appendIdentifier(inUseColumn.getSelectIdentifier())
-                .append(" = ")
+                .unsafeAppend(" = ")
                 .append(schema.getSqlDialect().wrapBooleanExpression(existsSQL));
 
             try

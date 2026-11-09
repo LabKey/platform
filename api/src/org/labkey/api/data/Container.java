@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ProductFeature;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -141,25 +140,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private Long _fileRootSize = null;
     private LocalDateTime _fileRootLastCrawled = null;
 
-    private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = new BlockingCache<>(
-        CacheManager.getCache(
-            Constants.getMaxContainers(),
-            CacheManager.DAY,
-            "Required modules per container"),
-        (key, argument) -> {
-            if (!(argument instanceof Container c))
-            {
-                throw new IllegalStateException("Expected usage pattern is to include the container instance as the argument. Key: " + key);
-            }
+    private final static BlockingCache<Container, Set<Module>> REQUIRED_MODULES_CACHE = DatabaseCache.get(
+        Container.class,
+        CoreSchema.getInstance().getScope(),
+        Constants.getMaxContainers(),
+        CacheManager.DAY,
+        "Required modules per container",
+        (c, _) -> {
             Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
             requiredModules.add(ModuleLoader.getInstance().getModule("API"));
 
-            for (Container child: c.getChildren())
+            if (c.canHaveChildren())
             {
-                if (child.isWorkbook())
-                {
-                    requiredModules.addAll(c.getRequiredModulesForFolderType(child.getFolderType()));
-                }
+                for (FolderType workbookFolderType : ContainerManager.getWorkbookChildFolderTypes(c))
+                    requiredModules.addAll(c.getRequiredModulesForFolderType(workbookFolderType));
             }
 
             return Collections.unmodifiableSet(requiredModules);
@@ -167,19 +161,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     static
     {
-        // Clear the required modules cache on any change to the container tree or container properties
+        // An entry depends on its container's folder type, its workbook children's, and (via module path patterns) its
+        // path. Uncache just the container and its parent, except renames and moves, which change descendants' paths.
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {
             @Override
             public void containerCreated(Container c, User user)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                uncacheRequiredModules(c, c.getParent());
             }
 
             @Override
             public void containerDeleted(Container c, User user)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                uncacheRequiredModules(c, c.getParent());
             }
 
             @Override
@@ -191,9 +186,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                if (evt instanceof ContainerManager.ContainerPropertyChangeEvent cpce && null != cpce.container
+                    && cpce.property != ContainerManager.Property.Name && cpce.property != ContainerManager.Property.Parent)
+                    uncacheRequiredModules(cpce.container, cpce.container.getParent());
+                else
+                    REQUIRED_MODULES_CACHE.clear();
             }
         });
+    }
+
+    private static void uncacheRequiredModules(Container... containers)
+    {
+        for (Container c : containers)
+        {
+            if (null != c)
+                REQUIRED_MODULES_CACHE.remove(c);
+        }
     }
 
     // Might add others in the future (e.g., ReadOnly)
@@ -497,17 +505,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), Set.of());
+        // Prefer hasAnyPermissions() for a singleton since it's less expensive than hasAllPermissions()
+        return SecurityManager.hasAnyPermissions(logMsg, this, user, Set.of(perm), Set.of());
     }
 
-    public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), contextualRoles);
+        // Prefer hasAnyPermissions() for a singleton since it's less expensive than hasAllPermissions()
+        return SecurityManager.hasAnyPermissions(logMsg, this, user, Set.of(perm), contextualRoles);
     }
 
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(null, this, user, Set.of(perm), contextualRoles);
+        // Prefer hasAnyPermissions() for a singleton since it's less expensive than hasAllPermissions()
+        return SecurityManager.hasAnyPermissions(null, this, user, Set.of(perm), contextualRoles);
     }
 
     public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions)
@@ -515,7 +526,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAllPermissions(null, this, user, permissions, Set.of());
     }
 
-    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions, @NotNull Set<Role> contextualRoles)
     {
         return SecurityManager.hasAllPermissions(null, this, user, permissions, contextualRoles);
     }
@@ -531,7 +542,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAnyPermissions(null, this, user, new HashSet<>(Arrays.asList(perms)), Set.of());
     }
 
-    public boolean isForbiddenProject(User user, Set<Role> contextualRoles)
+    public boolean isForbiddenProject(User user, @NotNull Set<Role> contextualRoles)
     {
         return handleForbiddenProject(user, contextualRoles, false);
     }
@@ -541,7 +552,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         handleForbiddenProject(user, Set.of(), true);
     }
 
-    private boolean handleForbiddenProject(User user, Set<Role> contextualRoles, boolean shouldThrow)
+    private boolean handleForbiddenProject(User user, @NotNull Set<Role> contextualRoles, boolean shouldThrow)
     {
         if (null != user && !user.isSearchUser())
         {
@@ -1004,7 +1015,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getRequiredModules()
     {
-        return REQUIRED_MODULES_CACHE.get(getEntityId(), this);
+        return REQUIRED_MODULES_CACHE.get(this);
     }
 
     public Set<Module> getRequiredModulesForFolderType(FolderType folderType)
@@ -1033,9 +1044,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @NotNull
     public Boolean getAuditCommentsRequired()
     {
-        Map<String, String> props = PropertyManager.getProperties(this, AUDIT_SETTINGS_PROPERTY_SET_NAME);
         if (!ProductRegistry.isProductFeatureEnabled(ProductFeature.DataChangeCommentRequirement))
             return false;
+        // the audit setting is stored on the app home folder, which is the project only when product folders are enabled
+        Container container = isAppHomeFolder() ? this : getProject();
+        if (container == null) // shouldn't ever happen
+            return false;
+        Map<String, String> props = PropertyManager.getProperties(container, AUDIT_SETTINGS_PROPERTY_SET_NAME);
         return Boolean.parseBoolean(props.getOrDefault(REQUIRE_USER_COMMENTS_PROPERTY_NAME, "false"));
     }
 
@@ -1458,7 +1473,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         ContainerType type = ContainerTypeRegistry.get().getType(typeString);
         if (type == null)
-            LOG.warn("Unknown container type: " + typeString);
+            LOG.warn("Unknown container type: {}", typeString);
         else
             _containerType = type;
     }
@@ -1756,11 +1771,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return ContainerFilter.current(this, user);
     }
 
-    public boolean isDataspace()
-    {
-        return StudyService.DATASPACE_FOLDERTYPE_NAME.equalsIgnoreCase(getFolderType().getName());
-    }
-
     public boolean hasActiveModuleByName(@NotNull String moduleName)
     {
         for (Module module : getActiveModules())
@@ -1800,7 +1810,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 iconFile = dir.getFile();
             if (!NetworkDrive.exists(iconFile))
             {
-                LOG.warn("Could not find specified icon: " + iconPath);
+                LOG.warn("Could not find specified icon: {}", iconPath);
                 iconPath = FolderType.NONE.getFolderIconPath();
             }
             if (!iconPath.startsWith("/"))

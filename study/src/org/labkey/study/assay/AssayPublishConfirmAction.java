@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.study.assay;
 
 import org.jetbrains.annotations.NotNull;
@@ -10,10 +25,10 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -24,8 +39,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.publish.AbstractPublishConfirmAction;
-import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
@@ -35,6 +48,8 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.study.publish.AbstractPublishConfirmAction;
+import org.labkey.study.publish.PublishConfirmForm;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -61,7 +76,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
             if (_protocol == null)
             {
                 if (getRowId() != null)
-                    _protocol = ExperimentService.get().getExpProtocol(getRowId().intValue());
+                    _protocol = ExperimentService.get().getExpProtocol(getRowId());
                 else
                     throw new NotFoundException("Protocol ID not specified.");
 
@@ -239,7 +254,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
             .toList();
 
         if (sampleCols.size() == 1)
-            additionalCols.put(LinkToStudyKeys.SampleId, sampleCols.get(0).getFieldKey());
+            additionalCols.put(LinkToStudyKeys.SampleId, sampleCols.getFirst().getFieldKey());
 
         if (!selectColumns.containsKey(additionalCols.get(LinkToStudyKeys.Date)))
         {
@@ -250,7 +265,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
                 .toList();
 
             if (dateCols.size() == 1)
-                additionalCols.put(LinkToStudyKeys.Date, dateCols.get(0).getFieldKey());
+                additionalCols.put(LinkToStudyKeys.Date, dateCols.getFirst().getFieldKey());
         }
 
         // Add the TargetStudy FieldKey only if it exists on the Result domain.

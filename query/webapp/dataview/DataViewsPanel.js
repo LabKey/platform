@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -705,7 +705,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 },
                 scope : this
             },
-            hidden   : !this.manageView,
+            hidden   : !this.editMode,
             scope    : this
         },{
             xtype    : 'fatreecolumn',
@@ -1050,14 +1050,20 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     onEnableEditMode : function() {
         this.editMode = true;
-        this._getEditColumn().show();
+        var editColumn = this._getEditColumn();
+        if (editColumn) {
+            editColumn.show();
+        }
         this.refreshViewStore();
         this.applySearchFilter();
     },
 
     onDisableEditMode : function() {
         this.editMode = false;
-        this._getEditColumn().hide();
+        var editColumn = this._getEditColumn();
+        if (editColumn) {
+            editColumn.hide();
+        }
         this.refreshViewStore();
         this.applySearchFilter();
     },

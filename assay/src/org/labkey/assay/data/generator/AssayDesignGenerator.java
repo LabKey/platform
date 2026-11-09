@@ -1,10 +1,25 @@
+/*
+ * Copyright (c) 2023-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.assay.data.generator;
 
 import org.labkey.api.assay.AssayDomainService;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.generator.DataGenerator;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -18,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.SAMPLE_CONCEPT_URI;
 
 public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Config>
 {
@@ -28,12 +43,17 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         super(job, config);
     }
 
-    public void generateAssayDesigns(String namePrefix) throws ValidationException, AssayException
+    public void generateAssayDesigns(String namePrefix) throws ValidationException
     {
         int numAssayDesigns = _config.getNumAssayDesigns();
         if (numAssayDesigns <= 0)
         {
-            _log.info(String.format("No assay designs generated because %s=%d", Config.NUM_ASSAY_DESIGNS, numAssayDesigns));
+            _log.info("No assay designs generated because {}={}", Config.NUM_ASSAY_DESIGNS, numAssayDesigns);
+            return;
+        }
+        if (!getContainer().hasPermission(_job.getUser(), DesignAssayPermission.class))
+        {
+            _log.warn("No assay designs generated because the user lacks the proper permissions in this container.");
             return;
         }
         checkAlive(_job);
@@ -53,7 +73,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
             checkAlive(_job);
         }
         timer.stop();
-        _log.info(String.format("Generating %d assay designs took %s", numAssayDesigns, timer.getDuration() + "."));
+        _log.info("Generating {} assay designs took {}", numAssayDesigns, timer.getDuration() + ".");
     }
 
     private void createStandardAssayDesign(String name) throws ValidationException
@@ -154,7 +174,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
     public static class Driver implements DataGenerationDriver
     {
         @Override
-        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException, AssayException
+        public List<CPUTimer> generateData(PipelineJob job, Properties properties) throws ValidationException
         {
             AssayDesignGenerator generator = new AssayDesignGenerator(job, new AssayDesignGenerator.Config(properties));
             generator.generateAssayDesigns("Assay Design ");

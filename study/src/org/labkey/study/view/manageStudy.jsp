@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@
 <%@ page import="org.labkey.study.StudyInternalServiceImpl" %>
 <%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ConfigureMasterPatientSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DemoModeAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageExternalReloadAction" %>
@@ -302,11 +301,6 @@
                             }
                         }
                     %>
-                    <tr>
-                        <td class="lk-study-prop-label">Master Patient Index</td>
-                        <td class="lk-study-prop-desc">Configure the Master Patient Index settings for this folder</td>
-                        <td><%= link("Master Patient Index", ConfigureMasterPatientSettingsAction.class) %></td>
-                    </tr>
                 </table>
             </labkey:panel>
 
@@ -327,7 +321,7 @@
 <%
     }
 
-    if (c.hasPermission(user, AdminPermission.class) && !c.isDataspace())
+    if (c.hasPermission(user, AdminPermission.class) && !StudyService.get().isDataspace(c))
     {
 %>
         <%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>

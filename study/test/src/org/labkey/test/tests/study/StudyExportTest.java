@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,12 @@ public class StudyExportTest extends StudyManualTest
     @Override
     protected int getVisitCount()
     {
-        return super.getVisitCount() + 1;
+        return super.getVisitCount() + 1 + (_studyHelper.isSpecimenModulePresent() ? 0 : -11);
+    }
+
+    protected int getUnusedVisitCount()
+    {
+        return _studyHelper.isSpecimenModulePresent() ? 24 : 26;
     }
 
     protected void doCohortCreateSteps()

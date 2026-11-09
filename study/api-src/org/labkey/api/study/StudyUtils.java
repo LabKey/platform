@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
@@ -41,9 +56,9 @@ public class StudyUtils
         // Returns a SQL statement that produces a single number from a date, in the form of YYYYMMDD.
         SqlDialect dialect = StudyService.get().getStudySchema().getSqlDialect();
         SQLFragment sql = new SQLFragment();
-        sql.append("(10000 * ").append(dialect.getDatePart(Calendar.YEAR, dateColumnName)).append(") + ");
-        sql.append("(100 * ").append(dialect.getDatePart(Calendar.MONTH, dateColumnName)).append(") + ");
-        sql.append("(").append(dialect.getDatePart(Calendar.DAY_OF_MONTH, dateColumnName)).append(")");
+        sql.unsafeAppend("(10000 * ").append(dialect.getDatePartAsSql(Calendar.YEAR, dateColumnName)).unsafeAppend(") + ");
+        sql.unsafeAppend("(100 * ").append(dialect.getDatePartAsSql(Calendar.MONTH, dateColumnName)).unsafeAppend(") + ");
+        sql.unsafeAppend("(").append(dialect.getDatePartAsSql(Calendar.DAY_OF_MONTH, dateColumnName)).unsafeAppend(")");
         return sql;
     }
 
@@ -100,13 +115,13 @@ public class StudyUtils
         return null!=value && (Boolean)JdbcType.BOOLEAN.convert(value);
     }
 
-    public static String getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
+    public static SQLFragment getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
     {
         SqlDialect dialect = schema.getSqlDialect();
-        String strType = dialect.getSqlTypeName(JdbcType.VARCHAR);
+        SQLFragment sequenceNum = SQLFragment.unsafe("CAST(CAST(").appendIdentifier(sequenceNumColumnName)
+                .unsafeAppend(" AS NUMERIC(15,4)) AS ").append(dialect.getSqlTypeNameAsSql(JdbcType.VARCHAR)).unsafeAppend(")");
+        SQLFragment ptid = new SQLFragment().appendIdentifier(ptidColumnName);
 
-        //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
-
-        return "(" + dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")") + ")";
+        return SQLFragment.unsafe("(").append(dialect.concatenate(ptid, SQLFragment.unsafe("'|'"), sequenceNum)).unsafeAppend(")");
     }
 }

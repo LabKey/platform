@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class TempTableInfo extends SchemaTableInfo
     public TempTableInfo(DbSchema schema, String name, List<ColumnInfo> cols, List<String> pk)
     {
         super(schema, DatabaseTableType.TABLE, name, name,
-                new SQLFragment().appendIdentifier(schema.getName()).append(".").appendIdentifier(name + "$" + new GUID().toStringNoDashes()));
+                new SQLFragment().appendIdentifier(schema.getName()).unsafeAppend(".").appendIdentifier(name + "$" + new GUID().toStringNoDashes()));
 
         // make sure TempTableTracker is initialized _before_ caller executes CREATE TABLE
         TempTableTracker.init();

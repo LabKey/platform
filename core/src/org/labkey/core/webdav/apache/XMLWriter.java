@@ -17,7 +17,7 @@
 
 package org.labkey.core.webdav.apache;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -273,7 +273,7 @@ public class XMLWriter {
                 } else {
                     buffer.append(node.getLocalName());
                 }
-                Attr attrs[] = sortAttributes(node.getAttributes());
+                Attr[] attrs = sortAttributes(node.getAttributes());
                 for ( int i = 0; i < attrs.length; i++ ) {
                     Attr attr = attrs[i];
                     buffer.append(' ');
@@ -375,7 +375,7 @@ public class XMLWriter {
         }
 
         int len = attrs.getLength();
-        Attr array[] = new Attr[len];
+        Attr[] array = new Attr[len];
         for ( int i = 0; i < len; i++ ) {
             array[i] = (Attr)attrs.item(i);
         }
@@ -486,6 +486,6 @@ public class XMLWriter {
                 continue;
             return false;
         }
-        return !StringUtils.startsWithIgnoreCase(name,"xml");
+        return !Strings.CI.startsWith(name,"xml");
     }
 }

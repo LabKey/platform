@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,6 @@ public class AnnouncementModel extends Entity implements Serializable
 
     private Collection<AnnouncementModel> _responses = null;
     private Set<User> _authors;
-    private Date _approved = null;
 
     /**
      * Standard constructor.
@@ -417,22 +416,6 @@ public class AnnouncementModel extends Entity implements Serializable
     public AttachmentParent getAttachmentParent()
     {
         return new AnnouncementAttachmentParent(this);
-    }
-
-    public Date getApproved()
-    {
-        return _approved;
-    }
-
-    public void setApproved(Date approved)
-    {
-        _approved = approved;
-    }
-
-    @JsonIgnore
-    public boolean isSpam()
-    {
-        return AnnouncementManager.isSpam(this);
     }
 }
 

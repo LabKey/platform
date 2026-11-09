@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class WebdavServlet extends HttpServlet
 
         String fullPath = (null==request.getServletPath()?"":request.getServletPath()) + (null==request.getPathInfo()?"":request.getPathInfo());
 
-        _log.debug(request.getMethod() + ": " + request.getRequestURL() + "; " + request.getPathInfo());
+        _log.debug("{}: {}; {}", request.getMethod(), request.getRequestURL(), request.getPathInfo());
         URLHelper helper;
         try
         {
@@ -130,7 +130,7 @@ public class WebdavServlet extends HttpServlet
             catch (URISyntaxException e)
             {
             }
-            LogManager.getRootLogger().error("Improper welcome URL: " + AppProps.getInstance().getSiteWelcomePageUrlString());
+            LogManager.getRootLogger().error("Improper welcome URL: {}", AppProps.getInstance().getSiteWelcomePageUrlString());
             try {response.reset();}catch(IllegalStateException x){/*pass*/}
         }
 

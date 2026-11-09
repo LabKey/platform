@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.CanAccessLockedProjectsPermission;
@@ -167,7 +166,7 @@ public class RoleManager
     }
 
     // Limit logging of each unique role or permission warning to once-per-day
-    private static final Throttle<String> WARNING_THROTTLE = new Throttle<>("RoleManagerWarningThrottle", 500, CacheManager.DAY, LOG::warn);
+    private static final Throttle<String> WARNING_THROTTLE = new Throttle<>(String.class, "role and permission warnings", 500, CacheManager.DAY, LOG::warn);
 
     private static <T extends Role> T warnIfNull(@Nullable T role, Supplier<String> warningSupplier)
     {
@@ -373,15 +372,13 @@ public class RoleManager
      * @return A set of Role objects corresponding to the role classes
      */
     @NotNull
-    public static Set<Role> mergeContextualRoles(ViewContext context, Class<? extends HasContextualRoles>[] roleFactories, Set<Role> contextualRoles)
+    public static Set<Role> mergeContextualRoles(ViewContext context, Class<? extends HasContextualRoles>[] roleFactories, @NotNull Set<Role> contextualRoles)
     {
         if (roleFactories == null || roleFactories.length == 0)
             return contextualRoles;
 
-        Set<Role> allContextualRoles = new HashSet<>();
-        if (contextualRoles != null)
-            allContextualRoles.addAll(contextualRoles);
-        
+        Set<Role> allContextualRoles = new HashSet<>(contextualRoles);
+
         for (Class<? extends HasContextualRoles> roleFactory : roleFactories)
         {
             HasContextualRoles factory;
@@ -397,9 +394,7 @@ public class RoleManager
                 throw new RuntimeException(e);
             }
 
-            Set<Role> roles = factory.getContextualRoles(context);
-            if (roles != null)
-                allContextualRoles.addAll(roles);
+            allContextualRoles.addAll(factory.getContextualRoles(context));
         }
 
         return allContextualRoles;

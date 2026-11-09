@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -53,7 +54,7 @@ public class StudyPipeline extends PipelineProvider
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             return;
 
-        if (context.getContainer().isDataspace())
+        if (StudyService.get().isDataspace(context.getContainer()))
             return;
 
         Study study = StudyManager.getInstance().getStudy(context.getContainer());

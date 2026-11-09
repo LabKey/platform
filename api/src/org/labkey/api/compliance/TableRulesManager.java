@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public class TableRulesManager
     public void addTableRulesProvider(TableRulesProvider provider)
     {
         // Always add to the beginning... we want to iterate in reverse dependency order
-        TABLE_RULES_PROVIDERS.add(0, provider);
+        TABLE_RULES_PROVIDERS.addFirst(provider);
     }
 
     public @NotNull TableRules getTableRules(@NotNull Container c, @NotNull User user, SecurableResource permissionsResource)

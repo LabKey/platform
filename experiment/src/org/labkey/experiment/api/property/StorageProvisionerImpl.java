@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2021-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,7 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -97,6 +98,7 @@ import org.springframework.validation.BindException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -110,7 +112,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
@@ -138,7 +139,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     // #42641: Track recently created tables in a cache to limit size and duration
     private static final Cache<@NotNull String, StackTraceElement @NotNull []> RECENTLY_CREATED_TABLES = CacheBuilder.newBuilder()
         .maximumSize(10000)
-        .expireAfterWrite(1, TimeUnit.DAYS)
+        .expireAfterWrite(Duration.ofDays(1))
         .build();
 
     private String _create(DbScope scope, DomainKind<?> kind, Domain domain, boolean useProvidedStorageName)
@@ -193,7 +194,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                     // name as a built-in column. e.g. to allow setting overrides?
                     if (!kind.hasPropertiesIncludeBaseProperties())
-                        log.info("StorageProvisioner ignored property with name of built-in column: " + property.getPropertyURI());
+                        log.info("StorageProvisioner ignored property with name of built-in column: {}", property.getPropertyURI());
                     continue;
                 }
 
@@ -213,11 +214,20 @@ public class StorageProvisionerImpl implements StorageProvisioner
             indices.addAll(domain.getPropertyIndices());
             change.setIndexedColumns(domain, indices);
 
+            /*
+             * TODO:
+             * GitHub Issue 1117: Consider the generic fix below for develop. See https://github.com/LabKey/platform/pull/7804
+             * Tests may need updates and domains FKs (for example, issues) maybe need to adjusted.
+             *
+             * Set<PropertyStorageSpec.ForeignKey> foreignKeys = new LinkedHashSet<>(kind.getPropertyForeignKeys(domain.getContainer()));
+             * foreignKeys.addAll(domain.getPropertyForeignKeys());
+             * change.setForeignKeys(foreignKeys);
+             */
             change.setForeignKeys(domain.getPropertyForeignKeys());
 
             try
             {
-                log.info("Attempting to create " + tableName);
+                log.info("Attempting to create {}", tableName);
                 change.execute();
                 RECENTLY_CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
             }
@@ -226,7 +236,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 StackTraceElement[] previousCreationStack = RECENTLY_CREATED_TABLES.getIfPresent(tableName);
 
                 if (null != previousCreationStack)
-                    log.error(re.getMessage() + " while attempting to create storage table. Previous creation stack trace:" + ExceptionUtil.renderStackTrace(previousCreationStack));
+                    log.error("{} while attempting to create storage table. Previous creation stack trace:{}", re.getMessage(), ExceptionUtil.renderStackTrace(previousCreationStack));
 
                 throw re;
             }
@@ -280,7 +290,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         if (kind == null)
         {
             if (null != domain.getStorageTableName())
-                log.warn("Domain " + domain.getName() + " has no DomainKind, it cannot be dropped. URI: " + domain.getTypeURI(), new IllegalStateException());
+                log.warn("Domain {} has no DomainKind, it cannot be dropped. URI: {}", domain.getName(), domain.getTypeURI(), new IllegalStateException());
             return;
         }
 
@@ -304,13 +314,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
             }
             catch (RuntimeSQLException e)
             {
-                log.warn(String.format("Failed to drop table in schema %s for domain %s - %s", schemaName, domain.getName(), e.getMessage()), e);
+                log.warn("Failed to drop table in schema {} for domain {} - {}", schemaName, domain.getName(), e.getMessage(), e);
                 throw e;
             }
         }
         else
         {
-            log.warn(String.format("Table %s in schema %s for domain %s does not exist. Ignoring drop.", tableName, schemaName, domain.getName()));
+            log.warn("Table {} in schema {} for domain {} does not exist. Ignoring drop.", tableName, schemaName, domain.getName());
         }
         // Issue 44467: Update DbSchema caches
         kind.invalidate(domain);
@@ -340,7 +350,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
-                log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getName());
+                log.warn("StorageProvisioner ignored property with name of built-in column: {}", prop.getName());
                 continue;
             }
 
@@ -384,12 +394,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
-                log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getPropertyURI());
+                log.warn("StorageProvisioner ignored property with name of built-in column: {}", prop.getPropertyURI());
                 continue;
             }
 
             if (CoreSchema.getInstance().getSqlDialect().isReserved(prop.getName()))
-                log.warn("Property name '" + prop.getName() + "' is a reserved word in the current SQL dialect.");
+                log.warn("Property name '{}' is a reserved word in the current SQL dialect.", prop.getName());
 
             PropertyStorageSpec spec = kind.getPropertySpec(prop.getPropertyDescriptor(), domain);
             if (null != spec)
@@ -401,7 +411,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 change.addColumn(makeMvColumn(prop));
             }
         }
-        log.debug("addingProperties to " + domain.getName());
+        log.debug("addingProperties to {}", domain.getName());
         change.execute();
     }
 
@@ -590,11 +600,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
                         var selectColumnName = prop.getPropertyDescriptor().getLegalSelectName(scope.getSqlDialect());
                         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
                                 .appendDottedIdentifiers(kind.getStorageSchemaName(), domain.getStorageTableName())
-                                .append(" WHERE ")
+                                .unsafeAppend(" WHERE ")
                                 .appendIdentifier(selectColumnName)
-                                .append(" IS NOT NULL AND array_length(")
+                                .unsafeAppend(" IS NOT NULL AND array_length(")
                                 .appendIdentifier(selectColumnName)
-                                .append(", 1) > 1");
+                                .unsafeAppend(", 1) > 1");
                         long count = new SqlSelector(scope, sql).getObject(Long.class);
                         if (count > 0)
                         {
@@ -639,6 +649,19 @@ public class StorageProvisionerImpl implements StorageProvisioner
         _ProvisionedTable wrapper = new _ProvisionedTable(sti.getSchema(), sti.getName(), sti, domain);
         wrapper.wrapAllColumns();
         return wrapper;
+    }
+
+    @Override
+    @NotNull
+    public TableInfo createSharedTableInfoImpl(@NotNull Domain domain)
+    {
+        TableInfo table = createTableInfoImpl(domain);
+        table.setLocked(true);
+        MemTracker.getInstance().remove(table);
+        // The table holds the Domain, which holds a DomainDescriptor that MemTracker tracks separately
+        if (domain instanceof DomainImpl di)
+            MemTracker.getInstance().remove(di._dd);
+        return table;
     }
 
     @NotNull
@@ -1040,7 +1063,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return CoreSchema.getInstance().getSqlDialect();
     }
 
-    @Override
+    @Override @NotNull
     public SchemaTableInfo getSchemaTableInfo(Domain domain)
     {
         DomainKind<?> kind = getDomainKind(domain);
@@ -1099,7 +1122,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             if (null == c)
             {
-                log.info("Column not found in storage table: " + tableName + "." + s.getName());
+                log.info("Column not found in storage table: {}.{}", tableName, s.getName());
                 continue;
             }
 
@@ -1133,11 +1156,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 if (p.getPropertyDescriptor().getStorageColumnName() == null)
                 {
-                    log.warn("No storage column name set for property " + p.getName() + " on table " + tableName);
+                    log.warn("No storage column name set for property {} on table {}", p.getName(), tableName);
                 }
                 else
                 {
-                    log.info("Column not found in storage table: " + tableName + "." + p.getPropertyDescriptor().getStorageColumnName());
+                    log.info("Column not found in storage table: {}.{}", tableName, p.getPropertyDescriptor().getStorageColumnName());
                 }
                 continue;
             }
@@ -1265,7 +1288,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 .append(OntologyManager.getTinfoDomainDescriptor().getFromSQL("dd"));
         if (null != domainuri)
         {
-            sql.append(" WHERE domainuri=?");
+            sql.unsafeAppend(" WHERE domainuri=?");
             sql.add(domainuri);
         }
 
@@ -1406,15 +1429,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     domainReport.addError(String.format("database table %s.%s did not contain expected column '%s'", domainReport.getSchemaName(), domainReport.getTableName(), domainProp.getName()));
                     status.fix = "Create column '" + domainProp.getName() + "'";
                     status.hasProblem = true;
-                }
-
-                // Ignore the hashed columns generated for unique constraint over large text columns required for SQLServer
-                // Unfortunately, the domain doesn't record the intended unique indices, so we'll just ignore all columns that have the "_hashed_" prefix.
-                var dialect = getSqlDialect(domain);
-                if (getSqlDialect(domain).isSqlServer() && domainProp.getJdbcType().isText())
-                {
-                    String hashedColumnName = PropertyStorageSpec.HASHED_COLUMN_PREFIX + propDescriptor.getName();
-                    hardColumnNames.remove(hashedColumnName);
                 }
 
                 String mvColName = PropertyStorageSpec.getMvIndicatorDisplayColumnName(propDescriptor);
@@ -1766,12 +1780,6 @@ renaming a property AND toggling mvindicator on in the same change.
                 public @Nullable ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
                 {
                     return null;
-                }
-
-                @Override
-                public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-                {
-                    return Collections.emptySet();
                 }
 
                 @Override

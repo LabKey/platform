@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -164,7 +164,9 @@ public class DbSchema
         if (null != module)
             fullyQualifiedSchemaName = module.getDatabaseSchemaName(fullyQualifiedSchemaName);
 
-        String schemaName = DbSchema.getDbScopeAndSchemaName(fullyQualifiedSchemaName).second;
+        // Strip the known prefix; getDbScopeAndSchemaName() can't resolve a display name and mis-splits dotted schema names
+        String prefix = DbSchema.getDisplayName(scope, "");
+        String schemaName = fullyQualifiedSchemaName.startsWith(prefix) ? fullyQualifiedSchemaName.substring(prefix.length()) : fullyQualifiedSchemaName;
         Map<String, String> schemaNameMap = SchemaNameCache.get().getSchemaNameMap(scope);
         String metaDataName = schemaNameMap.get(schemaName);
 
@@ -239,7 +241,7 @@ public class DbSchema
             _ignoreTemp = ignoreTemp;
         }
 
-        protected abstract void handleTable(String tableName, DatabaseTableType tableType, String description) throws SQLException;
+        protected abstract void handleTable(String tableName, DatabaseTableType tableType, String description);
 
         protected T getReturnValue() {return null;}
 
@@ -289,7 +291,7 @@ public class DbSchema
             }
             catch (IllegalArgumentException e)
             {
-                _log.error("Malformed XML in " + ti.getSchema() + "." + xmlTable.getTableName(), e);
+                _log.error("Malformed XML in {}.{}", ti.getSchema(), xmlTable.getTableName(), e);
             }
         }
 
@@ -612,31 +614,20 @@ public class DbSchema
         public void testDDLMethods() throws Exception
         {
             DbSchema testSchema = test.getSchema();
+            DbScope testScope = testSchema.getScope();
 
             // create test objects
             //start with cleanup
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
-            testSchema.getSqlDialect().dropSchema(testSchema,"testdrop2");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope,"testdrop2");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop3");
             testSchema.dropTableIfExists(tempTableName);
 
-            SqlExecutor executor = new SqlExecutor(testSchema);
+            SqlExecutor executor = new SqlExecutor(testScope);
 
-            if (testSchema.getSqlDialect().isSqlServer())
-            {
-                // test the 3 ways to create a schema on SQLServer
-                executor.execute("EXEC sp_addapprole 'testdrop', 'password'");
-                executor.execute("CREATE SCHEMA testdrop2");
-                executor.execute(testSchema.getSqlDialect().getCreateSchemaSql("testdrop3"));
-            }
-            else if (testSchema.getSqlDialect().isPostgreSQL())
-            {
-                executor.execute("CREATE SCHEMA testdrop");
-                executor.execute("CREATE SCHEMA testdrop2");
-                executor.execute("CREATE SCHEMA testdrop3");
-            }
-            else
-                return;
+            executor.execute("CREATE SCHEMA testdrop");
+            executor.execute("CREATE SCHEMA testdrop2");
+            executor.execute("CREATE SCHEMA testdrop3");
 
             executor.execute("CREATE TABLE testdrop.T0 (c0 INT NOT NULL PRIMARY KEY)");
             executor.execute("CREATE TABLE testdrop.T (c1 CHAR(1), fk_c0 INT REFERENCES testdrop.T0(c0))");
@@ -666,16 +657,16 @@ public class DbSchema
             testSchema.dropTableIfExists(tempTableName);
             executor.execute(sqlCreateTempTable);
 
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
 
             // these don't exist
             testSchema.dropIndexIfExists("T", "T_notexist") ;
             testSchema.dropTableIfExists("V1");
             testSchema.dropTableIfExists("Tnot");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
 
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop2");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop2");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop3");
         }
 
         @After
@@ -728,15 +719,15 @@ public class DbSchema
                 if (col.getName().equalsIgnoreCase("Container"))
                 {
                     sbSql.append(" INSERT INTO " + tempTableName );
-                    sbSql.append(" SELECT " + (++row) + " AS rowId, ").appendValue(t.getSelectName()).append(" AS TableName, ");
+                    sbSql.append(" SELECT " + (++row) + " AS rowId, ").appendValue(t.getSelectName()).unsafeAppend(" AS TableName, ");
                     List<ColumnInfo> pkColumns = t.getPkColumns();
 
                     if (pkColumns.size() == 1)
                     {
-                        ColumnInfo pkColumn = pkColumns.get(0);
+                        ColumnInfo pkColumn = pkColumns.getFirst();
                         sbSql.appendValue(pkColumn.getSelectIdentifier().getId());
-                        sbSql.append(" AS FirstPKColName, ");
-                        sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),pkColumn.getSelectIdentifier()).append(" AS VARCHAR(100)) AS FirstPKValue, ");
+                        sbSql.unsafeAppend(" AS FirstPKColName, ");
+                        sbSql.unsafeAppend(" CAST( ").append(t.getSQLName()).unsafeAppend(".").appendIdentifier(pkColumn.getSelectIdentifier()).unsafeAppend(" AS VARCHAR(100)) AS FirstPKValue, ");
                     }
                     else
                     {
@@ -745,25 +736,25 @@ public class DbSchema
                             tmp = "multiCol PK ";
                         if(t.getName().equals("ACLs"))
                             tmp = "objectid ";
-                        sbSql.appendValue(tmp).append(" AS FirstPKColName, ");
-                        sbSql.append(" NULL AS FirstPKValue, ");
+                        sbSql.appendValue(tmp).unsafeAppend(" AS FirstPKColName, ");
+                        sbSql.unsafeAppend(" NULL AS FirstPKValue, ");
                     }
-                    sbSql.appendValue(moduleName).append(" AS ModuleName, ");
-                    sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),col.getSelectIdentifier()).append(" AS VARCHAR(100)) AS OrphanedContainer ");
-                    sbSql.append(" FROM ").appendIdentifier(t.getSelectName());
-                    sbSql.append( " LEFT OUTER JOIN  core.Containers C ");
-                    sbSql.append(" ON (").appendIdentifier(t.getSelectName()).append(".").append("Container = C.EntityId ) ");
-                    sbSql.append( " WHERE C.EntityId IS NULL ");
+                    sbSql.appendValue(moduleName).unsafeAppend(" AS ModuleName, ");
+                    sbSql.unsafeAppend(" CAST( ").append(t.getSQLName()).unsafeAppend(".").appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" AS VARCHAR(100)) AS OrphanedContainer ");
+                    sbSql.unsafeAppend(" FROM ").append(t.getSQLName());
+                    sbSql.unsafeAppend( " LEFT OUTER JOIN  core.Containers C ");
+                    sbSql.unsafeAppend(" ON (").append(t.getSQLName()).unsafeAppend(".").unsafeAppend("Container = C.EntityId ) ");
+                    sbSql.unsafeAppend( " WHERE C.EntityId IS NULL ");
 
                     // special handling of MS2 soft deletes
                     if (null != t.getColumn("Deleted"))
                     {
-                        sbSql.append( " AND Deleted = ? ");
+                        sbSql.unsafeAppend( " AND Deleted = ? ");
                         sbSql.add(Boolean.FALSE);
                     }
                     else if (t.getSchema().getName().equals("ms2") && null != t.getColumn("Run"))
                     {
-                        sbSql.append(" AND Run IN (SELECT Run FROM ms2.runs WHERE Deleted = ? ) ");
+                        sbSql.unsafeAppend(" AND Run IN (SELECT Run FROM ms2.runs WHERE Deleted = ? ) ");
                         sbSql.add(Boolean.FALSE);
                     }
 

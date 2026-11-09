@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
@@ -167,7 +166,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles, context);
         if (PipelineDataCollector.getFileQueue(context).isEmpty())
         {
-            result.add(0, new TextAreaDataCollector<>());
+            result.addFirst(new TextAreaDataCollector<>());
         }
         return result;
     }
@@ -285,7 +284,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         specimenID.setImportAliasSet(specimenImportAliases);
 
         DomainProperty participantID = addProperty(dataDomain, PARTICIPANTID_PROPERTY_NAME, PARTICIPANTID_PROPERTY_CAPTION, PropertyType.STRING, "Used with either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + " to identify subject and timepoint for assay.");
-        participantID.setConceptURI(org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI);
+        participantID.setConceptURI(PropertyType.PARTICIPANT_CONCEPT_URI);
         participantID.setImportAliasSet(participantImportAliases);
 
         DomainProperty visitID = addProperty(dataDomain, VISITID_PROPERTY_NAME,  VISITID_PROPERTY_CAPTION, PropertyType.DOUBLE, "Used with " + PARTICIPANTID_PROPERTY_NAME + " to identify subject and timepoint for assay.");
@@ -344,6 +343,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public DataExchangeHandler createDataExchangeHandler()
     {
         return new TsvDataExchangeHandler();
+    }
+
+    @Override
+    public boolean isTransformBeforeRunSupported(ExpProtocol protocol)
+    {
+        // Parsing plate data deletes hit selections of the run being replaced
+        return !isPlateMetadataEnabled(protocol);
     }
 
     @Override
@@ -726,7 +732,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         if (!toRemove.isEmpty())
         {
             var sql = new SQLFragment("DELETE FROM ").append(table)
-                    .append(" WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
+                    .unsafeAppend(" WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
             new SqlExecutor(table.getSchema()).execute(sql);
         }
 
@@ -747,19 +753,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 throw new RuntimeSQLException(e);
             }
         }
-    }
-
-    @Override
-    public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
-    {
-        assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
-
-        var table = AssayDbSchema.getInstance().getTableInfoFilterCriteria();
-        var sql = new SQLFragment("DELETE FROM ").append(table)
-                .append(" WHERE (PropertyId = ? OR ReferencePropertyId = ?)")
-                .addAll(pd.getPropertyId(), pd.getPropertyId());
-
-        new SqlExecutor(table.getSchema()).execute(sql);
     }
 
     private static boolean isResultsDomain(GWTDomain<?> domain)
@@ -887,7 +880,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             TsvAssayProvider provider = new TsvAssayProvider();
             List<AssayDataCollector> dataCollectors = provider.getDataCollectors(null, _uploadContext);
             assertEquals(1, dataCollectors.size());
-            assertEquals(PipelineDataCollector.class, dataCollectors.get(0).getClass());
+            assertEquals(PipelineDataCollector.class, dataCollectors.getFirst().getClass());
         }
 
         @Test

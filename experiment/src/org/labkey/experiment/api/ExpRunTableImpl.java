@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
@@ -90,6 +91,8 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ProductFeature;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
@@ -238,16 +241,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
         else
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append("RowID IN (");
-            String separator = "";
-            for (ExpRun run : runs)
-            {
-                sql.append(separator);
-                separator = ", ";
-                sql.appendValue(run.getRowId());
-            }
-            sql.append(")");
+            SQLFragment sql = new SQLFragment("RowID");
+            sql.appendInClause(runs.stream().map(ExpRun::getRowId).toList(), getSqlDialect());
             addCondition(sql);
         }
     }
@@ -436,9 +431,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case ReplacesRun:
                 SQLFragment replacesSQL = new SQLFragment("(SELECT MIN(er.RowId) FROM ");
                 replacesSQL.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
-                replacesSQL.append(" WHERE er.ReplacedByRunId = ");
+                replacesSQL.unsafeAppend(" WHERE er.ReplacedByRunId = ");
                 replacesSQL.append(ExprColumn.STR_TABLE_ALIAS);
-                replacesSQL.append(".RowId)");
+                replacesSQL.unsafeAppend(".RowId)");
                 var replacesRunCol = new ExprColumn(this, "ReplacesRun", replacesSQL, JdbcType.INTEGER);
                 replacesRunCol.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 replacesRunCol.setLabel("Replaces");
@@ -455,8 +450,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return createPropertiesColumn(alias);
             case WorkflowTask:
                 var workflowTaskCol = wrapColumn(alias, _rootTable.getColumn("WorkflowTask"));
-                workflowTaskCol.setShownInInsertView(false);
-                workflowTaskCol.setShownInUpdateView(false);
                 // the "workflow" schema is part of the samplemanagement module
                 if (ModuleLoader.getInstance().hasModule("samplemanagement"))
                 {
@@ -465,6 +458,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                                     .schema("workflow", getContainer())
                                     .to("Task", "RowId", "Name")
                     );
+                }
+                if (!ProductRegistry.isProductFeatureEnabled(ProductFeature.Workflow))
+                {
+                    workflowTaskCol.setShownInInsertView(false);
+                    workflowTaskCol.setShownInUpdateView(false);
+                    workflowTaskCol.setShownInDetailsView(false);
                 }
                 workflowTaskCol.setLabel("Workflow Task");
                 return workflowTaskCol;
@@ -485,14 +484,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nAND ");
         if (role == null)
         {
-            sql.append("1 = 0");
+            sql.unsafeAppend("1 = 0");
         }
         else
         {
-            sql.append("exp.datainput.role = ?");
+            sql.unsafeAppend("exp.datainput.role = ?");
             sql.add(role);
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
@@ -506,14 +505,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nAND ");
         if (roleName == null)
         {
-            sql.append("1 = 0");
+            sql.unsafeAppend("1 = 0");
         }
         else
         {
-            sql.append("exp.DataInput.Role = ?");
+            sql.unsafeAppend("exp.DataInput.Role = ?");
             sql.add(roleName);
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
@@ -579,11 +578,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         SQLFragment sql = new SQLFragment("SELECT pa.RunId, di.DataId AS ");
                         sql.append(dataIdName);
-                        sql.append(" FROM ");
+                        sql.unsafeAppend(" FROM ");
                         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
-                        sql.append(", ");
+                        sql.unsafeAppend(", ");
                         sql.append(ExperimentServiceImpl.get().getTinfoDataInput(), "di");
-                        sql.append(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = ").appendValue(type);
+                        sql.unsafeAppend(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = ").appendValue(type);
                         return sql;
                     }
                 };
@@ -841,7 +840,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         {
                             SQLFragment sql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
                             sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-                            sql.append(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).append(" AND ExperimentId = ").appendValue(exp.getRowId()).append(")");
+                            sql.unsafeAppend(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).unsafeAppend(" AND ExperimentId = ").appendValue(exp.getRowId()).unsafeAppend(")");
 
                             return getSqlDialect().wrapBooleanExpression(sql);
                         }
@@ -1157,7 +1156,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws BatchValidationException
         {
             Map<String, Integer> allContainerResponse = new HashMap<>();
 
@@ -1182,7 +1181,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         throw new BatchValidationException(new ValidationException(e.getMessage()));
                     }
                 }
-                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "assayRuns");
+                SimpleMetricsService.get().increment(ExperimentMetricArea.MOVE_ENTITIES, "assayRuns");
             }
 
             return new HashMap<>(allContainerResponse);

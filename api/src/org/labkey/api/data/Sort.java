@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,7 +152,7 @@ public class Sort
         {
             SQLFragment sql = new SQLFragment();
             sql.appendIdentifier(alias);
-            sql.append(" ");
+            sql.unsafeAppend(" ");
             sql.append(_dir.getSqlDir());
             return sql;
         }
@@ -496,7 +496,7 @@ public class Sort
                 // if caller provided a columns Map, then ignore columns that are not found
                 if (null != columns)
                 {
-                    LogHelper.getLogger(this.getClass().getPackage(),"Sort").debug("Specified sort column was not found: " + fieldKey);
+                    LogHelper.getLogger(this.getClass().getPackage(), "Sort").debug("Specified sort column was not found: {}", fieldKey);
                     continue;
                 }
                 // NOTE Sort.getSortText() passes in dialect==null
@@ -557,7 +557,7 @@ public class Sort
             return;
 
         if (!distinctKeys.isEmpty())
-            sql.append(", ");
+            sql.unsafeAppend(", ");
 
         sql.append(sf.toOrderByFragment(dialect, alias));
         distinctKeys.add(alias.getId());

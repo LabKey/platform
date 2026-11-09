@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.SimpleValidationError;
@@ -56,7 +55,6 @@ import org.labkey.data.xml.TableType;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -121,7 +119,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     @Override
@@ -141,12 +139,6 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     {
         Lsid lsid = new Lsid(domainURI);
         return lsid.getNamespacePrefix() != null && getNamespacePrefix().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
-    }
-
-    @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-    {
-        return Collections.emptySet();
     }
 
     @Override

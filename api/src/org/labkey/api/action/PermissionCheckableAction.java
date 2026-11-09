@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package org.labkey.api.action;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.security.AdminConsoleAction;
@@ -97,7 +97,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         try
         {
             boolean isSendBasic = (unauthorizedType == UnauthorizedException.Type.sendBasicAuth || unauthorizedType == UnauthorizedException.Type.sendUnauthorized);
-            checkPermissionsAndTermsOfUse(getContextualRoles(), isSendBasic);
+            checkPermissionsAndTermsOfUse(isSendBasic);
         }
         catch (UnauthorizedException e)
         {
@@ -106,12 +106,12 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         }
     }
 
-    private void checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
+    private void checkActionPermissions() throws UnauthorizedException
     {
         try
         {
             SecurityLogger.indent("BaseViewAction.checkActionPermissions(" + getClass().getName() + ")");
-            _checkActionPermissions(contextualRoles);
+            _checkActionPermissions();
         }
         finally
         {
@@ -144,7 +144,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         return getViewContext().getMethod() == Method.PATCH;
     }
 
-    private void _checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
+    private void _checkActionPermissions() throws UnauthorizedException
     {
         ViewContext context = getViewContext();
 
@@ -152,7 +152,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         User user = context.getUser();
         Class<? extends Controller> actionClass = getClass();
         if (LOG.isDebugEnabled())
-            LOG.debug(actionClass.getName() + ": checking permissions for user " + (user == null ? "<null>" : user.getName() + " (impersonated=" + user.isImpersonated() + ")"));
+            LOG.debug("{}: checking permissions for user {}", actionClass.getName(), user == null ? "<null>" : user.getName() + " (impersonated=" + user.isImpersonated() + ")");
 
         if (!actionClass.isAnnotationPresent(IgnoresForbiddenProjectCheck.class))
             c.throwIfForbiddenProject(user);
@@ -172,14 +172,14 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
         if (requiresSiteAdmin && !user.hasSiteAdminPermission())
         {
-            LOG.debug(actionClass.getName() + ": action requires site admin permissions");
+            LOG.debug("{}: action requires site admin permissions", actionClass.getName());
             throw new UnauthorizedException();
         }
 
         boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
         if (requiresLogin && user.isGuest())
         {
-            LOG.debug(actionClass.getName() + ": action requires login (non-guest)");
+            LOG.debug("{}: action requires login (non-guest)", actionClass.getName());
             throw new UnauthorizedException();
         }
 
@@ -214,6 +214,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
                 permissionsRequired.add(TroubleshooterPermission.class);
         }
 
+        @NotNull Set<Role> contextualRoles = Set.of();
         ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
         if (rolesAnnotation != null)
         {
@@ -224,7 +225,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         if (!SecurityManager.hasAllPermissions(this.getClass().getName()+"_checkActionPermissions",
                 c, user, permissionsRequired, contextualRoles))
         {
-            LOG.debug(actionClass.getName() + ": action requires all permissions: " + permissionsRequired);
+            LOG.debug("{}: action requires all permissions: {}", actionClass.getName(), permissionsRequired);
             throw new UnauthorizedException();
         }
 
@@ -241,7 +242,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             if (!SecurityManager.hasAnyPermissions(this.getClass().getName() + "_checkActionPermissions",
                     c, user, permissionsAnyOf, contextualRoles))
             {
-                LOG.debug(actionClass.getName() + ": action requires any permissions: " + permissionsAnyOf);
+                LOG.debug("{}: action requires any permissions: {}", actionClass.getName(), permissionsAnyOf);
                 throw new UnauthorizedException();
             }
         }
@@ -258,15 +259,13 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             throw new DeprecatedActionException(actionClass);
     }
 
-
-    private void checkPermissionsAndTermsOfUse(Set<Role> contextualRoles, boolean isSendBasic) throws UnauthorizedException
+    private void checkPermissionsAndTermsOfUse(boolean isSendBasic) throws UnauthorizedException
     {
-        checkActionPermissions(contextualRoles);
+        checkActionPermissions();
 
         if (!getClass().isAnnotationPresent(IgnoresTermsOfUse.class))
             verifyTermsOfUse(isSendBasic);
     }
-
 
     /**
      * Check if terms of use are ever required for this request. If so, enumerate all the terms-of-use providers and ask
@@ -287,16 +286,5 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
         for (SecurityManager.TermsOfUseProvider provider : SecurityManager.getTermsOfUseProviders())
             provider.verifyTermsOfUse(context, isBasicAuth);
-    }
-
-
-    /**
-     * Actions may provide a set of {@link Role}s used during permission checking
-     * or null if no contextual roles apply.
-     */
-    @Nullable
-    protected Set<Role> getContextualRoles()
-    {
-        return null;
     }
 }

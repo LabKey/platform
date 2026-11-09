@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -234,7 +234,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public boolean includeTable()
             {
-                return AppProps.getInstance().isOptionalFeatureEnabled(SAMPLE_FILES_TABLE);
+                return OptionalFeatureService.get().isFeatureEnabled(SAMPLE_FILES_TABLE);
             }
         },
         SampleStatus
@@ -243,6 +243,14 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
                 return ExperimentService.get().createSampleStatusTable(expSchema, cf);
+            }
+        },
+        DataColors
+        {
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
+            {
+                return ExperimentService.get().createDataColorTable(expSchema, cf);
             }
         },
         Fields
@@ -295,7 +303,7 @@ public class ExpSchema extends AbstractExpSchema
 
         ret.addExperimentMembershipColumn(run);
         List<FieldKey> defaultCols = new ArrayList<>(ret.getDefaultVisibleColumns());
-        defaultCols.add(0, FieldKey.fromParts("RunMembership"));
+        defaultCols.addFirst(FieldKey.fromParts("RunMembership"));
         defaultCols.remove(FieldKey.fromParts(ExpExperimentTable.Column.RunCount.name()));
         ret.setDefaultVisibleColumns(defaultCols);
 

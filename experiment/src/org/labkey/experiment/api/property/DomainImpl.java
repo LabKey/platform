@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.labkey.experiment.api.property;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
@@ -81,9 +80,9 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
@@ -96,7 +95,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -107,6 +106,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.experiment.exp.property.DomainPropertyAuditProvider;
 
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -124,6 +124,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.exp.query.ExpSchema.DerivationDataScopeType.ChildOnly;
 
 public class DomainImpl implements Domain
 {
@@ -443,9 +444,9 @@ public class DomainImpl implements Domain
         lock.lock();
 
         // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
-        if (null != getStorageTableName() && lockSchema.getSqlDialect().isPostgreSQL())
+        if (null != getStorageTableName())
         {
-            SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN ACCESS EXCLUSIVE MODE").appendEOS().append("\n");
+            SQLFragment lockSQL = new SQLFragment().unsafeAppend("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).unsafeAppend(" IN ACCESS EXCLUSIVE MODE").appendEOS().unsafeAppend("\n");
             new SqlExecutor(lockSchema).execute(lockSQL);
         }
     }
@@ -622,15 +623,6 @@ public class DomainImpl implements Domain
 
         try (DbScope.Transaction transaction = scope.ensureTransaction(domainLock))
         {
-            // This is a pretty heavy-handed way to fix a deadlock problem, but it works
-            // CONSIDER: another approach might be to fine tune the filters/indexes used in the Table.insert/OntologyManager.getDomainDescriptor calls
-            // or using LSID as the primary key on DomainDescriptor?
-            if (scope.getSqlDialect().isSqlServer())
-            {
-                String sql = "SELECT * FROM " + OntologyManager.getTinfoDomainDescriptor() + " WITH (UPDLOCK)";
-                new SqlSelector(schema, sql).getArrayList(DomainDescriptor.class);
-            }
-
             // Issue 32406: Need to capture because _new changes during the process
             boolean isDomainNew = isNew();
             if (saveOnlyIfNotExists && !isDomainNew)
@@ -757,7 +749,9 @@ public class DomainImpl implements Domain
                             // If this field is newly required, or it's required and we're disabling MV indicators on
                             // it, make sure that all the rows have values for it
                             if ((!impl._pdOld.isRequired() && impl._pd.isRequired()) ||
-                                    (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()))
+                                    (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()) ||
+                                    (impl._pdOld.isRequired() && derivationDataScopeChanged(impl._pdOld.getDerivationDataScope(), impl._pd.getDerivationDataScope()))
+                            )
                             {
                                 checkRequiredStatus.add(impl);
                             }
@@ -875,6 +869,14 @@ public class DomainImpl implements Domain
             {
                 for (DomainProperty prop : checkRequiredStatus)
                 {
+                    // Issue 46733: A field that is editable for aliquots only is never populated for a sample, so it can
+                    // never be required. Reject it before the blank value check below, which would otherwise report every
+                    // sample row as blank and give a misleading reason.
+                    if (ChildOnly.name().equalsIgnoreCase(prop.getDerivationDataScope()))
+                    {
+                        throw new ChangePropertyDescriptorException("The property \"" + prop.getName() + "\" cannot be required when it is editable for aliquots only.");
+                    }
+
                     boolean hasRows = kind.hasNullValues(this, prop);
                     if (hasRows)
                     {
@@ -923,10 +925,15 @@ public class DomainImpl implements Domain
                     getDomainKind().invalidate(this);
             };
             transaction.addCommitTask(afterDomainCommitOrRollback, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
-
-            QueryService.get().updateLastModified();
             transaction.commit();
         }
+    }
+
+    private boolean derivationDataScopeChanged(String oldScope, String newScope)
+    {
+        ExpSchema.DerivationDataScopeType oldType = oldScope == null ? ExpSchema.DerivationDataScopeType.ParentOnly : ExpSchema.DerivationDataScopeType.valueOf(oldScope);
+        ExpSchema.DerivationDataScopeType newType = newScope == null ? ExpSchema.DerivationDataScopeType.ParentOnly : ExpSchema.DerivationDataScopeType.valueOf(newScope);
+        return oldType != newType;
     }
 
     record CalculatedFieldsUpdate(@Nullable List<MetadataColumnJSON> added, @Nullable List<MetadataColumnJSON> removed, @Nullable List<Pair<MetadataColumnJSON, MetadataColumnJSON>> updated)
@@ -1081,19 +1088,19 @@ public class DomainImpl implements Domain
         uniqueIdProps.forEach(prop -> colNames.add(prop.getName()));
         ListofMapsDataIterator mapsDi = new ListofMapsDataIterator(colNames, rows);
         mapsDi.setDebugName(table.getName() + ".ensureUniqueIds");
-        SQLFragment sql = new SQLFragment().append("UPDATE ").append(table).append(" SET ");
+        SQLFragment sql = new SQLFragment().unsafeAppend("UPDATE ").append(table).unsafeAppend(" SET ");
         String separator = "";
         for (DomainProperty prop: uniqueIdProps)
         {
             // Issue 50715: quote column names with spaces for update statement
-            sql.append(separator).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
+            sql.append(separator).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).unsafeAppend(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
             separator = ",";
         }
-        sql.append(" WHERE ");
+        sql.unsafeAppend(" WHERE ");
         separator = "";
         for (ColumnInfo col: uniqueIndexCols)
         {
-            sql.append(separator).append(col.getName()).append(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
+            sql.append(separator).append(col.getName()).unsafeAppend(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
             separator = " AND ";
         }
 
@@ -1251,7 +1258,7 @@ public class DomainImpl implements Domain
 
         private static String renderValidators(PropertyDescriptor prop)
         {
-            Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
+            Collection<PropertyValidatorBean> validators = DomainPropertyManager.get().getValidators(prop);
             return getPropertyValidatorStringVal(validators);
         }
 
@@ -1263,7 +1270,7 @@ public class DomainImpl implements Domain
 
     }
 
-    public static String getPropertyValidatorStringVal(Collection<PropertyValidator> validators)
+    public static String getPropertyValidatorStringVal(Collection<PropertyValidatorBean> validators)
     {
         if (validators == null || validators.isEmpty())
             return null;
@@ -1492,7 +1499,7 @@ public class DomainImpl implements Domain
 
     private static String fuzz(String s)
     {
-        if (AppProps.getInstance().isOptionalFeatureEnabled(Domain.EXPERIMENTAL_FUZZ_STORAGE_NAME))
+        if (OptionalFeatureService.get().isFeatureEnabled(Domain.EXPERIMENTAL_FUZZ_STORAGE_NAME))
         {
             var r = new Random();
             if (r.nextBoolean())

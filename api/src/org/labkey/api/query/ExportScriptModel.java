@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.lang3.StringUtils.replace;
 
 /**
  * Holds configuration information about a {@link QueryView}, to be used by a {@link ExportScriptFactory}.
@@ -105,7 +105,7 @@ public abstract class ExportScriptModel
         }
         catch (Exception e)
         {
-            LOG.error("Failed to export script in " + this.getClass().getName(), e);
+            LOG.error("Failed to export script in {}", this.getClass().getName(), e);
             return "Error generating script export: " + e.getMessage();
         }
     }
@@ -256,8 +256,8 @@ public abstract class ExportScriptModel
     {
         if (null == s)
             s = "";
-        s = replace(s, "\\", "\\\\");
-        s = replace(s, "\"","\\\"");
+        s = Strings.CS.replace(s, "\\", "\\\\");
+        s = Strings.CS.replace(s, "\"","\\\"");
         return "\"" + s + "\"";
     }
 

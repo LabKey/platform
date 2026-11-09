@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.dataiterator;
 
 import org.junit.Assert;
@@ -27,6 +42,7 @@ import java.util.function.Supplier;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 
+// TODO: replace the mark/read-ahead/reset with LookAheadDataIterator (added for GH Issue 1746)
 public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
 {
     public static final String EXISTING_RECORD_COLUMN_NAME = "_" + GenerateUniqueDataIterator.class.getName() + "#EXISTING_RECORD_COLUMN_NAME";
@@ -129,16 +145,16 @@ public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
         String comma = "";
         for (V v : proposedValues)
         {
-            sqlf.append(comma).append("(?)");
+            sqlf.append(comma).unsafeAppend("(?)");
             sqlf.add(v);
             comma = "\n,";
         }
-        sqlf.append("\n) AS _x (value))\n");
+        sqlf.unsafeAppend("\n) AS _x (value))\n");
 
-        sqlf.append("SELECT _values_.value\n");
-        sqlf.append("FROM _values_ LEFT OUTER JOIN ").append(target.getFromSQL("_target_")).append(" ON ");
-        sqlf.append("(_values_.value").append("=(").append(column.getValueSql("_target_")).append("))\n");
-        sqlf.append("WHERE (").append(column.getValueSql("_target_")).append(") IS NULL");
+        sqlf.unsafeAppend("SELECT _values_.value\n");
+        sqlf.unsafeAppend("FROM _values_ LEFT OUTER JOIN ").append(target.getFromSQL("_target_")).unsafeAppend(" ON ");
+        sqlf.unsafeAppend("(_values_.value").unsafeAppend("=(").append(column.getValueSql("_target_")).unsafeAppend("))\n");
+        sqlf.unsafeAppend("WHERE (").append(column.getValueSql("_target_")).unsafeAppend(") IS NULL");
 
         return new SqlSelector(target.getSchema(), sqlf).getArrayList(clazz);
     }

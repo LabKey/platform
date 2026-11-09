@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.labkey.study.model;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
  * User: Matthew
@@ -47,7 +49,7 @@ public class VisitMapKey implements Comparable
     }
 
     @Override
-    public int compareTo(Object o)
+    public int compareTo(@NotNull Object o)
     {
         VisitMapKey k = (VisitMapKey) o;
         return this.visitRowId != k.visitRowId ? this.visitRowId - k.visitRowId :

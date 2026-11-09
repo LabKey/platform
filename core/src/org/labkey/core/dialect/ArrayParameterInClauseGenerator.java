@@ -51,7 +51,7 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
             return _parameterMarkerGenerator.appendInClauseSql(sql, params);
         }
 
-        sql.append(" = ANY (?)");
+        sql.unsafeAppend(" = ANY (?)");
         sql.add(params);
 
         return sql;

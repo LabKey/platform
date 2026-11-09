@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ public abstract class SecurityEscalator implements AutoCloseable
 
         // Get our caller
         List<StackTraceElement> stackTraceElements = Arrays.asList(Thread.currentThread().getStackTrace());
-        String thisFileName = stackTraceElements.get(0).getFileName();
+        String thisFileName = stackTraceElements.getFirst().getFileName();
 
         String serviceName = null;
         List<String> relevantStackTraceElements = new ArrayList<>();
@@ -114,7 +114,7 @@ public abstract class SecurityEscalator implements AutoCloseable
 
             // We can cut out everything below this, because that's just boring Servlet/Tomcat traces, which
             // doesn't matter for our auditing.
-            if (stackTraceElement.getClassName().equals("javax.servlet.http.HttpServlet")) {
+            if (stackTraceElement.getClassName().equals("jakarta.servlet.http.HttpServlet")) {
                 break;
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,7 +178,7 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
                 assertEquals(JdbcType.VARCHAR, it.getColumnInfo(2).getJdbcType());
                 assertTrue(it.next());
                 assertEquals(1, it.get(0));
-                assertEquals(null, it.get(1));
+                assertNull(it.get(1));
                 assertEquals("null", it.get(2));
                 assertTrue(it.next());
                 assertEquals(2, it.get(0));

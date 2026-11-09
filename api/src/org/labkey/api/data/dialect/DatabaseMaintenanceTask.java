@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,12 +59,14 @@ public class DatabaseMaintenanceTask implements MaintenanceTask
             log.error("Exception retrieving url", e);
         }
 
-        String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
+        SqlDialect dialect = scope.getSqlDialect();
+        SQLFragment sql = dialect.getDatabaseMaintenanceSql();
         if (null != sql)
         {
             try
             {
-                new SqlExecutor(scope).execute(SQLFragment.unsafe(sql));
+                log.info("Executing {}", sql.toDebugString(dialect));
+                new SqlExecutor(scope).execute(sql);
             }
             catch (BadSqlGrammarException e)
             {

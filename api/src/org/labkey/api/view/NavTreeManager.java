@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,8 +50,8 @@ public class NavTreeManager
     {
         if (null == navTreeId)
             return;
-        
-        _log.debug("Expand/Collapse path navTreeId = " + navTreeId + " path=" +  path + " collapse= " + collapse);
+
+        _log.debug("Expand/Collapse path navTreeId = {} path={} collapse= {}", navTreeId, path, collapse);
         saveExpandState(viewContext, navTreeId, path, collapse);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.data.MultiChoice.ARRAY_MARKER;
 
@@ -369,7 +368,7 @@ public class ViewServlet extends HttpServlet
                     }
                     if ("GET".equals(request.getMethod()))
                         throw new RedirectException(expand);
-                    _log.warn(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
+                    _log.warn(DataRegion.LAST_FILTER_PARAM + " not supported for {}", request.getMethod());
                 }
             }
         }
@@ -509,6 +508,12 @@ public class ViewServlet extends HttpServlet
         }
 
         @Override
+        public String getParameter(@NotNull String name)
+        {
+            return _actionURL.getParameter(name);
+        }
+
+        @Override
         public @NotNull String @NotNull [] getParameterValues(@NotNull String name)
         {
             List<String> parameters = _actionURL.getParameterValues(name);
@@ -519,6 +524,12 @@ public class ViewServlet extends HttpServlet
         public  @NotNull Enumeration<String> getParameterNames()
         {
             return _actionURL.getParameterNames();
+        }
+
+        @Override
+        public @Nullable String getQueryString()
+        {
+            return null == _actionURL || _actionURL.getParameters().isEmpty() ? null : _actionURL.getQueryString();
         }
     }
 
@@ -604,7 +615,7 @@ public class ViewServlet extends HttpServlet
     }
 
     /**
-     * Returns true for mock requests. The Rhino trigger script enviornment uses
+     * Returns true for mock requests. The Rhino trigger script environment uses
      * mock requests when issuing API calls back into the server.
      * See core/resources/scripts/labkey/adapter/bridge.js
      */
@@ -620,8 +631,8 @@ public class ViewServlet extends HttpServlet
         _servletContext = config.getServletContext();
         String realPath = config.getServletContext().getRealPath("/");
         _log.info("ViewServlet initialized");
-        _log.info("   WEBAPP: " + realPath);
-        _log.info("     PATH: " + System.getenv("PATH"));
+        _log.info("   WEBAPP: {}", realPath);
+        _log.info("     PATH: {}", System.getenv("PATH"));
     }
 
 
@@ -788,7 +799,7 @@ public class ViewServlet extends HttpServlet
         {
             String[] a = entry.getValue();
             Object v = a;
-            if (null != a && 1 == a.length && !startsWith(entry.getKey(), ARRAY_MARKER))
+            if (null != a && 1 == a.length && !Strings.CS.startsWith(entry.getKey(), ARRAY_MARKER))
                 v = a[0];
             ret.put(entry.getKey(), v);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2015 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
     public SqlSelector(DbScope scope, @Nullable Connection conn, SQLFragment sql, @NotNull QueryLogging queryLogging)
     {
         super(scope, conn, queryLogging);
+        if (null != sql && sql.hasError())
+            throw new IllegalStateException("SQL was generated with errors and must not be executed");
         _sql = sql;
     }
 
@@ -42,8 +44,6 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
     public SqlSelector(DbScope scope, @Nullable Connection conn, CharSequence sql)
     {
         this(scope, conn, new SQLFragment(sql));
-        if (sql instanceof SQLFragment)
-            throw new IllegalStateException();
     }
 
     public SqlSelector(DbScope scope, SQLFragment sql, @NotNull QueryLogging queryLogging)

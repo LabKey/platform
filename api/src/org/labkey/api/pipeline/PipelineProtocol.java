@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ public abstract class PipelineProtocol
      */
     protected Map<String, String> getSaveProperties()
     {
-        PropertyDescriptor props[] = PropertyUtils.getPropertyDescriptors(this);
+        PropertyDescriptor[] props = PropertyUtils.getPropertyDescriptors(this);
         Map<String, String> propMap = new HashMap<>();
 
         for (PropertyDescriptor prop : props)

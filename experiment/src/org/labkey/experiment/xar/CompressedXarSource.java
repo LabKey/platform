@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,8 @@ import org.labkey.api.writer.ZipUtil;
 import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -102,7 +99,7 @@ public class CompressedXarSource extends AbstractFileXarSource
         }
         else
         {
-            _xmlFile = xarFiles.get(0);
+            _xmlFile = xarFiles.getFirst();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,6 @@ public class ProtocolDocumentType implements AttachmentParentType
     @Override
     public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT ProtocolDocumentEntityId AS EntityId, Label AS Description FROM ").append(StudySchema.getInstance().getTableInfoStudy(), "s");
+        return SQLFragment.unsafe("SELECT ProtocolDocumentEntityId AS EntityId, Label AS Description FROM ").append(StudySchema.getInstance().getTableInfoStudy(), "s");
     }
 }

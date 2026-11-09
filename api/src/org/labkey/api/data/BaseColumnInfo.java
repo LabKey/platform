@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -109,7 +109,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     protected ColumnInfo _displayField;
     private List<FieldKey> _sortFieldKeys = null;
     private List<ConditionalFormat> _conditionalFormats = List.of();
-    private List<? extends IPropertyValidator> _validators = List.of();
+    private List<? extends PropertyValidatorDef> _validators = List.of();
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _shouldLog = true;
     private boolean _lockName = false;
@@ -196,7 +196,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         this(new FieldKey(null, rsmd.getColumnLabel(col)), JdbcType.valueOf(rsmd.getColumnType(col)));
         setSqlTypeName(rsmd.getColumnTypeName(col));
-        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment(rsmd.getColumnName(col))));
+        // this identifier is not used to generate SQL
+        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment().setSqlUnsafe(rsmd.getColumnName(col))));
     }
 
     /* Most ColumnInfos represent a column in the database.  However, some are created only for meta-data purposes.
@@ -630,10 +631,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         // call generateSelectName() to avoid asserts in getSelectName()
         var colIdentifier = generateSelectName();
-        if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName) || FilteredTable.filterNameAlias.equals(tableAliasName))
-            return SQLFragment.unsafe(tableAliasName).append(".").appendIdentifier(colIdentifier);
-        else
-            return new SQLFragment().appendDottedIdentifiers(tableAliasName, colIdentifier);
+        if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName))
+            return SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").appendIdentifier(colIdentifier);
+        if (FilteredTable.filterNameAlias.equals(tableAliasName))
+            return SQLFragment.unsafe(FilteredTable.filterNameAlias).unsafeAppend(".").appendIdentifier(colIdentifier);
+        return new SQLFragment().appendDottedIdentifiers(tableAliasName, colIdentifier);
     }
 
     @Override
@@ -894,8 +896,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         {
             TableInfo t = getParentTable();
             String tsName = t.getSchema().getName() + "." + Objects.requireNonNull(t.getMetaDataIdentifier()).getId() + "_ts";
-            String sqlString = getSqlDialect().getStringHandler().quoteStringLiteral(tsName);
-            return new SQLFragment("nextval(" + sqlString + ")");
+            return SQLFragment.unsafe("nextval(").appendStringLiteral(tsName,getSqlDialect()).unsafeAppend(")");
         }
 
         return null;
@@ -991,6 +992,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _isRootDbSequence = isRootDbSequence;
     }
 
+    @Override
     public boolean isMultiValued()
     {
         return _isMultiValued;
@@ -1141,16 +1143,16 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     displayColumnName = xfk.getFkDisplayColumnName().getStringValue();
                     useRawFKValue = xfk.getFkDisplayColumnName().getUseRawValue();
                 }
-                _fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), key.fkName, false, displayColumnName, useRawFKValue);
+                _fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.getFirst(), key.fkName, false, displayColumnName, useRawFKValue);
             }
             else
             {
                 String type = xfk.getFkMultiValued();
 
                 if (AbstractTableInfo.MultiValuedFkType.junction.name().equals(type))
-                    _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), key.fkName, false), xfk.getFkJunctionLookup());
+                    _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.getFirst(), key.fkName, false), xfk.getFkJunctionLookup());
                 else
-                    LOG.warn(String.format("Error in FK configuration for table : \"%s\". The multi value FK type : \"%s\" is not supported.", getParentTable().getName(), type));
+                    LOG.warn("Error in FK configuration for table : \"{}\". The multi value FK type : \"{}\" is not supported.", getParentTable().getName(), type);
             }
         }
 
@@ -1304,7 +1306,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                         }
                         else
                         {
-                            LOG.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
+                            LOG.error("Class is not a DisplayColumnFactory: {}", displayColumnClassName);
                         }
                     }
                 }
@@ -1315,7 +1317,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 // Defer logging an error until column is actually used, Issue #44103
                 // Substitute a factory that provides a renderer that displays and logs the error at render time
                 LOG.debug(message, e);
-                _displayColumnFactory = colInfo -> {
+                _displayColumnFactory = _ -> {
                     LOG.error(message, e);
                     return new SimpleDisplayColumn()
                     {
@@ -1352,15 +1354,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return name;
 
         // NOTE: This is just for testing (let the DataRegion/DataColumn do this)
-        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
+        // Hot during table construction, so test the name before the comparatively costly flag lookup
+        var index = name.indexOf("__");
+        if (index > 0 && OptionalFeatureService.get().isFeatureEnabled(AppProps.QUANTITY_COLUMN_SUFFIX_TESTING))
         {
-            var index = name.indexOf("__");
-            if (index > 0)
-            {
-                String unit = name.substring(index + 2);
-                if (null != org.labkey.api.ontology.Unit.fromName(unit))
-                    name = name.substring(0, index);
-            }
+            String unit = name.substring(index + 2);
+            if (null != org.labkey.api.ontology.Unit.fromName(unit))
+                name = name.substring(0, index);
         }
 
         StringBuilder buf = new StringBuilder(name.length() + 10);
@@ -1475,7 +1475,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         private final String _dbSchemaName;
         private final String _tableName;
         private String _lookupKey;
-        private String _fkName;
+        private final String _fkName;
         private final String _displayColumnName;
         private final boolean _joinWithContainer;
         private final boolean _useRawFKValue;
@@ -1607,7 +1607,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     List<String> pkColumnNames = tableInfo.getPkColumnNames();
                     if (pkColumnNames.size() == 1)
                     {
-                        _lookupKey = pkColumnNames.get(0);
+                        _lookupKey = pkColumnNames.getFirst();
                     }
                 }
                 return null;
@@ -1783,7 +1783,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
             if (i == -1)
             {
-                LOG.warn("Skipping multiple column foreign key " + key.fkName + " ON " + parentTable.getName());
+                LOG.warn("Skipping multiple column foreign key {} ON {}", key.fkName, parentTable.getName());
                 continue;
             }
 
@@ -1792,13 +1792,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
             if (col == null)
             {
-                LOG.error("Column in FK definition was not found " + colName + ". Skipping constraint " + key.fkName);
+                LOG.error("Column in FK definition was not found {}. Skipping constraint {}", colName, key.fkName);
                 continue;
             }
 
             if (col._fk != null)
             {
-                LOG.warn("More than one FK defined for column " + parentTable.getName() + "." + col.getName() + ". Skipping constraint " + key.fkName);
+                LOG.warn("More than one FK defined for column {}.{}. Skipping constraint {}", parentTable.getName(), col.getName(), key.fkName);
                 continue;
             }
 
@@ -2166,13 +2166,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     @Override
     @NotNull
-    public List<? extends IPropertyValidator> getValidators()
+    public List<? extends PropertyValidatorDef> getValidators()
     {
         return _validators;
     }
 
     @Override
-    public void setValidators(List<? extends IPropertyValidator> validators)
+    public void setValidators(List<? extends PropertyValidatorDef> validators)
     {
         checkLocked();
         _validators = copyFixedList(validators);

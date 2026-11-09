@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,8 +60,6 @@ public interface AssayUrls extends UrlProvider
     ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
 
     ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container);
-
-    ActionURL getDeleteDesignURL(ExpProtocol protocol);
 
     /**
      * Returns the URL for the assay import data wizard for an existing assay definition.

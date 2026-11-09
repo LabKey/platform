@@ -1,25 +1,30 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionURL, Ajax, getServerContext, Utils } from '@labkey/api';
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ActionURL, Ajax, Utils } from '@labkey/api';
 import {
+    AppContexts,
     AssayPicker,
     AssayPickerSelectionModel,
     AssayPickerTabs,
     GENERAL_ASSAY_PROVIDER_NAME,
     App as LabKeyApp,
-    ServerContextProvider,
+    redirect,
     useServerContext,
-    withAppUser,
 } from '@labkey/components';
 
 import './AssayTypeSelect.scss';
 
-function uploadXarFile(file: File, container: string): Promise<string> {
+function uploadXarFile(file: File, containerPath: string): Promise<string> {
     return new Promise((resolve, reject) => {
         const form = new FormData();
         form.append('file', file);
 
         Ajax.request({
-            url: ActionURL.buildURL('experiment', 'assayXarFile', container),
+            url: ActionURL.buildURL('experiment', 'assayXarFile', containerPath),
             method: 'POST',
             form,
             success: Utils.getCallbackWrapper(() => {
@@ -54,7 +59,7 @@ const AssayTypeSelect = memo(() => {
     const tab = useMemo(() => ActionURL.getParameter('tab'), []);
 
     const onCancel = useCallback(() => {
-        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
+        redirect(returnUrl || ActionURL.buildURL('project', 'begin'));
     }, [returnUrl]);
 
     const onChange = useCallback((model: AssayPickerSelectionModel) => {
@@ -62,18 +67,18 @@ const AssayTypeSelect = memo(() => {
     }, []);
 
     const onSubmit = useCallback(() => {
-        const container = assayPickerSelection.container ?? getServerContext().container.path;
-        if (assayPickerSelection.tab === AssayPickerTabs.XAR_IMPORT_TAB && assayPickerSelection.file) {
-            uploadXarFile(assayPickerSelection.file, assayPickerSelection.container).then(() => {
-                window.location.href = ActionURL.buildURL('pipeline', 'status-showList', container);
+        const { container, file, provider, tab } = assayPickerSelection;
+        if (tab === AssayPickerTabs.XAR_IMPORT_TAB && file) {
+            uploadXarFile(file, container).then(() => {
+                redirect(ActionURL.buildURL('pipeline', 'status-showList', container));
             });
         } else {
-            window.location.href = ActionURL.buildURL('assay', 'designer', container, {
-                providerName: assayPickerSelection.provider
-                    ? assayPickerSelection.provider.name
-                    : GENERAL_ASSAY_PROVIDER_NAME,
-                returnUrl: returnUrl,
-            });
+            redirect(
+                ActionURL.buildURL('assay', 'designer', container, {
+                    providerName: provider ? provider.name : GENERAL_ASSAY_PROVIDER_NAME,
+                    returnUrl,
+                })
+            );
         }
     }, [assayPickerSelection, returnUrl]);
 
@@ -119,13 +124,11 @@ const AssayTypeSelect = memo(() => {
         </>
     );
 });
-
 AssayTypeSelect.displayName = 'AssayTypeSelect';
 
-export const App = memo(() => (
-    <ServerContextProvider initialContext={withAppUser(getServerContext())}>
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
         <AssayTypeSelect />
-    </ServerContextProvider>
-));
-
+    </AppContexts>
+);
 App.displayName = 'App';

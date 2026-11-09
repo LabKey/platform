@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,12 +123,12 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         sql.add(getRowId());
         if (parentProtocol != null)
         {
-            sql.append("\nAND ER.ProtocolLSID = ?");
+            sql.unsafeAppend("\nAND ER.ProtocolLSID = ?");
             sql.add(parentProtocol.getLSID());
         }
         if (childProtocol != null)
         {
-            sql.append("\nAND ER.RowId IN (SELECT PA.RunId "
+            sql.unsafeAppend("\nAND ER.RowId IN (SELECT PA.RunId "
                 + " FROM exp.ProtocolApplication PA "
                 + " WHERE PA.ProtocolLSID = ? ) ");
             sql.add(childProtocol.getLSID());

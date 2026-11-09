@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -89,7 +88,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         FieldKey pkFieldKey;
 
         if (pkNames.size() == 1)
-            pkFieldKey = FieldKey.fromParts(pkNames.get(0));
+            pkFieldKey = FieldKey.fromParts(pkNames.getFirst());
         else
             pkFieldKey = FieldKey.fromParts(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME);
 

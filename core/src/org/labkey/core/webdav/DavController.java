@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.BaseViewAction;
@@ -56,12 +57,15 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.Sort;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.premium.AntiVirusService;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.ValidationException;
@@ -73,8 +77,11 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -127,6 +134,8 @@ import org.labkey.core.webdav.apache.XMLWriter;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
@@ -155,6 +164,7 @@ import java.io.DataOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FilterInputStream;
 import java.io.FilterWriter;
 import java.io.IOException;
@@ -191,7 +201,6 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -312,7 +321,7 @@ public class DavController extends SpringActionController
                 }
                 catch (MultipartException x)
                 {
-                    _webdavresponse.sendError(WebdavStatus.SC_BAD_REQUEST, x);
+                    _webdavresponse.sendError(ExceptionUtil.isClientRequestFailure(x) ? WebdavStatus.SC_BAD_REQUEST : WebdavStatus.SC_INTERNAL_SERVER_ERROR, x);
                     return null;
                 }
             }
@@ -330,26 +339,23 @@ public class DavController extends SpringActionController
                 return null;
             }
 
+            String skipProfiling;
+            try
+            {
+                skipProfiling = request.getParameter("skip-profiling");
+            }
+            catch (IllegalStateException x)
+            {
+                if (!ExceptionUtil.isInvalidParameterException(x))
+                    throw x;
+                ExceptionUtil.handleException(request, response, x, null, false);
+                return null;
+            }
+
             Class<? extends Controller> actionClass = action.getClass();
-            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
+            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(skipProfiling))
             {
                 MemTracker.get().ignore();
-            }
-            else
-            {
-                // Don't send back mini-profiler id if the user won't be able to get the profiler info
-                if (MiniProfiler.isEnabled(getViewContext()))
-                {
-                    RequestInfo req = MemTracker.get().current();
-                    if (req != null)
-                    {
-                        LinkedHashSet<Long> ids = new LinkedHashSet<>();
-                        ids.add(req.getId());
-                        ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
-
-                        response.setHeader("X-MiniProfiler-Ids", ids.toString());
-                    }
-                }
             }
 
             try
@@ -388,7 +394,7 @@ public class DavController extends SpringActionController
         {
             Closeable c = e.getKey();
             Throwable t = e.getValue();
-            _log.warn(c.getClass().getName() + " not closed", t);
+            _log.warn("{} not closed", c.getClass().getName(), t);
         }
         return null;
     }
@@ -443,7 +449,10 @@ public class DavController extends SpringActionController
 
         WebdavStatus sendError(WebdavStatus status, Exception x)
         {
-            ExceptionUtil.logExceptionToMothership(getRequest(), x);
+            if (status.code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+                ExceptionUtil.logExceptionToMothership(getRequest(), x);
+            else
+                _log.debug("{} response", status.code, x);
             if (x instanceof ConfigurationException)
             {
                 // These exceptions are skipped in the logExceptionToMothership() call. They're useful to log here
@@ -657,7 +666,7 @@ public class DavController extends SpringActionController
                 }
 
                 @Override
-                public void write(@NotNull char[] cbuf) throws IOException
+                public void write(char @NotNull [] cbuf) throws IOException
                 {
                     super.write(cbuf);
                     sbLogResponse.append(cbuf);
@@ -708,7 +717,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
+        public ModelAndView handleRequest(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response)
         {
             clearLastError();
 
@@ -719,10 +728,10 @@ public class DavController extends SpringActionController
                 boolean isBasicAuthentication = SecurityManager.isBasicAuthentication(getRequest());
                 String username = getUser().getName();
                 String auth = username + (isBasicAuthentication ? ":basic" : !getUser().isGuest() ? ":session" : "");
-                _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + " (" + auth + ") " + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
+                _log.debug(">>>> {} {} ({}) {}", request.getMethod(), getResourcePath(), auth, modified == -1 ? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")");
                 if (1==0) // verbose
                 {
-                    IteratorUtils.asIterator(request.getHeaderNames()).forEachRemaining(name -> _log.debug(name + ": " + request.getHeader(name)));
+                    IteratorUtils.asIterator(request.getHeaderNames()).forEachRemaining(name -> _log.debug("{}: {}", name, request.getHeader(name)));
                 }
                 start = System.currentTimeMillis();
             }
@@ -808,9 +817,7 @@ public class DavController extends SpringActionController
                 if (!getResponse().sbLogResponse.isEmpty())
                     _log.debug(getResponse().sbLogResponse);
                 WebdavStatus status = getResponse().getWebdavStatus();
-                _log.debug("<<<< " + (status != null ? status.code : 0) + " " +
-                        (null != status ? status.message : "") + " " +
-                        DateUtil.formatDuration(System.currentTimeMillis()-start));
+                _log.debug("<<<< {} {} {}", status != null ? status.code : 0, null != status ? status.message : "", DateUtil.formatDuration(System.currentTimeMillis() - start));
             }
 
             return null;
@@ -2709,7 +2716,10 @@ public class DavController extends SpringActionController
             {
                 long lastModified = resource.getLastModified();
                 if (Long.MIN_VALUE != lastModified)
+                {
                     json.key("lastmodified").value(getISOCreationDate(lastModified));
+                    json.key("lastModifiedFormatted").value(getDisplayDate(resource, lastModified));
+                }
                 long length = resource.getContentLength();
                 json.key("contentlength").value(length);
                 if (length >= 0)
@@ -3185,7 +3195,7 @@ public class DavController extends SpringActionController
                 {
                     File f = resource.getFile();
                     if (null != f && f.exists())
-                        _log.debug(f.getName() + " length=" + f.length());
+                        _log.debug("{} length={}", f.getName(), f.length());
                 }
             }
 
@@ -3310,7 +3320,7 @@ public class DavController extends SpringActionController
         if (null != file)
             FileContentService.get().fireFileReplacedEvent(file, getUser(), srcContainer);
 
-        _log.debug("fireFileReplaceEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+        _log.debug("fireFileReplaceEvent: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void clearWebfilesFileCache(Container srcContainer)
@@ -3329,7 +3339,7 @@ public class DavController extends SpringActionController
         java.nio.file.Path file = resource.getNioPath();
         if (null != file)
             FileContentService.get().fireFileCreateEvent(file, getUser(), srcContainer);
-        _log.debug("fireFileCreatedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+        _log.debug("fireFileCreatedEvent: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void updateIndexAndDataObject(WebdavResource resource)
@@ -3385,7 +3395,7 @@ public class DavController extends SpringActionController
         if (null != file)
             FileContentService.get().fireFileDeletedEvent(file, getUser(), srcContainer);
 
-        _log.debug("fireFileDeletedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+        _log.debug("fireFileDeletedEvent: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void removeFromDataObject(WebdavResource resource)
@@ -3414,7 +3424,7 @@ public class DavController extends SpringActionController
         HttpServletRequest request = getRequest();
         Path path = coll.getPath();
 
-        _log.debug("Delete:" + path);
+        _log.debug("Delete:{}", path);
 
         String ifHeader = request.getHeader("If");
         if (ifHeader == null)
@@ -3441,7 +3451,7 @@ public class DavController extends SpringActionController
                 if (!child.canDelete(getUser(),true,outMessage))
                 {
                     child.notify(getViewContext(), "fileDeleteFailed");
-                    setLastError(new DavException(WebdavStatus.SC_FORBIDDEN, outMessage.isEmpty() ? null : outMessage.get(0), child.getPath()));
+                    setLastError(new DavException(WebdavStatus.SC_FORBIDDEN, outMessage.isEmpty() ? null : outMessage.getFirst(), child.getPath()));
                     errorList.put(childName, WebdavStatus.SC_FORBIDDEN);
                     continue;
                 }
@@ -3549,17 +3559,24 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
 
+            WebdavResource resource = resolvePath();
+            if (null == resource)
+            {
+                throw new DavException(WebdavStatus.SC_NOT_FOUND);
+            }
+
+            if (!resource.canWrite(getUser(), true))
+            {
+                throw new DavException(WebdavStatus.SC_FORBIDDEN);
+            }
+
             FileTime lastModified = getLastModified(getRequest().getInputStream());
 
             if (lastModified != null)
             {
                 try
                 {
-                    WebdavResource resource = resolvePath();
-                    if (resource != null)
-                    {
-                        resource.setLastModified(lastModified.toMillis());
-                    }
+                    resource.setLastModified(lastModified.toMillis());
                 }
                 catch (ConversionException ignored) {}
             }
@@ -3569,12 +3586,6 @@ public class DavController extends SpringActionController
             assert track(writer);
             try
             {
-                WebdavResource resource = resolvePath();
-                if (resource == null)
-                {
-                    throw new DavException(WebdavStatus.SC_NOT_FOUND);
-                }
-
                 XMLResourceWriter resourceWriter = new XMLResourceWriter(writer);
                 resourceWriter.beginResponse(getResponse());
 
@@ -3657,20 +3668,20 @@ public class DavController extends SpringActionController
                 {
                     if (_inLastModified)
                     {
-                        lastModifieds.get(lastModifieds.size() - 1).append(ch, start, length);
+                        lastModifieds.getLast().append(ch, start, length);
                     }
                 }
             });
             if (lastModifieds.size() == 1)
             {
-                String lastModified = lastModifieds.get(0).toString();
+                String lastModified = lastModifieds.getFirst().toString();
                 try
                 {
                     return FileTime.fromMillis(DateUtil.parseDateTime(lastModified, "EEE, dd MMM yyyy HH:mm:ss zzz").getTime());
                 }
                 catch (ConversionException | ParseException e)
                 {
-                    _log.debug("Bad LastModified value for PROPPATCH: " + lastModified, e);
+                    _log.debug("Bad LastModified value for PROPPATCH: {}", lastModified, e);
                 }
             }
         }
@@ -3736,6 +3747,9 @@ public class DavController extends SpringActionController
             boolean exists = dest.exists();
 
             if (!src.canRead(getUser(), true))
+                return unauthorized(src);
+            // MOVE removes the resource from the source location, so confirm the caller could delete it there.
+            if (!src.canMove(getUser()))
                 return unauthorized(src);
             if (exists && !dest.canWrite(getUser(),true) || !exists && !dest.canCreate(getUser(),true))
                 return unauthorized(dest);
@@ -3867,13 +3881,13 @@ public class DavController extends SpringActionController
         if (dest.isCollection() && dest.list() != null)
             dest.list().forEach(this::addToIndex);
 
-        _log.debug("fireFileMovedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+        _log.debug("fireFileMovedEvent: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
         // Don't allow creating text/html via rename (circumventing script checking)
-        if (src.isFile() && !getContainer().hasPermission(getUser(), BrowserDeveloperPermission.class))
+        if (src.isFile() && !getUser().isTrustedBrowserDev())
         {
             String contentTypeSrc = Objects.toString(src.getContentType(),"");
             String contentTypeDest = Objects.toString(dest.getContentType(),"");
@@ -4385,7 +4399,7 @@ public class DavController extends SpringActionController
             close(writer, "lock writer");
 
             if (_log.isDebugEnabled())
-                _log.debug("lock: " + lock);
+                _log.debug("lock: {}", lock);
 
             if (null != resource && resource.exists())
                 return WebdavStatus.SC_OK;
@@ -4424,7 +4438,7 @@ public class DavController extends SpringActionController
             if (lockTokenHeader == null)
                 lockTokenHeader = "";
 
-            _log.debug("lock token: " + lockTokenHeader);
+            _log.debug("lock token: {}", lockTokenHeader);
 
             // Checking resource locks
 
@@ -4539,7 +4553,7 @@ public class DavController extends SpringActionController
         LockResult locked = _isLocked(path,ifHeader);
         if (_log.isDebugEnabled() && (locked!=LockResult.NOT_LOCKED || !StringUtils.isEmpty(ifHeader)))
         {
-            _log.debug(locked.name() + " " + path.toString() + " If:" + ifHeader);
+            _log.debug("{} {} If:{}", locked.name(), path.toString(), ifHeader);
         }
         return locked;
     }
@@ -4603,7 +4617,7 @@ public class DavController extends SpringActionController
         }
 
         // TODO actually parse the headers instead of using ifHeader.contains(token)
-        boolean tokenSpecified = StringUtils.contains(ifHeader,"<opaquelocktoken:") && StringUtils.contains(ifHeader,"{") && StringUtils.contains(ifHeader,"}");
+        boolean tokenSpecified = Strings.CS.contains(ifHeader,"<opaquelocktoken:") && Strings.CS.contains(ifHeader,"{") && Strings.CS.contains(ifHeader,"}");
         if (tokenSpecified && ret == LockResult.NOT_LOCKED)
             return LockResult.TOKEN_NOT_FOUND;
         return ret;
@@ -4662,7 +4676,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "WebDAV errors");
+    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(Path.class, 1000, 5*CacheManager.MINUTE, "WebDAV errors");
 
     private @Nullable Path getErrorCacheKey()
     {
@@ -5029,7 +5043,7 @@ public class DavController extends SpringActionController
                     request.setAttribute("org.apache.tomcat.sendfile.end", Long.valueOf(length));
                     request.setAttribute("org.apache.tomcat.sendfile.token", this);
                     getResponse().setContentLength(length);
-                    _log.debug("sendfile: " + absolutePath);
+                    _log.debug("sendfile: {}", absolutePath);
                 }
                 else
                 {
@@ -5073,7 +5087,7 @@ public class DavController extends SpringActionController
             if (ranges.size() == 1)
             {
 
-                Range range = ranges.get(0);
+                Range range = ranges.getFirst();
                 getResponse().addContentRange(range);
                 long length = range.end - range.start + 1;
                 getResponse().setContentLength(length);
@@ -5825,6 +5839,15 @@ public class DavController extends SpringActionController
         return creationDateFormat.format(new Date(creationDate));
     }
 
+    // Clients display this rather than the ISO timestamp, which is an instant a browser renders in the viewer's time zone.
+    // Takes the display format from the resource's own container; a _webdav request's ViewContext container doesn't resolve.
+    private String getDisplayDate(WebdavResource resource, long date)
+    {
+        GUID containerId = resource.getContainerId();
+        Container c = null != containerId ? ContainerManager.getForId(containerId) : null;
+        return DateUtil.formatDateTime(null != c ? c : ContainerManager.getRoot(), new Date(date));
+    }
+
     private static final FastDateFormat httpDateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
 
     private String getHttpDateFormat(long date)
@@ -5857,7 +5880,7 @@ public class DavController extends SpringActionController
         Path destinationPath = getDestinationPath();
         if (destinationPath == null)
             throw new DavException(WebdavStatus.SC_BAD_REQUEST);
-        _log.debug("Dest path :" + destinationPath);
+        _log.debug("Dest path :{}", destinationPath);
 
         WebdavResource resource = resolvePath();
         WebdavResource destination = resolvePath(destinationPath);
@@ -5944,7 +5967,7 @@ public class DavController extends SpringActionController
      */
     private WebdavStatus copyResource(int depth, WebdavResource src, Map<Path,WebdavStatus> errorList, Path destPath) throws DavException
     {
-        _log.debug("Copy: " + src.getPath() + " To: " + destPath);
+        _log.debug("Copy: {} To: {}", src.getPath(), destPath);
 
         WebdavResource dest = resolvePath(destPath);
 
@@ -6234,7 +6257,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(byte[] b) throws IOException
+        public int read(byte @NotNull [] b) throws IOException
         {
             int r = super.read(b);
             if (null != bos && r > 0)
@@ -6243,7 +6266,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(byte[] b, int off, int len) throws IOException
+        public int read(byte @NotNull [] b, int off, int len) throws IOException
         {
             int r = super.read(b, off, len);
             if (null != bos && r > 0)
@@ -6289,7 +6312,7 @@ public class DavController extends SpringActionController
 
     WebdavStatus unauthorized(WebdavResource resource, List<String> messages) throws DavException
     {
-        String message = null!=messages && !messages.isEmpty() ? messages.get(0) : null;
+        String message = null!=messages && !messages.isEmpty() ? messages.getFirst() : null;
         throw new UnauthorizedException(resource, message);
     }
 
@@ -6456,20 +6479,20 @@ public class DavController extends SpringActionController
 
     private void addToIndex(WebdavResource r)
     {
-        _log.debug("addToIndex: " + r.getPath());
+        _log.debug("addToIndex: {}", r.getPath());
 
         try
         {
             // a lot of tools up load temporary 0 length files, let's not index them
             if (!r.shouldIndex() || r.getContentLength() == 0 || r.getName().startsWith("._"))
             {
-                _log.debug("!shouldIndex(): " + r.getPath());
+                _log.debug("!shouldIndex(): {}", r.getPath());
                 return;
             }
         }
         catch (IOException x)
         {
-            _log.debug("!shouldIndex(): " + r.getPath(), x);
+            _log.debug("!shouldIndex(): {}", r.getPath(), x);
             return;
         }
 
@@ -6499,7 +6522,7 @@ public class DavController extends SpringActionController
 
     private void removeFromIndex(WebdavResource r)
     {
-        _log.debug("removeFromIndex: " + r.getPath());
+        _log.debug("removeFromIndex: {}", r.getPath());
         SearchService.get().deleteResource(r.getDocumentId());
     }
 
@@ -6576,7 +6599,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(@NotNull byte[] bytes) throws IOException
+        public int read(byte @NotNull [] bytes) throws IOException
         {
             access();
             return super.read(bytes, 0, bytes.length);
@@ -6641,5 +6664,248 @@ public class DavController extends SpringActionController
             assertFalse(XMLWriter.isValidXmlElementName("xml_"));
         }
 
+    }
+
+    public static class MoveActionContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        private Container _folder;
+        private User _mover;
+
+        @Before
+        public void setUp() throws Exception
+        {
+            _folder = createContainer("Folder");
+            // Author = Read + Insert but NOT Delete. This lets the caller pass the source-read and destination-create
+            // checks so a same-folder MOVE's outcome turns solely on the source-delete guard under test.
+            _mover = createUserInRole(_folder, AuthorRole.class);
+        }
+
+        // Documents the precondition the MOVE fix relies on: MOVE removes the source, so it requires Delete there.
+        // An Author can read and create but, lacking Delete, must not be able to rename/move.
+        @Test
+        public void testRenamePermissionInvariant()
+        {
+            WebdavResource files = WebdavService.get().lookup(filesPath(_folder));
+            assertNotNull("Expected a @files webdav node for the test folder", files);
+            assertTrue("Author should be able to read @files", files.canRead(_mover, true));
+            assertTrue("Author should be able to create in @files (so the destination check passes)", files.canCreate(_mover, true));
+            assertFalse("Author must NOT be able to rename/move @files (lacks Delete)", files.canRename(_mover, true));
+            assertTrue("Admin should be able to rename @files", files.canRename(getAdmin(), true));
+        }
+
+        // Drives an actual MOVE through WebdavServlet/DavController. The caller can read and create in the (single)
+        // folder but cannot delete, so only the source-delete guard can forbid the move. Without the fix the move
+        // succeeds (SC_CREATED), removing a file the caller has no right to delete; with the fix it is forbidden.
+        @Test
+        public void testMoveActionRequiresSourceDelete() throws Exception
+        {
+            File dir = ensureFilesDir(_folder);
+            File srcFile = writeFile(dir);
+            assertTrue("Source file should resolve through the resolver", WebdavService.get().lookup(filesPath(_folder).append("secret.txt")).exists());
+
+            Path src = filesPath(_folder).append("secret.txt");
+            Path dest = filesPath(_folder).append("moved.txt");
+
+            MockHttpServletResponse resp = doMove(_folder, src, dest, _mover);
+            assertEquals("A caller without Delete on the source must be forbidden from MOVE", HttpServletResponse.SC_FORBIDDEN, resp.getStatus());
+            assertTrue("Source file must still exist after a forbidden move", srcFile.exists());
+
+            // Positive control: the same MOVE driven by an admin (who has Delete, hence rename) succeeds, proving the
+            // guard forbids only the under-privileged caller rather than every MOVE.
+            MockHttpServletResponse adminResp = doMove(_folder, src, dest, getAdmin());
+            assertEquals("An admin must be allowed to MOVE", HttpServletResponse.SC_CREATED, adminResp.getStatus());
+            assertFalse("Source file should no longer exist after a successful move", srcFile.exists());
+            assertTrue("Destination file should exist after a successful move", new File(dir, "moved.txt").exists());
+        }
+
+        // Ensure moves by a caller who CAN delete in the source but lacks Insert in the target are forbidden
+        @Test
+        public void testMoveActionRequiresTargetCreate() throws Exception
+        {
+            Container source = createContainer("DeleteSource");
+            Container target = createContainer("NoInsertTarget");
+
+            // Editor in the source (Read+Insert+Update+Delete) -> passes the source read and delete checks.
+            // Reader in the target (no Insert) -> proves read access to the target is not enough; Insert is required.
+            User editorInSourceOnly = createUserInRole(source, EditorRole.class);
+            grantRole(editorInSourceOnly, target, ReaderRole.class);
+
+            File srcDir = ensureFilesDir(source);
+            File targetDir = ensureFilesDir(target);
+            File srcFile = writeFile(srcDir);
+
+            Path src = filesPath(source).append("secret.txt");
+            Path dest = filesPath(target).append("moved.txt");
+
+            MockHttpServletResponse resp = doMove(source, src, dest, editorInSourceOnly);
+            assertEquals("A caller without Insert on the target must be forbidden from MOVE", HttpServletResponse.SC_FORBIDDEN, resp.getStatus());
+            assertTrue("Source file must still exist after a forbidden move", srcFile.exists());
+            assertFalse("Destination file must not have been created", FileUtil.appendName(targetDir, "moved.txt").exists());
+
+            // Positive control: a caller who is also Editor (hence Insert) in the target can complete the same
+            // cross-container MOVE, proving the destination guard forbids only the under-privileged caller.
+            User editorInBoth = createUserInRole(source, EditorRole.class);
+            grantRole(editorInBoth, target, EditorRole.class);
+            MockHttpServletResponse okResp = doMove(source, src, dest, editorInBoth);
+            assertEquals("With Insert on the target the MOVE must succeed", HttpServletResponse.SC_CREATED, okResp.getStatus());
+            assertFalse("Source file should no longer exist after a successful move", srcFile.exists());
+            assertTrue("Destination file should exist after a successful move", FileUtil.appendName(targetDir, "moved.txt").exists());
+        }
+
+        // A file that backs experiment data (used by a run) can be moved but not deleted. Test via Java API
+        @Test
+        public void testImportedFileCanMoveButNotDelete() throws Exception
+        {
+            File dir = ensureFilesDir(_folder);
+            File srcFile = writeFile(dir, "imported.txt");
+            importFileIntoRun(_folder, srcFile);
+
+            User admin = getAdmin();
+            WebdavResource resource = WebdavService.get().lookup(filesPath(_folder).append("imported.txt"));
+            assertNotNull("Imported file should resolve through the resolver", resource);
+            assertTrue("Imported file should exist", resource.exists());
+            assertFalse("Precondition: a file used by a run must report a non-empty action list", resource.getActions(admin).isEmpty());
+
+            List<String> messages = new ArrayList<>();
+            assertFalse("Admin must NOT be able to delete a file that has been imported by an assay", resource.canDelete(admin, true, messages));
+            assertTrue("canDelete() should explain that the file was imported by an assay", messages.stream().anyMatch(m -> m.contains("imported by an assay")));
+            assertTrue("Admin MUST still be able to move a file that has been imported by an assay", resource.canMove(admin));
+        }
+
+        // A file that backs experiment data (used by a run) can be moved but not deleted. Test via WebDAV HTTP request
+        @Test
+        public void testMoveActionMovesImportedFileButDeleteForbidden() throws Exception
+        {
+            File dir = ensureFilesDir(_folder);
+
+            // DELETE of a file imported by a run is forbidden, and the file survives.
+            File imported = writeFile(dir, "imported.txt");
+            importFileIntoRun(_folder, imported);
+            MockHttpServletResponse deleteResp = doDelete(_folder, filesPath(_folder).append(imported.getName()), getAdmin());
+            assertEquals("DELETE of a file imported by an assay must be forbidden", HttpServletResponse.SC_FORBIDDEN, deleteResp.getStatus());
+            assertTrue("File must still exist after a forbidden delete", imported.exists());
+
+            // MOVE of an imported file succeeds, relocating it within the file root.
+            Path src = filesPath(_folder).append(imported.getName());
+            Path dest = filesPath(_folder).append("moved.txt");
+            MockHttpServletResponse moveResp = doMove(_folder, src, dest, getAdmin());
+            assertEquals("MOVE of a file imported by an assay must succeed", HttpServletResponse.SC_CREATED, moveResp.getStatus());
+            assertFalse("Source file should no longer exist after a successful move", imported.exists());
+            assertTrue("Destination file should exist after a successful move", FileUtil.appendName(dir, dest.getName()).exists());
+        }
+
+        // Ensure special nodes like @pipeline can't be deleted or moved
+        @Test
+        public void testNonDeletableNodeIsNotMovable() throws Exception
+        {
+            // Configure an explicit pipeline root so the @pipeline webdav node resolves to a PipelineFolderResource.
+            File fileRoot = ensureFilesDir(_folder).getParentFile();
+            File pipelineDir = FileUtil.appendName(fileRoot, "pipelineOverrideRoot");
+            if (!pipelineDir.exists())
+                assertTrue("Test requires a writable pipeline root directory", pipelineDir.mkdirs());
+            PipelineService.get().setPipelineRoot(getAdmin(), _folder, PipelineService.PRIMARY_ROOT, false, pipelineDir.toURI());
+
+            WebdavResource pipelineNode = WebdavService.get().lookup(pipelinePath(_folder));
+            assertNotNull("Test requires the @pipeline webdav node to resolve to a PipelineFolderResource", pipelineNode);
+            assertNotNull("The pipeline node must be backed by a writable file root", pipelineNode.getFile());
+
+            User admin = getAdmin();
+            assertFalse("The pipeline node must never be deletable", pipelineNode.canDelete(admin, true, null));
+            assertFalse("A node that is not deletable must also not be movable", pipelineNode.canMove(admin));
+        }
+
+        private static Path filesPath(Container c)
+        {
+            return WebdavService.getPath().append(c.getParsedPath()).append(FileContentService.FILES_LINK);
+        }
+
+        private static Path pipelinePath(Container c)
+        {
+            return WebdavService.getPath().append(c.getParsedPath()).append(FileContentService.PIPELINE_LINK);
+        }
+
+        private static File ensureFilesDir(Container c)
+        {
+            WebdavResource filesNode = WebdavService.get().lookup(filesPath(c));
+            assertNotNull("Test requires a @files node for " + c.getName(), filesNode);
+            File dir = filesNode.getFile();
+            assertNotNull("Test requires a file root for " + c.getName(), dir);
+            if (!dir.exists())
+                dir.mkdirs();
+            return dir;
+        }
+
+        private static File writeFile(File dir) throws IOException
+        {
+            return writeFile(dir, "secret.txt");
+        }
+
+        private static File writeFile(File dir, String name) throws IOException
+        {
+            File f = FileUtil.appendName(dir, name);
+            try (FileOutputStream os = new FileOutputStream(f))
+            {
+                os.write("secret".getBytes(StandardCharsets.UTF_8));
+            }
+            return f;
+        }
+
+        // Registers the file as experiment data used by a run, so the resolver's WebdavResource reports a
+        // non-empty action list - the same state that, in production, blocks deletion of an imported file
+        // while still permitting a move.
+        private void importFileIntoRun(Container c, File file) throws Exception
+        {
+            ExperimentService expSvc = ExperimentService.get();
+            User admin = getAdmin();
+
+            ExpData data = expSvc.createData(c, new DataType("Data"), file.getName());
+            data.setDataFileURI(file.toURI());
+            data.save(admin);
+
+            ExpRun run = expSvc.createExperimentRun(c, "import of " + file.getName());
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
+            assertNotNull("Test requires a pipeline root for " + c.getName(), pipeRoot);
+            run.setFilePathRoot(pipeRoot.getRootPath());
+            ExpProtocol protocol = expSvc.ensureSampleDerivationProtocol(admin);
+            run.setProtocol(protocol);
+
+            ViewBackgroundInfo info = new ViewBackgroundInfo(c, admin, null);
+            // Wiring the data as a run input is enough for getRunsUsingDatas() to associate the run with the file.
+            expSvc.saveSimpleExperimentRun(run, Collections.emptyMap(), Map.of(data, "Data"), Collections.emptyMap(),
+                    Collections.emptyMap(), Collections.emptyMap(), info, null, false);
+        }
+
+        private static MockHttpServletResponse doDelete(Container sourceContainer, Path srcResource, User user) throws Exception
+        {
+            String srcWebdav = srcResource.toString();
+            String servletPath = "/" + WebdavService.getServletPath();
+
+            HttpServletRequest base = ViewServlet.mockRequest("DELETE", new ActionURL(name, "delete", sourceContainer), user, Map.of(), null);
+            MockHttpServletRequest req = (MockHttpServletRequest) base;
+            req.setServletPath(servletPath);
+            req.setPathInfo(srcWebdav.substring(servletPath.length()));
+            req.setRequestURI(srcWebdav);
+
+            MockHttpServletResponse resp = new MockHttpServletResponse();
+            new WebdavServlet(false).service(req, resp);
+            return resp;
+        }
+
+        private static MockHttpServletResponse doMove(Container sourceContainer, Path srcResource, Path destResource, User user) throws Exception
+        {
+            String srcWebdav = srcResource.toString();
+            String destWebdav = destResource.toString();
+            String servletPath = "/" + WebdavService.getServletPath();
+
+            HttpServletRequest base = ViewServlet.mockRequest("MOVE", new ActionURL(name, "move", sourceContainer), user, Map.of("Destination", destWebdav), null);
+            MockHttpServletRequest req = (MockHttpServletRequest) base;
+            req.setServletPath(servletPath);
+            req.setPathInfo(srcWebdav.substring(servletPath.length()));
+            req.setRequestURI(srcWebdav);
+
+            MockHttpServletResponse resp = new MockHttpServletResponse();
+            new WebdavServlet(false).service(req, resp);
+            return resp;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,11 +89,11 @@ public class FileImporter implements FolderImporter
                     FileUtil.createDirectories(rootFile);
                 if (Files.isDirectory(rootFile))
                 {
-                    ctx.getLogger().info("Starting to copy files to @" + fileType.name());
+                    ctx.getLogger().info("Starting to copy files to @{}", fileType.name());
                     AtomicInteger count = new AtomicInteger();
                     copy(filesVF, rootFile, ctx.getLogger(), System.currentTimeMillis() + LOG_INTERVAL, count);
 
-                    ctx.getLogger().info("Copied " + count.get() + " files to @" + fileType.name());
+                    ctx.getLogger().info("Copied {} files to @{}", count.get(), fileType.name());
 
                     return true;
                 }
@@ -111,7 +111,7 @@ public class FileImporter implements FolderImporter
             {
                 if (nextLogTime < System.currentTimeMillis())
                 {
-                    log.info(count.get() + " files copied, now copying " + child);
+                    log.info("{} files copied, now copying {}", count.get(), child);
                     nextLogTime = System.currentTimeMillis() + LOG_INTERVAL;
                 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.DefaultType;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
@@ -48,6 +47,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -66,21 +66,20 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyType;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -101,10 +100,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidatorURI;
+import static org.labkey.api.exp.property.DefaultValidatorKind.createValidatorURI;
 
 public class PropertyServiceImpl implements PropertyService, UsageMetricsProvider
 {
@@ -279,13 +279,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Override
     public List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared)
     {
-        List<Domain> result = new ArrayList<>();
-        for (DomainDescriptor dd : OntologyManager.getDomainDescriptors(container, user, includeProjectAndShared))
-        {
-            result.add(new DomainImpl(dd));
-        }
-
-        return Collections.unmodifiableList(result);
+        return streamDomains(container, user, includeProjectAndShared, _ -> true).toList();
     }
 
     @Override
@@ -297,27 +291,33 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Override
     public List<? extends Domain> getDomains(Container container, User user, @NotNull DomainKind<?> dk, boolean includeProjectAndShared)
     {
-        // Domain.getDomainKind() can be slow. Instead just ask the passed-in dk if the domain matches or not.
-        return getDomains(container, user, includeProjectAndShared)
-                .stream()
-                .filter(d -> dk.getPriority(d.getTypeURI()) != null)
-                .collect(Collectors.toList());
+        // Domain.getDomainKind() can be slow. Instead, just ask the passed-in dk if the domain matches or not.
+        return streamDomains(container, user, includeProjectAndShared, dd -> dk.getPriority(dd.getDomainURI()) != null).toList();
     }
 
     @Override
     public Stream<? extends Domain> getDomainsStream(Container container, User user, @Nullable Set<String> domainKinds, @Nullable Set<String> domainNames, boolean includeProjectAndShared)
     {
-        Stream<? extends Domain> stream = getDomains(container, user, includeProjectAndShared)
-                .stream()
-                .filter(d -> d.getDomainKind() != null);
+        Predicate<DomainDescriptor> filter = dd -> dd.getDomainKind() != null;
 
         if (domainKinds != null && !domainKinds.isEmpty())
-            stream = stream.filter(d -> domainKinds.contains(d.getDomainKind().getKindName()));
+            filter = filter.and(dd -> domainKinds.contains(dd.getDomainKind().getKindName()));
 
         if (domainNames != null && !domainNames.isEmpty())
-            stream = stream.filter(d -> domainNames.contains(d.getName()));
+            filter = filter.and(dd -> domainNames.contains(dd.getName()));
 
-        return stream;
+        return streamDomains(container, user, includeProjectAndShared, filter);
+    }
+
+    /**
+     * Filter runs on the DomainDescriptor because constructing a DomainImpl loads and clones the domain's
+     * PropertyDescriptors, so materializing one per domain in the container is very expensive.
+     */
+    private Stream<DomainImpl> streamDomains(Container container, User user, boolean includeProjectAndShared, Predicate<DomainDescriptor> filter)
+    {
+        return OntologyManager.getDomainDescriptors(container, user, includeProjectAndShared).stream()
+                .filter(filter)
+                .map(DomainImpl::new);
     }
 
     @Override
@@ -333,7 +333,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         {
             SQLFragment sql = new SQLFragment("SELECT DISTINCT Container FROM ")
                 .append(OntologyManager.getTinfoDomainDescriptor())
-                .append(" WHERE ");
+                .unsafeAppend(" WHERE ");
 
             sql.append(domainNamespacePrefixes.stream()
                 .map(prefix -> new SQLFragment("DomainURI LIKE ?")
@@ -365,7 +365,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public IPropertyValidator createValidator(String typeURI)
+    public PropertyValidatorDef createValidator(String typeURI)
     {
         ValidatorKind kind = getValidatorKind(typeURI);
         if (kind != null)
@@ -374,13 +374,13 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public @NotNull List<IPropertyValidator> getPropertyValidators(PropertyDescriptor desc)
+    public @NotNull List<PropertyValidatorDef> getPropertyValidators(PropertyDescriptor desc)
     {
-        List<IPropertyValidator> validators = new ArrayList<>();
+        List<PropertyValidatorDef> validators = new ArrayList<>();
 
-        for (PropertyValidator v : DomainPropertyManager.get().getValidators(desc))
+        for (PropertyValidatorBean v : DomainPropertyManager.get().getValidators(desc))
         {
-            validators.add(new PropertyValidatorImpl(v));            
+            validators.add(new PropertyValidatorDefImpl(v));
         }
         return validators;
     }
@@ -399,14 +399,14 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public IPropertyValidator getValidatorForColumn(ColumnInfo col, org.labkey.api.gwt.client.model.PropertyValidatorType type)
+    public PropertyValidatorDef getValidatorForColumn(ColumnInfo col, org.labkey.api.gwt.client.model.PropertyValidatorType type)
     {
-        List<? extends IPropertyValidator> validators = col.getValidators();
+        List<? extends PropertyValidatorDef> validators = col.getValidators();
         if (!validators.isEmpty())
         {
             String typeURI = createValidatorURI(type).toString();
 
-            for (IPropertyValidator validator : validators)
+            for (PropertyValidatorDef validator : validators)
             {
                 if (validator.getTypeURI().equals(typeURI))
                     return validator;
@@ -416,7 +416,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public List<String> getTextChoiceValidatorOptions(IPropertyValidator validator)
+    public List<String> getTextChoiceValidatorOptions(PropertyValidatorDef validator)
     {
         String expression = "";
         if (validator != null && validator.getExpressionValue() != null)
@@ -491,7 +491,6 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                 .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
         om.setFilterProvider(gwtDomainFilterProvider);
         om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
-        om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
         om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
@@ -618,7 +617,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         {
             for (PropertyValidatorType xValidator : xProp.getPropertyValidatorArray())
             {
-                PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
+                PropertyValidatorDefImpl validator = new PropertyValidatorDefImpl(new PropertyValidatorBean());
                 validator.setContainer(prop.getContainer().getId());
                 validator.setName(xValidator.getName());
                 validator.setTypeURI(xValidator.getTypeURI());
@@ -684,7 +683,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
 
                         if (!vocabDomains.isEmpty())
                         {
-                            DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
+                            DomainProperty dp = vocabDomains.getFirst().getPropertyByURI(key);
                             vocabularyDomainProperties.add(dp);
                         }
                     }
@@ -696,43 +695,81 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public Map<String, Object> getUsageMetrics()
+    public UsageMetrics addUsageMetrics(UsageMetrics metrics)
     {
         DbSchema schema = ExperimentService.get().getSchema();
         String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
 
-        TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
-        long storageColumnNameMismatches = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
-
-        return Map.of(
-                "propertyValidators", Map.of(
-                        "byType", new SqlSelector(schema,
+        metrics.group("propertyValidators", "Field validators")
+                .put("byType", () -> new SqlSelector(schema,
                                 new SQLFragment("SELECT typeuri, COUNT(*) AS count FROM exp.propertyvalidator GROUP BY typeuri")
                         ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
                             x.put(m.get("typeuri").toString(), m.get("count"));
                             return x;
-                        }),
-                        "textChoiceValues", new SqlSelector(schema,
+                        }), "Validators by type URI; a Text Choice field's choices are one validator")
+                .put("textChoiceValues", () -> new SqlSelector(schema,
                                 new SQLFragment("SELECT MIN(NumValues) AS min, MAX(NumValues) AS max, AVG(NumValues) AS avg FROM (")
                                         .append(String.format("SELECT (%s(expression) - %s(replace(expression, '|', '')) + 1) AS NumValues FROM exp.propertyvalidator WHERE typeuri = ?", lengthFn, lengthFn))
-                                        .append(") AS X")
+                                        .unsafeAppend(") AS X")
                                         .add("urn:lsid:labkey.com:PropertyValidator:textchoice")
                             ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
                                 x.put("min", m.get("min") != null ? m.get("min") : 0);
                                 x.put("max", m.get("max") != null ? m.get("max") : 0);
                                 x.put("avg", m.get("avg") != null ? m.get("avg") : 0);
                                 return x;
-                            })
-                ),
-                "propertyCountsByRange", stripUriPrefixes(new SqlSelector(schema,
+                            }), "Choices per Text Choice validator: min, max, and avg");
+        metrics.group("propertyCountsByRange", "Fields across all domains by data type (range URI after # or xsd:); 'null' for none")
+                .putAll(() -> stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN RangeURI IS NULL THEN 'null' ELSE RangeURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY RangeURI")
-                ).getValueMap(String.class)),
-                "propertyCountsByConcept", stripUriPrefixes(new SqlSelector(schema,
+                ).getValueMap(String.class)));
+        metrics.group("propertyCountsByConcept", "Fields across all domains by concept URI (after # or xsd:); 'null' for none")
+                .putAll(() -> stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
-                ).getValueMap(String.class)),
-                        "conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class),
-                "storageColumnNameMismatches", storageColumnNameMismatches
-        );
+                ).getValueMap(String.class)));
+        metrics.group("defaultValuePropertyCounts", "Fields with a saved folder- or user-level default value, by default value type and by owning domain's LSID namespace; counts fields, not saved values")
+                .put("folder", () -> savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "%.Folder-%"))
+                .put("user", () -> savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + ".Folder-%"));
+        metrics.put("conditionalFormattingFields", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class), "Fields with conditional formatting");
+        metrics.put("storageColumnNameMismatches", () -> {
+            TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTableOrThrow(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
+            return new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
+        }, "Fields in provisioned domains whose database column name differs from the field name");
+        return metrics;
+    }
+
+    /**
+     * Properties that a user has actually saved a default value for, counted by the property's default value type and
+     * by the namespace prefix of the domain that owns it.
+     */
+    private Map<String, Object> savedDefaultValuePropertyCounts(DbSchema schema, String lsidPattern)
+    {
+        Map<String, Set<Integer>> byDefaultValueType = new HashMap<>();
+        Map<String, Set<Integer>> byDomainKind = new HashMap<>();
+
+        // One row per property/domain pair, so a property shared by two domains counts toward both kinds
+        SQLFragment sql = new SQLFragment("""
+                SELECT DISTINCT OP.PropertyId, PD.DefaultValueType, DD.DomainURI
+                FROM exp.ObjectProperty OP
+                    INNER JOIN exp.PropertyDescriptor PD ON PD.PropertyId = OP.PropertyId
+                    INNER JOIN exp.PropertyDomain PDM ON PDM.PropertyId = OP.PropertyId
+                    INNER JOIN exp.DomainDescriptor DD ON DD.DomainId = PDM.DomainId
+                WHERE OP.ObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI LIKE ?)""").add(lsidPattern);
+
+        new SqlSelector(schema, sql).forEachMap(row -> {
+            Integer propertyId = ((Number) row.get("PropertyId")).intValue();
+            Object defaultValueType = row.get("DefaultValueType");
+            Lsid domainLsid = new Lsid((String) row.get("DomainURI"));
+
+            byDefaultValueType.computeIfAbsent(defaultValueType == null ? "null" : defaultValueType.toString(), k -> new HashSet<>()).add(propertyId);
+            byDomainKind.computeIfAbsent(domainLsid.isValid() ? domainLsid.getNamespacePrefix() : "null", k -> new HashSet<>()).add(propertyId);
+        });
+
+        return Map.of("byDefaultValueType", countDistinct(byDefaultValueType), "byDomainKind", countDistinct(byDomainKind));
+    }
+
+    private static Map<String, Integer> countDistinct(Map<String, Set<Integer>> propertyIds)
+    {
+        return propertyIds.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().size()));
     }
 
     /**
@@ -752,7 +789,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                 key = key.split("#")[1];
             }
             key = key.replace("xsd:", "");
-            result.compute(key, (k, v) -> v == null ? value : v.intValue() + value);
+            result.compute(key, (_, v) -> v == null ? value : v.intValue() + value);
         }
         return result;
     }
@@ -831,8 +868,8 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         public void testTextChoiceValidatorOptions()
         {
             PropertyServiceImpl service = new PropertyServiceImpl();
-            TextChoiceValidator validator = new TextChoiceValidator();
-            IPropertyValidator instance = validator.createInstance();
+            TextChoiceValidatorKind validator = new TextChoiceValidatorKind();
+            PropertyValidatorDef instance = validator.createInstance();
 
             // empty expression
             instance.setExpressionValue("");

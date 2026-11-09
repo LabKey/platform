@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package org.labkey.api.defaults;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -180,52 +179,6 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                     return app;
                 }
             ).appendTo(out);
-//                oldWriter.write("<table class=\"lk-fields-table\">");
-
-
-//                    renderer.renderDetailsCaptionCell(ctx, out, "control-label lk-form-row-label");
-//
-//                    if (isFile)
-//                        TD().appendTo(out); // No input for file
-//                    else
-//                        renderer.renderInputCell(ctx, out);
-//
-//                    TD(
-//                        (Renderable) ret -> {
-//                            if (isFile)
-//                            {
-//                                out.write("Defaults cannot be set for file fields.");
-//                            }
-//                            else
-//                            {
-//                                DefaultValueType defaultType = ((DefaultableDisplayColumn) renderer).getDefaultValueType();
-//                                if (defaultType == null)
-//                                    defaultType = DefaultValueType.FIXED_EDITABLE;
-//                                out.write(defaultType.getLabel());
-//                                out.write(PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()));
-//                            }
-//                            return ret;
-//                        }
-//                    ).appendTo(out);
-//                    oldWriter.write("<td>");
-//                    if (isFile)
-//                    {
-//                        out.write("Defaults cannot be set for file fields.");
-//                    }
-//                    else
-//                    {
-//                        DefaultValueType defaultType = ((DefaultableDisplayColumn) renderer).getDefaultValueType();
-//                        if (defaultType == null)
-//                            defaultType = DefaultValueType.FIXED_EDITABLE;
-//                        out.write(defaultType.getLabel());
-//                        out.write(PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()));
-//                    }
-//                    oldWriter.write("</td>");
-
-//                    oldWriter.write("</tr>");
-//                }
-//                oldWriter.write("</table>");
-
 
             ButtonBar bbar = getButtonBar(MODE_INSERT);
             bbar.setStyle(ButtonBar.Style.separateButtons);
@@ -337,7 +290,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             else
                 overrideHtml.append("These values override defaults set in the following folder:");
             overrideHtml.unsafeAppend("</span><br>");
-            Container container = overridees.get(overridees.size() - 1);
+            Container container = overridees.getLast();
             overrideHtml.append(editURL(container, domainIdForm));
         }
         List<Container> overriders = DefaultValueService.get().getDefaultValueOverriders(domainIdForm.getContainer(), domain);

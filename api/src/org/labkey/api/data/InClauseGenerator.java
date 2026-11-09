@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -26,4 +27,9 @@ import java.util.Collection;
 public interface InClauseGenerator
 {
     SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params);
+
+    default @Nullable TempTableInfo getTempTableInfo(@NotNull Collection<?> params)
+    {
+        return null;
+    }
 }

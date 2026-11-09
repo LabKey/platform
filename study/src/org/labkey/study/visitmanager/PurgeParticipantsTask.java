@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class PurgeParticipantsTask extends TimerTask
         {
             // Queue a pipeline job to prevent participant purge from running in parallel with study import, #42641
             PipelineJob job = new PurgeParticipantsJob(vbi, root);
-            LOG.debug("Queuing PurgeParticipantsJob [thread " + Thread.currentThread().getName() + " to " + PipelineService.get().toString() + "]");
+            LOG.debug("Queuing PurgeParticipantsJob [thread {} to {}]", Thread.currentThread().getName(), PipelineService.get().toString());
             PipelineService.get().queueJob(job);
             JOB_QUEUED = true;
         }

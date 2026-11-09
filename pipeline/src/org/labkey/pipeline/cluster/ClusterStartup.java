@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -225,7 +226,7 @@ public class ClusterStartup extends AbstractPipelineStartup
 
         protected String executeJobRemote(List<String> args, int expectedExitCode) throws IOException, InterruptedException
         {
-            ProcessBuilder pb = new ProcessBuilder(args);
+            LabKeyProcessBuilder pb = new LabKeyProcessBuilder(args);
             pb.directory(_tempDir);
             pb.redirectErrorStream(true);
             Process proc = pb.start();

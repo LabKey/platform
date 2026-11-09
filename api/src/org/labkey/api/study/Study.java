@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.labkey.api.util.HtmlString;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -99,9 +98,9 @@ public interface Study extends StudyEntity
 
     String getAssayPlan();
 
-    void attachProtocolDocument(List<AttachmentFile> files , User user)  throws SQLException, IOException;
+    void attachProtocolDocument(List<AttachmentFile> files , User user)  throws IOException;
 
-    void removeProtocolDocument(String name, User user)  throws SQLException, IOException;
+    void removeProtocolDocument(String name, User user)  throws IOException;
 
     List<Attachment> getProtocolDocuments ();
 

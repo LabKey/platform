@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public interface Selector
 
     /**
      * Returns a sequential Stream of objects or records representing rows from the database. Converts each result row
-     * into an object the specified {@code Class}. The Stream is backed by a cached data structure (ResultSet and
+     * into an object of the specified {@code Class}. The Stream is backed by a cached data structure (ResultSet and
      * Connection are closed before returning the stream), so no need to close or fully exhaust this stream. Cached
      * streams are more convenient to use than uncached streams and should perform well in low-volume situations.
      */

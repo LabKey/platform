@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class GroupMembershipCache
     private static final String IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX = "ImmMemShip=";
     private static final String GROUP_MEMBERS_PREFIX = "Members=";
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final Cache<String, PrincipalArray> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Group memberships");
+    private static final Cache<String, PrincipalArray> CACHE = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "Group memberships");
 
     static
     {

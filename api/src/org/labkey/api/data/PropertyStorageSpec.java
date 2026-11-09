@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -527,17 +527,13 @@ public class PropertyStorageSpec
         @Override
         public String toString()
         {
-            switch (this)
+            return switch (this)
             {
-                case CLUSTERED:
-                    return "CLUSTERED";
-                case NONCLUSTERED:
-                    return "NONCLUSTERED";
-                case CLUSTER:
-                    return "CLUSTER";
-            }
+                case CLUSTERED -> "CLUSTERED";
+                case NONCLUSTERED -> "NONCLUSTERED";
+                case CLUSTER -> "CLUSTER";
+            };
 
-            return "";
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,11 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.view.ActionURL;
 
 public class LogDataType extends DataType
 {
     public LogDataType()
     {
         super("Log");
-    }
-    @Override
-    public ActionURL getDetailsURL(ExpData dataObject)
-    {
-        return null;
     }
 }

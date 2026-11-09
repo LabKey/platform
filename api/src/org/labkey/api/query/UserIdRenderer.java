@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,13 +78,13 @@ public class UserIdRenderer extends DataColumn
             return null;
         boolean isDeletedUser = UserManager.getUser(displayedUserId) == null;
 
-        if (!isDeletedUser && displayedUserId != null)
+        if (!isDeletedUser)
         {
-               ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, displayedUserId);
-               if (url != null)
-               {
-                   return url.toString();
-               }
+           ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, displayedUserId);
+           if (url != null)
+           {
+               return url.toString();
+           }
         }
 
         return null;

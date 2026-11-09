@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.websocket.WebSocketTracker;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 
 import jakarta.servlet.http.HttpSession;
@@ -57,6 +59,7 @@ public class NotificationEndpoint extends Endpoint
     private Session session;
     private int userId;
     private boolean errored;
+    private QuietCloser tracked;
 
     public NotificationEndpoint()
     {
@@ -74,7 +77,11 @@ public class NotificationEndpoint extends Endpoint
         Integer id = asInteger(endpointConfig.getUserProperties().get("userId"));
         this.userId = null==id ? 0 : id;
 
-        LOG.debug(this + " onOpen");
+        LOG.debug("{} onOpen", this);
+        // endpointsMap holds only authenticated endpoints, but a guest's socket occupies a connection slot just the
+        // same - on a public site they're nearly all guests. GH Issue 1574
+        tracked = WebSocketTracker.opened();
+
         synchronized (endpointsMap)
         {
             if (this.userId > 0)
@@ -96,11 +103,13 @@ public class NotificationEndpoint extends Endpoint
     @Override
     public void onClose(Session session, CloseReason closeReason)
     {
-        LOG.debug(this + " onClose: " + closeReason.toString());
+        LOG.debug("{} onClose: {}", this, closeReason.toString());
         synchronized (endpointsMap)
         {
             endpointsMap.removeMapping(this.userId, this);
         }
+        if (null != tracked)
+            tracked.close();
         super.onClose(session, closeReason);
     }
 
@@ -109,7 +118,7 @@ public class NotificationEndpoint extends Endpoint
     public void onError(Session session, Throwable throwable)
     {
         this.errored = true;
-        LOG.debug(this + " onError: " + throwable.getMessage());
+        LOG.debug("{} onError: {}", this, throwable.getMessage());
         super.onError(session, throwable);
     }
 
@@ -183,7 +192,7 @@ public class NotificationEndpoint extends Endpoint
         }
         catch (Exception x)
         {
-            LOG.debug(this + ": " + x.getMessage());
+            LOG.debug("{}: {}", this, x.getMessage());
             // NOTE: This NotificationEndpoint will be removed from the endpointsMap in onClose, called from WsSocket.close()
             // but remember it is a bad endpoint if someone tries to use it before the onClose method runs.
             this.errored = true;
@@ -207,7 +216,7 @@ public class NotificationEndpoint extends Endpoint
         {
             endpoint.safely(() -> {
                 endpoint.session.getBasicRemote().sendText(data);
-                LOG.debug(endpoint + " sendText: " + eventName);
+                LOG.debug("{} sendText: {}", endpoint, eventName);
             });
             count++;
         }
@@ -215,9 +224,9 @@ public class NotificationEndpoint extends Endpoint
         if (count == 0)
         {
             if (userIds.size() == 1)
-                LOG.debug("WebSocket: no sessions to send for " + userIds.get(0) + ": " + eventName);
+                LOG.debug("WebSocket: no sessions to send for {}: {}", userIds.getFirst(), eventName);
             else
-                LOG.debug("WebSocket: no sessions to send:" + eventName);
+                LOG.debug("WebSocket: no sessions to send:{}", eventName);
         }
 
     }

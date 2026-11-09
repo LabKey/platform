@@ -1,7 +1,7 @@
 package org.labkey.api.assay;
 
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ public class ReplacedRunFilter
             assert helper.getParameters().size() == 1;
 
             // Remove any existing URL filters on the Replaced column
-            String paramName = helper.getParameters().get(0).getKey();
+            String paramName = helper.getParameters().getFirst().getKey();
             String prefix = paramName.split(SimpleFilter.SEPARATOR_CHAR)[0];
             for (Pair<String, String> entry : url.getParameters())
             {
@@ -153,8 +153,8 @@ public class ReplacedRunFilter
             typeFilter.applyToURL(helper, view.getDataRegionName());
             List<Pair<String, String>> parameters = helper.getParameters();
             assert parameters.size() == 1;
-            String paramName = parameters.get(0).getKey();
-            String paramValue = parameters.get(0).getValue();
+            String paramName = parameters.getFirst().getKey();
+            String paramValue = parameters.getFirst().getValue();
 
             if (sortFilterParams.containsKey(paramName))
             {

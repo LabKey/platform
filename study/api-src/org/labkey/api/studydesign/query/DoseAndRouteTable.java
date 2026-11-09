@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,11 @@ public class DoseAndRouteTable extends StudyDesignLookupBaseTable
         setName("DoseAndRoute");
 
         // add an expr column for label to ba a concatenation of dose and route (need to keep the label generation in sync with code in DoseAndRoute.parseLabel)
-        String doseField = ExprColumn.STR_TABLE_ALIAS + ".dose";
-        String routeField = ExprColumn.STR_TABLE_ALIAS + ".route";
-        SQLFragment sql = new SQLFragment("CONCAT(CASE WHEN ").append(doseField).append(" IS NOT NULL THEN ").append(doseField).append(" ELSE '' END,")
-            .append("' : ',")
-            .append("CASE WHEN ").append(routeField).append(" IS NOT NULL THEN ").append(routeField).append(" ELSE '' END)");
+        var doseField = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".dose");
+        var routeField = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".route");
+        SQLFragment sql = SQLFragment.unsafe("CONCAT(CASE WHEN ").append(doseField).unsafeAppend(" IS NOT NULL THEN ").append(doseField).unsafeAppend(" ELSE '' END,")
+            .unsafeAppend("' : ',")
+            .unsafeAppend("CASE WHEN ").append(routeField).unsafeAppend(" IS NOT NULL THEN ").append(routeField).unsafeAppend(" ELSE '' END)");
 
         ExprColumn labelCol = new ExprColumn(this, "Label", sql, JdbcType.VARCHAR);
         labelCol.setReadOnly(true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.labkey.api.stats;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
@@ -119,6 +119,6 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     {
         return col.isNumericType() && !col.isKeyField() && !col.isLookup()
                 && !"serial".equalsIgnoreCase(col.getSqlTypeName())
-                && !StringUtils.containsIgnoreCase(col.getSqlTypeName(), "identity");
+                && !Strings.CI.contains(col.getSqlTypeName(), "identity");
     }
 }

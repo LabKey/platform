@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public interface ImportAliasable
             // Reverse the order of the descriptors so that we can preserve the right priority for resolving by names, aliases, etc
             for (T prop : properties)
             {
-                reversedProperties.add(0, prop);
+                reversedProperties.addFirst(prop);
             }
 
             // PropertyURI is lowest priority, so put it in the map first so it will be overwritten by higher priority usages

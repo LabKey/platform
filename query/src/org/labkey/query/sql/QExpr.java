@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ abstract public class QExpr extends QNode
 
     public ColumnInfo createColumnInfo(TableInfo table, String name, final Query query)
     {
-        ExprColumn expr = new ExprColumn(table, name, new SQLFragment("{{expr}}"), getJdbcType())
+        ExprColumn expr = new ExprColumn(table, name, SQLFragment.unsafe("{{expr}}"), getJdbcType())
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)

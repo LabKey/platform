@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -234,7 +234,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     public static DatabaseIdentifier getLegalSelectNameFromStorageName(SqlDialect dialect, String storageName)
     {
         String legalName = dialect.makeLegalIdentifier(storageName);
-        if (!storageName.equals(legalName) && dialect.isPostgreSQL())
+        if (!storageName.equals(legalName))
         {
             storageName = storageName.toLowerCase();
             legalName = dialect.makeLegalIdentifier(storageName);      // Our PG code deep down makes these lowercase, so we need to, too
@@ -324,7 +324,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         PropertyType type = getPropertyType();
         if (type == null)
         {
-            LOG.warn("Could not determine propertyType from RangeURI " + getRangeURI() + " and ConceptURI " + getConceptURI() + " for PropertyURI " + getPropertyURI() + ", defaulting to string");
+            LOG.warn("Could not determine propertyType from RangeURI {} and ConceptURI {} for PropertyURI {}, defaulting to string", getRangeURI(), getConceptURI(), getPropertyURI());
             type = PropertyType.STRING;
         }
         return type.getJdbcType();
@@ -480,7 +480,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     }
 
     @Transient
-    public @NotNull Collection<? extends IPropertyValidator> getValidators()
+    public @NotNull Collection<? extends PropertyValidatorDef> getValidators()
     {
         return PropertyService.get().getPropertyValidators(this);
     }

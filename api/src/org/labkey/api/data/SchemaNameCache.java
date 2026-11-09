@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class SchemaNameCache
 {
     private static final SchemaNameCache INSTANCE = new SchemaNameCache();
 
-    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingStringKeyCache(500, CacheManager.YEAR, "Schema names in each scope", (dsName, argument) -> {
+    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingCache(String.class, 500, CacheManager.YEAR, "Schema names in each scope", (dsName, argument) -> {
         DbScope scope = DbScope.getDbScope(dsName);
 
         try

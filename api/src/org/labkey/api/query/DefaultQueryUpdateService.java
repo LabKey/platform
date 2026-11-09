@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -707,12 +706,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (null != getObjectUriColumn())
         {
             SQLFragment lsids = new SQLFragment()
-                    .append("SELECT t.").append(getObjectUriColumn().getColumnName())
-                    .append(" FROM ").append(getDbTable(), "t")
-                    .append(" WHERE t.").append(getObjectUriColumn().getColumnName()).append(" IS NOT NULL");
+                    .unsafeAppend("SELECT t.").append(getObjectUriColumn().getColumnName())
+                    .unsafeAppend(" FROM ").append(getDbTable(), "t")
+                    .unsafeAppend(" WHERE t.").append(getObjectUriColumn().getColumnName()).unsafeAppend(" IS NOT NULL");
             if (null != getDbTable().getColumn("container"))
             {
-                lsids.append(" AND t.Container = ?");
+                lsids.unsafeAppend(" AND t.Container = ?");
                 lsids.add(container.getId());
             }
 
@@ -913,25 +912,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (dp != null)
             return isAttachmentProperty(dp);
         return false;
-    }
-
-    protected void configureCrossFolderImport(DataIteratorBuilder rows, DataIteratorContext context) throws IOException
-    {
-        if (!context.getInsertOption().updateOnly && context.isCrossFolderImport() && rows instanceof DataLoader dataLoader)
-        {
-            boolean hasContainerField = false;
-            for (ColumnDescriptor columnDescriptor : dataLoader.getColumns())
-            {
-                String fieldName = columnDescriptor.getColumnName();
-                if (fieldName.equalsIgnoreCase("Container") || fieldName.equalsIgnoreCase("Folder"))
-                {
-                    hasContainerField = true;
-                    break;
-                }
-            }
-            if (!hasContainerField)
-                context.setCrossFolderImport(false);
-        }
     }
 
     public static @Nullable String getKeyColumnAliasForUpdate(TableInfo tableInfo, @NotNull Map<String, Integer> columnNameMap)

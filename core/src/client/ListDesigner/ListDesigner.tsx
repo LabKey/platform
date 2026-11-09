@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, { ReactNode } from 'react';
+import React, { FC, ReactNode } from 'react';
 import { ActionURL, PermissionTypes, Security } from '@labkey/api';
 import {
     Alert,
-    LoadingSpinner,
-    ListDesignerPanels,
-    ListModel,
+    AppContexts,
+    BeforeUnload,
     fetchListDesign,
     getListIdFromDomainId,
-    BeforeUnload,
-    withServerContext,
+    ListDesignerPanels,
+    ListModel,
+    LoadingSpinner,
+    redirect,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface Props {}
 
 interface State {
@@ -104,8 +104,8 @@ export class ListDesigner extends React.Component<Props, State> {
 
     navigate = async (returnUrlProvider: () => Promise<string>, model?: ListModel): Promise<void> => {
         this._dirty = false;
-
-        window.location.href = this.getReturnUrl(model) ?? (await returnUrlProvider());
+        const redirectUrl = this.getReturnUrl(model) ?? (await returnUrlProvider());
+        redirect(redirectUrl);
     };
 
     getReturnUrl = (model?: ListModel): string => {
@@ -146,12 +146,16 @@ export class ListDesigner extends React.Component<Props, State> {
                 <ListDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    onComplete={this.onComplete}
                     onChange={this.onChange}
+                    onComplete={this.onComplete}
                 />
             </BeforeUnload>
         );
     }
 }
 
-export const App = withServerContext(ListDesigner);
+export const App: FC = () => (
+    <AppContexts includeGlobalState={false}>
+        <ListDesigner />
+    </AppContexts>
+);

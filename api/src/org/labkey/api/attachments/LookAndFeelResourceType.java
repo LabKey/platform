@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ public class LookAndFeelResourceType implements AttachmentParentType
     public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
         // Keep in sync with CoreMigrationSchemaHandler.copyAttachments()
-        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").append(") AND (");
-        sql.append(documentNameColumn).append(" IN (?, ?) OR ");
+        sql.append(parentColumn).unsafeAppend(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(") AND (");
+        sql.append(documentNameColumn).unsafeAppend(" IN (?, ?) OR ");
         sql.add(AttachmentCache.FAVICON_FILE_NAME);
         sql.add(AttachmentCache.STYLESHEET_FILE_NAME);
         sql.append(documentNameColumn).append(" LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ");

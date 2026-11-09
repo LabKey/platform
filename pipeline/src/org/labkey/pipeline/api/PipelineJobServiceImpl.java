@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
@@ -30,15 +30,15 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.formSchema.CheckboxField;
 import org.labkey.api.formSchema.Field;
 import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.formSchema.Option;
-import org.labkey.api.formSchema.SelectField;
 import org.labkey.api.formSchema.TextField;
-import org.labkey.api.formSchema.TextareaField;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -62,6 +62,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.reports.report.r.RReport;
@@ -70,6 +71,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.NetworkDrive;
@@ -84,6 +86,8 @@ import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
 import org.labkey.pipeline.cluster.NoOpPipelineStatusWriter;
+import org.labkey.pipeline.formSchema.SelectField;
+import org.labkey.pipeline.formSchema.TextareaField;
 import org.labkey.pipeline.mule.JMSStatusWriter;
 import org.labkey.pipeline.mule.test.DummyPipelineJob;
 import org.labkey.pipeline.mule.test.DummyRemoteExecutionEngine;
@@ -93,6 +97,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -103,12 +108,15 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 public class PipelineJobServiceImpl implements PipelineJobService
 {
     public static final String MODULE_PIPELINE_DIR = "pipeline";
 
     public static final Logger LOG = LogManager.getLogger(PipelineJobServiceImpl.class);
+    /** How long to let a cancelled job wind down its queries before terminating its database sessions outright */
+    private static final Duration CANCEL_GRACE_PERIOD = Duration.ofSeconds(2);
     private static final String PIPELINE_TOOLS_ERROR = "Failed to locate %s. Use the site pipeline tools settings to specify where it can be found. (Currently '%s')";
     private static final String INSTALLED_PIPELINE_TOOL_ERROR = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
     private static final String MODULE_TASKS_DIR = "tasks";
@@ -286,42 +294,67 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
         killProcessesForThread(jobThread);
 
-        if (PipelineSchema.getInstance().getSqlDialect().isPostgreSQL())
+        // Issue 50131: the job thread may be blocked in a slow query, so we can't wait for it to notice
+        // the cancellation. Ask the database to abort its queries instead, which makes its JDBC calls throw so it
+        // unwinds and releases its own connections on its own thread.
+        Map<DbScope, Set<ConnectionWrapper>> connectionsByScope = ConnectionWrapper.getConnectionsByScopeForThread(jobThread);
+
+        RequestCancellation.cancelQueries(connectionsByScope, RequestCancellation.Source.PIPELINE, false).forEach((scope, connections) ->
+            LOG.warn("Couldn't cancel queries on {}; job {} may run until its current query returns", scope.getDisplayName(), jobGuid));
+
+        // Escalate for anything that ignored the cancel, such as a task that swallows the exception and retries
+        waitForConnectionsToClose(jobThread, connectionsByScope).forEach((scope, connections) -> {
+            LOG.warn("Job thread {} still holds SPIDs {} after cancel; terminating those sessions", jobThread.getName(), getSPIDs(connections));
+            terminateQueries(scope, connections, jobGuid);
+        });
+    }
+
+    /** Isolated per scope so that one failure, such as failing to connect, doesn't skip the remaining scopes */
+    private static void terminateQueries(DbScope scope, Set<ConnectionWrapper> connections, String jobGuid)
+    {
+        try
         {
-            // Issue 50131
-            // Closing a Connection doesn't terminate all pending statements on SQL Server. Calling close
-            // and returning to the pool results in another thread getting a Connection that's still busy and
-            // blocks it.
+            scope.getSqlDialect().cancelQueries(scope, connections, true);
+        }
+        catch (RuntimeException e)
+        {
+            LOG.error("Failed to terminate queries on {} for job {}", scope.getDisplayName(), jobGuid, e);
+        }
+    }
 
-            // If we need to support query cancellation on SQL Server, we'd have to start tracking the Statements
-            // the Connection hands out and kill them individually.
+    private static Set<Integer> getSPIDs(Collection<ConnectionWrapper> connections)
+    {
+        return connections.stream().map(ConnectionWrapper::getSPID).collect(Collectors.toSet());
+    }
 
-            // Piggyback on the job thread so we can shut down open connections on its behalf
-            try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(jobThread, Thread.currentThread()))
+    /**
+     * Tracks wrappers rather than SPIDs so a thread that caught the cancel and borrowed a fresh connection doesn't look
+     * like one that never let go; the pool hands the same physical connection, and its SPID, straight back out.
+     * @return the subset of the original connections the thread still holds after the grace period, grouped by scope
+     */
+    private Map<DbScope, Set<ConnectionWrapper>> waitForConnectionsToClose(Thread jobThread, Map<DbScope, Set<ConnectionWrapper>> original)
+    {
+        long deadline = System.currentTimeMillis() + CANCEL_GRACE_PERIOD.toMillis();
+
+        while (true)
+        {
+            Map<DbScope, Set<ConnectionWrapper>> current = ConnectionWrapper.getConnectionsByScopeForThread(jobThread);
+            current.forEach((scope, connections) -> connections.retainAll(original.getOrDefault(scope, Set.of())));
+            current.values().removeIf(Set::isEmpty);
+
+            if (current.isEmpty() || System.currentTimeMillis() >= deadline)
             {
-                DbScope.DifferentConnectionException lastException;
-                int retry = 0;
-                do
-                {
-                    try
-                    {
-                        DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
-                        lastException = null;
-                    }
-                    catch (DbScope.DifferentConnectionException e)
-                    {
-                        // The connection we tried to close has already been closed and the thread has already
-                        // started using a different connection. Try again
-                        lastException = e;
-                        retry++;
-                    }
-                }
-                while (lastException != null && retry < 3);
+                return current;
+            }
 
-                if (lastException != null)
-                {
-                    throw lastException;
-                }
+            try
+            {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+                return current;
             }
         }
     }
@@ -638,7 +671,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         String prefix = pipelineId.getName() + LOCAL_TASK_PREFIX;
         for (TaskFactory<?> factory : getTaskFactories((Container)null))
         {
-            if (StringUtils.startsWith(factory.getId().getName(), prefix))
+            if (Strings.CS.startsWith(factory.getId().getName(), prefix))
                 removeTaskFactory(factory.getId());
         }
     }
@@ -686,7 +719,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         String typeDefaultValue = null;
 
         if (!typeOptions.isEmpty())
-            typeDefaultValue = typeOptions.get(0).getValue();
+            typeDefaultValue = typeOptions.getFirst().getValue();
 
         List<Option<String>> taskOptions = new ArrayList<>();
         List<FileAnalysisTaskPipeline> tasks = getTaskPipelines(container)
@@ -700,6 +733,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             taskOptions.add(new Option<>(task.getId().toString(), task.getDescription()));
 
         List<Option<String>> userOptions = new ArrayList<>(SecurityManager.getUsersWithPermissions(container, Set.of(InsertPermission.class)).stream()
+                .filter(u -> PipelineTriggerConfig.canRunAs(container, user, u))
                 .map(u -> new Option<>(u.getDisplayName(user), u.getDisplayName(user)))
                 .toList());
 
@@ -945,7 +979,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     private String getToolsPath()
     {
         String toolsDir = getAppProperties().getToolsDirectory();
-        CaseInsensitiveHashMap<String> ciEnvMap = new CaseInsensitiveHashMap<>((new ProcessBuilder()).environment());
+        CaseInsensitiveHashMap<String> ciEnvMap = new CaseInsensitiveHashMap<>((new LabKeyProcessBuilder()).environment());
         String path = ciEnvMap.get("PATH");
         return toolsDir + File.pathSeparator + path;
     }
@@ -1264,13 +1298,13 @@ public class PipelineJobServiceImpl implements PipelineJobService
                     .mapToInt(Map::size)
                     .sum();
 
-            LOG.info(pipelineCount + " task pipelines defined in all modules");
+            LOG.info("{} task pipelines defined in all modules", pipelineCount);
 
             int factoryCount = TASK_FACTORY_CACHE.streamAllResourceMaps()
                     .mapToInt(Map::size)
                     .sum();
 
-            LOG.info(factoryCount + " task factories defined in all modules");
+            LOG.info("{} task factories defined in all modules", factoryCount);
 
             // Make sure the cache retrieves the expected number of pipelines and factories from a couple test modules,
             // if an R engine is configured and the test modules are present

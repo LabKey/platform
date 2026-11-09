@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package org.labkey.api.services;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -29,19 +29,10 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/*
-* User: Dave
-* Date: Nov 19, 2008
-* Time: 10:50:17 AM
-*/
-
 /**
- * Provides a central registry for service interface implementations.
- * Modules that supply cross-module services should register their service
- * instances at startup by calling {@link #registerService}.
- * Other modules can then request that service at
- * runtime by calling {@link #getService(Class)}, specifying the
- * class of the service interface.
+ * Provides a central registry for service interface implementations. Modules that supply cross-module services should
+ * register their service instances at startup by calling {@link #registerService}. Other modules can then request that
+ * service at runtime by calling {@link #getService(Class)}, specifying the class of the service interface.
  */
 public class ServiceRegistry
 {
@@ -63,12 +54,12 @@ public class ServiceRegistry
         }
         final String shortName;
         final String longName;
-        final Class cls;
+        final Class<?> cls;
         final Object instance;
     }
     
     private static final ServiceRegistry _instance = new ServiceRegistry();
-    private final ConcurrentMap<Class, _ServiceDef> _servicesByClass = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, _ServiceDef> _servicesByClass = new ConcurrentHashMap<>();
 
     static {ServiceRegistry._instance.registerService(ServiceRegistry.class, _instance);}
 
@@ -103,15 +94,6 @@ public class ServiceRegistry
     {
         return getService(type) != null;
     }
-
-
-    /** Returns a service implementation for a given service interface. */
-    @Deprecated // Use ServiceRegistry.get().getService() instead
-    public static <T> T get(Class<T> type)
-    {
-        return get().getService(type);
-    }
-
 
     /**
      * Registers a service implementation. Modules that expose services should call this method
@@ -181,7 +163,7 @@ public class ServiceRegistry
         AbstractRefreshableWebApplicationContext ac = new AbstractRefreshableWebApplicationContext()
         {
             @Override
-            protected void loadBeanDefinitions(DefaultListableBeanFactory config) throws BeansException
+            protected void loadBeanDefinitions(@NotNull DefaultListableBeanFactory config) throws BeansException
             {
                 for (_ServiceDef sd : _servicesByClass.values())
                 {

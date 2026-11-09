@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,10 +91,6 @@ public class DavCrawler implements ShutdownListener
     // 1 Mbyte/sec, this seems to be enough to use a LOT of tika cpu time
     final RateLimiter _fileIORateLimiter = new RateLimiter("file io", 1000000, TimeUnit.SECONDS);
 
-    // CONSIDER: file count limiter
-    final RateLimiter _filesIndexRateLimiter = new RateLimiter("file index", 100, TimeUnit.SECONDS);
-
-
     public static class ResourceInfo
     {
         ResourceInfo(Date indexed, Date modified)
@@ -108,7 +104,7 @@ public class DavCrawler implements ShutdownListener
         //long length;
     }
 
-    private static final Cache<Path, ResourceInfo> errors = CacheManager.getCache(1000, CacheManager.WEEK, "Crawler indexing errors");
+    private static final Cache<Path, ResourceInfo> errors = CacheManager.getCache(Path.class, 1000, CacheManager.WEEK, "Crawler indexing errors");
 
 
     // to make testing easier, break out the interface for persisting crawl state
@@ -203,7 +199,7 @@ public class DavCrawler implements ShutdownListener
 
     public void startFull(Path path, boolean force)
     {
-        _log.debug("START FULL: " + path);
+        _log.debug("START FULL: {}", path);
 
         if (null == path)
             path = WebdavService.get().getResolver().getRootPath();
@@ -225,7 +221,7 @@ public class DavCrawler implements ShutdownListener
     {
         if (null != start)
         {
-            _log.debug("START CONTINUOUS " + start);
+            _log.debug("START CONTINUOUS {}", start);
             // make sure path exists
             if (null == nextCrawl)
             {
@@ -289,9 +285,12 @@ public class DavCrawler implements ShutdownListener
         {
             boolean isCrawlerThread = Thread.currentThread() == _crawlerThread;
 
-            _listingRateLimiter.add(1, isCrawlerThread);
+            if (isCrawlerThread)
+                _listingRateLimiter.add(1);
+            else
+                _listingRateLimiter.tryAdd(1);
 
-            _log.debug("IndexDirectoryJob.run(" + _path + ")");
+            _log.debug("IndexDirectoryJob.run({})", _path);
 
             _directory = getResolver().lookup(_path);
 
@@ -409,7 +408,10 @@ public class DavCrawler implements ShutdownListener
                     {
                         if (!f.isFile())
                             continue;
-                        _fileIORateLimiter.add(f.length(), isCrawlerThread);
+                        if (isCrawlerThread)
+                            _fileIORateLimiter.add(f.length());
+                        else
+                            _fileIORateLimiter.tryAdd(f.length());
                     }
 
                     _task.getQueue(null, SearchService.PRIORITY.crawl).addResource(child);
@@ -417,7 +419,6 @@ public class DavCrawler implements ShutdownListener
                 }
                 else if (!child.shouldIndex())
                 {
-                    continue;
                 }
                 else if (!skipContainer(child))
                 {
@@ -559,7 +560,7 @@ public class DavCrawler implements ShutdownListener
 
                 if (!Path.rootPath.equals(path))
                 {
-                    _log.debug("findSomeWork():    adding path to in memory queue: " + path.toString() + " (lastCrawl=" + lastCrawl + ", nextCrawl=" + nextCrawl);
+                    _log.debug("findSomeWork():    adding path to in memory queue: {} (lastCrawl={}, nextCrawl={}", path.toString(), lastCrawl, nextCrawl);
                     crawlQueue.add(new IndexDirectoryJob(path, lastCrawl, nextCrawl));
                 }
             }
@@ -573,7 +574,7 @@ public class DavCrawler implements ShutdownListener
         else
         {
             var path = crawlQueue.removeFirst();
-            _log.debug("findSomeWork(): now crawling " + path._directory);
+            _log.debug("findSomeWork(): now crawling {}", path._directory);
             return path;
         }
     }
@@ -611,10 +612,10 @@ public class DavCrawler implements ShutdownListener
         if (null != f)
         {
             // labkey convention
-            if (new File(f,".nocrawl").exists())
+            if (FileUtil.appendName(f,".nocrawl").exists())
                 return true;
             // postgres
-            if (new File(f,"PG_VERSION").exists())
+            if (FileUtil.appendName(f,"PG_VERSION").exists())
                 return true;
         }
 
