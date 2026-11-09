@@ -296,6 +296,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             AnnouncementManager.UpdateTest.class,
             AnnouncementsController.ContainerScopingTestCase.class,
             AnnouncementsController.MemberListTestCase.class,
+            MemberListRetentionTestCase.class,
             AnnouncementTableTestCase.class
         );
     }
