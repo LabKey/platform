@@ -1443,10 +1443,10 @@ public class OntologyManager
 
             // Owned objects should be in same container, so this should work
             String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-            executor.execute(deleteObjPropSql, c);
+            int deleted = executor.execute(deleteObjPropSql, c);
             String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
             _log.debug("Deleting from exp.object in container {}", c);
-            executor.execute(deleteObjSql, c);
+            deleted += executor.execute(deleteObjSql, c);
 
             // delete property validator references on property descriptors
             PropertyService.get().deleteValidatorsAndFormats(c);
@@ -1461,16 +1461,18 @@ public class OntologyManager
             }
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
-            executor.execute(deletePropDomSqlPD, c);
+            deleted += executor.execute(deletePropDomSqlPD, c);
             String deletePropDomSqlDD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE DomainId IN (SELECT DomainId FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?)";
-            executor.execute(deletePropDomSqlDD, c);
+            deleted += executor.execute(deletePropDomSqlDD, c);
             String deleteDomSql = "DELETE FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-            executor.execute(deleteDomSql, c);
+            deleted += executor.execute(deleteDomSql, c);
             // now delete the prop descriptors that are referenced in this container only
             String deletePropSql = "DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?";
-            executor.execute(deletePropSql, c);
+            deleted += executor.execute(deletePropSql, c);
 
-            clearCaches();
+            // Earlier container-delete steps uncache what they delete, so the server-wide clear is only needed for rows deleted here
+            if (deleted > 0)
+                clearCaches();
             transaction.commit();
         }
     }
