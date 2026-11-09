@@ -30,6 +30,9 @@ import org.labkey.api.util.logging.LogHelper;
 
 import java.math.BigDecimal;
 import java.text.Format;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /* CONSIDER: it's tempting to store BigDecimal in memory after parse for math/conversion purposed, even if we store as double in the database */
@@ -220,7 +223,14 @@ public class Quantity extends Number implements Comparable<Quantity>
     @Override
     public boolean equals(Object obj)
     {
-        return obj instanceof Quantity other && 0 == compareTo(other);
+        return obj instanceof Quantity other && this.kind == other.kind && 0 == compareTo(other);
+    }
+
+    /* compareTo() treats equal values as equal regardless of BigDecimal scale or Double/BigDecimal representation, so hash on the common double value */
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(kind, value.doubleValue());
     }
 
     @Override
@@ -575,6 +585,53 @@ public class Quantity extends Number implements Comparable<Quantity>
             q = (Quantity)ConvertUtils.convert("1234", Quantity.Mass_kg.class);
             assertEquals(Quantity.class, q.getClass());
             assertEquals(new Quantity(KindOfQuantity.Mass, 1234000d), q);
+        }
+
+        @Test
+        public void testEqualsAcrossKinds()
+        {
+            Quantity mass = Quantity.of(1, Unit.g);
+            Quantity volume = Quantity.of(1, Unit.mL);
+            Quantity count = Quantity.of(1, Unit.unit);
+
+            assertNotEquals(mass, volume);
+            assertNotEquals(volume, mass);
+            assertNotEquals(mass, count);
+            assertNotEquals(count, volume);
+
+            assertNotEquals(mass, null);
+            assertNotEquals(mass, 1.0);
+        }
+
+        @Test
+        public void testHashCode()
+        {
+            Quantity oneGram = Quantity.of(1, Unit.g);
+            Quantity oneThousandMilligrams = Quantity.of(1000, Unit.mg);
+            Quantity oneThousandthKilogram = Quantity.of(new BigDecimal("0.001"), Unit.kg);
+            Quantity oneGramAsBigDecimal = Quantity.of(new BigDecimal("1.000"), Unit.g);
+
+            assertEquals(oneGram, oneThousandMilligrams);
+            assertEquals(oneGram.hashCode(), oneThousandMilligrams.hashCode());
+            assertEquals(oneGram, oneThousandthKilogram);
+            assertEquals(oneGram.hashCode(), oneThousandthKilogram.hashCode());
+            assertEquals(oneGram, oneGramAsBigDecimal);
+            assertEquals(oneGram.hashCode(), oneGramAsBigDecimal.hashCode());
+
+            Set<Quantity> quantities = new HashSet<>();
+            quantities.add(oneGram);
+            assertTrue(quantities.contains(oneThousandMilligrams));
+            assertTrue(quantities.contains(oneThousandthKilogram));
+            assertTrue(quantities.contains(oneGramAsBigDecimal));
+
+            quantities.add(oneThousandMilligrams);
+            quantities.add(oneThousandthKilogram);
+            quantities.add(oneGramAsBigDecimal);
+            assertEquals(1, quantities.size());
+
+            quantities.add(Quantity.of(2, Unit.g));
+            quantities.add(Quantity.of(1, Unit.mL));
+            assertEquals(3, quantities.size());
         }
 
         @Test
