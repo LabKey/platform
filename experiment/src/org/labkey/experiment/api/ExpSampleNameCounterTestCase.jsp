@@ -310,6 +310,30 @@ public void testOppositeOrderAliquotImportsDoNotDeadlock() throws Exception
     assertEquals("Each parent's aliquots must stay contiguous", List.of("oo-1-" + (2 * rounds + 1), "oo-2-" + (2 * rounds + 1)), insertAliquots(cold, st, "oo-1", "oo-2"));
 }
 
+@Test
+public void testAliquotsReadCommittedRootSampleCount() throws Exception
+{
+    Container cold = createColdProject();
+    ExpSampleType roots = createSampleType(cold, "RootCounted", "R-${rootSampleCount}");
+    List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+    ExpSampleType parents = SampleTypeService.get().createSampleType(cold, _user, "RootAliquots-" + GUID.makeHash().substring(0, 8), null, props, emptyList(),
+            -1, -1, -1, -1, "S-${genId}", "${${AliquotedFrom}-R${rootSampleCount}-:withCounter}", null, null, null, null);
+
+    assertEquals(List.of("R-1", "R-2"), insertRows(cold, roots, List.of(new CaseInsensitiveHashMap<>(), new CaseInsensitiveHashMap<>())));
+    insertNames(cold, parents, "P");
+    assertEquals(List.of("P-R3-1", "P-R3-2"), insertAliquots(cold, parents, "P", "P"));
+
+    // Roots drawn earlier in the transaction aren't committed yet, so aliquots still see the committed count
+    DbScope scope = ExperimentService.get().getSchema().getScope();
+    try (DbScope.Transaction tx = scope.ensureTransaction())
+    {
+        insertNames(cold, parents, "Q");
+        assertEquals(List.of("Q-R3-1"), insertAliquots(cold, parents, "Q"));
+        tx.commit();
+    }
+    assertEquals(List.of("Q-R4-1"), insertAliquots(cold, parents, "Q"));
+}
+
 private Container createColdProject()
 {
     Container project = ContainerManager.ensureContainer(COLD_PROJECT_PREFIX + GUID.makeHash().substring(0, 8), _user);

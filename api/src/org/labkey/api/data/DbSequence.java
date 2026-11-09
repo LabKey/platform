@@ -116,7 +116,7 @@ public class DbSequence
      */
     protected static class Preallocate extends DbSequence
     {
-        private final int _batchSize;
+        private int _batchSize;
         private Long _currentValue = null;
         private Long _lastReservedValue = null;
 
@@ -127,6 +127,11 @@ public class DbSequence
         {
             super(c, name, rowId);
             _batchSize = batchSize;
+        }
+
+        synchronized void ensureBatchSize(int batchSize)
+        {
+            _batchSize = Math.max(_batchSize, batchSize);
         }
 
 

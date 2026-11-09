@@ -87,6 +87,8 @@ public class NameGeneratorState implements AutoCloseable
     private final NameGenerator.ProjectSampleCounters _sampleCounters;
     private boolean _counterSequencesCleaned = false;
     private boolean _sampleCountersLocked = false;
+    private final boolean _lockCountersEachTransaction;
+    private @Nullable Long _aliquotRootSampleCount;
     protected final Container _container;
 
     protected final Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
@@ -109,24 +111,27 @@ public class NameGeneratorState implements AutoCloseable
 
         DbSequence sampleCounterSequence = null;
         DbSequence rootCounterSequence = null;
+        boolean lockCounters = false;
 
         if (incrementSampleCounts)
         {
-            sampleCounterSequence = getActiveSampleCounter(expressionSummary, false);
-            rootCounterSequence = getActiveSampleCounter(expressionSummary, true);
-            if (null != sampleCounterSequence || null != rootCounterSequence || AppProps.getInstance().isOptionalFeatureEnabled(NameGenerator.EXPERIMENTAL_EAGER_COUNTER_LOCK))
+            boolean sampleInExpression = null != expressionSummary && expressionSummary.hasProjectSampleCounter();
+            boolean rootInExpression = null != expressionSummary && expressionSummary.hasProjectSampleRootCounter();
+            DbSequence sampleCountSeq = SampleTypeService.get().getSampleCountSequence(_container, false, sampleInExpression);
+            DbSequence rootCountSeq = SampleTypeService.get().getSampleCountSequence(_container, true, rootInExpression);
+
+            lockCounters = isActive(sampleCountSeq, sampleInExpression) || isActive(rootCountSeq, rootInExpression)
+                    || AppProps.getInstance().isOptionalFeatureEnabled(NameGenerator.EXPERIMENTAL_EAGER_COUNTER_LOCK);
+            if (lockCounters)
             {
                 lockSampleCounters();
                 // Decide again under the lock, since a concurrent import may have activated a counter
-                sampleCounterSequence = getActiveSampleCounter(expressionSummary, false);
-                rootCounterSequence = getActiveSampleCounter(expressionSummary, true);
-                if (null != sampleCounterSequence)
-                    initSampleCounter(sampleCounterSequence, expressionSummary, false);
-                if (null != rootCounterSequence)
-                    initSampleCounter(rootCounterSequence, expressionSummary, true);
+                sampleCounterSequence = initIfActive(sampleCountSeq, expressionSummary, false, sampleInExpression);
+                rootCounterSequence = initIfActive(rootCountSeq, expressionSummary, true, rootInExpression);
             }
         }
 
+        _lockCountersEachTransaction = lockCounters;
         _sampleCounters = new NameGenerator.ProjectSampleCounters(sampleCounterSequence, rootCounterSequence);
 
         // Create the name expression context shared for the entire batch of rows
@@ -142,26 +147,24 @@ public class NameGeneratorState implements AutoCloseable
         renameCache = new RemapCache(nameGenerator.isAllBulkRemapCache());
     }
 
-    /** The project counter, if this import must draw it: its expression uses it, or an earlier import activated it */
-    private @Nullable DbSequence getActiveSampleCounter(@Nullable NameGenerator.SampleNameExpressionSummary summary, boolean isRoot)
+    /** Whether this import must draw the project counter: its expression uses it, or an earlier import activated it */
+    private static boolean isActive(@Nullable DbSequence sequence, boolean inExpression)
     {
-        boolean inExpression = false;
-        if (null != summary)
-        {
-            if (isRoot)
-                inExpression = summary.hasProjectSampleRootCounter();
-            else
-                inExpression = summary.hasProjectSampleCounter();
-        }
-
-        DbSequence sequence = SampleTypeService.get().getSampleCountSequence(_container, isRoot, inExpression);
-        if (null == sequence || (!inExpression && sequence.current() == 0))
-            return null;
-        return sequence;
+        return inExpression || (null != sequence && sequence.current() > 0);
     }
 
-    private void initSampleCounter(DbSequence sequence, @Nullable NameGenerator.SampleNameExpressionSummary summary, boolean isRoot)
+    /** Returns the project counter, initialized for drawing, if it's active */
+    private @Nullable DbSequence initIfActive(@Nullable DbSequence sequence, @Nullable NameGenerator.SampleNameExpressionSummary summary, boolean isRoot, boolean inExpression)
     {
+        if (null == sequence)
+            sequence = SampleTypeService.get().getSampleCountSequence(_container, isRoot, false);
+        if (null == sequence)
+            return null;
+
+        long current = sequence.current();
+        if (!inExpression && current == 0)
+            return null;
+
         long expressionMin = 0;
         if (null != summary)
         {
@@ -171,7 +174,6 @@ public class NameGeneratorState implements AutoCloseable
                 expressionMin = summary.minProjectSampleCounter() - 1;
         }
 
-        long current = sequence.current();
         if (current == 0) // first use in the project starts from its existing samples
         {
             long existing;
@@ -183,6 +185,8 @@ public class NameGeneratorState implements AutoCloseable
         }
         else if (current < expressionMin)
             sequence.ensureMinimum(expressionMin);
+
+        return sequence;
     }
 
     /** Takes the project lock, held to commit, that orders every strict counter draw in the project */
@@ -192,6 +196,27 @@ public class NameGeneratorState implements AutoCloseable
             return;
         SampleTypeService.get().lockSampleCounters(_container);
         _sampleCountersLocked = true;
+
+        // commitAndKeepConnection() releases the lock mid-import
+        DbScope.Transaction tx = DbScope.getLabKeyScope().getCurrentTransaction();
+        if (null != tx)
+            tx.addCommitTask(() -> _sampleCountersLocked = false, DbScope.CommitTaskOption.POSTCOMMIT);
+    }
+
+    /** An aliquot's ${rootSampleCount}: the committed value, which the project lock keeps fixed until this transaction commits */
+    private long getAliquotRootSampleCount()
+    {
+        DbSequence sequence = _sampleCounters.rootCounterSequence();
+        DbScope.Transaction tx = DbScope.getLabKeyScope().getCurrentTransaction();
+        if (!sequence.useCurrentTransaction() || null == tx)
+            return sequence.current();
+
+        if (null == _aliquotRootSampleCount)
+        {
+            _aliquotRootSampleCount = sequence.current();
+            tx.addCommitTask(() -> _aliquotRootSampleCount = null, DbScope.CommitTaskOption.POSTCOMMIT);
+        }
+        return _aliquotRootSampleCount;
     }
 
     public boolean isIncrementSampleCounts()
@@ -281,6 +306,9 @@ public class NameGeneratorState implements AutoCloseable
         Map<String, Long> sampleCounts = null;
         if (_incrementSampleCounts)
         {
+            if (_lockCountersEachTransaction)
+                lockSampleCounters();
+
             if (!(_nameGenerator.getExpressionSummary() != null && _nameGenerator.getExpressionSummary().hasDateBasedSampleCounter()))
             {
                 if (null == getSampleCountsFunction)
@@ -308,7 +336,7 @@ public class NameGeneratorState implements AutoCloseable
                 if (!skipRootSampleCount)
                     sampleCounts.put("rootSampleCount", _sampleCounters.rootCounterSequence().next());
                 else
-                    sampleCounts.put("rootSampleCount", _sampleCounters.rootCounterSequence().current());
+                    sampleCounts.put("rootSampleCount", getAliquotRootSampleCount());
             }
         }
 

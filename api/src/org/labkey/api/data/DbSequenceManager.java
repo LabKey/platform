@@ -127,7 +127,10 @@ public class DbSequenceManager
     public static DbSequence getPreallocatingSequence(Container c, String name, long id, int batchSize)
     {
         String key = c.getId() + "/" + name + "/" + id;
-        return _sequences.computeIfAbsent(key, (k) -> new DbSequence.Preallocate(c, name, ensure(c, name, id), batchSize));
+        DbSequence.Preallocate sequence = _sequences.computeIfAbsent(key, (k) -> new DbSequence.Preallocate(c, name, ensure(c, name, id), batchSize));
+        // sync() writes back unguarded, so each sequence keeps one instance, sized by the largest batch any caller asks for
+        sequence.ensureBatchSize(batchSize);
+        return sequence;
     }
 
     /* This is not recommended, but if you get stuck and need to reserve a block at once */
@@ -1036,6 +1039,32 @@ public class DbSequenceManager
                 long value = second.get(30, TimeUnit.SECONDS);
                 assertEquals(value, DbSequenceManager.getReclaimable(c, name, 0).current());
                 return value;
+            }
+        }
+
+        @Test
+        public void testPreallocatingSequenceKeepsLargestBatchSize()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = "org.labkey.api.data.DbSequence.TestBatchSize/" + GUID.makeGUID();
+            try
+            {
+                DbSequence unbatched = DbSequenceManager.getPreallocatingSequence(c, name, 0, 1);
+                assertEquals(1, unbatched.next());
+                assertEquals(1, storedValue(unbatched));
+
+                DbSequence batched = DbSequenceManager.getPreallocatingSequence(c, name, 0, 10);
+                assertSame("One instance per sequence", unbatched, batched);
+                assertEquals(2, batched.next());
+                assertEquals("A later, larger batch size must apply", 11, storedValue(batched));
+
+                assertEquals(3, DbSequenceManager.getPreallocatingSequence(c, name, 0, 1).next());
+                assertEquals("A smaller batch size must not shrink it", 11, storedValue(batched));
+            }
+            finally
+            {
+                DbSequenceManager.invalidatePreallocatingSequence(c, name, 0);
+                DbSequenceManager.delete(c, name);
             }
         }
 
