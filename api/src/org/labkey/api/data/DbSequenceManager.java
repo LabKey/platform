@@ -46,6 +46,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -993,6 +998,47 @@ public class DbSequenceManager
                 tx.commit();
             }
             assertEquals(501, DbSequenceManager.getReclaimable(c, name, 0).current());
+        }
+
+        // On a sequence at 3: the second transaction's stale nextAtLeast(3) waits behind the first's nextAtLeast(10)
+        private long drawBehindConcurrentTransaction(boolean commitFirst) throws Exception
+        {
+            Container c = JunitUtil.getTestContainer();
+            String name = reclaimableName();
+            assertEquals(List.of(1L, 2L, 3L), draw(DbSequenceManager.getReclaimable(c, name, 0), 3));
+
+            try (ExecutorService executor = Executors.newSingleThreadExecutor())
+            {
+                Future<Long> second;
+                try (DbScope.Transaction tx = scope().ensureTransaction())
+                {
+                    assertEquals(11, DbSequenceManager.getReclaimable(c, name, 0, false).nextAtLeast(10));
+
+                    second = executor.submit(() -> {
+                        try (DbScope.Transaction tx2 = scope().ensureTransaction())
+                        {
+                            long value = DbSequenceManager.getReclaimable(c, name, 0, false).nextAtLeast(3);
+                            tx2.commit();
+                            return value;
+                        }
+                    });
+                    assertThrows("Second draw must wait for the first transaction's row lock", TimeoutException.class, () -> second.get(1, TimeUnit.SECONDS));
+
+                    if (commitFirst)
+                        tx.commit();
+                }
+
+                long value = second.get(30, TimeUnit.SECONDS);
+                assertEquals(value, DbSequenceManager.getReclaimable(c, name, 0).current());
+                return value;
+            }
+        }
+
+        @Test
+        public void testLateLockDrawWaitsForConcurrentTransaction() throws Exception
+        {
+            assertEquals("Must draw past the committed 11, not reuse the stale minimum", 12, drawBehindConcurrentTransaction(true));
+            assertEquals("A rolled-back draw must be reused", 4, drawBehindConcurrentTransaction(false));
         }
 
         @After
