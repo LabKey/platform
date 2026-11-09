@@ -694,13 +694,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _parentTable.getSqlDialect();
     }
 
-    // Return the actual value we have stashed; use this when copying attributes, so you don't hard-code label
-    @Override
-    public String getLabelValue()
-    {
-        return _label;
-    }
-
     @Override
     public String getLabel()
     {

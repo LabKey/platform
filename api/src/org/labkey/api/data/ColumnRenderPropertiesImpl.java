@@ -317,6 +317,12 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     }
 
     @Override
+    public String getLabelValue()
+    {
+        return _label;
+    }
+
+    @Override
     public void setLabel(String label)
     {
         _label = label;
