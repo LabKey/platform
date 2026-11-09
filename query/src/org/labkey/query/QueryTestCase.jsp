@@ -2022,7 +2022,11 @@ d,seven,twelve,day,month,date,duration,guid
 
     SQLFragment array(@CompileTimeConstant String... strings)
     {
-        var args = Arrays.stream(strings).map(s -> new SQLFragment().setSqlUnsafe(s)).toList().toArray(new SQLFragment[0]);
+        var args = Arrays.stream(strings).map(s -> {
+            SQLFragment arg = new SQLFragment();
+            arg.setSqlUnsafe(s);
+            return arg;
+        }).toList().toArray(new SQLFragment[0]);
         return dialect.array_construct(args);
     }
 

@@ -270,7 +270,9 @@ public class ListImporter
                                 {
                                     String setVal = src.replace("nextval(", "setval(");
                                     setVal = setVal.replace("::regclass)", "::regclass, ");
-                                    keyupdate = new SQLFragment("SELECT ").append(new SQLFragment().setSqlUnsafe(setVal));
+                                    SQLFragment setValSql = new SQLFragment();
+                                    setValSql.setSqlUnsafe(setVal);
+                                    keyupdate = SQLFragment.unsafe("SELECT ").append(setValSql);
                                 }
                                 else
                                 {

@@ -362,7 +362,11 @@ public abstract class SqlDialect
     public final @Nullable SQLFragment getSqlTypeNameAsSql(JdbcType type)
     {
         String sql = getSqlTypeName(type);
-        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+        if (null == sql)
+            return null;
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(sql);
+        return ret;
     }
 
     // Override for alternative behavior
@@ -375,14 +379,20 @@ public abstract class SqlDialect
     public final @Nullable SQLFragment getSqlCastTypeNameAsSql(JdbcType type)
     {
         String sql = getSqlCastTypeName(type);
-        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+        if (null == sql)
+            return null;
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(sql);
+        return ret;
     }
 
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
     public final SQLFragment getSqlTypeNameAsSql(PropertyStorageSpec prop)
     {
-        return new SQLFragment().setSqlUnsafe(getSqlTypeName(prop));
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getSqlTypeName(prop));
+        return ret;
     }
 
     protected @Nullable SQLFragment getDatabaseMaintenanceSql()
@@ -725,7 +735,9 @@ public abstract class SqlDialect
 
     public final SQLFragment getCaseInsensitiveLikeOperatorAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getCaseInsensitiveLikeOperator());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getCaseInsensitiveLikeOperator());
+        return ret;
     }
 
     public abstract String getVarcharLengthFunction();
@@ -847,28 +859,36 @@ public abstract class SqlDialect
 
     public final SQLFragment getDefaultDateTimeDataTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getDefaultDateTimeDataType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getDefaultDateTimeDataType());
+        return ret;
     }
 
     public abstract String getUniqueIdentType();
 
     public final SQLFragment getUniqueIdentTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getUniqueIdentType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getUniqueIdentType());
+        return ret;
     }
 
     public abstract String getGuidType();
 
     public final SQLFragment getGuidTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getGuidType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getGuidType());
+        return ret;
     }
 
     public abstract String getLsidType();
 
     public final SQLFragment getLsidTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getLsidType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getLsidType());
+        return ret;
     }
 
     public abstract String getTempTableKeyword();
@@ -900,7 +920,9 @@ public abstract class SqlDialect
 
     public final SQLFragment getDatePartAsSql(int part, String value)
     {
-        return new SQLFragment().setSqlUnsafe(getDatePart(part, value));
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getDatePart(part, value));
+        return ret;
     }
 
     public SQLFragment getDatePart(int part, SQLFragment value)
@@ -1671,7 +1693,9 @@ public abstract class SqlDialect
 
     public final SQLFragment getBooleanDataTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getBooleanDataType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getBooleanDataType());
+        return ret;
     }
 
     public String getBooleanTRUE()
@@ -1693,7 +1717,9 @@ public abstract class SqlDialect
 
     public final SQLFragment getBinaryDataTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getBinaryDataType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getBinaryDataType());
+        return ret;
     }
 
     // We need to determine the database name from a data source, so we've implemented a helper that parses the JDBC connection
@@ -2149,7 +2175,11 @@ public abstract class SqlDialect
     public final @Nullable SQLFragment getSqlTypeNameFromObjectAsSql(Object o)
     {
         String sql = getSqlTypeNameFromObject(o);
-        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+        if (null == sql)
+            return null;
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(sql);
+        return ret;
     }
 
     /**

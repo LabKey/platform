@@ -2879,14 +2879,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (options.isParents())
         {
             String parentsInnerSelect = map.get("$PARENTS_INNER$");
-            SQLFragment parentsInnerSelectFrag = new SQLFragment().setSqlUnsafe(parentsInnerSelect);
+            SQLFragment parentsInnerSelectFrag = new SQLFragment();
+            parentsInnerSelectFrag.setSqlUnsafe(parentsInnerSelect);
             parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
             String parentsInnerToken = ret.addCommonTableExpression(dialect, parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, true);
 
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = Strings.CS.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment().setSqlUnsafe(parentsSelect), true);
+            SQLFragment parentsSelectFrag = new SQLFragment();
+            parentsSelectFrag.setSqlUnsafe(parentsSelect);
+            parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", parentsSelectFrag, true);
         }
 
         String childrenToken = null;
@@ -2894,14 +2897,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             String childrenInnerSelect = map.get("$CHILDREN_INNER$");
             childrenInnerSelect = Strings.CS.replace(childrenInnerSelect, "$EDGES$", edgesToken);
-            SQLFragment childrenInnerSelectFrag = new SQLFragment().setSqlUnsafe(childrenInnerSelect);
+            SQLFragment childrenInnerSelectFrag = new SQLFragment();
+            childrenInnerSelectFrag.setSqlUnsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
             String childrenInnerToken = ret.addCommonTableExpression(dialect, childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, true);
 
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = Strings.CS.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment().setSqlUnsafe(childrenSelect), true);
+            SQLFragment childrenSelectFrag = new SQLFragment();
+            childrenSelectFrag.setSqlUnsafe(childrenSelect);
+            childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", childrenSelectFrag, true);
         }
 
         return new Pair<>(parentsToken,childrenToken);

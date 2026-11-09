@@ -93,7 +93,9 @@ public class QNumber extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append(new SQLFragment().setSqlUnsafe(getValueString()));
+        SQLFragment sql = new SQLFragment();
+        sql.setSqlUnsafe(getValueString());
+        builder.append(sql);
     }
 
     @Override

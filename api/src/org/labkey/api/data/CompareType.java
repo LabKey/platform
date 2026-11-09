@@ -953,7 +953,10 @@ public abstract class CompareType
             }
 
             for (int i = 0; i < params.length; i++)
-                fragments[i] = new SQLFragment().setSqlUnsafe(escapeLabKeySqlValue(params[i], type));
+            {
+                fragments[i] = new SQLFragment();
+                fragments[i].setSqlUnsafe(escapeLabKeySqlValue(params[i], type));
+            }
 
             return fragments;
         }

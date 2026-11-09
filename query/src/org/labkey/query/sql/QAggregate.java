@@ -299,7 +299,11 @@ public class QAggregate extends QExpr
         SQLFragment getFunctionSql(SqlDialect d)
         {
             String function = getFunction(d);
-            return null == function ? null : new SQLFragment().setSqlUnsafe(function);
+            if (null == function)
+                return null;
+            SQLFragment ret = new SQLFragment();
+            ret.setSqlUnsafe(function);
+            return ret;
         }
 
         boolean dialectSupports(@Nullable SqlDialect d)

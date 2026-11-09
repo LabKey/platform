@@ -239,17 +239,20 @@ public class SQLFragment
      * Obviously parameter number and order must remain unchanged
      *
      * This can also be used for processing sql scripts (e.g. module .sql update scripts)
+     *
+     * Returns void on purpose so every use stands out as its own statement; don't make it chainable.
      */
-    public SQLFragment setSqlUnsafe(String unsafe)
+    public void setSqlUnsafe(String unsafe)
     {
         this.sql = unsafe;
         this.sb = null;
-        return this;
     }
 
     public static SQLFragment unsafe(@CompileTimeConstant String unsafe)
     {
-        return new SQLFragment().setSqlUnsafe(unsafe);
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(unsafe);
+        return ret;
     }
 
     public static SQLFragment unsafe(@CompileTimeConstant String unsafe, Object... params)
@@ -309,7 +312,10 @@ public class SQLFragment
 
         public SQLFragment last()
         {
-            return _count !=0 && _last != null ? new SQLFragment().setSqlUnsafe(_last) : new SQLFragment();
+            SQLFragment ret = new SQLFragment();
+            if (_count != 0 && _last != null)
+                ret.setSqlUnsafe(_last);
+            return ret;
         }
     }
 
@@ -1340,6 +1346,7 @@ public class SQLFragment
     public SQLFragment OR()                 { return keyword("OR"); }
     public SQLFragment NOT()                { return keyword("NOT"); }
     public SQLFragment IN()                 { return keyword("IN"); }
+    public SQLFragment NOT_IN()             { return keyword("NOT IN"); }
     public SQLFragment NULL()               { return keyword("NULL"); }
     public SQLFragment IS_NULL()            { return keyword("IS NULL"); }
     public SQLFragment IS_NOT_NULL()        { return keyword("IS NOT NULL"); }
@@ -1415,19 +1422,24 @@ public class SQLFragment
             assertTrue(inserted.hasError());
             SQLFragment withCte = new SQLFragment();
             String token = withCte.addCommonTableExpression(dialect, "bad", "bad", bad);
-            withCte.unsafeAppend("SELECT * FROM ").append(new SQLFragment().setSqlUnsafe(token));
+            SQLFragment tokenSql = new SQLFragment();
+            tokenSql.setSqlUnsafe(token);
+            withCte.unsafeAppend("SELECT * FROM ").append(tokenSql);
             assertTrue(withCte.hasError());
             assertThrows(IllegalStateException.class, withCte::getSQL);
             assertThrows(IllegalStateException.class, () -> new SqlSelector(CoreSchema.getInstance().getSchema(), bad));
             assertThrows(IllegalStateException.class, () -> new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(bad));
             SQLFragment pendingCte = new SQLFragment();
             String pendingToken = pendingCte.createCommonTableExpressionToken(dialect, "pending", "pending");
-            pendingCte.unsafeAppend("SELECT * FROM ").append(new SQLFragment().setSqlUnsafe(pendingToken));
+            SQLFragment pendingTokenSql = new SQLFragment();
+            pendingTokenSql.setSqlUnsafe(pendingToken);
+            pendingCte.unsafeAppend("SELECT * FROM ").append(pendingTokenSql);
             assertFalse(pendingCte.hasError());
             assertEquals("SELECT * FROM " + pendingToken, pendingCte.getRawSQL());
 
             // The marker must fail on the database too, for SQL that lost the flag through a string round trip
-            SQLFragment roundTrip = new SQLFragment().setSqlUnsafe(bad.getRawSQL());
+            SQLFragment roundTrip = new SQLFragment();
+            roundTrip.setSqlUnsafe(bad.getRawSQL());
             assertFalse(roundTrip.hasError());
             assertThrows(RuntimeException.class, () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roundTrip).getObject(Integer.class));
         }
