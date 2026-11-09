@@ -587,17 +587,27 @@ public class SQLFragment
         // callers pass "" to mean no alias, e.g. getFromSQL("")
         if (identifier.isEmpty())
             return this;
-        if (!STR_TABLE_ALIAS.equals(identifier) && countIdentifierParts(identifier) < 1)
+        if (!isTableAliasPlaceholder(identifier) && countIdentifierParts(identifier) < 1)
             throw new IllegalArgumentException("SQLFragment.appendIdentifier() value is not a well-formed identifier or dotted identifier sequence: " + identifier);
         getStringBuilder().append(identifier);
         return this;
     }
 
-    private static CharSequence requireSingleIdentifier(CharSequence charseq)
+    // ExprColumn replaces STR_TABLE_ALIAS later, and lookups derive aliases from it (e.g. LookupColumn.getTableAlias())
+    private static boolean isTableAliasPlaceholder(String s)
     {
-        if (null != charseq && countIdentifierParts(charseq.toString().strip()) > 1)
-            throw new IllegalArgumentException("SQLFragment.appendDottedIdentifiers() part is not a single identifier: " + charseq);
-        return charseq;
+        return s.startsWith(STR_TABLE_ALIAS) && s.substring(STR_TABLE_ALIAS.length()).chars()
+                .allMatch(c -> Character.isLetterOrDigit(c) || c == '_' || c == '$');
+    }
+
+    // Unlike appendIdentifier(), a blank part is an error since it would leave a dangling dot
+    private static String requireIdentifierPart(CharSequence part, boolean first)
+    {
+        String s = null == part ? "" : part.toString().strip();
+        int parts = s.isEmpty() ? -1 : countIdentifierParts(s);
+        if (first ? parts < 1 && !isTableAliasPlaceholder(s) : parts != 1)
+            throw new IllegalArgumentException("SQLFragment.appendDottedIdentifiers() part is not a valid " + (first ? "identifier" : "single identifier") + ": " + part);
+        return s;
     }
 
     // Returns the number of dot-separated parts, or -1 if s isn't a well-formed sequence.
@@ -697,17 +707,20 @@ public class SQLFragment
     /** Appends table.col; table may be schema-qualified */
     public SQLFragment appendDottedIdentifiers(CharSequence table, DatabaseIdentifier col)
     {
-        return appendIdentifier(table).unsafeAppend(".").appendIdentifier(col);
+        return appendIdentifier(requireIdentifierPart(table, true)).unsafeAppend(".").appendIdentifier(col);
     }
 
     /** Appends the parts joined by dots; the first part may be qualified, each later part must be a single identifier */
     public SQLFragment appendDottedIdentifiers(CharSequence... ids)
     {
+        List<String> parts = IntStream.range(0, ids.length)
+                .mapToObj(i -> requireIdentifierPart(ids[i], i == 0))
+                .toList();
         var dot = "";
-        for (var id : ids)
+        for (var part : parts)
         {
             getStringBuilder().append(dot);
-            appendIdentifier(dot.isEmpty() ? id : requireSingleIdentifier(id));
+            appendIdentifier(part);
             dot = ".";
         }
         return this;
@@ -1787,11 +1800,11 @@ public class SQLFragment
         public void testAppendIdentifierGrammar()
         {
             for (String bad : List.of("a)or(1=1", "1=1", "x||y", "[name]", "\"\"", "a..b", ".a", "a.", "a\rb",
-                    "`a`)or(`b`", "`a`.\"b\"", "\"a\u0000b\"", "\"a\rb\"", "@a.@b", "a.#b", "$1", "a.$1", "$x.y", "1abc"))
+                    "`a`)or(`b`", "`a`.\"b\"", "\"a\u0000b\"", "\"a\rb\"", "@a.@b", "a.#b", "$1", "a.$1", "$x.y", "1abc", STR_TABLE_ALIAS + ")or(1=1", STR_TABLE_ALIAS + ".x"))
                 shouldFail(() -> new SQLFragment().appendIdentifier(bad));
 
             for (String good : List.of("\"core\".\"Containers\"", "`core`.`Containers`", "temp.ttw$0a1b", "temp.fn_ab12type",
-                    "$1.p1_x", "@p1_x", "#TTemp", "##fn_x", "_$objectid$_", "x$fk$.\"Name\"", "nämé", "\"a\tb\"", "\"a.b\"", "`my``sql`", STR_TABLE_ALIAS))
+                    "$1.p1_x", "@p1_x", "#TTemp", "##fn_x", "_$objectid$_", "x$fk$.\"Name\"", "nämé", "\"a\tb\"", "\"a.b\"", "`my``sql`", STR_TABLE_ALIAS, STR_TABLE_ALIAS + "$fk$_C"))
                 assertEquals(good, new SQLFragment().appendIdentifier(good).getRawSQL());
 
             assertEquals("_target_", new SQLFragment().appendIdentifier("_target_ ").getRawSQL());
@@ -1802,6 +1815,12 @@ public class SQLFragment
         public void testAppendDottedIdentifiers()
         {
             shouldFail(() -> new SQLFragment().appendDottedIdentifiers("a", "\"b\".\"c\""));
+            shouldFail(() -> new SQLFragment().appendDottedIdentifiers("a", null));
+            shouldFail(() -> new SQLFragment().appendDottedIdentifiers("", "b"));
+            shouldFail(() -> new SQLFragment().appendDottedIdentifiers(null, SqlDialect.makeDatabaseIdentifier("b", SQLFragment.unsafe("b"))));
+            SQLFragment partial = new SQLFragment();
+            shouldFail(() -> partial.appendDottedIdentifiers("a", "b c"));
+            assertEquals("", partial.getRawSQL());
             assertEquals("x.\"Name\"", new SQLFragment().appendDottedIdentifiers("x", "\"Name\"").getRawSQL());
             assertEquals("\"study\".\"participant\".\"Name\"", new SQLFragment().appendDottedIdentifiers("\"study\".\"participant\"", "\"Name\"").getRawSQL());
         }

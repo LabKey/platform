@@ -56,8 +56,6 @@ public class ParameterMapStatement implements AutoCloseable
     Integer _selectObjectIdIndex = null;
     Long _rowId;
     Long _objectId;
-    Integer _objectUriIndex = null;
-    String _objectURI;
     protected CaseInsensitiveHashMap<Integer> _map;
     protected Parameter[] _parameters;
     final @NotNull DbScope _scope;
@@ -278,11 +276,6 @@ public class ParameterMapStatement implements AutoCloseable
         _selectObjectIdIndex = i;
     }
 
-    public void setObjectUriIndex(Integer objectUriIndex)
-    {
-        _objectUriIndex = objectUriIndex;
-    }
-
     public boolean hasReselectRowId()
     {
         return _selectRowId;
@@ -348,7 +341,7 @@ public class ParameterMapStatement implements AutoCloseable
 
         try
         {
-            if (_selectRowId || _selectObjectIdIndex != null || _objectUriIndex != null)
+            if (_selectRowId || _selectObjectIdIndex != null)
                 rs = _dialect.executeWithResults(_stmt);
             else
                 _stmt.execute();
@@ -359,21 +352,15 @@ public class ParameterMapStatement implements AutoCloseable
             if (null != rs)
             {
                 rs.next();
-                if (_selectRowId || _selectObjectIdIndex != null)
+                firstInt = rs.getLong(1);
+                if (rs.wasNull())
+                    firstInt = null;
+                if (rs.getMetaData().getColumnCount() >= 2 && _selectObjectIdIndex != null)
                 {
-                    firstInt = rs.getLong(1);
+                    secondInt = rs.getLong(2);
                     if (rs.wasNull())
-                        firstInt = null;
-                    if (rs.getMetaData().getColumnCount() >= 2 && _selectObjectIdIndex != null)
-                    {
-                        secondInt = rs.getLong(2);
-                        if (rs.wasNull())
-                            secondInt = null;
-                    }
+                        secondInt = null;
                 }
-
-                if (_objectUriIndex != null)
-                    _objectURI = rs.getString(_objectUriIndex);
             }
 
             if (null == _selectObjectIdIndex)
@@ -412,11 +399,6 @@ public class ParameterMapStatement implements AutoCloseable
     public Long getObjectId()
     {
         return _objectId;
-    }
-
-    public String getObjectURI()
-    {
-        return _objectURI;
     }
 
     private void prepareParametersBeforeExecute()

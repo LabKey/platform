@@ -535,6 +535,7 @@ abstract public class QNode implements Cloneable
         {
             assertEquals("'a;b'", parse("'a;b'").getSourceText());
             assertEquals("'say \"hi'", parse("'say \"hi'").getSourceText());
+            assertEquals("$t.Temp°C", parse("$t.Temp°C").getSourceText());
 
             SourceBuilder source = new SourceBuilder();
             source.appendSourceText("'a;b'");
