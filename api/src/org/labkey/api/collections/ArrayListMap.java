@@ -231,8 +231,9 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         if (I == null)
             return false;
         int i = I.intValue();
-        Object v = i>=_row.size() ? null : _row.get(i);
-    return v != DOES_NOT_CONTAINKEY;
+        // A key added to the shared find map after this row was filled is absent here, not null
+        Object v = i>=_row.size() ? DOES_NOT_CONTAINKEY : _row.get(i);
+        return v != DOES_NOT_CONTAINKEY;
     }
 
 
