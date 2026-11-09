@@ -24,14 +24,21 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -42,11 +49,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 
 @TestWhen(TestWhen.When.BVT)
+@TestTimeout(180)
 public class ExperimentStressTest
 {
     private static final Logger LOG = LogManager.getLogger(ExperimentStressTest.class);
@@ -149,47 +161,112 @@ public class ExperimentStressTest
 
     enum RunMode
     {
-        nolineage("without lineage", 5, 5, false),
-        withlineage("with lineage", 5, 5, true),
-        withaliquot("with aliquots", 2, 2, true);
+        nolineage("without lineage", 5, 5, false, false, GEN_ID_NAMES),
+        withlineage("with lineage", 5, 5, true, false, GEN_ID_NAMES),
+        withaliquot("with aliquots", 2, 2, true, true, GEN_ID_NAMES),
+        withsamplecount("with sampleCount", 5, 5, false, false, "S-${sampleCount}"),
+        // Every other import inserts roots only, so it never takes the project lock that the aliquot imports take mid-import
+        mixedaliquot("with aliquots alongside counter-free inserts", 4, 3, true, true, GEN_ID_NAMES);
 
         public final String _description;
         public final int _thread;
         public final int _race;
         public final boolean _needParents;
+        public final boolean _aliquot;
+        public final String _nameExpression;
 
-        RunMode(String description, int thread, int race, boolean needParents)
+        RunMode(String description, int thread, int race, boolean needParents, boolean aliquot, String nameExpression)
         {
             _description = description;
             _thread = thread;
             _race = race;
             _needParents = needParents;
+            _aliquot = aliquot;
+            _nameExpression = nameExpression;
         }
     }
+
+    private static final String GEN_ID_NAMES = "S-${genId}";
+    private static final String SAMPLE_COUNT_PROJECT = "_ExperimentStressTestSampleCount";
 
     @Test
     public void sampleTypeInsertsWithoutLineage() throws Throwable
     {
-        _sampleTypeInserts(RunMode.nolineage);
+        _sampleTypeInserts(RunMode.nolineage, JunitUtil.getTestContainer());
     }
 
     @Test
     public void sampleTypeInsertsWithLineage() throws Throwable
     {
-        _sampleTypeInserts(RunMode.withlineage);
+        _sampleTypeInserts(RunMode.withlineage, JunitUtil.getTestContainer());
     }
 
     @Test
     public void sampleTypeInsertsWithAliquot() throws Throwable
     {
-        _sampleTypeInserts(RunMode.withaliquot);
+        ExpSampleType st = _sampleTypeInserts(RunMode.withaliquot, JunitUtil.getTestContainer());
+        verifyAliquotCounters(st);
     }
 
-    private void _sampleTypeInserts(RunMode mode) throws Throwable
+    @Test
+    public void sampleTypeInsertsWithSampleCount() throws Throwable
+    {
+        // sampleCount is per project and stays active, so use a fresh project rather than leave it on in /Shared
+        User user = TestContext.get().getUser();
+        Container leftover = ContainerManager.getForPath(SAMPLE_COUNT_PROJECT);
+        if (null != leftover)
+            ContainerManager.deleteAll(leftover, user);
+        Container project = ContainerManager.ensureContainer(SAMPLE_COUNT_PROJECT, user);
+        try
+        {
+            ExpSampleType st = _sampleTypeInserts(RunMode.withsamplecount, project);
+
+            List<Long> counts = getSampleNames(st).stream().map(name -> Long.parseLong(name.substring("S-".length()))).sorted().toList();
+            assertEquals("sampleCount values must be unique and contiguous", LongStream.rangeClosed(1, counts.size()).boxed().toList(), counts);
+            assertEquals(counts.size(), SampleTypeService.get().getCurrentCount(NameGenerator.EntityCounter.sampleCount, project));
+        }
+        finally
+        {
+            ContainerManager.deleteAll(project, user);
+        }
+    }
+
+    @Test
+    public void sampleTypeInsertsWithAliquotAndCounterFree() throws Throwable
+    {
+        ExpSampleType st = _sampleTypeInserts(RunMode.mixedaliquot, JunitUtil.getTestContainer());
+        verifyAliquotCounters(st);
+    }
+
+    private List<String> getSampleNames(ExpSampleType st)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), st.getLSID());
+        return new TableSelector(ExperimentService.get().getTinfoMaterial().getColumn("Name"), filter, null).getArrayList(String.class);
+    }
+
+    /** Each parent's :withCounter aliquot suffixes must be exactly 1..n */
+    private void verifyAliquotCounters(ExpSampleType st)
+    {
+        TableInfo material = ExperimentService.get().getTinfoMaterial();
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT p.Name AS Parent, a.Name AS Aliquot FROM ").append(material, "a")
+                .unsafeAppend(" JOIN ").append(material, "p").unsafeAppend(" ON a.AliquotedFromLsid = p.LSID WHERE a.CpasType = ?").add(st.getLSID());
+
+        Map<String, List<Long>> suffixesByParent = new HashMap<>();
+        new SqlSelector(material.getSchema(), sql).forEach(rs -> {
+            String parent = rs.getString("Parent");
+            String aliquot = rs.getString("Aliquot");
+            suffixesByParent.computeIfAbsent(parent, _ -> new ArrayList<>()).add(Long.parseLong(aliquot.substring(parent.length() + 1)));
+        });
+
+        assertFalse("Expected aliquots", suffixesByParent.isEmpty());
+        suffixesByParent.forEach((parent, suffixes) ->
+                assertEquals("Aliquots of " + parent, LongStream.rangeClosed(1, suffixes.size()).boxed().toList(), suffixes.stream().sorted().toList()));
+    }
+
+    private ExpSampleType _sampleTypeInserts(RunMode mode, Container c) throws Throwable
     {
         LOG.info("** starting sample type insert test {}", mode._description);
         final User user = TestContext.get().getUser();
-        final Container c = JunitUtil.getTestContainer();
 
         final String sampleTypeName = "MySamples" + mode.name();
 
@@ -197,7 +274,7 @@ public class ExperimentStressTest
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
-        ExpSampleType st = SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, "S-${genId}", null);
+        ExpSampleType st = SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, mode._nameExpression, null);
 
         // seed samples
         final int rowsToInsert = 50;
@@ -212,12 +289,16 @@ public class ExperimentStressTest
         final int threads = mode._thread;
         final int races = mode._race;
         LOG.info("** starting racy inserts (threads={}, races={}, rows=" + rowsToInsert + ")", threads, races);
+        AtomicInteger inserts = new AtomicInteger();
         JunitUtil.createRaces(() -> {
 
             try
             {
                 Thread.sleep(randomInt(10) * 200);
-                insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert, mode == RunMode.withaliquot);
+                if (mode == RunMode.mixedaliquot && inserts.getAndIncrement() % 2 == 1)
+                    insertSamples(user, c, sampleTypeName, null, rowsToInsert, false);
+                else
+                    insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert, mode._aliquot);
             }
             catch (Exception e)
             {
@@ -226,6 +307,8 @@ public class ExperimentStressTest
             }
 
         }, threads, races, 60);
+
+        return st;
     }
 
 }
