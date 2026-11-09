@@ -110,16 +110,19 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
             .append(selectSql)
             .append(") S");
         // Two extra rows for a null and a blank value, which are dropped, and one to detect overflow
-        sql = table.getSqlDialect().limitRows(sql, ColumnFactsCache.DISTINCT_VALUE_LIMIT + 3);
+        int limit = ColumnFactsCache.DISTINCT_VALUE_LIMIT + 3;
+        sql = table.getSqlDialect().limitRows(sql, limit);
         service.bindNamedParameters(sql, parameters);
         service.validateNamedParameters(sql);
 
         List<String> values = new ArrayList<>();
         int count = 0;
+        int rows = 0;
         boolean truncated = false;
         boolean hasBlank = false;
         for (String value : new SqlSelector(table.getSchema().getScope(), sql, queryLogging).setQueryTimeout(QUERY_TIMEOUT_SECONDS).getArrayList(String.class))
         {
+            rows++;
             if (value == null || value.isBlank())
             {
                 hasBlank = true;
@@ -131,7 +134,10 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
             else
                 truncated = true;
         }
-        return new ColumnFact.Values(count > ColumnFactsCache.DISTINCT_VALUE_LIMIT ? null : values, truncated, hasBlank);
+        // Every distinct blank-ish value is its own row and is dropped without counting, so a full fetch can hide
+        // values even when the count is under the limit. Then the list can't be trusted to be the whole set.
+        boolean overflow = count > ColumnFactsCache.DISTINCT_VALUE_LIMIT || rows == limit;
+        return new ColumnFact.Values(overflow ? null : values, truncated, hasBlank);
     }
 
     @Override

@@ -123,8 +123,11 @@ public class FilterSuggestionService
     /** The resolved table and the filter bounding the rows its facts are read from. */
     private record Resolved(@NotNull UserSchema schema, @NotNull TableInfo table, @Nullable SimpleFilter filter, boolean readsData) {}
 
-    /** The described columns carrying whatever facts loaded within the budget. */
-    private record Filled(@NotNull TableInfo table, @NotNull List<SuggestionColumn> columns, boolean complete) {}
+    /**
+     * The described columns carrying whatever facts loaded within the budget.
+     * @param failed a fact's load failed, so what's missing won't arrive by asking again
+     */
+    private record Filled(@NotNull TableInfo table, @NotNull List<SuggestionColumn> columns, boolean complete, boolean failed) {}
 
     private static Resolved resolve(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request)
     {
@@ -152,6 +155,7 @@ public class FilterSuggestionService
         List<SuggestionColumn> columns = described.columns();
 
         boolean complete = true;
+        boolean failed = false;
         FilterSuggestionContext context = new Context(table, container, user);
         for (FilterSuggestionProvider provider : QueryService.get().getFilterSuggestionProviders())
         {
@@ -174,7 +178,11 @@ public class FilterSuggestionService
         try
         {
             if (resolved.readsData())
-                complete &= ColumnFactsCache.get().fill(context, request.parameters(), resolved.filter(), described, tokens, ColumnFactsCache.DEFAULT_BUDGET_MS);
+            {
+                ColumnFactsCache.FillResult result = ColumnFactsCache.get().fill(context, request.parameters(), resolved.filter(), described, tokens, ColumnFactsCache.DEFAULT_BUDGET_MS);
+                complete &= result.complete();
+                failed = result.failed();
+            }
         }
         catch (RuntimeException e)
         {
@@ -182,7 +190,7 @@ public class FilterSuggestionService
             complete = false;
         }
 
-        return new Filled(table, columns, complete);
+        return new Filled(table, columns, complete, failed);
     }
 
     public static @NotNull FilterSuggestionsResponse getSuggestions(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request)
@@ -254,8 +262,9 @@ public class FilterSuggestionService
                 c.getDistinctCount(), c.isValuesTruncated(), c.isValuesHaveBlank()))
             .toList();
 
-        // Nothing was read, so the facts say nothing about the data; don't let a caller read that as "no values"
-        boolean complete = filled.complete() && resolved.readsData();
+        // Nothing was read, so the facts say nothing about the data; don't let a caller read that as "no values".
+        // A failed load reads the same way: its column reports no values, which is not the same as having none.
+        boolean complete = filled.complete() && !filled.failed() && resolved.readsData();
         tagResponse(filled.table(), facets.size(), complete);
         return new ColumnFacetsResponse(facets, largeTable, complete);
     }
