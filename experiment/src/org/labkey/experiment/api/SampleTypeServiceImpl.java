@@ -2378,13 +2378,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    @Nullable
-    public DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly)
+    public @Nullable DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly, boolean create)
     {
-        return getSampleCountSequence(container, isRootSampleOnly, true);
+        return getSampleCountSequence(container, isRootSampleOnly, create, false);
     }
 
-    public DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly, boolean create)
+    @Override
+    public void lockSampleCounters(Container container)
+    {
+        if (ExperimentService.get().useStrictCounter())
+            getSampleCountSequence(container, false, true, true);
+    }
+
+    private @Nullable DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly, boolean create, boolean lockNow)
     {
         Container seqContainer = container.getProject();
         if (seqContainer == null)
@@ -2401,7 +2407,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
        }
 
        if (ExperimentService.get().useStrictCounter())
-            return DbSequenceManager.getReclaimable(seqContainer, seqName, 0);
+            return DbSequenceManager.getReclaimable(seqContainer, seqName, 0, lockNow);
 
        return DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, 0, 100);
     }
@@ -2411,7 +2417,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         boolean isRootOnly = counterType == NameGenerator.EntityCounter.rootSampleCount;
 
-        DbSequence seq = getSampleCountSequence(container, isRootOnly, newSeqValue >= 1);
+        DbSequence seq = getSampleCountSequence(container, isRootOnly, newSeqValue >= 1, true);
         if (seq == null)
             return;
 

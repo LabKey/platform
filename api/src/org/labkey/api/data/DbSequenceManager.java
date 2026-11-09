@@ -167,15 +167,16 @@ public class DbSequenceManager
         Integer rowId = executeAndMaybeReturnInteger(tinfo, getRowIdSql);
 
         if (rowId != null && rowId > 0 && withUpdateLock)
-        {
-            SQLFragment lockRowSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
-            lockRowSql.unsafeAppend(" WHERE RowId = ?");
-            lockRowSql.unsafeAppend(" FOR UPDATE");
-            lockRowSql.add(rowId);
-            new SqlExecutor(tinfo.getSchema()).execute(lockRowSql); // get lock for current transaction
-        }
+            lockRow(tinfo, rowId);
 
         return rowId;
+    }
+
+    private static void lockRow(TableInfo tinfo, int rowId)
+    {
+        SQLFragment lockRowSql = new SQLFragment().unsafeAppend("SELECT RowId FROM ").append(tinfo);
+        lockRowSql.unsafeAppend(" WHERE RowId = ? FOR UPDATE").add(rowId);
+        new SqlExecutor(tinfo.getSchema()).execute(lockRowSql); // get lock for current transaction
     }
 
 
@@ -219,7 +220,11 @@ public class DbSequenceManager
         try
         {
             // Don't bother logging constraint violations
-            return executeAndReturnInt(tinfo, insertSql, Level.ERROR);
+            int rowId = executeAndReturnInt(tinfo, insertSql, Level.ERROR);
+            // The insert ran outside the transaction, so it holds no lock
+            if (withUpdateLock)
+                lockRow(tinfo, rowId);
+            return rowId;
         }
         catch (DataIntegrityViolationException e)
         {

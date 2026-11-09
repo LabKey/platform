@@ -243,7 +243,11 @@ public interface SampleTypeService
     // used by DomainKind.invalidate()
     void indexSampleType(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue);
 
-    @Nullable DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly);
+    /** Returns null if create is false and the sequence doesn't exist yet. Takes no lock; see {@link #lockSampleCounters}. */
+    @Nullable DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly, boolean create);
+
+    /** Takes the project's sample counter lock, held to commit, that must precede any strict counter draw in the project */
+    void lockSampleCounters(Container container);
 
     long getProjectSampleCount(Container container);
 

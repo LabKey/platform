@@ -41,6 +41,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -85,6 +86,7 @@ public class NameGeneratorState implements AutoCloseable
 
     private final NameGenerator.ProjectSampleCounters _sampleCounters;
     private boolean _counterSequencesCleaned = false;
+    private boolean _sampleCountersLocked = false;
     protected final Container _container;
 
     protected final Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
@@ -105,47 +107,24 @@ public class NameGeneratorState implements AutoCloseable
         _container = nameGenerator.getContainer();
         _nameField = nameField;
 
-        DbSequence sampleCounterSequence;
-        DbSequence rootCounterSequence;
+        DbSequence sampleCounterSequence = null;
+        DbSequence rootCounterSequence = null;
 
-        if (incrementSampleCounts) // determine if need to incrementRootSampleCount
+        if (incrementSampleCounts)
         {
-            DbSequence sampleCountSeq = SampleTypeService.get().getSampleCountSequence(_container, false);
-            if ((expressionSummary != null && expressionSummary.hasProjectSampleCounter()) || sampleCountSeq.current() > 0) // if ${sampleCount} is present, or if ${sampleCount} was previously evaluated
+            sampleCounterSequence = getActiveSampleCounter(expressionSummary, false);
+            rootCounterSequence = getActiveSampleCounter(expressionSummary, true);
+            if (null != sampleCounterSequence || null != rootCounterSequence || AppProps.getInstance().isOptionalFeatureEnabled(NameGenerator.EXPERIMENTAL_EAGER_COUNTER_LOCK))
             {
-                sampleCounterSequence = sampleCountSeq;
-                if (sampleCounterSequence != null)
-                {
-                    long expressionMin = expressionSummary.minProjectSampleCounter() - 1;
-                    if (sampleCounterSequence.current() == 0) // initialize existing count when ${sampleCount} is first encountered for a project
-                        sampleCounterSequence.ensureMinimum(Math.max(expressionMin, SampleTypeService.get().getProjectSampleCount(_container)));
-                    else if (sampleCountSeq.current() < expressionMin)
-                        sampleCounterSequence.ensureMinimum(expressionMin);
-                }
+                lockSampleCounters();
+                // Decide again under the lock, since a concurrent import may have activated a counter
+                sampleCounterSequence = getActiveSampleCounter(expressionSummary, false);
+                rootCounterSequence = getActiveSampleCounter(expressionSummary, true);
+                if (null != sampleCounterSequence)
+                    initSampleCounter(sampleCounterSequence, expressionSummary, false);
+                if (null != rootCounterSequence)
+                    initSampleCounter(rootCounterSequence, expressionSummary, true);
             }
-            else
-                sampleCounterSequence = null;
-
-            DbSequence rootCountSeq = SampleTypeService.get().getSampleCountSequence(_container, true);
-            if ((expressionSummary != null && expressionSummary.hasProjectSampleRootCounter()) || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
-            {
-                rootCounterSequence = rootCountSeq;
-                if (rootCounterSequence != null)
-                {
-                    long expressionMin = expressionSummary.minProjectSampleRootCounter() - 1;
-                    if (rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a project
-                        rootCounterSequence.ensureMinimum(Math.max(expressionMin, SampleTypeService.get().getProjectRootSampleCount(_container)));
-                    else if (rootCounterSequence.current() < expressionMin)
-                        rootCounterSequence.ensureMinimum(expressionMin);
-                }
-            }
-            else
-                rootCounterSequence = null;
-        }
-        else
-        {
-            sampleCounterSequence = null;
-            rootCounterSequence = null;
         }
 
         _sampleCounters = new NameGenerator.ProjectSampleCounters(sampleCounterSequence, rootCounterSequence);
@@ -161,6 +140,58 @@ public class NameGeneratorState implements AutoCloseable
         _ancestorSearchCache = new HashMap<>();
         _prefixCounterSequences = new HashMap<>();
         renameCache = new RemapCache(nameGenerator.isAllBulkRemapCache());
+    }
+
+    /** The project counter, if this import must draw it: its expression uses it, or an earlier import activated it */
+    private @Nullable DbSequence getActiveSampleCounter(@Nullable NameGenerator.SampleNameExpressionSummary summary, boolean isRoot)
+    {
+        boolean inExpression = false;
+        if (null != summary)
+        {
+            if (isRoot)
+                inExpression = summary.hasProjectSampleRootCounter();
+            else
+                inExpression = summary.hasProjectSampleCounter();
+        }
+
+        DbSequence sequence = SampleTypeService.get().getSampleCountSequence(_container, isRoot, inExpression);
+        if (null == sequence || (!inExpression && sequence.current() == 0))
+            return null;
+        return sequence;
+    }
+
+    private void initSampleCounter(DbSequence sequence, @Nullable NameGenerator.SampleNameExpressionSummary summary, boolean isRoot)
+    {
+        long expressionMin = 0;
+        if (null != summary)
+        {
+            if (isRoot)
+                expressionMin = summary.minProjectSampleRootCounter() - 1;
+            else
+                expressionMin = summary.minProjectSampleCounter() - 1;
+        }
+
+        long current = sequence.current();
+        if (current == 0) // first use in the project starts from its existing samples
+        {
+            long existing;
+            if (isRoot)
+                existing = SampleTypeService.get().getProjectRootSampleCount(_container);
+            else
+                existing = SampleTypeService.get().getProjectSampleCount(_container);
+            sequence.ensureMinimum(Math.max(expressionMin, existing));
+        }
+        else if (current < expressionMin)
+            sequence.ensureMinimum(expressionMin);
+    }
+
+    /** Takes the project lock, held to commit, that orders every strict counter draw in the project */
+    private void lockSampleCounters()
+    {
+        if (_sampleCountersLocked)
+            return;
+        SampleTypeService.get().lockSampleCounters(_container);
+        _sampleCountersLocked = true;
     }
 
     public boolean isIncrementSampleCounts()
@@ -308,6 +339,10 @@ public class NameGeneratorState implements AutoCloseable
         NameGenerator activeNameGenerator = getActiveNameGenerator(altNameGenerator);
         if (!activeNameGenerator.getSyntaxErrors().isEmpty())
             throw new IllegalArgumentException("Invalid naming expression. " + StringUtils.join(activeNameGenerator.getSyntaxErrors(), "\n"));
+
+        // :withCounter takes per-prefix row locks in data order, so the project lock must come first
+        if (_incrementSampleCounts && !_sampleCountersLocked && activeNameGenerator.hasCounterExpression())
+            lockSampleCounters();
 
         // Add extra context variables
         Map<FieldKey, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts, extraProps, altNameGenerator);

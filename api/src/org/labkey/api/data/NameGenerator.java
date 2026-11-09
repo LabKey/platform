@@ -108,6 +108,7 @@ public class NameGenerator
     public static final String WITH_COUNTER_NO_GAP_PARAM = "NoGap"; // named parameter to enforce continuity in sequence
 
     public static final String EXPERIMENTAL_ALLOW_GAP_COUNTER = "AllowCounterGap"; // postgres
+    public static final String EXPERIMENTAL_EAGER_COUNTER_LOCK = "EagerSampleCounterLock";
 
     /**
      * Examples:
@@ -243,6 +244,11 @@ public class NameGenerator
     public FieldKeyStringExpression getParsedNameExpression()
     {
         return _parsedNameExpression;
+    }
+
+    public boolean hasCounterExpression()
+    {
+        return null != _parsedNameExpression && _parsedNameExpression.getParsedExpression().stream().anyMatch(CounterExpressionPart.class::isInstance);
     }
 
     private final FieldKeyStringExpression _parsedNameExpression;

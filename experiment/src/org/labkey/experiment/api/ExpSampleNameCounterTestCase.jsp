@@ -37,13 +37,19 @@
 <%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.concurrent.Callable" %>
+<%@ page import="java.util.concurrent.ExecutorService" %>
+<%@ page import="java.util.concurrent.Executors" %>
+<%@ page import="java.util.concurrent.Future" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
+<%@ page import="java.util.concurrent.TimeoutException" %>
 <%@ page import="static java.util.Collections.emptyList" %>
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
@@ -53,10 +59,13 @@
 // ${sampleCount}. Expected values describe current behavior; changes to DbSequence or NameGenerator must keep them.
 
 private static final String PROJECT_NAME = "_testSampleNameCounter";
+// Counter activation is permanent, so tests needing a project with inactive counters each get a fresh one
+private static final String COLD_PROJECT_PREFIX = "_testSampleNameCounterCold";
 private static final String WITH_COUNTER_BY_LAB = "${${Lab}-:withCounter}";
 
 private Container c;
 static User _user;
+private static final List<Container> _coldProjects = new ArrayList<>();
 
 @BeforeClass
 public static void setUp()
@@ -82,6 +91,8 @@ public static void tearDown()
     Container project = ContainerManager.getForPath(PROJECT_NAME);
     if (project != null)
         ContainerManager.deleteAll(project, _user);
+    _coldProjects.forEach(p -> ContainerManager.deleteAll(p, _user));
+    _coldProjects.clear();
 }
 
 @Test
@@ -208,13 +219,145 @@ public void testSampleCountContiguousAcrossTypesInOneTransaction() throws Except
     assertEquals(n + 4, currentSampleCount());
 }
 
+@Test
+public void testCounterFreeImportsRunConcurrently() throws Exception
+{
+    Container cold = createColdProject();
+    ExpSampleType first = createSampleType(cold, "FreeFirst", "F-${genId}");
+    ExpSampleType second = createSampleType(cold, "FreeSecond", "G-${genId}");
+
+    assertSecondImportWaits(false, "An import that draws no counter must not wait for the project lock",
+            () -> insertNames(cold, first, "free-1"), () -> insertRows(cold, second, List.of(new CaseInsensitiveHashMap<>())));
+}
+
+@Test
+public void testWithCounterImportWaitsForProjectLock() throws Exception
+{
+    Container cold = createColdProject();
+    ExpSampleType st = createSampleType(cold, "LockParents", "L-${genId}");
+    insertNames(cold, st, "lp-1", "lp-2");
+
+    // Different prefixes share no sequence row, so only the project lock makes the second wait
+    assertSecondImportWaits(true, "A :withCounter import must take the project lock",
+            () -> insertAliquots(cold, st, "lp-1"), () -> insertAliquots(cold, st, "lp-2"));
+    assertEquals(List.of("lp-1-2"), insertAliquots(cold, st, "lp-1"));
+    assertEquals(List.of("lp-2-2"), insertAliquots(cold, st, "lp-2"));
+}
+
+@Test
+public void testActiveSampleCountImportsWaitForProjectLock() throws Exception
+{
+    Container cold = createColdProject();
+    ExpSampleType counted = createSampleType(cold, "ActiveCounted", "C-${sampleCount}", "Lab");
+    ExpSampleType supplied = createSampleType(cold, "ActiveSupplied", "S-${genId}");
+    insertLabs(cold, counted, "activate");
+
+    assertSecondImportWaits(true, "Once sampleCount is active, every sample import must take the project lock",
+            () -> insertNames(cold, supplied, "active-1"), () -> insertNames(cold, supplied, "active-2"));
+    assertEquals(3, SampleTypeService.get().getCurrentCount(NameGenerator.EntityCounter.sampleCount, cold));
+}
+
+@Test
+public void testEagerCounterLockFlag() throws Exception
+{
+    Container cold = createColdProject();
+    ExpSampleType st = createSampleType(cold, "Eager", "E-${genId}");
+
+    OptionalFeatureService features = OptionalFeatureService.get();
+    boolean wasEnabled = features.isFeatureEnabled(NameGenerator.EXPERIMENTAL_EAGER_COUNTER_LOCK);
+    features.setFeatureEnabled(NameGenerator.EXPERIMENTAL_EAGER_COUNTER_LOCK, true, _user);
+    try
+    {
+        assertSecondImportWaits(true, "The flag must serialize imports that draw no counter",
+                () -> insertNames(cold, st, "eager-1"), () -> insertNames(cold, st, "eager-2"));
+    }
+    finally
+    {
+        features.setFeatureEnabled(NameGenerator.EXPERIMENTAL_EAGER_COUNTER_LOCK, wasEnabled, _user);
+    }
+}
+
+@Test
+public void testOppositeOrderAliquotImportsDoNotDeadlock() throws Exception
+{
+    Container cold = createColdProject();
+    ExpSampleType st = createSampleType(cold, "OppositeOrder", "O-${genId}");
+    insertNames(cold, st, "oo-1", "oo-2");
+
+    int rounds = 5;
+    DbScope scope = ExperimentService.get().getSchema().getScope();
+    try (ExecutorService executor = Executors.newFixedThreadPool(2))
+    {
+        for (int i = 0; i < rounds; i++)
+        {
+            List<Future<List<String>>> imports = new ArrayList<>();
+            for (List<String> parents : List.of(List.of("oo-1", "oo-2"), List.of("oo-2", "oo-1")))
+            {
+                imports.add(executor.submit(() -> {
+                    try (DbScope.Transaction tx = scope.ensureTransaction())
+                    {
+                        List<String> names = insertAliquots(cold, st, parents.toArray(String[]::new));
+                        tx.commit();
+                        return names;
+                    }
+                }));
+            }
+            for (Future<List<String>> f : imports)
+                f.get(60, TimeUnit.SECONDS);
+        }
+    }
+
+    assertEquals("Each parent's aliquots must stay contiguous", List.of("oo-1-" + (2 * rounds + 1), "oo-2-" + (2 * rounds + 1)), insertAliquots(cold, st, "oo-1", "oo-2"));
+}
+
+private Container createColdProject()
+{
+    Container project = ContainerManager.ensureContainer(COLD_PROJECT_PREFIX + GUID.makeHash().substring(0, 8), _user);
+    _coldProjects.add(project);
+    return project;
+}
+
+/** Runs second in its own transaction on another thread while first's transaction is still open */
+private void assertSecondImportWaits(boolean expectWait, String message, Callable<?> first, Callable<?> second) throws Exception
+{
+    DbScope scope = ExperimentService.get().getSchema().getScope();
+    try (ExecutorService executor = Executors.newSingleThreadExecutor())
+    {
+        Future<?> secondImport;
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            first.call();
+            secondImport = executor.submit(() -> {
+                try (DbScope.Transaction tx2 = scope.ensureTransaction())
+                {
+                    second.call();
+                    tx2.commit();
+                    return null;
+                }
+            });
+
+            if (expectWait)
+                assertThrows(message, TimeoutException.class, () -> secondImport.get(2, TimeUnit.SECONDS));
+            else
+                secondImport.get(30, TimeUnit.SECONDS);
+            tx.commit();
+        }
+        secondImport.get(60, TimeUnit.SECONDS);
+    }
+}
+
 private ExpSampleType createSampleType(String baseName, @Nullable String nameExpression, String... stringFields) throws Exception
+{
+    return createSampleType(c, baseName, nameExpression, stringFields);
+}
+
+private ExpSampleType createSampleType(Container container, String baseName, @Nullable String nameExpression, String... stringFields) throws Exception
 {
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("name", "string"));
     Arrays.stream(stringFields).forEach(f -> props.add(new GWTPropertyDescriptor(f, "string")));
     String name = baseName + "-" + GUID.makeHash().substring(0, 8);
-    return SampleTypeService.get().createSampleType(c, _user, name, null, props, emptyList(), -1, -1, -1, -1, nameExpression, null);
+    return SampleTypeService.get().createSampleType(container, _user, name, null, props, emptyList(), -1, -1, -1, -1, nameExpression, null);
 }
 
 private long currentSampleCount()
