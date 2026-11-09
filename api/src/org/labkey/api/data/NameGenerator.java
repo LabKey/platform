@@ -2014,41 +2014,39 @@ public class NameGenerator
             return this.getValue(map, null);
         }
 
-        private DbSequence getCounterSeq(String prefixRaw, @Nullable Map<String, DbSequence> counterSequences, boolean noCache)
+        /** The prefix's sequence, plus its first count when the prefix wasn't cached yet */
+        private record CounterDraw(DbSequence sequence, @Nullable Long count) {}
+
+        private CounterDraw getCounterSeq(String prefixRaw, @Nullable Map<String, DbSequence> counterSequences, boolean noCache)
         {
             String prefix = prefixRaw.trim().toLowerCase(); // Issue 49338: withCounter should be case-insensitive
+            if (null != counterSequences && counterSequences.containsKey(prefix))
+                return new CounterDraw(counterSequences.get(prefix), null);
+
             DbSequence counterSeq;
-            if (noCache || !counterSequences.containsKey(prefix))
+            if (_strictIncremental || ExperimentService.get().useStrictCounter())
             {
-                long existingCount = -1;
-
-                if (_strictIncremental || ExperimentService.get().useStrictCounter())
-                {
-                    counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
-                }
-                else
-                {
-                    if (noCache)
-                        counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix, 0);
-                    else
-                        counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, 100);
-                }
-
-                long currentSeqMax = counterSeq.current();
-
-                if (_getNonConflictCountFn != null)
-                    existingCount = _getNonConflictCountFn.apply(prefix);
-
-                if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
-                    counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
-
-                if (!noCache)
-                    counterSequences.put(prefix, counterSeq);
+                // The first draw takes the row lock
+                counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0, false);
             }
             else
-                counterSeq = counterSequences.get(prefix);
+            {
+                if (noCache)
+                    counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix, 0);
+                else
+                    counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, 100);
+            }
 
-            return counterSeq;
+            long minimum = _startIndex - 1;
+            if (_getNonConflictCountFn != null)
+                minimum = Math.max(minimum, _getNonConflictCountFn.apply(prefix));
+
+            long count = counterSeq.nextAtLeast(minimum);
+
+            if (null != counterSequences)
+                counterSequences.put(prefix, counterSeq);
+
+            return new CounterDraw(counterSeq, count);
         }
 
         public String getValue(Map map, @Nullable Map<String, DbSequence> counterSequences)
@@ -2067,23 +2065,25 @@ public class NameGenerator
 
 
                 boolean noCache = counterSequences == null;
-                DbSequence counterSeq;
+                CounterDraw draw;
 
                 if (_strictIncremental || ExperimentService.get().useStrictCounter())
                 {
                     synchronized (this)
                     {
-                        counterSeq = getCounterSeq(prefix, counterSequences, noCache);
+                        draw = getCounterSeq(prefix, counterSequences, noCache);
                     }
                 }
                 else
-                    counterSeq = getCounterSeq(prefix, counterSequences, noCache);
+                    draw = getCounterSeq(prefix, counterSequences, noCache);
 
-
-                count = counterSeq.next();
+                if (null != draw.count())
+                    count = draw.count();
+                else
+                    count = draw.sequence().next();
 
                 if (noCache)
-                    counterSeq.sync();
+                    draw.sequence().sync();
             }
 
 

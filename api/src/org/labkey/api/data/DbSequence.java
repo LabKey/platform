@@ -60,6 +60,12 @@ public class DbSequence
         return DbSequenceManager.next(this);
     }
 
+    /** Equivalent to {@code ensureMinimum(minimum); next()}, in a single database round trip */
+    public long nextAtLeast(long minimum)
+    {
+        return DbSequenceManager.nextAtLeast(this, minimum);
+    }
+
     public void ensureMinimum(long minimum)
     {
         DbSequenceManager.ensureMinimum(this, minimum);
@@ -150,6 +156,22 @@ public class DbSequence
             long ret = _currentValue+1;
             _currentValue = _currentValue + count;
             return ret;
+        }
+
+        @Override
+        public synchronized long nextAtLeast(long minimum)
+        {
+            if (null == _lastReservedValue)
+            {
+                Pair<Long, Long> reserved = DbSequenceManager.reserve(this, Math.max(1, _batchSize), minimum);
+                _currentValue = reserved.first;
+                _lastReservedValue = reserved.second;
+            }
+            else
+            {
+                ensureMinimum(minimum);
+            }
+            return next();
         }
 
         @Override

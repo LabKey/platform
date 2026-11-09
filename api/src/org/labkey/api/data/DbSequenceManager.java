@@ -83,7 +83,13 @@ public class DbSequenceManager
 
     public static DbSequence.ReclaimableDbSequence getReclaimable(Container c, String name, int id)
     {
-        return new DbSequence.ReclaimableDbSequence(c, name, ensure(c, name, id, true));
+        return getReclaimable(c, name, id, true);
+    }
+
+    /** @param lockNow false defers the transaction's row lock to its first draw or update of the sequence */
+    public static DbSequence.ReclaimableDbSequence getReclaimable(Container c, String name, int id, boolean lockNow)
+    {
+        return new DbSequence.ReclaimableDbSequence(c, name, ensure(c, name, id, lockNow));
     }
 
     // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
@@ -300,6 +306,16 @@ public class DbSequenceManager
     }
 
 
+    static long nextAtLeast(DbSequence sequence, long minimum)
+    {
+        ReclaimableBlocks blocks = getReclaimableBlocks(sequence);
+        if (null != blocks)
+            return blocks.nextAtLeast(sequence, minimum);
+
+        return reserve(sequence, 1, minimum).second;
+    }
+
+
     // The holder for the current transaction, or null if the sequence isn't reclaimable or no transaction is active
     private static @Nullable ReclaimableBlocks getReclaimableBlocks(DbSequence sequence)
     {
@@ -343,8 +359,23 @@ public class DbSequenceManager
 
         synchronized long next(DbSequence sequence)
         {
+            return draw(sequence, null);
+        }
+
+        synchronized long nextAtLeast(DbSequence sequence, long minimum)
+        {
+            if (!_blocks.containsKey(sequence.getRowId()))
+                return draw(sequence, minimum);
+
+            ensureMinimum(sequence, minimum);
+            return draw(sequence, null);
+        }
+
+        // A minimum is applied only by a reservation, so callers pass one only when no block is outstanding
+        private long draw(DbSequence sequence, @Nullable Long minimum)
+        {
             if (_flushed)
-                return reserve(sequence, 1).second;
+                return reserve(sequence, 1, minimum).second;
 
             Block block = _blocks.get(sequence.getRowId());
             if (null == block || block._current == block._last)
@@ -352,7 +383,7 @@ public class DbSequenceManager
                 long size = 1;
                 if (null != block)
                     size = Math.min(block._size * 2, MAX_BLOCK_SIZE);
-                Pair<Long, Long> reserved = reserve(sequence, size);
+                Pair<Long, Long> reserved = reserve(sequence, size, minimum);
                 block = new Block(reserved.first, reserved.second, size);
                 _blocks.put(sequence.getRowId(), block);
             }
@@ -423,12 +454,25 @@ public class DbSequenceManager
     // in other words, next() should return values [pair.first+1, pair.second] inclusive
     static Pair<Long,Long> reserve(DbSequence sequence, long count)
     {
+        return reserve(sequence, count, null);
+    }
+
+
+    // Like reserve(sequence, count), but first raises the value to the minimum, if given
+    static Pair<Long,Long> reserve(DbSequence sequence, long count, @Nullable Long minimum)
+    {
         TableInfo tinfo = getTableInfo();
 
         SQLFragment sql = new SQLFragment();
         sql.unsafeAppend("UPDATE ").append(tinfo.getSelectName()).unsafeAppend(" SET Value = (");
 
+        if (null != minimum)
+            sql.unsafeAppend("GREATEST(");
+
         addValueSql(sql, tinfo, sequence);
+
+        if (null != minimum)
+            sql.unsafeAppend(", ?)").add(minimum);
 
         sql.unsafeAppend(") + ? WHERE RowId = ?");
         sql.add(count);
@@ -925,6 +969,30 @@ public class DbSequenceManager
             assertEquals(List.of(5L), beforeWriteBack);
             assertEquals(List.of(6L), afterWriteBack);
             assertEquals(6, DbSequenceManager.getReclaimable(c, name, 0).current());
+        }
+
+        private static List<Long> drawAtLeast(DbSequence seq)
+        {
+            return List.of(seq.nextAtLeast(10), seq.nextAtLeast(5), seq.next(), seq.nextAtLeast(500));
+        }
+
+        @Test
+        public void testNextAtLeast()
+        {
+            Container c = JunitUtil.getTestContainer();
+            List<Long> expected = List.of(11L, 12L, 13L, 501L);
+
+            assertEquals(expected, drawAtLeast(_sequence));
+            assertEquals(expected, drawAtLeast(_sequenceBulk));
+            assertEquals(expected, drawAtLeast(DbSequenceManager.getReclaimable(c, reclaimableName(), 0, false)));
+
+            String name = reclaimableName();
+            try (DbScope.Transaction tx = scope().ensureTransaction())
+            {
+                assertEquals(expected, drawAtLeast(DbSequenceManager.getReclaimable(c, name, 0, false)));
+                tx.commit();
+            }
+            assertEquals(501, DbSequenceManager.getReclaimable(c, name, 0).current());
         }
 
         @After
