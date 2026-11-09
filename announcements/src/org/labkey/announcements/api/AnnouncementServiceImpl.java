@@ -113,6 +113,9 @@ public class AnnouncementServiceImpl implements AnnouncementService
                 throw new NotFoundException("Can't find a parent announcement with the given id: " + parentRowId);
             }
             insert.setParent(parentAnnouncement.getEntityId());
+            // A response's own list is stale once the thread has newer posts, so only a thread's list carries forward
+            if (memberList == null && parentAnnouncement.getParent() == null)
+                insert.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(c, parentAnnouncement.getMemberListIds()));
         }
 
         List<AttachmentFile> files = Collections.emptyList();

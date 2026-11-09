@@ -829,6 +829,8 @@ public class AnnouncementsController extends SpringActionController
                     throw createThreadNotFoundException(c);
                 if (!getPermissions().allowResponse(parent))
                     throw new UnauthorizedException();
+                if (form.isMemberListInputOmitted())
+                    insert.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(c, parent.getMemberListIds()));
             }
 
             try
@@ -1259,6 +1261,9 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
+            if (form.isMemberListInputOmitted())
+                update.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(getContainer(), oldAnn.getRowId()));
+
             try
             {
                 AnnouncementManager.updateAnnouncement(getUser(), update, getAttachmentFileList());
@@ -1669,6 +1674,12 @@ public class AnnouncementsController extends SpringActionController
         public String getParentId()
         {
             return getAsString("parentid");
+        }
+
+        // The forms omit the field when the board's member list setting is off; a posted empty value means clear
+        boolean isMemberListInputOmitted()
+        {
+            return !getValuesToBind().containsKey("memberListInput");
         }
 
         AnnouncementModel selectAnnouncement()
@@ -3445,6 +3456,25 @@ public class AnnouncementsController extends SpringActionController
 
             AnnouncementService.get().updateAnnouncement(thread.getRowId(), board, getAdmin(), "Updated title", "updated body");
             assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+        }
+
+        @Test
+        public void testRespondFormRetainsMemberList() throws Exception
+        {
+            Container board = createBoard("NormalRespondForm", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(board, member);
+
+            // respond.jsp omits memberListInput when the board's member list setting is off
+            ActionURL respond = new ActionURL(RespondAction.class, board)
+                .addParameter("parentId", thread.getEntityId())
+                .addParameter("title", "Response")
+                .addParameter("body", "response body");
+            assertStatus(HttpServletResponse.SC_FOUND, post(respond, getAdmin()));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+
+            assertStatus(HttpServletResponse.SC_FOUND, post(respond.clone().addParameter("memberListInput", ""), getAdmin()));
+            assertEquals(List.of(), currentMemberList(board, thread));
         }
 
         @Test
