@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -27,8 +28,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.security.User;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -171,43 +170,26 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         String dataTypeLsid = getLSID();
         return (namePrefix) ->
         {
-            long max = 0;
+            int suffixStart = namePrefix.codePointCount(0, namePrefix.length()) + 1;
 
             // Here we don't apply a container filter and instead rely on the "CpasType" of the associated data.
             // This allows for us to process max counter from all matching results within the provided type.
             SQLFragment sql = new SQLFragment()
-                    .unsafeAppend("SELECT Name\n")
-                    .unsafeAppend("FROM ").append(tableInfo, "i")
-                    .unsafeAppend(" WHERE i.CpasType = ? AND i.NAME")
-                    .add(dataTypeLsid);
+                    .unsafeAppend("SELECT MAX(Counter) FROM (SELECT CASE WHEN SUBSTR(i.Name, ?) ~ '^[0-9]+$'")
+                    .add(suffixStart)
+                    .unsafeAppend(" THEN CAST(SUBSTR(i.Name, ?) AS NUMERIC) END AS Counter FROM ")
+                    .add(suffixStart)
+                    .append(tableInfo, "i")
+                    .unsafeAppend(" WHERE i.CpasType = ? AND LOWER(i.Name) LIKE LOWER(")
+                    .add(dataTypeLsid)
+                    // Inlined, not bound: a generic plan can't use the (CpasType, LOWER(Name)) index and scans the whole type
+                    .appendValue(CompareType.escapeLikePattern(namePrefix, '!') + "%", tableInfo.getSqlDialect())
+                    .unsafeAppend(") ESCAPE '!') x")
+                    // Skip counters beyond Long.MAX_VALUE so the generated sequence won't overflow
+                    .unsafeAppend(" WHERE Counter <= ").unsafeAppend(String.valueOf(Long.MAX_VALUE));
 
-            tableInfo.getSqlDialect().appendCaseInsensitiveStartsWith(sql, namePrefix);
-
-            List<String> names = new SqlSelector(tableInfo.getSchema(), sql).getArrayList(String.class);
-
-            final List<String> nameSuffixes = new ArrayList<>();
-            int prefixLength = namePrefix.length();
-            for (String fullName : names)
-                nameSuffixes.add(fullName.substring(prefixLength));
-
-            for (String nameSuffix : nameSuffixes)
-            {
-                // \d+ admits suffixes beyond Long.MAX_VALUE, so skip any that don't fit so generated sequence won't overflow
-                if (nameSuffix.matches("\\d+"))
-                {
-                    try
-                    {
-                        long id = Long.parseLong(nameSuffix);
-                        if (id > max)
-                            max = id;
-                    }
-                    catch (NumberFormatException ignored)
-                    {
-                    }
-                }
-            }
-
-            return max;
+            Long max = new SqlSelector(tableInfo.getSchema(), sql).getObject(Long.class);
+            return max == null ? 0 : max;
         };
     }
 

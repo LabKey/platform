@@ -105,6 +105,16 @@ public void testProbeEscapesLikeWildcards() throws Exception
 }
 
 @Test
+public void testProbeHandlesQuotesAndQuestionMarks() throws Exception
+{
+    // The probe inlines its LIKE pattern as a SQL literal
+    ExpSampleType st = createSampleType("Quotes", "S-${genId}");
+    insertNames(c, st, "O'Ne?l\\x", "O'Ne?l\\x-2");
+
+    assertEquals(List.of("O'Ne?l\\x-3"), insertAliquots(c, st, "O'Ne?l\\x"));
+}
+
+@Test
 public void testWithCounterExpressionStartAndFormat() throws Exception
 {
     ExpSampleType plain = createSampleType("LabCounter", WITH_COUNTER_BY_LAB, "Lab");
