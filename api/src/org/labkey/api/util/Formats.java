@@ -16,10 +16,13 @@
 
 package org.labkey.api.util;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.FolderSettingsCache;
 
 import java.text.DecimalFormat;
+import java.util.stream.IntStream;
 
 public class Formats
 {
@@ -44,7 +47,7 @@ public class Formats
     {
         private final DecimalFormat _format;
 
-        private SafeDecimalFormat(String pattern)
+        public SafeDecimalFormat(String pattern)
         {
             _format = new DecimalFormat(pattern);
         }
@@ -103,5 +106,29 @@ public class Formats
             return new DecimalFormat(formatString).format(n);
         else
             return n.toString();
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testConcurrentFormat()
+        {
+            // commaf3's pattern takes DecimalFormat's unsynchronized double fast path; most other patterns lock internally, so they can't detect a missing lock
+            DecimalFormat reference = commaf3.get();
+            String[] expected = IntStream.range(0, 1_000_000).mapToObj(i -> reference.format(i + 0.25)).toArray(String[]::new);
+
+            long mismatches = IntStream.range(0, expected.length).parallel()
+                .filter(i -> !commaf3.format(i + 0.25).equals(expected[i]))
+                .count();
+
+            assertEquals("Concurrent calls produced wrong results", 0, mismatches);
+        }
+
+        @Test
+        public void testGetReturnsUnsharedInstance()
+        {
+            assertNotSame(f2.get(), f2.get());
+            assertEquals(f2.format(1.5), f2.get().format(1.5));
+        }
     }
 }
