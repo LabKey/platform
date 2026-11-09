@@ -174,7 +174,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                     PasswordExpiration expiration = configuration.getExpiration();
                     User user2 = user;
 
-                    if (expiration.hasExpired(() -> LoginManager.getLastChanged(user2)))
+                    if (expiration.hasExpired(() -> LoginManager.getPasswordLastChanged(user2)))
                     {
                         return getChangePasswordResponse(configuration, user, returnUrl, FailureReason.expired);
                     }

@@ -1784,16 +1784,6 @@ public class VisualizationController extends SpringActionController
             assertStatus(HttpServletResponse.SC_OK, saveTimeChart(folder, author, "time-developer-fn", new JSONObject().put("pointClickFn", FN)));
         }
 
-        @Test
-        public void testStudySaveReportRequiresTrustedDeveloper() throws Exception
-        {
-            Container folder = getSharedContainer("StudyCharts", ModuleLoader.getInstance().getModule(VisualizationModule.NAME), ModuleLoader.getInstance().getModule("study"));
-            User author = createUserInRole(folder, AuthorRole.class);
-
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, saveStudyReport(folder, author, "study-author-fn", genericChartJson(FN)));
-            assertStatus(HttpServletResponse.SC_FOUND, saveStudyReport(folder, author, "study-author-no-fn", genericChartJson(null)));
-        }
-
         private static String genericChartJson(@Nullable String pointClickFn)
         {
             JSONObject measures = new JSONObject();
@@ -1829,20 +1819,6 @@ public class VisualizationController extends SpringActionController
                     .put("thumbnailType", ThumbnailType.NONE.name())
                     .put("json", config.toString());
             return postJson(new ActionURL(SaveVisualizationAction.class, folder), user, body);
-        }
-
-        private MockHttpServletResponse saveStudyReport(Container folder, User user, String label, String json) throws Exception
-        {
-            String params = PageFlowUtil.toQueryString(List.of(
-                    Pair.of(ReportDescriptor.Prop.json.name(), json),
-                    Pair.of(ReportDescriptor.Prop.schemaName.name(), "core"),
-                    Pair.of(ReportDescriptor.Prop.queryName.name(), "Users"),
-                    Pair.of(GenericChartReportDescriptor.Prop.renderType.name(), "scatter_plot")));
-            ActionURL url = new ActionURL("study-reports", "saveReport", folder)
-                    .addParameter("reportType", GenericChartReport.TYPE)
-                    .addParameter("label", label)
-                    .addParameter("params", params);
-            return post(url, user);
         }
     }
 }

@@ -31,29 +31,29 @@
 <div id=<%=qh(bean.dataRegionDomId)%>></div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 (function(){
-var regionDomId = <%=q(bean.dataRegionDomId)%>;
-var dataRegionName = <%=q(bean.dataRegionName)%>;
-var decl = [
-    <%
-    Collection<QueryService.ParameterDecl> decls = bean.params;
-    Map values = bean.values;
-    String COMMA = "";
-    for (QueryService.ParameterDecl p : decls)
-    {
-        Object value = null==values?null:values.get(p.getName());
-        if (null == value)
-            value = p.getDefault();
-        %><%=unsafe(COMMA)%><%
-        %>{name:<%=q(p.getName())%><%
-        %>,jdbctype:<%=q(p.getJdbcType().name())%><%
-        %>,jsontype:<%=q(p.getJdbcType().json)%><%
-        %>,xtype:<%=q(p.getJdbcType().xtype)%><%
-        %>,defaultValue:<%=q(ConvertUtils.convert(p.getDefault()))%><%
-        %>,value:<%=q(ConvertUtils.convert(value))%><%
-        %>}<%
-        COMMA = ",";
-    }
-    %>];
+    var regionDomId = <%=q(bean.dataRegionDomId)%>;
+    var dataRegionName = <%=q(bean.dataRegionName)%>;
+    var decl = [
+        <%
+        Collection<QueryService.ParameterDecl> decls = bean.params;
+        Map values = bean.values;
+        String COMMA = "";
+        for (QueryService.ParameterDecl p : decls)
+        {
+            Object value = null==values?null:values.get(p.getName());
+            if (null == value)
+                value = p.getDefault();
+            %><%=unsafe(COMMA)%><%
+            %>{name:<%=q(p.getName())%><%
+            %>,jdbctype:<%=q(p.getJdbcType().name())%><%
+            %>,jsontype:<%=q(p.getJdbcType().json)%><%
+            %>,xtype:<%=q(p.getJdbcType().xtype)%><%
+            %>,defaultValue:<%=q(ConvertUtils.convert(p.getDefault()))%><%
+            %>,value:<%=q(ConvertUtils.convert(value))%><%
+            %>}<%
+            COMMA = ",";
+        }
+        %>];
 
     <%-- This page is loaded only at render time, require Ext 4 --%>
     LABKEY.requiresExt4Sandbox(function() {
@@ -80,6 +80,11 @@ var decl = [
                 else if (p.jsontype == 'float') {
                     // Allow lots of precision or ExtJS will truncate potentially useful digits
                     item.decimalPrecision = 15;
+                }
+                else if (p.jsontype == 'date') {
+                    item.format = LABKEY.extDefaultDateFormat;
+                    // Display formats may not round-trip through the server's date parsing mode, so post ISO
+                    item.submitFormat = LABKEY.extDateInputFormat;
                 }
                 items.push(item);
             }

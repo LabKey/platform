@@ -304,13 +304,11 @@ public class QValuesTable extends QTable
             ret.unsafeAppend(") ");
             ret.appendIdentifier(getAlias());
             ret.unsafeAppend(" (");
-            String comma = "";
             // generate names consistent with PostgreSQL default name for VALUES
             // https://www.postgresql.org/docs/12/queries-values.html
             for (int i=1 ; i<= countOfColumns ; i++)
             {
-                ret.append(comma).append("column" + i);
-                comma = ",";
+                ret.unsafeAppend(i > 1 ? "," : "").unsafeAppend("column").appendValue(i);
             }
             ret.unsafeAppend(")\n");
             return ret;
