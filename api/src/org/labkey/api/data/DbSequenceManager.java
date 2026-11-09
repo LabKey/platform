@@ -720,11 +720,6 @@ public class DbSequenceManager
             timer.stop();
 
             TestContext.get().logPerfResult(timer);
-
-// TODO: Restore this check once we fix or trash lkwin03 agent01, which fails because it's slow
-//            final long elapsed = timer.getTotalMilliseconds();
-//            final double perSecond = n / (elapsed / 1000.0);
-//            assertTrue("Less than 100 iterations per second: " + perSecond, perSecond > 100);   // A very low bar
         }
 
         @Test
