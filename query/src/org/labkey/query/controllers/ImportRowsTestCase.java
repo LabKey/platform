@@ -26,25 +26,33 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** GH Issue 1867: saveRows must keep each row's values when rows differ in which keys they supply or how they case them */
+/** GH Issue 1867: inserts must keep each row's values, and give each omitted column its default, when rows differ in which keys they supply or how they case them */
+@TestTimeout(TestTimeout.DEFAULT * 5) // Each test creates and deletes a project
 public class ImportRowsTestCase extends Assert
 {
     private static final String PROJECT_NAME = "ImportRowsTestProject";
@@ -67,6 +75,8 @@ public class ImportRowsTestCase extends Assert
         domain.addProperty(new PropertyStorageSpec("Volume", JdbcType.INTEGER));
         // Provisioned as a database DEFAULT, the only kind of default API inserts honor
         domain.addProperty(new PropertyStorageSpec("Status", JdbcType.VARCHAR, 50, true, STATUS_DEFAULT));
+        // Multi-choice columns are provisioned NOT NULL DEFAULT '{}'; the dialect rejects any other default for ARRAY
+        domain.addProperty(new PropertyStorageSpec("Tags", JdbcType.ARRAY)).setRangeURI(PropertyType.MULTI_CHOICE.getTypeUri());
         ld.setKeyName("Name");
         ld.save(user);
     }
@@ -130,6 +140,59 @@ public class ImportRowsTestCase extends Assert
         assertOmittedColumnDefault("insert");
     }
 
+    @Test
+    public void testOmittedColumnDefaultInsertWithKeys() throws Exception
+    {
+        saveRows("insertWithKeys", List.of(Map.of("values", Map.of("Name", "S0"))));
+        assertValue("S0", "Status", STATUS_DEFAULT);
+
+        saveRows("insertWithKeys", List.of(
+                Map.of("values", Map.of("Name", "S1")),
+                Map.of("values", Map.of("Name", "S2", "Status", "Done"))));
+
+        assertValue("S1", "Status", STATUS_DEFAULT);
+        assertValue("S2", "Status", "Done");
+    }
+
+    @Test
+    public void testOmittedColumnDefaultUpdateService() throws Exception
+    {
+        insertRows(List.of(row("Name", "S0")));
+        assertValue("S0", "Status", STATUS_DEFAULT);
+
+        insertRows(List.of(
+                row("Name", "S1"),
+                row("Name", "S2", "Status", "Done")));
+
+        assertValue("S1", "Status", STATUS_DEFAULT);
+        assertValue("S2", "Status", "Done");
+    }
+
+    @Test
+    public void testExplicitNullUpdateService() throws Exception
+    {
+        insertRows(List.of(
+                row("Name", "S1", "Status", null),
+                row("Name", "S2", "Status", "Done", "Description", "x")));
+
+        assertNull("Status of S1", new TableSelector(getTable(), PageFlowUtil.set("Status")).getObject("S1", String.class));
+        assertValue("S2", "Status", "Done");
+    }
+
+    @Test
+    public void testOmittedMultiChoiceDefault() throws Exception
+    {
+        saveRows("insert", List.of(Map.of("Name", "S0")));
+        assertMultiChoiceValue("S0", List.of());
+
+        saveRows("insert", List.of(
+                Map.of("Name", "S1"),
+                Map.of("Name", "S2", "Tags", List.of("a", "b"))));
+
+        assertMultiChoiceValue("S1", List.of());
+        assertMultiChoiceValue("S2", List.of("a", "b"));
+    }
+
     private void assertMixedKeyCasing(String command) throws Exception
     {
         saveRows(command, List.of(
@@ -186,6 +249,35 @@ public class ImportRowsTestCase extends Assert
                 Map.of("Content-Type", "application/json"), json.toString());
         MockHttpServletResponse response = ViewServlet.mockDispatch(request, null);
         assertEquals(commandName + " via saveRows failed: " + response.getContentAsString(), HttpServletResponse.SC_OK, response.getStatus());
+    }
+
+    private static void insertRows(List<Map<String, Object>> rows) throws Exception
+    {
+        User user = TestContext.get().getUser();
+        QueryUpdateService qus = getTable().getUpdateService();
+        assertNotNull(qus);
+        BatchValidationException errors = new BatchValidationException();
+        qus.insertRows(user, getProject(), new ArrayList<>(rows), errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+    }
+
+    /** Unlike Map.of, allows null values */
+    private static Map<String, Object> row(Object... keysAndValues)
+    {
+        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+        for (int i = 0; i < keysAndValues.length; i += 2)
+            row.put((String) keysAndValues[i], keysAndValues[i + 1]);
+        return row;
+    }
+
+    private static void assertMultiChoiceValue(String key, List<String> expected)
+    {
+        Object actual = new TableSelector(getTable(), PageFlowUtil.set("Tags")).getObject(key, Object.class);
+        // The multi-choice converter maps null to an empty array, so check the raw value before converting
+        assertNotNull("Tags of " + key, actual);
+        assertEquals("Tags of " + key, MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, expected),
+                MultiChoice.Converter.getInstance().convert(MultiChoice.Array.class, actual));
     }
 
     private static void assertValue(String key, String column, @NotNull Object expected)
