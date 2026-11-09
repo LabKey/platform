@@ -21,29 +21,67 @@ import org.labkey.api.settings.FolderSettingsCache;
 
 import java.text.DecimalFormat;
 
-/**
- * User: adam
- * Date: Jul 27, 2006
- * Time: 4:05:45 PM
- */
 public class Formats
 {
-    public static DecimalFormat f0 = new DecimalFormat("0");
-    public static DecimalFormat f1 = new DecimalFormat("0.0");
-    public static DecimalFormat f2 = new DecimalFormat("0.00");
-    public static DecimalFormat fv2 = new DecimalFormat("#.##");
-    public static DecimalFormat f3 = new DecimalFormat("0.000");
-    public static DecimalFormat fv3 = new DecimalFormat("#.###");
-    public static DecimalFormat f4 = new DecimalFormat("0.0000");
-    public static DecimalFormat fv4 = new DecimalFormat("#.####");
-    public static DecimalFormat signf4 = new DecimalFormat("+0.0000;-0.0000");
-    public static DecimalFormat percent = new DecimalFormat("0%");
-    public static DecimalFormat percent1 = new DecimalFormat("0.0%");
-    public static DecimalFormat percent2 = new DecimalFormat("0.00%");
-    public static DecimalFormat commaf0 = new DecimalFormat("#,##0");
-    public static DecimalFormat commaf2 = new DecimalFormat("#,##0.##");
-    public static DecimalFormat commaf3 = new DecimalFormat("#,##0.###");
-    public static DecimalFormat chargeFilter = new DecimalFormat("0.#");
+    public static final SafeDecimalFormat f0 = new SafeDecimalFormat("0");
+    public static final SafeDecimalFormat f1 = new SafeDecimalFormat("0.0");
+    public static final SafeDecimalFormat f2 = new SafeDecimalFormat("0.00");
+    public static final SafeDecimalFormat fv2 = new SafeDecimalFormat("#.##");
+    public static final SafeDecimalFormat f3 = new SafeDecimalFormat("0.000");
+    public static final SafeDecimalFormat fv3 = new SafeDecimalFormat("#.###");
+    public static final SafeDecimalFormat f4 = new SafeDecimalFormat("0.0000");
+    public static final SafeDecimalFormat fv4 = new SafeDecimalFormat("#.####");
+    public static final SafeDecimalFormat signf4 = new SafeDecimalFormat("+0.0000;-0.0000");
+    public static final SafeDecimalFormat percent = new SafeDecimalFormat("0%");
+    public static final SafeDecimalFormat percent1 = new SafeDecimalFormat("0.0%");
+    public static final SafeDecimalFormat percent2 = new SafeDecimalFormat("0.00%");
+    public static final SafeDecimalFormat commaf0 = new SafeDecimalFormat("#,##0");
+    public static final SafeDecimalFormat commaf2 = new SafeDecimalFormat("#,##0.##");
+    public static final SafeDecimalFormat commaf3 = new SafeDecimalFormat("#,##0.###");
+
+    /** Thread-safe wrapper around a shared DecimalFormat; synchronizes since callers are low-contention display and logging code */
+    public static final class SafeDecimalFormat
+    {
+        private final DecimalFormat _format;
+
+        private SafeDecimalFormat(String pattern)
+        {
+            _format = new DecimalFormat(pattern);
+        }
+
+        /** Returns a new, unshared instance for the few code paths that require a DecimalFormat */
+        public DecimalFormat get()
+        {
+            synchronized (_format)
+            {
+                return (DecimalFormat) _format.clone();
+            }
+        }
+
+        public String format(double d)
+        {
+            synchronized (_format)
+            {
+                return _format.format(d);
+            }
+        }
+
+        public String format(long l)
+        {
+            synchronized (_format)
+            {
+                return _format.format(l);
+            }
+        }
+
+        public String format(Object o)
+        {
+            synchronized (_format)
+            {
+                return _format.format(o);
+            }
+        }
+    }
 
     public static String getDecimalFormatDocumentationURL()
     {
