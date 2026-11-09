@@ -26,6 +26,7 @@ import org.labkey.api.data.JdbcType;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -114,6 +115,7 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
     public static class ListOfMapsDataIterator extends AbstractMapDataIterator
     {
         protected List<Map<String, Object>> _rows;
+        private Map<String, BitSet> _omittedColumnRows = Map.of();
 
         protected ListOfMapsDataIterator(DataIteratorContext context, Set<String> colsNames)
         {
@@ -152,6 +154,31 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
                 _cols.add(new BaseColumnInfo(name, JdbcType.OTHER));
             }
             _rows = initRows(rows);
+            _omittedColumnRows = findOmittedColumnRows();
+            context.setOmittedColumnRows(_omittedColumnRows);
+        }
+
+        Map<String, BitSet> getOmittedColumnRows()
+        {
+            return _omittedColumnRows;
+        }
+
+        private Map<String, BitSet> findOmittedColumnRows()
+        {
+            Map<String, BitSet> omitted = new CaseInsensitiveHashMap<>();
+            for (int col = 1; col < _cols.size(); col++)
+            {
+                String name = _cols.get(col).getName();
+                BitSet rowNumbers = new BitSet();
+                for (int row = 0; row < _rows.size(); row++)
+                {
+                    if (!_rows.get(row).containsKey(name))
+                        rowNumbers.set(row + 1);
+                }
+                if (!rowNumbers.isEmpty())
+                    omitted.put(name, rowNumbers);
+            }
+            return omitted;
         }
 
         protected List<Map<String, Object>> initRows(List<Map<String, Object>> rows)

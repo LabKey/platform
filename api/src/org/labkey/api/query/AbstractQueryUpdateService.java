@@ -109,6 +109,7 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -400,6 +401,20 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
 
+        // GH Issue 1867: this pipeline's source registers its own omitted rows; a load nested on this context must not use the outer source's
+        Map<String, BitSet> outerOmittedRows = context.replaceOmittedColumnRows(null);
+        try
+        {
+            return _pumpImport(user, container, in, outputRows, context, extraScriptContext);
+        }
+        finally
+        {
+            context.replaceOmittedColumnRows(outerOmittedRows);
+        }
+    }
+
+    private int _pumpImport(User user, Container container, DataIteratorBuilder in, @Nullable ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
         preImportDIBValidation(in, null);
 
         boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport();
