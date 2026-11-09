@@ -32,7 +32,9 @@ import java.util.Set;
 
 public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implements Serializable, CaseInsensitiveCollection
 {
-    private final Map<String, String> _correctCaseMap;
+    private Map<String, String> _correctCaseMap;
+    // Set when other maps share _correctCaseMap, so re-casing a key here would orphan their entries
+    private boolean _sharedCaseMap;
 
     public CaseInsensitiveMapWrapper(Map<String, V> map)
     {
@@ -43,11 +45,27 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
     {
         super(map);
         _correctCaseMap = caseMapping == null ? new HashMap<>() : caseMapping._correctCaseMap;
+        // Wrapping the caseMapping itself shares its case map exactly as widely as that map already does
+        if (caseMapping == map)
+            _sharedCaseMap = caseMapping._sharedCaseMap;
+        else if (caseMapping != null)
+        {
+            _sharedCaseMap = true;
+            caseMapping._sharedCaseMap = true;
+        }
         for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
         {
-            if (entry.getKey() != null)
+            String key = entry.getKey();
+            if (key != null)
             {
-                _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());
+                String existing = _correctCaseMap.get(key.toLowerCase());
+                // A wrapped key can't be re-cased, so take a private case map instead of re-casing the shared one
+                if (_sharedCaseMap && existing != null && !existing.equals(key))
+                {
+                    _correctCaseMap = new HashMap<>(_correctCaseMap);
+                    _sharedCaseMap = false;
+                }
+                _correctCaseMap.put(key.toLowerCase(), key);
             }
         }
     }
@@ -81,9 +99,10 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
         {
             ret = remove(correctKey);
         }
-        _map.put(key, value);
-//        assert !_correctCaseMap.containsKey(key.toLowerCase());
-        _correctCaseMap.put(null==key?null:key.toLowerCase(), key);
+        // GH Issue 1867: with a shared case map, store under the existing casing so other maps still find their entries
+        String storedKey = _sharedCaseMap && correctKey != null ? correctKey : key;
+        _map.put(storedKey, value);
+        _correctCaseMap.put(null==key?null:key.toLowerCase(), storedKey);
         return ret;
     }
 

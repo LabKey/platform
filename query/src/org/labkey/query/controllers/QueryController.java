@@ -111,6 +111,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcMetaDataSelector;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.JsonWriter;
@@ -353,6 +354,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -4909,6 +4911,8 @@ public class QueryController extends SpringActionController
                 }
 
                 QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
+                if (commandType == CommandType.insert || commandType == CommandType.importRows)
+                    applyDatabaseDefaults(table, rowsToProcess);
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
                 if (auditEvent != null)
@@ -4997,6 +5001,53 @@ public class QueryController extends SpringActionController
             op.committed(committed);
 
             return response;
+        }
+
+        /** GH Issue 1867: a row that omits a column other rows supply gets the database default, as it would if every row omitted it */
+        private static void applyDatabaseDefaults(TableInfo table, List<Map<String, Object>> rows)
+        {
+            // generate_series is PostgreSQL; external data sources may use other dialects
+            if (rows.size() < 2 || !table.getSqlDialect().isPostgreSQL())
+                return;
+
+            Map<String, ColumnInfo> importMap = ImportAliasable.Helper.createImportMap(table.getColumns(), false);
+            Map<ColumnInfo, String> suppliedKeys = new LinkedHashMap<>();
+            List<Set<ColumnInfo>> suppliedByRow = new ArrayList<>(rows.size());
+            for (Map<String, Object> row : rows)
+            {
+                Set<ColumnInfo> supplied = new HashSet<>();
+                for (String key : row.keySet())
+                {
+                    ColumnInfo col = importMap.get(key);
+                    if (col != null && col.getJdbcDefaultValue() != null && !col.isAutoIncrement() && !col.isCalculated() &&
+                            col.getJdbcType() != JdbcType.ARRAY)
+                    {
+                        supplied.add(col);
+                        suppliedKeys.putIfAbsent(col, key);
+                    }
+                }
+                suppliedByRow.add(supplied);
+            }
+
+            for (Map.Entry<ColumnInfo, String> entry : suppliedKeys.entrySet())
+            {
+                ColumnInfo col = entry.getKey();
+                List<Map<String, Object>> omitting = IntStream.range(0, rows.size())
+                        .filter(i -> !suppliedByRow.get(i).contains(col))
+                        .mapToObj(rows::get)
+                        .toList();
+                if (omitting.isEmpty())
+                    continue;
+
+                // The expression comes from the database catalog; selecting one value per row keeps volatile defaults per-row
+                SQLFragment sql = new SQLFragment().unsafeAppend("SELECT ")
+                        .append(new SQLFragment().setSqlUnsafe(col.getJdbcDefaultValue()))
+                        .unsafeAppend(" FROM generate_series(1, ?)", omitting.size());
+                List<Object> defaults = new ArrayList<>(omitting.size());
+                new SqlSelector(table.getSchema().getScope(), sql).forEach(rs -> defaults.add(rs.getObject(1)));
+                for (int i = 0; i < omitting.size(); i++)
+                    omitting.get(i).put(entry.getValue(), defaults.get(i));
+            }
         }
 
         protected boolean allowRowAttachments()
