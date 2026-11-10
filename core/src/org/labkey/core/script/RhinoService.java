@@ -289,7 +289,7 @@ public final class RhinoService
 
 class RhinoFactory implements ScriptService
 {
-    private static final List<String> NAMES = List.of("rhino", "Rhino", "javascript", "JavaScript");
+    private static final List<String> NAMES = List.of("js", "rhino", "Rhino", "JavaScript", "javascript", "ECMAScript", "ecmascript");
     private static final List<String> EXTENSIONS = List.of("js");
     private static final List<String> MIME_TYPES = List.of(
         "application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript");
@@ -307,7 +307,7 @@ class RhinoFactory implements ScriptService
     }
 
     @Override
-    public String getEngineName() { return "rhino"; }
+    public String getEngineName() { return "Mozilla Rhino"; }
 
     @Override
     public String getEngineVersion()
@@ -328,7 +328,7 @@ class RhinoFactory implements ScriptService
     public List<String> getNames() { return NAMES; }
 
     @Override
-    public String getLanguageName() { return "javascript"; }
+    public String getLanguageName() { return "ECMAScript"; }
 
     @Override
     public String getLanguageVersion() { return String.valueOf(ScriptEngineManagerImpl.getRhinoLanguageVersion().getVersion()); }
@@ -338,7 +338,8 @@ class RhinoFactory implements ScriptService
     {
         return switch (key)
         {
-            case ScriptEngine.ENGINE, ScriptEngine.NAME -> getEngineName();
+            case ScriptEngine.ENGINE -> getEngineName();
+            case ScriptEngine.NAME -> "javascript";
             case ScriptEngine.ENGINE_VERSION -> getEngineVersion();
             case ScriptEngine.LANGUAGE -> getLanguageName();
             case ScriptEngine.LANGUAGE_VERSION -> getLanguageVersion();

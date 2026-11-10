@@ -24,7 +24,7 @@ import java.util.Arrays;
 /** The Rhino language levels an administrator can choose for server-side scripts. */
 public enum RhinoLanguageVersion
 {
-    JS_1_8(Context.VERSION_1_8, "JavaScript 1.8", "Legacy behavior, for scripts written for Rhino 1.7"),
+    JS_1_8(Context.VERSION_1_8, "JavaScript 1.8", "Legacy behavior, for scripts that are incompatible with modern JavaScript"),
     ES6(Context.VERSION_ES6, "ES6", "Modern JavaScript, without the checks that can break older scripts"),
     ECMASCRIPT(Context.VERSION_ECMASCRIPT, "ECMAScript", "Latest JavaScript, enforcing const and strict mode checks");
 
