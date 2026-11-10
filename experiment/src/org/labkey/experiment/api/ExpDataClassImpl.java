@@ -454,7 +454,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public Function<String, Long> getMaxDataCounterFunction()
     {
-        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoData());
+        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoData().getColumn("ClassId"));
     }
 
     public long getMinGenId()

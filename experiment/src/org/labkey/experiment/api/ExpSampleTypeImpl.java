@@ -1112,7 +1112,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public Function<String, Long> getMaxSampleCounterFunction()
     {
-        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoMaterial());
+        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoMaterial().getColumn("MaterialSourceId"));
     }
 
     @Override

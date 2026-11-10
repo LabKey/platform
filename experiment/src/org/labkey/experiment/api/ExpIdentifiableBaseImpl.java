@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -165,14 +166,16 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         return getClass().getSimpleName() + ": " + _object.getName() + " - " + _object.getLSID();
     }
 
-    protected Function<String, Long> getMaxCounterWithPrefixFunction(TableInfo tableInfo)
+    /** @param typeIdColumn column holding this type's RowId: MaterialSourceId or ClassId */
+    protected Function<String, Long> getMaxCounterWithPrefixFunction(ColumnInfo typeIdColumn)
     {
-        String dataTypeLsid = getLSID();
+        TableInfo tableInfo = typeIdColumn.getParentTable();
+        long typeId = getRowId();
         return (namePrefix) ->
         {
             int suffixStart = namePrefix.codePointCount(0, namePrefix.length()) + 1;
 
-            // Here we don't apply a container filter and instead rely on the "CpasType" of the associated data.
+            // Here we don't apply a container filter and instead rely on the type id of the associated data.
             // This allows for us to process max counter from all matching results within the provided type.
             SQLFragment sql = new SQLFragment()
                     .unsafeAppend("SELECT MAX(Counter) FROM (SELECT CASE WHEN SUBSTR(i.Name, ?) ~ '^[0-9]+$'")
@@ -180,9 +183,9 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
                     .unsafeAppend(" THEN CAST(SUBSTR(i.Name, ?) AS NUMERIC) END AS Counter FROM ")
                     .add(suffixStart)
                     .append(tableInfo, "i")
-                    .unsafeAppend(" WHERE i.CpasType = ? AND LOWER(i.Name) LIKE LOWER(")
-                    .add(dataTypeLsid)
-                    // Inlined, not bound: a generic plan can't use the (CpasType, LOWER(Name)) index and scans the whole type
+                    .unsafeAppend(" WHERE ").append(typeIdColumn.getValueSql("i")).unsafeAppend(" = ? AND LOWER(i.Name) LIKE LOWER(")
+                    .add(typeId)
+                    // Inlined, not bound: a generic plan can't use the (type id, LOWER(Name)) index and scans the whole type
                     .appendValue(CompareType.escapeLikePattern(namePrefix, '!') + "%", tableInfo.getSqlDialect())
                     .unsafeAppend(") ESCAPE '!') x")
                     // Skip counters beyond Long.MAX_VALUE so the generated sequence won't overflow
