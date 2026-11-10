@@ -85,6 +85,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -665,14 +666,17 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
+    // GH Issue 1688: callers check permissions in c, so the update must not name another folder or thread
+    public static AnnouncementModel updateAnnouncement(Container c, User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
-        Container c = ContainerManager.getForId(update.getContainerId());
-        if (c == null)
-            throw new NotFoundException("No container with id " + update.getContainerId());
+        if (!c.getId().equals(update.getContainerId()))
+            throw new UnauthorizedException();
         AnnouncementModel current = getAnnouncement(c, update.getRowId());
         if (current == null)
             throw new NotFoundException("No announcement with id " + update.getRowId());
+        if (!StringUtils.equals(StringUtils.trimToNull(update.getParent()), current.getParent()))
+            throw new RuntimeValidationException("A message's parent can't be changed.");
+        update.setParent(current.getParent());
         update = validateModelWithSideEffects(update, c, user, false);
 
         update.beforeUpdate(user, current); // This preserves Created, CreatedBy, EntityId, etc.
@@ -1170,7 +1174,7 @@ public class AnnouncementManager
             model.setModifiedBy(reader.getUserId());
             model.setModified(bogusDate);
             Thread.sleep(10); // Quick sleep to ensure Modified > Created, even on a very fast test run
-            AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
+            AnnouncementManager.updateAnnouncement(folder, getAdmin(), model, List.of());
 
             // Re-select updated model
             AnnouncementModel updated = AnnouncementManager.getAnnouncement(folder, model.getRowId());

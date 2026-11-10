@@ -208,9 +208,11 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         protected AnnouncementModel update(User user, Container container, AnnouncementModel bean, Integer oldKey) throws QueryUpdateServiceException
         {
             ensureNotSecure();
+            if (!oldKey.equals(bean.getRowId()))
+                throw new QueryUpdateServiceException("A message's RowId can't be changed.");
             try
             {
-                return AnnouncementManager.updateAnnouncement(user, bean, Collections.emptyList());
+                return AnnouncementManager.updateAnnouncement(container, user, bean, Collections.emptyList());
             }
             catch (RuntimeValidationException | IOException e)
             {

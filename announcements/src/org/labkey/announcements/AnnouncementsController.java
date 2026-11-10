@@ -1253,15 +1253,9 @@ public class AnnouncementsController extends SpringActionController
             form.setOldValues(oldAnn);
             AnnouncementModel update = form.getBean();
 
-            // Ensure that requested announcement's container matches current container (where perms have been checked)
-            if (!getContainer().getId().equals(update.getContainerId()))
-            {
-                throw new UnauthorizedException();
-            }
-
             try
             {
-                AnnouncementManager.updateAnnouncement(getUser(), update, getAttachmentFileList());
+                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), update, getAttachmentFileList());
             }
             catch (RuntimeValidationException e)
             {
@@ -2921,7 +2915,7 @@ public class AnnouncementsController extends SpringActionController
 
             try
             {
-                AnnouncementManager.updateAnnouncement(getUser(), updatedThread, getAttachmentFileList());
+                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), updatedThread, getAttachmentFileList());
             }
             catch (Exception e)
             {
@@ -3270,6 +3264,56 @@ public class AnnouncementsController extends SpringActionController
             // Admin of A who only reads B can't reach B's moderation queue across folders
             assertEquals(Set.of(), only(queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME), mine));
             assertEquals(Set.of(), only(queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.SPAM_TABLE_NAME), mine));
+        }
+
+        // GH Issue 1688
+        @Test
+        public void testQueryUpdateCannotRetargetMessage() throws Exception
+        {
+            Container secure = getSecureBoard();
+            User member = createUserInRole(secure, ReaderRole.class);
+            User otherReader = createUserInRole(secure, ReaderRole.class);
+            User editorA = createUserInRole(_folderA, EditorRole.class);
+
+            AnnouncementModel victim = insertMessage(secure, getAdmin(), "Victim thread", String.valueOf(member.getUserId()));
+            AnnouncementModel own = insertMessage(_folderA, editorA, "Own thread", null);
+            AnnouncementModel sibling = insertMessage(_folderA, getAdmin(), "Sibling thread", null);
+
+            QueryUpdateService qus = new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService();
+            Map<String, Object> ownKey = Map.of("RowId", own.getRowId());
+            String memberList = String.valueOf(otherReader.getUserId());
+
+            assertThrows(QueryUpdateServiceException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Container", secure.getId(), "Title", "Overwritten", "memberListInput", memberList)));
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Container", secure.getId(), "Title", "Overwritten")));
+            assertThrows(QueryUpdateServiceException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", sibling.getRowId(), "Title", "Overwritten")));
+            assertThrows(QueryUpdateServiceException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Parent", victim.getEntityId())));
+            assertThrows(QueryUpdateServiceException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Parent", sibling.getEntityId())));
+
+            assertEquals("Victim thread", AnnouncementManager.getAnnouncement(secure, victim.getRowId()).getTitle());
+            assertEquals(List.of(member.getUserId()), AnnouncementManager.getPostMemberList(victim.getRowId()));
+            assertEquals("Sibling thread", AnnouncementManager.getAnnouncement(_folderA, sibling.getRowId()).getTitle());
+            assertNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()).getParent());
+
+            // Positive control: an ordinary edit of the caller's own message still works
+            updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Title", "Edited"));
+            assertEquals("Edited", AnnouncementManager.getAnnouncement(_folderA, own.getRowId()).getTitle());
+        }
+
+        private AnnouncementModel insertMessage(Container c, User user, String title, @Nullable String memberListInput) throws Exception
+        {
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle(title);
+            insert.setBody("body");
+            insert.setMemberListInput(memberListInput);
+            return AnnouncementManager.insertAnnouncement(c, user, insert, null, false);
+        }
+
+        private void updateMessage(QueryUpdateService qus, User user, Map<String, Object> oldKey, Map<String, Object> values) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            qus.updateRows(user, _folderA, List.of(new HashMap<>(values)), List.of(new HashMap<>(oldKey)), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
         }
 
         // Shared across tests, so reset the settings some tests change

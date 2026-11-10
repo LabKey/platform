@@ -203,7 +203,7 @@ public class AnnouncementServiceImpl implements AnnouncementService
 
         try
         {
-            AnnouncementManager.updateAnnouncement(u, model, files);
+            AnnouncementManager.updateAnnouncement(c, u, model, files);
         }
         catch (IOException e)
         {
