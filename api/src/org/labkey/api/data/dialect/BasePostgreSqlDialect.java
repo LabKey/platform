@@ -1118,10 +1118,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         String nativeFn = passthroughFn.get(fn);
         if (null != nativeFn)
             return formatFunction(call, nativeFn, arguments);
-        else if (fn.equalsIgnoreCase("timestampdiff"))
-            return timestampdiff(arguments);
-        else
-            return super.formatJdbcFunction(fn, arguments);
+        if (fn.equalsIgnoreCase("timestampdiff"))
+            throw new UnsupportedOperationException("pgjdbc's {fn timestampdiff} swaps bound parameters; generate native SQL instead");
+        return super.formatJdbcFunction(fn, arguments);
     }
 
     @Override
@@ -1136,29 +1135,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         return true;
     }
 
-
-    /* 25146: timestampdiff() inconsistent between sql server and postgres
-     * As of dec/2015 {fn timestampdiff()} is not implemented correctly in pgjdbc
-     */
-    private SQLFragment timestampdiff(SQLFragment... arguments)
-    {
-        if (arguments[0].getSQL().equals("SQL_TSI_DAY"))
-            return super.formatJdbcFunction("timestampdiff", arguments);
-
-        SQLFragment epoch = new SQLFragment("EXTRACT(epoch FROM ");
-        epoch.unsafeAppend("(").append(arguments[2]).unsafeAppend(") - (").append(arguments[1]).unsafeAppend("))");
-
-        if (arguments[0].getSQL().equals("SQL_TSI_SECOND"))
-            return epoch;
-
-        if (arguments[0].getSQL().equals("SQL_TSI_MINUTE"))
-            return epoch.unsafeAppend("/60.0");
-
-        if (arguments[0].getSQL().equals("SQL_TSI_HOUR"))
-            return epoch.unsafeAppend("/3600.0");
-
-        return super.formatJdbcFunction("timestampdiff", arguments);
-    }
 
     @Override
     public boolean supportsBatchGeneratedKeys()

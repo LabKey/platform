@@ -817,6 +817,8 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_HOUR, CAST('01 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2005' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 8784), // leap year
         new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('01 Jan 2003' AS TIMESTAMP), CAST('31 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 395),
         new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('31 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -395),
+        new MethodSqlTest("PARAMETERS(StartTs TIMESTAMP DEFAULT '2003-01-01', EndTs TIMESTAMP DEFAULT '2004-01-31') SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, StartTs, EndTs) AS INTEGER)", JdbcType.INTEGER, 395),
+        new MethodSqlTest("PARAMETERS(StartTs TIMESTAMP DEFAULT '2004-01-01 05:00', EndTs TIMESTAMP DEFAULT '2004-01-01 06:00') SELECT CAST(TIMESTAMPDIFF(SQL_TSI_SECOND, StartTs, EndTs) AS INTEGER)", JdbcType.INTEGER, 3600),
         // NOTE: SQL_TSI_WEEK, SQL_TSI_MONTH, SQL_TSI_QUARTER, and SQL_TSI_YEAR are NYI in PostsgreSQL TIMESTAMPDIFF
 
         new MethodSqlTest("SELECT UCASE('Fred')", JdbcType.VARCHAR, "FRED"),
@@ -1062,7 +1064,9 @@ d,seven,twelve,day,month,date,duration,guid
                 new SqlTest("SELECT __cte_two__() as two, __cte_three__() as three, __cte_two__() * __cte_three__() as six_simple, __cte_times__(__cte_two__(), __cte_three__()) as six_complex", 4, 1),
 
                 // JDBC escape sequences
-                new SqlTest("SELECT * FROM (SELECT CAST({ts '2023-06-02 00:00:00'} AS DATE) AS d) x WHERE d = {d '2023-06-02'}", 1, 1)
+                new SqlTest("SELECT * FROM (SELECT CAST({ts '2023-06-02 00:00:00'} AS DATE) AS d) x WHERE d = {d '2023-06-02'}", 1, 1),
+
+                new FailTest("SELECT TIMESTAMPDIFF(SQL_TSI_MONTH, CAST('01 Jan 2003' AS TIMESTAMP), CAST('01 Jan 2004' AS TIMESTAMP))")
             )
         );
 
