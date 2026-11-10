@@ -310,7 +310,7 @@ public class ListController extends SpringActionController
             boolean isPicklist = listDef.getCategory() != null;
             if (isPicklist)
             {
-                boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
+                boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId() && list.getContainer().hasPermission(getUser(), ManagePicklistsPermission.class);
                 return isOwnPicklist || (listDef.getCategory() == ListDefinition.Category.PublicPicklist && list.getContainer().hasPermission(getUser(), AdminPermission.class));
             }
 
@@ -337,9 +337,9 @@ public class ListController extends SpringActionController
             {
                 var list = form.getList();
                 if (canDelete(list.getContainer(), list.getListId()))
-                    form.getListContainerMap().add(Pair.of(list.getListId(), getContainer()));
+                    form.getListContainerMap().add(Pair.of(list.getListId(), list.getContainer()));
                 else
-                    errors.reject(ERROR_MSG, String.format("You do not have permission to delete list %s in container %s", list.getListId(), getContainer().getName()));
+                    errors.reject(ERROR_MSG, String.format("You do not have permission to delete list %s in container %s", list.getListId(), list.getContainer().getName()));
             }
             else
             {
