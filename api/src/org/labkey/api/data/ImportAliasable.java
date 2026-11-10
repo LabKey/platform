@@ -24,6 +24,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,27 +100,31 @@ public interface ImportAliasable
         }
 
         /**
+         * GH Issue 1585: the designer's import aliases followed by the framework's, for callers that report which
+         * headers resolve to a column. Nothing reads the result back into a save, so the two need not stay apart.
+         */
+        public static Set<String> allImportAliases(ImportAliasable property)
+        {
+            Set<String> aliases = new LinkedHashSet<>(property.getImportAliasSet());
+            aliases.addAll(property.getSystemImportAliasSet());
+            return aliases;
+        }
+
+        /**
          * Creates a mapping of many different possible names (actual name, label/caption, property URI, etc).
          * for a column to the column itself. Useful to provide flexibility in how the data is labeled during imports.
          */
         public static <T extends ImportAliasable> Map<String, T> createImportMap(List<T> properties, boolean includeMVIndicators)
         {
-            return createImportMap(properties, includeMVIndicators, null);
+            return createImportMap(properties, includeMVIndicators, null, Set.of());
         }
 
         /**
-         * GH Issue 1585: {@code ambiguousTokens}, when supplied, collects every token two properties tie for. Which one
-         * such a token resolves to is arbitrary, so a caller that cares can refuse to act on it.
-         */
-        public static <T extends ImportAliasable> Map<String, T> createImportMap(List<T> properties, boolean includeMVIndicators, @Nullable Set<String> ambiguousTokens)
-        {
-            return createImportMap(properties, includeMVIndicators, ambiguousTokens, Set.of());
-        }
-
-        /**
-         * GH Issue 1585: {@code kindSystemAliases} are the tokens the domain kind claims for its built-in columns, so a
-         * field that shadowed such a column cannot inherit its token. Pass what
-         * DataIteratorUtil.kindSystemImportAliases() returns for the same table, or nothing to skip the check.
+         * GH Issue 1585: {@code ambiguousTokens}, when supplied, collects every token two properties tie for at a rank
+         * the designer controls; which one such a token resolves to is arbitrary, so a caller that cares can refuse to
+         * act on it. {@code kindSystemAliases} are the tokens the domain kind claims for its built-in columns, so a
+         * field that shadowed such a column cannot inherit its token -- pass what
+         * DataIteratorUtil.kindSystemImportAliases() returns for the same table, or an empty set to skip the check.
          *
          * <p>A tie resolves to the first property here and to the last in DataIteratorUtil.buildTableMap; each keeps
          * what its own callers have always had, so read it out of {@code ambiguousTokens} rather than relying on either.
@@ -150,7 +155,7 @@ public interface ImportAliasable
                 put(ranked, ambiguousTokens, property.getName(), property, Rank.name);
             }
 
-            removeShadowedTokens(ranked, kindSystemAliases, Rank.systemAlias, null);
+            removeShadowedTokens(ranked, kindSystemAliases, Rank.systemAlias);
 
             Map<String, T> m = new CaseInsensitiveHashMap<>(ranked.size());
             ranked.forEach((token, pair) -> m.put(token, pair.first));
@@ -161,13 +166,20 @@ public interface ImportAliasable
          * GH Issue 1585: drops every token the kind claims for a built-in column that something lower-ranked got hold of.
          * A field named for such a column shadows it, taking the kind's token off the table, and leaving the token to
          * that field's own alias or label would write the server's value into it. A claim at {@code systemAliasRank} or
-         * above -- the built-in column itself, by alias or by name -- still wins. {@code onRemoved} sees each drop.
+         * above -- the built-in column itself, by alias or by name -- still wins.
          *
          * <p>Shared with DataIteratorUtil.buildTableMap, which ranks the same tokens over a TableInfo. The two keep
          * their own rank orders and tie-breaks, which their respective callers have always had.
          */
         public static <T, R extends Enum<R>> void removeShadowedTokens(Map<String, Pair<T, R>> ranked,
-                @NotNull Set<String> kindSystemAliases, R systemAliasRank, @Nullable BiConsumer<String, T> onRemoved)
+                @NotNull Set<String> kindSystemAliases, R systemAliasRank)
+        {
+            removeShadowedTokens(ranked, kindSystemAliases, systemAliasRank, (token, target) -> {});
+        }
+
+        /** As above, handing {@code onRemoved} each dropped token and the field that had claimed it. */
+        public static <T, R extends Enum<R>> void removeShadowedTokens(Map<String, Pair<T, R>> ranked,
+                @NotNull Set<String> kindSystemAliases, R systemAliasRank, @NotNull BiConsumer<String, T> onRemoved)
         {
             for (String token : kindSystemAliases)
             {
@@ -175,8 +187,7 @@ public interface ImportAliasable
                 if (null != claim && claim.second.compareTo(systemAliasRank) < 0)
                 {
                     ranked.remove(token);
-                    if (null != onRemoved)
-                        onRemoved.accept(token, claim.first);
+                    onRemoved.accept(token, claim.first);
                 }
             }
         }
@@ -220,12 +231,11 @@ public interface ImportAliasable
          * GH Issue 1585: a label derived from the property's own name is not a token anyone chose, so two of those
          * colliding is a field-naming coincidence with no label to correct. One chosen label makes it a design problem.
          */
-        private static <T extends ImportAliasable> boolean isDesignerToken(Rank rank, T existing, T incoming)
+        private static boolean isDesignerToken(Rank rank, ImportAliasable existing, ImportAliasable incoming)
         {
             if (rank == Rank.userAlias)
                 return true;
-            return rank == Rank.label && (ImportAliasable.isChosenLabel(existing) || ImportAliasable.isChosenLabel(incoming));
+            return rank == Rank.label && (isChosenLabel(existing) || isChosenLabel(incoming));
         }
-
     }
 }

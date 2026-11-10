@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CrosstabMember;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
@@ -42,7 +43,6 @@ import org.labkey.api.util.ExtUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -155,11 +155,9 @@ public class ReportingWriter
 
         if (cinfo != null)
         {
-            // GH Issue 1585: reports the framework's aliases alongside the designer's, as JsonWriter.getMetaData does
-            if (!cinfo.getImportAliasSet().isEmpty() || !cinfo.getSystemImportAliasSet().isEmpty())
+            Set<String> aliases = ImportAliasable.Helper.allImportAliases(cinfo);
+            if (!aliases.isEmpty())
             {
-                Set<String> aliases = new LinkedHashSet<>(cinfo.getImportAliasSet());
-                aliases.addAll(cinfo.getSystemImportAliasSet());
                 props.put("importAliases", new ArrayList<>(aliases));
             }
 

@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -196,12 +195,9 @@ public class JsonWriter
 
         if (cinfo != null)
         {
-            // GH Issue 1585: this describes which headers resolve to the column, so it reports the framework's aliases
-            // alongside the designer's. Nothing reads it back into a save, so the two need not stay distinguishable here.
-            if (!cinfo.getImportAliasSet().isEmpty() || !cinfo.getSystemImportAliasSet().isEmpty())
+            Set<String> aliases = ImportAliasable.Helper.allImportAliases(cinfo);
+            if (!aliases.isEmpty())
             {
-                Set<String> aliases = new LinkedHashSet<>(cinfo.getImportAliasSet());
-                aliases.addAll(cinfo.getSystemImportAliasSet());
                 props.put("importAliases", new ArrayList<>(aliases));
             }
 

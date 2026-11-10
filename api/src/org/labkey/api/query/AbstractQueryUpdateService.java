@@ -132,7 +132,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected final TableInfo _queryTable;
 
     private boolean _bulkLoad = false;
-    private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
+    private Map<String, ColumnInfo> _columnImportMap = null;
     private CaseInsensitiveHashSet _ambiguousImportTokens = null;
     private VirtualFile _att = null;
 
@@ -687,7 +687,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if(_columnImportMap == null)
         {
             _ambiguousImportTokens = new CaseInsensitiveHashSet();
-            _columnImportMap = (CaseInsensitiveHashMap<ColumnInfo>)ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false,
+            _columnImportMap = ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false,
                     _ambiguousImportTokens, DataIteratorUtil.kindSystemImportAliases(getQueryTable()));
         }
 

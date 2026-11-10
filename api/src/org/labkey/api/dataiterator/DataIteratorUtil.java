@@ -19,6 +19,7 @@ package org.labkey.api.dataiterator;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -30,8 +31,8 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -151,7 +152,7 @@ public class DataIteratorUtil
      */
     public static Map<String,ColumnInfo> createTableMap(TableInfo target, boolean useImportAliases)
     {
-        Map<String,Pair<ColumnInfo,MatchType>> targetAliasesMapWithMatchType = buildTableMap(target, useImportAliases).map;
+        Map<String,Pair<ColumnInfo,MatchType>> targetAliasesMapWithMatchType = buildTableMap(target, useImportAliases).map();
         Map<String, ColumnInfo> targetAliasesMap = new CaseInsensitiveHashMap<>();
 
         targetAliasesMapWithMatchType.forEach((tableIdentifier, tablePair) -> targetAliasesMap.put(tableIdentifier, tablePair.first));
@@ -193,17 +194,12 @@ public class DataIteratorUtil
         }
     }
 
-    protected static class TableMap
+    /**
+     * @param map resolved token -> target column
+     * @param ambiguous GH Issue 1585: token -> the fields that tie for it, none of which can be resolved to safely
+     */
+    protected record TableMap(Map<String, Pair<ColumnInfo, MatchType>> map, Map<String, Set<FieldKey>> ambiguous)
     {
-        final Map<String, Pair<ColumnInfo, MatchType>> map;
-        /** GH Issue 1585: token -> the fields that tie for it, none of which can be resolved to safely. */
-        final Map<String, Set<FieldKey>> ambiguous;
-
-        TableMap(Map<String, Pair<ColumnInfo, MatchType>> map, Map<String, Set<FieldKey>> ambiguous)
-        {
-            this.map = map;
-            this.ambiguous = ambiguous;
-        }
     }
 
     /**
@@ -228,23 +224,31 @@ public class DataIteratorUtil
 
         if (null == existing || rank.compareTo(existing.second) > 0)
         {
-            ranked.put(token, new Pair<>(col, rank));
             // A higher-ranked claim settles a tie recorded earlier, so the token is no longer ambiguous.
             ambiguous.remove(token);
         }
-        else if (rank == existing.second && !existing.first.getFieldKey().equals(col.getFieldKey()))
+        else if (rank != existing.second || existing.first.getFieldKey().equals(col.getFieldKey()))
         {
-            // Only a tie on a token the designer controls is a design problem worth refusing the import over. A tie on a
-            // fieldKey or propertyURI is a framework bug, and erroring on one would break imports that work today.
-            if (isDesignerToken(rank, existing.first, col))
-            {
-                ambiguous.computeIfAbsent(token, k -> new LinkedHashSet<>()).add(existing.first.getFieldKey());
-                ambiguous.get(token).add(col.getFieldKey());
-            }
-            // A tie resolves to the last claimant. That only decides a tie no one reports, since a reported one is
-            // dropped from the map below.
-            ranked.put(token, new Pair<>(col, rank));
+            // A lower-ranked claim loses the token, and a column re-claiming its own changes nothing.
+            return;
         }
+        // Only a tie on a token the designer controls is a design problem worth refusing the import over. A tie on a
+        // fieldKey or propertyURI is a framework bug, and erroring on one would break imports that work today.
+        else if (isDesignerToken(rank, existing.first, col))
+        {
+            Set<FieldKey> claimants = ambiguous.computeIfAbsent(token, k -> new LinkedHashSet<>());
+            claimants.add(existing.first.getFieldKey());
+            claimants.add(col.getFieldKey());
+        }
+
+        // A tie resolves to the last claimant, which only decides one no caller is told about: a reported tie is
+        // dropped from the map below.
+        ranked.put(token, new Pair<>(col, rank));
+    }
+
+    private static boolean isMvIndicatorName(String name)
+    {
+        return StringUtils.endsWithIgnoreCase(name, MvColumn.MV_INDICATOR_SUFFIX);
     }
 
 
@@ -310,8 +314,8 @@ public class DataIteratorUtil
 
         // Debug, not warn: buildTableMap runs on every coerce step and every cached-map miss, so a single broken design
         // would repeat these lines for the life of the deployment. matchColumns raises the user-visible error.
-        ImportAliasable.Helper.removeShadowedTokens(ranked, kindSystemAliases, TokenRank.systemAlias,
-                (token, col) -> LOG.debug("Import token '{}' in '{}' is claimed by field '{}' rather than the built-in column it belongs to; leaving it unresolved.",
+        ImportAliasable.Helper.removeShadowedTokens(ranked, kindSystemAliases, TokenRank.systemAlias, (token, col) ->
+                LOG.debug("Import token '{}' in '{}' is claimed by field '{}' rather than the built-in column it belongs to; leaving it unresolved.",
                         token, target.getName(), col.getName()));
 
         if (!ambiguous.isEmpty())
@@ -338,14 +342,14 @@ public class DataIteratorUtil
 
     private static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableMap tableMap, TableInfo target, Container container)
     {
-        Map<String,Pair<ColumnInfo,MatchType>> targetMap = tableMap.map;
+        Map<String,Pair<ColumnInfo,MatchType>> targetMap = tableMap.map();
         ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<>(input.getColumnCount()+1);
         matches.add(null);
 
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
             ColumnInfo from = input.getColumnInfo(i);
-            if (from.getName().toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+            if (isMvIndicatorName(from.getName()))
             {
                 matches.add(null);
                 continue;
@@ -381,6 +385,26 @@ public class DataIteratorUtil
     }
 
 
+    /**
+     * GH Issue 1585: a design where two fields claim one token resolves arbitrarily, so refuse the import rather than
+     * write to whichever field happened to win. Only data that actually carries the token is affected, so a domain
+     * configured before this check still imports everything else. Called only for a column nothing matched: one
+     * resolved by propertyURI or vocabulary lookup never consulted the token, so no ambiguity can reach it.
+     */
+    private static void reportAmbiguousDesign(TableMap tableMap, ColumnInfo from, ValidationException setupError)
+    {
+        if (isMvIndicatorName(from.getName()))
+            return;
+
+        Set<FieldKey> claimants = tableMap.ambiguous().get(from.getName());
+        if (null == claimants)
+            return;
+
+        String fields = claimants.stream().map(fk -> "'" + fk.getName() + "'").collect(Collectors.joining(", "));
+        setupError.addGlobalError(String.format(AMBIGUOUS_COLUMN_IN_DESIGN_ERROR, from.getName(), fields));
+    }
+
+
     /** throws ValidationException only if there are unresolvable ambiguity in the source->destination column mapping */
     public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, ValidationException setupError, @Nullable Container container)
     {
@@ -393,22 +417,8 @@ public class DataIteratorUtil
             Pair<ColumnInfo,MatchType> match = matches.get(i);
             if (null != match)
                 duplicatesMap.put(match.first.getFieldKey(), i);
-
-            // GH Issue 1585: a design where two fields claim one token resolves arbitrarily, so refuse the import rather
-            // than write to whichever field happened to win. Only data that actually carries the token is affected, so a
-            // domain configured before this check still imports everything else. A column _matchColumns already resolved
-            // by propertyURI or vocabulary lookup, or skipped as an MV indicator, never consults the token, so the
-            // ambiguity cannot reach it.
-            String fromName = input.getColumnInfo(i).getName();
-            if (null == match && !fromName.toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
-            {
-                Set<FieldKey> claimants = tableMap.ambiguous.get(fromName);
-                if (null != claimants)
-                {
-                    String fields = claimants.stream().map(FieldKey::getName).collect(Collectors.joining("', '"));
-                    setupError.addGlobalError(String.format(AMBIGUOUS_COLUMN_IN_DESIGN_ERROR, fromName, "'" + fields + "'"));
-                }
-            }
+            else
+                reportAmbiguousDesign(tableMap, input.getColumnInfo(i), setupError);
         }
 
         // handle duplicates, by priority
