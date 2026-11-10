@@ -115,7 +115,7 @@ public class ScriptableMap extends NativeJavaObject {
     @Override
     public Object get(String name, Scriptable start) {
         if (map == null || (reflect && super.has(name, start))) {
-            return super.get(name, start);
+            return StringFlatteningMethod.wrap(super.get(name, start));
         }
         return getInternal(name);
     }

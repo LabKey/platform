@@ -196,7 +196,7 @@ public class ScriptableList extends NativeJavaObject {
         if ("length".equals(name) && list != null) {
             return Integer.valueOf(list.size());
         }
-        return super.get(name, start);
+        return StringFlatteningMethod.wrap(super.get(name, start));
     }
 
     @Override

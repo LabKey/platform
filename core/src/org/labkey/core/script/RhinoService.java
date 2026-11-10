@@ -59,6 +59,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.NativeJavaClass;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.RhinoException;
@@ -233,6 +234,29 @@ public final class RhinoService
             {
                 setScriptExecutionTimeout(original, user);
             }
+        }
+
+        @Test
+        public void concatenatedStringInteropTest() throws Exception
+        {
+            String helper = "var helper = Packages." + RhinoService.class.getName() + ".TestCase; var n = 1; ";
+            ScriptEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
+
+            assertEquals("a1", engine.eval(helper + "helper.firstString(['a' + n]);"));
+            assertEquals("b1", engine.eval(helper + "helper.firstString([['b' + n]][0]);"));
+            assertEquals("c1", engine.eval(helper + "helper.mapValue({nested: {key: 'c' + n}}.nested);"));
+            assertEquals("d1", engine.eval(helper + "var list = new java.util.ArrayList(); list.addAll(['d' + n]); helper.firstString(list);"));
+            assertEquals("e1", engine.eval(helper + "helper.firstString(new java.util.ArrayList(['e' + n]));"));
+        }
+
+        public static String firstString(List<String> list)
+        {
+            return list.get(0);
+        }
+
+        public static String mapValue(Map<String, String> map)
+        {
+            return map.get("key");
         }
 
         private void setScriptExecutionTimeout(int seconds, User user)
@@ -1177,6 +1201,12 @@ class SandboxContextFactory extends ContextFactory
         {
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
+
+        @Override
+        public Scriptable wrapJavaClass(Context cx, Scriptable scope, Class<?> javaClass)
+        {
+            return new SandboxNativeJavaClass(scope, javaClass);
+        }
     }
 
     private static class SandboxNativeJavaObject extends NativeJavaObject
@@ -1191,7 +1221,28 @@ class SandboxContextFactory extends ContextFactory
         {
             if (DISALLOWED_METHODS.contains(name))
                 return NOT_FOUND;
-            return super.get(name, start);
+            return StringFlatteningMethod.wrap(super.get(name, start));
+        }
+    }
+
+    private static class SandboxNativeJavaClass extends NativeJavaClass
+    {
+        public SandboxNativeJavaClass(Scriptable scope, Class<?> javaClass)
+        {
+            super(scope, javaClass);
+        }
+
+        @Override
+        public Object get(String name, Scriptable start)
+        {
+            return StringFlatteningMethod.wrap(super.get(name, start));
+        }
+
+        @Override
+        public Scriptable construct(Context cx, Scriptable scope, Object[] args)
+        {
+            StringFlatteningMethod.flattenStrings(args);
+            return super.construct(cx, scope, args);
         }
     }
 }
