@@ -441,22 +441,22 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         assert sql.appendComment("<QueryLookupWrapper>");
 
         sql.unsafeAppend("SELECT ");
-        String comma = "";
+        boolean first = true;
         for (RelationColumn col : _selectedColumns.values())
         {
             if (0 == col.ref.count())
                 continue;
-            sql.append(comma);
+            sql.unsafeAppend(first ? "" : ", ");
             if (col instanceof QueryLookupColumn)
                 col.declareJoins(_source.getAlias(), joins);
             SQLFragment f = col.getInternalSql();
-            if (f.getSQL().length() > 40)
+            if (f.getSqlCharSequence().length() > 40)
                 sql.unsafeAppend("\n").append(f).unsafeAppend("\n");
             else
                 sql.append(f);
             sql.unsafeAppend(" AS ");
             sql.appendIdentifier(col.getAlias());
-            comma = ", ";
+            first = false;
         }
         sql.unsafeAppend("\nFROM ");
         sql.append(sourceFromSql);

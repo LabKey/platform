@@ -161,6 +161,6 @@ public class QResolveTableColumn extends QIfDefined
     @Override
     public @NotNull JdbcType getJdbcType()
     {
-        return null!=_column ? JdbcType.VARCHAR : _column.getJdbcType();
+        return null==_column ? JdbcType.VARCHAR : _column.getJdbcType();
     }
 }

@@ -31,8 +31,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Collapsible;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTreeManager;
-import org.labkey.api.view.SimpleRenderableDisplayElement;
 import org.labkey.api.view.VBox;
+import org.labkey.experiment.view.SimpleRenderableDisplayElement;
 import org.springframework.validation.BindException;
 
 import static org.labkey.api.util.DOM.SPAN;

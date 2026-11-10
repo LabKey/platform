@@ -27,7 +27,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
@@ -35,6 +34,8 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.usageMetrics.AssayMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -154,12 +155,10 @@ public class DataTransformService
                             "the configuration for this assay design.");
                 }
 
-                logIfInTransaction(context, operation);
-
                 if (operation == TransformOperation.UPDATE)
-                    SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForUpdate");
+                    SimpleMetricsService.get().increment(AssayMetricArea.TRANSFORM_SCRIPT, "executionCountForUpdate");
                 if (operation == TransformOperation.INSERT)
-                    SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForInsert");
+                    SimpleMetricsService.get().increment(AssayMetricArea.TRANSFORM_SCRIPT, "executionCountForInsert");
 
                 // TODO: don't bother slurping the contents of binary scripts
                 StringBuilder sb = new StringBuilder();
@@ -297,17 +296,6 @@ public class DataTransformService
         return prepared.getResult();
     }
 
-    private void logIfInTransaction(AssayRunUploadContext<?> context, TransformOperation operation)
-    {
-        if (LOG.isDebugEnabled()
-                && operation == TransformOperation.INSERT
-                && context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
-                && ExperimentService.get().getSchema().getScope().isTransactionActive())
-        {
-            LOG.debug("Transform script for assay '{}' is running inside a database transaction; callbacks from the script into the server can deadlock", context.getProtocol().getName(), new Throwable());
-        }
-    }
-
     public void addStandardParameters(@Nullable HttpServletRequest request, @Nullable Container container, @Nullable FileLike scriptFile, @Nullable String apiKey, @NotNull Map<String, String> paramMap)
     {
         if (scriptFile != null)
@@ -316,7 +304,7 @@ public class DataTransformService
             if (srcDir != null && srcDir.exists())
                 paramMap.put(SRC_DIR_REPLACEMENT, srcDir.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
         }
-        if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+        if (OptionalFeatureService.get().isFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
         {
             paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(request, apiKey));
             paramMap.put(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(request));

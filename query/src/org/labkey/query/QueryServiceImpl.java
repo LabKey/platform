@@ -51,6 +51,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -67,9 +68,7 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SQLParameterException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -119,7 +118,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
@@ -150,6 +149,7 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.data.SQLParameterException;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.ServerManager;
 import org.labkey.query.olap.rolap.RolapCubeDef;
@@ -359,7 +359,7 @@ public class QueryServiceImpl implements QueryService
         return new SQLFragment()
             .unsafeAppend("(").appendIdentifier(col.getAlias())
             .unsafeAppend(")")
-            .append(negate ? " NOT" : "")
+            .unsafeAppend(negate ? " NOT" : "")
             .unsafeAppend(" IN (")
             .unsafeAppend(" SELECT ")
             .append(t.getColumns().getFirst().getValueSql("_"))
@@ -519,12 +519,12 @@ public class QueryServiceImpl implements QueryService
             }
             String expression = (String) getParamVals()[0];
             if (isBlank(expression))
-                return new SQLFragment("1=1");
+                return SQLFragment.unsafe("1=1");
             // reparse because we have a dialect now
             List<QueryParseException> errors = new ArrayList<>();
             QExpr expr = new SqlParser(dialect, null).parseExpr(expression, errors);
             if (null == expr || !errors.isEmpty())
-                return new SQLFragment("0=1"); // UNDONE: error reporting
+                return SQLFragment.unsafe("0=1"); // UNDONE: error reporting
             QExpr bound = bind(expr, columnMap);
             SQLFragment ret = null;
             if (null != bound && query.getParseErrors().isEmpty())
@@ -3464,19 +3464,19 @@ public class QueryServiceImpl implements QueryService
     @Override
     public boolean isProductFoldersAllFolderScopeEnabled()
     {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS);
     }
 
     @Override
     public boolean isProductFoldersDataListingScopedToProject()
     {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
     }
 
     @Override
     public boolean isTriggerManagedColumnsEnabled()
     {
-        return !AppProps.getInstance().isOptionalFeatureEnabled(DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS);
+        return !OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert

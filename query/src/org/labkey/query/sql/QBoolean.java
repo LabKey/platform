@@ -44,13 +44,13 @@ public class QBoolean extends QExpr implements IConstant
     public void appendSql(SqlBuilder builder, Query query)
     {
         SqlDialect d = builder.getDialect();
-        builder.append(getValue() ? d.getBooleanTRUE() : d.getBooleanFALSE());
+        builder.appendValue(getValue(), d);
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(getValue().toString());
+        builder.unsafeAppend(getValue() ? "true" : "false");
     }
 
     @Override

@@ -352,7 +352,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                     .create();
 
             // GH Issue 1707: run transform scripts before the transaction so their callbacks into the server can't deadlock with it
-            try (PreparedTransform ignored = provider.getRunCreator().prepareTransform(uploadContext, forceAsync);
+            try (PreparedTransform ignored = importInBackground ? null : provider.getRunCreator().prepareTransform(uploadContext);
                  DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(DefaultAssayRunCreator.protocolImportLocks(importInBackground)))
             {
                 Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();

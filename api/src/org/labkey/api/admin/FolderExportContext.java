@@ -66,9 +66,10 @@ public class FolderExportContext extends AbstractFolderContext
 
         // If the container is a Dataspace folder type and we are requesting exporting the study objects,
         // verify that the user is allowed to export the study for this Dataspace configuration.
-        if (c.isDataspace() && dataTypes.contains("Study"))
+        StudyService studyService = StudyService.get();
+        if (null != studyService && studyService.isDataspace(c) && dataTypes.contains("Study"))
         {
-            Study study = StudyService.get().getStudy(c);
+            Study study = studyService.getStudy(c);
             if (study != null && !study.allowExport(getUser()))
                 throw new IllegalStateException("Cannot export study from this Dataspace folder.");
         }

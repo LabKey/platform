@@ -1227,7 +1227,7 @@ public class OlapController extends SpringActionController
         }
         // TODO optimize, this is round-about since cf probably implements getIds() internally
         DbSchema core = CoreSchema.getInstance().getSchema();
-        SQLFragment sqlf = new SQLFragment("SELECT entityid FROM core.containers WHERE ");
+        SQLFragment sqlf = SQLFragment.unsafe("SELECT entityid FROM core.containers WHERE ");
         sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), new HashMap<>()));
         ArrayList<String> list = new SqlSelector(core, sqlf).getArrayList(String.class);
         return Collections.unmodifiableCollection(list);

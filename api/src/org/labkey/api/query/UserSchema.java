@@ -53,7 +53,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.VisualizationProvider;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -392,12 +391,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     public boolean canCreate()
     {
         return getContainer().hasPermission(getUser(), UpdatePermission.class);
-    }
-
-    @Nullable @Override
-    public VisualizationProvider<?> createVisualizationProvider()
-    {
-        return null;
     }
 
     public ActionURL urlFor(QueryAction action)

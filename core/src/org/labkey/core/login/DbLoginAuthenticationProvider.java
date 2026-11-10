@@ -30,7 +30,6 @@ import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationPro
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -45,6 +44,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.login.DbLoginManager.Key;
+import org.labkey.core.security.PasswordExpiration;
 
 import java.util.Collection;
 import java.util.EmptyStackException;
@@ -174,7 +174,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                     PasswordExpiration expiration = configuration.getExpiration();
                     User user2 = user;
 
-                    if (expiration.hasExpired(() -> LoginManager.getLastChanged(user2)))
+                    if (expiration.hasExpired(() -> LoginManager.getPasswordLastChanged(user2)))
                     {
                         return getChangePasswordResponse(configuration, user, returnUrl, FailureReason.expired);
                     }

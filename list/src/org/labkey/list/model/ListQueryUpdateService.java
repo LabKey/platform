@@ -51,13 +51,12 @@ import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ImportProgress;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyValidatorDef;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -81,6 +80,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.test.TestTimeout;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -613,7 +613,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != value)
         {
-            for (IPropertyValidator validator : prop.getValidators())
+            for (PropertyValidatorDef validator : prop.getValidators())
             {
                 if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache))
                     return false;
@@ -760,7 +760,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
             tx.commit();
 
-            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "list");
+            SimpleMetricsService.get().increment(ExperimentMetricArea.MOVE_ENTITIES, "list");
         }
 
         return moveRowsCounts(fileAttachmentsMovedCount, listAuditEventsCreatedCount, listAuditEventsMovedCount, listRecordsCount, queryAuditEventsMovedCount);

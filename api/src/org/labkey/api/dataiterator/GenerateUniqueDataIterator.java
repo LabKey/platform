@@ -42,6 +42,7 @@ import java.util.function.Supplier;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 
+// TODO: replace the mark/read-ahead/reset with LookAheadDataIterator (added for GH Issue 1746)
 public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
 {
     public static final String EXISTING_RECORD_COLUMN_NAME = "_" + GenerateUniqueDataIterator.class.getName() + "#EXISTING_RECORD_COLUMN_NAME";

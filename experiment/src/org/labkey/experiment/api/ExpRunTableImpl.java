@@ -92,6 +92,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ProductFeature;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
@@ -1180,7 +1181,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         throw new BatchValidationException(new ValidationException(e.getMessage()));
                     }
                 }
-                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "assayRuns");
+                SimpleMetricsService.get().increment(ExperimentMetricArea.MOVE_ENTITIES, "assayRuns");
             }
 
             return new HashMap<>(allContainerResponse);

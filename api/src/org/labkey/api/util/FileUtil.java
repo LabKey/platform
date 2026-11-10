@@ -885,12 +885,15 @@ public class FileUtil
 
 
     /** Only returns a child path */
-    public static FileLike appendPath(FileLike dir, org.labkey.api.util.Path path)
+    public static FileLike appendPath(FileLike dir, org.labkey.api.util.Path originalPath)
     {
-        path = path.normalize();
-        if (!path.isEmpty() && "..".equals(path.get(0)))
-            throw new InvalidPathReferenceException(path.toString(), "Path to parent not allowed");
-        return dir.resolveFile(path);
+        // normalize() returns null rather than a path with a leading ".."
+        org.labkey.api.util.Path path = originalPath.normalize();
+        assert path == null || path.isEmpty() || !path.get(0).equals("..");
+        if (path == null || (!path.isEmpty() && "..".equals(path.get(0))))
+            throw new InvalidPathReferenceException(originalPath.toString(), "Path to parent not allowed");
+        // resolveFile() resolves an absolute path from the file system root, not from dir
+        return dir.resolveFile(path.relative());
     }
 
 
@@ -2478,6 +2481,18 @@ quickScan:
             assertNull("Combined extension should be allowed, but wasn't", checkExtension("multi.tar.a_v", mockProps));
             assertNull("No extension should be allowed, but wasn't", checkExtension("No extension", mockProps));
             assertNull("Numeric extension should be allowed", checkExtension("test.1", mockProps));
+        }
+
+        @Test
+        public void testAppendPathFileLike()
+        {
+            FileLike sub = new FileSystemLike.Builder(ROOT).root().resolveChild("sub");
+            FileLike x = sub.resolveChild("x");
+            assertEquals(x, appendPath(sub, org.labkey.api.util.Path.parse("a/../x")));
+            assertEquals(x, appendPath(sub, org.labkey.api.util.Path.parse("/x")));
+            assertEquals(sub, appendPath(sub, org.labkey.api.util.Path.parse("/")));
+            assertThrows(InvalidPathReferenceException.class, () -> appendPath(sub, org.labkey.api.util.Path.parse("../x")));
+            assertThrows(InvalidPathReferenceException.class, () -> appendPath(sub, org.labkey.api.util.Path.parse("a/../../x")));
         }
 
         @Test

@@ -238,6 +238,13 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
+    public @NotNull Set<String> getReservedNameExemptions()
+    {
+        // ensureDomainProperties adds these to every plate metadata domain, so they are ours, not user-chosen.
+        return MANDATORY_PROPS;
+    }
+
+    @Override
     public @Nullable Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);

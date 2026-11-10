@@ -42,6 +42,8 @@ import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
@@ -63,7 +65,6 @@ import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.management.StandardMBean;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -136,6 +137,8 @@ public class SearchModule extends DefaultModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
+        SimpleMetricsService.get().describeFeatureAreas(SearchMetricArea.values());
+
         ModuleLoader.getInstance().handleStartupProperties(
             new StandardStartupPropertyHandler<>("SearchSettings", SearchStartupProperties.class)
             {
@@ -177,16 +180,14 @@ public class SearchModule extends DefaultModule
 
         FolderManagement.addTab(FolderManagement.TYPE.FolderManagement, "Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
 
-        UsageMetricsService.get().registerUsageMetrics(getName(), () ->
+        UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> metrics.put("fullTextSearches", () ->
         {
             // Report the total number of search entries in the audit log
             User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.getUnsafeEverythingFilter());
-
-            long count = new TableSelector(auditTable).getRowCount();
-            return Collections.singletonMap("fullTextSearches", count);
-        });
+            return new TableSelector(auditTable).getRowCount();
+        }, "Full-text search events in the audit log across all containers; drops if the audit log is purged", UsageMetrics.Kind.CUMULATIVE));
     }
 
     @Override

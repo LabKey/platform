@@ -92,6 +92,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
@@ -148,6 +149,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -211,29 +213,32 @@ public class SecurityManager
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return () -> {
-            MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
-            Set<Role> siteRoles = RoleManager.getSiteRoles();
-            for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
-            {
-                Role role = assignment.getRole();
-                if (siteRoles.contains(role))
+        return metrics -> {
+            Supplier<Map<String, Integer>> supplier = () -> {
+                MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
+                Set<Role> siteRoles = RoleManager.getSiteRoles();
+                for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
                 {
-                    UserPrincipal principal = getPrincipal(assignment.getUserId());
-                    if (principal != null && principal.isActive())
+                    Role role = assignment.getRole();
+                    if (siteRoles.contains(role))
                     {
-                        switch (principal.getPrincipalType())
+                        UserPrincipal principal = getPrincipal(assignment.getUserId());
+                        if (principal != null && principal.isActive())
                         {
-                            case USER -> mvm.put(role, principal);
-                            case GROUP -> mvm.putAll(role, getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS));
+                            switch (principal.getPrincipalType())
+                            {
+                                case USER -> mvm.put(role, principal);
+                                case GROUP ->
+                                        mvm.putAll(role, getAllGroupMembers((Group) principal, MemberType.ACTIVE_USERS));
+                            }
                         }
                     }
                 }
-            }
-            Map<String, Integer> roleCounts = mvm.keySet().stream()
-                .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
+                return mvm.keySet().stream()
+                    .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
+            };
 
-            return Map.of("SiteRoleUserCounts", roleCounts);
+            return metrics.put("SiteRoleUserCounts", supplier, "Active users holding each site-level role, directly or through group membership");
         };
     }
 
@@ -713,7 +718,7 @@ public class SecurityManager
 
             if (null != transformSessionId)
             {
-                if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+                if (OptionalFeatureService.get().isFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
                 {
                     apiKey = transformSessionId;
                     AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' header instead");
@@ -746,7 +751,7 @@ public class SecurityManager
 
                 if (apiKeyParameter != null)
                 {
-                    if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
+                    if (OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
                     {
                         apiKey = apiKeyParameter;
                         shouldSetSessionCookie = false;
@@ -1204,25 +1209,19 @@ public class SecurityManager
         return displayName;
     }
 
-    // Passes no timeout duration. Should be called only by MacCoss SignUpManager, which doesn't implement expiration.
-    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
-    {
-        sendEmail(c, fromUser, message, to, verificationURL, null);
-    }
-
-    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout) throws ConfigurationException, MessagingException
+    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout) throws ConfigurationException, MessagingException
     {
         MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
         MailHelper.send(m, fromUser, c);
     }
 
-    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout, Writer out) throws MessagingException
+    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout, Writer out) throws MessagingException
     {
         MimeMessage m = createMessage(c, fromUser, message, to, verificationURL, linkTimeout);
         MailHelper.renderHtml(m, message.getType(), out);
     }
 
-    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @Nullable Duration linkTimeout) throws MessagingException
+    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, @NotNull Duration linkTimeout) throws MessagingException
     {
         try
         {
@@ -1445,6 +1444,9 @@ public class SecurityManager
 
         if (membersToDelete != null && !membersToDelete.isEmpty())
         {
+            if (group.isSystemGroup())
+                throw new IllegalArgumentException("Can't remove a member from the " + group.getName() + " group");
+
             SQLFragment sql = new SQLFragment(
             "DELETE FROM " + core.getTableInfoMembers() + "\nWHERE GroupId = ? AND UserId ");
             sql.add(groupId);
@@ -2684,7 +2686,7 @@ public class SecurityManager
         try
         {
             String verification;
-            Duration linkTimeout;
+            final Duration linkTimeout;
 
             if (loginExists)
             {
@@ -3110,6 +3112,9 @@ public class SecurityManager
             @Override
             boolean accept(/* Must be a sequential stream (NOT parallel) */ Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
             {
+                // Check invariants: stream must not be parallel and required.size() < 2 should route through ANY
+                assert !granted.isParallel() && required.size() > 1;
+
                 // Create a mutable copy to track missing elements
                 Set<Class<? extends Permission>> remainder = new HashSet<>(required.size());
                 remainder.addAll(required);
@@ -3299,7 +3304,7 @@ public class SecurityManager
                 assertNotNull(verifiedUser);
                 assertEquals(user, verifiedUser);
 
-                String stored = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT Verification FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()).getObject(String.class);
+                String stored = new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT PasswordVerification FROM ").append(CoreSchema.getInstance().getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", user.getUserId())).getObject(String.class);
                 assertNotNull(stored);
                 assertNotEquals("Verification token stored in plain text", status.getVerification(), stored);
 
@@ -3348,6 +3353,78 @@ public class SecurityManager
             finally
             {
                 UserManager.deleteUser(user.getUserId());
+            }
+        }
+
+        // GH Issue 1778
+        @Test
+        public void testEmailChangeTokens() throws Exception
+        {
+            ValidEmail email;
+            ValidEmail newEmail;
+
+            do
+            {
+                String rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
+                email = new ValidEmail(rawEmail);
+                newEmail = new ValidEmail("changed_" + rawEmail);
+            }
+            while (UserManager.getUser(email) != null || UserManager.getUser(newEmail) != null);
+
+            User user = null;
+
+            try
+            {
+                NewUserStatus status = addUser(email, null);
+                user = status.getUser();
+                String setup = status.getVerification();
+
+                String emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                assertEquals("Email change request cancelled the pending setup link", user, LoginManager.verify(setup));
+                assertNull("Email-change token accepted as a set-password token", LoginManager.verify(emailChange));
+                assertTrue(LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertFalse("Setup token accepted as an email-change token", LoginManager.getVerifyEmail(user).isVerified(setup));
+
+                LoginManager.clearVerification(user);
+                assertTrue("Pending email change reported as an unverified user", LoginManager.isVerified(user));
+                assertTrue("Clearing the password token cancelled the email change", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+
+                String reset = LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
+                assertTrue("Reset cancelled the pending email change", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+
+                LoginManager.clearEmailVerification(user);
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+                assertFalse(LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertEquals("Clearing the email change cancelled the reset link", user, LoginManager.verify(reset));
+
+                emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                LoginManager.setPassword(user, generateStrongPassword(user));
+                assertFalse("Setting a password left the pending email change usable", LoginManager.getVerifyEmail(user).isVerified(emailChange));
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+
+                emailChange = LoginManager.createTempPassword();
+                LoginManager.requestEmailChange(user, newEmail, emailChange, user);
+                try
+                {
+                    UserManager.changeEmail(user, user, false, newEmail.getEmailAddress(), reset);
+                    fail("Reset token completed an email change");
+                }
+                catch (UserManagementException expected)
+                {
+                }
+                assertEquals(email.getEmailAddress(), UserManager.getUser(user.getUserId()).getEmail());
+
+                UserManager.changeEmail(user, user, false, newEmail.getEmailAddress(), emailChange);
+                assertEquals(newEmail.getEmailAddress(), UserManager.getUser(user.getUserId()).getEmail());
+                assertNull("Reset link sent to the old address outlived the email change", LoginManager.verify(reset));
+                assertNull(LoginManager.getVerifyEmail(user).requestedEmail());
+            }
+            finally
+            {
+                if (null != user)
+                    UserManager.deleteUser(user.getUserId());
             }
         }
 

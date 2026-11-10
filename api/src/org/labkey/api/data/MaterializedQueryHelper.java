@@ -624,13 +624,24 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         if (Materialized.LoadingState.BEFORELOAD == m._loadingState.get())
             return -1;
 
-        // execute incremental update
-        SQLFragment copy = new SQLFragment(sqlf);
-        copy.setSqlUnsafe(sqlf.getSQL().replace("${NAME}", m._tableName));
+        return upsert(m, sqlf);
+    }
+
+    /** Execute an incremental update against this specific view's table, skipping the cache lookup. */
+    protected int upsert(Materialized m, SQLFragment sqlf)
+    {
         try (var ignored = SpringActionController.ignoreSqlUpdates())
         {
-            return new SqlExecutor(_scope).execute(copy);
+            return new SqlExecutor(_scope).execute(resolveTableName(m, sqlf));
         }
+    }
+
+    /** Replace ${NAME} with the view's temp table name. */
+    protected static SQLFragment resolveTableName(Materialized m, SQLFragment sqlf)
+    {
+        SQLFragment copy = new SQLFragment(sqlf);
+        copy.setSqlUnsafe(sqlf.getSQL().replace("${NAME}", m._tableName));
+        return copy;
     }
 
     /* used by FLow directly for some reason */

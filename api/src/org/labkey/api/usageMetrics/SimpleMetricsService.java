@@ -15,6 +15,7 @@
  */
 package org.labkey.api.usageMetrics;
 
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.services.ServiceRegistry;
 
 public interface SimpleMetricsService
@@ -36,6 +37,7 @@ public interface SimpleMetricsService
 
     /**
      * Increment the persistent counter associated with the given module, feature area, and metric name combination.
+     * Prefer {@link #increment(SimpleMetricArea, String)} unless the feature area's name is computed.
      * The total will be reported to mothership in this module's "simpleMetricCounts" node. Isn't that simple?
      * @param moduleName Module name. Must match a currently deployed module's name, though we'll grudgingly accept
      *                   casing differences vs. the module's canonical name. But just use the module's name constant so
@@ -48,4 +50,33 @@ public interface SimpleMetricsService
      * @return new value for this counter
      */
     long increment(String moduleName, String featureArea, String metricName);
+
+    default long increment(SimpleMetricArea area, String metricName)
+    {
+        SimpleMetricArea.Definition definition = area.getDefinition();
+        return increment(definition.moduleName(), definition.areaName(), metricName);
+    }
+
+    /**
+     * Describe what a feature area's metrics count, for the usage metric descriptions. Its metric names share the
+     * description, so this works for names only known at runtime. Call from module startup.
+     */
+    default void describeFeatureArea(String moduleName, String featureArea, String description)
+    {
+    }
+
+    /** Describes a feature area counted by core-incrementClientSideMetricCount, which records it under Core */
+    default void describeClientSideFeatureArea(String featureArea, String description)
+    {
+        describeFeatureArea(DefaultModule.CORE_MODULE_NAME, featureArea, description);
+    }
+
+    default void describeFeatureAreas(SimpleMetricArea... areas)
+    {
+        for (SimpleMetricArea area : areas)
+        {
+            SimpleMetricArea.Definition definition = area.getDefinition();
+            describeFeatureArea(definition.moduleName(), definition.areaName(), definition.description());
+        }
+    }
 }

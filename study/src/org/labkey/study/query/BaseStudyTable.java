@@ -576,16 +576,10 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
         private void appendCommentCaseSQL(SQLFragment sb, List<Pair<SQLFragment, SQLFragment>> fields)
         {
-            String concat = "";
-
-            sb.unsafeAppend(" WHEN ");
+            var and = SQLFragment.sep(" WHEN ", "AND ", "THEN ");
             for (Pair<SQLFragment, SQLFragment> field : fields)
-            {
-                sb.unsafeAppend(concat).append(field.first).unsafeAppend(" IS NOT NULL ");
-                concat = "AND ";
-            }
-
-            sb.unsafeAppend("THEN ");
+                sb.append(and.next()).append(field.first).unsafeAppend(" IS NOT NULL ");
+            sb.append(and.last());
 
             SQLFragment[] castFields = new SQLFragment[fields.size()];
             SQLFragment sep = SQLFragment.unsafe("''");
@@ -761,7 +755,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     {
         checkedPermissions.add(perm);
         // Most tables should not be editable in Dataspace
-        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
+        if (!perm.equals(ReadPermission.class) && StudyService.get().isDataspace(getContainer()))
             return false;
         return hasPermissionOverridable(user, perm);
     }

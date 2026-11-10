@@ -34,6 +34,7 @@ import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Aggregate.Result.FormattedValue;
 import org.labkey.api.query.AggregateRowConfig;
+import org.labkey.api.query.ChartDesignerUrls;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -48,6 +49,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM;
@@ -73,7 +75,6 @@ import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.HtmlWriter.AttributeValue;
 import org.springframework.validation.Errors;
@@ -1461,7 +1462,7 @@ public class DataRegion extends DisplayElement
         dataRegionJSON.put("rowCount", _rowCount);
         dataRegionJSON.put("showPagination", getShowPagination());
         dataRegionJSON.put("showPaginationCount", getShowPaginationCount());
-        if (getShowPaginationCount() && AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
+        if (getShowPaginationCount() && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
         {
             // Issue 51036: load totalRows count async for DataRegions
             dataRegionJSON.put("showPaginationCount", false);
@@ -1490,9 +1491,9 @@ public class DataRegion extends DisplayElement
             ignoreViewFilter = getSettings().getIgnoreViewFilter();
         dataRegionJSON.put("ignoreViewFilter", ignoreViewFilter);
 
-        VisualizationUrls visUrlProvider = PageFlowUtil.urlProviderOptional(VisualizationUrls.class);
-        if (visUrlProvider != null)
-            dataRegionJSON.put("chartWizardURL", visUrlProvider.getGenericChartDesignerURL(ctx.getContainer(), user, getSettings(), null));
+        ChartDesignerUrls chartUrls = PageFlowUtil.urlProviderOptional(ChartDesignerUrls.class);
+        if (chartUrls != null)
+            dataRegionJSON.put("chartWizardURL", chartUrls.getGenericChartDesignerURL(ctx.getContainer(), user, getSettings()));
 
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
@@ -1646,7 +1647,7 @@ public class DataRegion extends DisplayElement
     private void renderAggregatesTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
     {
         // Issue 51036: load totalRows count async for DataRegions
-        boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
+        boolean asyncTotalRows = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
         boolean showPaginationCount = getShowPaginationCount() && !asyncTotalRows;
 
         Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx, showPaginationCount);
