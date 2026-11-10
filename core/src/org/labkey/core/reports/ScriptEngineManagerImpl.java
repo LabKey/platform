@@ -66,6 +66,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.reports.report.python.PythonScriptEngine;
 import org.labkey.core.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.core.reports.report.r.RserveScriptEngineFactory;
+import org.labkey.core.script.RhinoLanguageVersion;
 import org.labkey.core.script.RhinoScriptEngine;
 
 import javax.script.ScriptEngine;
@@ -594,6 +595,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             String key = makeKey(def.getExtensions());
 
             setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
+
+            RhinoLanguageVersion version = RhinoLanguageVersion.fromVersion(def.getLanguageVersion());
+            if (version != null)
+                setProp(Props.languageVersion.name(), String.valueOf(version.getVersion()), key);
         }
 
         // Issue 22354: It's a little heavy-handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
@@ -619,6 +624,12 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     private static String makeKey(String[] engineExtensions)
     {
         return ENGINE_DEF_MAP_PREFIX + StringUtils.join(engineExtensions, ',');
+    }
+
+    public static @NotNull RhinoLanguageVersion getRhinoLanguageVersion()
+    {
+        RhinoLanguageVersion version = RhinoLanguageVersion.fromVersion(getProp(Props.languageVersion.name(), makeKey(new String[]{"js"})));
+        return version != null ? version : RhinoLanguageVersion.DEFAULT;
     }
 
     private static ExternalScriptEngineDefinition createDefinition(Map<String, String> props, boolean isFromStartupProps)

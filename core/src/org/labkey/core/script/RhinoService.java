@@ -50,6 +50,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
+import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -330,7 +331,7 @@ class RhinoFactory implements ScriptService
     public String getLanguageName() { return "javascript"; }
 
     @Override
-    public String getLanguageVersion() { return String.valueOf(Context.VERSION_ES6); }
+    public String getLanguageVersion() { return String.valueOf(ScriptEngineManagerImpl.getRhinoLanguageVersion().getVersion()); }
 
     @Override
     public Object getParameter(String key)
@@ -780,7 +781,6 @@ class RhinoEngine extends RhinoScriptEngine
                 
                 try (Context cx = Context.enter())
                 {
-                    cx.setLanguageVersion(Context.VERSION_ES6);
                     topLevel = new ImporterTopLevel(cx, false);
                     MemTracker.getInstance().put(topLevel);
 
@@ -1123,7 +1123,7 @@ class SandboxContextFactory extends ContextFactory
         private SandboxContext(SandboxContextFactory factory)
         {
             super(factory);
-            setLanguageVersion(Context.VERSION_ES6); // TODO: New version for now. Make configurable.
+            setLanguageVersion(ScriptEngineManagerImpl.getRhinoLanguageVersion().getVersion());
             startTime = HeartBeat.currentTimeMillis();
             timeoutSeconds = AppProps.getInstance().getScriptExecutionTimeout();
         }
