@@ -61,6 +61,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
     saveEditedModal = (): void => {
         const { modalType, authConfig, configType, closeModal, updateAuthRowsAfterSave } = this.props;
 
+        this.setState({ errorMessage: '' });
         if (this.areRequiredFieldsEmpty()) {
             return;
         }
@@ -98,6 +99,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
     areRequiredFieldsEmpty = (): boolean => {
         // Issue 50964: Save incomplete disabled authentication configurations
         if (!this.state.fieldValues.enabled) {
+            this.setState({ emptyRequiredFields: [] });
             return false;
         }
 
@@ -110,12 +112,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         }, []);
 
         const emptyRequiredFields = requiredFields.filter(name => this.state.fieldValues[name] == '');
-        if (emptyRequiredFields.length > 0) {
-            this.setState({ emptyRequiredFields });
-            return true;
-        } else {
-            return false;
-        }
+        this.setState({ emptyRequiredFields });
+        return emptyRequiredFields.length > 0;
     };
 
     onToggle = (): void => {
