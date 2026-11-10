@@ -21,12 +21,12 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.Formats.SafeDecimalFormat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 import java.io.PrintWriter;
-import java.text.NumberFormat;
 import java.util.Map;
 
 class ActionsView extends HttpView
@@ -212,7 +212,7 @@ class ActionsView extends HttpView
         renderTd(out, d, Formats.commaf0);
     }
 
-    private void renderTd(PrintWriter out, Number d, NumberFormat format)
+    private void renderTd(PrintWriter out, Number d, SafeDecimalFormat format)
     {
         out.print("<td align=\"right\">");
         out.print(format.format(d));
