@@ -133,11 +133,9 @@ public class QQuery extends QExpr
         SQLFragment f = _select.getSql();
         if (null == f)
         {
-            if (null != _select && !_select.getParseErrors().isEmpty())
-                return;
-            String message = "Unexpected error parsing subselect: " + getSourceText();
-            _select.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
-            builder.unsafeAppend("#ERROR:").append(message).unsafeAppend("#");
+            if (_select.getParseErrors().isEmpty())
+                _select.getParseErrors().add(new QueryParseException("Unexpected error parsing subselect: " + getSourceText(), null, getLine(), getColumn()));
+            builder.appendError();
             return;
         }
         builder.unsafeAppend("(");
@@ -165,6 +163,8 @@ public class QQuery extends QExpr
     public Collection<AbstractQueryRelation.RelationColumn> gatherInvolvedSelectColumns(Collection<AbstractQueryRelation.RelationColumn> collect)
     {
         var relation = getQuerySelect();
+        if (null == relation)
+            return collect;
         AbstractQueryRelation.RelationColumn col = relation.getFirstColumn();
         if (null != col)
             col.gatherInvolvedSelectColumns(collect);

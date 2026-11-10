@@ -190,6 +190,7 @@ import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JSoupUtil;
@@ -454,6 +455,7 @@ public class ApiModule extends CodeOnlyModule
             FieldKey.TestCase.class,
             FileType.TestCase.class,
             FileUtil.TestCase.class,
+            Formats.TestCase.class,
             GenerateUniqueDataIterator.TestCase.class,
             GUID.TestCase.class,
             HelpTopic.TestCase.class,

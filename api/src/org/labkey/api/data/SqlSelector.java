@@ -30,6 +30,8 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
     public SqlSelector(DbScope scope, @Nullable Connection conn, SQLFragment sql, @NotNull QueryLogging queryLogging)
     {
         super(scope, conn, queryLogging);
+        if (null != sql && sql.hasError())
+            throw new IllegalStateException("SQL was generated with errors and must not be executed");
         _sql = sql;
     }
 

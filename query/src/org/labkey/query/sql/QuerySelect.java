@@ -1691,7 +1691,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.append(col.getInternalSql());
             sql.unsafeAppend(" AS ");
             String sqlAlias = dialect.makeLegalIdentifier(colAlias);
-            sql.append(sqlAlias);
+            sql.appendIdentifier(sqlAlias);
             aliasMap.put(colAlias,sqlAlias);
             sql.nextPrefix(",\n");
             count++;
@@ -1802,7 +1802,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 {
                     if (entry.expr() instanceof QIdentifier && aliasMap.containsKey(entry.expr().getTokenText()))
                     {
-                        sql.append(aliasMap.get(entry.expr().getTokenText()));
+                        sql.appendIdentifier(aliasMap.get(entry.expr().getTokenText()));
                     }
                     else
                     {
@@ -1820,12 +1820,13 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                     getSqlDialect().appendSortOnSubqueryWithoutLimitQualifier(sql);
             }
         }
+        // Before limitRows(), which on SQL Server reads the SQL text and so throws for an error fragment
+        if (!getParseErrors().isEmpty())
+            return null;
         if (_limit != null)
         {
             getSqlDialect().limitRows(sql, _limit.getLimit());
         }
-        if (!getParseErrors().isEmpty())
-            return null;
 
         if (asFromSql)
         {

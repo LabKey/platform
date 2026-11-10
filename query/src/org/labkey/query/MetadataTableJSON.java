@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -379,7 +380,8 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             }
 
             // Set the label
-            if (shouldStoreValue(metadataColumnJSON.getLabel(), rawColumnInfo.getLabel()))
+            // GH Issue 1805: a cleared label arrives as "", which would store an empty title and blank the header
+            if (!StringUtils.isBlank(metadataColumnJSON.getLabel()) && shouldStoreValue(metadataColumnJSON.getLabel(), rawColumnInfo.getLabel()))
             {
                 xmlColumn.setColumnTitle(metadataColumnJSON.getLabel());
             }
