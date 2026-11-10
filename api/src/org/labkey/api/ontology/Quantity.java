@@ -598,10 +598,10 @@ public class Quantity extends Number implements Comparable<Quantity>
             assertEquals("1000.0mg", q.format(Unit.mg));
 
             // with format
-            assertEquals("1.000g", q.format(Formats.f3.get()));
-            assertEquals("1.000g", q.format(Unit.g, Formats.f3.get()));
-            assertEquals("0.001kg", q.format(Unit.kg, Formats.f3.get()));
-            assertEquals("1000000ug", q.format(Unit.ug, Formats.fv3.get()));
+            assertEquals("1.000g", q.format(Formats.f3.createCopy()));
+            assertEquals("1.000g", q.format(Unit.g, Formats.f3.createCopy()));
+            assertEquals("0.001kg", q.format(Unit.kg, Formats.f3.createCopy()));
+            assertEquals("1000000ug", q.format(Unit.ug, Formats.fv3.createCopy()));
         }
     }
 }

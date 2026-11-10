@@ -208,7 +208,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
 
         public String getTimings(String prefix, Order order, String deliminator)
         {
-            Format df = Formats.f2.get();
+            Format df = Formats.f2.createCopy();
             StringBuilder sb = new StringBuilder(prefix);
             Map<String, Double> map = getMap(order);
 
@@ -219,6 +219,5 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
 
             return sb.toString();
         }
-
     }
 }

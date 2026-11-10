@@ -53,7 +53,7 @@ public class Formats
         }
 
         /** Returns a new, unshared instance for the few code paths that require a DecimalFormat */
-        public DecimalFormat get()
+        public DecimalFormat createCopy()
         {
             synchronized (_format)
             {
@@ -114,7 +114,7 @@ public class Formats
         public void testConcurrentFormat()
         {
             // commaf3's pattern takes DecimalFormat's unsynchronized double fast path; most other patterns lock internally, so they can't detect a missing lock
-            DecimalFormat reference = commaf3.get();
+            DecimalFormat reference = commaf3.createCopy();
             String[] expected = IntStream.range(0, 1_000_000).mapToObj(i -> reference.format(i + 0.25)).toArray(String[]::new);
 
             long mismatches = IntStream.range(0, expected.length).parallel()
@@ -127,8 +127,8 @@ public class Formats
         @Test
         public void testGetReturnsUnsharedInstance()
         {
-            assertNotSame(f2.get(), f2.get());
-            assertEquals(f2.format(1.5), f2.get().format(1.5));
+            assertNotSame(f2.createCopy(), f2.createCopy());
+            assertEquals(f2.format(1.5), f2.createCopy().format(1.5));
         }
     }
 }

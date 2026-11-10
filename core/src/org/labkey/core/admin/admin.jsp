@@ -48,7 +48,7 @@
 <%
     boolean devMode = AppProps.getInstance().isDevMode();
     int row = 0;
-    DecimalFormat df = Formats.commaf0.get();
+    DecimalFormat df = Formats.commaf0.createCopy();
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
