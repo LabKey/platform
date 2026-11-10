@@ -48,9 +48,12 @@ public class DeploymentMetrics
 
     public static UsageMetricsProvider getMetricsProvider()
     {
-        return metrics -> metrics.group("deployment", "How the server was deployed: channel (docker, ce-docker, or unknown) and whether it's running in a container")
-            .put("channel", () -> CHANNEL)
-            .put("container", () -> CONTAINER);
+        return metrics -> {
+            metrics.group("deployment", "How the server was deployed: channel (docker, ce-docker, or unknown) and whether it's running in a container")
+                .put("channel", () -> CHANNEL)
+                .put("container", () -> CONTAINER);
+            return metrics;
+        };
     }
 
     static @NotNull String getChannel(Function<String, String> env)
@@ -85,6 +88,13 @@ public class DeploymentMetrics
     public static class TestCase extends Assert
     {
         private static final Predicate<Path> NO_FILES = _ -> false;
+
+        @Test
+        public void testNestedUnderDeployment()
+        {
+            Map<String, Object> values = getMetricsProvider().getUsageMetrics();
+            assertEquals(Map.of("deployment", Map.of("channel", CHANNEL, "container", CONTAINER)), values);
+        }
 
         @Test
         public void testChannel()
