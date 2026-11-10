@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -26,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * Common methods for fields/properties that may be referred to by various names in incoming data. Useful so that we
@@ -41,7 +43,7 @@ public interface ImportAliasable
     Set<String> getImportAliasSet();
 
     /**
-     * GH Issue 1584: aliases the framework puts on a built-in column, such as "container" on the Sample Type "Folder"
+     * GH Issue 1585: aliases the framework puts on a built-in column, such as "container" on the Sample Type "Folder"
      * column. They outrank every user-configurable token so a field alias or label can never steal one.
      */
     default Set<String> getSystemImportAliasSet()
@@ -54,8 +56,8 @@ public interface ImportAliasable
     String getLabel();
 
     /**
-     * The label as the designer set it, or null when this implementation derives one from the name instead. ColumnInfo
-     * derives, so getLabel() alone cannot tell a chosen label from a generated one.
+     * The stored label, without the substitution getLabel() may make for a blank one. Still not proof of a chosen
+     * label: ColumnInfo stores the generated one for an unlabelled field, so compare against labelFromName().
      */
     @Nullable
     default String getLabelValue()
@@ -64,6 +66,17 @@ public interface ImportAliasable
     }
 
     String getPropertyURI();
+
+    /**
+     * GH Issue 1585: whether the designer chose this label, as opposed to the one generated from the field name.
+     * PropertyColumn.copyAttributes stores labelFromName() on every unlabelled field, so a non-null label is not proof
+     * of a chosen one; a label that merely restates its own field name counts as generated either way.
+     */
+    static boolean isChosenLabel(ImportAliasable property)
+    {
+        String label = property.getLabelValue();
+        return null != label && !label.equalsIgnoreCase(ColumnInfo.labelFromName(property.getName()));
+    }
 
     class Helper
     {
@@ -100,6 +113,20 @@ public interface ImportAliasable
          */
         public static <T extends ImportAliasable> Map<String, T> createImportMap(List<T> properties, boolean includeMVIndicators, @Nullable Set<String> ambiguousTokens)
         {
+            return createImportMap(properties, includeMVIndicators, ambiguousTokens, Set.of());
+        }
+
+        /**
+         * GH Issue 1585: {@code kindSystemAliases} are the tokens the domain kind claims for its built-in columns, so a
+         * field that shadowed such a column cannot inherit its token. Pass what
+         * DataIteratorUtil.kindSystemImportAliases() returns for the same table, or nothing to skip the check.
+         *
+         * <p>A tie resolves to the first property here and to the last in DataIteratorUtil.buildTableMap; each keeps
+         * what its own callers have always had, so read it out of {@code ambiguousTokens} rather than relying on either.
+         */
+        public static <T extends ImportAliasable> Map<String, T> createImportMap(List<T> properties, boolean includeMVIndicators,
+                @Nullable Set<String> ambiguousTokens, @NotNull Set<String> kindSystemAliases)
+        {
             Map<String, Pair<T, Rank>> ranked = new CaseInsensitiveHashMap<>(properties.size() * 3);
 
             for (T property : properties)
@@ -123,12 +150,38 @@ public interface ImportAliasable
                 put(ranked, ambiguousTokens, property.getName(), property, Rank.name);
             }
 
+            removeShadowedTokens(ranked, kindSystemAliases, Rank.systemAlias, null);
+
             Map<String, T> m = new CaseInsensitiveHashMap<>(ranked.size());
             ranked.forEach((token, pair) -> m.put(token, pair.first));
             return m;
         }
 
-        /** Precedence for resolving an incoming token to a property, lowest first. GH Issue 1584. */
+        /**
+         * GH Issue 1585: drops every token the kind claims for a built-in column that something lower-ranked got hold of.
+         * A field named for such a column shadows it, taking the kind's token off the table, and leaving the token to
+         * that field's own alias or label would write the server's value into it. A claim at {@code systemAliasRank} or
+         * above -- the built-in column itself, by alias or by name -- still wins. {@code onRemoved} sees each drop.
+         *
+         * <p>Shared with DataIteratorUtil.buildTableMap, which ranks the same tokens over a TableInfo. The two keep
+         * their own rank orders and tie-breaks, which their respective callers have always had.
+         */
+        public static <T, R extends Enum<R>> void removeShadowedTokens(Map<String, Pair<T, R>> ranked,
+                @NotNull Set<String> kindSystemAliases, R systemAliasRank, @Nullable BiConsumer<String, T> onRemoved)
+        {
+            for (String token : kindSystemAliases)
+            {
+                Pair<T, R> claim = ranked.get(token);
+                if (null != claim && claim.second.compareTo(systemAliasRank) < 0)
+                {
+                    ranked.remove(token);
+                    if (null != onRemoved)
+                        onRemoved.accept(token, claim.first);
+                }
+            }
+        }
+
+        /** Precedence for resolving an incoming token to a property, lowest first. GH Issue 1585. */
         private enum Rank
         {
             propertyUri,
@@ -164,14 +217,15 @@ public interface ImportAliasable
         }
 
         /**
-         * GH Issue 1585: a label this property derived from its own name is not a token anyone chose, so two of those
-         * colliding is a field-naming coincidence with no label to correct. One explicit label makes it a design problem.
+         * GH Issue 1585: a label derived from the property's own name is not a token anyone chose, so two of those
+         * colliding is a field-naming coincidence with no label to correct. One chosen label makes it a design problem.
          */
         private static <T extends ImportAliasable> boolean isDesignerToken(Rank rank, T existing, T incoming)
         {
             if (rank == Rank.userAlias)
                 return true;
-            return rank == Rank.label && (null != existing.getLabelValue() || null != incoming.getLabelValue());
+            return rank == Rank.label && (ImportAliasable.isChosenLabel(existing) || ImportAliasable.isChosenLabel(incoming));
         }
+
     }
 }

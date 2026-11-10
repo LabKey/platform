@@ -948,7 +948,7 @@ export function generateFieldNameForImport(length: number = 10, charset?: string
 }
 
 /**
- * GH Issue 1584 / 1585: how an incoming column resolves to a field when the design contains collisions. The type is
+ * GH Issue 1585: how an incoming column resolves to a field when the design contains collisions. The type is
  * created with strictFieldValidation off so it stands in for one configured before validation refused these designs.
  */
 export async function checkImportColumnResolution(server: IntegrationTestServer, domainType: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
@@ -1037,8 +1037,8 @@ export async function checkImportColumnResolution(server: IntegrationTestServer,
 
     await ExperimentCRUDUtils.updateRows(server, [{ rowId, description: 'touched' }], schemaName, name, folderOptions, userOptions);
 
-    // GH Issue 1584: the update pipeline supplies a Container column of its own, and a field aliased 'Container' used to
-    // win that token and come back holding the row's container instead of the value it was given.
+    // GH Issue 1585: the update pipeline supplies a Container column of its own, so a field aliased 'Container' must
+    // keep the value it was given rather than come back holding the row's container.
     row = await rowByName('ResolveMe', seededColumns);
     expect(caseInsensitive(row, 'CommentGrab')).toBe('keepComment');
     if (canAliasContainer)

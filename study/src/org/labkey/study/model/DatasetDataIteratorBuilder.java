@@ -458,7 +458,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         for (String alias : c.getImportAliasSet())
             if (map.containsKey(alias))
                 return map.get(alias);
-        // GH Issue 1584: "ptid"/"participantid" live here now, not in the user alias set
+        // GH Issue 1585: "ptid"/"participantid" live here now, not in the user alias set
         for (String alias : c.getSystemImportAliasSet())
             if (map.containsKey(alias))
                 return map.get(alias);

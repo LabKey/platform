@@ -91,7 +91,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _onClick;
     // methods use Set<>, but I'm using a List<> here because it is simpler and more thread safe and explicitly preserves order
     protected List<String> _importAliases = List.of();
-    // GH Issue 1584: kept apart from _importAliases so import column resolution can rank a framework-supplied alias above anything a user can configure on a field.
+    // GH Issue 1585: kept apart from _importAliases so import column resolution can rank a framework-supplied alias above anything a user can configure on a field.
     protected List<String> _systemImportAliases = List.of();
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType _facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;

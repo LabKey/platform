@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
@@ -172,7 +173,7 @@ public class DataIteratorUtil
     }
 
     /**
-     * GH Issue 1584: precedence for building the target map, lowest first. Separate from {@link MatchType}, which ranks
+     * GH Issue 1585: precedence for building the target map, lowest first. Separate from {@link MatchType}, which ranks
      * competing source columns in matchColumns(); each rank reports its old MatchType so that ranking is unchanged.
      */
     private enum TokenRank
@@ -206,15 +207,15 @@ public class DataIteratorUtil
     }
 
     /**
-     * GH Issue 1585: whether a tie at this rank is something the designer can fix. ColumnInfo.getLabel() falls back to a
-     * label derived from the field name, so two fields with no label at all can tie at the label rank -- a naming
-     * coincidence with no label to correct, not a design problem. One explicit label is enough to make it one.
+     * GH Issue 1585: whether a tie at this rank is something the designer can fix. A label nobody chose is derived from
+     * the field name, so "sample_id" and "sampleId" both carry "Sample Id" -- a naming coincidence with no label to
+     * correct, not a design problem. One chosen label is enough to make it one.
      */
     private static boolean isDesignerToken(TokenRank rank, ColumnInfo existing, ColumnInfo incoming)
     {
         if (rank == TokenRank.userAlias)
             return true;
-        return rank == TokenRank.label && (null != existing.getLabelValue() || null != incoming.getLabelValue());
+        return rank == TokenRank.label && (ImportAliasable.isChosenLabel(existing) || ImportAliasable.isChosenLabel(incoming));
     }
 
     private static void putToken(Map<String, Pair<ColumnInfo, TokenRank>> ranked, Map<String, Set<FieldKey>> ambiguous,
@@ -240,8 +241,8 @@ public class DataIteratorUtil
                 ambiguous.computeIfAbsent(token, k -> new LinkedHashSet<>()).add(existing.first.getFieldKey());
                 ambiguous.get(token).add(col.getFieldKey());
             }
-            // The pass-per-rank loop this replaced let a later column overwrite an earlier one, so a tie still resolves
-            // to the last claimant. Recording the ambiguity above is what is new, not the resolution.
+            // A tie resolves to the last claimant. That only decides a tie no one reports, since a reported one is
+            // dropped from the map below.
             ranked.put(token, new Pair<>(col, rank));
         }
     }
@@ -257,7 +258,8 @@ public class DataIteratorUtil
         return buildTableMap(target, useImportAliases, kindSystemImportAliases(target));
     }
 
-    private static Set<String> kindSystemImportAliases(TableInfo target)
+    /** The tokens the target's domain kind claims for its built-in columns, empty when it has no kind. */
+    public static Set<String> kindSystemImportAliases(TableInfo target)
     {
         Domain domain = target.getDomain();
         DomainKind<?> kind = null == domain ? null : domain.getDomainKind();
@@ -283,15 +285,16 @@ public class DataIteratorUtil
             String tsvQueryColumnName = col.getFieldKey().toDisplayString();
             putToken(ranked, ambiguous, tsvQueryColumnName, col, TokenRank.tsvFieldKey);
 
-            // GH Issue 1584: unconditional -- useImportAliases is about what the designer configured, not about whether
-            // the framework's own headers work. For "container" and "comment" this preserves the old behavior, which the
-            // folder-name check below still provides for that column's user aliases. For the dataset subject column it is
-            // a deliberate widening: "ptid" and "participantid" were user aliases, so an import that turns those off
-            // (DatasetDefinition passes useImportAliases=false for a managed key) did not resolve them before and now does.
+            // GH Issue 1585: unconditional -- useImportAliases is about what the designer configured, not about whether
+            // the framework's own headers work. For the dataset subject column that is a deliberate widening: an import
+            // with the designer's aliases off (DatasetDefinition does this for a managed key) still resolves "ptid".
             for (String alias : col.getSystemImportAliasSet())
                 putToken(ranked, ambiguous, alias, col, TokenRank.systemAlias);
 
-            if (useImportAliases || col.getFieldKey().equals(containerFieldKey))
+            // GH Issue 1585: the container column keeps its user aliases even when the designer's are turned off, because
+            // only query metadata can set one there. getContainerFieldKey() insists on a GUID type and prefers a column
+            // named "container", so the name test is what still covers a non-GUID Folder column.
+            if (useImportAliases || col.getFieldKey().equals(containerFieldKey) || "folder".equalsIgnoreCase(col.getName()))
             {
                 for (String alias : col.getImportAliasSet())
                     putToken(ranked, ambiguous, alias, col, TokenRank.userAlias);
@@ -305,23 +308,12 @@ public class DataIteratorUtil
             putToken(ranked, ambiguous, col.getName(), col, TokenRank.name);
         }
 
-        // GH Issue 1584: a token the kind claims for a built-in column never falls through to something a designer
-        // configured. A field named for that column shadows it -- addColumn replaces the entry rather than refusing --
-        // which takes the system alias off the table and would otherwise leave the token to a field's own alias or
-        // label, writing the server's value into it. A column claiming the token by name still wins it.
-        for (String token : kindSystemAliases)
-        {
-            Pair<ColumnInfo, TokenRank> claim = ranked.get(token);
-            if (null != claim && claim.second.compareTo(TokenRank.systemAlias) < 0)
-            {
-                LOG.warn("Import token '{}' in '{}' is claimed by field '{}' rather than the built-in column it belongs to; leaving it unresolved.",
-                        token, target.getName(), claim.first.getName());
-                ranked.remove(token);
-            }
-        }
+        // Debug, not warn: buildTableMap runs on every coerce step and every cached-map miss, so a single broken design
+        // would repeat these lines for the life of the deployment. matchColumns raises the user-visible error.
+        ImportAliasable.Helper.removeShadowedTokens(ranked, kindSystemAliases, TokenRank.systemAlias,
+                (token, col) -> LOG.debug("Import token '{}' in '{}' is claimed by field '{}' rather than the built-in column it belongs to; leaving it unresolved.",
+                        token, target.getName(), col.getName()));
 
-        // Debug, not warn: this runs on every coerce step and every cached-map miss, so a single broken design would
-        // repeat the same line for the life of the deployment. matchColumns raises the user-visible error.
         if (!ambiguous.isEmpty())
             LOG.debug("Ambiguous import columns in '{}': {}", target.getName(), ambiguous);
 
@@ -404,12 +396,18 @@ public class DataIteratorUtil
 
             // GH Issue 1585: a design where two fields claim one token resolves arbitrarily, so refuse the import rather
             // than write to whichever field happened to win. Only data that actually carries the token is affected, so a
-            // domain configured before this check still imports everything else.
-            Set<FieldKey> claimants = tableMap.ambiguous.get(input.getColumnInfo(i).getName());
-            if (null != claimants)
+            // domain configured before this check still imports everything else. A column _matchColumns already resolved
+            // by propertyURI or vocabulary lookup, or skipped as an MV indicator, never consults the token, so the
+            // ambiguity cannot reach it.
+            String fromName = input.getColumnInfo(i).getName();
+            if (null == match && !fromName.toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
             {
-                String fields = claimants.stream().map(FieldKey::getName).collect(Collectors.joining("', '"));
-                setupError.addGlobalError(String.format(AMBIGUOUS_COLUMN_IN_DESIGN_ERROR, input.getColumnInfo(i).getName(), "'" + fields + "'"));
+                Set<FieldKey> claimants = tableMap.ambiguous.get(fromName);
+                if (null != claimants)
+                {
+                    String fields = claimants.stream().map(FieldKey::getName).collect(Collectors.joining("', '"));
+                    setupError.addGlobalError(String.format(AMBIGUOUS_COLUMN_IN_DESIGN_ERROR, fromName, "'" + fields + "'"));
+                }
             }
         }
 
@@ -726,7 +724,7 @@ public class DataIteratorUtil
     }
 
 
-    /** GH Issue 1584 / 1585: token precedence and collision reporting in {@link #buildTableMap}. */
+    /** GH Issue 1585: token precedence and collision reporting in {@link #buildTableMap}. */
     public static class TableMapTestCase extends Assert
     {
         private VirtualTable<UserSchema> _table;
@@ -750,6 +748,14 @@ public class DataIteratorUtil
         {
             BaseColumnInfo col = new BaseColumnInfo(name, _table, JdbcType.GUID);
             _table.addColumn(col);
+            return col;
+        }
+
+        /** What PropertyColumn.copyAttributes does to an unlabelled field: the generated label is stored, not derived. */
+        private BaseColumnInfo unlabelledCol(String name)
+        {
+            BaseColumnInfo col = col(name);
+            col.setLabel(ColumnInfo.labelFromName(name));
             return col;
         }
 
@@ -784,8 +790,8 @@ public class DataIteratorUtil
         @Test
         public void aSystemAliasOutranksALabelWithUserAliasesOff()
         {
-            // The dataset shape: with user aliases off, a field labeled "ptid" used to win the token by default because
-            // the subject column's aliases were skipped entirely. The framework's claim now outranks it.
+            // The dataset shape: the framework's claim on "ptid" outranks a field labeled "ptid", and holds even with
+            // the designer's aliases off.
             col("Labeled").setLabel("ptid");
             col("ParticipantId").setSystemImportAliasesSet(Set.of("ptid", "participantid"));
 
@@ -836,8 +842,8 @@ public class DataIteratorUtil
         @Test
         public void theContainerColumnKeepsItsUserAliasesWhenUserAliasesAreOff()
         {
-            // getContainerFieldKey() finds a GUID-typed column named "container" or "folder"; a user's String field of
-            // the same name is not one, so it no longer inherits the exemption the old name match gave it.
+            // getContainerFieldKey() finds a GUID-typed column named "container" or "folder"; a user's String field
+            // named "container" is not one, so it stays subject to useImportAliases.
             guidCol("container").setImportAliasesSet(Set.of("legacyFolder"));
             col("NotTheContainer").setImportAliasesSet(Set.of("userToken"));
 
@@ -847,11 +853,21 @@ public class DataIteratorUtil
         }
 
         @Test
+        public void aNonGuidFolderColumnKeepsTheLegacyExemption()
+        {
+            // getContainerFieldKey() declines a non-GUID column, so the name test in buildTableMap is the only thing
+            // resolving this column's aliases. Dropping it for getContainerFieldKey() alone silently breaks them.
+            col("Folder").setImportAliasesSet(Set.of("legacyFolder"));
+
+            assertEquals("Folder", resolve(build(false), "legacyFolder"));
+        }
+
+        @Test
         public void twoGeneratedLabelsAreNotAmbiguous()
         {
-            // Neither field carries a label; both generate "Sample Id", so there is no label for anyone to correct
-            col("sample_id");
-            col("sampleId");
+            // Neither field carries a label the designer chose; both generate "Sample Id", so there is none to correct
+            unlabelledCol("sample_id");
+            unlabelledCol("sampleId");
 
             TableMap map = build(true);
             assertFalse("A collision between two generated labels is a field-naming coincidence", map.ambiguous.containsKey("Sample Id"));
@@ -861,7 +877,7 @@ public class DataIteratorUtil
         @Test
         public void anExplicitLabelMeetingAGeneratedOneIsAmbiguous()
         {
-            col("sample_id");
+            unlabelledCol("sample_id");
             col("Other").setLabel("Sample Id");
 
             TableMap map = build(true);
@@ -881,8 +897,8 @@ public class DataIteratorUtil
         @Test
         public void aTieAtAnUnreportedRankResolvesToTheLastClaimant()
         {
-            // Two columns sharing a propertyURI is a framework bug, not a design problem, so it is not refused. It keeps
-            // resolving the way the pass-per-rank loop this replaced did -- to the last claimant.
+            // Two columns sharing a propertyURI is a framework bug, not a design problem, so it is not refused and
+            // resolves to the last claimant.
             col("First").setPropertyURI("urn:test#shared");
             col("Second").setPropertyURI("urn:test#shared");
 

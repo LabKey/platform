@@ -188,7 +188,7 @@ abstract public class ExpTableImpl<C extends Enum>
     protected MutableColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         var result = addColumn(containerCol);
-        // GH Issue 1584: a system alias, since the column is surfaced as "Folder" and nothing else reclaims "container"
+        // GH Issue 1585: a system alias, since the column is surfaced as "Folder" and nothing else reclaims "container"
         Set<String> set = new LinkedHashSet<>(result.getSystemImportAliasSet());
         set.add("container");
         result.setSystemImportAliasesSet(set);

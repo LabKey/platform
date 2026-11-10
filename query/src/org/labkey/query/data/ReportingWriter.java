@@ -155,7 +155,7 @@ public class ReportingWriter
 
         if (cinfo != null)
         {
-            // GH Issue 1584: reports the framework's aliases alongside the designer's, as JsonWriter.getMetaData does
+            // GH Issue 1585: reports the framework's aliases alongside the designer's, as JsonWriter.getMetaData does
             if (!cinfo.getImportAliasSet().isEmpty() || !cinfo.getSystemImportAliasSet().isEmpty())
             {
                 Set<String> aliases = new LinkedHashSet<>(cinfo.getImportAliasSet());

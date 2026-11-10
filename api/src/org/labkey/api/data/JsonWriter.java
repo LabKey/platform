@@ -196,7 +196,7 @@ public class JsonWriter
 
         if (cinfo != null)
         {
-            // GH Issue 1584: this describes which headers resolve to the column, so it reports the framework's aliases
+            // GH Issue 1585: this describes which headers resolve to the column, so it reports the framework's aliases
             // alongside the designer's. Nothing reads it back into a save, so the two need not stay distinguishable here.
             if (!cinfo.getImportAliasSet().isEmpty() || !cinfo.getSystemImportAliasSet().isEmpty())
             {

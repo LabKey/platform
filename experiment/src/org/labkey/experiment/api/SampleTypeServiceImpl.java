@@ -2629,8 +2629,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         /**
-         * GH Issue 1584: the container column is surfaced as "Folder", so "Container" is left to a framework import
-         * alias, which a user field's own alias or label used to outrank. Built through Domain.save(), which runs no
+         * GH Issue 1585: the container column is surfaced as "Folder", so "Container" is left to a framework import
+         * alias, which must outrank a user field's own alias or label. Built through Domain.save(), which runs no
          * field-name validation: the alias design is refused by the API as a reserved name, and that is how the domains
          * in the field came to carry either one. The label design would save normally.
          */
