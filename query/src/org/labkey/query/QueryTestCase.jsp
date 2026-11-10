@@ -69,6 +69,7 @@
 <%@ page import="org.labkey.api.reader.DataLoader" %>
 <%@ page import="org.labkey.api.reader.DataLoaderService" %>
 <%@ page import="org.labkey.api.reader.JSONDataLoader" %>
+<%@ page import="org.labkey.api.security.LimitedUser" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.GUID" %>
@@ -770,6 +771,7 @@ d,seven,twelve,day,month,date,duration,guid
         // javaConstant() always return VARCHAR currently, would like to fix
         new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
         new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT CASE WHEN NOT ISMEMBEROF(-2) THEN 1 ELSE 0 END FROM R WHERE rowid=1", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LEAST(0, 2, 1)", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
         new MethodSqlTest("SELECT LEFT('FRED', 2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
@@ -1384,6 +1386,19 @@ d,seven,twelve,day,month,date,duration,guid
         for (SqlTest test : tests)
         {
             test.validate(null);
+        }
+
+        // ISMEMBEROF() reads the user from the query environment; a LimitedUser has no groups
+        Object environmentUser = QueryService.get().getEnvironment(QueryService.Environment.USER);
+        try
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.USER, new LimitedUser(user));
+            new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false).validate(null);
+            new MethodSqlTest("SELECT CASE WHEN NOT ISMEMBEROF(-2) THEN 1 ELSE 0 END FROM R WHERE rowid=1", JdbcType.INTEGER, 1).validate(null);
+        }
+        finally
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.USER, environmentUser);
         }
 
         if (dialect.isPostgreSQL() /* dialect.allowSortOnSubqueryWithoutLimit() is the preferred check, but SQL Server still has problems with these queries */)
