@@ -652,7 +652,8 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     @Override
     protected ModuleSource loadFromUri(URI uri, URI base, Object validator)
     {
-        return load(uri.getPath(), validator);
+        // Rhino resolves a relative require() id to an extension-less URI
+        return load(uri.getPath() + ".js", validator);
     }
 
     @Override
