@@ -20,6 +20,7 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -45,6 +46,9 @@ import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.MergeKeyColumns;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
@@ -67,6 +71,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -102,23 +107,31 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetLsidImportHelper;
+import org.labkey.study.model.ParticipantIdImportHelper;
+import org.labkey.study.model.SequenceNumImportHelper;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
-public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
+public class DatasetTableImpl extends BaseStudyTable implements DatasetTable, MergeKeyColumns.Provider
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
@@ -611,6 +624,72 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public Dataset getDataset()
     {
         return _dsd;
+    }
+
+    private static final String LSID_COLUMN = "lsid";
+
+    /** Adds the LSID that dataset import computes from participant, visit, and key, so triggers can route MERGE rows */
+    @Override
+    public @Nullable MergeKeyColumns addMergeKeyColumns(DataIterator input, DataIteratorContext context)
+    {
+        Map<String, Integer> inputMap = DataIteratorUtil.createColumnAndPropertyMap(input);
+        StudyImpl study = _dsd.getStudy();
+        boolean timeKey = !study.getTimepointType().isVisitBased() && _dsd.getUseTimeKeyField();
+        Integer ptidIndex = DatasetDataIteratorBuilder.findColumnInMap(inputMap, getColumn(study.getSubjectColumnName()));
+        Integer seqIndex = DatasetDataIteratorBuilder.findColumnInMap(inputMap, getColumn("SequenceNum"));
+        Integer dateIndex = DatasetDataIteratorBuilder.findColumnInMap(inputMap, getColumn("Date"));
+        String keyName = _dsd.getKeyPropertyName();
+        Integer keyIndex = keyName == null ? null : DatasetDataIteratorBuilder.findColumnInMap(inputMap, getColumn(keyName));
+        Integer containerIndex = inputMap.get("Container");
+
+        if (ptidIndex == null)
+            return null;
+        if (!_dsd.isDemographicData())
+        {
+            if (seqIndex == null && dateIndex == null)
+                return null;
+            if (timeKey ? dateIndex == null : keyName != null && keyIndex == null)
+                return null;
+        }
+
+        Callable<Object> ptid;
+        try
+        {
+            ptid = new ParticipantIdImportHelper(study, getUserSchema().getUser(), _dsd).getCallable(input, ptidIndex);
+        }
+        catch (ValidationException e)
+        {
+            return null;
+        }
+        Callable<Object> seq = new SequenceNumImportHelper(study, _dsd).getCallable(input, seqIndex, dateIndex);
+        DatasetLsidImportHelper lsid = new DatasetLsidImportHelper(_dsd);
+
+        SimpleTranslator translator = new SimpleTranslator(input, context);
+        translator.setDebugName("DatasetTableImpl.addMergeKeyColumns");
+        // Import recomputes the LSID and ignores any supplied one, so this does too
+        translator.selectAll(new CaseInsensitiveHashSet(LSID_COLUMN));
+        translator.addColumn(new BaseColumnInfo(LSID_COLUMN, JdbcType.VARCHAR), (Supplier<Object>) () -> {
+            try
+            {
+                Object participant = ptid.call();
+                Object sequenceNum = seq.call();
+                Object date = dateIndex == null ? null : input.get(dateIndex);
+                if (participant != null && (_dsd.isDemographicData() || sequenceNum instanceof Number))
+                {
+                    return lsid.translateLsid(participant.toString(), sequenceNum instanceof Number n ? n.doubleValue() : null,
+                            date instanceof Date d ? d : null, keyIndex == null ? null : input.get(keyIndex),
+                            containerIndex == null ? null : Objects.toString(input.get(containerIndex), null));
+                }
+            }
+            catch (Exception ignored)
+            {
+                // Import reports the bad value; the row just won't match an existing one
+            }
+            // A null key is a row error, and duplicate keys are too, so give unmatched rows a key of their own
+            return "unmatched:" + input.get(0);
+        });
+
+        return new MergeKeyColumns(translator, Set.of(LSID_COLUMN));
     }
 
     @Override

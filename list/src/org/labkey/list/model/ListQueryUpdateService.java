@@ -35,6 +35,7 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -45,10 +46,12 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ImportProgress;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -68,6 +71,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -101,6 +105,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.BatchSize.Kind.AUDIT;
@@ -1242,6 +1247,274 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 assertEquals(expected, qus.getRows(_user, _container, keys));
             }
+        }
+    }
+    /** GH Issue 1048: MERGE must leave columns the input omits unchanged, and script triggers see existing rows as updates. */
+    @TestTimeout(TestTimeout.DEFAULT * 5)
+    public static class MergeTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "ListMergeTest Project";
+        private static final String LIST_NAME = "Merge list";
+        private static final String KEY_NAME = "Key";
+        private static final String INT_FIELD = "A";
+        private static final String TEXT_FIELD = "B";
+
+        private static User _user;
+        private static Container _container;
+        private static ListDefinition _list;
+
+        @BeforeClass
+        public static void setup() throws Exception
+        {
+            _user = TestContext.get().getUser();
+
+            deleteTestContainer();
+            _container = ContainerManager.ensureContainer(PROJECT_NAME, _user);
+
+            _list = ListService.get().createList(_container, LIST_NAME, ListDefinition.KeyType.Integer);
+            _list.setKeyName(KEY_NAME);
+            addField(INT_FIELD, PropertyType.INTEGER);
+            addField(TEXT_FIELD, PropertyType.STRING);
+            _list.save(_user);
+        }
+
+        private static void addField(String name, PropertyType type)
+        {
+            Domain domain = _list.getDomain();
+            assertNotNull(domain);
+            DomainProperty dp = domain.addProperty();
+            dp.setName(name);
+            dp.setType(PropertyService.get().getType(_container, type.getXmlName()));
+            dp.setPropertyURI(ListDomainKind.createPropertyURI(LIST_NAME, name, _container, _list.getKeyType()).toString());
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            _list = null;
+            _container = null;
+            _user = null;
+
+            deleteTestContainer();
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+        }
+
+        /** Cached tables are locked, so only one built for write accepts another trigger factory */
+        private TableInfo tableWithTrigger(Trigger trigger)
+        {
+            AbstractTableInfo table = (AbstractTableInfo) new ListQuerySchema(_user, _container).getTable(LIST_NAME, null, true, true);
+            assertNotNull(table);
+            table.addTriggerFactory((_, _, _) -> List.of(trigger));
+            table.resetTriggers(_container);
+            assertTrue(table.hasTriggers(_container));
+
+            return table;
+        }
+
+        /** Records which hook saw each key; sets the text field on insert when it manages that column */
+        private static class RecordingTrigger implements Trigger
+        {
+            final List<String> events = new ArrayList<>();
+            final boolean _routed;
+            final boolean _managesText;
+
+            RecordingTrigger(boolean routed, boolean managesText)
+            {
+                _routed = routed;
+                _managesText = managesText;
+            }
+
+            @Override
+            public boolean isMergeRoutedByExistingRecord()
+            {
+                return _routed;
+            }
+
+            @Override
+            public @Nullable ManagedColumns getManagedColumns()
+            {
+                return _managesText ? new ManagedColumns(Set.of(TEXT_FIELD), Set.of(), null) : null;
+            }
+
+            @Override
+            public void beforeInsert(TableInfo table, Container c, User user, @Nullable InsertOption insertOption, @Nullable Map<String, Object> newRow, ValidationException errors, Map<String, Object> extraContext)
+            {
+                assertNotNull(newRow);
+                events.add("beforeInsert " + newRow.get(KEY_NAME));
+                if (_managesText)
+                    newRow.put(TEXT_FIELD, "computed");
+            }
+
+            @Override
+            public void beforeUpdate(TableInfo table, Container c, User user, @Nullable InsertOption insertOption, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext)
+            {
+                assertNotNull(newRow);
+                assertNotNull(oldRow);
+                events.add("beforeUpdate " + newRow.get(KEY_NAME) + " old " + new CaseInsensitiveHashMap<>(oldRow).get(TEXT_FIELD));
+            }
+
+            @Override
+            public void afterInsert(TableInfo table, Container c, User user, @Nullable Map<String, Object> newRow, ValidationException errors, Map<String, Object> extraContext)
+            {
+                assertNotNull(newRow);
+                events.add("afterInsert " + newRow.get(KEY_NAME));
+            }
+
+            @Override
+            public void afterUpdate(TableInfo table, Container c, User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext)
+            {
+                assertNotNull(newRow);
+                assertNotNull(oldRow);
+                events.add("afterUpdate " + newRow.get(KEY_NAME));
+            }
+        }
+
+        private TableInfo listTable()
+        {
+            TableInfo table = _list.getTable(_user);
+            assertNotNull(table);
+            return table;
+        }
+
+        private QueryUpdateService updateService(TableInfo table)
+        {
+            QueryUpdateService qus = table.getUpdateService();
+            assertNotNull(qus);
+            return qus;
+        }
+
+        private void insertRow(int key) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            updateService(listTable()).insertRows(_user, _container, List.of(CaseInsensitiveHashMap.of(KEY_NAME, key, INT_FIELD, 1, TEXT_FIELD, "x")), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        private void mergeIntField(TableInfo table, int... keys) throws Exception
+        {
+            load(table, InsertOption.MERGE, keys);
+        }
+
+        /** Writes the int field only, for each key */
+        private void load(TableInfo table, InsertOption option, int... keys) throws Exception
+        {
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (int key : keys)
+                rows.add(CaseInsensitiveHashMap.of(KEY_NAME, key, INT_FIELD, 2));
+
+            BatchValidationException errors = new BatchValidationException();
+            DataIteratorContext context = new DataIteratorContext(errors);
+            context.setInsertOption(option);
+            try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+            {
+                int count = updateService(table).loadRows(_user, _container, MapDataIterator.of(rows), context, null);
+                if (errors.hasErrors())
+                    throw errors;
+                assertEquals(keys.length, count);
+                tx.commit();
+            }
+        }
+
+        /** Rows are batched, so hooks for different rows may interleave */
+        private void assertEvents(RecordingTrigger trigger, String... expected)
+        {
+            assertEquals(Set.of(expected), Set.copyOf(trigger.events));
+            assertEquals(expected.length, trigger.events.size());
+        }
+
+        private Map<String, Object> getRow(int key)
+        {
+            Map<String, Object> row = new TableSelector(listTable(), new SimpleFilter(FieldKey.fromParts(KEY_NAME), key), null).getMap();
+            assertNotNull(row);
+            return row;
+        }
+
+        private void assertOmittedFieldKept(int key)
+        {
+            Map<String, Object> row = getRow(key);
+            assertEquals(2, ((Number) row.get(INT_FIELD)).intValue());
+            assertEquals("MERGE nulled a column it was not given", "x", row.get(TEXT_FIELD));
+        }
+
+        @Test
+        public void mergeWithoutTriggerKeepsOmittedColumns() throws Exception
+        {
+            insertRow(1);
+            mergeIntField(listTable(), 1);
+            assertOmittedFieldKept(1);
+        }
+
+        @Test
+        public void mergeWithTriggerKeepsOmittedColumns() throws Exception
+        {
+            insertRow(2);
+            mergeIntField(tableWithTrigger(new Trigger() {}), 2);
+            assertOmittedFieldKept(2);
+        }
+
+        @Test
+        public void mergeRoutesExistingRowsToUpdateHooks() throws Exception
+        {
+            insertRow(3);
+            RecordingTrigger trigger = new RecordingTrigger(true, false);
+            mergeIntField(tableWithTrigger(trigger), 3, 4);
+
+            assertEvents(trigger, "beforeUpdate 3 old x", "beforeInsert 4", "afterUpdate 3", "afterInsert 4");
+            assertOmittedFieldKept(3);
+        }
+
+        @Test
+        public void mergeWithoutRoutingFiresInsertHooks() throws Exception
+        {
+            insertRow(5);
+            RecordingTrigger trigger = new RecordingTrigger(false, false);
+            mergeIntField(tableWithTrigger(trigger), 5, 6);
+
+            assertEvents(trigger, "beforeInsert 5", "beforeInsert 6", "afterInsert 5", "afterInsert 6");
+            assertOmittedFieldKept(5);
+        }
+
+        @Test
+        public void mergeKeepsInsertManagedColumnOnUpdatedRows() throws Exception
+        {
+            insertRow(7);
+            RecordingTrigger trigger = new RecordingTrigger(true, true);
+            mergeIntField(tableWithTrigger(trigger), 7, 8);
+
+            assertEvents(trigger, "beforeUpdate 7 old x", "beforeInsert 8", "afterUpdate 7", "afterInsert 8");
+            assertOmittedFieldKept(7);
+            assertEquals("computed", getRow(8).get(TEXT_FIELD));
+        }
+
+        @Test
+        public void replaceRoutesExistingRowsToUpdateHooks() throws Exception
+        {
+            insertRow(9);
+            RecordingTrigger trigger = new RecordingTrigger(true, false);
+            load(tableWithTrigger(trigger), InsertOption.REPLACE, 9, 10);
+
+            assertEvents(trigger, "beforeUpdate 9 old x", "beforeInsert 10", "afterUpdate 9", "afterInsert 10");
+            assertNull("REPLACE keeps a column it was not given", getRow(9).get(TEXT_FIELD));
+        }
+
+        @Test
+        public void replaceKeepsInsertManagedColumnOnUpdatedRows() throws Exception
+        {
+            insertRow(11);
+            RecordingTrigger trigger = new RecordingTrigger(true, true);
+            load(tableWithTrigger(trigger), InsertOption.REPLACE, 11, 12);
+
+            assertEvents(trigger, "beforeUpdate 11 old x", "beforeInsert 12", "afterUpdate 11", "afterInsert 12");
+            assertEquals("REPLACE nulled a trigger-managed column", "x", getRow(11).get(TEXT_FIELD));
+            assertEquals("computed", getRow(12).get(TEXT_FIELD));
         }
     }
 }
