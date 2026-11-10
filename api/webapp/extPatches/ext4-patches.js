@@ -245,20 +245,6 @@ Ext4.override(Ext4.form.FieldContainer, {
 
 /**
  * @Override
- * A pending type-ahead fires after destroy and throws on the unbound store.
- * Version: 4.2.1
- */
-Ext4.override(Ext4.form.field.ComboBox, {
-    onDestroy: function() {
-        if (this.typeAheadTask) {
-            this.typeAheadTask.cancel();
-        }
-        this.callParent(arguments);
-    }
-});
-
-/**
- * @Override
  * Sencha Issue: http://www.sencha.com/forum/showthread.php?269116-Ext-4.2.1.883-Sandbox-getRowStyleTableEl
  * Version: 4.2.1
  */
