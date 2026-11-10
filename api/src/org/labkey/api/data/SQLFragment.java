@@ -148,6 +148,7 @@ public class SQLFragment
         sql = "";
     }
 
+    /** @deprecated Use {@link #unsafe(String, List)} for constant SQL text, or build with {@link #appendIdentifier(CharSequence)} and {@link #appendValue}. */
     @Deprecated
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
@@ -164,6 +165,7 @@ public class SQLFragment
     }
 
 
+    /** @deprecated Use {@link #unsafe(String, Object...)} for constant SQL text, or build with {@link #appendIdentifier(CharSequence)} and {@link #appendValue}. */
     @Deprecated
     public SQLFragment(CharSequence sql, Object... params)
     {
@@ -556,6 +558,7 @@ public class SQLFragment
         return null == params ? this : addAll(params);
     }
 
+    /** @deprecated Use {@link #unsafeAppend(String)} for constant SQL text, {@link #appendIdentifier(CharSequence)} for names, or {@link #appendValue} for values. */
     @Deprecated
     public SQLFragment append(CharSequence charseq)
     {
@@ -734,6 +737,7 @@ public class SQLFragment
     }
 
 
+    /** @deprecated See {@link #append(CharSequence)}. */
     @Deprecated
     public SQLFragment append(CharSequence csq, int start, int end)
     {
@@ -1815,7 +1819,7 @@ public class SQLFragment
         public void testAppendDottedIdentifiers()
         {
             shouldFail(() -> new SQLFragment().appendDottedIdentifiers("a", "\"b\".\"c\""));
-            shouldFail(() -> new SQLFragment().appendDottedIdentifiers("a", null));
+            shouldFail(() -> new SQLFragment().appendDottedIdentifiers("a", (CharSequence) null));
             shouldFail(() -> new SQLFragment().appendDottedIdentifiers("", "b"));
             shouldFail(() -> new SQLFragment().appendDottedIdentifiers(null, SqlDialect.makeDatabaseIdentifier("b", SQLFragment.unsafe("b"))));
             SQLFragment partial = new SQLFragment();
