@@ -276,16 +276,6 @@ public class ParameterMapStatement implements AutoCloseable
         _selectObjectIdIndex = i;
     }
 
-    public boolean hasReselectRowId()
-    {
-        return _selectRowId;
-    }
-
-    public boolean hasReselectObjectId()
-    {
-        return null != _objectId;
-    }
-
     public int size()
     {
         return _map.size();

@@ -147,11 +147,9 @@ public class ContainerTable extends FilteredTable<UserSchema>
         }
         containerTypeSQL = containerTypeSQL.unsafeAppend("WHEN ")
                 .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
-                .unsafeAppend(".entityid = ? THEN 'root' "
-                    + "WHEN ")
+                .unsafeAppend(".entityid = ? THEN 'root' WHEN ")
                 .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
-                .unsafeAppend(".parent = ? THEN 'project' "
-                    + "ELSE 'folder' END");
+                .unsafeAppend(".parent = ? THEN 'project' ELSE 'folder' END");
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         ExprColumn containerTypeColumn = new ExprColumn(this, "ContainerType", containerTypeSQL, JdbcType.VARCHAR);
