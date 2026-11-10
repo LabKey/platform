@@ -88,7 +88,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
     final DataIteratorContext _context;
 
-    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useMark, DataIteratorContext context, boolean detailed)
+    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useMark, DataIteratorContext context, boolean detailed, boolean allColumns)
     {
         super(in);
         _context = context;
@@ -122,6 +122,8 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
         if (detailed)
             _dataColumnNames.addAll(map.keySet());
+        if (allColumns)
+            _dataColumnNames.addAll(target.getColumnNameSet());
 
         for (String name : keyNames)
         {
@@ -246,6 +248,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
     public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useGetRows)
     {
+        return createBuilder(dib, target, keys, sharedKeys, useGetRows, false);
+    }
+
+    /** @param allColumns fetch every stored column of existing rows, keyed by column name, not just those needed for keys and auditing */
+    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useGetRows, boolean allColumns)
+    {
         return context ->
         {
             DataIterator di = dib.getDataIterator(context);
@@ -264,11 +272,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 AuditBehaviorType auditType = AuditBehaviorType.NONE;
                 if (target.supportsAuditTracking())
                     auditType = target.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
-                boolean detailed = auditType == DETAILED || hasAttachmentProperties;
+                boolean detailed = auditType == DETAILED || hasAttachmentProperties || allColumns;
                 if (useGetRows)
-                    return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed);
+                    return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed, allColumns);
                 else
-                    return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed);
+                    return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed, allColumns);
             }
             return di;
         };
@@ -279,12 +287,15 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     static class ExistingDataIteratorsTableInfo extends ExistingRecordDataIterator
     {
         final Set<String> allowedContainers = new HashSet<>();
+        /** When set, select these by column name instead of the storage columns, matching the rows updateRows() passes as oldRow */
+        final @Nullable List<ColumnInfo> _namedColumns;
 
-        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed)
+        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed, boolean allColumns)
         {
-            super(in, target, keys, sharedKeys, true, context, detailed);
+            super(in, target, keys, sharedKeys, true, context, detailed, allColumns);
             if (c != null)
                 allowedContainers.add(c.getId());
+            _namedColumns = allColumns ? target.getColumns().stream().filter(col -> !col.isCalculated() && !col.isUnselectable()).toList() : null;
         }
 
         private Pair<SQLFragment, Map<Integer, String>> getSelectExistingSql(int rows) throws BatchValidationException
@@ -334,7 +345,15 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 sqlf.unsafeAppend(",").unsafeAppend("key").appendValue(p);
             sqlf.unsafeAppend("))\n");
 
-            sqlf.unsafeAppend("SELECT _key_columns_._row_number_, _target_.* FROM ");
+            sqlf.unsafeAppend("SELECT _key_columns_._row_number_");
+            if (_namedColumns == null)
+                sqlf.unsafeAppend(", _target_.*");
+            else
+            {
+                for (int i = 0; i < _namedColumns.size(); i++)
+                    sqlf.unsafeAppend(", (").append(_namedColumns.get(i).getValueSql("_target_")).unsafeAppend(") AS _col").appendValue(i);
+            }
+            sqlf.unsafeAppend(" FROM ");
             sqlf.unsafeAppend("_key_columns_ INNER JOIN ");
             sqlf.append(target.getFromSQL("_target_ "));
             sqlf.unsafeAppend(" ON ");
@@ -368,6 +387,13 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             for (Map map : list)
             {
                 Integer r = asInteger(map.get("_row_number_"));
+                if (_namedColumns != null)
+                {
+                    Map<String, Object> named = new CaseInsensitiveHashMap<>();
+                    for (int i = 0; i < _namedColumns.size(); i++)
+                        named.put(_namedColumns.get(i).getName(), map.get("_col" + i));
+                    map = named;
+                }
 
                 if (_verifyExisting)
                 {
@@ -412,9 +438,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         final QueryUpdateService qus;
 
-        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed, boolean allColumns)
         {
-            super(in, target, keys, sharedKeys, true, context, detailed);
+            super(in, target, keys, sharedKeys, true, context, detailed, allColumns);
             qus = target.getUpdateService();
         }
 
@@ -500,7 +526,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             assertFalse(di.supportsGetExistingRecord());
             var context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.INSERT);
-            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, null, context, true);
+            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, null, context, true, false);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
         }
