@@ -85,6 +85,11 @@ public abstract class AbstractAuditHandler implements AuditHandler
     {
         DetailedAuditTypeEvent create(@Nullable Map<String, Object> row, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents);
 
+        /** Called before each batch of created records is saved, to save the events they must follow, such as an item's move out ahead of its move in */
+        default void savePrecedingEvents()
+        {
+        }
+
         /** Called once after the call's last record is created, to save what the records collected */
         default void complete()
         {
@@ -208,6 +213,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                         batch.add(event);
                         if (batch.size() >= BatchSize.get(AUDIT))
                         {
+                            recordFactory.savePrecedingEvents();
                             auditLog.addEvents(user, batch, useTransactionAuditCache);
                             batch.clear();
                         }
@@ -220,6 +226,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                     }
                     if (!batch.isEmpty())
                     {
+                        recordFactory.savePrecedingEvents();
                         auditLog.addEvents(user, batch, useTransactionAuditCache);
                         batch.clear();
                     }
