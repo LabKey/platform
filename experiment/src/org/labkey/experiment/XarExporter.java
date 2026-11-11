@@ -151,6 +151,7 @@ public class XarExporter
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private final Logger _log;
+    private boolean _excludedDataFilesLogged = false;
 
     private boolean _includeXML = true;
 
@@ -1406,8 +1407,21 @@ public class XarExporter
         return OntologyManager.getPropertyObjects(container, lsid);
     }
 
+    /** Names every withheld file once, through the exporter's log so a pipeline export reports them in its own job log. */
+    private void logExcludedDataFiles()
+    {
+        Map<Long, String> excluded = _urlRewriter.getExcludedDataFiles();
+        if (_excludedDataFilesLogged || excluded.isEmpty())
+            return;
+
+        _excludedDataFilesLogged = true;
+        _log.warn("{} data file(s) omitted from this export because they resolve outside the folder's file roots:", excluded.size());
+        excluded.forEach((rowId, path) -> _log.warn("  exp.data row {}: {}", rowId, path));
+    }
+
     public void dumpXML(OutputStream out) throws IOException, ExperimentException
     {
+        logExcludedDataFiles();
         ensureDomainsWritten();
 
         XmlOptions validateOptions = new XmlOptions();
@@ -1488,8 +1502,7 @@ public class XarExporter
                     zOut.closeEntry();
                 }
 
-                if (_urlRewriter.getExcludedCount() > 0)
-                    _log.warn("{} data file(s) were omitted from this archive because they resolve outside the folder's file roots; see the server log for each path.", _urlRewriter.getExcludedCount());
+                logExcludedDataFiles();
 
                 for (URLRewriter.FileInfo fileInfo : _urlRewriter.getFileInfos())
                 {

@@ -93,8 +93,8 @@ public class ArchiveURLRewriter extends URLRewriter
         if (canonical != null && FileContentService.isFileReadable(data.getContainer(), canonical, user))
             return canonical;
 
-        LOG.warn("Excluding data file from export, not under a file root of {}: {} (exp.data row {})", data.getContainer().getPath(), canonical == null ? path : canonical, data.getRowId());
-        addExcluded(data);
+        LOG.debug("Excluding data file from export, not under a file root of {}: {} (exp.data row {})", data.getContainer().getPath(), canonical == null ? path : canonical, data.getRowId());
+        addExcluded(data, canonical == null ? path : canonical);
         return null;
     }
 

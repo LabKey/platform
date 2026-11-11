@@ -33,7 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,7 +44,7 @@ import java.util.Set;
 public abstract class URLRewriter
 {
     protected Map<Path, FileInfo> _files = new HashMap<>();
-    private final Set<Long> _excludedDataRowIds = new HashSet<>();
+    private final Map<Long, String> _excludedDataFiles = new LinkedHashMap<>();
 
     private final boolean _includeXarXml;
 
@@ -65,20 +65,21 @@ public abstract class URLRewriter
         return _files.values();
     }
 
-    protected void addExcluded(ExpData data)
+    protected void addExcluded(ExpData data, Path path)
     {
-        _excludedDataRowIds.add(data.getRowId());
+        _excludedDataFiles.put(data.getRowId(), String.valueOf(path));
     }
 
     /** Distinguishes a file deliberately withheld from the archive from one that simply has no name. */
     public boolean isExcluded(ExpData data)
     {
-        return _excludedDataRowIds.contains(data.getRowId());
+        return _excludedDataFiles.containsKey(data.getRowId());
     }
 
-    public int getExcludedCount()
+    /** exp.data row id to the path that was withheld, for reporting to whoever asked for the export. */
+    public Map<Long, String> getExcludedDataFiles()
     {
-        return _excludedDataRowIds.size();
+        return _excludedDataFiles;
     }
 
     public boolean isIncludeXarXml()
