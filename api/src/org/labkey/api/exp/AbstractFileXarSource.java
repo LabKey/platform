@@ -45,6 +45,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: jeckels
@@ -134,7 +135,7 @@ public abstract class AbstractFileXarSource extends XarSource
             {
                 return result;
             }
-            return FileUtil.pathToString(FileUtil.getAbsoluteCaseSensitivePath(container, path.toUri()));
+            return FileUtil.pathToString(Objects.requireNonNull(FileUtil.getAbsoluteCaseSensitivePath(container, path.toUri())));
         }
         else
         {

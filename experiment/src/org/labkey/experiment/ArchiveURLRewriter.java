@@ -59,7 +59,7 @@ public class ArchiveURLRewriter extends URLRewriter
             FileInfo existingInfo = _files.get(path);
             if (existingInfo != null)
             {
-                return existingInfo.getName();
+                return canonicalPathIfExportable(data, path, user) == null ? null : existingInfo.getName();
             }
             Path rootDir = null;
             if (run != null)
@@ -84,21 +84,29 @@ public class ArchiveURLRewriter extends URLRewriter
         return "Run" + run.getRowId();
     }
 
+    /** The canonical path, or null when this row's container must not export the file; records the exclusion either way. */
+    private Path canonicalPathIfExportable(ExpData data, Path path, User user)
+    {
+        Path canonical = FileUtil.getAbsoluteCaseSensitivePath(data.getContainer(), path.toUri());
+
+        // however the exp.data row got its URL, don't stream a file from outside the container's roots
+        if (canonical != null && FileContentService.isFileReadable(data.getContainer(), canonical, user))
+            return canonical;
+
+        LOG.warn("Excluding data file from export, not under a file root of {}: {} (exp.data row {})", data.getContainer().getPath(), canonical == null ? path : canonical, data.getRowId());
+        addExcluded(data);
+        return null;
+    }
+
     public String addFile(ExpData data, Path path, String directoryName, Path rootDir, ExperimentDataHandler dataHandler, User user, String fileRootPath)
             throws ExperimentException
     {
         String name;
         try
         {
-            path = FileUtil.getAbsoluteCaseSensitivePath(data.getContainer(), path.toUri());
-
-            // however the exp.data row got its URL, don't stream a file from outside the container's roots
-            if (!FileContentService.isFileReadable(data.getContainer(), path, user))
-            {
-                LOG.warn("Excluding data file from export, not under a file root of {}: {} (exp.data row {})", data.getContainer().getPath(), path, data.getRowId());
-                addExcluded(data);
+            path = canonicalPathIfExportable(data, path, user);
+            if (path == null)
                 return null;
-            }
 
             boolean inSubTree = false;
             Path fileParentDir = path.getParent();
