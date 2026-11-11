@@ -3169,7 +3169,7 @@ public class DbScope
 
         private void _testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
         {
-            SQLFragment sql = new SQLFragment("SELECT (");
+            SQLFragment sql = SQLFragment.unsafe("SELECT (");
             sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
             sql.unsafeAppend(") AS Diff");
 
@@ -3212,9 +3212,9 @@ public class DbScope
         {
             String delimiter = " ";
 
-            SQLFragment query = new SQLFragment("SELECT\n");
+            SQLFragment query = SQLFragment.unsafe("SELECT\n");
             query.unsafeAppend("  COUNT(*) AS NumRows,\n");
-            query.unsafeAppend("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).unsafeAppend(" AS StrVals\n");
+            query.unsafeAppend("  ").append(dialect.getGroupConcat(SQLFragment.unsafe("StrVal"), distinct, sorted, delimiter)).unsafeAppend(" AS StrVals\n");
             query.unsafeAppend("FROM (\n");
             query.unsafeAppend("  VALUES\n");
             query.unsafeAppend("  (1, 'x'),\n");

@@ -426,7 +426,7 @@ public final class RequestCancellation
         /** Polls briefly, since a discarded session's backend exits only after the pool closes its connection */
         static long countLiveBackends(DbScope scope, Set<Integer> spids) throws InterruptedException
         {
-            SQLFragment live = new SQLFragment("SELECT COUNT(*) FROM pg_stat_activity WHERE pid ").appendInClause(spids, scope.getSqlDialect());
+            SQLFragment live = SQLFragment.unsafe("SELECT COUNT(*) FROM pg_stat_activity WHERE pid ").appendInClause(spids, scope.getSqlDialect());
             long start = System.currentTimeMillis();
             long count;
             while ((count = new SqlSelector(scope, live).getObject(Long.class)) > 0 && System.currentTimeMillis() - start < 5_000)

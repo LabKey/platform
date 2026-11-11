@@ -1622,7 +1622,7 @@ d,seven,twelve,day,month,date,duration,guid
         ArrayList<QueryException> errors = new ArrayList<>();
         TableInfo t = q.getTable(errors, false);
         assertTrue(errors.isEmpty());
-        SQLFragment sqlf = t.getFromSQL("$");
+        SQLFragment sqlf = t.getFromSQL("t");
         assertNotNull(sqlf);
         String debugSql = sqlf.toDebugString();
         assertFalse(debugSql.contains(testGUID.toString()));
@@ -1638,7 +1638,7 @@ d,seven,twelve,day,month,date,duration,guid
         q.setContainerFilter(custom);
         t = q.getTable(errors, false);
         assertTrue(errors.isEmpty());
-        sqlf = t.getFromSQL("$");
+        sqlf = t.getFromSQL("t");
         assertNotNull(sqlf);
         debugSql = sqlf.toDebugString();
         assertFalse(debugSql.contains(testGUID.toString()));
@@ -2037,7 +2037,11 @@ d,seven,twelve,day,month,date,duration,guid
 
     SQLFragment array(@CompileTimeConstant String... strings)
     {
-        var args = Arrays.stream(strings).map(s -> new SQLFragment().setSqlUnsafe(s)).toList().toArray(new SQLFragment[0]);
+        var args = Arrays.stream(strings).map(s -> {
+            SQLFragment arg = new SQLFragment();
+            arg.setSqlUnsafe(s);
+            return arg;
+        }).toList().toArray(new SQLFragment[0]);
         return dialect.array_construct(args);
     }
 

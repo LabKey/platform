@@ -539,7 +539,9 @@ public abstract class Method
                         SQLFragment cte = SQLFragment.unsafe("SELECT 2 as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, "__test__two__", "_two", cte);
-                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
+                        SQLFragment tokenSql = new SQLFragment();
+                        tokenSql.setSqlUnsafe(token);
+                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -558,7 +560,9 @@ public abstract class Method
                         SQLFragment cte = SQLFragment.unsafe("SELECT 3 as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, "__test_three__", "_three", cte);
-                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
+                        SQLFragment tokenSql = new SQLFragment();
+                        tokenSql.setSqlUnsafe(token);
+                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -578,7 +582,9 @@ public abstract class Method
                         cte.unsafeAppend("SELECT (").append(arguments[0]).unsafeAppend(")*(").append(arguments[1]).unsafeAppend(") as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, GUID.makeGUID(), "_times", cte);
-                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
+                        SQLFragment tokenSql = new SQLFragment();
+                        tokenSql.setSqlUnsafe(token);
+                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
                         return ret;
                     }
                 };

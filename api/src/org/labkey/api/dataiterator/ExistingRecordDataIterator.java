@@ -289,7 +289,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
         private Pair<SQLFragment, Map<Integer, String>> getSelectExistingSql(int rows) throws BatchValidationException
         {
-            SQLFragment sqlf = new SQLFragment("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
+            SQLFragment sqlf = SQLFragment.unsafe("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
             String comma = "";
             Map<Integer, String> rowNumContainers = new IntHashMap<>();
             String container;
