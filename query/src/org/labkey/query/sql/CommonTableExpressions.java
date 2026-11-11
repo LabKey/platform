@@ -219,8 +219,10 @@ public class CommonTableExpressions
         public SQLFragment getFromSql(String alias)
         {
             // Reference to With
+            SQLFragment cteTokenSql = new SQLFragment();
+            cteTokenSql.setSqlUnsafe(_cteToken);
             SQLFragment sql = new SQLFragment()
-                    .append(new SQLFragment().setSqlUnsafe(_cteToken)).unsafeAppend(" ")
+                    .append(cteTokenSql).unsafeAppend(" ")
                     .appendIdentifier(alias);
 
             if (!_parsingWith)

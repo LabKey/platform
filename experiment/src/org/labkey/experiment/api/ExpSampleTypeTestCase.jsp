@@ -40,6 +40,13 @@
 <%@ page import="org.labkey.api.data.queryprofiler.QueryCounter" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
+<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
+<%@ page import="org.labkey.api.dataiterator.ValidatorIterator" %>
+<%@ page import="org.labkey.api.data.validator.PrefetchingValidator" %>
+<%@ page import="org.labkey.api.data.validator.PropertyValidator" %>
+<%@ page import="org.labkey.api.exp.PropertyType" %>
+<%@ page import="org.labkey.api.exp.property.ValidatorContext" %>
+<%@ page import="org.labkey.experiment.api.property.LookupValidatorKind" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
@@ -87,10 +94,12 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineageService" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
 <%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
@@ -1549,6 +1558,169 @@ public void testPrefetchExpMaterialsMatchesFindExpMaterial() throws Exception
     }
 }
 
+@Test // GH Issue 1561
+public void testLookupValidatorQueriesPerWindow() throws Exception
+{
+    String sampleType = createSampleType(generateSampleTypeName(), List.of(new GWTPropertyDescriptor("name", "string")), null).getName();
+    String prefix = sampleType + "-";
+    List<Map<String, Object>> samples = insertSampleRows(sampleType, List.of(
+        CaseInsensitiveHashMap.of("name", prefix + "1"),
+        CaseInsensitiveHashMap.of("name", prefix + "2"),
+        CaseInsensitiveHashMap.of("name", prefix + "3")
+    ));
+    Object id1 = samples.get(0).get("rowid");
+    Object id2 = samples.get(1).get("rowid");
+    long id3 = ((Number) samples.get(2).get("rowid")).longValue();
+
+    // An INTEGER field matches the key however the value is typed, so the last window is all cached; a text field validates against the sample Name
+    assertLookupValidation(lookupField(sampleType, PropertyType.INTEGER), List.of(id1, id2, id1, -1561L, id3, String.valueOf(id2), (int) id3), Set.of(4), 3);
+    assertLookupValidation(lookupField(sampleType, PropertyType.STRING), List.of(prefix + "1", prefix + "2", prefix + "Missing", prefix + "3", prefix + "1"), Set.of(3), 2);
+}
+
+@Test // GH Issue 1561
+public void testLookupValidatorPreloadWithDuplicateKeys() throws Exception
+{
+    // exp.Materials spans every sample type in the folder, so isolate this test's samples
+    c = ContainerManager.ensureContainer(c, "LookupValidatorDuplicateKeys", _user);
+    String prefix = generateSampleTypeName() + "-";
+    String dup = prefix + "dup";
+    String oldest = prefix + "oldest";
+    // The preload sorts by RowId descending, so it reads the three newest rows: the duplicated name
+    for (String name : List.of(oldest, dup, dup, dup))
+    {
+        String sampleType = createSampleType(generateSampleTypeName(), List.of(new GWTPropertyDescriptor("name", "string")), null).getName();
+        insertSampleRows(sampleType, List.of(CaseInsensitiveHashMap.of("name", name)));
+    }
+
+    PropertyDescriptor field = new PropertyDescriptor("urn:lsid:labkey.com:LookupValidatorTest:Materials", PropertyType.STRING, "Lookup", c);
+    field.setLookupSchema(ExpSchema.SCHEMA_EXP.toString());
+    field.setLookupQuery(ExpSchema.TableType.Materials.name());
+
+    // Three rows hold one distinct key, but the target has a fourth row, so the oldest name needs its own query
+    try (AutoCloseable ignored = LookupValidatorKind.overridePreloadMaxRows(2); QueryCounter counter = new QueryCounter("\"exp\".\"material\""))
+    {
+        assertNull(lookupValidator(field).validate(1, oldest, new ValidatorContext(c, _user), null));
+        assertEquals(String.valueOf(counter.getSql()), 2, counter.getCount());
+    }
+}
+
+@Test // GH Issue 1745
+public void testBulkLookupsScopedToContainer() throws Exception
+{
+    ExpSampleType st = createSampleType(generateSampleTypeName(), List.of(new GWTPropertyDescriptor("name", "string")), null);
+    Container sub = ContainerManager.ensureContainer(c, "bulkLookup-" + st.getName(), _user);
+
+    String prefix = st.getName() + "-";
+    List<String> inProject = List.of(prefix + "1", prefix + "2", prefix + "3", prefix + "4");
+    String inSub = prefix + "InSub";
+    insertSampleRows(st.getName(), nameRows(inProject));
+    insertSampleRows(sub, st.getName(), nameRows(List.of(inSub)));
+
+    List<String> names = new ArrayList<>(inProject);
+    names.add(inSub);
+    names.add(prefix + "Missing");
+
+    try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, 3))
+    {
+        List<? extends ExpMaterial> byName = st.getSamplesByName(c, names);
+        assertEquals(Set.copyOf(inProject), byName.stream().map(ExpMaterial::getName).collect(Collectors.toSet()));
+        byName.forEach(m -> assertEquals(m.getName(), c, m.getContainer()));
+
+        List<? extends ExpMaterial> subByName = st.getSamplesByName(sub, names);
+        assertEquals(List.of(inSub), subByName.stream().map(ExpMaterial::getName).toList());
+        String subLsid = subByName.getFirst().getLSID();
+
+        List<String> lsids = new ArrayList<>(byName.stream().map(ExpMaterial::getLSID).toList());
+        lsids.add(subLsid);
+        lsids.add(prefix + "MissingLsid");
+
+        List<? extends ExpMaterial> byLsid = ExperimentService.get().getExpMaterialsByLsid(c, lsids);
+        assertEquals(byName.stream().map(ExpMaterial::getRowId).collect(Collectors.toSet()), byLsid.stream().map(ExpMaterial::getRowId).collect(Collectors.toSet()));
+
+        assertNull(ExperimentService.get().getExpMaterial(c, subLsid));
+        assertNotNull(ExperimentService.get().getExpMaterial(sub, subLsid));
+    }
+
+    assertTrue(st.getSamplesByName(c, emptyList()).isEmpty());
+    assertTrue(ExperimentService.get().getExpMaterialsByLsid(c, emptyList()).isEmpty());
+}
+
+private static List<Map<String, Object>> nameRows(List<String> names)
+{
+    List<Map<String, Object>> rows = new ArrayList<>();
+    names.forEach(name -> rows.add(CaseInsensitiveHashMap.of("name", name)));
+    return rows;
+}
+
+private PropertyDescriptor lookupField(String sampleType, PropertyType type)
+{
+    PropertyDescriptor field = new PropertyDescriptor("urn:lsid:labkey.com:LookupValidatorTest:" + type.name(), type, "Lookup", c);
+    field.setLookupSchema(SamplesSchema.SCHEMA_SAMPLES.toString());
+    field.setLookupQuery(sampleType);
+    return field;
+}
+
+private PropertyValidator lookupValidator(PropertyDescriptor field)
+{
+    LookupValidatorKind kind = new LookupValidatorKind();
+    return kind.bind(kind.createInstance(), field);
+}
+
+private Set<Integer> validateLookups(PropertyDescriptor field, List<Object> values) throws Exception
+{
+    List<Map<String, Object>> rows = values.stream().map(v -> (Map<String, Object>) CaseInsensitiveHashMap.of(field.getName(), v)).toList();
+    DataIteratorContext context = new DataIteratorContext();
+    context.setFailFast(false);
+    ValidatorIterator validate = new ValidatorIterator(new ListofMapsDataIterator(Set.of(field.getName()), rows), context, c, _user, Map.of(1, List.of(lookupValidator(field))));
+    while (validate.next())
+    {
+    }
+    return context.getErrors().getRowErrors().stream().map(ValidationException::getRowNumber).collect(Collectors.toSet());
+}
+
+/** @param expectedQueries windows of two rows holding a value not already cached; one query each, never one for the whole target */
+private void assertLookupValidation(PropertyDescriptor field, List<Object> values, Set<Integer> expectedErrorRows, int expectedQueries) throws Exception
+{
+    String label = field.getPropertyType().name();
+
+    assertEquals(label, expectedErrorRows, validateLookups(field, values));
+
+    // Building the lookup table runs queries of its own once per import, so count only those against the target
+    String lookupTarget = "\"exp\".\"material\"";
+    int windowSize = 2;
+    try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, windowSize); QueryCounter counter = new QueryCounter(lookupTarget))
+    {
+        assertEquals(label, expectedErrorRows, validateLookups(field, values));
+        assertEquals(label + ": " + counter.getSql(), expectedQueries, counter.getCount());
+    }
+
+    // Outside a data iterator, the first lookup loads a target under the preload cap, so a missing value needs no query
+    Object missing = values.get(expectedErrorRows.iterator().next() - 1);
+    assertUnbatchedLookups(field, values.getFirst(), missing, 1);
+
+    // A target over the preload cap queries each uncached value by itself
+    try (AutoCloseable ignored = LookupValidatorKind.overridePreloadMaxRows(windowSize))
+    {
+        assertUnbatchedLookups(field, values.getFirst(), missing, 2);
+    }
+}
+
+private void assertUnbatchedLookups(PropertyDescriptor field, Object present, Object missing, int expectedQueries)
+{
+    String label = field.getPropertyType().name();
+    ValidatorContext validatorContext = new ValidatorContext(c, _user);
+    PropertyValidator validator = lookupValidator(field);
+    try (QueryCounter counter = new QueryCounter("\"exp\".\"material\""))
+    {
+        assertNull(validator.validate(1, present, validatorContext, null));
+        assertNull(validator.validate(2, present, validatorContext, null));
+        assertNotNull(validator.validate(3, missing, validatorContext, null));
+        // A complete preload doesn't cache misses, so only the _complete check keeps this from querying
+        ((PrefetchingValidator) validator).prefetch(List.of(missing), validatorContext);
+        assertEquals(label + ": " + counter.getSql(), expectedQueries, counter.getCount());
+    }
+}
+
 private String findResult(@Nullable ExpSampleType sampleType, String key, RemapCache cache, Map<Long, ExpMaterial> materialCache)
 {
     try
@@ -1622,9 +1794,16 @@ private List<Map<String, Object>> getSampleRows(String sampleType)
 
 private List<Map<String, Object>> insertSampleRows(String sampleType, List<Map<String, Object>> rows) throws Exception
 {
+    return insertSampleRows(c, sampleType, rows);
+}
+
+private List<Map<String, Object>> insertSampleRows(Container container, String sampleType, List<Map<String, Object>> rows) throws Exception
+{
     BatchValidationException errors = new BatchValidationException();
-    QueryUpdateService svc = getSampleTypeUpdateService(sampleType);
-    List<Map<String, Object>> ret = svc.insertRows(_user, c, rows, errors, null, null);
+    UserSchema schema = QueryService.get().getUserSchema(_user, container, SamplesSchema.SCHEMA_SAMPLES);
+    QueryUpdateService svc = schema.getTableOrThrow(sampleType).getUpdateService();
+    assertNotNull("Update service cannot be null", svc);
+    List<Map<String, Object>> ret = svc.insertRows(_user, container, rows, errors, null, null);
     if (errors.hasErrors())
         throw errors;
     return ret;

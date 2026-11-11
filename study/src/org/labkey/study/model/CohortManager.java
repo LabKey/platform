@@ -334,7 +334,7 @@ public class CohortManager
                             .SELECT_DISTINCT().append(cohortLabelCol.getValueSql("CO")).NL()
                             .FROM().append(cohortDatasetTinfo.getFromSQL("CO")).NL()
                             .WHERE().append(cohortLabelCol.getValueSql("CO")).IS_NOT_NULL()
-                                .AND().append(cohortLabelCol.getValueSql("CO")).NOT().IN().LP()
+                                .AND().append(cohortLabelCol.getValueSql("CO")).NOT_IN().LP()
                                     .SELECT().unsafeAppend("Label").FROM().append(StudySchema.getInstance().getTableInfoCohort())
                                     .WHERE().unsafeAppend("Container = ?").RP()
                             .add(study.getContainer().getId());

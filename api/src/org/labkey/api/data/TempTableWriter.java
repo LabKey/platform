@@ -85,7 +85,7 @@ public class TempTableWriter
 
         // note: this call sets col.parentTable()
         TempTableInfo tinfoTempTable = new TempTableInfo("ttw", activeColumns, null);
-        String tempTableName = tinfoTempTable.getTempTableName();
+        SQLFragment tempTableName = tinfoTempTable.getSQLName();
 
         //
         // create table

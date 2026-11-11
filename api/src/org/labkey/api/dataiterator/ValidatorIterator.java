@@ -19,10 +19,12 @@ package org.labkey.api.dataiterator;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.data.validator.PrefetchingValidator;
 import org.labkey.api.data.validator.PropertyValidator;
 import org.labkey.api.data.validator.RowValidator;
 import org.labkey.api.exp.property.DomainProperty;
@@ -35,7 +37,11 @@ import org.labkey.api.util.GUID;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
@@ -46,6 +52,7 @@ import static org.labkey.api.util.IntegerUtils.asInteger;
  */
 public class ValidatorIterator extends AbstractDataIterator implements DataIterator
 {
+    final DataIterator _in;
     final DataIterator _data;
     final ValidatorContext validatorContext;
     final ArrayList<RowValidator> _rowValidators = new ArrayList<>();
@@ -53,29 +60,39 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
 
     public ValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
     {
+        this(data, context, c, user, Map.of());
+    }
+
+    /** {@link PrefetchingValidator}s must be passed here, since the look-ahead they need is chosen at construction */
+    public ValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user, Map<Integer, ? extends List<? extends ColumnValidator>> validators)
+    {
         super(context);
-        _data = data;
+        _in = data;
         validatorContext = new ValidatorContext(c, user);
+        validators.forEach(this::putValidators);
+        _data = lookAhead(data);
+    }
+
+    private void putValidators(int i, List<? extends ColumnValidator> vs)
+    {
+        while (_validators.size() <= i)
+            _validators.add(new ArrayList<>());
+        _validators.get(i).addAll(vs);
     }
 
     public void addValidators(int i, List<? extends ColumnValidator> vs)
     {
         if (vs != null)
         {
-            while (_validators.size() <= i)
-                _validators.add(new ArrayList<>());
-            _validators.get(i).addAll(vs);
+            assert vs.stream().noneMatch(v -> v instanceof PrefetchingValidator) : "Pass PrefetchingValidators to the constructor";
+            putValidators(i, vs);
         }
     }
 
     public void addValidator(int i, ColumnValidator v)
     {
         if (v != null)
-        {
-            while (_validators.size() <= i)
-                _validators.add(new ArrayList<>());
-            _validators.get(i).add(v);
-        }
+            addValidators(i, List.of(v));
     }
 
 
@@ -216,6 +233,45 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
         return true;
     }
 
+    /** GH Issue 1561: when validators resolve values in bulk, prefetch a window of rows before validating them one at a time */
+    private DataIterator lookAhead(DataIterator data)
+    {
+        Map<Integer, List<PrefetchingValidator>> prefetching = new HashMap<>();
+        for (int i = 1; i < _validators.size(); i++)
+        {
+            for (ColumnValidator v : _validators.get(i))
+            {
+                if (v instanceof PrefetchingValidator pv)
+                    prefetching.computeIfAbsent(i, k -> new ArrayList<>()).add(pv);
+            }
+        }
+        if (prefetching.isEmpty())
+            return data;
+
+        return LookAheadDataIterator.of(data, BatchSize.get(BatchSize.Kind.ROWS), new LookAheadDataIterator.LookAheadCallback()
+        {
+            private final Map<Integer, Set<Object>> _windowValues = new HashMap<>();
+
+            @Override
+            public void collectRow(DataIterator lookAhead)
+            {
+                for (Integer i : prefetching.keySet())
+                {
+                    Object value = lookAhead.get(i);
+                    if (value != null)
+                        _windowValues.computeIfAbsent(i, k -> new LinkedHashSet<>()).add(value);
+                }
+            }
+
+            @Override
+            public void prefetch()
+            {
+                _windowValues.forEach((i, values) -> prefetching.get(i).forEach(pv -> pv.prefetch(values, validatorContext)));
+                _windowValues.clear();
+            }
+        });
+    }
+
     protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data, @Nullable Object providedValue)
     {
         return v.validate(rowNum, value, validatorContext, providedValue);
@@ -245,14 +301,15 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
     @Override
     public boolean isConstant(int i)
     {
-        return _data.isConstant(i);
+        // The look-ahead caches rows and doesn't report constants
+        return _in.isConstant(i);
     }
 
 
     @Override
     public Object getConstantValue(int i)
     {
-        return _data.getConstantValue(i);
+        return _in.getConstantValue(i);
     }
 
     @Override

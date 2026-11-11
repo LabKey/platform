@@ -885,7 +885,7 @@ public class Table
                         throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
                 }
 
-                valueSQL.append("?");
+                valueSQL.unsafeAppend("?");
                 if (value instanceof Parameter.JdbcParameterValue)
                     valueSQL.add(value);
                 else
@@ -901,13 +901,13 @@ public class Table
         }
 
         insertSQL.unsafeAppend("INSERT INTO ");
-        insertSQL.append(table.getSelectName());
+        insertSQL.append(table.getSQLName());
         insertSQL.unsafeAppend("\n\t(");
         insertSQL.append(columnSQL);
         insertSQL.unsafeAppend(")\n\t");
         insertSQL.unsafeAppend("VALUES (");
         insertSQL.append(valueSQL);
-        insertSQL.append(")");
+        insertSQL.unsafeAppend(")");
 
         // CONSIDER reselect version column
         if (null != autoIncColumn)
@@ -1172,7 +1172,7 @@ public class Table
         if (containerColumn == null)
             throw new IllegalArgumentException("Table " + fullTableName(table) + " has no column named '" + SpecialColumn.Container.name() + "'.");
 
-        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(table)
+        SQLFragment dataUpdate = SQLFragment.unsafe("UPDATE ").append(table)
                 .unsafeAppend(" SET  ").appendIdentifier(containerColumn.getSelectIdentifier())
                 .unsafeAppend(" = ")
                 .appendValue(targetContainer);
@@ -1238,7 +1238,7 @@ public class Table
     {
         assert assertInDb(table);
         SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
-        SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).unsafeAppend("\n\t").append(where);
+        SQLFragment deleteSQL = SQLFragment.unsafe("DELETE FROM ").append(table).unsafeAppend("\n\t").append(where);
 
         return new SqlExecutor(table.getSchema()).execute(deleteSQL);
     }
@@ -1776,7 +1776,7 @@ public class Table
             }
 
             String fn = null==objectIdColumnName ? "deleteObject" : "deleteObjectByid";
-            SQLFragment deleteArguments = new SQLFragment("?, ");
+            SQLFragment deleteArguments = SQLFragment.unsafe("?, ");
             deleteArguments.add(paramContainer);
             deleteArguments.append(sqlfSelectKey);
             sqlfDeleteObject = d.execute(ExperimentService.get().getSchema(), fn, deleteArguments);
@@ -1786,7 +1786,7 @@ public class Table
         // BASE TABLE delete
         //
 
-        sqlfDeleteTable = new SQLFragment("DELETE ").append(table);
+        sqlfDeleteTable = SQLFragment.unsafe("DELETE ").append(table);
         sqlfDelete.append(sqlfWhere);
 
         if (null != sqlfDeleteObject)
@@ -1906,7 +1906,7 @@ public class Table
 
     public static class LogExceptionTestCase extends Assert
     {
-        private static final SQLFragment SELECT = new SQLFragment("SELECT 1");
+        private static final SQLFragment SELECT = SQLFragment.unsafe("SELECT 1");
 
         // How PgJDBC reports a backend killed mid-query
         private static SQLException backendTerminated()
@@ -1928,7 +1928,7 @@ public class Table
             assertNull(getExceptionLogLevel(SELECT, backendTerminated(), Level.OFF));
             assertNull(getExceptionLogLevel(SELECT, new SQLException("relation does not exist", "42P01"), Level.OFF));
 
-            SQLFragment insert = new SQLFragment("INSERT INTO t VALUES (1)");
+            SQLFragment insert = SQLFragment.unsafe("INSERT INTO t VALUES (1)");
             SQLException duplicate = new SQLException("duplicate key value violates unique constraint", "23505");
             assertEquals(Level.WARN, getExceptionLogLevel(insert, duplicate, Level.WARN));
             assertNull(getExceptionLogLevel(insert, duplicate, Level.ERROR));

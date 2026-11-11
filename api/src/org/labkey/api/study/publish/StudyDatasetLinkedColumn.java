@@ -67,8 +67,8 @@ public class StudyDatasetLinkedColumn extends ExprColumn
 
         joinSql.appendComment("<StudyDatasetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
         joinSql.unsafeAppend(" LEFT OUTER JOIN ").append(datasetTable.getFromSQL(datasetAlias)).unsafeAppend(" ON ");
-        joinSql.append(datasetAlias).unsafeAppend("._key = CAST(").append(parentAlias).unsafeAppend(".").append(_rowIdName).unsafeAppend(" AS ");
-        joinSql.append(getSqlDialect().getSqlTypeName(JdbcType.VARCHAR)).unsafeAppend("(200))");
+        joinSql.appendIdentifier(datasetAlias).unsafeAppend("._key = CAST(").appendDottedIdentifiers(parentAlias, getSqlDialect().makeDatabaseIdentifier(_rowIdName)).unsafeAppend(" AS ");
+        joinSql.append(getSqlDialect().getSqlTypeNameAsSql(JdbcType.VARCHAR)).unsafeAppend("(200))");
         joinSql.appendComment("</StudyDatasetColumn.join>", getSqlDialect());
         map.put(datasetAlias, joinSql);
     }

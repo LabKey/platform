@@ -55,8 +55,10 @@ public class NullColumnInfo extends BaseColumnInfo
     public static SQLFragment nullValue(@Nullable String typeName)
     {
         if (null == typeName)
-            return new SQLFragment("NULL");
-        return new SQLFragment("CAST(NULL AS ").append(new SQLFragment().setSqlUnsafe(typeName)).unsafeAppend(")");
+            return SQLFragment.unsafe("NULL");
+        SQLFragment typeSql = new SQLFragment();
+        typeSql.setSqlUnsafe(typeName);
+        return SQLFragment.unsafe("CAST(NULL AS ").append(typeSql).unsafeAppend(")");
     }
 }
 

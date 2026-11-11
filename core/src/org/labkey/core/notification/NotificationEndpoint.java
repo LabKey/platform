@@ -19,7 +19,13 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.labkey.api.data.RequestCancellation;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.security.SecurityManager;
@@ -31,7 +37,7 @@ import jakarta.websocket.CloseReason;
 import jakarta.websocket.Endpoint;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.HandshakeResponse;
-import jakarta.websocket.OnMessage;
+import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.HandshakeRequest;
 import jakarta.websocket.server.ServerEndpoint;
@@ -42,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
@@ -55,9 +62,13 @@ public class NotificationEndpoint extends Endpoint
 {
     static final Logger LOG = LogManager.getLogger(NotificationEndpoint.class);
     static final MultiValuedMap<Integer,NotificationEndpoint> endpointsMap = new ArrayListValuedHashMap<>();
+    private static final int MAX_CANCEL_REQUEST_IDS = 100;
 
     private Session session;
     private int userId;
+    private String tabId; // The page that opened this socket, which sends the same id with the requests it may cancel
+    private String sessionId; // The HTTP session the requests this socket may cancel must have been sent with
+    private long openedAt;
     private boolean errored;
     private QuietCloser tracked;
 
@@ -76,11 +87,24 @@ public class NotificationEndpoint extends Endpoint
 
         Integer id = asInteger(endpointConfig.getUserProperties().get("userId"));
         this.userId = null==id ? 0 : id;
+        this.tabId = Objects.toString(endpointConfig.getUserProperties().get("tabId"), "");
+        this.sessionId = endpointConfig.getUserProperties().get("httpSession") instanceof HttpSession httpSession ? httpSession.getId() : "";
+        this.openedAt = System.currentTimeMillis();
 
         LOG.debug("{} onOpen", this);
         // endpointsMap holds only authenticated endpoints, but a guest's socket occupies a connection slot just the
         // same - on a public site they're nearly all guests. GH Issue 1574
         tracked = WebSocketTracker.opened();
+
+        // Tomcat ignores @OnMessage on Endpoint subclasses
+        session.addMessageHandler(new MessageHandler.Whole<String>()
+        {
+            @Override
+            public void onMessage(String message)
+            {
+                incoming(message);
+            }
+        });
 
         synchronized (endpointsMap)
         {
@@ -94,9 +118,42 @@ public class NotificationEndpoint extends Endpoint
     }
 
 
-    @OnMessage
-    public void incoming(String message)
+    /** {"type":"cancel","requestIds":[...]} cancels those in-flight requests from this socket's tab */
+    private void incoming(String message)
     {
+        if (!canCancel())
+            return;
+
+        try
+        {
+            JSONObject json = new JSONObject(message);
+            JSONArray ids = json.optJSONArray("requestIds");
+            if (!"cancel".equals(json.optString("type")) || ids == null || ids.isEmpty())
+                return;
+
+            if (ids.length() > MAX_CANCEL_REQUEST_IDS)
+                LOG.debug("{} ignoring {} of {} request ids past the limit", this, ids.length() - MAX_CANCEL_REQUEST_IDS, ids.length());
+
+            // Ids are client-generated UUIDs; anything else can't match a request and would only be logged as ignored
+            List<String> requestIds = new ArrayList<>();
+            for (int i = 0; i < Math.min(ids.length(), MAX_CANCEL_REQUEST_IDS); i++)
+            {
+                String requestId = ids.optString(i);
+                if (GUID.isGUID(requestId))
+                    requestIds.add(requestId);
+            }
+            if (!requestIds.isEmpty())
+                TransactionFilter.cancelRequests(this.userId, this.sessionId, this.tabId, requestIds, RequestCancellation.Source.WS_MESSAGE);
+        }
+        catch (JSONException e)
+        {
+            LOG.debug("{} ignoring malformed message: {}", this, e.getMessage());
+        }
+    }
+
+    private boolean canCancel()
+    {
+        return this.userId > 0 && !this.tabId.isEmpty() && !this.sessionId.isEmpty() && RequestCancellation.isCancelAbandonedRequestsEnabled();
     }
 
 
@@ -110,6 +167,24 @@ public class NotificationEndpoint extends Endpoint
         }
         if (null != tracked)
             tracked.close();
+        if (canCancel())
+        {
+            int code = closeReason.getCloseCode().getCode();
+            long lifetimeMs = System.currentTimeMillis() - this.openedAt;
+            // An abnormal close near the load balancer's idle timeout means it killed a silent socket; errored means the server
+            // closed it after a failed send; 1008 means Tomcat closed it because the HTTP session ended. The tab may still be
+            // open and waiting, so leave its requests to the read-only timeout.
+            if (this.errored || code == CloseReason.CloseCodes.CLOSED_ABNORMALLY.getCode() || code == CloseReason.CloseCodes.VIOLATED_POLICY.getCode())
+            {
+                LOG.info("websocket-close userId={} lifetimeMs={} code={} errored={} reason={}", this.userId, lifetimeMs, code, this.errored, closeReason.getReasonPhrase());
+            }
+            else
+            {
+                LOG.debug("websocket-close userId={} lifetimeMs={} code={} errored={} reason={}", this.userId, lifetimeMs, code, this.errored, closeReason.getReasonPhrase());
+                // The page is gone, so nobody is left to read its results
+                TransactionFilter.cancelRequests(this.userId, this.sessionId, this.tabId, null, RequestCancellation.Source.WS_CLOSE);
+            }
+        }
         super.onClose(session, closeReason);
     }
 
@@ -142,6 +217,9 @@ public class NotificationEndpoint extends Endpoint
                 config.getUserProperties().put("httpSession", session);
 
             config.getUserProperties().put("userId", null == user ? 0 : user.getUserId());
+
+            List<String> tabIds = request.getParameterMap().get("tabId");
+            config.getUserProperties().put("tabId", tabIds == null || tabIds.isEmpty() ? "" : tabIds.getFirst());
         }
     }
 

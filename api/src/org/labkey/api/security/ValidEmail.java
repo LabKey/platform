@@ -126,7 +126,7 @@ public class ValidEmail
             {
                 LOG.debug("Found field in users table to use to match against login form: {}", uidColumn.getName());
                 // Do a case-insensitive search for the username
-                Collection<Map<String, Object>> matchingUsers = new TableSelector(usersTable, new SimpleFilter(new SimpleFilter.SQLClause(new SQLFragment("LOWER(uid) = LOWER(?)", rawEmail), uidColumn.getFieldKey())), null).getMapCollection();
+                Collection<Map<String, Object>> matchingUsers = new TableSelector(usersTable, new SimpleFilter(new SimpleFilter.SQLClause(SQLFragment.unsafe("LOWER(uid) = LOWER(?)", rawEmail), uidColumn.getFieldKey())), null).getMapCollection();
                 if (matchingUsers.size() == 1)
                 {
                     String fullEmail = (String) matchingUsers.iterator().next().get("Email");

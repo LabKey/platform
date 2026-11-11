@@ -546,7 +546,7 @@ public class Sort
 
         // Determine if any ORDER BY additions were made
         if (!sql.getSQL().isEmpty())
-            return new SQLFragment("ORDER BY ").append(sql);
+            return SQLFragment.unsafe("ORDER BY ").append(sql);
 
         return new SQLFragment();
     }

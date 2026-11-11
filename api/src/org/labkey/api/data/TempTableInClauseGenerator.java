@@ -138,10 +138,10 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         {
             DbSchema tempSchema = _tempSchemaSupplier.get();
             tempTableInfo = new TempTableInfo(tempSchema, "InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
-            SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
+            SQLFragment sqlCreate = SQLFragment.unsafe("CREATE TABLE ");
             sqlCreate.append(tempTableInfo)
                 .unsafeAppend("\n(Id ")
-                .append(tempSchema.getSqlDialect().getSqlTypeName(jdbcType))
+                .append(tempSchema.getSqlDialect().getSqlTypeNameAsSql(jdbcType))
                 .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
                 .unsafeAppend(")");
 
@@ -281,7 +281,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         @Test
         public void testString()
         {
-            SQLFragment sql = new SQLFragment("SELECT a from (SELECT 'a' AS a UNION SELECT 'b' AS a UNION SELECT 'g' AS a) b WHERE a ");
+            SQLFragment sql = SQLFragment.unsafe("SELECT a from (SELECT 'a' AS a UNION SELECT 'b' AS a UNION SELECT 'g' AS a) b WHERE a ");
             SQLFragment firstSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sql), STRINGS);
             Assert.assertEquals("Validate first string IN clause", 2, new SqlSelector(_scope, firstSQL).getRowCount());
             SQLFragment secondSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sql), STRINGS);
@@ -294,7 +294,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         public void testJdbcParameterValues()
         {
             List<GUID> guids = Stream.generate(GUID::new).limit(4).toList();
-            SQLFragment sql = new SQLFragment("SELECT a FROM (SELECT ").appendValue(guids.get(0)).append(" AS a UNION SELECT ").appendValue(guids.get(1)).append(" AS a UNION SELECT 'g' AS a) b WHERE a ");
+            SQLFragment sql = SQLFragment.unsafe("SELECT a FROM (SELECT ").appendValue(guids.get(0)).unsafeAppend(" AS a UNION SELECT ").appendValue(guids.get(1)).unsafeAppend(" AS a UNION SELECT 'g' AS a) b WHERE a ");
             SQLFragment inClause = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sql), guids);
             Assert.assertNotNull("GUIDs should use a temp table", inClause);
             Assert.assertEquals("Validate GUID IN clause", 2, new SqlSelector(_scope, inClause).getRowCount());

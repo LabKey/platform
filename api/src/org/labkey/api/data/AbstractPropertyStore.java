@@ -120,7 +120,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     void deleteProperties(Container c)
     {
         var setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
-        SQLFragment deleteProps = new SQLFragment("DELETE FROM ").append(_prop.getTableInfoProperties().getSQLName())
+        SQLFragment deleteProps = SQLFragment.unsafe("DELETE FROM ").append(_prop.getTableInfoProperties().getSQLName())
                 .unsafeAppend(" WHERE ").appendIdentifier(setSelectName).unsafeAppend(" IN ")
                 .unsafeAppend("(SELECT ").appendIdentifier(setSelectName).unsafeAppend(" FROM ").append(_prop.getTableInfoPropertySets().getSQLName()).unsafeAppend(" WHERE ObjectId = ? AND ").add(c);
         appendWhereFilter(deleteProps);
@@ -219,7 +219,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
         ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
         var setSelectName = setColumn.getSelectIdentifier();   // Keyword in some dialects
 
-        SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(setSelectName).unsafeAppend(", Encryption FROM ").append(_prop.getTableInfoPropertySets())
+        SQLFragment sql = SQLFragment.unsafe("SELECT ").appendIdentifier(setSelectName).unsafeAppend(", Encryption FROM ").append(_prop.getTableInfoPropertySets())
                 .unsafeAppend(" WHERE UserId = ? AND ObjectId = ? AND Category = ?").addAll(user, container, category);
 
         PropertySet propertySet = new SqlSelector(_prop.getSchema(), sql).getObject(PropertySet.class);

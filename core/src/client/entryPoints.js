@@ -30,6 +30,11 @@ module.exports = {
         path: './src/client/ProductNavigation',
         generateLib: true // used in header.jsp
     },{
+        name: 'labKeyAssistant',
+        title: 'LabKey Assistant',
+        path: './src/client/LabKeyAssistant',
+        generateLib: true // used in pageTemplate.jsp
+    },{
         name: 'assayDesigner',
         title: 'Assay Designer',
         permissionClasses: ['org.labkey.api.security.permissions.ReadPermission'], // the component will check for DesignAssayPermission and show edit vs read only mode accordingly, used in assay/action/DesignerAction.java

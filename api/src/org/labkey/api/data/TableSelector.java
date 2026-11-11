@@ -779,7 +779,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
     private static Collection<ColumnInfo> getRowCountingSelectColumns(TableInfo table)
     {
-        ColumnInfo column = new ExprColumn(table, "One", new SQLFragment("1"), JdbcType.INTEGER);
+        ColumnInfo column = new ExprColumn(table, "One", SQLFragment.unsafe("1"), JdbcType.INTEGER);
         return Collections.singleton(column);
     }
 

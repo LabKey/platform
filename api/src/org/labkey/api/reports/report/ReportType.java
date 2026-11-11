@@ -44,7 +44,7 @@ public class ReportType implements AttachmentParentType
     public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
         TableInfo table = CoreSchema.getInstance().getTableInfoReport();
-        return new SQLFragment("SELECT EntityId, ")
+        return SQLFragment.unsafe("SELECT EntityId, ")
             .append(table.getSqlDialect().concatenate("ReportKey", "':'", "CAST(RowId AS VARCHAR)"))
             .unsafeAppend(" AS Description FROM ")
             .append(table, "reports");

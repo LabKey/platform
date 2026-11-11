@@ -25,8 +25,8 @@ import org.labkey.api.data.SQLFragment;
  */
 public interface AttachmentParentType
 {
-    SQLFragment NO_ROWS = new SQLFragment("SELECT NULL AS EntityId, NULL AS Description WHERE 1 = 0");
-    SQLFragment PARENT_CONTAINER_SQL = new SQLFragment("SELECT EntityId, COALESCE(Name, '<Root>') AS Description FROM ")
+    SQLFragment NO_ROWS = SQLFragment.unsafe("SELECT NULL AS EntityId, NULL AS Description WHERE 1 = 0");
+    SQLFragment PARENT_CONTAINER_SQL = SQLFragment.unsafe("SELECT EntityId, COALESCE(Name, '<Root>') AS Description FROM ")
         .append(CoreSchema.getInstance().getTableInfoContainers());
 
     AttachmentParentType UNKNOWN = new AttachmentParentType()
@@ -58,7 +58,7 @@ public interface AttachmentParentType
     default void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
         SQLFragment selectSql = getSelectParentEntityIdsSql();
-        sql.append(parentColumn).unsafeAppend(" IN (").append(selectSql).unsafeAppend(")");
+        sql.appendIdentifier(parentColumn).unsafeAppend(" IN (").append(selectSql).unsafeAppend(")");
     }
 
     /**
@@ -70,7 +70,7 @@ public interface AttachmentParentType
         SQLFragment selectSql = getSelectEntityIdAndDescriptionSql();
 
         // The returned SQL is always used inside a subselect, so the alias doesn't have to be unique
-        return new SQLFragment("SELECT EntityId FROM (").append(selectSql).unsafeAppend(") x");
+        return SQLFragment.unsafe("SELECT EntityId FROM (").append(selectSql).unsafeAppend(") x");
     }
 
     /**

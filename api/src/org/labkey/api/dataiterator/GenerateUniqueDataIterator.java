@@ -141,7 +141,7 @@ public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
 
     private List<V> getValidatedList(List<V> proposedValues)
     {
-        SQLFragment sqlf = new SQLFragment("WITH _values_ AS (\nSELECT * FROM (VALUES \n");
+        SQLFragment sqlf = SQLFragment.unsafe("WITH _values_ AS (\nSELECT * FROM (VALUES \n");
         String comma = "";
         for (V v : proposedValues)
         {

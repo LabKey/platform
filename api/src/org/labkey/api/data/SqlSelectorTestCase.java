@@ -52,7 +52,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         assertTrue("Expected an identity map!", identityMap.entrySet().stream().allMatch(entry -> entry.getKey().equals(entry.getValue())));
 
         verifyExecutionPlans(selector);
-        verifyExecutionPlans(new SqlSelector(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT RowId FROM comm.Announcements WHERE RowId > ?", 0)));
+        verifyExecutionPlans(new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT RowId FROM comm.Announcements WHERE RowId > ?", 0)));
     }
 
     // Verify that we can generate the supported execution plans and that they contain neither the query nor its results
@@ -288,13 +288,13 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         assertFalse("Test assumes no active transaction on this thread", scope.isTransactionActive());
 
         // core.Containers always has at least the root container
-        long expectedRows = new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers")).getRowCount();
+        long expectedRows = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId FROM core.Containers")).getRowCount();
         assertTrue("core.Containers should never be empty", expectedRows > 0);
 
         MutableInt visited = new MutableInt(0);
         Set<Connection> callbackConnections = Collections.newSetFromMap(new IdentityHashMap<>());
 
-        new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers ORDER BY RowId")).forEach(Integer.class, rowId -> {
+        new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId FROM core.Containers ORDER BY RowId")).forEach(Integer.class, rowId -> {
             visited.increment();
 
             // The callback runs while the outer ResultSet is open. Acquiring the thread connection must return the same
@@ -308,7 +308,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
 
             // A nested self-contained query must return correct results even though the outer server-side cursor is open
             // on the same connection — this is the interleaving that would fail if the nested statement clobbered it.
-            Integer nestedRowId = new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers WHERE RowId = ?", rowId)).getObject(Integer.class);
+            Integer nestedRowId = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId FROM core.Containers WHERE RowId = ?", rowId)).getObject(Integer.class);
             assertEquals("Nested query should return exactly the matching row", rowId, nestedRowId);
         });
 

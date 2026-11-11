@@ -1462,8 +1462,10 @@ public class DbScope
 
     public ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
-        // If the thread is banned, release the ban so that future DB cleanup (dropping temp tables, for example) can proceed
-        if (BANNED_THREADS.remove(getEffectiveThread()))
+        // If the thread is banned, release the ban so that future DB cleanup (dropping temp tables, for example) can proceed.
+        // A deferral, e.g. an audit insert, is exempt; the ban waits for the thread's next connection after it.
+        Thread thread = getEffectiveThread();
+        if (BANNED_THREADS.contains(thread) && !TransactionFilter.isCancellationDeferred(thread) && BANNED_THREADS.remove(thread))
         {
             throw new AbortedRequestException("Cannot get another DB connection for this thread");
         }
@@ -3167,7 +3169,7 @@ public class DbScope
 
         private void _testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
         {
-            SQLFragment sql = new SQLFragment("SELECT (");
+            SQLFragment sql = SQLFragment.unsafe("SELECT (");
             sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
             sql.unsafeAppend(") AS Diff");
 
@@ -3210,9 +3212,9 @@ public class DbScope
         {
             String delimiter = " ";
 
-            SQLFragment query = new SQLFragment("SELECT\n");
+            SQLFragment query = SQLFragment.unsafe("SELECT\n");
             query.unsafeAppend("  COUNT(*) AS NumRows,\n");
-            query.unsafeAppend("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).unsafeAppend(" AS StrVals\n");
+            query.unsafeAppend("  ").append(dialect.getGroupConcat(SQLFragment.unsafe("StrVal"), distinct, sorted, delimiter)).unsafeAppend(" AS StrVals\n");
             query.unsafeAppend("FROM (\n");
             query.unsafeAppend("  VALUES\n");
             query.unsafeAppend("  (1, 'x'),\n");

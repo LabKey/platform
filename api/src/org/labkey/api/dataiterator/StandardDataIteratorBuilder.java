@@ -308,8 +308,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 for (Set<String> requiredFields : additionalRequiredInsertColumns)
                     additionalRequiredCols.addAll(requiredFields);
             }
-            ValidatorIterator validate = getValidatorIterator(validateInput, context, translateHelperMap, _c, _user);
-
+            Map<Integer, List<ColumnValidator>> validators = new HashMap<>();
             for (int index = 1; index <= validateInput.getColumnCount(); index++)
             {
                 ColumnInfo col = validateInput.getColumnInfo(index);
@@ -320,13 +319,13 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                     {
                         var reqd = ColumnValidators.createRequiredValidator(col, null, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
                         if (null != reqd)
-                            validate.addValidator(index, reqd);
+                            validators.put(index, List.of(reqd));
                     }
                     continue;
                 }
-                List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
-                validate.addValidators(index, validators);
+                validators.put(index, ColumnValidators.create(pair.target, pair.dp, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString)));
             }
+            ValidatorIterator validate = getValidatorIterator(validateInput, context, translateHelperMap, _c, _user, validators);
             if (validate.hasValidators())
                 last = validate;
         }
@@ -347,9 +346,9 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
     }
 
-    protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user)
+    protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user, Map<Integer, List<ColumnValidator>> validators)
     {
-        ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user);
+        ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user, validators);
         validate.setDebugName("StandardDIB validate");
         return validate;
     }

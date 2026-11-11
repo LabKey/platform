@@ -30,7 +30,7 @@ public class SampleStatusTable extends FilteredTable<ExpSchema>
         setName(ExpSchema.TableType.SampleStatus.name());
         if (cf != null)
             this.setContainerFilter(cf);
-        SQLFragment sql = new SQLFragment("(stateType");
+        SQLFragment sql = SQLFragment.unsafe("(stateType");
         sql.appendInClause(Arrays.stream(ExpSchema.SampleStateType.values()).map(Enum::name).toList(), getSqlDialect());
         sql.unsafeAppend(")");
         addCondition(sql);

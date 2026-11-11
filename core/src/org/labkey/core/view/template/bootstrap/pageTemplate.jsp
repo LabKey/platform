@@ -102,6 +102,9 @@
 <div class="lk-body-ct">
     <% me.include(me.getView("bodyTemplate"), out); %>
 </div>
+<% if (me.showAssistant()) { %>
+<div id="sdms-labkey-assistant"></div>
+<% } %>
 <% if (null != me.getView("footer")) { %>
 <footer class="footer-block">
     <div class="footer-content">
@@ -121,5 +124,10 @@ if (null != me.getViewContext().getContainer()) {
 <%  }
     model.endOfBodyScript(out); %>
 </script>
+<% if (me.showAssistant()) { %>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    LABKEY.App.loadApp('labKeyAssistant', 'sdms-labkey-assistant', {});
+</script>
+<% } %>
 </body>
 </html>
