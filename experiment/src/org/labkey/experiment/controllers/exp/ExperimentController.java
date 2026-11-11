@@ -2565,7 +2565,7 @@ public class ExperimentController extends SpringActionController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    @ConcurrencyLimit(value = 2, message = "Too many files are being parsed right now. Please retry in a few moments.")
+    @ConcurrencyLimit(value = 4, message = "Too many files are being parsed right now. Please retry in a few moments.")
     public class ParseFileAction extends MutatingApiAction<ParseForm>
     {
         private static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
