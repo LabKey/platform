@@ -25,10 +25,14 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.vfs.FileLike;
 
@@ -38,6 +42,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * User: klum
@@ -65,6 +70,42 @@ public interface FileContentService
     static void setInstance(FileContentService impl)
     {
         ServiceRegistry.get().registerService(FileContentService.class, impl);
+    }
+
+    /** True if the path lies within the container's pipeline root or one of its configured file roots. */
+    static boolean isUnderContainerRoot(@NotNull Container c, @NotNull java.nio.file.Path path)
+    {
+        java.nio.file.Path normalized = path.normalize();
+
+        PipelineService pipelineService = PipelineService.get();
+        PipeRoot pipeRoot = pipelineService == null ? null : pipelineService.findPipelineRoot(c);
+        // not a ContentType below: the pipeline root can sit outside the file root and span supplemental roots, which only isUnderRoot covers
+        // the Path overload only; isUnderRoot(File) returns false for every file when the root is a cloud root
+        if (pipeRoot != null && pipeRoot.isUnderRoot(normalized))
+            return true;
+
+        FileContentService svc = get();
+        if (svc == null)
+            return false;
+
+        return Stream.of(ContentType.files, ContentType.assayfiles)
+                .map(type -> svc.getConfiguredFileRootPath(c, type))
+                .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), normalized.toUri()));
+    }
+
+    /** True if the user can read the container and the file lies under one of its roots,
+     * or under the root of another container the user can read  (LK Issue 35649). */
+    static boolean isFileReadable(@NotNull Container c, @NotNull java.nio.file.Path path, @NotNull User user)
+    {
+        if (c.hasPermission(user, ReadPermission.class) && isUnderContainerRoot(c, path))
+            return true;
+
+        FileContentService svc = get();
+        if (svc == null)
+            return false;
+
+        Container fileContainer = svc.getContainerForFilePath(path.normalize());
+        return fileContainer != null && fileContainer.hasPermission(user, ReadPermission.class);
     }
 
     /**

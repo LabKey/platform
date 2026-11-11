@@ -380,8 +380,9 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             File file = new File(filePath);
             if (!(file.exists() && Files.isRegularFile(file.toPath())))
                 throw new ValidationException("File not found or file type not allowed: " + String.valueOf(row.get("AbsoluteFilePath")));
+            resource = getWebdavUrlFromAbsoluteFilePath(filePath, container);
             if (resource == null)
-                throw new ValidationException("File not found under container's managed file roots: " + String.valueOf(row.get("AbsoluteFilePath")));
+                throw new ValidationException("File not found under container's managed file roots: " + filePath);
         }
 
         if (resource != null)
@@ -503,11 +504,11 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     {
         if (keys.containsKey(KEY_COL_DAV))
         {
-            return FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_DAV)));
+            return resourceInContainer(FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_DAV))), container);
         }
         else if (keys.containsKey(KEY_COL_ID))
         {
-            return FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_ID)));
+            return resourceInContainer(FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_ID))), container);
         }
         else
         {
@@ -529,6 +530,12 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         }
 
         return null;
+    }
+
+    /** davUrl and id resolve against the whole server, so confine the result to this folder. */
+    private static @Nullable WebdavResource resourceInContainer(@Nullable WebdavResource resource, Container container)
+    {
+        return resource != null && container.getEntityId().equals(resource.getContainerId()) ? resource : null;
     }
 
     private WebdavResource getWebdavUrlFromAbsoluteFilePath(@NotNull String absoluteFilePath, Container container)

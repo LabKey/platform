@@ -1805,11 +1805,8 @@ public class XarReader extends AbstractXarImporter
                 if (null != original)
                 {
                     URI uri = FileUtil.createUri(original);
-                    if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
-                    {
-                        if (new File(uri).exists())
-                            data.setDataFileUrl(original);
-                    }
+                    if (FileUtil.FILE_SCHEME.equals(uri.getScheme()) && new File(uri).exists())
+                        data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(original));
                 }
             }
 
