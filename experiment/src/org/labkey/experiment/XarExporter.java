@@ -423,6 +423,10 @@ public class XarExporter
                 {
                     dataLSID.setDataFileUrl(url);
                 }
+                else if (_urlRewriter.isExcluded(expData))
+                {
+                    dataLSID.setStringValue(_relativizedLSIDs.relativizeWithoutDataFile(expData));
+                }
             }
             else
             {
@@ -975,17 +979,16 @@ public class XarExporter
     private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run) throws ExperimentException
     {
         _log.debug("Adding data {}", data.getLSID());
+        Path path = data.getFilePath();
+        String url = path == null ? null : _urlRewriter.rewriteURL(path, data, role, run, _user, _fileRootPath);
+
         xData.setName(data.getName());
-        xData.setAbout(_relativizedLSIDs.relativize(data));
+        // an excluded file leaves no DataFileUrl, so the LSID must not be the ${AutoFileLSID} form that resolves through one
+        xData.setAbout(_urlRewriter.isExcluded(data) ? _relativizedLSIDs.relativizeWithoutDataFile(data) : _relativizedLSIDs.relativize(data));
         xData.setCpasType(isDefaultCpasType(data.getCpasType(), ExpData.DEFAULT_CPAS_TYPE) ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
 
-        Path path = data.getFilePath();
-        if (path != null)
-        {
-            String url = _urlRewriter.rewriteURL(path, data, role, run, _user, _fileRootPath);
-            if (url != null)
-                xData.setDataFileUrl(url);
-        }
+        if (url != null)
+            xData.setDataFileUrl(url);
 
         // Add the original URL as a property on the data object
         // so that it's easier to figure out links between files later, since

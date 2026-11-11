@@ -85,6 +85,8 @@ import static org.labkey.api.webdav.FileSystemResource.DISPLAY_VALUE_SUFFIX;
  */
 public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
+    private final Map<Container, FileContentService.ManagedRoots> _rootsByContainer = new HashMap<>();
+
     private static final Logger _log = LogManager.getLogger(FileQueryUpdateService.class);
 
     private final Container _container;
@@ -373,13 +375,19 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     /** Confines a data file URL to roots the user may read, whatever key on the row supplied it. */
-    private static void validateDataFileUrl(@Nullable String dataFileUrl, Container container, User user) throws ValidationException
+    /** One batch cannot change a container's roots, so resolve them once rather than per row. */
+    private FileContentService.ManagedRoots rootsFor(Container c)
+    {
+        return _rootsByContainer.computeIfAbsent(c, FileContentService::getManagedRoots);
+    }
+
+    private void validateDataFileUrl(@Nullable String dataFileUrl, Container container, User user) throws ValidationException
     {
         if (StringUtils.isEmpty(dataFileUrl) || "null".equals(dataFileUrl))
             return;
 
         java.nio.file.Path path = FileUtil.getAbsoluteCaseSensitivePath(container, FileUtil.createUri(dataFileUrl));
-        if (path == null || !FileContentService.isFileReadable(container, path.normalize(), user))
+        if (path == null || !FileContentService.isFileReadable(container, path.normalize(), user, rootsFor(container)))
             throw new ValidationException("File not found under container's managed file roots: " + dataFileUrl);
     }
 

@@ -348,8 +348,8 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 byType.put(root.getType(), pipeRoot);
         }
 
-        // a container with no configured primary root still resolves a default one
-        byType.computeIfAbsent(PRIMARY_ROOT, type -> getPipelineRootSetting(container, type));
+        // findPipelineRoot, not getPipelineRootSetting: only the former falls back to the default root when the configured one is invalid
+        byType.computeIfAbsent(PRIMARY_ROOT, type -> findPipelineRoot(container, type));
         return byType.values();
     }
 

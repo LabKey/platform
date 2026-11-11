@@ -274,6 +274,21 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             return result;
         }
 
+        /**
+         * For data whose file is not being exported. ${AutoFileLSID} is resolved on import by looking up the data file
+         * URL, so a Data element written without one must not carry it.
+         */
+        public String relativizeWithoutDataFile(ExpData data)
+        {
+            String result = getExistingLSID(data.getLSID());
+            if (result != null)
+                return result;
+
+            result = PARTIAL_FOLDER_RELATIVE.relativize(data, this, false);
+            putLSID(data.getLSID(), result);
+            return result;
+        }
+
         public String relativize(String s)
         {
             return relativize(s, false);
