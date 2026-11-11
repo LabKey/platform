@@ -28,7 +28,7 @@ public enum RhinoLanguageVersion
     ES6(Context.VERSION_ES6, "ES6", "Modern JavaScript, without the checks that can break older scripts"),
     ECMASCRIPT(Context.VERSION_ECMASCRIPT, "ECMAScript", "Latest JavaScript, enforcing const and strict mode checks");
 
-    public static final RhinoLanguageVersion DEFAULT = JS_1_8;
+    public static final RhinoLanguageVersion DEFAULT = ECMASCRIPT;
 
     private final int _version;
     private final String _label;
