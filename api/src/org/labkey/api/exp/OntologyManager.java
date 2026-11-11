@@ -311,12 +311,27 @@ public class OntologyManager
                                           @Nullable RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
+        insertTabDelimited(c, user, ownerObjectId, helper, domain, rows, ensureObjects, new ValidatorContext(c, user), rowCallback);
+    }
+
+    /** @param validatorContext shared with the caller's own validation pass so lookup and pattern caches are reused */
+    public static void insertTabDelimited(Container c,
+                                          User user,
+                                          @Nullable Long ownerObjectId,
+                                          ImportHelper helper,
+                                          Domain domain,
+                                          DataIterator rows,
+                                          boolean ensureObjects,
+                                          ValidatorContext validatorContext,
+                                          @Nullable RowCallback rowCallback)
+            throws SQLException, BatchValidationException
+    {
         List<PropertyDescriptor> properties = new ArrayList<>(domain.getProperties().size());
         for (DomainProperty prop : domain.getProperties())
         {
             properties.add(prop.getPropertyDescriptor());
         }
-        insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects, rowCallback);
+        insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects, validatorContext, rowCallback);
     }
 
     public interface RowCallback
@@ -370,6 +385,20 @@ public class OntologyManager
                                           @Nullable RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
+        insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rawRows, ensureObjects, new ValidatorContext(c, user), rowCallback);
+    }
+
+    private static void insertTabDelimited(Container c,
+                                           User user,
+                                           @Nullable Long ownerObjectId,
+                                           ImportHelper helper,
+                                           List<PropertyDescriptor> descriptors,
+                                           DataIterator rawRows,
+                                           boolean ensureObjects,
+                                           ValidatorContext validatorCache,
+                                           @Nullable RowCallback rowCallback)
+            throws SQLException, BatchValidationException
+    {
         MapDataIterator rows = DataIteratorUtil.wrapMap(rawRows, false);
 
         rowCallback = rowCallback == null ? NO_OP_ROW_CALLBACK : rowCallback;
@@ -386,8 +415,6 @@ public class OntologyManager
 
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<>(maxPropsInBatch + descriptors.size());
-
-        ValidatorContext validatorCache = new ValidatorContext(c, user);
 
         try
         {
@@ -540,7 +567,23 @@ public class OntologyManager
                                           RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
-        saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, rowCallback);
+        insertTabDelimited(tableInsert, c, user, helper, rows, autoFillDefaultColumns, new ValidatorContext(c, user), logger, rowCallback);
+    }
+
+    /** @param validatorContext shared with the caller's own validation pass so lookup and pattern caches are reused */
+    @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
+    public static void insertTabDelimited(TableInfo tableInsert,
+                                          Container c,
+                                          User user,
+                                          UpdateableTableImportHelper helper,
+                                          DataIterator rows,
+                                          boolean autoFillDefaultColumns,
+                                          ValidatorContext validatorContext,
+                                          Logger logger,
+                                          RowCallback rowCallback)
+            throws SQLException, BatchValidationException
+    {
+        saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, validatorContext, rowCallback);
     }
 
     @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
@@ -553,7 +596,7 @@ public class OntologyManager
                                           Logger logger)
             throws SQLException, BatchValidationException
     {
-        saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns, NO_OP_ROW_CALLBACK);
+        saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns, new ValidatorContext(c, user), NO_OP_ROW_CALLBACK);
     }
 
     private static void saveTabDelimited(TableInfo table,
@@ -564,6 +607,7 @@ public class OntologyManager
                                          Logger logger,
                                          boolean insert,
                                          boolean autoFillDefaultColumns,
+                                         ValidatorContext validatorCache,
                                          @Nullable RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
@@ -581,8 +625,6 @@ public class OntologyManager
 
         Domain d = table.getDomain();
         List<? extends DomainProperty> properties = null == d ? Collections.emptyList() : d.getProperties();
-
-        ValidatorContext validatorCache = new ValidatorContext(c, user);
 
         Connection conn = null;
         ParameterMapStatement parameterMap = null;

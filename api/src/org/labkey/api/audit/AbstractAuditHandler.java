@@ -79,6 +79,24 @@ public abstract class AbstractAuditHandler implements AuditHandler
      */
     protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents);
 
+    /** Creates the detailed record for one row of an {@link #addAuditEvent} call */
+    @FunctionalInterface
+    protected interface DetailedAuditRecordFactory
+    {
+        DetailedAuditTypeEvent create(@Nullable Map<String, Object> row, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents);
+
+        /** Called once after the call's last record is created, to save what the records collected */
+        default void complete()
+        {
+        }
+    }
+
+    /** Called once per detailed {@link #addAuditEvent} call; override to load what every row's record needs in one pass */
+    protected DetailedAuditRecordFactory getDetailedAuditRecordFactory(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+    {
+        return (row, existingRow, providedValues, sideEffectEvents) -> createDetailedAuditRecord(user, c, tInfo, action, userComment, row, existingRow, providedValues, sideEffectEvents);
+    }
+
     /**
      * Allow for adding fields that may be present in the updated row but not represented in the original row
      *
@@ -142,13 +160,14 @@ public abstract class AbstractAuditHandler implements AuditHandler
                     AuditLogService auditLog = AuditLogService.get();
                     List<DetailedAuditTypeEvent> batch = new ArrayList<>();
                     List<AuditTypeEvent> sideEffectEvents = new ArrayList<>();
+                    DetailedAuditRecordFactory recordFactory = getDetailedAuditRecordFactory(user, c, auditConfigurable, action, userComment, rows, existingRows);
 
                     for (int i=0; i < rows.size(); i++)
                     {
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null == existingRows ? Collections.emptyMap() : existingRows.get(i);
                         Map<String, Object> providedValueRow = null == providedValues || providedValues.size() <= i  ? null : providedValues.get(i);
-                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow, providedValueRow, sideEffectEvents);
+                        DetailedAuditTypeEvent event = recordFactory.create(row, existingRow, providedValueRow, sideEffectEvents);
 
                         switch (action)
                         {
@@ -205,6 +224,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                         batch.clear();
                     }
                     addSideEffectEvents(auditLog, user, sideEffectEvents, useTransactionAuditCache);
+                    recordFactory.complete();
                     break;
                 }
             }

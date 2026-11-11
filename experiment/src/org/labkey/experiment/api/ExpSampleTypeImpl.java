@@ -790,6 +790,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return getSample(c, name, null);
     }
 
+    @Override
+    public @NotNull List<ExpMaterialImpl> getSamplesByName(@NotNull Container c, @NotNull Collection<String> names)
+    {
+        return ExperimentServiceImpl.get().getExpMaterialsInContainer(c, getLSID(), ExpMaterialTable.Column.Name, names);
+    }
+
     public ExpMaterialImpl getSample(Container c, String name, @Nullable ContainerFilter cf)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), getLSID());

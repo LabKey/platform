@@ -1427,6 +1427,9 @@ public abstract class Method
                 User user = (User) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
+                // Role impersonation and LimitedUser have no groups; "IN ()" is a syntax error
+                if (user.getGroups().size() == 0)
+                    return new SQLFragment("(1=0)");
                 SQLFragment ret = new SQLFragment();
                 // Inline the IDs: appendInClause() may create a temp table in the LabKey DB, but this SQL can run against an external data source
                 ret.unsafeAppend("(").append(groupArg).unsafeAppend(") IN (");

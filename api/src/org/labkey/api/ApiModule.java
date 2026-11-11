@@ -84,6 +84,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RecordFactory;
 import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RepeatedCommitTaskMonitor;
+import org.labkey.api.data.ResultSetImpl;
 import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -124,6 +125,8 @@ import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.jsp.RecompilingJspClassLoader;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.OperationsMXBean;
+import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
@@ -199,6 +202,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MailMetrics;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.MothershipReport;
@@ -307,6 +311,7 @@ public class ApiModule extends CodeOnlyModule
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
+        MailMetrics.registerMetricsProvider();
         AuditLogService.get().registerAuditType(new SystemUpgradeAuditProvider());
         // Handle system maintenance startup properties as late as possible; we want all system maintenance tasks to be registered first
         ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
@@ -413,6 +418,7 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            AbstractAgentAction.TestCase.class,
             Aggregate.TestCase.class,
             ApiResponseWriter.TestCase.class,
             ApiXmlWriter.TestCase.class,
@@ -471,8 +477,10 @@ public class ApiModule extends CodeOnlyModule
             KeySharingJSONTokener.TestCase.class,
             LimitedUser.TestCase.class,
             LookAheadDataIterator.TestCase.class,
+            MailMetrics.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
+            McpService.TestCase.class,
             MemTracker.TestCase.class,
             ModuleArchiveTestCase.class,
             ModuleContext.TestCase.class,
@@ -602,6 +610,7 @@ public class ApiModule extends CodeOnlyModule
             RequestCancellation.TestCase.class,
             RepeatedCommitTaskMonitor.IntegrationTestCase.class,
             ResultSetDataIterator.TestCase.class,
+            ResultSetImpl.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
             SearchScope.TestCase.class,
