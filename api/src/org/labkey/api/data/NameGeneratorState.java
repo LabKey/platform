@@ -192,15 +192,15 @@ public class NameGeneratorState implements AutoCloseable
     /** Takes the project lock, held to commit, that orders every strict counter draw in the project */
     private void lockSampleCounters()
     {
-        if (_sampleCountersLocked)
+        // Without a transaction the lock would be released at once
+        DbScope.Transaction tx = DbScope.getLabKeyScope().getCurrentTransaction();
+        if (_sampleCountersLocked || null == tx)
             return;
         SampleTypeService.get().lockSampleCounters(_container);
         _sampleCountersLocked = true;
 
-        // commitAndKeepConnection() releases the lock mid-import
-        DbScope.Transaction tx = DbScope.getLabKeyScope().getCurrentTransaction();
-        if (null != tx)
-            tx.addCommitTask(() -> _sampleCountersLocked = false, DbScope.CommitTaskOption.POSTCOMMIT);
+        // Rollback and commitAndKeepConnection() release the lock too
+        tx.addCommitTask(() -> _sampleCountersLocked = false, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
     }
 
     /** An aliquot's ${rootSampleCount}: the committed value, which the project lock keeps fixed until this transaction commits */
@@ -214,7 +214,7 @@ public class NameGeneratorState implements AutoCloseable
         if (null == _aliquotRootSampleCount)
         {
             _aliquotRootSampleCount = sequence.current();
-            tx.addCommitTask(() -> _aliquotRootSampleCount = null, DbScope.CommitTaskOption.POSTCOMMIT);
+            tx.addCommitTask(() -> _aliquotRootSampleCount = null, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
         }
         return _aliquotRootSampleCount;
     }

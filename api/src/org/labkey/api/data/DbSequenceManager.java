@@ -330,6 +330,7 @@ public class DbSequenceManager
 
 
     // The holder for the current transaction, or null if the sequence isn't reclaimable or no transaction is active
+    // A holder first registered from a PRECOMMIT task misses the already-copied queue, so its unused tail becomes a gap
     private static @Nullable ReclaimableBlocks getReclaimableBlocks(DbSequence sequence)
     {
         if (!sequence.useCurrentTransaction())
