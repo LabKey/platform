@@ -2875,8 +2875,8 @@ public class AnnouncementsController extends SpringActionController
         return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), filter, null).getArrayList(Integer.class));
     }
 
-    // Reports an unreadable thread as missing, so callers can't probe for its existence. Writes include unapproved
-    // threads so admins can still moderate them.
+    // Reports an unreadable thread as missing, so callers can't probe for its existence. Write callers pass
+    // approvedOnly=false so moderators can act on unapproved threads.
     private @Nullable AnnouncementFullModel getReadableThread(Integer rowId, String entityId, boolean approvedOnly)
     {
         AnnouncementFullModel thread = getThread(getContainer(), rowId, entityId);
