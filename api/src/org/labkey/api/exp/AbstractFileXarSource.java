@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -120,7 +119,7 @@ public abstract class AbstractFileXarSource extends XarSource
     }
 
     @Override
-    public String canonicalizeDataFileURL(String dataFileURL)
+    public String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException
     {
         dataFileURL = dataFileURL.replace("\\", "/");
         Path xarDirectory = getRootPath();
@@ -151,7 +150,7 @@ public abstract class AbstractFileXarSource extends XarSource
                 {
                     validatePathAllowed(dataFileURL, xarDirectory, path, container);
                 }
-                catch (InvalidPathException e)
+                catch (XarFormatException e)
                 {
                     LOG.warn("Exempt XAR source referenced a data file outside the roots of {}: {}", container.getPath(), dataFileURL);
                 }
@@ -167,16 +166,16 @@ public abstract class AbstractFileXarSource extends XarSource
     }
 
     /** A data file may only live in the XAR's own directory or under one of the container's roots. */
-    private void validatePathAllowed(String dataFileURL, @Nullable Path xarDirectory, @Nullable Path path, Container container)
+    private void validatePathAllowed(String dataFileURL, @Nullable Path xarDirectory, @Nullable Path path, Container container) throws XarFormatException
     {
         if (path == null)
-            throw new InvalidPathException(dataFileURL, "Path to data file could not be resolved");
+            throw new XarFormatException("Path to data file could not be resolved: " + dataFileURL);
 
         if (xarDirectory != null && path.normalize().startsWith(xarDirectory.normalize()))
             return;
 
         if (!FileContentService.isUnderContainerRoot(container, path))
-            throw new InvalidPathException(dataFileURL, "Path to data file not allowed");
+            throw new XarFormatException("Path to data file not allowed: " + dataFileURL);
     }
 
     public static FileLike getLogFileFor(FileLike f) throws IOException
@@ -266,7 +265,7 @@ public abstract class AbstractFileXarSource extends XarSource
         public void rejectsAbsolutePathOutsideTheRoots() throws Exception
         {
             XarSource source = createSource();
-            assertThrows(InvalidPathException.class, () -> source.getCanonicalDataFileURL("file:///etc/hosts"));
+            assertThrows(XarFormatException.class, () -> source.getCanonicalDataFileURL("file:///etc/hosts"));
         }
 
         @Test
@@ -278,7 +277,7 @@ public abstract class AbstractFileXarSource extends XarSource
             try
             {
                 assertThrows("A path outside every configured root must be rejected",
-                        InvalidPathException.class, () -> createSource().getCanonicalDataFileURL(dataFileURL));
+                        XarFormatException.class, () -> createSource().getCanonicalDataFileURL(dataFileURL));
 
                 // a module's own root type, e.g. the MS2 FASTA sequence root, is still a root of this container
                 PipelineService.get().setPipelineRoot(user, _project, TYPED_ROOT, false, typedRoot.toUri());
@@ -296,7 +295,7 @@ public abstract class AbstractFileXarSource extends XarSource
         public void rejectsRelativePathEscapingTheRoots() throws Exception
         {
             XarSource source = createSource();
-            assertThrows(InvalidPathException.class, () -> source.getCanonicalDataFileURL("../../../../../../../../etc/hosts"));
+            assertThrows(XarFormatException.class, () -> source.getCanonicalDataFileURL("../../../../../../../../etc/hosts"));
         }
     }
 }

@@ -291,20 +291,26 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         return _setRow(user, container, row, false);
     }
 
+    /** True when the row carries the path itself; otherwise findData reads it back off the stored row. */
+    private static boolean rowSuppliesDataFileUrl(Map<String, Object> row)
+    {
+        return row.containsKey(ExpDataTable.Column.DataFileUrl.name())
+                || (row.containsKey("AbsoluteFilePath")
+                    && !row.containsKey(ExpDataTable.Column.RowId.name())
+                    && !row.containsKey(ExpDataTable.Column.LSID.name()));
+    }
+
     /** @return Pair of the data object (if found), and the requested dataFileUrl (if specified in the row) */
     private Pair<ExpData, String> findData(Container container, Map<String, Object> row) throws ValidationException
     {
         String dataFileUrl = null;
 
-        if (row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+        if (rowSuppliesDataFileUrl(row))
         {
-            dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
-        }
-        else if (row.containsKey("AbsoluteFilePath") &&
-                !row.containsKey(ExpDataTable.Column.RowId.name()) &&
-                !row.containsKey(ExpDataTable.Column.LSID.name()))
-        {
-            dataFileUrl = getDataFileUrlFromAbsoluteFilePath((String) row.get("AbsoluteFilePath"));
+            if (row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+                dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
+            else
+                dataFileUrl = getDataFileUrlFromAbsoluteFilePath((String) row.get("AbsoluteFilePath"));
         }
         else
         {
@@ -366,11 +372,14 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         }
     }
 
-    /** Confines a data file URL to the folder's managed roots, whatever key on the row supplied it. */
-    private static void validateDataFileUrl(String dataFileUrl, Container container) throws ValidationException
+    /** Confines a data file URL to roots the user may read, whatever key on the row supplied it. */
+    private static void validateDataFileUrl(@Nullable String dataFileUrl, Container container, User user) throws ValidationException
     {
+        if (StringUtils.isEmpty(dataFileUrl) || "null".equals(dataFileUrl))
+            return;
+
         java.nio.file.Path path = FileUtil.getAbsoluteCaseSensitivePath(container, FileUtil.createUri(dataFileUrl));
-        if (path == null || !FileContentService.isUnderContainerRoot(container, path.normalize()))
+        if (path == null || !FileContentService.isFileReadable(container, path.normalize(), user))
             throw new ValidationException("File not found under container's managed file roots: " + dataFileUrl);
     }
 
@@ -382,9 +391,10 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         ExpData data = p.getKey();
         String dataFileUrl = p.getValue();
 
-        // whichever key supplied it, the value about to be stored is what must be confined to this folder
-        if (dataFileUrl != null)
-            validateDataFileUrl(dataFileUrl, container);
+        // whichever key supplied it, a path the caller is storing must be confined to this folder; one read back off
+        // the existing row is not being stored, and rejecting it would block edits to rows that predate this check
+        if (rowSuppliesDataFileUrl(row))
+            validateDataFileUrl(dataFileUrl, container, user);
 
         if (row.containsKey("AbsoluteFilePath")) // AbsoluteFilePath is a valid key for inserting exp.files record through api
         {
