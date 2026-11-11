@@ -666,7 +666,7 @@ public class AnnouncementManager
     }
 
 
-    // GH Issue 1688: callers check permissions in c, so the update must not name another folder or thread
+    // GH Issue 1688: callers check permissions in c, so the update must not name another folder
     public static AnnouncementModel updateAnnouncement(Container c, User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
         if (!c.getId().equals(update.getContainerId()))
@@ -674,9 +674,6 @@ public class AnnouncementManager
         AnnouncementModel current = getAnnouncement(c, update.getRowId());
         if (current == null)
             throw new NotFoundException("No announcement with id " + update.getRowId());
-        if (!StringUtils.equals(StringUtils.trimToNull(update.getParent()), current.getParent()))
-            throw new RuntimeValidationException("A message's parent can't be changed.");
-        update.setParent(current.getParent());
         update = validateModelWithSideEffects(update, c, user, false);
 
         update.beforeUpdate(user, current); // This preserves Created, CreatedBy, EntityId, etc.

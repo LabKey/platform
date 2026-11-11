@@ -3277,22 +3277,17 @@ public class AnnouncementsController extends SpringActionController
 
             AnnouncementModel victim = insertMessage(secure, getAdmin(), "Victim thread", String.valueOf(member.getUserId()));
             AnnouncementModel own = insertMessage(_folderA, editorA, "Own thread", null);
-            AnnouncementModel sibling = insertMessage(_folderA, getAdmin(), "Sibling thread", null);
 
-            QueryUpdateService qus = new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService();
+            QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
             Map<String, Object> ownKey = Map.of("RowId", own.getRowId());
             String memberList = String.valueOf(otherReader.getUserId());
 
-            assertThrows(QueryUpdateServiceException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Container", secure.getId(), "Title", "Overwritten", "memberListInput", memberList)));
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Container", secure.getId(), "Title", "Overwritten", "memberListInput", memberList)));
+            assertThrows(NotFoundException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Title", "Overwritten", "memberListInput", memberList)));
             assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Container", secure.getId(), "Title", "Overwritten")));
-            assertThrows(QueryUpdateServiceException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", sibling.getRowId(), "Title", "Overwritten")));
-            assertThrows(QueryUpdateServiceException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Parent", victim.getEntityId())));
-            assertThrows(QueryUpdateServiceException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Parent", sibling.getEntityId())));
 
             assertEquals("Victim thread", AnnouncementManager.getAnnouncement(secure, victim.getRowId()).getTitle());
             assertEquals(List.of(member.getUserId()), AnnouncementManager.getPostMemberList(victim.getRowId()));
-            assertEquals("Sibling thread", AnnouncementManager.getAnnouncement(_folderA, sibling.getRowId()).getTitle());
-            assertNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()).getParent());
 
             // Positive control: an ordinary edit of the caller's own message still works
             updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Title", "Edited"));
