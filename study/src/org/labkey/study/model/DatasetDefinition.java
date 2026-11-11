@@ -2855,7 +2855,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 continue;
             }
 
-            // Dataset domain kinds match only domains whose dataset row exists, so Domain.delete() would NPE here. GH Issue 1612.
+            // Dataset domain kinds match only domains with a study.dataset definition, so getDomainKind() is null here and Domain.delete() would NPE. GH Issue 1612.
             try (DbScope.Transaction transaction = s.getScope().ensureTransaction())
             {
                 DefaultValueService.get().clearDefaultValues(domain.getContainer(), domain);
