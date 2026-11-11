@@ -91,9 +91,15 @@ public interface FileContentService
         if (svc == null)
             return false;
 
-        return Stream.of(ContentType.files, ContentType.assayfiles)
+        if (Stream.of(ContentType.files, ContentType.assayfiles)
                 .map(type -> svc.getConfiguredFileRootPath(c, type))
-                .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), normalized.toUri()));
+                .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), normalized.toUri())))
+            return true;
+
+        // registered file sets are managed roots as well, and may be configured outside the file root
+        return svc.getRegisteredDirectories(c).stream()
+                .map(AttachmentDirectory::getFileSystemDirectoryPath)
+                .anyMatch(dir -> dir != null && URIUtil.isDescendant(dir.toUri(), normalized.toUri()));
     }
 
     /** True if the user can read the container and the file lies under one of its roots,

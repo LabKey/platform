@@ -136,7 +136,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         super(factory, job);
     }
 
-    /** The XAR this task just wrote describes files the job itself produced, which legitimately live outside the folder's roots. */
+    /** The loading XAR this task just wrote describes files the job itself produced, which legitimately live outside the folder's roots. */
     private static FileXarSource jobXarSource(FileLike xarFile, PipelineJob job)
     {
         return new FileXarSource(xarFile, job)
@@ -175,7 +175,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 if (NetworkDrive.exists(permanentXAR))
                 {
                     // Be sure that it's been imported (and not already deleted from the database)
-                    importedRuns.addAll(ExperimentService.get().importXar(jobXarSource(permanentXAR, getJob()), getJob(), false));
+                    importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(permanentXAR, getJob()), getJob(), false));
                 }
                 else
                 {

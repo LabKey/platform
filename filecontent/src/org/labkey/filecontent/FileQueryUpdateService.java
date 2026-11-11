@@ -366,6 +366,14 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         }
     }
 
+    /** Confines a data file URL to the folder's managed roots, whatever key on the row supplied it. */
+    private static void validateDataFileUrl(String dataFileUrl, Container container) throws ValidationException
+    {
+        java.nio.file.Path path = FileUtil.getAbsoluteCaseSensitivePath(container, FileUtil.createUri(dataFileUrl));
+        if (path == null || !FileContentService.isUnderContainerRoot(container, path.normalize()))
+            throw new ValidationException("File not found under container's managed file roots: " + dataFileUrl);
+    }
+
     private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException
     {
         WebdavResource resource = davResourceFromKeys(row, container);
@@ -374,17 +382,18 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         ExpData data = p.getKey();
         String dataFileUrl = p.getValue();
 
+        // whichever key supplied it, the value about to be stored is what must be confined to this folder
+        if (dataFileUrl != null)
+            validateDataFileUrl(dataFileUrl, container);
+
         if (row.containsKey("AbsoluteFilePath")) // AbsoluteFilePath is a valid key for inserting exp.files record through api
         {
             String filePath = String.valueOf(row.get("AbsoluteFilePath"));
             java.nio.file.Path path = FileUtil.getAbsoluteCaseSensitiveFile(new File(filePath)).toPath().normalize();
             if (!(Files.exists(path) && Files.isRegularFile(path)))
                 throw new ValidationException("File not found or file type not allowed: " + filePath);
-            // the path stored on the row is what must be confined; a resource resolved from another key says nothing about it
-            if (!FileContentService.isUnderContainerRoot(container, path))
-                throw new ValidationException("File not found under container's managed file roots: " + filePath);
             if (resource == null)
-                resource = getWebdavUrlFromAbsoluteFilePath(filePath, container);
+                resource = getWebdavUrlFromAbsoluteFilePath(path.toString(), container);
             if (resource == null)
                 throw new ValidationException("File not found under container's managed file roots: " + filePath);
         }

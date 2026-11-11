@@ -33,7 +33,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -42,6 +44,7 @@ import java.util.Map;
 public abstract class URLRewriter
 {
     protected Map<Path, FileInfo> _files = new HashMap<>();
+    private final Set<Long> _excludedDataRowIds = new HashSet<>();
 
     private final boolean _includeXarXml;
 
@@ -60,6 +63,22 @@ public abstract class URLRewriter
     public Collection<FileInfo> getFileInfos()
     {
         return _files.values();
+    }
+
+    protected void addExcluded(ExpData data)
+    {
+        _excludedDataRowIds.add(data.getRowId());
+    }
+
+    /** Distinguishes a file deliberately withheld from the archive from one that simply has no name. */
+    public boolean isExcluded(ExpData data)
+    {
+        return _excludedDataRowIds.contains(data.getRowId());
+    }
+
+    public int getExcludedCount()
+    {
+        return _excludedDataRowIds.size();
     }
 
     public boolean isIncludeXarXml()

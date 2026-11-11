@@ -990,7 +990,7 @@ public class XarExporter
         // so that it's easier to figure out links between files later, since
         // the URLs have all been rewritten
         PropertyCollectionType dataProperties = getProperties(data.getLSID(), data.getContainer());
-        if (!StringUtils.isBlank(data.getDataFileUrl()) && !Strings.CS.equals(xData.getDataFileUrl(), data.getDataFileUrl()))
+        if (!_urlRewriter.isExcluded(data) && !StringUtils.isBlank(data.getDataFileUrl()) && !Strings.CS.equals(xData.getDataFileUrl(), data.getDataFileUrl()))
             dataProperties = addOriginalURLProperty(dataProperties, data.getDataFileUrl());
         if (dataProperties != null)
             xData.setProperties(dataProperties);
@@ -1487,6 +1487,9 @@ public class XarExporter
                     dumpXML(zOut);
                     zOut.closeEntry();
                 }
+
+                if (_urlRewriter.getExcludedCount() > 0)
+                    _log.warn("{} data file(s) were omitted from this archive because they resolve outside the folder's file roots; see the server log for each path.", _urlRewriter.getExcludedCount());
 
                 for (URLRewriter.FileInfo fileInfo : _urlRewriter.getFileInfos())
                 {

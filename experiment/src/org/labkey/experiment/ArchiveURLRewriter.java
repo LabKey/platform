@@ -96,6 +96,7 @@ public class ArchiveURLRewriter extends URLRewriter
             if (!FileContentService.isFileReadable(data.getContainer(), path, user))
             {
                 LOG.warn("Excluding data file from export, not under a file root of {}: {} (exp.data row {})", data.getContainer().getPath(), path, data.getRowId());
+                addExcluded(data);
                 return null;
             }
 
