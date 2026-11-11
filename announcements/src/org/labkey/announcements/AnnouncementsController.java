@@ -64,6 +64,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
@@ -155,6 +156,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -647,7 +649,8 @@ public class AnnouncementsController extends SpringActionController
         public Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
         {
             AnnouncementModel ann = getAnnouncement(form);
-            verifyPermissions(ann);
+            // A response's own member list is a stale snapshot, so check read against the thread itself
+            verifyPermissions(null == ann.getParent() ? ann : AnnouncementManager.getAnnouncement(getContainer(), ann.getParent()));
 
             return new Pair<>(ann.getAttachmentParent(), form.getName());
         }
@@ -3604,14 +3607,36 @@ public class AnnouncementsController extends SpringActionController
             assertEquals(1, AnnouncementManager.getAnnouncement(secure, thread.getEntityId()).getResponses().size());
         }
 
-        private AnnouncementModel insertResponse(Container c, AnnouncementModel thread, String memberListInput) throws Exception
+        @Test
+        public void testResponseDownloadUsesThreadMemberList() throws Exception
+        {
+            Container secure = createBoard("SecureDownload", Settings.SECURE_WITHOUT_EMAIL);
+            User formerMember = createUserInRole(secure, MessageBoardContributorRole.class);
+            User newMember = createUserInRole(secure, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(secure, formerMember);
+
+            // The first response's member list keeps formerMember; the second swaps them for newMember on the thread
+            AnnouncementModel oldResponse = insertResponse(secure, thread, String.valueOf(formerMember.getUserId()),
+                new ByteArrayAttachmentFile("notes.txt", "notes".getBytes(StandardCharsets.UTF_8), "text/plain"));
+            insertResponse(secure, thread, String.valueOf(newMember.getUserId()));
+            assertEquals(List.of(newMember.getUserId()), currentMemberList(secure, thread));
+
+            ActionURL download = new ActionURL(DownloadAction.class, secure)
+                .addParameter("entityId", oldResponse.getEntityId())
+                .addParameter("name", "notes.txt");
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(download, formerMember));
+            assertStatus(HttpServletResponse.SC_OK, get(download, newMember));
+        }
+
+        private AnnouncementModel insertResponse(Container c, AnnouncementModel thread, String memberListInput, AttachmentFile... files) throws Exception
         {
             AnnouncementModel response = new AnnouncementModel();
             response.setParent(thread.getEntityId());
             response.setTitle("Response");
             response.setBody("response body");
             response.setMemberListInput(memberListInput);
-            return AnnouncementManager.insertAnnouncement(c, getAdmin(), response, null, false);
+            return AnnouncementManager.insertAnnouncement(c, getAdmin(), response, List.of(files), false);
         }
 
         @Test
