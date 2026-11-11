@@ -646,7 +646,7 @@ public class ExcelFactory
         return convertExcelToJSON(in, extended, maxRows, -1);
     }
 
-    /** @param maxCells cap on rows plus cells across all sheets, or -1 for no cap; exceeding it throws ApiUsageException */
+    /** @param maxCells cap on rows plus cells across all sheets, or -1 for no cap; rows past it are dropped and the sheet marked truncated */
     @NotNull
     public static JSONArray convertExcelToJSON(InputStream in, boolean extended, int maxRows, long maxCells) throws IOException
     {
@@ -692,13 +692,15 @@ public class ExcelFactory
 
         DataFormatter formatter = new DataFormatter();
         long cellCount = 0;
+        boolean outOfCells = false;
 
         for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
         {
             JSONArray rowsArray = new JSONArray();
-            boolean truncated = false;
+            // Once the budget is spent, later sheets are listed with no rows so callers still see their names
+            boolean truncated = outOfCells;
             Sheet sheet = workbook.getSheetAt(sheetIndex);
-            for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++)
+            for (int rowIndex = 0; !outOfCells && rowIndex <= sheet.getLastRowNum(); rowIndex++)
             {
                 if (maxRows > -1 && maxRows <= rowIndex)
                 {
@@ -709,9 +711,16 @@ public class ExcelFactory
                 Row row = sheet.getRow(rowIndex);
 
                 // Count blank-filled cells up to getLastCellNum() before building them, so one far-right cell can't blow up output
-                cellCount += 1 + (row == null ? 0 : Math.max(0, row.getLastCellNum()));
-                if (maxCells > -1 && cellCount > maxCells)
-                    throw new ApiUsageException("Spreadsheet is too large to parse; it exceeds " + maxCells + " cells.");
+                long rowCells = 1 + (row == null ? 0 : Math.max(0, row.getLastCellNum()));
+                if (maxCells > -1 && cellCount + rowCells > maxCells)
+                {
+                    if (cellCount == 0)
+                        throw new ApiUsageException("Spreadsheet is too large to parse; its first row exceeds " + maxCells + " cells.");
+                    outOfCells = true;
+                    truncated = true;
+                    break;
+                }
+                cellCount += rowCells;
 
                 JSONArray rowArray = new JSONArray();
                 if (row != null)
@@ -882,6 +891,26 @@ public class ExcelFactory
                 JSONArray uncapped = convertExcelToJSON(wb, false, -1, -1);
                 assertEquals(16_384, uncapped.getJSONObject(0).getJSONArray("data").getJSONArray(0).length());
                 assertThrows(ApiUsageException.class, () -> convertExcelToJSON(wb, false, -1, 1_000));
+            }
+
+            try (Workbook wb = new XSSFWorkbook())
+            {
+                // Each row costs 1 + 3 cells, so a budget of 10 fits 2 rows and spends nothing on the second sheet
+                Sheet first = wb.createSheet("First");
+                for (int r = 0; r < 5; r++)
+                {
+                    Row row = first.createRow(r);
+                    for (int c = 0; c < 3; c++)
+                        row.createCell(c).setCellValue(r);
+                }
+                wb.createSheet("Second").createRow(0).createCell(0).setCellValue("x");
+
+                JSONArray capped = convertExcelToJSON(wb, false, -1, 10);
+                assertEquals(2, capped.getJSONObject(0).getJSONArray("data").length());
+                assertTrue(capped.getJSONObject(0).getBoolean("truncated"));
+                assertEquals("Second", capped.getJSONObject(1).getString("name"));
+                assertEquals(0, capped.getJSONObject(1).getJSONArray("data").length());
+                assertTrue(capped.getJSONObject(1).getBoolean("truncated"));
             }
         }
 

@@ -19,7 +19,6 @@ const MAX_ROWS = 10_000;
 const MAX_CELLS = 500_000;
 const MAX_COLUMNS = 16_384;
 const SMALL_TSV = 'small.tsv';
-const BIG_TSV = 'big.tsv';
 const LONG_TSV = 'long.tsv';
 const XLSX = 'sampleType.xlsx';
 
@@ -88,10 +87,23 @@ describe('ParseFileAction', () => {
         expect(response.body.truncated).toBe(truncated);
     });
 
-    it('rejects files over the size cap', async () => {
-        mock({ [BIG_TSV]: 'a'.repeat(MAX_FILE_BYTES + 1) });
-        const response = await parseFile(BIG_TSV, readerOptions).expect(400);
-        expect(response.body.exception).toEqual('File exceeds the maximum allowed size of 10 MB.');
+    const chunk = '\t'.repeat(MAX_COLUMNS / 2);
+    const tooBig = 'a'.repeat(MAX_FILE_BYTES + 1);
+    const wideLine = 'A' + '\t'.repeat(MAX_COLUMNS) + '\nx\n';
+    const quotedWide = '"a\nb"' + chunk + '"c\nd"' + chunk + '"e\nf"' + chunk + '\nx\n';
+    const sizeMessage = 'File exceeds the maximum allowed size of 10 MB.';
+    const extensionMessage = 'Excel files must have a .xls or .xlsx extension.';
+    const columnsMessage = `File has more than ${MAX_COLUMNS} columns.`;
+
+    it.each([
+        ['files over the size cap', 'big.tsv', tooBig, sizeMessage],
+        ['Excel content without an Excel extension', 'sampleType', XLSX_CONTENT, extensionMessage],
+        ['lines wider than the column cap', 'wide.tsv', wideLine, columnsMessage],
+        ['wide records split across quoted newlines', 'quoted.tsv', quotedWide, columnsMessage],
+    ])('rejects %s', async (_, name, content, message) => {
+        mock({ [name]: content });
+        const response = await parseFile(name, readerOptions).expect(400);
+        expect(response.body.exception).toEqual(message);
     });
 
     it.each([-1, MAX_ROWS * 2])('caps rows at the server maximum when maxRows=%i', async (maxRows) => {
@@ -125,37 +137,17 @@ describe('ParseFileAction', () => {
         expect(response.body.truncated).toBe(false);
     });
 
-    it('rejects Excel content without an Excel extension', async () => {
-        mock({ sampleType: XLSX_CONTENT });
-
-        const response = await parseFile('sampleType', readerOptions).expect(400);
-        expect(response.body.exception).toEqual('Excel files must have a .xls or .xlsx extension.');
-    });
-
-    it('rejects lines wider than the column cap', async () => {
-        mock({ 'wide.tsv': 'A' + '\t'.repeat(MAX_COLUMNS) + '\nx\n' });
-
-        const response = await parseFile('wide.tsv', readerOptions).expect(400);
-        expect(response.body.exception).toEqual(`File has more than ${MAX_COLUMNS} columns.`);
-    });
-
-    it('rejects wide records split across quoted newlines', async () => {
-        const chunk = '\t'.repeat(MAX_COLUMNS / 2);
-        mock({ 'quoted.tsv': '"a\nb"' + chunk + '"c\nd"' + chunk + '"e\nf"' + chunk + '\nx\n' });
-
-        const response = await parseFile('quoted.tsv', readerOptions).expect(400);
-        expect(response.body.exception).toEqual(`File has more than ${MAX_COLUMNS} columns.`);
-    });
-
-    it('rejects TSV output over the cell cap', async () => {
+    it('truncates TSV output at the cell cap', async () => {
         // 60 columns x 10,000 rows stays under the row and column caps but over the cell cap
         const width = 60;
         const header = Array.from({ length: width }, (_, i) => `C${i}`).join('\t');
         const row = Array.from({ length: width }, () => '1').join('\t');
         mock({ 'cells.tsv': header + '\n' + Array(MAX_ROWS).fill(row).join('\n') + '\n' });
 
-        const response = await parseFile('cells.tsv', readerOptions).expect(400);
-        expect(response.body.exception).toEqual(`File is too large to parse; it exceeds ${MAX_CELLS} cells.`);
+        const response = await parseFile('cells.tsv', readerOptions).expect(200);
+        // Each row, header included, costs 1 + width cells
+        expect(response.body.sheets[0].data.length).toEqual(Math.floor(MAX_CELLS / (width + 1)));
+        expect(response.body.truncated).toBe(true);
     });
 
     it('keeps values that do not match the inferred type', async () => {

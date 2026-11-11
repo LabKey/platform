@@ -2663,19 +2663,16 @@ public class ExperimentController extends SpringActionController
                     tabLoader.setInferTypes(false);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
 
-                for (ColumnDescriptor col : cols)
+                if (maxCells > -1)
                 {
-                    if (ignoreTypes)
-                    {
-                        col.clazz = String.class;
-                    }
-                    if (maxCells > -1)
+                    for (ColumnDescriptor col : cols)
                     {
                         col.errorValues = DataLoader.ERROR_VALUE_USE_ORIGINAL;
                     }
                 }
 
-                // Every output row has cols.length entries, so charge the full width per row, as the Excel path does
+                // Every output row has cols.length entries, so charge the full width per row, as the Excel path does.
+                // Throw only if the header alone is over budget; data rows past the budget are truncated below.
                 long cellCount = 1 + cols.length;
                 checkCellBudget(cellCount, maxCells);
 
@@ -2705,8 +2702,13 @@ public class ExperimentController extends SpringActionController
                         break;
                     }
 
+                    // Out of cell budget
                     cellCount += 1 + cols.length;
-                    checkCellBudget(cellCount, maxCells);
+                    if (maxCells > -1 && cellCount > maxCells)
+                    {
+                        truncated = true;
+                        break;
+                    }
 
                     JSONArray rowArray = new JSONArray();
                     for (ColumnDescriptor col : cols)
