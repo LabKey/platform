@@ -18,6 +18,7 @@ package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
@@ -31,6 +32,8 @@ import org.labkey.api.util.logging.LogHelper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,6 +47,14 @@ public class ArchiveURLRewriter extends URLRewriter
     private static final Logger LOG = LogHelper.getLogger(ArchiveURLRewriter.class, "XAR (experiment archive) exporting");
 
     private final Set<String> _roles;
+
+    /** Resolving a container's roots hits the database, so do it once per export; a root reconfigured mid-export is not picked up. */
+    private final Map<Container, FileContentService.ManagedRoots> _rootsByContainer = new HashMap<>();
+
+    private FileContentService.ManagedRoots rootsFor(Container c)
+    {
+        return _rootsByContainer.computeIfAbsent(c, FileContentService::getManagedRoots);
+    }
 
     public ArchiveURLRewriter(boolean includeXarXml, Set<String> roles)
     {
@@ -90,7 +101,7 @@ public class ArchiveURLRewriter extends URLRewriter
         Path canonical = FileUtil.getAbsoluteCaseSensitivePath(data.getContainer(), path.toUri());
 
         // however the exp.data row got its URL, don't stream a file from outside the container's roots
-        if (canonical != null && FileContentService.isFileReadable(data.getContainer(), canonical, user))
+        if (canonical != null && FileContentService.isFileReadable(data.getContainer(), canonical, user, rootsFor(data.getContainer())))
             return canonical;
 
         LOG.debug("Excluding data file from export, not under a file root of {}: {} (exp.data row {})", data.getContainer().getPath(), canonical == null ? path : canonical, data.getRowId());

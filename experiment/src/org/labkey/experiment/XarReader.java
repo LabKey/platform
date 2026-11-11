@@ -1807,14 +1807,8 @@ public class XarReader extends AbstractXarImporter
                     URI uri = FileUtil.createUri(original);
                     if (FileUtil.FILE_SCHEME.equals(uri.getScheme()) && new File(uri).exists())
                     {
-                        try
-                        {
-                            data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(original));
-                        }
-                        catch (XarFormatException e)
-                        {
-                            getLog().warn("Ignoring original data file URL outside this folder's file roots: {}", original);
-                        }
+                        // fail rather than silently drop the URL: a legacy archive naming paths outside this folder's roots is not importable here
+                        data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(original));
                     }
                 }
             }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.files;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
@@ -33,15 +34,18 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -50,6 +54,8 @@ import java.util.stream.Stream;
  */
 public interface FileContentService
 {
+    Logger LOG = LogHelper.getLogger(FileContentService.class, "File root containment checks");
+
     String UPLOADED_FILE_NAMESPACE_PREFIX = "UploadedFile";
     DataType UPLOADED_FILE = new DataType(UPLOADED_FILE_NAMESPACE_PREFIX);
 
@@ -73,47 +79,85 @@ public interface FileContentService
     }
 
     /**
+     * A container's managed roots, resolved once. Resolving them queries the database and stats the filesystem, so a
+     * caller testing many paths against one container should hold this rather than call isUnderContainerRoot per path.
+     */
+    record ManagedRoots(@NotNull Collection<PipeRoot> pipelineRoots, @NotNull Collection<java.nio.file.Path> directories)
+    {
+        public boolean contains(@NotNull java.nio.file.Path path)
+        {
+            java.nio.file.Path normalized = path.normalize();
+            // the Path overload only; isUnderRoot(File) returns false for every file when the root is a cloud root
+            return pipelineRoots.stream().anyMatch(root -> root.isUnderRoot(normalized))
+                    || directories.stream().anyMatch(dir -> URIUtil.isDescendant(dir.toUri(), normalized.toUri()));
+        }
+    }
+
+    static @NotNull ManagedRoots getManagedRoots(@NotNull Container c)
+    {
+        PipelineService pipelineService = PipelineService.get();
+        // not a ContentType below: pipeline roots sit outside the file root, span supplemental roots, and exist per type (e.g. a FASTA sequence root)
+        Collection<PipeRoot> pipelineRoots = pipelineService == null ? List.of() : pipelineService.findPipelineRoots(c);
+
+        FileContentService svc = get();
+        if (svc == null)
+            return new ManagedRoots(pipelineRoots, List.of());
+
+        List<java.nio.file.Path> directories = new ArrayList<>();
+        Stream.of(ContentType.files, ContentType.assayfiles)
+                .map(type -> svc.getConfiguredFileRootPath(c, type))
+                .filter(Objects::nonNull)
+                .forEach(directories::add);
+        // registered file sets are managed roots as well, and may be configured outside the file root
+        svc.getRegisteredDirectories(c).stream()
+                .map(dir -> fileSetDirectory(dir, c))
+                .filter(Objects::nonNull)
+                .forEach(directories::add);
+
+        return new ManagedRoots(pipelineRoots, directories);
+    }
+
+    /**
      * True if the path lies within the container's pipeline root or one of its configured file roots.
      * A cloud root has no per-ContentType subdirectory, so there the check is only to the root itself.
      */
     static boolean isUnderContainerRoot(@NotNull Container c, @NotNull java.nio.file.Path path)
     {
-        java.nio.file.Path normalized = path.normalize();
-
-        PipelineService pipelineService = PipelineService.get();
-        // not a ContentType below: pipeline roots sit outside the file root, span supplemental roots, and exist per type (e.g. a FASTA sequence root)
-        // the Path overload only; isUnderRoot(File) returns false for every file when the root is a cloud root
-        if (pipelineService != null && pipelineService.findPipelineRoots(c).stream().anyMatch(root -> root.isUnderRoot(normalized)))
-            return true;
-
-        FileContentService svc = get();
-        if (svc == null)
-            return false;
-
-        if (Stream.of(ContentType.files, ContentType.assayfiles)
-                .map(type -> svc.getConfiguredFileRootPath(c, type))
-                .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), normalized.toUri())))
-            return true;
-
-        // registered file sets are managed roots as well, and may be configured outside the file root
-        return svc.getRegisteredDirectories(c).stream()
-                .map(AttachmentDirectory::getFileSystemDirectoryPath)
-                .anyMatch(dir -> dir != null && URIUtil.isDescendant(dir.toUri(), normalized.toUri()));
+        return getManagedRoots(c).contains(path);
     }
 
-    /** True if the user can read the container and the file lies under one of its roots,
-     * or under the root of another container the user can read  (LK Issue 35649). */
+    /**
+     * The no-arg getFileSystemDirectoryPath() passes create=true, so it would make directories from this read-only
+     * check; it also throws when the root is unmapped or unreachable. An unresolvable file set is simply not a match.
+     */
+    private static java.nio.file.Path fileSetDirectory(@NotNull AttachmentDirectory dir, @NotNull Container c)
+    {
+        try
+        {
+            return dir.getFileSystemDirectoryPath(c, false);
+        }
+        catch (RuntimeException e)
+        {
+            // debug, not warn: this runs per data file on export
+            LOG.debug("Ignoring registered file set with an unresolvable directory in {}", c.getPath(), e);
+            return null;
+        }
+    }
+
+    /**
+     * True if the user can read the container and the file lies under one of its roots.
+     * Container-scoped by design: do not re-add a fallback accepting a file under some other container the user can
+     * read. Ancestor roots still resolve, so a folder inheriting a project root is unaffected.
+     */
     static boolean isFileReadable(@NotNull Container c, @NotNull java.nio.file.Path path, @NotNull User user)
     {
-        if (c.hasPermission(user, ReadPermission.class) && isUnderContainerRoot(c, path))
-            return true;
+        return isFileReadable(c, path, user, getManagedRoots(c));
+    }
 
-        FileContentService svc = get();
-        if (svc == null)
-            return false;
-
-        Container fileContainer = svc.getContainerForFilePath(path.normalize());
-        return fileContainer != null && fileContainer.hasPermission(user, ReadPermission.class);
+    /** As above, against roots already resolved for c. */
+    static boolean isFileReadable(@NotNull Container c, @NotNull java.nio.file.Path path, @NotNull User user, @NotNull ManagedRoots roots)
+    {
+        return c.hasPermission(user, ReadPermission.class) && roots.contains(path);
     }
 
     /**

@@ -341,7 +341,12 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     {
         Map<String, PipeRoot> byType = new LinkedHashMap<>();
         for (PipelineRoot root : PipelineManager.findPipelineRoots(container))
-            byType.put(root.getType(), new PipeRootImpl(root));
+        {
+            // skip an invalid root so the default below still applies, as findPipelineRoot does for the primary root
+            PipeRootImpl pipeRoot = new PipeRootImpl(root);
+            if (pipeRoot.isValid())
+                byType.put(root.getType(), pipeRoot);
+        }
 
         // a container with no configured primary root still resolves a default one
         byType.computeIfAbsent(PRIMARY_ROOT, type -> getPipelineRootSetting(container, type));
