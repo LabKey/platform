@@ -252,6 +252,17 @@ public final class RhinoService
             assertEquals("2020-01-15", engine.eval(ext4 + "Ext4.Date.format(Ext4.Date.parse('15/01/2020', 'd/m/Y'), 'Y-m-d');"));
         }
 
+        @Test
+        public void relativeRequireCacheTest() throws Exception
+        {
+            ModuleSourceProvider provider = new LabKeyModuleSourceProvider();
+            URI uri = new URI("labkey/Filter");
+            ModuleSource source = provider.loadSource(uri, null, null);
+
+            assertNotNull(source);
+            assertSame("An unchanged module should not be reloaded", ModuleSourceProvider.NOT_MODIFIED, provider.loadSource(uri, null, source.getValidator()));
+        }
+
         @SuppressWarnings("unused") // called from script
         public static String firstString(List<String> list)
         {
@@ -689,6 +700,10 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     @Override
     protected ModuleSource loadFromUri(URI uri, URI base, Object validator)
     {
+        // Unlike the module id path, Rhino doesn't revalidate before calling this, so a cached module would be recompiled on every require()
+        if (!entityNeedsRevalidation(validator))
+            return NOT_MODIFIED;
+
         // Rhino resolves a relative require() id to an extension-less URI
         return load(uri.getPath() + ".js", validator);
     }
