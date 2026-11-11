@@ -156,6 +156,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
@@ -1806,7 +1807,16 @@ public class XarReader extends AbstractXarImporter
                 {
                     URI uri = FileUtil.createUri(original);
                     if (FileUtil.FILE_SCHEME.equals(uri.getScheme()) && new File(uri).exists())
-                        data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(original));
+                    {
+                        try
+                        {
+                            data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(original));
+                        }
+                        catch (InvalidPathException e)
+                        {
+                            getLog().warn("Ignoring original data file URL outside this folder's file roots: {}", original);
+                        }
+                    }
                 }
             }
 

@@ -72,7 +72,10 @@ public interface FileContentService
         ServiceRegistry.get().registerService(FileContentService.class, impl);
     }
 
-    /** True if the path lies within the container's pipeline root or one of its configured file roots. */
+    /**
+     * True if the path lies within the container's pipeline root or one of its configured file roots.
+     * A cloud root has no per-ContentType subdirectory, so there the check is only to the root itself.
+     */
     static boolean isUnderContainerRoot(@NotNull Container c, @NotNull java.nio.file.Path path)
     {
         java.nio.file.Path normalized = path.normalize();

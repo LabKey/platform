@@ -151,7 +151,10 @@ public abstract class AbstractFileXarSource extends XarSource
     /** A data file may only live in the XAR's own directory or under one of the container's roots. */
     private void validatePathAllowed(String dataFileURL, @Nullable Path xarDirectory, @Nullable Path path, Container container)
     {
-        if (path == null || (xarDirectory != null && path.normalize().startsWith(xarDirectory.normalize())))
+        if (path == null)
+            throw new InvalidPathException(dataFileURL, "Path to data file could not be resolved");
+
+        if (xarDirectory != null && path.normalize().startsWith(xarDirectory.normalize()))
             return;
 
         if (!FileContentService.isUnderContainerRoot(container, path))

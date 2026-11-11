@@ -377,10 +377,14 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         if (row.containsKey("AbsoluteFilePath")) // AbsoluteFilePath is a valid key for inserting exp.files record through api
         {
             String filePath = String.valueOf(row.get("AbsoluteFilePath"));
-            File file = new File(filePath);
-            if (!(file.exists() && Files.isRegularFile(file.toPath())))
-                throw new ValidationException("File not found or file type not allowed: " + String.valueOf(row.get("AbsoluteFilePath")));
-            resource = getWebdavUrlFromAbsoluteFilePath(filePath, container);
+            java.nio.file.Path path = FileUtil.getAbsoluteCaseSensitiveFile(new File(filePath)).toPath().normalize();
+            if (!(Files.exists(path) && Files.isRegularFile(path)))
+                throw new ValidationException("File not found or file type not allowed: " + filePath);
+            // the path stored on the row is what must be confined; a resource resolved from another key says nothing about it
+            if (!FileContentService.isUnderContainerRoot(container, path))
+                throw new ValidationException("File not found under container's managed file roots: " + filePath);
+            if (resource == null)
+                resource = getWebdavUrlFromAbsoluteFilePath(filePath, container);
             if (resource == null)
                 throw new ValidationException("File not found under container's managed file roots: " + filePath);
         }
@@ -500,7 +504,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Nullable
-    private WebdavResource davResourceFromKeys(Map<String, Object> keys, Container container)
+    private WebdavResource davResourceFromKeys(Map<String, Object> keys, Container container) throws ValidationException
     {
         if (keys.containsKey(KEY_COL_DAV))
         {
@@ -526,16 +530,20 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 absoluteFilePath = String.valueOf(keys.get("AbsoluteFilePath"));
 
             if (absoluteFilePath != null)
-                return getWebdavUrlFromAbsoluteFilePath(absoluteFilePath, _container);
+                return getWebdavUrlFromAbsoluteFilePath(absoluteFilePath, container);
         }
 
         return null;
     }
 
     /** davUrl and id resolve against the whole server, so confine the result to this folder. */
-    private static @Nullable WebdavResource resourceInContainer(@Nullable WebdavResource resource, Container container)
+    private static @Nullable WebdavResource resourceInContainer(@Nullable WebdavResource resource, Container container) throws ValidationException
     {
-        return resource != null && container.getEntityId().equals(resource.getContainerId()) ? resource : null;
+        if (resource == null)
+            return null;
+        if (!container.getEntityId().equals(resource.getContainerId()))
+            throw new ValidationException("File is not in this folder: " + resource.getPath());
+        return resource;
     }
 
     private WebdavResource getWebdavUrlFromAbsoluteFilePath(@NotNull String absoluteFilePath, Container container)
