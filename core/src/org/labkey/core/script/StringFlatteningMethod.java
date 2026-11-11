@@ -24,6 +24,7 @@ import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Wrapper;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -69,13 +70,20 @@ class StringFlatteningMethod extends BaseFunction
         Set<Object> visited = null;
         for (Object arg : args)
         {
-            if (arg instanceof NativeArray || arg instanceof NativeObject)
+            Object container = unwrap(arg);
+            if (container instanceof NativeArray || container instanceof NativeObject)
             {
                 if (visited == null)
                     visited = Collections.newSetFromMap(new IdentityHashMap<>());
-                flattenStrings((ScriptableObject) arg, visited);
+                flattenStrings((ScriptableObject) container, visited);
             }
         }
+    }
+
+    // A script's top-level variables live in the engine bindings, which hand JS arrays and objects back wrapped as Java collections
+    private static Object unwrap(Object value)
+    {
+        return value instanceof Wrapper wrapper ? wrapper.unwrap() : value;
     }
 
     private static void flattenStrings(ScriptableObject container, Set<Object> visited)
@@ -85,7 +93,7 @@ class StringFlatteningMethod extends BaseFunction
 
         for (Object id : container.getIds())
         {
-            Object value = id instanceof Integer i ? container.get(i, container) : container.get(id.toString(), container);
+            Object value = unwrap(id instanceof Integer i ? container.get(i, container) : container.get(id.toString(), container));
             if (value instanceof ConsString)
             {
                 try

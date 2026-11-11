@@ -154,15 +154,6 @@ public final class RhinoService
             test("exportTest");
         }
 
-        // TODO: Enable once APIs exist to create tables.
-        public void queryTest() throws Exception
-        {
-            // Prepare table
-            // Need APIs
-
-            test("queryTest");
-        }
-
         @Test
         public void simpleQueryTest() throws Exception
         {
@@ -247,13 +238,33 @@ public final class RhinoService
             assertEquals("c1", engine.eval(helper + "helper.mapValue({nested: {key: 'c' + n}}.nested);"));
             assertEquals("d1", engine.eval(helper + "var list = new java.util.ArrayList(); list.addAll(['d' + n]); helper.firstString(list);"));
             assertEquals("e1", engine.eval(helper + "helper.firstString(new java.util.ArrayList(['e' + n]));"));
+            assertEquals("f1", engine.eval(helper + "var hostName = 'f' + n; var ids = []; ids.push(5); var params = {}; function set() { params = {status: 1, key: hostName}; } set(); new helper().copiedMapValue(ids, params);"));
+            assertEquals("g1", engine.eval(helper + "(function() { var hostName = 'g' + n; var ids = []; ids.push(5); var params = {}; function set() { params = {status: 1, key: hostName}; } set(); return new helper().copiedMapValue(ids, params); })();"));
         }
 
+        @Test
+        public void ext4DateTest() throws Exception
+        {
+            ScriptEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
+            String ext4 = "var Ext4 = require('Ext4').Ext; ";
+
+            assertEquals("2020-01-15", engine.eval(ext4 + "Ext4.Date.format(new Date(2020, 0, 15), 'Y-m-d');"));
+            assertEquals("2020-01-15", engine.eval(ext4 + "Ext4.Date.format(Ext4.Date.parse('15/01/2020', 'd/m/Y'), 'Y-m-d');"));
+        }
+
+        @SuppressWarnings("unused") // called from script
         public static String firstString(List<String> list)
         {
-            return list.get(0);
+            return list.getFirst();
         }
 
+        @SuppressWarnings("unused") // called from script
+        public String copiedMapValue(String[] keys, Map<String, Object> map)
+        {
+            return (String) new HashMap<>(map).get("key");
+        }
+
+        @SuppressWarnings("unused") // called from script
         public static String mapValue(Map<String, String> map)
         {
             return map.get("key");
