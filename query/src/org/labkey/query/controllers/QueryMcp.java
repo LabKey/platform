@@ -17,7 +17,6 @@ package org.labkey.query.controllers;
 
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -56,7 +55,6 @@ import org.springframework.ai.mcp.annotation.McpResource;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.List;
@@ -78,10 +76,10 @@ public class QueryMcp implements McpService.McpImpl
         mimeType = "application/markdown",
         name = "LabKey SQL",
         description = "Required reading before writing or debugging LabKey SQL. Covers lookup traversal, PIVOT, parameterized queries, cross-folder queries, and all available functions.")
-    public ReadResourceResult getLabKeySQLDocumentation() throws IOException
+    public ReadResourceResult getLabKeySQLDocumentation()
     {
         incrementResourceRequestCount("LabKey SQL");
-        String markdown = IOUtils.resourceToString("org/labkey/query/controllers/prompts/LabKeySql.md", null, QueryController.class.getClassLoader());
+        String markdown = QueryController.PromptResource.LabKeySql.resource();
         return new ReadResourceResult(List.of(
             new TextResourceContents(
                 "resource://org/labkey/query/controllers/prompts/LabKeySql.md",
