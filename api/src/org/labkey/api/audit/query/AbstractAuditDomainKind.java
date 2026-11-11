@@ -151,7 +151,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     protected static Container getDomainContainer()

@@ -45,7 +45,7 @@ public class AuthenticationLogoType implements AttachmentParentType
     {
         TableInfo table = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
 
-        return new SQLFragment("SELECT EntityId, ")
+        return SQLFragment.unsafe("SELECT EntityId, ")
             .append(table.getSqlDialect().concatenate("'Configuration #'", "CAST(RowId AS VARCHAR)", "' ('", "description", "')'"))
             .unsafeAppend(" AS Description FROM ")
             .append(table, "acs");

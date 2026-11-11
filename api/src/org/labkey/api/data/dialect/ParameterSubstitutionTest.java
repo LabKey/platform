@@ -72,18 +72,18 @@ public class ParameterSubstitutionTest extends Assert
         String longBothSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('" + longString + "')) > 0 )";
         testParameterSubstitution(dialect, new SQLFragment(longBothSql), longBothSql);
 
-        testParameterSubstitution(dialect, new SQLFragment("? ? ?", 937, "this", 1.234), "937 'this' 1.234", "937 N'this' 1.234");
-        testParameterSubstitution(dialect, new SQLFragment("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST 937 TEST 'this' TEST 1.234", "TEST 937 TEST N'this' TEST 1.234");
-        testParameterSubstitution(dialect, new SQLFragment("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' 937 '???''????' 'this' 1.234", "'????' 937 '???''????' N'this' 1.234");
-        testParameterSubstitution(dialect, new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234),
+        testParameterSubstitution(dialect, SQLFragment.unsafe("? ? ?", 937, "this", 1.234), "937 'this' 1.234", "937 N'this' 1.234");
+        testParameterSubstitution(dialect, SQLFragment.unsafe("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST 937 TEST 'this' TEST 1.234", "TEST 937 TEST N'this' TEST 1.234");
+        testParameterSubstitution(dialect, SQLFragment.unsafe("'????' ? '???''????' ? ?", 937, "this", 1.234), "'????' 937 '???''????' 'this' 1.234", "'????' 937 '???''????' N'this' 1.234");
+        testParameterSubstitution(dialect, SQLFragment.unsafe("\"identifier\" ? \"iden?tif?ier\" '????' ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234),
             "\"identifier\" 937 \"iden?tif?ier\" '????' 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234",
             "\"identifier\" 937 \"iden?tif?ier\" '????' 123 '???''????' \"iden?tifi?er\" N'this' N'that' 1.234");
-        testParameterSubstitution(dialect, new SQLFragment("-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -? - ? ?", 937, 123, "this"),
+        testParameterSubstitution(dialect, SQLFragment.unsafe("-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -? - ? ?", 937, 123, "this"),
             "-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -937 - 123 'this'",
             "-- ?? ?? ?, ? \n--? ? ?\n*-- ??\n*/ -937 - 123 N'this'");
-        testParameterSubstitution(dialect, new SQLFragment("/* ?? ?? ?, ? */ ? ?", 937, 123), "/* ?? ?? ?, ? */ 937 123");
+        testParameterSubstitution(dialect, SQLFragment.unsafe("/* ?? ?? ?, ? */ ? ?", 937, 123), "/* ?? ?? ?, ? */ 937 123");
         testParameterSubstitution(dialect,
-            new SQLFragment("\"identifier\" ? \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234),
+            SQLFragment.unsafe("\"identifier\" ? \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ ? '???''????' \"iden?tifi?er\" ? ? ?", 937, 123, "this", "that", 1.234),
                 "\"identifier\" 937 \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ 123 '???''????' \"iden?tifi?er\" 'this' 'that' 1.234",
                 "\"identifier\" 937 \"iden?tif?ier\" '????' /* Here's a ?? comment with a bunch ' of '' question marks ????? * and an extra star or two and some weird chars '''' ??? **/ 123 '???''????' \"iden?tifi?er\" N'this' N'that' 1.234");
 

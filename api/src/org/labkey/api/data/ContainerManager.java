@@ -651,7 +651,7 @@ public class ContainerManager
     /** Left-joins each container (alias "c") to its stored folder type name, exposed as pe.Value; null when none is stored */
     private static SQLFragment getFolderTypeNameJoin()
     {
-        return new SQLFragment(" LEFT OUTER JOIN ").append(PropertySchema.getInstance().getTableInfoPropertyEntries(), "pe")
+        return SQLFragment.unsafe(" LEFT OUTER JOIN ").append(PropertySchema.getInstance().getTableInfoPropertyEntries(), "pe")
             .unsafeAppend(" ON pe.ObjectId = c.EntityId AND pe.Category = ? AND pe.Name = ? AND pe.UserId = ?")
             .add(FOLDER_TYPE_PROPERTY_SET_NAME).add(FOLDER_TYPE_PROPERTY_NAME).add(PropertyManager.SHARED_USER.getUserId());
     }
@@ -666,7 +666,7 @@ public class ContainerManager
     @NotNull
     public static Map<String, Integer> getFolderTypeNameContainerCounts()
     {
-        SQLFragment sql = new SQLFragment("SELECT pe.Value, COUNT(*) FROM ").append(CORE.getTableInfoContainers(), "c")
+        SQLFragment sql = SQLFragment.unsafe("SELECT pe.Value, COUNT(*) FROM ").append(CORE.getTableInfoContainers(), "c")
             .append(getFolderTypeNameJoin())
             .unsafeAppend(" GROUP BY pe.Value");
         Map<String, Integer> nameCounts = new TreeMap<>();
@@ -678,7 +678,7 @@ public class ContainerManager
     @NotNull
     public static Set<FolderType> getWorkbookChildFolderTypes(Container parent)
     {
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT pe.Value FROM ").append(CORE.getTableInfoContainers(), "c")
+        SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT pe.Value FROM ").append(CORE.getTableInfoContainers(), "c")
             .append(getFolderTypeNameJoin())
             .unsafeAppend(" WHERE c.Parent = ? AND c.Type = ?").add(parent.getEntityId()).add(WorkbookContainerType.NAME);
         return new SqlSelector(CORE.getSchema(), sql).stream(String.class)
@@ -845,7 +845,7 @@ public class ContainerManager
 
         //For some reason, there is no primary key defined on core.containers
         //so we can't use Table.update here
-        SQLFragment sql = new SQLFragment("UPDATE ");
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.unsafeAppend(" SET Description=? WHERE RowID=?").add(description).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
@@ -861,7 +861,7 @@ public class ContainerManager
     {
         //For some reason, there is no primary key defined on core.containers
         //so we can't use Table.update here
-        SQLFragment sql = new SQLFragment("UPDATE ");
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.unsafeAppend(" SET Searchable=? WHERE RowID=?").add(searchable).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
@@ -873,7 +873,7 @@ public class ContainerManager
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        SQLFragment sql = new SQLFragment("UPDATE ");
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.unsafeAppend(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?").add(lockState).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
@@ -900,7 +900,7 @@ public class ContainerManager
     public static void setExcludedProjects(Collection<GUID> ids, @NotNull Runnable auditRunnable)
     {
         // First clear all existing "Excluded" states
-        SQLFragment sql = new SQLFragment("UPDATE ");
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.unsafeAppend(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?").add(LockState.Excluded);
         new SqlExecutor(CORE.getSchema()).execute(sql);
@@ -910,8 +910,8 @@ public class ContainerManager
         {
             ColumnInfo entityIdCol = CORE.getTableInfoContainers().getColumn("EntityId");
             Filter inClauseFilter = new SimpleFilter(new InClause(entityIdCol.getFieldKey(), ids));
-            SQLFragment frag = new SQLFragment("UPDATE ");
-            frag.append(CORE.getTableInfoContainers().getSelectName());
+            SQLFragment frag = SQLFragment.unsafe("UPDATE ");
+            frag.append(CORE.getTableInfoContainers().getSQLName());
             frag.unsafeAppend(" SET LockState = ?, ExpirationDate = NULL ");
             frag.add(LockState.Excluded);
             frag.append(inClauseFilter.getSQLFragment(CORE.getSqlDialect(), "c", Map.of(entityIdCol.getFieldKey(), entityIdCol)));
@@ -928,8 +928,8 @@ public class ContainerManager
         if (container.isRoot() || container.isProject() || container.isAppHomeFolder())
             throw new ApiUsageException("Archive action not supported for this folder.");
 
-        SQLFragment sql = new SQLFragment("UPDATE ");
-        sql.append(CORE.getTableInfoContainers().getSelectName());
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ");
+        sql.append(CORE.getTableInfoContainers().getSQLName());
         if (archive)
         {
             sql.unsafeAppend(" SET LockState = ? ");
@@ -971,7 +971,7 @@ public class ContainerManager
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        SQLFragment sql = new SQLFragment("UPDATE ");
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         // Note: jTDS doesn't support LocalDate, so convert to java.sql.Date
         sql.unsafeAppend(" SET ExpirationDate = ? WHERE RowID = ?").add(java.sql.Date.valueOf(expirationDate)).add(container.getRowId());
@@ -987,7 +987,7 @@ public class ContainerManager
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        SQLFragment sql = new SQLFragment("UPDATE ");
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.unsafeAppend(" SET Type=? WHERE RowID=?").add(newType).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
@@ -1002,7 +1002,7 @@ public class ContainerManager
 
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        SQLFragment sql = new SQLFragment("UPDATE ");
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.unsafeAppend(" SET Title=? WHERE RowID=?").add(title).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
@@ -1366,7 +1366,7 @@ public class ContainerManager
             {
                 // Not appendInClause(): values must go through the DB's LOWER(), matching how the insert below stores paths
                 deleteSQL.unsafeAppend(" OR Path IN (")
-                    .append(SQLFragment.join(aliases.stream().map(alias -> new SQLFragment("LOWER(?)", alias)).toList(), SQLFragment.unsafe(", ")))
+                    .append(SQLFragment.join(aliases.stream().map(alias -> SQLFragment.unsafe("LOWER(?)", alias)).toList(), SQLFragment.unsafe(", ")))
                     .unsafeAppend(")");
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
@@ -2351,9 +2351,9 @@ public class ContainerManager
     public static SQLFragment getIdsAsCsvList(Set<Container> containers, SqlDialect d)
     {
         if (containers.isEmpty())
-            return new SQLFragment("(NULL)");    // WHERE x IN (NULL) should match no rows
+            return SQLFragment.unsafe("(NULL)");    // WHERE x IN (NULL) should match no rows
 
-        SQLFragment csvList = new SQLFragment("(");
+        SQLFragment csvList = SQLFragment.unsafe("(");
         String comma = "";
         for (Container container : containers)
         {

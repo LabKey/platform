@@ -231,7 +231,7 @@ public abstract class ContainerFilter
         {
             if (allowNulls)
             {
-                return new SQLFragment("1 = 1");
+                return SQLFragment.unsafe("1 = 1");
             }
             else
             {
@@ -243,7 +243,7 @@ public abstract class ContainerFilter
 
         if (ids.isEmpty())
         {
-            return new SQLFragment("1 = 0");
+            return SQLFragment.unsafe("1 = 0");
         }
 
         // Issue 39891: Biologics: slow page loads for sample/assay and assay/results
@@ -263,7 +263,7 @@ public abstract class ContainerFilter
         {
             if (containers.isEmpty())
             {
-                return new SQLFragment("1 = 0");
+                return SQLFragment.unsafe("1 = 0");
             }
             else
             {
@@ -303,7 +303,7 @@ public abstract class ContainerFilter
             select.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
             // Need to add cast to make Postgres happy
             select.unsafeAppend(" INNER JOIN (SELECT CAST(Id AS ");
-            select.append(schema.getSqlDialect().getGuidType());
+            select.append(schema.getSqlDialect().getGuidTypeAsSql());
             select.unsafeAppend(") AS Id FROM (VALUES ");
             select.append(list);
             select.unsafeAppend(") as _containerids_ (Id) ");
@@ -755,7 +755,7 @@ public abstract class ContainerFilter
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles, boolean allowNulls)
         {
             if (_user.hasRootAdminPermission() && _container.isRoot())
-                return new SQLFragment("1 = 1");
+                return SQLFragment.unsafe("1 = 1");
             return super.getSQLFragment(schema, containerColumnSQL, permission, contextualRoles, allowNulls);
         }
 
@@ -1263,19 +1263,19 @@ public abstract class ContainerFilter
         @Override
         public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return new SQLFragment("1=1");
+            return SQLFragment.unsafe("1=1");
         }
 
         @Override
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL)
         {
-            return new SQLFragment("1=1");
+            return SQLFragment.unsafe("1=1");
         }
 
         @Override
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, boolean allowNulls)
         {
-            return new SQLFragment("1=1");
+            return SQLFragment.unsafe("1=1");
         }
 
         @Override
