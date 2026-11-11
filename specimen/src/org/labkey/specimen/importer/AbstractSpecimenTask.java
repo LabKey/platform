@@ -133,7 +133,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             importer.process(specimenDir, merge, ctx, job, syncParticipantVisit);
 
             // if there's an inputFile, perform any tasks after the transform and import has been completed
-            if (inputFile != null)
+//            if (inputFile != null)
             {
                 String activeImporter = SpecimenService.get().getActiveSpecimenImporter(ctx.getContainer());
                 if (null != activeImporter)
