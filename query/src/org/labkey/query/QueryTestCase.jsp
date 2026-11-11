@@ -70,6 +70,7 @@
 <%@ page import="org.labkey.api.reader.DataLoader" %>
 <%@ page import="org.labkey.api.reader.DataLoaderService" %>
 <%@ page import="org.labkey.api.reader.JSONDataLoader" %>
+<%@ page import="org.labkey.api.security.LimitedUser" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.GUID" %>
@@ -771,6 +772,7 @@ d,seven,twelve,day,month,date,duration,guid
         // javaConstant() always return VARCHAR currently, would like to fix
         new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
         new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT CASE WHEN NOT ISMEMBEROF(-2) THEN 1 ELSE 0 END FROM R WHERE rowid=1", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LEAST(0, 2, 1)", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
         new MethodSqlTest("SELECT LEFT('FRED', 2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
@@ -1393,6 +1395,19 @@ d,seven,twelve,day,month,date,duration,guid
             test.validate(null);
         }
 
+        // ISMEMBEROF() reads the user from the query environment; a LimitedUser has no groups
+        Object environmentUser = QueryService.get().getEnvironment(QueryService.Environment.USER);
+        try
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.USER, new LimitedUser(user));
+            new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false).validate(null);
+            new MethodSqlTest("SELECT CASE WHEN NOT ISMEMBEROF(-2) THEN 1 ELSE 0 END FROM R WHERE rowid=1", JdbcType.INTEGER, 1).validate(null);
+        }
+        finally
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.USER, environmentUser);
+        }
+
         if (dialect.isPostgreSQL() /* dialect.allowSortOnSubqueryWithoutLimit() is the preferred check, but SQL Server still has problems with these queries */)
         {
             for (SqlTest test : postgres)
@@ -1607,7 +1622,7 @@ d,seven,twelve,day,month,date,duration,guid
         ArrayList<QueryException> errors = new ArrayList<>();
         TableInfo t = q.getTable(errors, false);
         assertTrue(errors.isEmpty());
-        SQLFragment sqlf = t.getFromSQL("$");
+        SQLFragment sqlf = t.getFromSQL("t");
         assertNotNull(sqlf);
         String debugSql = sqlf.toDebugString();
         assertFalse(debugSql.contains(testGUID.toString()));
@@ -1623,7 +1638,7 @@ d,seven,twelve,day,month,date,duration,guid
         q.setContainerFilter(custom);
         t = q.getTable(errors, false);
         assertTrue(errors.isEmpty());
-        sqlf = t.getFromSQL("$");
+        sqlf = t.getFromSQL("t");
         assertNotNull(sqlf);
         debugSql = sqlf.toDebugString();
         assertFalse(debugSql.contains(testGUID.toString()));
@@ -2022,7 +2037,11 @@ d,seven,twelve,day,month,date,duration,guid
 
     SQLFragment array(@CompileTimeConstant String... strings)
     {
-        var args = Arrays.stream(strings).map(s -> new SQLFragment().setSqlUnsafe(s)).toList().toArray(new SQLFragment[0]);
+        var args = Arrays.stream(strings).map(s -> {
+            SQLFragment arg = new SQLFragment();
+            arg.setSqlUnsafe(s);
+            return arg;
+        }).toList().toArray(new SQLFragment[0]);
         return dialect.array_construct(args);
     }
 

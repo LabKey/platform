@@ -93,7 +93,6 @@ public class StatementDataIterator extends AbstractDataIterator
     ArrayList<Object> _keyValues;
     Integer _rowIdIndex = null;
     Integer _objectIdIndex = null;
-    Integer _objectUriIndex = null;
     protected int _batchSize = -1;
     int _currentBatchSize = 0;
     int _currentTxSize = 0;
@@ -120,7 +119,7 @@ public class StatementDataIterator extends AbstractDataIterator
     public void setUseAsynchronousExecute(boolean useAsynchronousExecute)
     {
         if (_dialect.allowAsynchronousExecute())
-            _useAsynchronousExecute = useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex && null == _objectUriIndex;
+            _useAsynchronousExecute = useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex;
     }
 
 
@@ -169,19 +168,6 @@ public class StatementDataIterator extends AbstractDataIterator
         _useAsynchronousExecute = false;
     }
 
-    public void setObjectUriColumn(int index, ColumnInfo col)
-    {
-        if (-1 == index)
-        {
-            _keyColumnInfo.add(null);
-            _keyValues.add(null);
-            index = _keyColumnInfo.size()-1;
-        }
-        _keyColumnInfo.set(index,col);
-        _objectUriIndex = index;
-        _useAsynchronousExecute = false;
-    }
-
 
     void init()
     {
@@ -213,7 +199,7 @@ public class StatementDataIterator extends AbstractDataIterator
         _currentStmt = _stmts[0];
         _currentBinding = _bindings[0];
 
-        if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex && null == _objectUriIndex)
+        if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex)
             _batchSize = Math.max(10, 10000/Math.max(2, _currentBinding.length));
 
         Integer contextTxSize = null;
@@ -414,8 +400,6 @@ public class StatementDataIterator extends AbstractDataIterator
                 _keyValues.set(_rowIdIndex, _currentStmt.getRowId());
             if (null != _objectIdIndex)
                 _keyValues.set(_objectIdIndex, _currentStmt.getObjectId());
-            if (null != _objectUriIndex)
-                _keyValues.set(_objectUriIndex, _currentStmt.getObjectURI());
 
             checkBackgroundException();
             return hasNextRow;

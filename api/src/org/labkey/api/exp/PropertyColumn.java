@@ -210,7 +210,7 @@ public class PropertyColumn extends LookupColumn
     @Override
     public SQLFragment getValueSql(String tableAlias)
     {
-        SQLFragment sql = new SQLFragment("(SELECT ");
+        SQLFragment sql = SQLFragment.unsafe("(SELECT ");
         if (isMvIndicatorColumn())
         {
             sql.unsafeAppend("MvIndicator");
@@ -221,14 +221,14 @@ public class PropertyColumn extends LookupColumn
         }
         else
         {
-            sql.append(getPropertyCol(_pd));
+            sql.appendIdentifier(getPropertyCol(_pd));
         }
-        sql.unsafeAppend(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").append(String.valueOf(_pd.getPropertyId()));
+        sql.unsafeAppend(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = ").appendValue(_pd.getPropertyId());
         sql.unsafeAppend(" AND exp.ObjectProperty.ObjectId = ");
         if (_parentIsObjectId)
             sql.append(_foreignKey.getValueSql(tableAlias));
         else
-            sql.append(getTableAlias(tableAlias)).unsafeAppend(".ObjectId");
+            sql.appendIdentifier(getTableAlias(tableAlias)).unsafeAppend(".ObjectId");
         sql.unsafeAppend(")");
 
         String cast = getPropertySqlCastType();

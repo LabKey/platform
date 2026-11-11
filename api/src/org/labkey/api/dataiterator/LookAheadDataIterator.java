@@ -40,6 +40,34 @@ public abstract class LookAheadDataIterator extends CachingDataIterator
         _windowSize = windowSize;
     }
 
+    /** Lets a class other than a subclass gather and resolve each window */
+    public interface LookAheadCallback
+    {
+        /** Reads the current row of {@code lookAhead} while reading ahead */
+        void collectRow(DataIterator lookAhead);
+
+        /** Resolves what {@link #collectRow} gathered for the window */
+        void prefetch();
+    }
+
+    public static LookAheadDataIterator of(DataIterator in, int windowSize, LookAheadCallback callback)
+    {
+        return new LookAheadDataIterator(in, windowSize)
+        {
+            @Override
+            protected void collectRow()
+            {
+                callback.collectRow(this);
+            }
+
+            @Override
+            protected void prefetch()
+            {
+                callback.prefetch();
+            }
+        };
+    }
+
     /** Reads the current row while reading ahead */
     protected abstract void collectRow();
 

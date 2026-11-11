@@ -183,10 +183,10 @@ public class AssayQCFlagColumn extends ExprColumn
 
     public static SQLFragment createSQLFragment(SqlDialect sqlDialect, String selectColumn)
     {
-        SQLFragment innerSQL = new SQLFragment(" ");
-        innerSQL.append("SELECT qcf." + selectColumn + " FROM ");
+        SQLFragment innerSQL = SQLFragment.unsafe(" ");
+        innerSQL.unsafeAppend("SELECT qcf.").appendIdentifier(selectColumn).unsafeAppend(" FROM ");
         innerSQL.append(ExperimentService.get().getTinfoAssayQCFlag(), "qcf");
-        innerSQL.append(" WHERE qcf.RunId = " + STR_TABLE_ALIAS + ".RowId ORDER BY qcf.FlagType, qcf.Enabled, qcf.RowId");
+        innerSQL.unsafeAppend(" WHERE qcf.RunId = ").appendIdentifier(STR_TABLE_ALIAS).unsafeAppend(".RowId ORDER BY qcf.FlagType, qcf.Enabled, qcf.RowId");
 
         return sqlDialect.getSelectConcat(innerSQL, ",");
     }

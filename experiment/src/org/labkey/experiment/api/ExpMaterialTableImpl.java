@@ -1878,7 +1878,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             DbSchema temp = DbSchema.getTemp();
             String name = _prefix + "_" + GUID.makeHash();
-            _Materialized materialized = new _Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), new SQLFragment().appendDottedIdentifiers("\"" + temp.getName() + "\"", "\"" + name + "\""));
+            _Materialized materialized = new _Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), new SQLFragment().appendDottedIdentifiers(temp.getSqlDialect().quoteIdentifier(temp.getName()), temp.getSqlDialect().quoteIdentifier(name)));
             initMaterialized(materialized);
             return materialized;
         }

@@ -275,9 +275,9 @@ public class ExpDataIterators
     {
         private final Integer _aliquotedFromColIdx;
 
-        public ExpMaterialValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
+        public ExpMaterialValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user, Map<Integer, List<ColumnValidator>> validators)
         {
-            super(data, context, c, user);
+            super(data, context, c, user, validators);
             boolean isUpdateOnly = context.getInsertOption().updateOnly;
 
             Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
@@ -327,9 +327,9 @@ public class ExpDataIterators
         }
 
         @Override
-        protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user)
+        protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user, Map<Integer, List<ColumnValidator>> validators)
         {
-            ExpMaterialValidatorIterator validate = new ExpMaterialValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user);
+            ExpMaterialValidatorIterator validate = new ExpMaterialValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user, validators);
             validate.setDebugName("ExpMaterialDataIteratorBuilder validate");
             return validate;
         }
