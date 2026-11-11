@@ -102,6 +102,12 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     @Nullable
     PipeRoot findPipelineRoot(Container container, String type);
 
+    /**
+     * Every pipeline root the container resolves, across root types (e.g. a module's separate sequence-database root),
+     * including roots inherited from ancestors and the default primary root.
+     */
+    @NotNull Collection<PipeRoot> findPipelineRoots(Container container);
+
 
     /** @return true if this container (or an inherited parent container) has a pipeline root that exists on disk */
     boolean hasValidPipelineRoot(Container container);

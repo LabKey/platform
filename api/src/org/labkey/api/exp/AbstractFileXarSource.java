@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp;
 
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
@@ -51,6 +53,8 @@ import java.util.Map;
  */
 public abstract class AbstractFileXarSource extends XarSource
 {
+    private static final Logger LOG = LogHelper.getLogger(AbstractFileXarSource.class, "XAR data file path validation");
+
     protected FileLike _xmlFile;
 
     protected FileLike getXmlFile()
@@ -137,7 +141,21 @@ public abstract class AbstractFileXarSource extends XarSource
         {
             Path path = FileUtil.getAbsoluteCaseSensitivePath(container, uri);
             if (isDataFilePathRestricted())
+            {
                 validatePathAllowed(dataFileURL, xarDirectory, path, container);
+            }
+            else
+            {
+                // measuring whether the exemption is still earned: validate and record, but keep allowing as before
+                try
+                {
+                    validatePathAllowed(dataFileURL, xarDirectory, path, container);
+                }
+                catch (InvalidPathException e)
+                {
+                    LOG.warn("Exempt XAR source referenced a data file outside the roots of {}: {}", container.getPath(), dataFileURL);
+                }
+            }
             return FileUtil.pathToString(path);
         }
     }
@@ -187,6 +205,7 @@ public abstract class AbstractFileXarSource extends XarSource
     public static class TestCase extends Assert
     {
         private static final String PROJECT_NAME = "XarDataFilePathTestProject";
+        private static final String TYPED_ROOT = "XarDataFilePathTestRootType";
 
         private static Container _project;
         private static PipeRoot _pipeRoot;
@@ -248,6 +267,29 @@ public abstract class AbstractFileXarSource extends XarSource
         {
             XarSource source = createSource();
             assertThrows(InvalidPathException.class, () -> source.getCanonicalDataFileURL("file:///etc/hosts"));
+        }
+
+        @Test
+        public void allowsAbsolutePathUnderANonPrimaryPipelineRoot() throws Exception
+        {
+            java.nio.file.Path typedRoot = Files.createTempDirectory("xarTypedPipelineRoot");
+            String dataFileURL = typedRoot.resolve("sequences.fasta").toUri().toString();
+            User user = TestContext.get().getUser();
+            try
+            {
+                assertThrows("A path outside every configured root must be rejected",
+                        InvalidPathException.class, () -> createSource().getCanonicalDataFileURL(dataFileURL));
+
+                // a module's own root type, e.g. the MS2 FASTA sequence root, is still a root of this container
+                PipelineService.get().setPipelineRoot(user, _project, TYPED_ROOT, false, typedRoot.toUri());
+                assertNotNull("A path under a configured non-primary pipeline root must be accepted",
+                        createSource().getCanonicalDataFileURL(dataFileURL));
+            }
+            finally
+            {
+                PipelineService.get().setPipelineRoot(user, _project, TYPED_ROOT, false);
+                Files.deleteIfExists(typedRoot);
+            }
         }
 
         @Test

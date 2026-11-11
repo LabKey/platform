@@ -81,10 +81,9 @@ public interface FileContentService
         java.nio.file.Path normalized = path.normalize();
 
         PipelineService pipelineService = PipelineService.get();
-        PipeRoot pipeRoot = pipelineService == null ? null : pipelineService.findPipelineRoot(c);
-        // not a ContentType below: the pipeline root can sit outside the file root and span supplemental roots, which only isUnderRoot covers
+        // not a ContentType below: pipeline roots sit outside the file root, span supplemental roots, and exist per type (e.g. a FASTA sequence root)
         // the Path overload only; isUnderRoot(File) returns false for every file when the root is a cloud root
-        if (pipeRoot != null && pipeRoot.isUnderRoot(normalized))
+        if (pipelineService != null && pipelineService.findPipelineRoots(c).stream().anyMatch(root -> root.isUnderRoot(normalized)))
             return true;
 
         FileContentService svc = get();

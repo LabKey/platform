@@ -153,6 +153,19 @@ public class PipelineManager
     }
 
 
+    /** Every root the container resolves across root types, nearest ancestor winning per type, as findPipelineRoot does for one type. */
+    @NotNull
+    public static Collection<PipelineRoot> findPipelineRoots(@NotNull Container container)
+    {
+        Map<String, PipelineRoot> byType = new HashMap<>();
+        while (container != null && !container.isRoot())
+        {
+            CACHE.get(CACHE_KEY).getOrDefault(container.getId(), Collections.emptyMap()).forEach(byType::putIfAbsent);
+            container = container.getParent();
+        }
+        return byType.values();
+    }
+
     static public List<PipelineRoot> getPipelineRoots(String type)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
