@@ -217,7 +217,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.009;
+        return 26.010;
     }
 
     @Nullable
@@ -1165,6 +1165,7 @@ public class ExperimentModule extends SpringModule
     {
         return Set.of(
             DomainUtil.ImportAliasTestCase.class,
+            DomainUtil.SystemFieldLabelTestCase.class,
             GraphAlgorithms.TestCase.class,
             LSIDRelativizer.TestCase.class,
             Lsid.TestCase.class,
