@@ -66,7 +66,7 @@ public class ShortURLServiceImpl implements ShortURLService
     @Override @Nullable
     public ShortURLRecord resolveShortURL(@NotNull String shortURL)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoShortURL(), "s");
         sql.unsafeAppend(" WHERE LOWER(ShortURL) = LOWER(?)");
         sql.add(shortURL);
@@ -77,7 +77,7 @@ public class ShortURLServiceImpl implements ShortURLService
     @Override
     public List<ShortURLRecord> getAllShortURLs()
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoShortURL(), "s");
         sql.unsafeAppend(" ORDER BY LOWER(ShortURL)");
         return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ShortURLRecord.class);

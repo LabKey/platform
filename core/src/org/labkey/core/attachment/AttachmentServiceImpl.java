@@ -541,7 +541,7 @@ public class AttachmentServiceImpl implements AttachmentService
     {
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("Parent"), parentIds))
             .addClause(new SimpleFilter.SQLClause("LastIndexed IS NOT NULL", null));
-        SQLFragment sql = new SQLFragment("UPDATE core.Documents SET LastIndexed = NULL ")
+        SQLFragment sql = SQLFragment.unsafe("UPDATE core.Documents SET LastIndexed = NULL ")
             .append(filter.getSQLFragment(CoreSchema.getInstance().getSqlDialect()));
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
     }
@@ -554,7 +554,7 @@ public class AttachmentServiceImpl implements AttachmentService
     private void deleteIndexedAttachment(String parent, String name)
     {
         SearchService.get().deleteResource(makeDocId(parent, name));
-        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment(
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(SQLFragment.unsafe(
             "UPDATE core.Documents SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL AND Parent = ? AND DocumentName = ?", parent, name)
         );
     }
@@ -870,7 +870,7 @@ public class AttachmentServiceImpl implements AttachmentService
     // Joins each row of core.Documents to the table(s) (if any) that contain an EntityId matching the document's parent
     public WebPartView<?> getFindAttachmentParentsView()
     {
-        SQLFragment sql = new SQLFragment("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
+        SQLFragment sql = SQLFragment.unsafe("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
         addSelectAllEntityIdsSql(sql, null, Sets.newCaseInsensitiveHashSet("Audit"), false);
         sql.unsafeAppend(") c ON EntityId = Parent\nORDER BY TableName, DocumentName, Container");
 
@@ -903,7 +903,7 @@ public class AttachmentServiceImpl implements AttachmentService
             .filter(ColumnRenderProperties::isStringType)
             .map(c->getSelectStatement(c, lsidsOnly))
             .filter(Objects::nonNull)
-            .collect(LabKeyCollectors.joining(new SQLFragment("    UNION\n"))));
+            .collect(LabKeyCollectors.joining(SQLFragment.unsafe("    UNION\n"))));
     }
 
     private static final Set<String> EXCLUDED_COLUMNS = CaseInsensitiveHashSet.of("Container", "ContainerId", "LookupContainer", "OwnerId", "Project", "ResourceId");
@@ -931,7 +931,7 @@ public class AttachmentServiceImpl implements AttachmentService
         }
 
         TableInfo table = column.getParentTable();
-        SQLFragment sql = new SQLFragment("    SELECT ")
+        SQLFragment sql = SQLFragment.unsafe("    SELECT ")
             .append(expression)
             .unsafeAppend(" AS EntityId, ? AS TableName FROM ")
             .add(table.getSelectName())
@@ -1781,7 +1781,7 @@ public class AttachmentServiceImpl implements AttachmentService
         @Override
         public void setLastIndexed(long ms, long modified)
         {
-            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment(
+            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(SQLFragment.unsafe(
                     "UPDATE core.Documents SET LastIndexed=? WHERE Parent=? and DocumentName=?",
                     new Date(ms), _parent.getEntityId(), _name));
         }

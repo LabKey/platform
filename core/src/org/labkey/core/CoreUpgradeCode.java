@@ -126,7 +126,7 @@ public class CoreUpgradeCode implements UpgradeCode
                 {
                     LOG.info("Populating attachment parent type for {}", type.getUniqueName());
 
-                    SQLFragment updateSql = new SQLFragment("UPDATE ")
+                    SQLFragment updateSql = SQLFragment.unsafe("UPDATE ")
                         .append(CoreSchema.getInstance().getTableInfoDocuments())
                         .unsafeAppend(" SET ParentType = ?")
                         .add(type.getUniqueName())

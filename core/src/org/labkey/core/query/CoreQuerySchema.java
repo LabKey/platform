@@ -278,10 +278,10 @@ public class CoreQuerySchema extends UserSchema
         groups.setDefaultVisibleColumns(defCols);
 
         //filter for just groups
-        groups.addCondition(new SQLFragment("Type IN ('g','r')"));
+        groups.addCondition(SQLFragment.unsafe("Type IN ('g','r')"));
         
         //filter out inactive
-        groups.addCondition(new SQLFragment("Active = ?", true));
+        groups.addCondition(SQLFragment.unsafe("Active = ?", true));
 
         // always include root plus current container's project
         groups.addCondition(getRootPlusProjectCondition());
@@ -383,10 +383,10 @@ public class CoreQuerySchema extends UserSchema
         principals.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this));
 
         //filter out inactive
-        principals.addCondition(new SQLFragment("Active=?", true));
+        principals.addCondition(SQLFragment.unsafe("Active=?", true));
 
         //filter for container is null or container = current-container
-        principals.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
+        principals.addCondition(SQLFragment.unsafe("Container IS NULL or Container=?", getContainer().getProject()));
 
         //only admins may see the principals
         if (!getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -456,7 +456,7 @@ public class CoreQuerySchema extends UserSchema
 
     private SQLFragment getRootPlusProjectCondition()
     {
-        SQLFragment sql = new SQLFragment("Container IS NULL");
+        SQLFragment sql = SQLFragment.unsafe("Container IS NULL");
         Container project = getContainer().getProject();
 
         // Include this condition outside the root
@@ -697,7 +697,7 @@ public class CoreQuerySchema extends UserSchema
     {
         TableInfo dataStatesTable = getDataStatesTable(cf);
         FilteredTable<?> table = new FilteredTable<>(dataStatesTable, this);
-        SQLFragment sql = new SQLFragment("(stateType IS NULL)");
+        SQLFragment sql = SQLFragment.unsafe("(stateType IS NULL)");
         table.setName(QCSTATE_TABLE_NAME);
 
         table.addCondition(sql);
@@ -710,7 +710,7 @@ public class CoreQuerySchema extends UserSchema
 
     protected void addNullSetFilter(FilteredTable<?> table)
     {
-        table.addCondition(new SQLFragment("1=2"), FieldKey.fromParts("UserId"));
+        table.addCondition(SQLFragment.unsafe("1=2"), FieldKey.fromParts("UserId"));
     }
 
     public boolean getMustCheckPermissions()
