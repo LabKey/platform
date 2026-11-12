@@ -151,6 +151,7 @@ public class XarExporter
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private final Logger _log;
+    private boolean _excludedDataFilesLogged = false;
 
     private boolean _includeXML = true;
 
@@ -389,7 +390,6 @@ public class XarExporter
                 inputRefs = xApplication.addNewInputRefs();
             }
             InputOutputRefsType.DataLSID dataLSID = inputRefs.addNewDataLSID();
-            dataLSID.setStringValue(_relativizedLSIDs.relativize(data.getLSID()));
             String roleName = null;
             for (DataInput dataInput : dataInputs)
             {
@@ -416,6 +416,11 @@ public class XarExporter
 
             ExpDataImpl expData = new ExpDataImpl(data);
             String url = _urlRewriter.rewriteURL(expData.getFilePath(), expData, roleName, run, _user, _fileRootPath);
+            // decide before relativizing: the first answer for an LSID is the one that sticks
+            dataLSID.setStringValue(StringUtils.isEmpty(url)
+                    ? _relativizedLSIDs.relativizeWithoutDataFile(expData)
+                    : _relativizedLSIDs.relativize(data.getLSID()));
+
             if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
             {
                 if (url != null && !url.isEmpty())
@@ -974,23 +979,23 @@ public class XarExporter
     private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run) throws ExperimentException
     {
         _log.debug("Adding data {}", data.getLSID());
+        Path path = data.getFilePath();
+        String url = path == null ? null : _urlRewriter.rewriteURL(path, data, role, run, _user, _fileRootPath);
+
         xData.setName(data.getName());
-        xData.setAbout(_relativizedLSIDs.relativize(data));
+        // no DataFileUrl below means the LSID must not be the ${AutoFileLSID} form, which resolves through one on import;
+        // a role filter and an unresolvable path both leave url null without the row being recorded as excluded
+        xData.setAbout(url == null ? _relativizedLSIDs.relativizeWithoutDataFile(data) : _relativizedLSIDs.relativize(data));
         xData.setCpasType(isDefaultCpasType(data.getCpasType(), ExpData.DEFAULT_CPAS_TYPE) ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
 
-        Path path = data.getFilePath();
-        if (path != null)
-        {
-            String url = _urlRewriter.rewriteURL(path, data, role, run, _user, _fileRootPath);
-            if (url != null)
-                xData.setDataFileUrl(url);
-        }
+        if (url != null)
+            xData.setDataFileUrl(url);
 
         // Add the original URL as a property on the data object
         // so that it's easier to figure out links between files later, since
         // the URLs have all been rewritten
         PropertyCollectionType dataProperties = getProperties(data.getLSID(), data.getContainer());
-        if (!StringUtils.isBlank(data.getDataFileUrl()) && !Strings.CS.equals(xData.getDataFileUrl(), data.getDataFileUrl()))
+        if (!_urlRewriter.isExcluded(data) && !StringUtils.isBlank(data.getDataFileUrl()) && !Strings.CS.equals(xData.getDataFileUrl(), data.getDataFileUrl()))
             dataProperties = addOriginalURLProperty(dataProperties, data.getDataFileUrl());
         if (dataProperties != null)
             xData.setProperties(dataProperties);
@@ -1406,8 +1411,21 @@ public class XarExporter
         return OntologyManager.getPropertyObjects(container, lsid);
     }
 
+    /** Names every withheld file once, through the exporter's log so a pipeline export reports them in its own job log. */
+    private void logExcludedDataFiles()
+    {
+        Map<Long, String> excluded = _urlRewriter.getExcludedDataFiles();
+        if (_excludedDataFilesLogged || excluded.isEmpty())
+            return;
+
+        _excludedDataFilesLogged = true;
+        _log.warn("{} data file(s) omitted from this export because they resolve outside the folder's file roots:", excluded.size());
+        excluded.forEach((rowId, path) -> _log.warn("  exp.data row {}: {}", rowId, path));
+    }
+
     public void dumpXML(OutputStream out) throws IOException, ExperimentException
     {
+        logExcludedDataFiles();
         ensureDomainsWritten();
 
         XmlOptions validateOptions = new XmlOptions();
@@ -1487,6 +1505,8 @@ public class XarExporter
                     dumpXML(zOut);
                     zOut.closeEntry();
                 }
+
+                logExcludedDataFiles();
 
                 for (URLRewriter.FileInfo fileInfo : _urlRewriter.getFileInfos())
                 {

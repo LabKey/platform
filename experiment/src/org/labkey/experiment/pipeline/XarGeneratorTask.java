@@ -136,6 +136,19 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         super(factory, job);
     }
 
+    /** The loading XAR this task just wrote describes files the job itself produced, which legitimately live outside the folder's roots. */
+    private static FileXarSource jobXarSource(FileLike xarFile, PipelineJob job)
+    {
+        return new FileXarSource(xarFile, job)
+        {
+            @Override
+            protected boolean isDataFilePathRestricted()
+            {
+                return false;
+            }
+        };
+    }
+
     /**
      * The basic steps are:
      * 1. Start a transaction.
@@ -173,7 +186,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                     }
 
                     // Load the data files for this run
-                    importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false));
+                    importedRuns.addAll(ExperimentService.get().importXar(jobXarSource(getLoadingXarFile(), getJob()), getJob(), false));
 
                     Files.move(getLoadingXarFile().toNioPathForWrite(), permanentXAR.toNioPathForWrite());
                 }

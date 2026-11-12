@@ -45,6 +45,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -1120,6 +1121,7 @@ public class ExperimentModule extends SpringModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            AbstractFileXarSource.TestCase.class,
             EdgeDiagnosticsTestCase.class,
             ExperimentController.ContainerScopingTestCase.class,
             DataColorTable.TestCase.class,

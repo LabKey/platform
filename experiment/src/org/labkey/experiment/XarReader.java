@@ -1805,10 +1805,10 @@ public class XarReader extends AbstractXarImporter
                 if (null != original)
                 {
                     URI uri = FileUtil.createUri(original);
-                    if (FileUtil.FILE_SCHEME.equals(uri.getScheme()))
+                    if (FileUtil.FILE_SCHEME.equals(uri.getScheme()) && new File(uri).exists())
                     {
-                        if (new File(uri).exists())
-                            data.setDataFileUrl(original);
+                        // fail rather than silently drop the URL: a legacy archive naming paths outside this folder's roots is not importable here
+                        data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(original));
                     }
                 }
             }
