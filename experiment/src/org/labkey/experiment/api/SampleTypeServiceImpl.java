@@ -1333,6 +1333,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             ExpSampleType sampleType = null;
             if (sampleTypeLsid != null)
                 sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
+            // A sample type's own table audits only its samples, so each row's sample needn't be loaded
+            else if (tInfo instanceof ExpMaterialTableImpl materialTable && materialTable.getSampleType() != null)
+                sampleType = materialTable.getSampleType();
             else if (event.getSampleId() > 0)
             {
                 ExpMaterial sample = ExperimentService.get().getExpMaterial(event.getSampleId());

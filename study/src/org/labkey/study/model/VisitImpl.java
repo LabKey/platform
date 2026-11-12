@@ -32,14 +32,13 @@ import org.labkey.api.data.Transient;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.Formats.SafeDecimalFormat;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.study.StudySchema;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +52,7 @@ public class VisitImpl extends AbstractStudyEntity<Integer, VisitImpl> implement
 
     // Sequence numbers and protocol day are currently stored as NUMERIC(15, 4); below are all the related constants.
     private static final int MAX_SCALE = 4;
-    private static final NumberFormat SEQUENCE_FORMAT = new DecimalFormat("0.0###");
+    private static final SafeDecimalFormat SEQUENCE_FORMAT = new SafeDecimalFormat("0.0###");
 
     private int _rowId = 0;
     private BigDecimal _sequenceMin = BigDecimal.ZERO;

@@ -175,9 +175,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     else
                     {
                         // UNLOGGED skips WAL when populating and indexing the table.
-                        selectInto = new SQLFragment("SELECT * INTO ")
+                        selectInto = SQLFragment.unsafe("SELECT * INTO ")
                                 .append(_mqh._unlogged ? "UNLOGGED " : "")
-                                .appendIdentifier(temp.getName()).unsafeAppend(".").appendIdentifier(_tableName).unsafeAppend("\nFROM (\n");
+                                .appendDottedIdentifiers(temp.getName(), _tableName).unsafeAppend("\nFROM (\n");
                         selectInto.append(selectQuery);
                         selectInto.unsafeAppend("\n) _sql_");
                     }
@@ -561,7 +561,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         _countGetFromSql.incrementAndGet();
         SQLFragment sqlf = new SQLFragment(m._fromSql);
         if (!StringUtils.isBlank(tableAlias))
-            sqlf.unsafeAppend(" ").append(tableAlias);
+            sqlf.unsafeAppend(" ").appendIdentifier(tableAlias);
         sqlf.addTempToken(m);
         return sqlf;
     }
@@ -658,7 +658,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         _lastUsed.set(HeartBeat.currentTimeMillis());
         SQLFragment sqlf = new SQLFragment(materialized._fromSql);
         if (!StringUtils.isBlank(tableAlias))
-            sqlf.unsafeAppend(" ").append(tableAlias);
+            sqlf.unsafeAppend(" ").appendIdentifier(tableAlias);
         sqlf.addTempToken(materialized);
         _countGetFromSql.incrementAndGet();
         return sqlf;
@@ -796,7 +796,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     {
         DbSchema temp = DbSchema.getTemp();
         String name = _prefix + "_" + GUID.makeHash();
-        Materialized materialized = new Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), new SQLFragment().appendDottedIdentifiers("\"" + temp.getName() + "\"", "\"" + name + "\""));
+        Materialized materialized = new Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), new SQLFragment().appendDottedIdentifiers(temp.getSqlDialect().quoteIdentifier(temp.getName()), temp.getSqlDialect().quoteIdentifier(name)));
         initMaterialized(materialized);
         return materialized;
     }
@@ -943,8 +943,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             DbSchema temp = DbSchema.getTemp();
             DbScope s = temp.getScope();
-            SQLFragment select = new SQLFragment("SELECT * FROM temp.MQH_TESTCASE");
-            SQLFragment uptodate = new SQLFragment("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
+            SQLFragment select = SQLFragment.unsafe("SELECT * FROM temp.MQH_TESTCASE");
+            SQLFragment uptodate = SQLFragment.unsafe("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
             try (MaterializedQueryHelper  mqh = MaterializedQueryHelper.create("test", s,select,uptodate,null,CacheManager.UNLIMITED))
             {
                 SQLFragment emptyA = mqh.getFromSql("_");
@@ -966,8 +966,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
             DbSchema temp = DbSchema.getTemp();
             DbScope s = temp.getScope();
-            SQLFragment select = new SQLFragment("SELECT x, x*x as y FROM temp.MQH_TESTCASE");
-            SQLFragment uptodate = new SQLFragment("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
+            SQLFragment select = SQLFragment.unsafe("SELECT x, x*x as y FROM temp.MQH_TESTCASE");
+            SQLFragment uptodate = SQLFragment.unsafe("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
             try (final MaterializedQueryHelper  mqh = MaterializedQueryHelper.create("test", s,select,uptodate,null,CacheManager.UNLIMITED))
             {
                 Runnable inserter = () ->
@@ -992,7 +992,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     {
                         while (System.currentTimeMillis() < stop)
                         {
-                            new SqlSelector(temp, new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_"))).getMapCollection();
+                            new SqlSelector(temp, SQLFragment.unsafe("SELECT * FROM ").append(mqh.getFromSql("_"))).getMapCollection();
                             queries.incrementAndGet();
                         }
                     }
@@ -1054,7 +1054,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             DbSchema temp = DbSchema.getTemp();
             DbScope s = temp.getScope();
             AtomicReference<String> supplierValue = new AtomicReference<>("v1");
-            SQLFragment select = new SQLFragment("SELECT * FROM temp.MQH_TESTCASE");
+            SQLFragment select = SQLFragment.unsafe("SELECT * FROM temp.MQH_TESTCASE");
 
             try (MaterializedQueryHelper mqh = new Builder("test", s, select)
                     .addInvalidCheck(supplierValue::get)
@@ -1089,7 +1089,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             DbScope s = temp.getScope();
             Assume.assumeTrue("UNLOGGED is only supported on PostgreSQL", s.getSqlDialect().isPostgreSQL());
             new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)");
-            SQLFragment select = new SQLFragment("SELECT * FROM temp.MQH_TESTCASE");
+            SQLFragment select = SQLFragment.unsafe("SELECT * FROM temp.MQH_TESTCASE");
 
             try (MaterializedQueryHelper mqh = new Builder("test", s, select).unlogged(true).build())
             {
@@ -1098,13 +1098,13 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 assertEquals("An intact marker must keep the table", before, mqh.tryGetFromSqlIfLoaded(null));
 
                 // Empty the table and the marker as a failover or crash recovery would
-                new SqlExecutor(temp).execute(new SQLFragment("TRUNCATE ").append(before));
+                new SqlExecutor(temp).execute(SQLFragment.unsafe("TRUNCATE ").append(before));
                 UnloggedTableGeneration.simulateResetForTest();
 
                 assertNull("A reset table must not be served", mqh.tryGetFromSqlIfLoaded(null));
                 SQLFragment after = mqh.getFromSql(null);
                 assertNotEquals("A reset table must be rebuilt into a new table", before, after);
-                assertEquals(Integer.valueOf(1), new SqlSelector(temp, new SQLFragment("SELECT COUNT(*) FROM ").append(after)).getObject(Integer.class));
+                assertEquals(Integer.valueOf(1), new SqlSelector(temp, SQLFragment.unsafe("SELECT COUNT(*) FROM ").append(after)).getObject(Integer.class));
             }
         }
 
@@ -1119,13 +1119,13 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             assertNotNull("The initial check must create a marker", before);
             long generation = Long.parseLong(UnloggedTableGeneration.current());
 
-            new SqlExecutor(temp).execute(new SQLFragment("DROP TABLE temp.").appendIdentifier(before));
+            new SqlExecutor(temp).execute(SQLFragment.unsafe("DROP TABLE temp.").appendIdentifier(before));
             UnloggedTableGeneration.checkForTest();
 
             assertTrue("A dropped marker must bump the generation", Long.parseLong(UnloggedTableGeneration.current()) > generation);
             String after = UnloggedTableGeneration.markerNameForTest();
             assertNotEquals("A dropped marker must be replaced under a new name", before, after);
-            assertEquals(Integer.valueOf(1), new SqlSelector(temp, new SQLFragment("SELECT COUNT(*) FROM temp.").appendIdentifier(after)).getObject(Integer.class));
+            assertEquals(Integer.valueOf(1), new SqlSelector(temp, SQLFragment.unsafe("SELECT COUNT(*) FROM temp.").appendIdentifier(after)).getObject(Integer.class));
         }
     }
 }

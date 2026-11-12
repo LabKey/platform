@@ -298,7 +298,9 @@ public enum Operator
 
     public SQLFragment getOperatorSql(SqlDialect d)
     {
-        return new SQLFragment().setSqlUnsafe(getOperator(d));
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getOperator(d));
+        return ret;
     }
 
     public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)

@@ -43,12 +43,12 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.Formats.SafeDecimalFormat;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -73,7 +73,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     boolean allowImportManagedKeys = false;
     boolean useImportAliases = false;
     Map<String, Map<Object, Object>>  _tableIdMapMap = Map.of();    // used to be handed in via StudyImportContext (see comments in DatasetUpdateService.Config)
-    public static final DecimalFormat SEQUENCE_NUM_FORMAT = new DecimalFormat("0.0000");
+    public static final SafeDecimalFormat SEQUENCE_NUM_FORMAT = new SafeDecimalFormat("0.0000");
 
     DataIteratorBuilder builder = null;
 

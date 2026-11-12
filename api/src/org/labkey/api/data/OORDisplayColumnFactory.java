@@ -78,7 +78,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
 
         combinedCol.setDisplayColumnFactory(new OORDisplayColumnFactory());     // Do this after wrappedNumberColumn in case we did addColumn above instead of addWrappedColumn
 
-        SQLFragment inRangeSQL = new SQLFragment("CASE WHEN ");
+        SQLFragment inRangeSQL = SQLFragment.unsafe("CASE WHEN ");
         SQLFragment valueSql = oorIndicatorColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS);
         inRangeSQL.append(valueSql);
 //        inRangeSQL.append(ExprColumn.STR_TABLE_ALIAS);                                      // TODO: getValueSql   (oorIndicatorColumn)

@@ -176,7 +176,7 @@ public class MultiValuedLookupColumn extends LookupColumn
             }
             else
             {
-                SQLFragment select = new SQLFragment("SELECT ");
+                SQLFragment select = SQLFragment.unsafe("SELECT ");
                 select.append(valueSql);
                 select.unsafeAppend(" FROM ");
                 select.append(_lookupKey.getParentTable().getFromSQL(nestedAlias));

@@ -1165,6 +1165,7 @@ public class ExperimentModule extends SpringModule
     {
         return Set.of(
             DomainUtil.ImportAliasTestCase.class,
+            DomainUtil.SystemFieldLabelTestCase.class,
             GraphAlgorithms.TestCase.class,
             LSIDRelativizer.TestCase.class,
             Lsid.TestCase.class,

@@ -70,6 +70,7 @@
 <%@ page import="org.labkey.api.reader.DataLoader" %>
 <%@ page import="org.labkey.api.reader.DataLoaderService" %>
 <%@ page import="org.labkey.api.reader.JSONDataLoader" %>
+<%@ page import="org.labkey.api.security.LimitedUser" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.GUID" %>
@@ -771,6 +772,7 @@ d,seven,twelve,day,month,date,duration,guid
         // javaConstant() always return VARCHAR currently, would like to fix
         new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
         new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT CASE WHEN NOT ISMEMBEROF(-2) THEN 1 ELSE 0 END FROM R WHERE rowid=1", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LEAST(0, 2, 1)", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
         new MethodSqlTest("SELECT LEFT('FRED', 2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
@@ -817,6 +819,8 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_HOUR, CAST('01 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2005' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 8784), // leap year
         new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('01 Jan 2003' AS TIMESTAMP), CAST('31 Jan 2004' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, 395),
         new MethodSqlTest("SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, CAST('31 Jan 2004' AS TIMESTAMP), CAST('01 Jan 2003' AS TIMESTAMP)) AS INTEGER)", JdbcType.INTEGER, -395),
+        new MethodSqlTest("PARAMETERS(StartTs TIMESTAMP DEFAULT '2003-01-01', EndTs TIMESTAMP DEFAULT '2004-01-31') SELECT CAST(TIMESTAMPDIFF(SQL_TSI_DAY, StartTs, EndTs) AS INTEGER)", JdbcType.INTEGER, 395),
+        new MethodSqlTest("PARAMETERS(StartTs TIMESTAMP DEFAULT '2004-01-01 05:00', EndTs TIMESTAMP DEFAULT '2004-01-01 06:00') SELECT CAST(TIMESTAMPDIFF(SQL_TSI_SECOND, StartTs, EndTs) AS INTEGER)", JdbcType.INTEGER, 3600),
         // NOTE: SQL_TSI_WEEK, SQL_TSI_MONTH, SQL_TSI_QUARTER, and SQL_TSI_YEAR are NYI in PostsgreSQL TIMESTAMPDIFF
 
         new MethodSqlTest("SELECT UCASE('Fred')", JdbcType.VARCHAR, "FRED"),
@@ -1062,7 +1066,9 @@ d,seven,twelve,day,month,date,duration,guid
                 new SqlTest("SELECT __cte_two__() as two, __cte_three__() as three, __cte_two__() * __cte_three__() as six_simple, __cte_times__(__cte_two__(), __cte_three__()) as six_complex", 4, 1),
 
                 // JDBC escape sequences
-                new SqlTest("SELECT * FROM (SELECT CAST({ts '2023-06-02 00:00:00'} AS DATE) AS d) x WHERE d = {d '2023-06-02'}", 1, 1)
+                new SqlTest("SELECT * FROM (SELECT CAST({ts '2023-06-02 00:00:00'} AS DATE) AS d) x WHERE d = {d '2023-06-02'}", 1, 1),
+
+                new FailTest("SELECT TIMESTAMPDIFF(SQL_TSI_MONTH, CAST('01 Jan 2003' AS TIMESTAMP), CAST('01 Jan 2004' AS TIMESTAMP))")
             )
         );
 
@@ -1393,6 +1399,19 @@ d,seven,twelve,day,month,date,duration,guid
             test.validate(null);
         }
 
+        // ISMEMBEROF() reads the user from the query environment; a LimitedUser has no groups
+        Object environmentUser = QueryService.get().getEnvironment(QueryService.Environment.USER);
+        try
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.USER, new LimitedUser(user));
+            new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false).validate(null);
+            new MethodSqlTest("SELECT CASE WHEN NOT ISMEMBEROF(-2) THEN 1 ELSE 0 END FROM R WHERE rowid=1", JdbcType.INTEGER, 1).validate(null);
+        }
+        finally
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.USER, environmentUser);
+        }
+
         if (dialect.isPostgreSQL() /* dialect.allowSortOnSubqueryWithoutLimit() is the preferred check, but SQL Server still has problems with these queries */)
         {
             for (SqlTest test : postgres)
@@ -1607,7 +1626,7 @@ d,seven,twelve,day,month,date,duration,guid
         ArrayList<QueryException> errors = new ArrayList<>();
         TableInfo t = q.getTable(errors, false);
         assertTrue(errors.isEmpty());
-        SQLFragment sqlf = t.getFromSQL("$");
+        SQLFragment sqlf = t.getFromSQL("t");
         assertNotNull(sqlf);
         String debugSql = sqlf.toDebugString();
         assertFalse(debugSql.contains(testGUID.toString()));
@@ -1623,7 +1642,7 @@ d,seven,twelve,day,month,date,duration,guid
         q.setContainerFilter(custom);
         t = q.getTable(errors, false);
         assertTrue(errors.isEmpty());
-        sqlf = t.getFromSQL("$");
+        sqlf = t.getFromSQL("t");
         assertNotNull(sqlf);
         debugSql = sqlf.toDebugString();
         assertFalse(debugSql.contains(testGUID.toString()));
@@ -2022,7 +2041,11 @@ d,seven,twelve,day,month,date,duration,guid
 
     SQLFragment array(@CompileTimeConstant String... strings)
     {
-        var args = Arrays.stream(strings).map(s -> new SQLFragment().setSqlUnsafe(s)).toList().toArray(new SQLFragment[0]);
+        var args = Arrays.stream(strings).map(s -> {
+            SQLFragment arg = new SQLFragment();
+            arg.setSqlUnsafe(s);
+            return arg;
+        }).toList().toArray(new SQLFragment[0]);
         return dialect.array_construct(args);
     }
 

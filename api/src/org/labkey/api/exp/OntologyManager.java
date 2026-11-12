@@ -311,12 +311,27 @@ public class OntologyManager
                                           @Nullable RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
+        insertTabDelimited(c, user, ownerObjectId, helper, domain, rows, ensureObjects, new ValidatorContext(c, user), rowCallback);
+    }
+
+    /** @param validatorContext shared with the caller's own validation pass so lookup and pattern caches are reused */
+    public static void insertTabDelimited(Container c,
+                                          User user,
+                                          @Nullable Long ownerObjectId,
+                                          ImportHelper helper,
+                                          Domain domain,
+                                          DataIterator rows,
+                                          boolean ensureObjects,
+                                          ValidatorContext validatorContext,
+                                          @Nullable RowCallback rowCallback)
+            throws SQLException, BatchValidationException
+    {
         List<PropertyDescriptor> properties = new ArrayList<>(domain.getProperties().size());
         for (DomainProperty prop : domain.getProperties())
         {
             properties.add(prop.getPropertyDescriptor());
         }
-        insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects, rowCallback);
+        insertTabDelimited(c, user, ownerObjectId, helper, properties, rows, ensureObjects, validatorContext, rowCallback);
     }
 
     public interface RowCallback
@@ -370,6 +385,20 @@ public class OntologyManager
                                           @Nullable RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
+        insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rawRows, ensureObjects, new ValidatorContext(c, user), rowCallback);
+    }
+
+    private static void insertTabDelimited(Container c,
+                                           User user,
+                                           @Nullable Long ownerObjectId,
+                                           ImportHelper helper,
+                                           List<PropertyDescriptor> descriptors,
+                                           DataIterator rawRows,
+                                           boolean ensureObjects,
+                                           ValidatorContext validatorCache,
+                                           @Nullable RowCallback rowCallback)
+            throws SQLException, BatchValidationException
+    {
         MapDataIterator rows = DataIteratorUtil.wrapMap(rawRows, false);
 
         rowCallback = rowCallback == null ? NO_OP_ROW_CALLBACK : rowCallback;
@@ -386,8 +415,6 @@ public class OntologyManager
 
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<>(maxPropsInBatch + descriptors.size());
-
-        ValidatorContext validatorCache = new ValidatorContext(c, user);
 
         try
         {
@@ -540,7 +567,23 @@ public class OntologyManager
                                           RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
-        saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, rowCallback);
+        insertTabDelimited(tableInsert, c, user, helper, rows, autoFillDefaultColumns, new ValidatorContext(c, user), logger, rowCallback);
+    }
+
+    /** @param validatorContext shared with the caller's own validation pass so lookup and pattern caches are reused */
+    @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
+    public static void insertTabDelimited(TableInfo tableInsert,
+                                          Container c,
+                                          User user,
+                                          UpdateableTableImportHelper helper,
+                                          DataIterator rows,
+                                          boolean autoFillDefaultColumns,
+                                          ValidatorContext validatorContext,
+                                          Logger logger,
+                                          RowCallback rowCallback)
+            throws SQLException, BatchValidationException
+    {
+        saveTabDelimited(tableInsert, c, user, helper, rows, logger, true, autoFillDefaultColumns, validatorContext, rowCallback);
     }
 
     @Deprecated // switch to StandardDataIteratorBuilder and TableInsertDataIteratorBuilder
@@ -553,7 +596,7 @@ public class OntologyManager
                                           Logger logger)
             throws SQLException, BatchValidationException
     {
-        saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns, NO_OP_ROW_CALLBACK);
+        saveTabDelimited(tableInsert, c, user, helper, rows, logger, false, autoFillDefaultColumns, new ValidatorContext(c, user), NO_OP_ROW_CALLBACK);
     }
 
     private static void saveTabDelimited(TableInfo table,
@@ -564,6 +607,7 @@ public class OntologyManager
                                          Logger logger,
                                          boolean insert,
                                          boolean autoFillDefaultColumns,
+                                         ValidatorContext validatorCache,
                                          @Nullable RowCallback rowCallback)
             throws SQLException, BatchValidationException
     {
@@ -581,8 +625,6 @@ public class OntologyManager
 
         Domain d = table.getDomain();
         List<? extends DomainProperty> properties = null == d ? Collections.emptyList() : d.getProperties();
-
-        ValidatorContext validatorCache = new ValidatorContext(c, user);
 
         Connection conn = null;
         ParameterMapStatement parameterMap = null;
@@ -1083,7 +1125,7 @@ public class OntologyManager
 
             for (String uri : uris)
             {
-                SQLFragment sql = getSqlDialect().execute(getExpSchema(), "deleteObject", new SQLFragment("?, ?", c.getId(), uri));
+                SQLFragment sql = getSqlDialect().execute(getExpSchema(), "deleteObject", SQLFragment.unsafe("?, ?", c.getId(), uri));
                 executor.execute(sql);
             }
         }
@@ -1096,7 +1138,7 @@ public class OntologyManager
 
     public static int deleteOntologyObjects(DbSchema schema, SQLFragment objectUriSql, @Nullable Container c)
     {
-        SQLFragment objectIdSQL = new SQLFragment("SELECT ObjectId FROM ")
+        SQLFragment objectIdSQL = SQLFragment.unsafe("SELECT ObjectId FROM ")
             .append(getTinfoObject()).unsafeAppend("\n")
             .unsafeAppend(" WHERE ");
         if (c != null)
@@ -1127,17 +1169,17 @@ public class OntologyManager
         // once, and the FK from ObjectProperty is checked only after both deletes. The column alias matches by position.
         SQLFragment deleteSql = new SQLFragment();
         String ids = deleteSql.addCommonTableExpression(dialect, "ids", "ids",
-                new SQLFragment("SELECT ObjectId FROM (").append(objectIdSql).append(") x (ObjectId)"));
+                SQLFragment.unsafe("SELECT ObjectId FROM (").append(objectIdSql).unsafeAppend(") x (ObjectId)"));
         deleteSql.addCommonTableExpression(dialect, "deletedProps", "deletedProps",
-                new SQLFragment("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).append(")"));
+                SQLFragment.unsafe("DELETE FROM ").append(getTinfoObjectProperty()).unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).unsafeAppend(")"));
         String deleted = deleteSql.addCommonTableExpression(dialect, "deleted", "deleted",
-                new SQLFragment("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).append(") RETURNING ObjectURI, Container"));
+                SQLFragment.unsafe("DELETE FROM ").append(getTinfoObject()).unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).unsafeAppend(") RETURNING ObjectURI, Container"));
         // Keys come from the DELETE itself so they match exactly what was removed. Counting first means a delete past
         // the limit never aggregates its URIs, which could otherwise reach millions.
         String counted = deleteSql.addCommonTableExpression(dialect, "counted", "counted",
-                new SQLFragment("SELECT ObjectURI, Container, COUNT(*) OVER () AS TotalCount FROM ").append(deleted));
-        deleteSql.append("SELECT Container, COUNT(*) AS DeletedCount, array_agg(CAST(ObjectURI AS VARCHAR)) FILTER (WHERE TotalCount <= ?) AS URIs").add(MAX_TARGETED_CACHE_REMOVALS)
-                .append("\nFROM ").append(counted).append(" GROUP BY Container");
+                SQLFragment.unsafe("SELECT ObjectURI, Container, COUNT(*) OVER () AS TotalCount FROM ").append(deleted));
+        deleteSql.unsafeAppend("SELECT Container, COUNT(*) AS DeletedCount, array_agg(CAST(ObjectURI AS VARCHAR)) FILTER (WHERE TotalCount <= ?) AS URIs").add(MAX_TARGETED_CACHE_REMOVALS)
+                .unsafeAppend("\nFROM ").append(counted).unsafeAppend(" GROUP BY Container");
 
         int deletedCount = new SqlExecutor(getExpSchema()).executeWithResults(deleteSql, (rs, _) -> {
             int total = 0;
@@ -1203,7 +1245,7 @@ public class OntologyManager
         if (deleteOwnedObjects)
         {
             // NOTE: owned objects should never be in a different container than the owner, that would be a problem
-            SQLFragment sqlDeleteOwnedProperties = new SQLFragment("DELETE FROM ")
+            SQLFragment sqlDeleteOwnedProperties = SQLFragment.unsafe("DELETE FROM ")
                 .append(getTinfoObjectProperty())
                 .unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ")
                 .append(getTinfoObject())
@@ -1214,7 +1256,7 @@ public class OntologyManager
 
             new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedProperties);
 
-            SQLFragment sqlDeleteOwnedObjects = new SQLFragment("DELETE FROM ")
+            SQLFragment sqlDeleteOwnedObjects = SQLFragment.unsafe("DELETE FROM ")
                 .append(getTinfoObject())
                 .unsafeAppend(" WHERE Container = ? AND OwnerObjectId ")
                 .add(c)
@@ -1230,7 +1272,7 @@ public class OntologyManager
 
         if (deleteObjects)
         {
-            SQLFragment sqlDeleteObjects = new SQLFragment("DELETE FROM ")
+            SQLFragment sqlDeleteObjects = SQLFragment.unsafe("DELETE FROM ")
                 .append(getTinfoObject())
                 .unsafeAppend(" WHERE Container = ? AND ObjectId ")
                 .add(c)
@@ -1305,7 +1347,7 @@ public class OntologyManager
                         " (SELECT DISTINCT SUBO.OwnerObjectId FROM " + getTinfoObject() + " SUBO " +
                         " WHERE SUBO.ObjectId")
                         .appendInClause(objIdsToDeleteList, dialect)
-                        .append(" )");
+                        .unsafeAppend(" )");
 
                 ownerObjIds = new SqlSelector(getExpSchema(), selectOwnerObjects).getArray(Long.class);
             }
@@ -1326,16 +1368,24 @@ public class OntologyManager
                 // other properties attached to them
                 SQLFragment deleteObjSql = new SQLFragment("DELETE FROM " + getTinfoObject() + " WHERE ObjectId")
                         .appendInClause(objIdsToDeleteList, dialect)
-                        .append(" AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
-                        " WHERE  OP.ObjectId = " + getTinfoObject() + ".ObjectId)");
+                        .unsafeAppend(" AND NOT EXISTS (SELECT * FROM ")
+                                .append(getTinfoObjectProperty().getSQLName())
+                                .unsafeAppend(" OP "
+                                    + " WHERE  OP.ObjectId = ")
+                                .append(getTinfoObject().getSQLName())
+                                .unsafeAppend(".ObjectId)");
                 new SqlExecutor(getExpSchema()).execute(deleteObjSql);
 
                 if (ownerObjIds.length > 0)
                 {
                     SQLFragment deleteOwnerSql = new SQLFragment("DELETE FROM " + getTinfoObject() + " WHERE ObjectId")
                             .appendInClause(Arrays.asList(ownerObjIds), dialect)
-                            .append(" AND NOT EXISTS (SELECT * FROM " + getTinfoObject() + " SUBO " +
-                            " WHERE SUBO.OwnerObjectId = " + getTinfoObject() + ".ObjectId)");
+                            .unsafeAppend(" AND NOT EXISTS (SELECT * FROM ")
+                                    .append(getTinfoObject().getSQLName())
+                                    .unsafeAppend(" SUBO "
+                                        + " WHERE SUBO.OwnerObjectId = ")
+                                    .append(getTinfoObject().getSQLName())
+                                    .unsafeAppend(".ObjectId)");
                     new SqlExecutor(getExpSchema()).execute(deleteOwnerSql);
                 }
             }
@@ -1388,11 +1438,19 @@ public class OntologyManager
 
                 SQLFragment deletePDs = new SQLFragment("DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyId")
                         .appendInClause(Arrays.asList(pdIdsToDelete), getExpSchema().getSqlDialect())
-                        .append(" AND Container = ? ").add(dd.getContainer().getId())
-                        .append("AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
-                        "WHERE OP.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId) " +
-                        "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
-                        "WHERE PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId)");
+                        .unsafeAppend(" AND Container = ? ").add(dd.getContainer().getId())
+                        .unsafeAppend("AND NOT EXISTS (SELECT * FROM ")
+                                .append(getTinfoObjectProperty().getSQLName())
+                                .unsafeAppend(" OP "
+                                    + "WHERE OP.PropertyId = ")
+                                .append(getTinfoPropertyDescriptor().getSQLName())
+                                .unsafeAppend(".PropertyId) "
+                                    + "AND NOT EXISTS (SELECT * FROM ")
+                                .append(getTinfoPropertyDomain().getSQLName())
+                                .unsafeAppend(" PDM "
+                                    + "WHERE PDM.PropertyId = ")
+                                .append(getTinfoPropertyDescriptor().getSQLName())
+                                .unsafeAppend(".PropertyId)");
 
                 new SqlExecutor(getExpSchema()).execute(deletePDs);
             }
@@ -1427,10 +1485,10 @@ public class OntologyManager
 
             // Owned objects should be in same container, so this should work
             String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-            executor.execute(deleteObjPropSql, c);
+            int deleted = executor.execute(deleteObjPropSql, c);
             String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
             _log.debug("Deleting from exp.object in container {}", c);
-            executor.execute(deleteObjSql, c);
+            deleted += executor.execute(deleteObjSql, c);
 
             // delete property validator references on property descriptors
             PropertyService.get().deleteValidatorsAndFormats(c);
@@ -1445,16 +1503,18 @@ public class OntologyManager
             }
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
-            executor.execute(deletePropDomSqlPD, c);
+            deleted += executor.execute(deletePropDomSqlPD, c);
             String deletePropDomSqlDD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE DomainId IN (SELECT DomainId FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?)";
-            executor.execute(deletePropDomSqlDD, c);
+            deleted += executor.execute(deletePropDomSqlDD, c);
             String deleteDomSql = "DELETE FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-            executor.execute(deleteDomSql, c);
+            deleted += executor.execute(deleteDomSql, c);
             // now delete the prop descriptors that are referenced in this container only
             String deletePropSql = "DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?";
-            executor.execute(deletePropSql, c);
+            deleted += executor.execute(deletePropSql, c);
 
-            clearCaches();
+            // Earlier container-delete steps uncache what they delete, so the server-wide clear is only needed for rows deleted here
+            if (deleted > 0)
+                clearCaches();
             transaction.commit();
         }
     }
@@ -1528,7 +1588,7 @@ public class OntologyManager
                     " ON (PD.PropertyId = PDM2.PropertyId) " +
                     " WHERE PDM.PropertyId")
                     .appendInClause(propIds, dialect)
-                    .append(" OR PD.PropertyId")
+                    .unsafeAppend(" OR PD.PropertyId")
                     .appendInClause(propIds, dialect);
 
             if (_log.isDebugEnabled())
@@ -1873,7 +1933,7 @@ public class OntologyManager
             Map<String, Object> m = f.toMap(pd, null);
             stmt.putAll(m);
             int rowcount = stmt.execute();
-            SQLFragment reselect = new SQLFragment("SELECT * FROM exp.propertydescriptor WHERE propertyuri=? AND container=?", pd.getPropertyURI(), pd.getContainer());
+            SQLFragment reselect = SQLFragment.unsafe("SELECT * FROM exp.propertydescriptor WHERE propertyuri=? AND container=?", pd.getPropertyURI(), pd.getContainer());
             out[0] = (new SqlSelector(getExpSchema(), reselect).getObject(PropertyDescriptor.class));
             return rowcount;
         }
@@ -1995,12 +2055,14 @@ public class OntologyManager
                 // ensureDomainDescriptor() shouldn't fail if there is a race condition, however Table.insert() will throw if row exists, so can't use that
                 // also a constraint violation will kill any current transaction
                 // CONSIDER to generalize add an option to check for existing row to Table.insert(ColumnInfo[] keyCols, Object[] keyValues)
-                String timestamp = expSchema.getSqlDialect().getSqlTypeName(JdbcType.TIMESTAMP);
+                SQLFragment timestamp = expSchema.getSqlDialect().getSqlTypeNameAsSql(JdbcType.TIMESTAMP);
                 String templateJson = null==ddIn.getTemplateInfo() ? null : ddIn.getTemplateInfo().toJSON();
-                SQLFragment insert = new SQLFragment(
+                SQLFragment insert = SQLFragment.unsafe(
                         "INSERT INTO ").append(getTinfoDomainDescriptor())
-                        .append(" (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo, SystemFieldConfig)\n" +
-                        "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS " + timestamp + "),?,?\n")
+                        .unsafeAppend(" (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo, SystemFieldConfig)\n"
+                                    + "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS ")
+                                .append(timestamp)
+                                .unsafeAppend("),?,?\n")
                         .addAll(ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson, ddIn.getSystemFieldConfig())
                 .unsafeAppend("WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoDomainDescriptor(),"x").unsafeAppend(" WHERE x.DomainURI=? AND x.Project=?)\n")
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
@@ -2185,18 +2247,18 @@ public class OntologyManager
      */
     public static void deleteProperties(Container objContainer, long objectId)
     {
-        deleteProperties(objContainer, new SQLFragment(" = ?", objectId));
+        deleteProperties(objContainer, SQLFragment.unsafe(" = ?", objectId));
     }
     public static void deleteProperties(Container objContainer, SQLFragment objectIdClause)
     {
-        SQLFragment objectUriSql = new SQLFragment("SELECT ObjectURI FROM ")
+        SQLFragment objectUriSql = SQLFragment.unsafe("SELECT ObjectURI FROM ")
                 .append(getTinfoObject(), "o")
                 .unsafeAppend(" WHERE ObjectId ");
         objectUriSql.append(objectIdClause);
 
         List<String> objectURIs = new SqlSelector(getExpSchema(), objectUriSql).getArrayList(String.class);
 
-        SQLFragment sqlDeleteProperties = new SQLFragment("DELETE FROM ")
+        SQLFragment sqlDeleteProperties = SQLFragment.unsafe("DELETE FROM ")
                 .append(getTinfoObjectProperty())
                 .unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ")
                 .append(getTinfoObject())
@@ -2750,8 +2812,8 @@ public class OntologyManager
     static ParameterMapStatement getInsertStmt(Connection conn, User user, TableInfo t, boolean ifNotExists)
     {
         user = null==user ? User.guest : user;
-        SQLFragment sql = new SQLFragment("INSERT INTO exp.propertydescriptor\n\t\t(");
-        SQLFragment values = new SQLFragment("\nSELECT\t");
+        SQLFragment sql = SQLFragment.unsafe("INSERT INTO exp.propertydescriptor\n\t\t(");
+        SQLFragment values = SQLFragment.unsafe("\nSELECT\t");
         ColumnInfo c;
         String comma = "";
         Parameter container = null;
@@ -2760,7 +2822,7 @@ public class OntologyManager
         {
             if (null == (c = t.getColumn(p)))
                 continue;
-            sql.append(comma).append(p);
+            sql.append(comma).appendIdentifier(p);
             values.append(comma).unsafeAppend("?");
             comma = ",";
             Parameter parameter = new Parameter(p, c.getJdbcType());
@@ -2771,7 +2833,7 @@ public class OntologyManager
                 propertyuri = parameter;
         }
         sql.unsafeAppend(", createdby, created, modifiedby, modified)\n");
-        values.append(", " + user.getUserId() + ", {fn now()}, " + user.getUserId() + ", {fn now()}");
+        values.unsafeAppend(", ").appendValue(user.getUserId()).unsafeAppend(", {fn now()}, ").appendValue(user.getUserId()).unsafeAppend(", {fn now()}");
         sql.append(values);
         if (ifNotExists)
         {
@@ -3304,8 +3366,8 @@ public class OntologyManager
             String parentObjectLsid = new Lsid("Junit", "OntologyManager", "sqlDeleteParent").toString();
             String childObjectLsid = new Lsid("Junit", "OntologyManager", "sqlDeleteChild").toString();
             String intProp = new Lsid("Junit", "OntologyManager", "sqlDeleteIntProp").toString();
-            SQLFragment childUriSql = new SQLFragment("SELECT ObjectURI FROM ").append(getTinfoObject())
-                .append(" WHERE ObjectURI = ?").add(childObjectLsid);
+            SQLFragment childUriSql = SQLFragment.unsafe("SELECT ObjectURI FROM ").append(getTinfoObject())
+                .unsafeAppend(" WHERE ObjectURI = ?").add(childObjectLsid);
             DbScope scope = getExpSchema().getScope();
 
             deleteOntologyObjects(c, parentObjectLsid);
@@ -3385,8 +3447,8 @@ public class OntologyManager
                 assertTrue(isPropertyMapCached(c2, lsid2));
                 assertTrue(isPropertyMapCached(c2, keptLsid));
 
-                SQLFragment idSql = new SQLFragment("SELECT ObjectId FROM ").append(getTinfoObject())
-                    .append(" WHERE ObjectURI IN (?, ?)").add(lsid1).add(lsid2);
+                SQLFragment idSql = SQLFragment.unsafe("SELECT ObjectId FROM ").append(getTinfoObject())
+                    .unsafeAppend(" WHERE ObjectURI IN (?, ?)").add(lsid1).add(lsid2);
                 assertEquals(2, deleteOntologyObjectsByObjectIdSql(getExpSchema(), idSql));
 
                 assertNull(getOntologyObject(c1, lsid1));
@@ -3423,15 +3485,15 @@ public class OntologyManager
             String trackedLsid = uriPrefix + "tracked";
             String keptLsid = new Lsid("Junit", "OntologyManager", "overLimitKept").toString();
             String intProp = new Lsid("Junit", "OntologyManager", "overLimitIntProp").toString();
-            SQLFragment bulkIdSql = new SQLFragment("SELECT ObjectId FROM ").append(getTinfoObject())
-                .append(" WHERE Container = ? AND ObjectURI LIKE ?").add(c1.getId()).add(uriPrefix + "%");
+            SQLFragment bulkIdSql = SQLFragment.unsafe("SELECT ObjectId FROM ").append(getTinfoObject())
+                .unsafeAppend(" WHERE Container = ? AND ObjectURI LIKE ?").add(c1.getId()).add(uriPrefix + "%");
 
             try
             {
                 insertProperties(c1, user, null, new ObjectProperty(trackedLsid, c1, intProp, 1));
                 insertProperties(c2, user, null, new ObjectProperty(keptLsid, c2, intProp, 2));
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment("INSERT INTO ").append(getTinfoObject())
-                    .append(" (Container, ObjectURI) SELECT ?, ? || g FROM generate_series(1, ?) g")
+                new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("INSERT INTO ").append(getTinfoObject())
+                    .unsafeAppend(" (Container, ObjectURI) SELECT ?, ? || g FROM generate_series(1, ?) g")
                     .add(c1.getId()).add(uriPrefix).add(MAX_TARGETED_CACHE_REMOVALS));
                 long trackedId = ensureObject(c1, trackedLsid);
                 assertEquals(1, getProperties(c1, trackedLsid).get(intProp));
@@ -3475,8 +3537,8 @@ public class OntologyManager
             String tracked2 = uriPrefix + "tracked2";
             String keptLsid = new Lsid("Junit", "OntologyManager", "overLimitSplitKept").toString();
             String intProp = new Lsid("Junit", "OntologyManager", "overLimitSplitIntProp").toString();
-            SQLFragment bulkIdSql = new SQLFragment("SELECT ObjectId FROM ").append(getTinfoObject())
-                .append(" WHERE ObjectURI LIKE ?").add(uriPrefix + "%");
+            SQLFragment bulkIdSql = SQLFragment.unsafe("SELECT ObjectId FROM ").append(getTinfoObject())
+                .unsafeAppend(" WHERE ObjectURI LIKE ?").add(uriPrefix + "%");
 
             try
             {
@@ -3486,8 +3548,8 @@ public class OntologyManager
                 // Each container stays under the limit; only the delete as a whole exceeds it
                 for (Container c : List.of(c1, c2))
                 {
-                    new SqlExecutor(getExpSchema()).execute(new SQLFragment("INSERT INTO ").append(getTinfoObject())
-                        .append(" (Container, ObjectURI) SELECT ?, ? || g FROM generate_series(1, ?) g")
+                    new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("INSERT INTO ").append(getTinfoObject())
+                        .unsafeAppend(" (Container, ObjectURI) SELECT ?, ? || g FROM generate_series(1, ?) g")
                         .add(c.getId()).add(uriPrefix + c.getRowId() + "-").add(MAX_TARGETED_CACHE_REMOVALS / 2));
                 }
                 long trackedId1 = ensureObject(c1, tracked1);

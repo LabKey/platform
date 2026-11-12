@@ -148,6 +148,7 @@ public class SQLFragment
         sql = "";
     }
 
+    /** @deprecated Use {@link #unsafe(String, List)} for constant SQL text, or build with {@link #appendIdentifier(CharSequence)} and {@link #appendValue}. */
     @Deprecated
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
@@ -164,6 +165,7 @@ public class SQLFragment
     }
 
 
+    /** @deprecated Use {@link #unsafe(String, Object...)} for constant SQL text, or build with {@link #appendIdentifier(CharSequence)} and {@link #appendValue}. */
     @Deprecated
     public SQLFragment(CharSequence sql, Object... params)
     {
@@ -217,6 +219,20 @@ public class SQLFragment
         return this;
     }
 
+    /** Flags SQL that must never be executed, without adding the marker text */
+    protected void markNotExecutable()
+    {
+        hasError = true;
+    }
+
+    /** Appends without the quote/semicolon check; allowed only once markNotExecutable() has been called */
+    protected void appendUnchecked(CharSequence charseq)
+    {
+        if (!hasError)
+            throw new IllegalStateException("appendUnchecked() requires a fragment marked not executable");
+        getStringBuilder().append(charseq);
+    }
+
     public boolean hasError()
     {
         // CTE sqlf is null between createCommonTableExpressionToken() and setCommonTableExpressionSql()
@@ -239,17 +255,20 @@ public class SQLFragment
      * Obviously parameter number and order must remain unchanged
      *
      * This can also be used for processing sql scripts (e.g. module .sql update scripts)
+     *
+     * Returns void on purpose so every use stands out as its own statement; don't make it chainable.
      */
-    public SQLFragment setSqlUnsafe(String unsafe)
+    public void setSqlUnsafe(String unsafe)
     {
         this.sql = unsafe;
         this.sb = null;
-        return this;
     }
 
     public static SQLFragment unsafe(@CompileTimeConstant String unsafe)
     {
-        return new SQLFragment().setSqlUnsafe(unsafe);
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(unsafe);
+        return ret;
     }
 
     public static SQLFragment unsafe(@CompileTimeConstant String unsafe, Object... params)
@@ -309,7 +328,10 @@ public class SQLFragment
 
         public SQLFragment last()
         {
-            return _count !=0 && _last != null ? new SQLFragment().setSqlUnsafe(_last) : new SQLFragment();
+            SQLFragment ret = new SQLFragment();
+            if (_count != 0 && _last != null)
+                ret.setSqlUnsafe(_last);
+            return ret;
         }
     }
 
@@ -536,6 +558,7 @@ public class SQLFragment
         return null == params ? this : addAll(params);
     }
 
+    /** @deprecated Use {@link #unsafeAppend(String)} for constant SQL text, {@link #appendIdentifier(CharSequence)} for names, or {@link #appendValue} for values. */
     @Deprecated
     public SQLFragment append(CharSequence charseq)
     {
@@ -558,91 +581,149 @@ public class SQLFragment
         return append(id.getSql());
     }
 
-    /** Functionally the same as append(CharSequence).  This method just has different asserts */
+    /** Appends one identifier or a dotted sequence of them (e.g. a TableInfo select name) */
     public SQLFragment appendIdentifier(CharSequence charseq)
     {
         if (null == charseq)
             return this;
         String identifier = charseq.toString().strip();
-
-        if (STR_TABLE_ALIAS.equals(identifier))
-        {
-            getStringBuilder().append(identifier);
+        // callers pass "" to mean no alias, e.g. getFromSQL("")
+        if (identifier.isEmpty())
             return this;
-        }
-
-        boolean malformed;
-        boolean quoteWrapped = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
-        if (quoteWrapped)
-            malformed = (StringUtils.countMatches(identifier, '\"') % 2) != 0;
-        else if (identifier.length() >= 2 && identifier.startsWith("`") && identifier.endsWith("`"))
-            malformed = (StringUtils.countMatches(identifier, '`') % 2) != 0;
-        else
-            malformed = StringUtils.containsAny(identifier, "*/\\'\"`?;- \t\n");
-        if (malformed)
-            throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to be incorrectly formatted: " + identifier);
-
-        // A quote-wrapped value must be a well-formed quoted identifier, or dotted sequence of them.
-        if (quoteWrapped && !isQuotedIdentifierSequence(identifier))
-            throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
-
-        getStringBuilder().append(charseq);
+        if (!isTableAliasPlaceholder(identifier) && countIdentifierParts(identifier) < 1)
+            throw new IllegalArgumentException("SQLFragment.appendIdentifier() value is not a well-formed identifier or dotted identifier sequence: " + identifier);
+        getStringBuilder().append(identifier);
         return this;
     }
 
-    // True iff the value is one or more double-quote-delimited identifiers joined by single dots,
-    // e.g. "a", "a"."b", "schema"."table". A literal quote within a segment must be escaped as "".
-    // A '.' inside quotes is part of the name; a '.' between segments is a separator. Anything else
-    // outside the quotes -- stray text, a lone (breakout) quote, an unterminated segment -- is rejected.
-    private static boolean isQuotedIdentifierSequence(String s)
+    // ExprColumn replaces STR_TABLE_ALIAS later, and lookups derive aliases from it (e.g. LookupColumn.getTableAlias())
+    private static boolean isTableAliasPlaceholder(String s)
     {
-        int i = 0;
+        return s.startsWith(STR_TABLE_ALIAS) && s.substring(STR_TABLE_ALIAS.length()).chars()
+                .allMatch(c -> Character.isLetterOrDigit(c) || c == '_' || c == '$');
+    }
+
+    // Unlike appendIdentifier(), a blank part is an error since it would leave a dangling dot
+    private static String requireIdentifierPart(CharSequence part, boolean first)
+    {
+        String s = null == part ? "" : part.toString().strip();
+        int parts = s.isEmpty() ? -1 : countIdentifierParts(s);
+        if (first ? parts < 1 && !isTableAliasPlaceholder(s) : parts != 1)
+            throw new IllegalArgumentException("SQLFragment.appendDottedIdentifiers() part is not a valid " + (first ? "identifier" : "single identifier") + ": " + part);
+        return s;
+    }
+
+    // Returns the number of dot-separated parts, or -1 if s isn't a well-formed sequence.
+    // A part is "quoted" or `quoted` (with doubled inner quotes), an unquoted name, or a PostgreSQL $N parameter.
+    private static int countIdentifierParts(String s)
+    {
         int n = s.length();
+        int i = 0;
+        int parts = 0;
+        char quoteChar = 0;
+        boolean positional = false;
         while (i < n)
         {
-            if (s.charAt(i) != '"')         // each segment must open with a quote
-                return false;
-            i++;
-            boolean closed = false;
-            while (i < n)
+            char c = s.charAt(i);
+            int end;
+            if (c == '"' || c == '`')
             {
-                if (s.charAt(i) == '"')
-                {
-                    if (i + 1 < n && s.charAt(i + 1) == '"')    // escaped "" -- part of the name
-                    {
-                        i += 2;
-                        continue;
-                    }
-                    i++;                    // closing quote
-                    closed = true;
-                    break;
-                }
-                i++;                        // any other char is legal inside quotes
+                if (quoteChar != 0 && quoteChar != c)
+                    return -1;
+                quoteChar = c;
+                end = endOfQuotedPart(s, i, c);
             }
-            if (!closed)                    // ran off the end without a closing quote
-                return false;
-            if (i == n)                     // end of a valid final segment
-                return true;
-            if (s.charAt(i) != '.')         // segments must be separated by a single dot
-                return false;
-            i++;                            // consume the separator and require another segment
+            else if (c == '$')
+            {
+                if (parts > 0)
+                    return -1;
+                positional = true;
+                end = endOfPositionalPart(s, i);
+            }
+            else
+            {
+                end = endOfUnquotedPart(s, i, parts == 0);
+            }
+            if (end < 0)
+                return -1;
+            parts++;
+            if (end == n)
+                return positional && parts == 1 ? -1 : parts;
+            if (s.charAt(end) != '.')
+                return -1;
+            i = end + 1;
         }
-        return false;                       // trailing dot with no following segment
+        return -1;
     }
 
-    // just to save some typing
+    private static int endOfQuotedPart(String s, int start, char quote)
+    {
+        int n = s.length();
+        int i = start + 1;
+        while (i < n)
+        {
+            char c = s.charAt(i);
+            if (c == quote)
+            {
+                if (i + 1 < n && s.charAt(i + 1) == quote)
+                {
+                    i += 2;
+                    continue;
+                }
+                return i == start + 1 ? -1 : i + 1;
+            }
+            if (Character.isISOControl(c) && c != '\t')
+                return -1;
+            i++;
+        }
+        return -1;
+    }
+
+    private static int endOfPositionalPart(String s, int start)
+    {
+        int i = start + 1;
+        while (i < s.length() && s.charAt(i) >= '0' && s.charAt(i) <= '9')
+            i++;
+        return i == start + 1 ? -1 : i;
+    }
+
+    // SQL Server variable (@x) and temp table (#x, ##x) prefixes are allowed only on the first part
+    private static int endOfUnquotedPart(String s, int start, boolean first)
+    {
+        int n = s.length();
+        int i = start;
+        if (first)
+        {
+            if (s.startsWith("##", i))
+                i += 2;
+            else if (s.charAt(i) == '@' || s.charAt(i) == '#')
+                i++;
+        }
+        if (i >= n || !(Character.isLetter(s.charAt(i)) || s.charAt(i) == '_'))
+            return -1;
+        i++;
+        while (i < n && (Character.isLetterOrDigit(s.charAt(i)) || s.charAt(i) == '_' || s.charAt(i) == '$'))
+            i++;
+        return i;
+    }
+
+    /** Appends table.col; table may be schema-qualified */
     public SQLFragment appendDottedIdentifiers(CharSequence table, DatabaseIdentifier col)
     {
-        return appendIdentifier(table).unsafeAppend(".").appendIdentifier(col);
+        return appendIdentifier(requireIdentifierPart(table, true)).unsafeAppend(".").appendIdentifier(col);
     }
 
-    // just to save some typing
+    /** Appends the parts joined by dots; the first part may be qualified, each later part must be a single identifier */
     public SQLFragment appendDottedIdentifiers(CharSequence... ids)
     {
+        List<String> parts = IntStream.range(0, ids.length)
+                .mapToObj(i -> requireIdentifierPart(ids[i], i == 0))
+                .toList();
         var dot = "";
-        for (var id : ids)
+        for (var part : parts)
         {
-            append(dot).appendIdentifier(id);
+            getStringBuilder().append(dot);
+            appendIdentifier(part);
             dot = ".";
         }
         return this;
@@ -656,6 +737,7 @@ public class SQLFragment
     }
 
 
+    /** @deprecated See {@link #append(CharSequence)}. */
     @Deprecated
     public SQLFragment append(CharSequence csq, int start, int end)
     {
@@ -1295,6 +1377,7 @@ public class SQLFragment
     public SQLFragment OR()                 { return keyword("OR"); }
     public SQLFragment NOT()                { return keyword("NOT"); }
     public SQLFragment IN()                 { return keyword("IN"); }
+    public SQLFragment NOT_IN()             { return keyword("NOT IN"); }
     public SQLFragment NULL()               { return keyword("NULL"); }
     public SQLFragment IS_NULL()            { return keyword("IS NULL"); }
     public SQLFragment IS_NOT_NULL()        { return keyword("IS NOT NULL"); }
@@ -1370,19 +1453,24 @@ public class SQLFragment
             assertTrue(inserted.hasError());
             SQLFragment withCte = new SQLFragment();
             String token = withCte.addCommonTableExpression(dialect, "bad", "bad", bad);
-            withCte.unsafeAppend("SELECT * FROM ").append(new SQLFragment().setSqlUnsafe(token));
+            SQLFragment tokenSql = new SQLFragment();
+            tokenSql.setSqlUnsafe(token);
+            withCte.unsafeAppend("SELECT * FROM ").append(tokenSql);
             assertTrue(withCte.hasError());
             assertThrows(IllegalStateException.class, withCte::getSQL);
             assertThrows(IllegalStateException.class, () -> new SqlSelector(CoreSchema.getInstance().getSchema(), bad));
             assertThrows(IllegalStateException.class, () -> new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(bad));
             SQLFragment pendingCte = new SQLFragment();
             String pendingToken = pendingCte.createCommonTableExpressionToken(dialect, "pending", "pending");
-            pendingCte.unsafeAppend("SELECT * FROM ").append(new SQLFragment().setSqlUnsafe(pendingToken));
+            SQLFragment pendingTokenSql = new SQLFragment();
+            pendingTokenSql.setSqlUnsafe(pendingToken);
+            pendingCte.unsafeAppend("SELECT * FROM ").append(pendingTokenSql);
             assertFalse(pendingCte.hasError());
             assertEquals("SELECT * FROM " + pendingToken, pendingCte.getRawSQL());
 
             // The marker must fail on the database too, for SQL that lost the flag through a string round trip
-            SQLFragment roundTrip = new SQLFragment().setSqlUnsafe(bad.getRawSQL());
+            SQLFragment roundTrip = new SQLFragment();
+            roundTrip.setSqlUnsafe(bad.getRawSQL());
             assertFalse(roundTrip.hasError());
             assertThrows(RuntimeException.class, () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roundTrip).getObject(Integer.class));
         }
@@ -1710,6 +1798,35 @@ public class SQLFragment
             // Doubled interior quotes around a dot decode to a single identifier named weird"."name --
             // distinct from the two-segment "weird"."name" -- and cannot break out, so it's accepted.
             new SQLFragment().appendIdentifier("\"weird\"\".\"\"name\"");
+        }
+
+        @Test
+        public void testAppendIdentifierGrammar()
+        {
+            for (String bad : List.of("a)or(1=1", "1=1", "x||y", "[name]", "\"\"", "a..b", ".a", "a.", "a\rb",
+                    "`a`)or(`b`", "`a`.\"b\"", "\"a\u0000b\"", "\"a\rb\"", "@a.@b", "a.#b", "$1", "a.$1", "$x.y", "1abc", STR_TABLE_ALIAS + ")or(1=1", STR_TABLE_ALIAS + ".x"))
+                shouldFail(() -> new SQLFragment().appendIdentifier(bad));
+
+            for (String good : List.of("\"core\".\"Containers\"", "`core`.`Containers`", "temp.ttw$0a1b", "temp.fn_ab12type",
+                    "$1.p1_x", "@p1_x", "#TTemp", "##fn_x", "_$objectid$_", "x$fk$.\"Name\"", "nämé", "\"a\tb\"", "\"a.b\"", "`my``sql`", STR_TABLE_ALIAS, STR_TABLE_ALIAS + "$fk$_C"))
+                assertEquals(good, new SQLFragment().appendIdentifier(good).getRawSQL());
+
+            assertEquals("_target_", new SQLFragment().appendIdentifier("_target_ ").getRawSQL());
+            assertEquals("", new SQLFragment().appendIdentifier(" ").getRawSQL());
+        }
+
+        @Test
+        public void testAppendDottedIdentifiers()
+        {
+            shouldFail(() -> new SQLFragment().appendDottedIdentifiers("a", "\"b\".\"c\""));
+            shouldFail(() -> new SQLFragment().appendDottedIdentifiers("a", (CharSequence) null));
+            shouldFail(() -> new SQLFragment().appendDottedIdentifiers("", "b"));
+            shouldFail(() -> new SQLFragment().appendDottedIdentifiers(null, SqlDialect.makeDatabaseIdentifier("b", SQLFragment.unsafe("b"))));
+            SQLFragment partial = new SQLFragment();
+            shouldFail(() -> partial.appendDottedIdentifiers("a", "b c"));
+            assertEquals("", partial.getRawSQL());
+            assertEquals("x.\"Name\"", new SQLFragment().appendDottedIdentifiers("x", "\"Name\"").getRawSQL());
+            assertEquals("\"study\".\"participant\".\"Name\"", new SQLFragment().appendDottedIdentifiers("\"study\".\"participant\"", "\"Name\"").getRawSQL());
         }
 
         @Test
