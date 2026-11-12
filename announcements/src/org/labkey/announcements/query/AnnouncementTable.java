@@ -210,7 +210,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
             ensureNotSecure();
             try
             {
-                return AnnouncementManager.updateAnnouncement(container, user, bean, Collections.emptyList());
+                return AnnouncementManager.updateAnnouncement(container, user, oldKey, bean, Collections.emptyList());
             }
             catch (RuntimeValidationException | IOException e)
             {

@@ -666,14 +666,14 @@ public class AnnouncementManager
     }
 
 
-    // GH Issue 1688: callers check permissions in c, so the update must not name another folder
-    public static AnnouncementModel updateAnnouncement(Container c, User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
+    // GH Issue 1688, GH Issue 1853: callers check permissions on rowId in c, so the update must not name another row or folder
+    public static AnnouncementModel updateAnnouncement(Container c, User user, int rowId, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
-        if (!c.getId().equals(update.getContainerId()))
+        if (!c.getId().equals(update.getContainerId()) || update.getRowId() != rowId)
             throw new UnauthorizedException();
-        AnnouncementModel current = getAnnouncement(c, update.getRowId());
+        AnnouncementModel current = getAnnouncement(c, rowId);
         if (current == null)
-            throw new NotFoundException("No announcement with id " + update.getRowId());
+            throw new NotFoundException("No announcement with id " + rowId);
         update = validateModelWithSideEffects(update, c, user, false);
 
         update.beforeUpdate(user, current); // This preserves Created, CreatedBy, EntityId, etc.
@@ -1171,7 +1171,7 @@ public class AnnouncementManager
             model.setModifiedBy(reader.getUserId());
             model.setModified(bogusDate);
             Thread.sleep(10); // Quick sleep to ensure Modified > Created, even on a very fast test run
-            AnnouncementManager.updateAnnouncement(folder, getAdmin(), model, List.of());
+            AnnouncementManager.updateAnnouncement(folder, getAdmin(), model.getRowId(), model, List.of());
 
             // Re-select updated model
             AnnouncementModel updated = AnnouncementManager.getAnnouncement(folder, model.getRowId());

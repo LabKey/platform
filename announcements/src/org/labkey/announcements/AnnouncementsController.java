@@ -1255,7 +1255,7 @@ public class AnnouncementsController extends SpringActionController
 
             try
             {
-                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), update, getAttachmentFileList());
+                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), oldAnn.getRowId(), update, getAttachmentFileList());
             }
             catch (RuntimeValidationException e)
             {
@@ -2915,7 +2915,7 @@ public class AnnouncementsController extends SpringActionController
 
             try
             {
-                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), updatedThread, getAttachmentFileList());
+                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), thread.getRowId(), updatedThread, getAttachmentFileList());
             }
             catch (Exception e)
             {
@@ -3283,7 +3283,7 @@ public class AnnouncementsController extends SpringActionController
             String memberList = String.valueOf(otherReader.getUserId());
 
             assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Container", secure.getId(), "Title", "Overwritten", "memberListInput", memberList)));
-            assertThrows(NotFoundException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Title", "Overwritten", "memberListInput", memberList)));
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Title", "Overwritten", "memberListInput", memberList)));
             assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Container", secure.getId(), "Title", "Overwritten")));
 
             assertEquals("Victim thread", AnnouncementManager.getAnnouncement(secure, victim.getRowId()).getTitle());
@@ -3292,6 +3292,19 @@ public class AnnouncementsController extends SpringActionController
             // Positive control: an ordinary edit of the caller's own message still works
             updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Title", "Edited"));
             assertEquals("Edited", AnnouncementManager.getAnnouncement(_folderA, own.getRowId()).getTitle());
+        }
+
+        // GH Issue 1853
+        @Test
+        public void testQueryUpdateCannotRetargetWithinFolder() throws Exception
+        {
+            User editorA = createUserInRole(_folderA, EditorRole.class);
+            AnnouncementModel victim = insertMessage(_folderA, getAdmin(), "Victim thread", null);
+            AnnouncementModel own = insertMessage(_folderA, editorA, "Own thread", null);
+
+            QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", victim.getRowId(), "Title", "Overwritten")));
+            assertEquals("Victim thread", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
         }
 
         private AnnouncementModel insertMessage(Container c, User user, String title, @Nullable String memberListInput) throws Exception
