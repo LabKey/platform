@@ -306,7 +306,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         // Allow String values through if the column is a lookup and the settings allow lookups by alternate key.
                         // The lookup table unique indices or display column value will be used to convert the column to the lookup value.
-                        if (!(settings.getLookupResolutionType().useAlternateKey() && column.clazz == String.class && prop.getLookup() != null))
+                        boolean allowAlternateKey = settings.getLookupResolutionType().useAlternateKey() && prop.getLookup() != null;
+                        // GH Issue 1881: force sample lookups to String, else an inferred integer strips leading zeros from names like "0587"
+                        if (allowAlternateKey && ExperimentService.get().isLookupToSamples(prop))
+                        {
+                            column.clazz = String.class;
+                        }
+                        else if (!(allowAlternateKey && column.clazz == String.class))
                         {
                             // Otherwise, just use the expected PropertyDescriptor's column type
                             column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
