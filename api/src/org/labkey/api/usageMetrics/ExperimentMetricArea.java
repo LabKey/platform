@@ -21,7 +21,8 @@ public enum ExperimentMetricArea implements SimpleMetricArea
 {
     MOVE_ENTITIES("moveEntities", "Requests that moved entities to another folder, by entity type (samples, sources for data class rows, assayRuns, list, jobs, notebooks)"),
     CONVERT_TABLE("convertTable", "Client-supplied grid data converted to a download, by format (asExcel, asDelimited); only counted when the request includes query info for auditing"),
-    SAMPLE_IMPORT("sampleImport", "Non-background sample imports spanning multiple sample types, including ones that failed validation (crossTypeImport), plus the subset using the update (crossTypeUpdate) or merge (crossTypeMerge) option");
+    SAMPLE_IMPORT("sampleImport", "Non-background sample imports spanning multiple sample types, including ones that failed validation (crossTypeImport), plus the subset using the update (crossTypeUpdate) or merge (crossTypeMerge) option"),
+    TEXT_CHOICE("textChoice", "Domain saves that renamed in-use text choice values and updated existing rows (renames), plus each updated field bucketed by rows updated (rename0, rename1to1000, etc.)");
 
     private final Definition _definition;
 
