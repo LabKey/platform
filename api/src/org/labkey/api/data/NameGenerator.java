@@ -2023,7 +2023,7 @@ public class NameGenerator
         /** The prefix's sequence, plus its first count when the prefix wasn't cached yet */
         private record CounterDraw(DbSequence sequence, @Nullable Long count) {}
 
-        private CounterDraw getCounterSeq(String prefixRaw, @Nullable Map<String, DbSequence> counterSequences, boolean noCache)
+        private CounterDraw getCounterSeq(String prefixRaw, @Nullable Map<String, DbSequence> counterSequences)
         {
             String prefix = prefixRaw.trim().toLowerCase(); // Issue 49338: withCounter should be case-insensitive
             if (null != counterSequences && counterSequences.containsKey(prefix))
@@ -2032,12 +2032,12 @@ public class NameGenerator
             DbSequence counterSeq;
             if (_strictIncremental || ExperimentService.get().useStrictCounter())
             {
-                // The first draw takes the row lock
-                counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0, false);
+                // Lock before the probe so it sees names a concurrent import wrote beyond its draws
+                counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0, _getNonConflictCountFn != null);
             }
             else
             {
-                if (noCache)
+                if (null == counterSequences)
                     counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix, 0);
                 else
                     counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, 100);
@@ -2077,11 +2077,11 @@ public class NameGenerator
                 {
                     synchronized (this)
                     {
-                        draw = getCounterSeq(prefix, counterSequences, noCache);
+                        draw = getCounterSeq(prefix, counterSequences);
                     }
                 }
                 else
-                    draw = getCounterSeq(prefix, counterSequences, noCache);
+                    draw = getCounterSeq(prefix, counterSequences);
 
                 if (null != draw.count())
                     count = draw.count();

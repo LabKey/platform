@@ -102,7 +102,11 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.util.concurrent.ExecutorService" %>
+<%@ page import="java.util.concurrent.Executors" %>
+<%@ page import="java.util.concurrent.Future" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
+<%@ page import="java.util.concurrent.TimeoutException" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static java.util.Collections.emptyList" %>
 <%@ page import="static org.hamcrest.Matchers.containsString" %>
@@ -734,6 +738,44 @@ public void testWithCounterBootstrapsFromExistingNames() throws Exception
     }
 
     assertEquals(List.of("D-6", "D-7"), ret.stream().map(r -> r.get("name")).toList());
+}
+
+// GH Issue 1563: a NoGap probe must wait for a concurrent import that drew from the prefix and also supplied a later name
+@Test
+public void testWithCounterProbeSeesConcurrentSuppliedName() throws Exception
+{
+    List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("Lab", "string"));
+    DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+    options.setNameExpression("${${Lab}-:withCounter(1, '0', NoGap)}");
+    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "WithCounterProbeUnderLock", options, props, emptyList(), null, null);
+    DbScope scope = ExperimentService.get().getSchema().getScope();
+    List<Map<String, Object>> generate = List.of(CaseInsensitiveHashMap.of("Lab", "D"));
+
+    assertEquals("D-1", helper.insertRows(c, generate, dataClass.getName()).get(0).get("name"));
+
+    try (ExecutorService executor = Executors.newSingleThreadExecutor())
+    {
+        Future<Object> second;
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            assertEquals("D-2", helper.insertRows(c, generate, dataClass.getName()).get(0).get("name"));
+            helper.insertRows(c, List.of(CaseInsensitiveHashMap.of("name", "D-5")), dataClass.getName());
+
+            second = executor.submit(() -> {
+                try (DbScope.Transaction tx2 = scope.ensureTransaction())
+                {
+                    Object name = helper.insertRows(c, generate, dataClass.getName()).get(0).get("name");
+                    tx2.commit();
+                    return name;
+                }
+            });
+            assertThrows("Second import must wait for the first transaction's row lock", TimeoutException.class, () -> second.get(1, TimeUnit.SECONDS));
+
+            tx.commit();
+        }
+
+        assertEquals("D-6", second.get(30, TimeUnit.SECONDS));
+    }
 }
 
 @Test
