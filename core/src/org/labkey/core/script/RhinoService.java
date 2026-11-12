@@ -270,6 +270,30 @@ public final class RhinoService
             assertSame("An unchanged module should not be reloaded", ModuleSourceProvider.NOT_MODIFIED, provider.loadSource(uri, null, source.getValidator()));
         }
 
+        @Test
+        public void relativeRequireTest() throws Exception
+        {
+            assertNotNull("A relative require() that names the extension should load", new LabKeyModuleSourceProvider().loadSource(new URI("labkey/Filter.js"), null, null));
+            // Query.js loads its siblings with relative require() calls
+            ScriptEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
+            engine.getContext().setAttribute(SERVER_CONTEXT_KEY, ScriptTrigger.ServerContextModuleScript.create(ScriptTrigger.getServerContext(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser())), ScriptContext.ENGINE_SCOPE);
+            assertEquals("function", engine.eval("typeof require('labkey/Query').Query.selectRows;"));
+        }
+
+        @Test
+        public void thrownValueMessageTest()
+        {
+            ScriptEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
+            ScriptException e = assertThrows(ScriptException.class, () -> engine.eval("var e = new Error('a'); e.message = {toString: function() { return 'boom'; }}; throw e;"));
+            assertTrue(e.getMessage(), e.getMessage().contains("boom"));
+        }
+
+        @Test
+        public void javaMethodIdentityTest() throws Exception
+        {
+            assertEquals(true, RhinoService.RHINO_FACTORY.getScriptEngine().eval("var list = new java.util.ArrayList(); list.add === list.add;"));
+        }
+
         @SuppressWarnings("unused") // called from script
         public static String firstString(List<String> list)
         {
@@ -711,8 +735,9 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         if (!entityNeedsRevalidation(validator))
             return NOT_MODIFIED;
 
-        // Rhino resolves a relative require() id to an extension-less URI
-        return load(uri.getPath() + ".js", validator);
+        // Rhino resolves a relative require() id to a URI with whatever extension the script gave it, usually none
+        String path = uri.getPath();
+        return load(path.endsWith(".js") ? path : path + ".js", validator);
     }
 
     @Override
@@ -724,7 +749,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     protected ModuleSource load(String moduleScript, Object validator)
     {
         // load non-relative modules from the root "/scripts" directory
-        if ((!moduleScript.startsWith("./") || !moduleScript.startsWith("../")) && !moduleScript.startsWith(ScriptService.SCRIPTS_DIR + "/"))
+        if (!moduleScript.startsWith(ScriptService.SCRIPTS_DIR + "/"))
             moduleScript = "/" + ScriptService.SCRIPTS_DIR + "/" + moduleScript;
 
         Path path = Path.parse(moduleScript);
@@ -874,7 +899,7 @@ class RhinoEngine extends RhinoScriptEngine
     {
         try
         {
-            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null, scope);
+            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null, null);
             global.getScript().exec(cx, scope, scope);
         }
         catch (Exception e)
@@ -937,12 +962,7 @@ class RhinoEngine extends RhinoScriptEngine
                 extraModules = Map.of(ScriptTrigger.SERVER_CONTEXT_SCRIPT_NAME, scriptContextScript);
             }
 
-            // Rhino 1.9.1's ModuleScope constructor passes its prototype argument to
-            // TopLevel.cacheBuiltins(), which unconditionally calls putProperty() to register
-            // __GeneratorFunction (ES6 generator support). This fails with "Cannot modify a
-            // sealed object" if the prototype is the sealed topLevel. Using a thin non-sealed
-            // wrapper with topLevel as its prototype lets cacheBuiltins write safely while
-            // still making all built-ins visible to module scripts via the prototype chain.
+            // Rhino's ModuleScope writes builtins into its prototype, which fails on the sealed topLevel, so give it an unsealed wrapper
             NativeObject moduleNativeScope = new NativeObject();
             moduleNativeScope.setPrototype(getTopLevel());
             moduleNativeScope.setParentScope(null);

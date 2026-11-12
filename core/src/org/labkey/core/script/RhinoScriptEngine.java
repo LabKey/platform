@@ -91,20 +91,24 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
     {
         try (Context cx = Context.enter())
         {
-            Scriptable scope = getRuntimeScope(ctxt);
-            scope.put("context", scope, ctxt);
-            Object ret = cx.evaluateReader(scope, preProcessScriptSource(reader), getFilename(ctxt), 1, null);
-            return unwrapReturnValue(ret);
-        }
-        catch (JavaScriptException jse)
-        {
-            _log.debug(jse);
-            throw toScriptException(jse);
-        }
-        catch (RhinoException re)
-        {
-            _log.debug(re);
-            throw toScriptException(re);
+            // Converting a thrown JS value to a message can call back into script, so catch while the Context is still entered
+            try
+            {
+                Scriptable scope = getRuntimeScope(ctxt);
+                scope.put("context", scope, ctxt);
+                Object ret = cx.evaluateReader(scope, preProcessScriptSource(reader), getFilename(ctxt), 1, null);
+                return unwrapReturnValue(ret);
+            }
+            catch (JavaScriptException jse)
+            {
+                _log.debug(jse);
+                throw toScriptException(jse);
+            }
+            catch (RhinoException re)
+            {
+                _log.debug(re);
+                throw toScriptException(re);
+            }
         }
         catch (IOException ee)
         {
@@ -143,32 +147,35 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
     {
         try (Context cx = Context.enter())
         {
-            if (name == null)
-                throw new NullPointerException("method name is null");
+            try
+            {
+                if (name == null)
+                    throw new NullPointerException("method name is null");
 
-            if (thiz != null && !(thiz instanceof Scriptable))
-                thiz = cx.toObject(thiz, topLevel);
+                if (thiz != null && !(thiz instanceof Scriptable))
+                    thiz = cx.toObject(thiz, topLevel);
 
-            Scriptable localScope = (thiz != null) ? (Scriptable) thiz : getRuntimeScope(context);
-            Object obj = ScriptableObject.getProperty(localScope, name);
-            if (!(obj instanceof Function func))
-                throw new NoSuchMethodException("no such method: " + name);
+                Scriptable localScope = (thiz != null) ? (Scriptable) thiz : getRuntimeScope(context);
+                Object obj = ScriptableObject.getProperty(localScope, name);
+                if (!(obj instanceof Function func))
+                    throw new NoSuchMethodException("no such method: " + name);
 
-            Scriptable scope = func.getParentScope();
-            if (scope == null)
-                scope = getRuntimeScope(context);
-            Object result = func.call(cx, scope, localScope, wrapArguments(args));
-            return unwrapReturnValue(result);
-        }
-        catch (JavaScriptException jse)
-        {
-            _log.debug(jse);
-            throw toScriptException(jse);
-        }
-        catch (RhinoException re)
-        {
-            _log.debug(re);
-            throw toScriptException(re);
+                Scriptable scope = func.getParentScope();
+                if (scope == null)
+                    scope = getRuntimeScope(context);
+                Object result = func.call(cx, scope, localScope, wrapArguments(args));
+                return unwrapReturnValue(result);
+            }
+            catch (JavaScriptException jse)
+            {
+                _log.debug(jse);
+                throw toScriptException(jse);
+            }
+            catch (RhinoException re)
+            {
+                _log.debug(re);
+                throw toScriptException(re);
+            }
         }
     }
 

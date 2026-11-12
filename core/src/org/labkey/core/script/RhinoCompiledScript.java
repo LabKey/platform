@@ -54,22 +54,26 @@ final class RhinoCompiledScript extends CompiledScript
     @Override
     public Object eval(ScriptContext context) throws ScriptException
     {
-
-        Object result;
         try (Context cx = Context.enter())
         {
-            Scriptable scope = engine.getRuntimeScope(context);
-            Object ret = script.exec(cx, scope, scope);
-            result = engine.unwrapReturnValue(ret);
-        } catch (JavaScriptException jse) {
-            _log.debug(jse);
-            throw RhinoScriptEngine.toScriptException(jse);
-        } catch (RhinoException re) {
-            _log.debug(re);
-            throw RhinoScriptEngine.toScriptException(re);
+            // Converting a thrown JS value to a message can call back into script, so catch while the Context is still entered
+            try
+            {
+                Scriptable scope = engine.getRuntimeScope(context);
+                Object ret = script.exec(cx, scope, scope);
+                return engine.unwrapReturnValue(ret);
+            }
+            catch (JavaScriptException jse)
+            {
+                _log.debug(jse);
+                throw RhinoScriptEngine.toScriptException(jse);
+            }
+            catch (RhinoException re)
+            {
+                _log.debug(re);
+                throw RhinoScriptEngine.toScriptException(re);
+            }
         }
-
-        return result;
     }
 
     @Override

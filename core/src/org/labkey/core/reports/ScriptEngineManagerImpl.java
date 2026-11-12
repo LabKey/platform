@@ -90,6 +90,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 {
     private static final Logger LOG = LogHelper.getLogger(ScriptEngineManagerImpl.class, "Script engine anomalies");
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
+    private static final String RHINO_KEY = ENGINE_DEF_MAP_PREFIX + "js";
     private static final String ALL_ENGINES = "ALL";
     private static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
 
@@ -596,7 +597,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
 
-            RhinoLanguageVersion version = RhinoLanguageVersion.fromVersion(def.getLanguageVersion());
+            RhinoLanguageVersion version = isRhino(def) ? RhinoLanguageVersion.fromVersion(def.getLanguageVersion()) : null;
             if (version != null)
                 setProp(Props.languageVersion.name(), String.valueOf(version.getVersion()), key);
         }
@@ -626,9 +627,14 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         return ENGINE_DEF_MAP_PREFIX + StringUtils.join(engineExtensions, ',');
     }
 
+    public static boolean isRhino(ExternalScriptEngineDefinition def)
+    {
+        return !def.isExternal() && RHINO_KEY.equals(makeKey(def.getExtensions()));
+    }
+
     public static @NotNull RhinoLanguageVersion getRhinoLanguageVersion()
     {
-        RhinoLanguageVersion version = RhinoLanguageVersion.fromVersion(getProp(Props.languageVersion.name(), makeKey(new String[]{"js"})));
+        RhinoLanguageVersion version = RhinoLanguageVersion.fromVersion(getProp(Props.languageVersion.name(), RHINO_KEY));
         return version != null ? version : RhinoLanguageVersion.DEFAULT;
     }
 

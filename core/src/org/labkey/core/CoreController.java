@@ -109,6 +109,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -188,6 +189,7 @@ import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
+import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.script.RhinoLanguageVersion;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.workbook.CreateWorkbookBean;
@@ -2282,7 +2284,7 @@ public class CoreController extends SpringActionController
         boolean isExternal = factory instanceof ExternalScriptEngineFactory;
         record.put("external", String.valueOf(isExternal));
 
-        if (!isExternal)
+        if (factory instanceof ScriptService)
         {
             record.put("languageVersionOptions", Arrays.stream(RhinoLanguageVersion.values())
                 .map(v -> Map.of("value", String.valueOf(v.getVersion()), "label", v.getLabel(), "description", v.getDescription()))
@@ -2356,7 +2358,7 @@ public class CoreController extends SpringActionController
                     errors.rejectValue("Name", ERROR_MSG, "Unable to save duplicate engine name: " + def.getName());
                 }
             }
-            else if (StringUtils.isNotBlank(def.getLanguageVersion()) && RhinoLanguageVersion.fromVersion(def.getLanguageVersion()) == null)
+            else if (ScriptEngineManagerImpl.isRhino(def) && StringUtils.isNotBlank(def.getLanguageVersion()) && RhinoLanguageVersion.fromVersion(def.getLanguageVersion()) == null)
             {
                 errors.rejectValue("languageVersion", ERROR_MSG, "Unsupported language version: " + def.getLanguageVersion());
             }

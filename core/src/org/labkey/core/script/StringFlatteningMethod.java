@@ -44,7 +44,12 @@ class StringFlatteningMethod extends BaseFunction
 
     static Object wrap(Object member)
     {
-        return member instanceof NativeJavaMethod method ? new StringFlatteningMethod(method) : member;
+        if (!(member instanceof NativeJavaMethod method))
+            return member;
+
+        // Rhino shares one NativeJavaMethod per Java member, so keeping the wrapper on it preserves function identity
+        Object wrapper = method.getAssociatedValue(StringFlatteningMethod.class);
+        return wrapper != null ? wrapper : method.associateValue(StringFlatteningMethod.class, new StringFlatteningMethod(method));
     }
 
     @Override
