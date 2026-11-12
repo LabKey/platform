@@ -28,6 +28,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.BatchSize;
@@ -55,6 +56,7 @@ import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaNameCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -80,6 +82,7 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
@@ -116,6 +119,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -1449,6 +1453,170 @@ public class OntologyManager
 
             transaction.commit();
         }
+    }
+
+    /** Deletes domains whose storage schema no loaded module claims and the database no longer has. GH Issue 1612. */
+    public static int deleteDomainsWithMissingStorage()
+    {
+        Map<String, String> existingSchemas = SchemaNameCache.get().getSchemaNameMap(getExpSchema().getScope());
+        Set<String> claimedSchemas = ModuleLoader.getInstance().getModules().stream()
+            .flatMap(module -> module.getSchemaNames().stream())
+            .collect(Collectors.toCollection(CaseInsensitiveHashSet::new));
+
+        SQLFragment sql = new SQLFragment()
+            .unsafeAppend("SELECT DISTINCT StorageSchemaName FROM ").append(getTinfoDomainDescriptor())
+            .unsafeAppend(" WHERE StorageSchemaName IS NOT NULL");
+        List<String> storageSchemas = new SqlSelector(getExpSchema(), sql).getArrayList(String.class);
+
+        return deleteDomainsInStorageSchemas(findMissingSchemas(storageSchemas, existingSchemas, claimedSchemas));
+    }
+
+    private static List<String> findMissingSchemas(Collection<String> storageSchemas, Map<String, String> existingSchemas, Set<String> claimedSchemas)
+    {
+        return storageSchemas.stream()
+            .filter(name -> !existingSchemas.containsKey(name) && !claimedSchemas.contains(name))
+            .toList();
+    }
+
+    /**
+     * Deletes every domain stored in these schemas, plus the property descriptors, validators, conditional formats, and
+     * default values no other domain uses. Bypasses DomainKind, whose module may be gone, and leaves storage tables alone.
+     * @return the number of domains deleted
+     */
+    public static int deleteDomainsInStorageSchemas(@NotNull Collection<String> schemaNames)
+    {
+        if (schemaNames.isEmpty())
+            return 0;
+
+        DbSchema schema = getExpSchema();
+        SqlDialect dialect = schema.getSqlDialect();
+        SqlExecutor executor = new SqlExecutor(schema);
+
+        try (Transaction transaction = schema.getScope().ensureTransaction())
+        {
+            List<String> lowerSchemaNames = schemaNames.stream().map(name -> name.toLowerCase(Locale.ROOT)).toList();
+            Set<Integer> domainIds = new SqlSelector(schema, new SQLFragment()
+                .unsafeAppend("SELECT DomainId FROM ").append(getTinfoDomainDescriptor())
+                .unsafeAppend(" WHERE ").appendInClause("LOWER(StorageSchemaName)", lowerSchemaNames, dialect))
+                .fillSet(Integer.class, new HashSet<>());
+
+            if (domainIds.isEmpty())
+                return 0;
+
+            Set<Integer> propertyIds = new SqlSelector(schema, new SQLFragment()
+                .unsafeAppend("SELECT DISTINCT pdm.PropertyId FROM ").append(getTinfoPropertyDomain(), "pdm")
+                .unsafeAppend(" WHERE ").appendInClause("pdm.DomainId", domainIds, dialect)
+                .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM ").append(getTinfoPropertyDomain(), "other")
+                .unsafeAppend(" WHERE other.PropertyId = pdm.PropertyId AND ").appendNotInClause("other.DomainId", domainIds, dialect)
+                .unsafeAppend(")"))
+                .fillSet(Integer.class, new HashSet<>());
+
+            Set<Integer> allPropertyIds = new SqlSelector(schema, new SQLFragment()
+                .unsafeAppend("SELECT DISTINCT PropertyId FROM ").append(getTinfoPropertyDomain())
+                .unsafeAppend(" WHERE ").appendInClause("DomainId", domainIds, dialect))
+                .fillSet(Integer.class, new HashSet<>());
+
+            deleteDefaultValues(propertyIds, allPropertyIds);
+
+            executor.execute(new SQLFragment()
+                .unsafeAppend("DELETE FROM ").append(getTinfoPropertyDomain())
+                .unsafeAppend(" WHERE ").appendInClause("DomainId", domainIds, dialect));
+
+            // Values other than defaults mean something outside these domains still uses the property
+            List<Integer> keptIds = new SqlSelector(schema, new SQLFragment()
+                .unsafeAppend("SELECT DISTINCT PropertyId FROM ").append(getTinfoObjectProperty())
+                .unsafeAppend(" WHERE ").appendInClause("PropertyId", propertyIds, dialect))
+                .getArrayList(Integer.class);
+            if (!keptIds.isEmpty())
+            {
+                propertyIds.removeAll(keptIds);
+                List<String> examples = keptIds.stream().limit(10).map(OntologyManager::getPropertyDescriptor).filter(Objects::nonNull).map(PropertyDescriptor::getPropertyURI).toList();
+                _log.warn("Kept {} property descriptors that still have values but no longer belong to a domain, e.g., {}", keptIds.size(), examples);
+            }
+
+            for (TableInfo table : List.of(schema.getTable("PropertyValidator"), schema.getTable("ConditionalFormat"), getTinfoPropertyDescriptor()))
+            {
+                executor.execute(new SQLFragment()
+                    .unsafeAppend("DELETE FROM ").append(table)
+                    .unsafeAppend(" WHERE ").appendInClause("PropertyId", propertyIds, dialect));
+            }
+
+            // exp.List references its domain without cascading; these rows went with the dropped list schema
+            executor.execute(new SQLFragment()
+                .unsafeAppend("DELETE FROM ").append(schema.getTable("List"))
+                .unsafeAppend(" WHERE ").appendInClause("DomainId", domainIds, dialect));
+
+            executor.execute(new SQLFragment()
+                .unsafeAppend("DELETE FROM ").append(getTinfoDomainDescriptor())
+                .unsafeAppend(" WHERE ").appendInClause("DomainId", domainIds, dialect));
+
+            clearCaches();
+            transaction.commit();
+
+            _log.info("Deleted {} domains and {} property descriptors stored in schemas {}", domainIds.size(), propertyIds.size(), schemaNames);
+            return domainIds.size();
+        }
+    }
+
+    /**
+     * Forms remember default values per folder and user; they're the only values expected on a deleted domain's properties.
+     * An object holding an exclusive property belongs to a deleted domain, so its values for that domain's shared
+     * properties go too. Values for properties outside the deleted domains stay, and keep their object alive.
+     */
+    private static void deleteDefaultValues(Collection<Integer> exclusivePropertyIds, Collection<Integer> allPropertyIds)
+    {
+        if (exclusivePropertyIds.isEmpty())
+            return;
+
+        DbSchema schema = getExpSchema();
+        SqlDialect dialect = schema.getSqlDialect();
+
+        List<Long> objectIds = new SqlSelector(schema, appendDefaultValueUriFilter(new SQLFragment()
+            .unsafeAppend("SELECT DISTINCT o.ObjectId FROM ").append(getTinfoObject(), "o")
+            .unsafeAppend(" INNER JOIN ").append(getTinfoObjectProperty(), "op").unsafeAppend(" ON op.ObjectId = o.ObjectId")
+            .unsafeAppend(" WHERE ").appendInClause("op.PropertyId", exclusivePropertyIds, dialect)))
+            .getArrayList(Long.class);
+
+        if (objectIds.isEmpty())
+            return;
+
+        List<Long> ownerIds = new SqlSelector(schema, appendDefaultValueUriFilter(new SQLFragment()
+            .unsafeAppend("SELECT DISTINCT o.ObjectId FROM ").append(getTinfoObject(), "o")
+            .unsafeAppend(" INNER JOIN ").append(getTinfoObject(), "child").unsafeAppend(" ON child.OwnerObjectId = o.ObjectId")
+            .unsafeAppend(" WHERE ").appendInClause("child.ObjectId", objectIds, dialect)))
+            .getArrayList(Long.class);
+
+        new SqlExecutor(schema).execute(new SQLFragment()
+            .unsafeAppend("DELETE FROM ").append(getTinfoObjectProperty())
+            .unsafeAppend(" WHERE ").appendInClause("ObjectId", objectIds, dialect)
+            .unsafeAppend(" AND ").appendInClause("PropertyId", allPropertyIds, dialect));
+
+        // Owners last, once their children are gone
+        deleteEmptyObjects(objectIds);
+        deleteEmptyObjects(ownerIds);
+    }
+
+    private static SQLFragment appendDefaultValueUriFilter(SQLFragment sql)
+    {
+        // Prefixes may be followed by a domain kind qualifier, and "UserDefaultValue" also matches its parent objects
+        return sql.unsafeAppend(" AND (o.ObjectURI LIKE ? OR o.ObjectURI LIKE ?)")
+            .add("%:" + DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "%")
+            .add("%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + "%");
+    }
+
+    private static void deleteEmptyObjects(Collection<Long> objectIds)
+    {
+        if (objectIds.isEmpty())
+            return;
+
+        TableInfo object = getTinfoObject();
+        new SqlExecutor(getExpSchema()).execute(new SQLFragment()
+            .unsafeAppend("DELETE FROM ").append(object)
+            .unsafeAppend(" WHERE ").appendInClause("ObjectId", objectIds, getSqlDialect())
+            .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM ").append(getTinfoObjectProperty(), "op")
+            .unsafeAppend(" WHERE op.ObjectId = ").append(object).unsafeAppend(".ObjectId)")
+            .unsafeAppend(" AND NOT EXISTS (SELECT 1 FROM ").append(object, "child")
+            .unsafeAppend(" WHERE child.OwnerObjectId = ").append(object).unsafeAppend(".ObjectId)"));
     }
 
 
@@ -3287,6 +3455,152 @@ public class OntologyManager
 
             m = getProperties(c, oChild.getObjectURI());
             assertEquals(0, m.size());
+        }
+
+        @Test
+        public void testDeleteDomainsInStorageSchemas() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
+            String missingSchema = "junit_missing_storage";
+            String liveDomainUri = new Lsid("Junit", "OntologyManager", "liveDomain").toString();
+            String deadDomainUri = new Lsid("Junit", "OntologyManager", "deadDomain").toString();
+            String scope = "Folder-" + c.getRowId() + ".User-" + user.getUserId();
+            String defaultsParentLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + "Parent", scope, "deadDomain").toString();
+            String defaultsLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX, scope, "deadDomain").toString();
+            String liveDefaultsLsid = new Lsid(DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX, scope, "liveDomain").toString();
+            String keptPropUri = new Lsid("Junit", "OntologyManager", "keptProp").toString();
+            String keptValueLsid = new Lsid("Junit", "OntologyManager", "keptValueObject").toString();
+
+            Runnable cleanup = () -> {
+                deleteDomainsInStorageSchemas(List.of(missingSchema));
+                deleteOntologyObjects(c, defaultsParentLsid, liveDefaultsLsid, keptValueLsid);
+                PropertyDescriptor keptPd = getPropertyDescriptor(keptPropUri, c);
+                if (keptPd != null)
+                    deletePropertyDescriptor(keptPd);
+                if (getDomainDescriptor(liveDomainUri, c) != null)
+                {
+                    try
+                    {
+                        deleteDomain(liveDomainUri, c);
+                    }
+                    catch (DomainNotFoundException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+
+            cleanup.run();
+            try
+            {
+                DomainDescriptor liveDomain = ensureDomainDescriptor(liveDomainUri, "liveDomain", c);
+                DomainDescriptor deadDomain = ensureDomainDescriptor(new DomainDescriptor.Builder(deadDomainUri, c)
+                    .setName("deadDomain").setStorageSchemaName(missingSchema).setStorageTableName("deadtable").build());
+
+                PropertyDescriptor sharedPd = insertPropertyDescriptor(new PropertyDescriptor(new Lsid("Junit", "OntologyManager", "sharedProp").toString(), PropertyType.STRING, "sharedProp", c));
+                PropertyDescriptor exclusivePd = insertPropertyDescriptor(new PropertyDescriptor(new Lsid("Junit", "OntologyManager", "exclusiveProp").toString(), PropertyType.STRING, "exclusiveProp", c));
+                ensurePropertyDomain(sharedPd, liveDomain, 0);
+                ensurePropertyDomain(sharedPd, deadDomain, 0);
+                ensurePropertyDomain(exclusivePd, deadDomain, 1);
+
+                SqlExecutor executor = new SqlExecutor(getExpSchema());
+                executor.execute(new SQLFragment()
+                    .unsafeAppend("INSERT INTO ").append(getExpSchema().getTable("PropertyValidator"))
+                    .unsafeAppend(" (Name, TypeURI, Container, PropertyId) VALUES (?, ?, ?, ?)")
+                    .addAll("junitValidator", "urn:lsid:labkey.com:PropertyValidator:length", c, exclusivePd.getPropertyId()));
+                executor.execute(new SQLFragment()
+                    .unsafeAppend("INSERT INTO ").append(getExpSchema().getTable("ConditionalFormat"))
+                    .unsafeAppend(" (PropertyId, SortOrder, Filter, Bold, Italic, Strikethrough) VALUES (?, ?, ?, ?, ?, ?)")
+                    .addAll(exclusivePd.getPropertyId(), 0, "format.column~eq=x", true, false, false));
+
+                // A value that isn't a saved default means something else still uses the property, so it's kept
+                PropertyDescriptor keptPd = insertPropertyDescriptor(new PropertyDescriptor(keptPropUri, PropertyType.STRING, "keptProp", c));
+                ensurePropertyDomain(keptPd, deadDomain, 2);
+                ensureObject(c, keptValueLsid);
+                insertProperties(c, user, null, new ObjectProperty(keptValueLsid, c, keptPropUri, "stillUsed"));
+
+                ensureObject(c, defaultsLsid, defaultsParentLsid);
+                insertProperties(c, user, defaultsParentLsid,
+                    new ObjectProperty(defaultsLsid, c, exclusivePd.getPropertyURI(), "remembered"),
+                    new ObjectProperty(defaultsLsid, c, sharedPd.getPropertyURI(), "rememberedShared"));
+
+                // The live domain's own defaults use the shared property too, and must survive
+                ensureObject(c, liveDefaultsLsid);
+                insertProperties(c, user, null, new ObjectProperty(liveDefaultsLsid, c, sharedPd.getPropertyURI(), "liveRemembered"));
+
+                TableInfo listTable = getExpSchema().getTable("List");
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment()
+                    .unsafeAppend("INSERT INTO ").append(listTable)
+                    .unsafeAppend(" (EntityId, Container, ListId, Name, DomainId, KeyName, KeyType) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                    .addAll(GUID.makeGUID(), c, Integer.MAX_VALUE, "junitDeadList", deadDomain.getDomainId(), "Key", "Integer"));
+
+                assertEquals(1, deleteDomainsInStorageSchemas(List.of(missingSchema.toUpperCase(Locale.ROOT))));
+
+                assertEquals(0L, (long) new SqlSelector(getExpSchema(), new SQLFragment()
+                    .unsafeAppend("SELECT COUNT(*) FROM ").append(listTable)
+                    .unsafeAppend(" WHERE DomainId = ?").add(deadDomain.getDomainId())).getObject(Long.class));
+                assertNull(getDomainDescriptor(deadDomain.getDomainId()));
+                assertNotNull(getDomainDescriptor(liveDomain.getDomainId()));
+                assertNull(getPropertyDescriptor(exclusivePd.getPropertyId()));
+                assertNotNull(getPropertyDescriptor(sharedPd.getPropertyId()));
+                assertNull(getOntologyObject(c, defaultsLsid));
+                assertNull(getOntologyObject(c, defaultsParentLsid));
+                assertEquals("liveRemembered", getProperties(c, liveDefaultsLsid).get(sharedPd.getPropertyURI()));
+
+                for (String table : List.of("PropertyValidator", "ConditionalFormat"))
+                {
+                    assertEquals(table, 0L, (long) new SqlSelector(getExpSchema(), new SQLFragment()
+                        .unsafeAppend("SELECT COUNT(*) FROM ").append(getExpSchema().getTable(table))
+                        .unsafeAppend(" WHERE PropertyId = ?").add(exclusivePd.getPropertyId())).getObject(Long.class));
+                }
+
+                assertNotNull(getPropertyDescriptor(keptPd.getPropertyId()));
+                assertEquals("stillUsed", getProperties(c, keptValueLsid).get(keptPropUri));
+            }
+            finally
+            {
+                cleanup.run();
+            }
+        }
+
+        @Test
+        public void testFindMissingSchemas()
+        {
+            Map<String, String> existing = SchemaNameCache.get().getSchemaNameMap(getExpSchema().getScope());
+            Set<String> claimed = new CaseInsensitiveHashSet("junit_claimed_but_gone");
+
+            // Matching is case-insensitive against both the database's schemas and the claimed ones
+            assertEquals(List.of("junit_gone"), findMissingSchemas(List.of("exp", "EXP", "JUNIT_CLAIMED_BUT_GONE", "junit_gone"), existing, claimed));
+        }
+
+        @Test
+        public void testDeleteDomainsWithMissingStorage() throws Exception
+        {
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
+            String existingStorageUri = new Lsid("Junit", "OntologyManager", "existingStorage").toString();
+            String missingStorageUri = new Lsid("Junit", "OntologyManager", "missingStorage").toString();
+
+            try
+            {
+                DomainDescriptor existingStorage = ensureDomainDescriptor(new DomainDescriptor.Builder(existingStorageUri, c)
+                    .setName("existingStorage").setStorageSchemaName("EXP").setStorageTableName("junit_table").build());
+                DomainDescriptor missingStorage = ensureDomainDescriptor(new DomainDescriptor.Builder(missingStorageUri, c)
+                    .setName("missingStorage").setStorageSchemaName("junit_missing_storage2").setStorageTableName("junit_table").build());
+
+                deleteDomainsWithMissingStorage();
+
+                assertNotNull(getDomainDescriptor(existingStorage.getDomainId()));
+                assertNull(getDomainDescriptor(missingStorage.getDomainId()));
+            }
+            finally
+            {
+                for (String uri : List.of(existingStorageUri, missingStorageUri))
+                {
+                    if (getDomainDescriptor(uri, c) != null)
+                        deleteDomain(uri, c);
+                }
+            }
         }
 
         @Test
