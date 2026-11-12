@@ -88,6 +88,8 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -1092,6 +1094,8 @@ public class DomainUtil
                     if (!validationException.getErrors().isEmpty())
                         return validationException;
                 }
+                if (!textChoiceValueUpdates.isEmpty())
+                    SimpleMetricsService.get().increment(ExperimentMetricArea.TEXT_CHOICE, "renames");
 
                 // update indices - add missing and drop those that aren't included in domain info
                 if (kind.allowUniqueConstraintProperties() && update.getIndices() != null)
@@ -1488,9 +1492,11 @@ public class DomainUtil
                     int batchSize = BatchSize.get(ROWS);
                     List<Map<String, Object>> batch = new ArrayList<>(batchSize);
                     Iterator<Map<String, Object>> iter = stream.iterator();
+                    long rowCount = 0;
                     while (iter.hasNext())
                     {
                         Map<String, Object> rsRow = iter.next();
+                        rowCount++;
                         var valueRow = new CaseInsensitiveHashMap<>();
                         for (ColumnInfo col : columns)
                             valueRow.put(col.getName(), col.getValue(rsRow));
@@ -1506,6 +1512,7 @@ public class DomainUtil
                         }
                     }
                     transaction.commit();
+                    SimpleMetricsService.get().increment(ExperimentMetricArea.TEXT_CHOICE, getTextChoiceRenameMetric(rowCount));
                 }
                 catch (Exception e)
                 {
@@ -1513,6 +1520,19 @@ public class DomainUtil
                 }
             }
         }
+    }
+
+    private static String getTextChoiceRenameMetric(long rowCount)
+    {
+        if (rowCount == 0)
+            return "rename0";
+        if (rowCount <= 1_000)
+            return "rename1to1000";
+        if (rowCount <= 10_000)
+            return "rename1001to10000";
+        if (rowCount <= 100_000)
+            return "rename10001to100000";
+        return "renameOver100000";
     }
 
     private static void updateTextChoiceValueBatch(Domain domain, User user, TableInfo domainTable, @Nullable ColumnInfo containerCol, Map<String, TableInfo> containerTables,
