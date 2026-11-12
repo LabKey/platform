@@ -1,26 +1,31 @@
 /*
- * Copyright (c) 2024 LabKey Corporation
+ * Copyright (C) 2006 Sun Microsystems, Inc. All rights reserved.
+ * Use is subject to license terms.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Portions of this file are derived from the Phobos scripting engine
- * (Copyright (C) 2006 Sun Microsystems, Inc., BSD license) and the
- * Helma scripting engine (Copyright 2006 Hannes Wallnoefer, Apache 2.0).
+ * Redistribution and use in source and binary forms, with or without modification, are
+ * permitted provided that the following conditions are met: Redistributions of source code
+ * must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of
+ * conditions and the following disclaimer in the documentation and/or other materials
+ * provided with the distribution. Neither the name of the Sun Microsystems nor the names of
+ * is contributors may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.labkey.core.script;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.util.ExceptionUtil;
 import org.mozilla.javascript.Context;
@@ -118,7 +123,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
     @Override
     public ScriptEngineFactory getFactory()
     {
-        return factory;
+        return factory != null ? factory : RhinoService.RHINO_FACTORY;
     }
 
     @Override
@@ -167,41 +172,39 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T getInterface(Class<T> clasz)
     {
-        if (clasz == null || !clasz.isInterface())
-            return null;
-        return (T) Proxy.newProxyInstance(
-            Thread.currentThread().getContextClassLoader(),
-            new Class<?>[]{clasz},
-            (proxy, method, args) -> {
-                try
-                {
-                    Object result = invokeFunction(method.getName(), args != null ? args : new Object[0]);
-                    Class<?> rt = method.getReturnType();
-                    return rt == Void.TYPE ? null : ScriptUtils.jsToJava(result, rt);
-                }
-                catch (NoSuchMethodException e)
-                {
-                    return null;
-                }
-            });
+        return implement(null, clasz);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T getInterface(Object thiz, Class<T> clasz)
     {
         if (thiz == null)
             throw new IllegalArgumentException("script object can not be null");
+        return implement(thiz, clasz);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> @Nullable T implement(@Nullable Object thiz, Class<T> clasz)
+    {
         if (clasz == null || !clasz.isInterface())
             return null;
         return (T) Proxy.newProxyInstance(
-            Thread.currentThread().getContextClassLoader(),
+            clasz.getClassLoader(),
             new Class<?>[]{clasz},
             (proxy, method, args) -> {
+                if (method.getDeclaringClass() == Object.class)
+                {
+                    return switch (method.getName())
+                    {
+                        case "equals" -> proxy == args[0];
+                        case "hashCode" -> System.identityHashCode(proxy);
+                        default -> "Script implementation of " + clasz.getName();
+                    };
+                }
+
                 try
                 {
                     Object result = invokeMethod(thiz, method.getName(), args != null ? args : new Object[0]);
@@ -210,7 +213,11 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
                 }
                 catch (NoSuchMethodException e)
                 {
-                    return null;
+                    throw new UnsupportedOperationException("Script does not implement " + clasz.getName() + "." + method.getName() + "()", e);
+                }
+                catch (ScriptException e)
+                {
+                    throw new RuntimeException(e.getMessage(), e);
                 }
             });
     }

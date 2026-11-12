@@ -239,6 +239,7 @@ public final class RhinoService
             assertEquals("d1", engine.eval(helper + "var list = new java.util.ArrayList(); list.addAll(['d' + n]); helper.firstString(list);"));
             assertEquals("e1", engine.eval(helper + "helper.firstString(new java.util.ArrayList(['e' + n]));"));
             assertEquals("f1", engine.eval(helper + "var hostName = 'f' + n; var ids = []; ids.push(5); var params = {}; function set() { params = {status: 1, key: hostName}; } set(); new helper().copiedMapValue(ids, params);"));
+            assertEquals("h10", engine.eval(helper + "var count = 0; var o = {key: 'h' + n}; Object.defineProperty(o, 'computed', {enumerable: true, get: function() { count++; return 'x'; }}); helper.mapValue(o) + count;"));
             assertEquals("g1", engine.eval(helper + "(function() { var hostName = 'g' + n; var ids = []; ids.push(5); var params = {}; function set() { params = {status: 1, key: hostName}; } set(); return new helper().copiedMapValue(ids, params); })();"));
         }
 
@@ -250,6 +251,12 @@ public final class RhinoService
 
             assertEquals("2020-01-15", engine.eval(ext4 + "Ext4.Date.format(new Date(2020, 0, 15), 'Y-m-d');"));
             assertEquals("2020-01-15", engine.eval(ext4 + "Ext4.Date.format(Ext4.Date.parse('15/01/2020', 'd/m/Y'), 'Y-m-d');"));
+        }
+
+        @Test
+        public void e4xTest() throws Exception
+        {
+            assertEquals("x", RhinoService.RHINO_FACTORY.getScriptEngine().eval("new XML('<a><b>x</b></a>').b.toString();"));
         }
 
         @Test

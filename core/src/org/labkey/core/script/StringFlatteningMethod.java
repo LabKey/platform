@@ -18,6 +18,7 @@ package org.labkey.core.script;
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeJavaMethod;
 import org.mozilla.javascript.NativeObject;
@@ -93,15 +94,22 @@ class StringFlatteningMethod extends BaseFunction
 
         for (Object id : container.getIds())
         {
-            Object value = unwrap(id instanceof Integer i ? container.get(i, container) : container.get(id.toString(), container));
+            String name = id instanceof Integer ? null : id.toString();
+            int index = id instanceof Integer i ? i : 0;
+
+            // Reading an accessor property would run its getter
+            if (container.getGetterOrSetter(name, index, container, false) instanceof Function)
+                continue;
+
+            Object value = unwrap(name == null ? container.get(index, container) : container.get(name, container));
             if (value instanceof ConsString)
             {
                 try
                 {
-                    if (id instanceof Integer i)
-                        container.put(i, container, value.toString());
+                    if (name == null)
+                        container.put(index, container, value.toString());
                     else
-                        container.put(id.toString(), container, value.toString());
+                        container.put(name, container, value.toString());
                 }
                 catch (RhinoException ignored)
                 {

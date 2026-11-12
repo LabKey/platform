@@ -867,6 +867,19 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "org.mozilla:rhino-xml:${rhinoVersion}",
+            "Mozilla Rhino XML",
+            "Mozilla Rhino",
+            "https://github.com/mozilla/rhino",
+            "MPL 2.0",
+            "https://www.mozilla.org/en-US/MPL/2.0/",
+            "E4X support for the embedded JavaScript engine"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "com.rometools:rome:${romeVersion}",
             "ROME",
             "ROME",
