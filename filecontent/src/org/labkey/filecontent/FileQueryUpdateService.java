@@ -293,6 +293,16 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         return _setRow(user, container, row, false);
     }
 
+    /** The data file URL carried on the row itself, or null when the row only identifies an existing one. */
+    private @Nullable String suppliedDataFileUrl(Map<String, Object> row)
+    {
+        if (row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+            return String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
+        if (row.containsKey("AbsoluteFilePath"))
+            return getDataFileUrlFromAbsoluteFilePath((String) row.get("AbsoluteFilePath"));
+        return null;
+    }
+
     /** True when the row carries the path itself; otherwise findData reads it back off the stored row. */
     private static boolean rowSuppliesDataFileUrl(Map<String, Object> row)
     {
@@ -308,12 +318,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         String dataFileUrl = null;
 
         if (rowSuppliesDataFileUrl(row))
-        {
-            if (row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
-                dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
-            else
-                dataFileUrl = getDataFileUrlFromAbsoluteFilePath((String) row.get("AbsoluteFilePath"));
-        }
+            dataFileUrl = suppliedDataFileUrl(row);
         else
         {
             try
@@ -399,10 +404,11 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         ExpData data = p.getKey();
         String dataFileUrl = p.getValue();
 
-        // whichever key supplied it, a path the caller is storing must be confined to this folder; one read back off
+        // a path the caller supplies is confined to this folder whatever other keys accompany it; a URL read back off
         // the existing row is not being stored, and rejecting it would block edits to rows that predate this check
-        if (rowSuppliesDataFileUrl(row))
-            validateDataFileUrl(dataFileUrl, container, user);
+        String suppliedUrl = suppliedDataFileUrl(row);
+        if (suppliedUrl != null)
+            validateDataFileUrl(suppliedUrl, container, user);
 
         if (row.containsKey("AbsoluteFilePath")) // AbsoluteFilePath is a valid key for inserting exp.files record through api
         {
@@ -554,7 +560,8 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     absoluteFilePath = FileContentServiceImpl.getInstance().getAbsolutePathFromDataFileUrl(data.getDataFileUrl(), container);
             }
             else if (keys.containsKey("AbsoluteFilePath"))
-                absoluteFilePath = String.valueOf(keys.get("AbsoluteFilePath"));
+                // normalized: getWebdavUrlFromAbsoluteFilePath tests a bare prefix, which a '..' segment would satisfy
+                absoluteFilePath = FileUtil.getAbsoluteCaseSensitiveFile(new File(String.valueOf(keys.get("AbsoluteFilePath")))).toPath().normalize().toString();
 
             if (absoluteFilePath != null)
                 return getWebdavUrlFromAbsoluteFilePath(absoluteFilePath, container);

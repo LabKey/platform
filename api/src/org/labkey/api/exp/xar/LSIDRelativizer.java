@@ -114,7 +114,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 // UNDONE: Now that "Data" prefix is used for DataClass, the AutoFileLSID is not a good default.
                 // UNDONE: Can we be more restrictive about which LSIDs this is applied to?  Maybe only if the objectId part of the LSID includes a "/" (%2F) or something?
                 // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
-                return "${AutoFileLSID}"; // AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION;
+                return AUTO_FILE_LSID;
             }
             else if (suffix != null && (SUFFIX_PATTERN.matcher(suffix).matches() || XAR_IMPORT_SUFFIX_PATTERN.matcher(suffix).matches()))
             {
@@ -197,6 +197,10 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
         }
     };
+
+    /** AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, which lives in a module this one cannot see. */
+    private static final String AUTO_FILE_LSID = "${AutoFileLSID}";
+
     private final String _description;
 
     protected abstract String relativize(Lsid lsid, RelativizedLSIDs lsids, boolean useXarJobId);
@@ -284,7 +288,11 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             if (result != null)
                 return result;
 
-            result = PARTIAL_FOLDER_RELATIVE.relativize(data, this, false);
+            // only the relativizers that would yield ${AutoFileLSID} need the fallback; ABSOLUTE must keep its own LSID
+            result = _relativizer.relativize(data, this, false);
+            if (AUTO_FILE_LSID.equals(result))
+                result = PARTIAL_FOLDER_RELATIVE.relativize(data, this, false);
+
             putLSID(data.getLSID(), result);
             return result;
         }

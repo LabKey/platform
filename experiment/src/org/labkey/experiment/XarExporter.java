@@ -390,7 +390,6 @@ public class XarExporter
                 inputRefs = xApplication.addNewInputRefs();
             }
             InputOutputRefsType.DataLSID dataLSID = inputRefs.addNewDataLSID();
-            dataLSID.setStringValue(_relativizedLSIDs.relativize(data.getLSID()));
             String roleName = null;
             for (DataInput dataInput : dataInputs)
             {
@@ -417,15 +416,16 @@ public class XarExporter
 
             ExpDataImpl expData = new ExpDataImpl(data);
             String url = _urlRewriter.rewriteURL(expData.getFilePath(), expData, roleName, run, _user, _fileRootPath);
+            // decide before relativizing: the first answer for an LSID is the one that sticks
+            dataLSID.setStringValue(StringUtils.isEmpty(url)
+                    ? _relativizedLSIDs.relativizeWithoutDataFile(expData)
+                    : _relativizedLSIDs.relativize(data.getLSID()));
+
             if (AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION.equals(dataLSID.getStringValue()))
             {
                 if (url != null && !url.isEmpty())
                 {
                     dataLSID.setDataFileUrl(url);
-                }
-                else if (_urlRewriter.isExcluded(expData))
-                {
-                    dataLSID.setStringValue(_relativizedLSIDs.relativizeWithoutDataFile(expData));
                 }
             }
             else
@@ -983,8 +983,9 @@ public class XarExporter
         String url = path == null ? null : _urlRewriter.rewriteURL(path, data, role, run, _user, _fileRootPath);
 
         xData.setName(data.getName());
-        // an excluded file leaves no DataFileUrl, so the LSID must not be the ${AutoFileLSID} form that resolves through one
-        xData.setAbout(_urlRewriter.isExcluded(data) ? _relativizedLSIDs.relativizeWithoutDataFile(data) : _relativizedLSIDs.relativize(data));
+        // no DataFileUrl below means the LSID must not be the ${AutoFileLSID} form, which resolves through one on import;
+        // a role filter and an unresolvable path both leave url null without the row being recorded as excluded
+        xData.setAbout(url == null ? _relativizedLSIDs.relativizeWithoutDataFile(data) : _relativizedLSIDs.relativize(data));
         xData.setCpasType(isDefaultCpasType(data.getCpasType(), ExpData.DEFAULT_CPAS_TYPE) ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
 
         if (url != null)
