@@ -24,6 +24,7 @@
 
 package org.labkey.core.script;
 
+import org.mozilla.javascript.ConstProperties;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeJavaClass;
@@ -32,13 +33,16 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Symbol;
 import org.mozilla.javascript.SymbolScriptable;
+import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * ExternalScriptable is an implementation of Scriptable
@@ -49,7 +53,7 @@ import java.util.Map;
  * @since 1.6
  */
 // kevink: changes marked
-final class ExternalScriptable implements Scriptable, SymbolScriptable
+final class ExternalScriptable implements Scriptable, SymbolScriptable, ConstProperties
 {
     /* Underlying ScriptContext that we use to store
      * named variables of this scope.
@@ -66,6 +70,10 @@ final class ExternalScriptable implements Scriptable, SymbolScriptable
      * JSR 223 API. We can just script objects "as is" and need not convert.
      */
     private final Map indexedProps;
+
+    // Bindings can't carry property attributes, so top-level const declarations are tracked here
+    private final Set<String> constNames = new HashSet<>();
+    private final Set<String> uninitializedConsts = new HashSet<>();
 
     // my prototype
     private Scriptable prototype;
@@ -197,18 +205,26 @@ final class ExternalScriptable implements Scriptable, SymbolScriptable
             synchronized (this) {
                 if (isEmpty(name)) {
                     indexedProps.put(name, value);
-                } else {
-                    synchronized (context) {
-                        int scope = context.getAttributesScope(name);
-                        if (scope == -1) {
-                            scope = ScriptContext.ENGINE_SCOPE;
-                        }
-                        context.setAttribute(name, jsToJava(value), scope);
+                } else if (constNames.contains(name)) {
+                    if (Context.isCurrentContextStrict()) {
+                        throw ScriptRuntime.typeErrorById("msg.modify.readonly", name);
                     }
+                } else {
+                    setAttribute(name, value);
                 }
             }
         } else {
             start.put(name, start, value);
+        }
+    }
+
+    private void setAttribute(String name, Object value) {
+        synchronized (context) {
+            int scope = context.getAttributesScope(name);
+            if (scope == -1) {
+                scope = ScriptContext.ENGINE_SCOPE;
+            }
+            context.setAttribute(name, jsToJava(value), scope);
         }
     }
 
@@ -239,6 +255,9 @@ final class ExternalScriptable implements Scriptable, SymbolScriptable
      */
     @Override
     public synchronized void delete(String name) {
+        if (constNames.contains(name)) {
+            return;
+        }
         if (isEmpty(name)) {
             indexedProps.remove(name);
         } else {
@@ -437,6 +456,42 @@ final class ExternalScriptable implements Scriptable, SymbolScriptable
     @Override
     public void delete(Symbol key)
     {
+    }
+
+    @Override
+    public synchronized void defineConst(String name, Scriptable start)
+    {
+        if (start != this)
+        {
+            if (start instanceof ConstProperties cp)
+                cp.defineConst(name, start);
+            return;
+        }
+        constNames.add(name);
+        uninitializedConsts.add(name);
+        setAttribute(name, Undefined.instance);
+    }
+
+    @Override
+    public synchronized void putConst(String name, Scriptable start, Object value)
+    {
+        if (start != this)
+        {
+            if (start instanceof ConstProperties cp)
+                cp.putConst(name, start, value);
+            else
+                start.put(name, start, value);
+            return;
+        }
+        // Only the first initialization sticks, matching ScriptableObject
+        if (constNames.add(name) || uninitializedConsts.remove(name))
+            setAttribute(name, value);
+    }
+
+    @Override
+    public synchronized boolean isConst(String name)
+    {
+        return constNames.contains(name);
     }
 
     /**

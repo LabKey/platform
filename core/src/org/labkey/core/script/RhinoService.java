@@ -294,6 +294,15 @@ public final class RhinoService
             assertEquals(true, RhinoService.RHINO_FACTORY.getScriptEngine().eval("var list = new java.util.ArrayList(); list.add === list.add;"));
         }
 
+        @Test
+        public void topLevelConstTest() throws Exception
+        {
+            assertEquals(5, ((Number) RhinoService.RHINO_FACTORY.getScriptEngine().eval("const LIMIT = 5; LIMIT;")).intValue());
+            assertEquals(5, ((Number) RhinoService.RHINO_FACTORY.getScriptEngine().eval("const LIMIT = 5; LIMIT = 6; delete LIMIT; LIMIT;")).intValue());
+            assertEquals(5, ((Number) RhinoService.RHINO_FACTORY.getScriptEngine().eval("const LIMIT = 5; (function() { LIMIT = 6; return LIMIT; })();")).intValue());
+            assertThrows(ScriptException.class, () -> RhinoService.RHINO_FACTORY.getScriptEngine().eval("'use strict'; const LIMIT = 5; LIMIT = 6;"));
+        }
+
         @SuppressWarnings("unused") // called from script
         public static String firstString(List<String> list)
         {
