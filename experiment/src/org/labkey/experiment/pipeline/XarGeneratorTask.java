@@ -175,7 +175,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 if (NetworkDrive.exists(permanentXAR))
                 {
                     // Be sure that it's been imported (and not already deleted from the database)
-                    importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(permanentXAR, getJob()), getJob(), false));
+                    importedRuns.addAll(ExperimentService.get().importXar(jobXarSource(permanentXAR, getJob()), getJob(), false));
                 }
                 else
                 {
