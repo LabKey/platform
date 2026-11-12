@@ -58,6 +58,7 @@ import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.MultiChoice;
@@ -69,6 +70,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
@@ -88,6 +90,7 @@ import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.mcp.ChatHistoryService;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -262,6 +265,7 @@ import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.ClientSideMetricDescriptions;
+import org.labkey.core.metrics.DeploymentMetrics;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.metrics.WebSocketMXBean;
@@ -476,6 +480,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
+        ChatHistoryService.setInstance(new ChatHistoryManager());
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
@@ -549,6 +554,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationService.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(RequestCancellation.FEATUREFLAG_DISABLE_CANCEL_ABANDONED_REQUESTS,
+            "Disable cancelling abandoned requests",
+            "By default, when a page abandons a read-only request, e.g. the user navigates away or closes the tab, the server stops the request and its database queries. You can disable this feature with this flag.",
+            false, false, FeatureType.Optional));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
             "Allow script authentication via legacy substitution parameters",
             "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
@@ -1342,6 +1351,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), AttachmentHashingMaintenanceTask.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), DeploymentMetrics.getMetricsProvider());
         SystemMaintenance.addTask(new AttachmentHashingMaintenanceTask());
 
         if (AppProps.getInstance().isDevMode())
@@ -1474,6 +1484,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
         json.put("productKey", new ProductConfiguration().getCurrentProductKey());
+        json.put("labKeyAssistantEnabled",  OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT));
         return json;
     }
 
@@ -1513,11 +1524,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.RevertFolderScopingTestCase.class,
             AllowListType.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
+            ChatHistoryManager.TestCase.class,
             CoreController.TestCase.class,
             CoreController.MoveContainerTestCase.class,
             DataRegion.TestCase.class,
             DavController.TestCase.class,
             DavController.MoveActionContainerScopingTestCase.class,
+            LabKeyAssistantAgentAction.TestCase.class,
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
             HealthCheckTestCase.class,
@@ -1569,6 +1582,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            DeploymentMetrics.TestCase.class,
             LabKeyProxyServlet.TestCase.class,
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
@@ -1643,6 +1657,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<DbSchema> getSchemasToTest()
     {
         Set<DbSchema> result = new LinkedHashSet<>(super.getSchemasToTest());
+        // Spring AI's PgVectorStore owns these tables, and their pgvector/uuid columns have no LabKey type mapping
+        result.remove(DbSchema.get(VECTOR_SCHEMA, DbSchemaType.Module));
 
         // Add the "labkey" schema in all module data sources as well... should match application.properties
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())

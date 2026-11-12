@@ -226,7 +226,7 @@ public class ApiKeyManager
 
         try (Transaction t = scope.beginTransaction(TRANSACTION_KIND))
         {
-            SQLFragment sql = new SQLFragment("UPDATE ")
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ")
                 .append(CoreSchema.getInstance().getTableAPIKeys())
                 .unsafeAppend(" SET LastUsed = ? WHERE Crypt = ?")
                 .add(new Date())
@@ -332,7 +332,7 @@ public class ApiKeyManager
 
     private static FilterClause getStillValidClause()
     {
-        return new SQLClause(new SQLFragment("Expiration IS NULL OR Expiration > ?", new Date()), FieldKey.fromParts("Expiration"));
+        return new SQLClause(SQLFragment.unsafe("Expiration IS NULL OR Expiration > ?", new Date()), FieldKey.fromParts("Expiration"));
     }
 
     public static class TestCase extends Assert

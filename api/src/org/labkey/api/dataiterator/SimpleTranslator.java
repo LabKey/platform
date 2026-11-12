@@ -390,7 +390,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         // Above SELECTOR_MAX_ROWS so a bulk load never evicts its own rows
         static final int MAX_CACHED_KEYS = 2 * SELECTOR_MAX_ROWS;
 
-        private static <K, V> Map<K, V> lruMap()
+        /** Access-ordered map that evicts its least recently used entry past {@link #MAX_CACHED_KEYS} */
+        public static <K, V> Map<K, V> lruMap()
         {
             return new LinkedHashMap<>(16, 0.75f, true)
             {

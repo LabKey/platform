@@ -227,7 +227,7 @@ public class TableUpdaterFileListener implements FileListener
         SqlDialect dialect = schema.getSqlDialect();
 
         // Build up SQL that can be used for both the file and any children
-        SQLFragment sharedSQL = new SQLFragment("UPDATE ");
+        SQLFragment sharedSQL = SQLFragment.unsafe("UPDATE ");
         sharedSQL.append(_table);
         sharedSQL.unsafeAppend(" SET ");
         if (_table.getColumn("Modified") != null)
@@ -295,12 +295,12 @@ public class TableUpdaterFileListener implements FileListener
             {
                 srcPath = "file://" + srcPath.replaceFirst("^file:/+", "/");
             }
-            SQLFragment whereClause = new SQLFragment(" WHERE ");
-            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), _pathColumn.getSelectIdentifier().getSql())).unsafeAppend(" = 1");
+            SQLFragment whereClause = SQLFragment.unsafe(" WHERE ");
+            whereClause.append(dialect.getStringIndexOfFunction(SQLFragment.unsafe("?", srcPath), _pathColumn.getSelectIdentifier().getSql())).unsafeAppend(" = 1");
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(_pathColumn.getSelectIdentifier().getSql(), new SQLFragment(Integer.toString(srcPath.length() + 1)), new SQLFragment("5000")))));
+            childPathsSQL.append(dialect.concatenate(SQLFragment.unsafe("?", destPath), new SQLFragment(dialect.getSubstringFunction(_pathColumn.getSelectIdentifier().getSql(), new SQLFragment(Integer.toString(srcPath.length() + 1)), SQLFragment.unsafe("5000")))));
             childPathsSQL.append(whereClause);
             childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
 
@@ -399,8 +399,8 @@ public class TableUpdaterFileListener implements FileListener
             SqlDialect dialect = _table.getSchema().getSqlDialect();
             SQLFragment fileNameFrag = new SQLFragment();
             fileNameFrag.unsafeAppend("regexp_replace(").appendIdentifier(_pathColumn.getSelectIdentifier()).unsafeAppend(", ");
-            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral(".*/")).unsafeAppend(", ");
-            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral("")).unsafeAppend(")");
+            fileNameFrag.appendStringLiteral(".*/", dialect).unsafeAppend(", ");
+            fileNameFrag.appendStringLiteral("", dialect).unsafeAppend(")");
             selectFrag.unsafeAppend("  ").append(fileNameFrag).unsafeAppend(" AS FilePathShort,\n");
         }
 
