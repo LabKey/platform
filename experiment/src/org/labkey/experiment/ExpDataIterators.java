@@ -58,6 +58,7 @@ import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.MatchMakerDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
@@ -327,7 +328,7 @@ public class ExpDataIterators
         }
 
         @Override
-        protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user, Map<Integer, List<ColumnValidator>> validators)
+        protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, MatchMakerDataIterator match, Container c, User user, Map<Integer, List<ColumnValidator>> validators)
         {
             ExpMaterialValidatorIterator validate = new ExpMaterialValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user, validators);
             validate.setDebugName("ExpMaterialDataIteratorBuilder validate");
