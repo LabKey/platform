@@ -58,6 +58,7 @@ import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.MultiChoice;
@@ -264,6 +265,7 @@ import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.ClientSideMetricDescriptions;
+import org.labkey.core.metrics.DeploymentMetrics;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.metrics.WebSocketMXBean;
@@ -1349,6 +1351,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), AttachmentHashingMaintenanceTask.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), DeploymentMetrics.getMetricsProvider());
         SystemMaintenance.addTask(new AttachmentHashingMaintenanceTask());
 
         if (AppProps.getInstance().isDevMode())
@@ -1481,6 +1484,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
         json.put("productKey", new ProductConfiguration().getCurrentProductKey());
+        json.put("labKeyAssistantEnabled",  OptionalFeatureService.get().isFeatureEnabled(McpService.ENABLE_LABKEY_ASSISTANT));
         return json;
     }
 
@@ -1577,6 +1581,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            DeploymentMetrics.TestCase.class,
             LabKeyProxyServlet.TestCase.class,
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
@@ -1651,6 +1656,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<DbSchema> getSchemasToTest()
     {
         Set<DbSchema> result = new LinkedHashSet<>(super.getSchemasToTest());
+        // Spring AI's PgVectorStore owns these tables, and their pgvector/uuid columns have no LabKey type mapping
+        result.remove(DbSchema.get(VECTOR_SCHEMA, DbSchemaType.Module));
 
         // Add the "labkey" schema in all module data sources as well... should match application.properties
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())

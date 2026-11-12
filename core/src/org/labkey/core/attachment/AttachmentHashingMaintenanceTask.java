@@ -30,10 +30,10 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 // Temporary: measures how long the post-26.11 de-duplicating attachment migration will take. Remove once that migration is in place.
 public class AttachmentHashingMaintenanceTask implements MaintenanceTask
@@ -76,40 +76,44 @@ public class AttachmentHashingMaintenanceTask implements MaintenanceTask
             listSql.unsafeAppend(" AND Parent <> ?", globalParentId);
         listSql.unsafeAppend(" ORDER BY RowId");
 
+        SqlSelector listSelector = new SqlSelector(scope, listSql);
         long start = System.currentTimeMillis();
-        List<Integer> rowIds = new SqlSelector(scope, listSql).getArrayList(Integer.class);
+        long documentCount = listSelector.getRowCount();
         long enumerationMillis = System.currentTimeMillis() - start;
-        log.info("Attachment hashing: enumerated {} documents in {}", Formats.commaf0.format(rowIds.size()), DateUtil.formatDuration(enumerationMillis));
+        log.info("Attachment hashing: counted {} documents in {}", Formats.commaf0.format(documentCount), DateUtil.formatDuration(enumerationMillis));
 
         long hashStart = System.currentTimeMillis();
         long lastProgress = hashStart;
         int hashed = 0;
         long hashedBytes = 0;
 
-        for (int rowId : rowIds)
+        try (Stream<Integer> rowIds = listSelector.uncachedStream(Integer.class))
         {
-            if (ContextListener.isShuttingDown())
+            for (int rowId : (Iterable<Integer>) rowIds::iterator)
             {
-                log.info("Attachment hashing: stopping due to server shutdown after hashing {} of {} documents; statistics not saved", Formats.commaf0.format(hashed), Formats.commaf0.format(rowIds.size()));
-                return;
-            }
+                if (ContextListener.isShuttingDown())
+                {
+                    log.info("Attachment hashing: stopping due to server shutdown after hashing {} of {} documents; statistics not saved", Formats.commaf0.format(hashed), Formats.commaf0.format(documentCount));
+                    return;
+                }
 
-            // Postgres materializes bytea values regardless, so getBytes() costs no more than getBinaryStream()
-            byte[] bytes = new SqlSelector(scope, SQLFragment.unsafe("SELECT Document FROM ").append(documents).unsafeAppend(" WHERE RowId = ?", rowId)).getObject(byte[].class);
+                // Postgres materializes bytea values regardless, so getBytes() costs no more than getBinaryStream()
+                byte[] bytes = new SqlSelector(scope, SQLFragment.unsafe("SELECT Document FROM ").append(documents).unsafeAppend(" WHERE RowId = ?", rowId)).getObject(byte[].class);
 
-            // Null if the document was deleted after enumeration
-            if (bytes != null)
-            {
-                DigestUtils.sha256Hex(bytes);
-                hashed++;
-                hashedBytes += bytes.length;
-            }
+                // Null if the document was deleted after enumeration
+                if (bytes != null)
+                {
+                    DigestUtils.sha256Hex(bytes);
+                    hashed++;
+                    hashedBytes += bytes.length;
+                }
 
-            long now = System.currentTimeMillis();
-            if (now - lastProgress >= PROGRESS_INTERVAL)
-            {
-                lastProgress = now;
-                log.info("Attachment hashing: {} of {} documents hashed ({} bytes), elapsed {}, {} attachments per second, {} bytes per second", Formats.commaf0.format(hashed), Formats.commaf0.format(rowIds.size()), Formats.commaf0.format(hashedBytes), DateUtil.formatDuration(now - hashStart), Formats.commaf0.format(perSecond(hashed, now - hashStart)), Formats.commaf0.format(perSecond(hashedBytes, now - hashStart)));
+                long now = System.currentTimeMillis();
+                if (now - lastProgress >= PROGRESS_INTERVAL)
+                {
+                    lastProgress = now;
+                    log.info("Attachment hashing: {} of {} documents hashed ({} bytes), elapsed {}, {} attachments per second, {} bytes per second", Formats.commaf0.format(hashed), Formats.commaf0.format(documentCount), Formats.commaf0.format(hashedBytes), DateUtil.formatDuration(now - hashStart), Formats.commaf0.format(perSecond(hashed, now - hashStart)), Formats.commaf0.format(perSecond(hashedBytes, now - hashStart)));
+                }
             }
         }
 
@@ -119,7 +123,7 @@ public class AttachmentHashingMaintenanceTask implements MaintenanceTask
         log.info("Attachment hashing: complete. Hashed {} documents ({} bytes) in {}, {} attachments per second, {} bytes per second", Formats.commaf0.format(hashed), Formats.commaf0.format(hashedBytes), DateUtil.formatDuration(hashingMillis), Formats.commaf0.format(attachmentsPerSecond), Formats.commaf0.format(bytesPerSecond));
 
         WritablePropertyMap statistics = PropertyManager.getWritableProperties(STATISTICS_CATEGORY, true);
-        statistics.put("documentCount", String.valueOf(rowIds.size()));
+        statistics.put("documentCount", String.valueOf(documentCount));
         statistics.put("hashedCount", String.valueOf(hashed));
         statistics.put("hashedBytes", String.valueOf(hashedBytes));
         statistics.put("enumerationMillis", String.valueOf(enumerationMillis));

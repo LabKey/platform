@@ -8580,10 +8580,24 @@ public class QueryController extends SpringActionController
 
     enum PromptResource
     {
-        ExpressionAssistant,
-        LabKeySql;
+        ExpressionAssistant(true),
+        LabKeySql(true),
+        LabKeySqlExpressions(false);
+
+        private final boolean _appendExpressionReference;
+
+        PromptResource(boolean appendExpressionReference)
+        {
+            _appendExpressionReference = appendExpressionReference;
+        }
 
         String resource()
+        {
+            String markdown = load();
+            return _appendExpressionReference ? markdown + "\n" + LabKeySqlExpressions.load() : markdown;
+        }
+
+        private String load()
         {
             try
             {
