@@ -177,6 +177,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
             if (null != match)
             {
+                // NOTE: Setting properties on ColumnInfo owned by other code/datastructure is bad behavior (See MatchMakerDataIterator)
                 ((BaseColumnInfo)inputColumn).setPropertyURI(match.getPropertyURI());
 
                 if (match == lsidColumn || match == seqnumColumn || DatasetDomainKind._KEY.equals(match.getName()))

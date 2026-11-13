@@ -113,6 +113,7 @@ import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.GenerateUniqueDataIterator;
 import org.labkey.api.dataiterator.LookAheadDataIterator;
+import org.labkey.api.dataiterator.MatchMakerDataIterator;
 import org.labkey.api.dataiterator.QueryDataIteratorBuilder;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
@@ -592,6 +593,7 @@ public class ApiModule extends CodeOnlyModule
             LabKeyCollectors.TestCase.class,
             LookAndFeelFolderPropertiesTest.class,
             MapLoader.MapLoaderTestCase.class,
+            MatchMakerDataIterator.TestCase.class,
             MaterialInputRoleComparator.TestCase.class,
             MimeMap.TestCase.class,
             ModuleHtmlView.TestCase.class,
