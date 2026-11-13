@@ -755,6 +755,9 @@ public class ReportUtil
     /**
      * Save both in one transaction so a rejected report save doesn't leave the new policy in place. The report is
      * often the shared instance from the report cache, so put its owner back if the save is rejected.
+     * Save the report first: its save does the edit and share checks, and savePolicy can only find reports the
+     * performer can read, so saving the policy first turns a rejected change to another user's private report into
+     * an IllegalStateException instead of an UnauthorizedException.
      */
     private static void savePolicyAndReport(ViewContext context, Report report, MutableSecurityPolicy policy, @Nullable Integer owner, User performer, boolean skipValidation)
     {
@@ -764,8 +767,8 @@ public class ReportUtil
         boolean saved = false;
         try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
         {
-            SecurityPolicyManager.savePolicy(policy, performer);
             ReportService.get().saveReportEx(context, descriptor.getReportKey(), report, skipValidation);
+            SecurityPolicyManager.savePolicy(policy, performer);
             tx.commit();
             saved = true;
         }
