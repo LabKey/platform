@@ -452,12 +452,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public void waitForIdle() throws InterruptedException
     {
-        if (_runQueue.isEmpty() && _itemQueue.size() < 4)
-            return;
         synchronized (_idleEvent)
         {
-            _idleWaiting = true;
-            _idleEvent.wait();
+            while (!_runQueue.isEmpty() || _itemQueue.size() >= 4)
+            {
+                _idleWaiting = true;
+                _idleEvent.wait();
+            }
         }
     }
 
@@ -1283,6 +1284,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     /** @param failuresBeforeBackoff number of initial failures that retry immediately */
+    @SuppressWarnings("WaitNotInLoop") // a notify on syncObject deliberately cuts the delay short
     private static void postFailureDelay(Throwable e, String logPrefix, Logger log, int consecutiveFailures, int failuresBeforeBackoff, final Object syncObject)
     {
         long delayMs = TimeUnit.SECONDS.toMillis(30L * Math.min(10, Math.max(0, consecutiveFailures - failuresBeforeBackoff)));
