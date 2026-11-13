@@ -76,7 +76,7 @@ beforeAll(async () => {
     designerReaderOptions = options.designerReaderOptions;
 
     designerEditor = options.designerEditor;
-    designerEditorOptions = options.designerReaderOptions;
+    designerEditorOptions = options.designerEditorOptions;
 
     admin = options.admin;
     adminOptions = options.adminOptions;

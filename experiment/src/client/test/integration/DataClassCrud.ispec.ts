@@ -63,7 +63,7 @@ beforeAll(async () => {
     editorUserOptions = options.editorUserOptions;
     designerOptions = options.designerOptions;
     designerReaderOptions = options.designerReaderOptions;
-    designerEditorOptions = options.designerReaderOptions;
+    designerEditorOptions = options.designerEditorOptions;
     adminOptions = options.adminOptions;
 });
 
