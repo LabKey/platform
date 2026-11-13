@@ -94,6 +94,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -1465,6 +1466,7 @@ public class PropertyController extends SpringActionController
                     }
 
                     writer.write("Success:");
+                    data = PageFlowUtil.filter(data);
                     data = data.replaceAll("\r|\n", "<br>");
                     data = data.replaceAll("\t", "<hr>");
                     writer.write(data);
@@ -1564,7 +1566,7 @@ public class PropertyController extends SpringActionController
 
         private void error(Writer writer, String message) throws IOException
         {
-            writer.write(message);
+            writer.write(PageFlowUtil.filter(message));
             writer.flush();
         }
 

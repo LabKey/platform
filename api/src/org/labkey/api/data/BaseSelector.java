@@ -173,7 +173,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
 
 
     @Override
-    public <T> T getObject(Class<T> clazz)
+    public @Nullable <T> T getObject(Class<T> clazz)
     {
         return getObject(clazz, getStandardResultSetFactory());
     }
@@ -350,7 +350,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
 
     protected abstract TableResultSet wrapResultSet(ResultSet rs, Connection conn, boolean cache, boolean requireClose) throws SQLException;
 
-    protected <T> T getObject(final Class<T> clazz, ResultSetFactory factory)
+    protected @Nullable <T> T getObject(final Class<T> clazz, ResultSetFactory factory)
     {
         List<T> list = factory.handleResultSet(new ArrayListResultSetHandler<T>(clazz) {
             @Override

@@ -121,7 +121,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             Map<String, String> aliasMap = new HashMap<>();
             table.getColumns().forEach(col -> {
                 // include the name if different from the alias
-                if (!col.getName().equals(col.getAlias()))
+                if (!col.getName().equals(col.getAlias().getId()))
                     aliasMap.put(col.getAlias().getId(), col.getName());
             });
             var filter = new SimpleFilter(FieldKey.fromParts(AssayResultDomainKind.Column.ReplicateLsid.name()), _replicateLsid.keySet(), CompareType.IN);
