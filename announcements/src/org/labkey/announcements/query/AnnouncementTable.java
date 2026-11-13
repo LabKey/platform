@@ -23,6 +23,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -181,6 +182,29 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
                 }
             }
             return null;
+        }
+
+        @Override
+        protected void populateBean(AnnouncementModel bean, Map<String, Object> row, User user) throws QueryUpdateServiceException
+        {
+            // Only updates arrive with a stored bean
+            int storedRowId = bean.getRowId();
+            Container storedContainer = storedRowId != 0 ? ContainerManager.getForId(bean.getContainerId()) : null;
+            super.populateBean(bean, row, user);
+
+            // A row without memberListInput keeps the post's member list, or for a new response the thread's
+            if (row.containsKey("memberListInput"))
+                return;
+            if (storedContainer != null)
+            {
+                bean.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(storedContainer, storedRowId));
+            }
+            else if (storedRowId == 0 && bean.getParent() != null)
+            {
+                AnnouncementModel thread = AnnouncementManager.getAnnouncement(getContainer(), bean.getParent());
+                if (thread != null && thread.getParent() == null)
+                    bean.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(getContainer(), thread.getMemberListIds()));
+            }
         }
 
         @Override

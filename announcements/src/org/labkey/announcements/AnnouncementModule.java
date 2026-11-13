@@ -30,6 +30,7 @@ import org.labkey.announcements.model.MessageBoardContributorRole;
 import org.labkey.announcements.model.SecureMessageBoardReadPermission;
 import org.labkey.announcements.model.SecureMessageBoardRespondPermission;
 import org.labkey.announcements.query.AnnouncementSchema;
+import org.labkey.announcements.query.AnnouncementTableTestCase;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.api.AnnouncementService;
@@ -294,7 +295,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             AnnouncementManager.TestCase.class,
             AnnouncementManager.UpdateTest.class,
             AnnouncementsController.ContainerScopingTestCase.class,
-            AnnouncementsController.MemberListTestCase.class
+            AnnouncementsController.MemberListTestCase.class,
+            MemberListRetentionTestCase.class,
+            AnnouncementTableTestCase.class
         );
     }
 

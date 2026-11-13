@@ -829,6 +829,8 @@ public class AnnouncementsController extends SpringActionController
                     throw createThreadNotFoundException(c);
                 if (!getPermissions().allowResponse(parent))
                     throw new UnauthorizedException();
+                if (form.isMemberListInputOmitted())
+                    insert.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(c, parent.getMemberListIds()));
             }
 
             try
@@ -1259,6 +1261,9 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
+            if (form.isMemberListInputOmitted())
+                update.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(getContainer(), oldAnn.getRowId()));
+
             try
             {
                 AnnouncementManager.updateAnnouncement(getUser(), update, getAttachmentFileList());
@@ -1669,6 +1674,12 @@ public class AnnouncementsController extends SpringActionController
         public String getParentId()
         {
             return getAsString("parentid");
+        }
+
+        // The forms omit the field when the board's member list setting is off; a posted empty value means clear
+        boolean isMemberListInputOmitted()
+        {
+            return !getValuesToBind().containsKey("memberListInput");
         }
 
         AnnouncementModel selectAnnouncement()
@@ -2713,22 +2724,6 @@ public class AnnouncementsController extends SpringActionController
         return thread;
     }
 
-    // An empty memberListInput clears the thread's member list, so API writes carry the current list forward. Members
-    // who can no longer read are dropped, otherwise validation rejects the whole post.
-    private String getRetainedMemberListInput(List<Integer> memberListIds)
-    {
-        Settings settings = getSettings();
-        AnnouncementModel probe = new AnnouncementModel();
-        probe.setMemberListIds(memberListIds);
-
-        return memberListIds.stream()
-            .map(UserManager::getUser)
-            .filter(Objects::nonNull)
-            .filter(member -> getPermissions(getContainer(), member, settings).allowRead(probe))
-            .map(member -> String.valueOf(member.getUserId()))
-            .collect(Collectors.joining("\n"));
-    }
-
     public static class CreateThreadForm extends ThreadForm
     {
         private boolean _reply;
@@ -2785,7 +2780,7 @@ public class AnnouncementsController extends SpringActionController
                 if (!getPermissions().allowResponse(parentThread))
                     throw new UnauthorizedException();
 
-                newThread.setMemberListInput(getRetainedMemberListInput(parentThread.getMemberListIds()));
+                newThread.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(getContainer(), parentThread.getMemberListIds()));
             }
 
             try
@@ -2916,8 +2911,7 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
 
             var updatedThread = copyEditableProps(thread, rawThread, false);
-            // The member list is saved per post, so keep this post's own list rather than the thread's latest
-            updatedThread.setMemberListInput(getRetainedMemberListInput(AnnouncementManager.getPostMemberList(thread.getRowId())));
+            updatedThread.setMemberListInput(AnnouncementManager.getRetainedMemberListInput(getContainer(), thread.getRowId()));
 
             try
             {
@@ -3451,6 +3445,62 @@ public class AnnouncementsController extends SpringActionController
             assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
             assertEquals(Set.of(member.getUserId(), other.getUserId()), new HashSet<>(AnnouncementManager.getPostMemberList(thread.getRowId())));
             assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+        }
+
+        @Test
+        public void testServiceUpdateRetainsMemberList() throws Exception
+        {
+            Container board = createBoard("NormalService", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(board, member);
+
+            AnnouncementService.get().updateAnnouncement(thread.getRowId(), board, getAdmin(), "Updated title", "updated body");
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+        }
+
+        @Test
+        public void testRespondFormRetainsMemberList() throws Exception
+        {
+            Container board = createBoard("NormalRespondForm", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(board, member);
+
+            // respond.jsp omits memberListInput when the board's member list setting is off
+            ActionURL respond = new ActionURL(RespondAction.class, board)
+                .addParameter("parentId", thread.getEntityId())
+                .addParameter("title", "Response")
+                .addParameter("body", "response body");
+            assertStatus(HttpServletResponse.SC_FOUND, post(respond, getAdmin()));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+
+            assertStatus(HttpServletResponse.SC_FOUND, post(respond.clone().addParameter("memberListInput", ""), getAdmin()));
+            assertEquals(List.of(), currentMemberList(board, thread));
+        }
+
+        @Test
+        public void testQueryInsertResponseRetainsMemberList() throws Exception
+        {
+            Container board = createBoard("NormalQueryResponse", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(board, member);
+
+            UserSchema schema = QueryService.get().getUserSchema(getAdmin(), board, AnnouncementSchema.SCHEMA_NAME);
+            QueryUpdateService qus = schema.getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService();
+            assertNotNull(qus);
+
+            String parent = thread.getEntityId();
+            assertNotNull(parent);
+            BatchValidationException errors = new BatchValidationException();
+            qus.insertRows(getAdmin(), board, List.of(Map.of("Parent", parent, "Title", "Response", "Body", "response body")), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+
+            // An explicit empty memberListInput still clears the list
+            qus.insertRows(getAdmin(), board, List.of(Map.of("Parent", parent, "Title", "Response", "Body", "response body", "memberListInput", "")), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+            assertEquals(List.of(), currentMemberList(board, thread));
         }
 
         @Test
