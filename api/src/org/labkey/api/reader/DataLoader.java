@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
@@ -104,6 +105,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected ColumnDescriptor[] _columns;
     protected boolean _initialized = false;
     protected int _scanAheadLineCount = 7500; // number of lines to scan trying to infer data types
+    protected int _maxColumns = -1; // -1 means no limit
+    protected long _maxInferenceCells = -1; // -1 means no limit
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
     private boolean _inferTypes = true;
@@ -316,6 +319,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             nCols = Math.max(nCols, lineField.length);
         }
+        checkColumnCount(nCols);
 
         ColumnDescriptor[] colDescs = new ColumnDescriptor[nCols];
         for (int i = 0; i < nCols; i++)
@@ -325,6 +329,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         if (getInferTypes())
         {
             int inferStartLine = _skipLines == -1 ? 1 : _skipLines;
+            int inferEndLine = numLines;
+            if (_maxInferenceCells > -1 && nCols > 0)
+                inferEndLine = (int) Math.min(numLines, inferStartLine + Math.max(1, _maxInferenceCells / nCols));
             for (int f = 0; f < nCols; f++)
             {
                 List<Class<?>> classesToTest = new ArrayList<>(Arrays.asList(CONVERT_CLASSES));
@@ -348,7 +355,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     }
                 }
 
-                for (int line = inferStartLine; line < numLines; line++)
+                for (int line = inferStartLine; line < inferEndLine; line++)
                 {
                     if (f >= lineFields[line].length)
                         continue;
@@ -484,6 +491,23 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     public void setScanAheadLineCount(int count)
     {
         _scanAheadLineCount = count;
+    }
+
+    /** Reject input with more than this many columns, before allocating per-column state. -1 means no limit. */
+    public void setMaxColumns(int maxColumns)
+    {
+        _maxColumns = maxColumns;
+    }
+
+    public void setMaxInferenceCells(long maxInferenceCells)
+    {
+        _maxInferenceCells = maxInferenceCells;
+    }
+
+    protected void checkColumnCount(int count)
+    {
+        if (_maxColumns > -1 && count > _maxColumns)
+            throw new ApiUsageException("File has more than " + _maxColumns + " columns.");
     }
 
     // This is convenient when configuring a DataLoader that is returned or passed to other code

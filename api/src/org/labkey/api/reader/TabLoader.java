@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MultiChoice;
 import org.labkey.api.dataiterator.HashDataIterator;
@@ -388,6 +389,7 @@ public class TabLoader extends DataLoader
         if (!_parseQuotes)
         {
             String[] fields = StringUtils.splitByWholeSeparator(line.toString(), _strDelimiter);
+            checkColumnCount(fields.length);
             for (int i = 0; i < fields.length; i++)
                 fields[i] = parseValue(fields[i]);
             return fields;
@@ -417,6 +419,8 @@ public class TabLoader extends DataLoader
             boolean parseEnclosedQuotes = _parseEnclosedQuotes || isArrayColumn;
 
             colIndex++;
+            // Checked per field so a record spanning quoted newlines can't grow unbounded
+            checkColumnCount(colIndex);
 
             boolean isDelimiterOrQuote = false;
             if (ch == _chDelimiter)
@@ -918,6 +922,29 @@ public class TabLoader extends DataLoader
         {
             testTextFile(csvData, ".csv", TabLoader::parseAsCSV);
             testReader(csvData, ".csv", TabLoader::parseAsCSV);
+        }
+
+        @Test
+        public void testColumnAndInferenceLimits() throws IOException
+        {
+            // Integers for five lines, then text: a full scan falls back to String, a capped scan stops before the text
+            String data = "A\tB\n96\t96\n97\t97\n98\t98\n99\t99\n100\t100\nx\tx\n";
+            try (TabLoader l = new TabLoader(new StringReader(data), true))
+            {
+                assertEquals(String.class, l.getColumns()[0].clazz);
+            }
+            try (TabLoader l = new TabLoader(new StringReader(data), true))
+            {
+                l.setMaxInferenceCells(10); // 2 columns, so 5 lines
+                assertEquals(Integer.class, l.getColumns()[0].clazz);
+            }
+
+            // A quoted newline joins the lines into one record, so the cap applies to the record, not the line
+            try (TabLoader l = new TabLoader(new StringReader("A\t\"x\ny\"\tC\n1\t2\t3\n"), true))
+            {
+                l.setMaxColumns(2);
+                assertThrows(ApiUsageException.class, l::getColumns);
+            }
         }
 
         private void testTextFile(String data, String extension, Consumer<TabLoader> consumer) throws IOException
