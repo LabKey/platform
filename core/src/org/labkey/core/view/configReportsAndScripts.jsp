@@ -101,6 +101,15 @@
                         'A special variable &apos;DETACH=TRUE&apos; will force container to run in detached mode, with &apos;--detach&apos;'}
         };
 
+        var renderLanguageVersionColumn = function(value, p, record) {
+            var label = value;
+            Ext4.each(record.data.languageVersionOptions, function(option) {
+                if (option.value === value)
+                    label = option.label;
+            });
+            return Ext4.htmlEncode(label);
+        };
+
         var renderNameColumn = function(value, p, record) {
             var txt, data = record.data;
 
@@ -341,6 +350,30 @@
             if (record.pathMap)
                 pathMapStore.loadData(record.pathMap.paths);
 
+            var languageVersionField = {
+                fieldLabel: 'Language Version',
+                name: 'languageVersion',
+                id: 'editEngine_languageVersion',
+                value: record.languageVersion
+            };
+
+            if (record.languageVersionOptions) {
+                Ext4.apply(languageVersionField, {
+                    xtype: 'combo',
+                    store: Ext4.create('Ext.data.Store', {fields: ['value', 'label', 'description'], data: record.languageVersionOptions}),
+                    valueField: 'value',
+                    displayField: 'label',
+                    queryMode: 'local',
+                    editable: false,
+                    forceSelection: true,
+                    matchFieldWidth: false,
+                    listConfig: {
+                        minWidth: 420,
+                        getInnerTpl: function() { return '<b>{label:htmlEncode}</b><br>{description:htmlEncode}'; }
+                    }
+                });
+            }
+
             // standard fields at the top of the form
             var fields = [{
                 fieldLabel: "Name",
@@ -354,12 +387,7 @@
                 id: 'editEngine_languageName',
                 allowBlank: false,
                 value: record.languageName
-            },{
-                fieldLabel: 'Language Version',
-                name: 'languageVersion',
-                id: 'editEngine_languageVersion',
-                value: record.languageVersion
-            },{
+            }, languageVersionField, {
                 fieldLabel: 'File Extensions',
                 name: 'extensions',
                 id: 'editEngine_extensions',
@@ -589,8 +617,10 @@
             // do any configuration on the fields, enabled, disabled, editable etc.
             Ext4.each(items, function(item){
                 switch (item.name) {
-                    case 'name':
                     case 'languageVersion':
+                        item.readOnly = !record.external && !record.languageVersionOptions;
+                        break;
+                    case 'name':
                     case 'machine':
                     case 'port':
                         item.readOnly = !record.external;
@@ -785,7 +815,7 @@
                 columns:[
                     {header:'Name', dataIndex:'name', minWidth: 180, renderer:renderNameColumn},
                     {header:'Language', dataIndex:'languageName'},
-                    {header:'Language Version', dataIndex:'languageVersion'},
+                    {header:'Language Version', dataIndex:'languageVersion', renderer:renderLanguageVersionColumn},
                     {header:'File Extensions', dataIndex:'extensions'},
                     <% if (isRemoteEnabled) { %>
                     {header:'Remote', dataIndex:'remote'},
@@ -1006,6 +1036,7 @@
                     {name:'extensions'},
                     {name:'languageName'},
                     {name:'languageVersion'},
+                    {name:'languageVersionOptions'},
                     {name:'rowId'},
                     {name:'type'},
                     {name:'default', type:'boolean'},
