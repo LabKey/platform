@@ -121,6 +121,19 @@ public interface InventoryService
 
     List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container, User user);
 
+    /**
+     * Adds the plate storage columns to plate.Plate and returns the field keys belonging in its default view. Built
+     * here rather than in assay because the joined tables are inventory's; the caller only passes its table in.
+     */
+    List<FieldKey> addPlateInventoryStatusColumns(TableInfo plateTable, Container container, User user);
+
+    /**
+     * Of the given plates, those currently in a storage location. The lifecycle guards on the assay side read this to
+     * reject the whole call rather than orphan a storage row; there is no DB FK from inventory.PlateItem to stop them.
+     */
+    @NotNull
+    Collection<Long> getStoredPlateRowIds(Collection<Long> plateRowIds);
+
     DataIteratorBuilder getPersistStorageItemDataIteratorBuilder(DataIteratorBuilder data, Container container, User user, ExpSampleType sampleType);
 
     @NotNull
