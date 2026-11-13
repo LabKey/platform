@@ -139,6 +139,7 @@ import org.labkey.api.module.ModuleHtmlViewDefinition;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleLoader.StartupPropertyStartupListener;
 import org.labkey.api.module.ModuleXml;
+import org.labkey.api.qc.TsvDataSerializerTestCase;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
@@ -527,6 +528,7 @@ public class ApiModule extends CodeOnlyModule
             Table.IsSelectTestCase.class,
             Table.LogExceptionTestCase.class,
             TracedOperation.TestCase.class,
+            TsvDataSerializerTestCase.class,
             URIUtil.TestCase.class,
             UsageMetrics.TestCase.class,
             ValidEmail.TestCase.class,
