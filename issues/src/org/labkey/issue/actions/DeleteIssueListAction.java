@@ -23,6 +23,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.RequiresPermission;
@@ -64,12 +65,15 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
 
         for (String id : ids)
         {
-            IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(),NumberUtils.toInt(id));
+            IssueListDef issueListDef = IssueManager.getIssueListDefIncludingUnregistered(getContainer(), NumberUtils.toInt(id));
             if (issueListDef != null)
             {
                 TableInfo table = issueListDef.createTable(getUser());
+                long rowCount = table != null
+                    ? new TableSelector(table, SimpleFilter.createContainerFilter(getContainer()), null).getRowCount()
+                    : new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), new SimpleFilter(FieldKey.fromParts("IssueDefId"), issueListDef.getRowId()), null).getRowCount();
 
-                form.getRowCounts().add(new TableSelector(table, SimpleFilter.createContainerFilter(getContainer()), null).getRowCount());
+                form.getRowCounts().add(rowCount);
                 form.getIssueDefNames().add(issueListDef.getName());
                 form.getIssueDefId().add(issueListDef.getRowId());
             }
