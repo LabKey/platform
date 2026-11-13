@@ -893,7 +893,7 @@ public class IssueManager
     {
         try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
         {
-            for (IssueListDef issueListDef : getIssueListDefs(c))
+            for (IssueListDef issueListDef : IssueListDefCache.getIssueListDefsIncludingUnregistered(c))
             {
                 deleteIssueListDef(issueListDef.getRowId(), c, user);
             }
@@ -1086,6 +1086,13 @@ public class IssueManager
         return IssueListDefCache.getIssueListDef(container, rowId);
     }
 
+    /** Also returns a list whose domain kind isn't registered, which has no domain; use only to delete it */
+    @Nullable
+    public static IssueListDef getIssueListDefIncludingUnregistered(Container container, int rowId)
+    {
+        return IssueListDefCache.getIssueListDefIncludingUnregistered(container, rowId);
+    }
+
     /**
      * Returns the default issue list definition if there is only one in scope.
      */
@@ -1140,7 +1147,7 @@ public class IssueManager
     public static IssueListDef createIssueListDef(Container container, User user, @NotNull String providerName, @NotNull String label)
     {
         String name = IssuesListDefTable.nameFromLabel(label);
-        IssueListDef existingDef = getIssueListDef(container, name);
+        IssueListDef existingDef = IssueListDefCache.getIssueListDefIncludingUnregistered(container, name);
         if (existingDef != null)
             throw new IllegalArgumentException("An IssueListDef already exists for this container with the following name: " + name);
 
@@ -1182,7 +1189,7 @@ public class IssueManager
 
     public static void deleteIssueListDef(int rowId, Container c, User user)
     {
-        IssueListDef def = getIssueListDef(c, rowId);
+        IssueListDef def = getIssueListDefIncludingUnregistered(c, rowId);
         if (def == null)
             throw new IllegalArgumentException("Can't find IssueDef with rowId " + rowId);
 
@@ -1192,7 +1199,8 @@ public class IssueManager
     private static void _deleteIssueListDef(IssueListDef def, Container c, User user, boolean deleteDomain)
     {
         Domain d = def.getDomain(user);
-        if (d == null && deleteDomain)
+        // Without its domain kind the domain can't be resolved, so delete the list's rows and leave the domain
+        if (d == null && deleteDomain && def.isDomainKindRegistered())
             throw new IllegalArgumentException("Unable to find the domain for this IssueDef");
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -1203,7 +1211,7 @@ public class IssueManager
             deleteProperties(c, def.getName());
             Table.delete(issueDefTable, def.getRowId());
 
-            if (deleteDomain)
+            if (deleteDomain && d != null)
             {
                 // if there are no other containers referencing this domain, then it's safe to delete
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
@@ -1285,6 +1293,9 @@ public class IssueManager
                 unsafeAppend(" WHERE IssueDefId = ?");
         deleteIssuesSQL.add(issueDef.getRowId());
         int count = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteIssuesSQL);
+
+        if (issueDefTable == null)
+            return count;
 
         // delete records from the provisioned table
         SQLFragment deleteProvisionedSQL = new SQLFragment("DELETE FROM ").append(issueDefTable, "").

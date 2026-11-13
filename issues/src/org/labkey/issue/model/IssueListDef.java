@@ -146,10 +146,12 @@ public class IssueListDef extends Entity
        return getDomain(user, false);
     }
 
+    /** Null when the domain doesn't exist, including when this list's domain kind isn't registered */
+    @Nullable
     public Domain getDomain(User user, boolean forUpdate)
     {
         String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
-        return PropertyService.get().getDomain(getDomainContainer(user), uri, forUpdate);
+        return uri == null ? null : PropertyService.get().getDomain(getDomainContainer(user), uri, forUpdate);
     }
 
     /** False when the module that provides this list's domain kind isn't deployed */
@@ -163,12 +165,11 @@ public class IssueListDef extends Entity
         return (AbstractIssuesListDefDomainKind)PropertyService.get().getDomainKindByName(getDomainKindName(getKind()));
     }
 
-    private static String generateDomainURI(Container c, User user, String name, String kindName)
+    /** Null when the domain kind isn't registered */
+    private static @Nullable String generateDomainURI(Container c, User user, String name, String kindName)
     {
-        DomainKind<?> domainKind = PropertyService.get().getDomainKindByName(kindName);
-        if (domainKind == null)
-            throw new NotFoundException("Domain kind not found: " + kindName);
-        return domainKind.generateDomainURI(IssuesSchema.getInstance().getSchemaName(), name, c, user);
+        DomainKind<?> domainKind = PropertyService.get().getDomainKindByName(getDomainKindName(kindName));
+        return domainKind == null ? null : domainKind.generateDomainURI(IssuesSchema.getInstance().getSchemaName(), name, c, user);
     }
 
     public boolean isNew()
@@ -186,6 +187,8 @@ public class IssueListDef extends Entity
             {
                 def = Table.insert(user, IssuesSchema.getInstance().getTableInfoIssueListDef(), this);
                 String uri = generateDomainURI(getDomainContainer(user), user, getName(), getKind());
+                if (uri == null)
+                    throw new NotFoundException("Domain kind not found: " + getKind());
                 Container domainContainer = getDomainContainer(user);
 
                 Domain domain = PropertyService.get().getDomain(domainContainer, uri);
@@ -230,6 +233,8 @@ public class IssueListDef extends Entity
     {
         Domain domain;
         String uri = generateDomainURI(c, user, name, kind);
+        if (uri == null)
+            return null;
         domain = PropertyService.get().getDomain(c, uri);
 
         if (domain == null)
@@ -317,7 +322,7 @@ public class IssueListDef extends Entity
         IssueManager.saveEntryTypeNames(domainContainer, getName(), singular, plural);
     }
 
-    private String getDomainKindName(String kind)
+    private static String getDomainKindName(String kind)
     {
         if (null == kind)
             return IssueDefDomainKind.NAME;

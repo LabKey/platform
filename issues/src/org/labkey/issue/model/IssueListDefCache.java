@@ -47,18 +47,25 @@ public class IssueListDefCache
         private final Map<Integer, IssueListDef> _rowIdMap;
         private final Map<String, IssueListDef> _nameMap;
         private final Map<String, List<IssueListDef>> _domainKindMap;
+        // Lists whose domain kind isn't registered; reachable only for deletion and name-uniqueness checks
+        private final Map<Integer, IssueListDef> _unregisteredRowIdMap;
+        private final Map<String, IssueListDef> _unregisteredNameMap;
 
         private IssueDefCollections(Container c)
         {
             Map<Integer, IssueListDef> rowIdMap = new IntHashMap<>();
             Map<String, IssueListDef> nameMap = new HashMap<>();
             Map<String, List<IssueListDef>> domainKindMap = new HashMap<>();
+            Map<Integer, IssueListDef> unregisteredRowIdMap = new IntHashMap<>();
+            Map<String, IssueListDef> unregisteredNameMap = new HashMap<>();
 
             new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), SimpleFilter.createContainerFilter(c), null).forEach(IssueListDef.class, issueDef -> {
 
                 if (!issueDef.isDomainKindRegistered())
                 {
                     LOG.warn("Ignoring issue list \"{}\" in {}: domain kind \"{}\" is not registered", issueDef.getName(), c.getPath(), issueDef.getKind());
+                    unregisteredRowIdMap.put(issueDef.getRowId(), issueDef);
+                    unregisteredNameMap.put(issueDef.getName(), issueDef);
                     return;
                 }
 
@@ -75,6 +82,8 @@ public class IssueListDefCache
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
             _nameMap = Collections.unmodifiableMap(nameMap);
             _domainKindMap = Collections.unmodifiableMap(domainKindMap);
+            _unregisteredRowIdMap = Collections.unmodifiableMap(unregisteredRowIdMap);
+            _unregisteredNameMap = Collections.unmodifiableMap(unregisteredNameMap);
         }
 
         private @Nullable IssueListDef getForRowId(int rowId)
@@ -116,6 +125,28 @@ public class IssueListDefCache
     static @NotNull Collection<IssueListDef> getForDomainKind(Container c, String kindName)
     {
         return ISSUE_DEF_DB_CACHE.get(c).getForDomainKind(kindName);
+    }
+
+    static @Nullable IssueListDef getIssueListDefIncludingUnregistered(Container c, int rowId)
+    {
+        IssueDefCollections collections = ISSUE_DEF_DB_CACHE.get(c);
+        IssueListDef def = collections.getForRowId(rowId);
+        return def != null ? def : collections._unregisteredRowIdMap.get(rowId);
+    }
+
+    static @Nullable IssueListDef getIssueListDefIncludingUnregistered(Container c, String name)
+    {
+        IssueDefCollections collections = ISSUE_DEF_DB_CACHE.get(c);
+        IssueListDef def = collections.getForName(name);
+        return def != null ? def : collections._unregisteredNameMap.get(name);
+    }
+
+    static @NotNull Collection<IssueListDef> getIssueListDefsIncludingUnregistered(Container c)
+    {
+        IssueDefCollections collections = ISSUE_DEF_DB_CACHE.get(c);
+        List<IssueListDef> defs = new ArrayList<>(collections.getListDefs());
+        defs.addAll(collections._unregisteredRowIdMap.values());
+        return defs;
     }
 
     public static void uncache(Container c)
