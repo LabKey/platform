@@ -69,6 +69,10 @@ public interface ColumnRenderProperties extends ImportAliasable, SimpleConvert
     @Override
     String getLabel();
 
+    // Return the actual value we have stashed; use this when copying attributes, so you don't hard-code label
+    @Override
+    @Nullable String getLabelValue();
+
     String getShortLabel();
 
     String getDescription();
@@ -112,6 +116,9 @@ public interface ColumnRenderProperties extends ImportAliasable, SimpleConvert
 
     @Override
     @NotNull Set<String> getImportAliasSet();
+
+    @Override
+    @NotNull Set<String> getSystemImportAliasSet();
 
     @Nullable PropertyType getPropertyType();
 

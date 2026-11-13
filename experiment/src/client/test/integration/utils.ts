@@ -948,6 +948,136 @@ export function generateFieldNameForImport(length: number = 10, charset?: string
 }
 
 /**
+ * GH Issue 1585: how an incoming column resolves to a field when the design contains collisions. The type is
+ * created with strictFieldValidation off so it stands in for one configured before validation refused these designs.
+ */
+export async function checkImportColumnResolution(server: IntegrationTestServer, domainType: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    const isSampleType = domainType === SAMPLE_TYPE_DOMAIN_KIND;
+    const schemaName = isSampleType ? 'samples' : 'exp.data';
+    const baseFields = isSampleType ? [{ name: 'Name' }] : [];
+    const name = 'ImportColumnResolution';
+    // 'Container' is reserved by both kinds, so an alias carrying it only saves with reserved-name validation relaxed.
+    // Data classes expose that switch; SampleTypeDomainKindProperties has no such property and rejects the unknown key,
+    // so the sample type run skips this field and leaves the container token to the JUnit coverage.
+    const canAliasContainer = !isSampleType;
+
+    const ambiguousError = (token: string, fields: string) =>
+        `Column '${token}' matches more than one field (${fields}). Check the field names, labels, and import aliases in the design.`;
+
+    // The rest save as-is: duplicate labels, a label matching another field's name, and a label colliding with
+    // another field's alias are all metrics-only rules.
+    await server.post('property', 'createDomain', {
+        kind: domainType,
+        domainDesign: {
+            name,
+            fields: [
+                ...baseFields,
+                // The container column carries the framework alias 'container', which outranks this one
+                ...(canAliasContainer ? [{ name: 'AliasGrab', importAliases: 'Container' }] : []),
+                // ...and the built-in Flag column carries 'comment'
+                { name: 'CommentGrab', importAliases: 'comment' },
+                // 'Folder' is the container column's own name, which outranks any label
+                { name: 'FolderLabel', label: 'Folder' },
+                // Two fields claiming one token
+                { name: 'AmbLabelA', label: 'dup_label' },
+                { name: 'AmbLabelB', label: 'dup_label' },
+                // ...unless a field name claims it outright
+                { name: 'SettledA', label: 'settled' },
+                { name: 'SettledB', label: 'settled' },
+                { name: 'settled' },
+                // One field offering the same token twice is not a collision
+                { name: 'CaseTwice', importAliases: 'twice, TWICE' },
+                // A label and another field's alias meet at different ranks, so precedence resolves it
+                { name: 'CrossLabel', label: 'cross' },
+                { name: 'CrossAlias', importAliases: 'cross' },
+            ],
+        },
+        options: canAliasContainer ? { name, strictFieldValidation: false } : { name },
+    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+
+    // The ambiguity checks below are only meaningful if the query actually reports both fields under the colliding
+    // label; a label that saves on the domain but never reaches the TableInfo would make them pass vacuously.
+    const details = await server.post('query', 'getQueryDetails', {
+        schemaName,
+        queryName: name,
+    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+    const captionOf = (fieldName: string) =>
+        details.body.columns.find(col => col.name?.toLowerCase() === fieldName.toLowerCase())?.caption;
+    expect(captionOf('AmbLabelA')).toBe('dup_label');
+    expect(captionOf('AmbLabelB')).toBe('dup_label');
+
+    const rowByName = async (rowName: string, columns: string) => {
+        const resp = await server.post('query', 'selectRows', {
+            schemaName,
+            queryName: name,
+            'query.Name~eq': rowName,
+            'query.columns': columns,
+        }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+        return resp.body.rows[0];
+    };
+
+    const importExpectError = async (text: string, insertOption: string, error: string) => {
+        const resp = await ExperimentCRUDUtils.importData(server, text, name, insertOption, folderOptions, userOptions, false, false, isSampleType, true);
+        expect(JSON.parse(resp.text).exception).toContain(error);
+    };
+
+    const importRows = (text: string, insertOption: string) =>
+        ExperimentCRUDUtils.importData(server, text, name, insertOption, folderOptions, userOptions, false, false, isSampleType);
+
+    const seededColumns = canAliasContainer ? 'CommentGrab, AliasGrab' : 'CommentGrab';
+    const inserted = await ExperimentCRUDUtils.insertRows(server, [{
+        name: 'ResolveMe',
+        CommentGrab: 'keepComment',
+        ...(canAliasContainer ? { AliasGrab: 'keepAlias' } : {}),
+    }], schemaName, name, folderOptions, userOptions);
+    const rowId = caseInsensitive(inserted[0], 'rowId');
+
+    let row = await rowByName('ResolveMe', seededColumns);
+    expect(caseInsensitive(row, 'CommentGrab')).toBe('keepComment');
+
+    await ExperimentCRUDUtils.updateRows(server, [{ rowId, description: 'touched' }], schemaName, name, folderOptions, userOptions);
+
+    // GH Issue 1585: the update pipeline supplies a Container column of its own, so a field aliased 'Container' must
+    // keep the value it was given rather than come back holding the row's container.
+    row = await rowByName('ResolveMe', seededColumns);
+    expect(caseInsensitive(row, 'CommentGrab')).toBe('keepComment');
+    if (canAliasContainer)
+        expect(caseInsensitive(row, 'AliasGrab')).toBe('keepAlias');
+
+    // The built-in Flag column carries the framework alias 'comment', so it takes that header, not the user field
+    await importRows('Name\tcomment\nFlagged\tflagValue', 'IMPORT');
+    row = await rowByName('Flagged', 'CommentGrab');
+    expect(caseInsensitive(row, 'CommentGrab')).toBeNull();
+
+    // GH Issue 1585: two fields claim 'dup_label', so data carrying that header is refused rather than written to
+    // whichever field happened to win. Checked on both insert and merge -- they build the same column map.
+    const dupLabelError = ambiguousError('dup_label', "'AmbLabelA', 'AmbLabelB'");
+    await importExpectError('Name\tdup_label\nAmbiguousRow\tx', 'IMPORT', dupLabelError);
+    await importExpectError('Name\tdup_label\nResolveMe\tx', 'MERGE', dupLabelError);
+    await importExpectError('Name\tdup_label\nResolveMe\tx', 'UPDATE', dupLabelError);
+    // ...and through the insert API, where the ambiguous key is left alone rather than renamed onto a field by chance
+    await insertRowsExpectError(server, [{ name: 'AmbiguousRow', dup_label: 'x' }], schemaName, name, dupLabelError, folderOptions, userOptions);
+
+    // A design holding an ambiguous token still imports everything that does not carry it
+    await importRows('Name\ttwice\nCaseOk\tviaAlias', 'IMPORT');
+    row = await rowByName('CaseOk', 'CaseTwice');
+    expect(caseInsensitive(row, 'CaseTwice')).toBe('viaAlias');
+
+    // A field name outranks both labels, so the tie is settled rather than reported
+    await importRows('Name\tsettled\nSettledOk\tbyName', 'IMPORT');
+    row = await rowByName('SettledOk', 'settled, SettledA, SettledB');
+    expect(caseInsensitive(row, 'settled')).toBe('byName');
+    expect(caseInsensitive(row, 'SettledA')).toBeNull();
+    expect(caseInsensitive(row, 'SettledB')).toBeNull();
+
+    // A label outranks another field's import alias, so this resolves by precedence instead of being refused
+    await importRows('Name\tcross\nCrossOk\tbyLabel', 'IMPORT');
+    row = await rowByName('CrossOk', 'CrossLabel, CrossAlias');
+    expect(caseInsensitive(row, 'CrossLabel')).toBe('byLabel');
+    expect(caseInsensitive(row, 'CrossAlias')).toBeNull();
+}
+
+/**
  * Field/alias collision rules shared by sample types and data classes. A "parent alias" is the data type level
  * lineage header (options.importAliases); a "field alias" is a field's own importAliases string.
  */
@@ -983,21 +1113,18 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
     await createExpectError([{ name: 'A', importAliases: reservedName }],
         `Import alias '${reservedName}' on field 'A' conflicts with a reserved field name.`);
 
-    // GH Issue 1783: labels resolve into the same import map as names and aliases, so a label matching a column the
-    // server writes on every insert and update leaves the field holding the server's value.
-    await createExpectError([{ name: 'A', label: reservedName }],
-        `Label '${reservedName}' on field 'A' conflicts with a system field name.`);
-    await createExpectError([{ name: 'A', label: reservedName.toLowerCase() }],
-        `Label '${reservedName.toLowerCase()}' on field 'A' conflicts with a system field name.`);
-    await createExpectError([{ name: 'B', label: reservedName }, { name: 'A', label: reservedName }],
-        `Label '${reservedName}' on fields 'A', 'B' conflicts with a system field name.`);
-
-    // Only 'Container' is a system field name. 'Folder' and the audit columns are real column names, which outrank any
-    // label at import, so a field wearing one as its label is unreachable rather than overwritten.
+    // GH Issue 1783: a label is never refused. A framework alias outranks it, so the label is unreachable at import
+    // rather than overwritten -- the same outcome as colliding with a column name, which has always been allowed. The
+    // nightly scan counts these as labelVsSystemField instead.
     const otherLabelsName = name + 'OtherLabels';
     await server.post('property', 'createDomain', {
         kind: domainType,
-        domainDesign: { name: otherLabelsName, fields: [...baseFields, { name: 'A', label: 'Folder' }, { name: 'B', label: 'Created By' }] },
+        domainDesign: { name: otherLabelsName, fields: [...baseFields,
+            { name: 'A', label: reservedName },            // a token the kind claims for the column shown as 'Folder'
+            { name: 'B', label: 'Comment' },               // ...and for the one shown as 'Flag'
+            { name: 'C', label: 'Folder' },                // a real column name
+            { name: 'D', label: 'Created By' },
+        ] },
         options: { name: otherLabelsName },
     }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
 

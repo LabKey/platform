@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CrosstabMember;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
@@ -44,6 +45,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: tgaluhn
@@ -153,9 +155,10 @@ public class ReportingWriter
 
         if (cinfo != null)
         {
-            if (!cinfo.getImportAliasSet().isEmpty())
+            Set<String> aliases = ImportAliasable.Helper.allImportAliases(cinfo);
+            if (!aliases.isEmpty())
             {
-                props.put("importAliases", new ArrayList<>(cinfo.getImportAliasSet()));
+                props.put("importAliases", new ArrayList<>(aliases));
             }
 
             if (dc.getTsvFormatString() != null)

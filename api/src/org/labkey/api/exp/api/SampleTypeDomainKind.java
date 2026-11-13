@@ -271,6 +271,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
+    public @NotNull Set<String> getSystemImportAliases()
+    {
+        // ExpTableImpl shows these columns as "Folder" and "Flag", so no column name reclaims the tokens
+        return Set.of("container", "comment");
+    }
+
+    @Override
     public Set<String> getReservedPropertyNamePrefixes()
     {
         return AbstractDomainKind.LINEAGE_FIELD_NAME_PREFIXES;

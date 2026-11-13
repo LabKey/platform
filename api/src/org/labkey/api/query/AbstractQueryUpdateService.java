@@ -132,7 +132,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected final TableInfo _queryTable;
 
     private boolean _bulkLoad = false;
-    private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
+    private Map<String, ColumnInfo> _columnImportMap = null;
+    private CaseInsensitiveHashSet _ambiguousImportTokens = null;
     private VirtualFile _att = null;
 
     /* AbstractQueryUpdateService is generally responsible for some shared functionality
@@ -685,7 +686,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         if(_columnImportMap == null)
         {
-            _columnImportMap = (CaseInsensitiveHashMap<ColumnInfo>)ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false);
+            _ambiguousImportTokens = new CaseInsensitiveHashSet();
+            _columnImportMap = ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false,
+                    _ambiguousImportTokens, DataIteratorUtil.kindSystemImportAliases(getQueryTable()));
         }
 
         Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
@@ -695,7 +698,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         String newName;
         for(String key : row.keySet())
         {
-            if(_columnImportMap.containsKey(key))
+            // GH Issue 1585: which field an ambiguous token resolves to is arbitrary, so leave the key under its original
+            // name rather than renaming the value onto a field picked by chance. Nothing reports it here: update drops
+            // the unmapped key, and insert hands it to every field claiming it (see DataIteratorUtil.createTableMap).
+            if(_columnImportMap.containsKey(key) && !_ambiguousImportTokens.contains(key))
             {
                 //it is possible for a normalized name to conflict with an existing property.  if so, defer to the original
                 newName = _columnImportMap.get(key).getName();

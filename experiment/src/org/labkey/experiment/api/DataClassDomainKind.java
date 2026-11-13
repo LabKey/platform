@@ -237,6 +237,13 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
+    public @NotNull Set<String> getSystemImportAliases()
+    {
+        // ExpTableImpl shows these columns as "Folder" and "Flag", so no column name reclaims the tokens
+        return Set.of("container", "comment");
+    }
+
+    @Override
     public Set<String> getReservedPropertyNamePrefixes()
     {
         return LINEAGE_FIELD_NAME_PREFIXES;

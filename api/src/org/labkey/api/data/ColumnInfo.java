@@ -189,9 +189,6 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     SqlDialect getSqlDialect();
 
-    // Return the actual value we have stashed; use this when copying attributes, so you don't hard-code label
-    String getLabelValue();
-
     @Override
     String getLabel();
 
