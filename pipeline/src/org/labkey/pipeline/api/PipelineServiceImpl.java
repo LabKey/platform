@@ -115,6 +115,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -332,6 +333,23 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         return result;
     }
 
+
+    @Override
+    public @NotNull Collection<PipeRoot> findPipelineRoots(Container container)
+    {
+        Map<String, PipeRoot> byType = new LinkedHashMap<>();
+        for (PipelineRoot root : PipelineManager.findPipelineRoots(container))
+        {
+            // skip an invalid root so the default below still applies, as findPipelineRoot does for the primary root
+            PipeRootImpl pipeRoot = new PipeRootImpl(root);
+            if (pipeRoot.isValid())
+                byType.put(root.getType(), pipeRoot);
+        }
+
+        // findPipelineRoot, not getPipelineRootSetting: only the former falls back to the default root when the configured one is invalid
+        byType.computeIfAbsent(PRIMARY_ROOT, type -> findPipelineRoot(container, type));
+        return byType.values();
+    }
 
     @Override
     public PipeRootImpl getPipelineRootSetting(Container container)

@@ -28,6 +28,7 @@ import org.json.JSONObject;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -148,6 +149,40 @@ public class PipelineManager
         return null;
     }
 
+
+    /** Every root the container resolves across root types, nearest ancestor winning per type, as findPipelineRoot does for one type. */
+    @NotNull
+    public static Collection<PipelineRoot> findPipelineRoots(@NotNull Container container)
+    {
+        /**
+         * TODO: MERGE forward to use:
+         * Map<String, PipelineRoot> byType = new HashMap<>();
+         *         while (container != null && !container.isRoot())
+         *         {
+         *             CACHE.get(CACHE_KEY).getOrDefault(container.getId(), Collections.emptyMap()).forEach(byType::putIfAbsent);
+         *             container = container.getParent();
+         *         }
+         *         return byType.values();
+         */
+        List<String> ids = new LinkedList<>();
+        while (container != null && !container.isRoot())
+        {
+            ids.add(container.getId());
+            container = container.getParent();
+        }
+        if (ids.isEmpty())
+            return List.of();
+
+        // not the per-type cache: the types configured in a container aren't enumerable from it
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), ids, CompareType.IN);
+        Map<String, Map<String, PipelineRoot>> byContainer = new HashMap<>();
+        new TableSelector(pipeline.getTableInfoPipelineRoots(), filter, null).forEach(PipelineRoot.class,
+            root -> byContainer.computeIfAbsent(root.getContainerId(), id -> new HashMap<>()).put(root.getType(), root));
+
+        Map<String, PipelineRoot> byType = new HashMap<>();
+        ids.forEach(id -> byContainer.getOrDefault(id, Map.of()).forEach(byType::putIfAbsent));
+        return byType.values();
+    }
 
     static public List<PipelineRoot> getPipelineRoots(String type)
     {

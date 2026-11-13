@@ -234,7 +234,6 @@ import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -348,7 +347,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
@@ -2506,26 +2504,8 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Data file " + _data.getDataFileUrl() + " does not exist on disk");
             }
 
-            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            if (root == null || !root.isUnderRoot(_data.getFileLike()))
-            {
-                FileContentService fileSvc = FileContentService.get();
-                if (fileSvc == null)
-                    throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
-
-                Path dataPath = _data.getFilePath();
-                boolean underFileRoot = Stream.of(FileContentService.ContentType.files, FileContentService.ContentType.assayfiles)
-                        .map(type -> fileSvc.getConfiguredFileRootPath(getContainer(), type))
-                        .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), dataPath.toUri()));
-
-                if (!underFileRoot)
-                {
-                    // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
-                    List<Container> containers = fileSvc.getContainersForFilePath(dataPath);
-                    if (containers.isEmpty() || containers.stream().noneMatch(c -> c.hasPermission(getUser(), ReadPermission.class)))
-                        throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
-                }
-            }
+            if (!FileContentService.isFileReadable(getContainer(), _data.getFilePath(), getUser()))
+                throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
 
             //Issues 25667 and 31152
             if (form.isInline())
