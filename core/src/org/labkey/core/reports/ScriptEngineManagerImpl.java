@@ -111,7 +111,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             String context = key.substring(colon + 1);
 
             // fetch script engine definitions scoped to the container
-            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+            SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
                 .unsafeAppend(" WHERE RowId IN (SELECT EngineId FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
@@ -431,7 +431,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             {
                 tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-                SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
+                SQLFragment sql = SQLFragment.unsafe("SELECT EngineId FROM ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
                         .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                         .add(container)
@@ -439,7 +439,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
                 if (!new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
                 {
-                    SQLFragment insert = new SQLFragment("INSERT INTO ")
+                    SQLFragment insert = SQLFragment.unsafe("INSERT INTO ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
                             .unsafeAppend(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
                             .add(def.getRowId())
@@ -450,7 +450,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 }
                 else
                 {
-                    SQLFragment update = new SQLFragment("UPDATE ")
+                    SQLFragment update = SQLFragment.unsafe("UPDATE ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
                             .unsafeAppend(" SET EngineId = ? ")
                             .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
@@ -473,7 +473,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         {
             tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-            SQLFragment sql = new SQLFragment("DELETE FROM ")
+            SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
                     .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
                     .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                     .add(container)

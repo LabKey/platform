@@ -632,16 +632,8 @@ public class SimpleFilter implements Filter
         {
             super(fieldKey);
             params = params == null ? new ArrayList<>() : new ArrayList<>(params); // possibly immutable
-            if (params.contains(null)) //params.size() == 0 ||
-            {
+            if (params.removeIf(p -> p == null || "".equals(p)))
                 _includeNull = true;
-                params.remove(null);
-            }
-            if (params.contains("")) //params.size() == 0 ||
-            {
-                _includeNull = true;
-                params.remove("");
-            }
 
             _paramVals = params.toArray();
             _comparison = comparison;

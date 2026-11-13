@@ -938,24 +938,14 @@ public abstract class CompareType
 
         public SQLFragment[] getParamSQLFragments(SqlDialect dialect)
         {
+            var sh = dialect.getStringHandler();
             Object[] params = getParamVals();
             SQLFragment[] fragments = new SQLFragment[params.length];
-
-            JdbcType type = null;
-            // Try to infer the type from the first non-null parameter
-            for (Object param : params)
-            {
-                if (param != null)
-                {
-                    type = JdbcType.valueOf(param.getClass());
-                    break;
-                }
-            }
 
             for (int i = 0; i < params.length; i++)
             {
                 fragments[i] = new SQLFragment();
-                fragments[i].setSqlUnsafe(escapeLabKeySqlValue(params[i], type));
+                fragments[i].setSqlUnsafe(sh.quoteStringLiteral(String.valueOf(params[i])));
             }
 
             return fragments;
