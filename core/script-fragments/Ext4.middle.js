@@ -25,3 +25,23 @@ Ext.Msg = {
 
 Ext.num = Ext.Number.from;
 
+// Rhino resolves Function-constructor code against the global scope, where this module's Ext is not visible
+(function() {
+    var cache = {};
+
+    function create(args) {
+        var body = args.pop() || '';
+        return new Function('Ext', 'return function(' + args.join(',') + '){' + body + '\n}')(Ext);
+    }
+
+    Ext.functionFactory = function() {
+        return create(Array.prototype.slice.call(arguments));
+    };
+
+    Ext.cacheableFunctionFactory = function() {
+        var args = Array.prototype.slice.call(arguments),
+            key = args.join('');
+
+        return cache[key] || (cache[key] = create(args));
+    };
+})();
