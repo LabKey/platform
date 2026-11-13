@@ -28,6 +28,8 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.query.CustomViewInfo;
@@ -735,13 +737,39 @@ public class ReportUtil
 
     public static void resetReportSecurityPolicy(ViewContext context, @NotNull Report report, @Nullable User owner, @NotNull User performer)
     {
+        resetReportSecurityPolicy(context, report, owner, performer, false);
+    }
+
+    /**
+     * @param skipValidation skip the report save's edit and share checks, for callers that already require admin
+     *                       permission, so an admin can change the access of a report owned by another user.
+     *                       The script and chart JavaScript checks still run.
+     */
+    public static void resetReportSecurityPolicy(ViewContext context, @NotNull Report report, @Nullable User owner, @NotNull User performer, boolean skipValidation)
+    {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor());
-        SecurityPolicyManager.savePolicy(policy, performer);
         report.getDescriptor().setOwner(owner != null ? owner.getUserId() : null); // null = "public", owner = "private"
-        ReportService.get().saveReportEx(context, report.getDescriptor().getReportKey(), report);
+        savePolicyAndReport(context, report, policy, performer, skipValidation);
+    }
+
+    // Save both in one transaction so a rejected report save doesn't leave the new policy in place
+    private static void savePolicyAndReport(ViewContext context, Report report, MutableSecurityPolicy policy, User performer, boolean skipValidation)
+    {
+        try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
+        {
+            SecurityPolicyManager.savePolicy(policy, performer);
+            ReportService.get().saveReportEx(context, report.getDescriptor().getReportKey(), report, skipValidation);
+            tx.commit();
+        }
     }
 
     public static void updateReportSecurityPolicy(ViewContext context, @NotNull Report report, Integer principalId, boolean toAdd)
+    {
+        updateReportSecurityPolicy(context, report, principalId, toAdd, false);
+    }
+
+    /** @param skipValidation see {@link #resetReportSecurityPolicy(ViewContext, Report, User, User, boolean)} */
+    public static void updateReportSecurityPolicy(ViewContext context, @NotNull Report report, Integer principalId, boolean toAdd, boolean skipValidation)
     {
         UserPrincipal principal = principalId != null && principalId != 0 ? SecurityManager.getPrincipal(principalId) : null;
         if (null != principal)
@@ -754,13 +782,18 @@ public class ReportUtil
             else if (!toAdd && !hasNoAssignedRoles)
                 policy.addRoleAssignment(principal, NoPermissionsRole.class);
             
-            SecurityPolicyManager.savePolicy(policy, context.getUser());
             report.getDescriptor().setOwner(null); // force the report to be "custom"
-            ReportService.get().saveReportEx(context, report.getDescriptor().getReportKey(), report);
+            savePolicyAndReport(context, report, policy, context.getUser(), skipValidation);
         }
     }
 
     public static void setReportSecurityPolicy(ViewContext context, @NotNull Report report, Set<Integer> groupIds, Set<Integer> userIds)
+    {
+        setReportSecurityPolicy(context, report, groupIds, userIds, false);
+    }
+
+    /** @param skipValidation see {@link #resetReportSecurityPolicy(ViewContext, Report, User, User, boolean)} */
+    public static void setReportSecurityPolicy(ViewContext context, @NotNull Report report, Set<Integer> groupIds, Set<Integer> userIds, boolean skipValidation)
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor());
 
@@ -783,8 +816,7 @@ public class ReportUtil
             }
         }
 
-        SecurityPolicyManager.savePolicy(policy, context.getUser());
         report.getDescriptor().setOwner(null);
-        ReportService.get().saveReportEx(context, report.getDescriptor().getReportKey(), report);
+        savePolicyAndReport(context, report, policy, context.getUser(), skipValidation);
     }
 }

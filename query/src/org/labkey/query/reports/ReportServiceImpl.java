@@ -29,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
@@ -42,6 +43,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -65,6 +67,7 @@ import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -83,6 +86,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.study.Dataset;
@@ -130,6 +134,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
 
@@ -448,26 +453,33 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         if (!(report instanceof ScriptReport))
             return;
 
-        ScriptEngine engine = getScriptEngine(context.getContainer(), report);
-        if (engine == null)
-        {
-            errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
-            return;
-        }
-
-        if (!ReportUtil.canCreateScript(context, engine))
-            errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or TrustedAnalyst to create a script report."));
+        String error = scriptAuthoringError(context, report);
+        if (null != error)
+            errors.add(new SimpleValidationError(error));
     }
 
-    private static @Nullable ScriptEngine getScriptEngine(Container c, Report report)
+    /**
+     * Shared by the action-level and database-level checks, so they agree. Returns null when the user may author the
+     * script. With no engine configured, only Platform Developers pass, since the script runs once one is configured.
+     */
+    private static @Nullable String scriptAuthoringError(ContainerUser context, Report report)
     {
-        if (report instanceof ScriptEngineReport scriptEngineReport)
-            return scriptEngineReport.getScriptEngine(c);
+        ScriptEngine engine = getScriptEngine(context.getContainer(), report);
+        if (ReportUtil.canCreateScript(context, engine))
+            return null;
+        return null == engine ? "Unable to find a configured script engine for this report." :
+            "You must be either a PlatformDeveloper or TrustedAnalyst to create or change the script of a script report.";
+    }
 
-        if (report instanceof JavaScriptReport || report instanceof IpynbReport)
-            return LabKeyScriptEngineManager.get().getEngineByExtension(c, report instanceof JavaScriptReport ? "js" : IpynbReport.EXTENSION);
-
-        return null;
+    static @Nullable ScriptEngine getScriptEngine(Container c, Report report)
+    {
+        return switch (report)
+        {
+            case ScriptEngineReport r -> r.getScriptEngine(c);
+            case JavaScriptReport _ -> LabKeyScriptEngineManager.get().getEngineByExtension(c, "js");
+            case IpynbReport _ -> LabKeyScriptEngineManager.get().getEngineByExtension(c, IpynbReport.EXTENSION);
+            default -> null;
+        };
     }
 
     private ReportDB _saveDbReport(ContainerUser context, String key, Report report, boolean skipValidation)
@@ -513,7 +525,9 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         ReportDB existing = null != reportId ? getReportDB(reportId.getRowId()) : null;
         if (null != existing && !c.getId().equals(existing.getContainerId()))
             throw new UnauthorizedException("A report can only be saved from the folder that it belongs to.");
-        validateScriptAuthorship(user, c, descriptor, existing);
+        Report stored = null != existing ? _getInstance(existing) : null;
+        validateScriptAuthorship(user, c, descriptor, stored);
+        validatePointClickFn(user, descriptor, stored);
 
         boolean reportExists = null != existing;
         if (reportExists)
@@ -540,21 +554,47 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
      * GH Issue 1910: every database report write passes here, so callers that skip validateReportPermissions can't
      * introduce script content. Saves that leave the code properties alone pass, so system rewrites still work.
      */
-    private void validateScriptAuthorship(User user, Container c, ReportDescriptor descriptor, @Nullable ReportDB existing)
+    private void validateScriptAuthorship(User user, Container c, ReportDescriptor descriptor, @Nullable Report stored)
     {
         Report report = createReportInstance(descriptor.getReportType());
         if (!(report instanceof ScriptReport))
             return;
         report.setDescriptor(descriptor);
 
-        Report stored = null != existing ? _getInstance(existing) : null;
         boolean introducesScript = null == stored || !stored.getType().equals(report.getType()) ||
             CODE_PROPS.stream().anyMatch(prop -> !Objects.equals(
                 scriptPropValue(stored.getDescriptor(), prop), scriptPropValue(descriptor, prop)));
 
-        // With no engine configured, only Platform Developers pass, since the script runs once one is configured
-        if (introducesScript && !ReportUtil.canCreateScript(new DefaultContainerUser(c, user), getScriptEngine(c, report)))
-            throw new UnauthorizedException("You must be either a PlatformDeveloper or TrustedAnalyst to create or change the script of a script report.");
+        String error = introducesScript ? scriptAuthoringError(new DefaultContainerUser(c, user), report) : null;
+        if (null != error)
+            throw new UnauthorizedException(error);
+    }
+
+    /**
+     * GH Issue 1649: the database-level twin of the pointClickFn check in tryValidateReportPermissions, so folder import
+     * and skipValidation saves can't add chart JavaScript either. The persisted report type picks the client renderer
+     * while the descriptor class (descriptorType, also from the input) picks the server's config parser, so when they
+     * disagree, check with both parsers.
+     */
+    private void validatePointClickFn(User user, ReportDescriptor descriptor, @Nullable Report stored)
+    {
+        if (user.isTrustedBrowserDev())
+            return;
+
+        List<VisualizationReportDescriptor> parsers = new ArrayList<>(2);
+        if (descriptor instanceof VisualizationReportDescriptor vizDescriptor)
+            parsers.add(vizDescriptor);
+        Report typeReport = createReportInstance(descriptor.getReportType());
+        if (null != typeReport && typeReport.getDescriptor() instanceof VisualizationReportDescriptor typeDescriptor &&
+            !typeDescriptor.getClass().equals(descriptor.getClass()))
+            parsers.add(typeDescriptor);
+
+        String json = descriptor.getProperty(ReportDescriptor.Prop.json);
+        ReportDescriptor storedDescriptor = null != stored ? stored.getDescriptor() : null;
+        List<ValidationError> errors = new ArrayList<>();
+        parsers.forEach(parser -> parser.validatePointClickFn(user, json, storedDescriptor, errors));
+        if (!errors.isEmpty())
+            throw new UnauthorizedException(errors.getFirst().getMessage());
     }
 
     // Treats missing and empty values alike, and ignores line endings, which XML storage normalizes
@@ -1054,7 +1094,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                 }
             }
 
-            // Save before deleting the same-named report so a save refused by validateScriptAuthorship leaves it in place
+            // Save before deleting the same-named report so a save refused by validateScriptAuthorship or validatePointClickFn leaves it in place
             int rowId;
             try
             {
@@ -1062,6 +1102,9 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             }
             catch (UnauthorizedException e)
             {
+                // Deserializing imported the report's tag properties, which nothing will reference
+                if (null != descriptor.getEntityId())
+                    ReportPropsManager.get().deleteProperties(descriptor.getEntityId(), ctx.getContainer());
                 ctx.getLogger().error("Report \"{}\" ({}) was not imported. {}", descriptor.getReportName(), xmlFileName, e.getMessage());
                 return null;
             }
@@ -1265,7 +1308,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             String name = "import-script-report-" + GUID.makeGUID();
             Report existing = saveScriptReport(folder, name);
 
-            assertNull("Import should skip the script report", importScriptReport(folder, folderAdmin, name));
+            assertNull("Import should skip the script report", importReport(folder, folderAdmin, newScriptReport(name)));
             assertEquals("Existing same-named report should survive", List.of(existing.getDescriptor().getReportId()), reportIds(folder));
         }
 
@@ -1278,7 +1321,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             String name = "import-script-report-" + GUID.makeGUID();
             Report existing = saveScriptReport(folder, name);
 
-            Report imported = importScriptReport(folder, developer, name);
+            Report imported = importReport(folder, developer, newScriptReport(name));
             assertNotNull("Import should save the script report", imported);
             assertEquals("Import should replace the same-named report", List.of(imported.getDescriptor().getReportId()), reportIds(folder));
             assertNotEquals(existing.getDescriptor().getReportId(), imported.getDescriptor().getReportId());
@@ -1316,11 +1359,150 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             assertEquals("// imported", Objects.requireNonNull(getInstance().getStoredReport(id)).getDescriptor().getProperty(ScriptReportDescriptor.Prop.script));
         }
 
+        @Test
+        public void testUnvalidatedSaveCannotChangeTypeToScript() throws Exception
+        {
+            Container folder = createContainer("E");
+            ContainerUser folderAdmin = new DefaultContainerUser(folder, createUserInRole(folder, FolderAdminRole.class));
+            Report queryReport = Objects.requireNonNull(ReportService.get().createReportInstance(QueryReport.TYPE));
+            queryReport.getDescriptor().setReportName("type-change-" + GUID.makeGUID());
+            ReportIdentifier id = saveAsAdmin(folder, queryReport).getDescriptor().getReportId();
+
+            // Keeps the stored report's (empty) code properties, so only the type change can trip the check
+            Report changed = Objects.requireNonNull(getInstance().getStoredReport(id));
+            changed.getDescriptor().setReportType(JavaScriptReport.TYPE);
+            assertThrows(UnauthorizedException.class, () -> ReportService.get().saveReportEx(folderAdmin, KEY, changed, true));
+            assertEquals(QueryReport.TYPE, Objects.requireNonNull(getInstance().getStoredReport(id)).getType());
+        }
+
+        @Test
+        public void testAdminCanChangeAccessOfAnotherUsersPrivateReport() throws Exception
+        {
+            Container folder = createContainer("I");
+            User owner = createUserInRole(folder, FolderAdminRole.class);
+            User reader = createUserInRole(folder, FolderAdminRole.class);
+            User folderAdmin = createUserInRole(folder, FolderAdminRole.class);
+            ReportIdentifier id = savePrivateReport(folder, owner);
+            ViewContext context = ViewContext.getMockViewContext(folderAdmin, folder, folder.getStartURL(folderAdmin), false);
+
+            // A validated save still requires the owner, and the rejected save mustn't leave the new policy behind
+            Report custom = Objects.requireNonNull(getInstance().getStoredReport(id));
+            assertThrows(UnauthorizedException.class, () -> ReportUtil.setReportSecurityPolicy(context, custom, Set.of(), Set.of(reader.getUserId())));
+            Report unchanged = Objects.requireNonNull(getInstance().getStoredReport(id));
+            assertEquals(owner.getUserId(), (int) unchanged.getDescriptor().getOwner());
+            assertTrue("Policy should roll back with the report save",
+                SecurityPolicyManager.getPolicy(unchanged.getDescriptor(), false).getAssignedRoles(reader).findAny().isEmpty());
+
+            // As study-reportPermissions does, which requires admin
+            ReportUtil.resetReportSecurityPolicy(context, unchanged, null, folderAdmin, true);
+            Report shared = Objects.requireNonNull(getInstance().getStoredReport(id));
+            assertNull(shared.getDescriptor().getOwner());
+            assertTrue(shared.getDescriptor().isShared());
+        }
+
+        @Test
+        public void testShareReportStillRequiresOwner() throws Exception
+        {
+            Container folder = createContainer("J");
+            User owner = createUserInRole(folder, AuthorRole.class);
+            User otherAuthor = createUserInRole(folder, AuthorRole.class);
+            User recipient = createUserInRole(folder, AuthorRole.class);
+            ReportIdentifier id = savePrivateReport(folder, owner);
+
+            // As query-shareReport does, which needs only ShareReportPermission, so it must keep the validated save
+            Report notMine = Objects.requireNonNull(getInstance().getStoredReport(id));
+            ViewContext otherContext = ViewContext.getMockViewContext(otherAuthor, folder, folder.getStartURL(otherAuthor), false);
+            assertThrows(UnauthorizedException.class, () -> ReportUtil.updateReportSecurityPolicy(otherContext, notMine, recipient.getUserId(), true));
+            Report unchanged = Objects.requireNonNull(getInstance().getStoredReport(id));
+            assertEquals(owner.getUserId(), (int) unchanged.getDescriptor().getOwner());
+            assertTrue("Policy should roll back with the report save",
+                SecurityPolicyManager.getPolicy(unchanged.getDescriptor(), false).getAssignedRoles(recipient).findAny().isEmpty());
+
+            // The owner can still share it
+            ViewContext ownerContext = ViewContext.getMockViewContext(owner, folder, folder.getStartURL(owner), false);
+            ReportUtil.updateReportSecurityPolicy(ownerContext, unchanged, recipient.getUserId(), true);
+            Report shared = Objects.requireNonNull(getInstance().getStoredReport(id));
+            assertNull(shared.getDescriptor().getOwner());
+            assertFalse(SecurityPolicyManager.getPolicy(shared.getDescriptor(), false).getAssignedRoles(recipient).findAny().isEmpty());
+        }
+
+        @Test
+        public void testFolderAdminImportSkipsPointClickFnChart() throws Exception
+        {
+            Container folder = createContainer("F");
+            User folderAdmin = createUserInRole(folder, FolderAdminRole.class);
+            String name = "import-chart-" + GUID.makeGUID();
+            Report existing = saveAsAdmin(folder, newChart(name, "function(){}"));
+
+            assertNull("Import should skip the chart", importReport(folder, folderAdmin, newChart(name, "function(){alert(1)}")));
+            assertEquals("Existing same-named chart should survive", List.of(existing.getDescriptor().getReportId()), reportIds(folder));
+            assertNotNull("A chart without a pointClickFn should import", importReport(folder, folderAdmin, newChart("plain-chart-" + GUID.makeGUID(), null)));
+        }
+
+        @Test
+        public void testPlatformDeveloperImportsPointClickFnChart() throws Exception
+        {
+            Container folder = createContainer("G");
+            User developer = createUserInRole(folder, FolderAdminRole.class);
+            grantRootRole(developer, PlatformDeveloperRole.class);
+
+            assertNotNull(importReport(folder, developer, newChart("import-chart-" + GUID.makeGUID(), "function(){alert(1)}")));
+        }
+
+        @Test
+        public void testUnvalidatedSaveCanRewriteButNotChangePointClickFn() throws Exception
+        {
+            Container folder = createContainer("H");
+            ContainerUser folderAdmin = new DefaultContainerUser(folder, createUserInRole(folder, FolderAdminRole.class));
+            ReportIdentifier id = saveAsAdmin(folder, newChart("chart-" + GUID.makeGUID(), "function(){}")).getDescriptor().getReportId();
+
+            // As CategoryListener does after a category delete
+            Report renamed = Objects.requireNonNull(getInstance().getStoredReport(id));
+            renamed.getDescriptor().setProperty(ReportDescriptor.Prop.queryName, "renamedQuery");
+            ReportService.get().saveReportEx(folderAdmin, KEY, renamed, true);
+
+            Report edited = Objects.requireNonNull(getInstance().getStoredReport(id));
+            assertEquals("renamedQuery", edited.getDescriptor().getProperty(ReportDescriptor.Prop.queryName));
+            edited.getDescriptor().setProperty(ReportDescriptor.Prop.json, chartJson("function(){alert(1)}"));
+            assertThrows(UnauthorizedException.class, () -> ReportService.get().saveReportEx(folderAdmin, KEY, edited, true));
+            assertEquals(chartJson("function(){}"), Objects.requireNonNull(getInstance().getStoredReport(id)).getDescriptor().getProperty(ReportDescriptor.Prop.json));
+        }
+
         private Report saveScriptReport(Container folder, String name)
         {
-            Report report = newScriptReport(name);
+            return saveAsAdmin(folder, newScriptReport(name));
+        }
+
+        // Ownership is the report's creator, so save as the owner; the deprecated owner column marks it private
+        private ReportIdentifier savePrivateReport(Container folder, User owner)
+        {
+            Report report = Objects.requireNonNull(ReportService.get().createReportInstance(QueryReport.TYPE));
+            report.getDescriptor().setReportName("private-" + GUID.makeGUID());
+            report.getDescriptor().setOwner(owner.getUserId());
+            return ReportService.get().saveReportEx(new DefaultContainerUser(folder, owner), KEY, report, true);
+        }
+
+        private Report saveAsAdmin(Container folder, Report report)
+        {
             ReportIdentifier id = ReportService.get().saveReportEx(new DefaultContainerUser(folder, getAdmin()), KEY, report, true);
             return id.getReport(new DefaultContainerUser(folder, getAdmin()));
+        }
+
+        private static Report newChart(String name, @Nullable String pointClickFn)
+        {
+            Report report = Objects.requireNonNull(ReportService.get().createReportInstance(GenericChartReport.TYPE));
+            report.getDescriptor().setReportName(name);
+            report.getDescriptor().setReportKey(KEY);
+            report.getDescriptor().setProperty(ReportDescriptor.Prop.json, chartJson(pointClickFn));
+            return report;
+        }
+
+        private static String chartJson(@Nullable String pointClickFn)
+        {
+            JSONObject measures = new JSONObject();
+            if (null != pointClickFn)
+                measures.put("pointClickFn", pointClickFn);
+            return new JSONObject().put("chartConfig", new JSONObject().put("measures", measures)).toString();
         }
 
         private static Report newScriptReport(String name)
@@ -1332,9 +1514,10 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             return report;
         }
 
-        private @Nullable Report importScriptReport(Container folder, User user, String name) throws Exception
+        private @Nullable Report importReport(Container folder, User user, Report report) throws Exception
         {
-            XmlObject xml = ReportDescriptorDocument.Factory.parse(newScriptReport(name).getDescriptor().serialize(folder));
+            String name = report.getDescriptor().getReportName();
+            XmlObject xml = ReportDescriptorDocument.Factory.parse(report.getDescriptor().serialize(folder));
             VirtualFile root = new MemoryVirtualFile();
             FolderImportContext ctx = new FolderImportContext(user, folder, FolderDocument.Factory.newInstance(), null,
                 new StaticLoggerGetter(LogHelper.getLogger(ScriptAuthorshipTestCase.class, "Script report authorship test")), root);

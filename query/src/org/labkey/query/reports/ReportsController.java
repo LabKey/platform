@@ -84,6 +84,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
+import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
@@ -425,7 +426,7 @@ public class ReportsController extends SpringActionController
             try (Stream<ScriptReportSave> stream = new TableSelector(table, Set.of("Created", "CreatedBy", "ImpersonatedBy", "Container", "ReportId", "ReportName", "ReportType", "Comment"), filter, new Sort("-Created"))
                 .uncachedStream(ScriptReportSave.class))
             {
-                saves = Flagged.of(stream, s -> lacksRole(s.createdBy()));
+                saves = Flagged.of(stream, s -> lacksRole(s.createdBy(), s.container(), s.reportType()));
             }
             List<ScriptReportSave> flaggedSaves = saves.flagged();
 
@@ -433,7 +434,8 @@ public class ReportsController extends SpringActionController
             Flagged<Report> reports;
             try (Stream<Report> stream = ReportServiceImpl.getInstance().streamScriptReports())
             {
-                reports = Flagged.of(stream, r -> lacksRole(r.getDescriptor().getCreatedBy()) || lacksRole(r.getDescriptor().getModifiedBy()));
+                reports = Flagged.of(stream, r -> lacksRole(r.getDescriptor().getCreatedBy(), r.getContainerId(), r.getType()) ||
+                    lacksRole(r.getDescriptor().getModifiedBy(), r.getContainerId(), r.getType()));
             }
             List<Report> flaggedReports = reports.flagged().stream()
                 .sorted(Comparator.comparing((Report r) -> r.getDescriptor().getModified(), Comparator.nullsLast(Comparator.reverseOrder())))
@@ -460,11 +462,25 @@ public class ReportsController extends SpringActionController
                         flaggedReports.stream().map(this::renderReport)))));
         }
 
-        // A deleted user can't be cleared
-        private static boolean lacksRole(@Nullable Integer userId)
+        private final Map<Pair<String, String>, Boolean> _sandboxed = new HashMap<>();
+
+        // A deleted user can't be cleared, and a Trusted Analyst is cleared only for a report type whose engine is sandboxed
+        private boolean lacksRole(@Nullable Integer userId, @Nullable String containerId, String reportType)
         {
             User user = null == userId ? null : UserManager.getUser(userId);
-            return null == user || !user.isTrustedAnalyst();
+            if (null == user || !user.isTrustedAnalyst())
+                return true;
+            return !user.isPlatformDeveloper() && !isSandboxed(containerId, reportType);
+        }
+
+        // Matches ReportUtil.canCreateScript's Trusted Analyst rule, cached since engine lookups can be costly
+        private boolean isSandboxed(@Nullable String containerId, String reportType)
+        {
+            return _sandboxed.computeIfAbsent(Pair.of(containerId, reportType), _ -> {
+                Container c = null == containerId ? null : ContainerManager.getForId(containerId);
+                Report report = ReportService.get().createReportInstance(reportType);
+                return null != c && null != report && ReportServiceImpl.getScriptEngine(c, report) instanceof LabKeyScriptEngine engine && engine.isSandboxed();
+            });
         }
 
         private static Renderable headerRow(String... labels)
@@ -477,10 +493,9 @@ public class ReportsController extends SpringActionController
             return TD(at(style, "white-space: nowrap"), DateUtil.formatDateTime(getContainer(), date));
         }
 
-        private String userName(int userId)
+        private String userName(@Nullable Integer userId)
         {
-            User user = UserManager.getUser(userId);
-            return null == user ? "Deleted user " + userId : user.getDisplayName(getUser());
+            return Objects.toString(UserManager.getDisplayNameOrUserId(userId, getUser()), "");
         }
 
         private Renderable renderReport(Report report)
@@ -499,7 +514,6 @@ public class ReportsController extends SpringActionController
         private Renderable renderSave(ScriptReportSave s)
         {
             Container c = ContainerManager.getForId(s.container());
-            User impersonator = null == s.impersonatedBy() ? null : UserManager.getUser(s.impersonatedBy());
             // Look in every folder, since saves before the cross-folder check could update a report in another folder
             Report report = null == s.reportId() ? null : ReportServiceImpl.getInstance().getReportInAnyContainer(s.reportId());
             Container reportContainer = null == report ? null : ContainerManager.getForId(report.getDescriptor().getContainerId());
@@ -514,8 +528,8 @@ public class ReportsController extends SpringActionController
 
             return TR(dateCell(s.created()),
                 TD(null == c ? "Deleted folder " + s.container() : c.getPath()),
-                TD(null == s.createdBy() ? "" : userName(s.createdBy())),
-                TD(null == impersonator ? "" : impersonator.getDisplayName(getUser())),
+                TD(userName(s.createdBy())),
+                TD(userName(s.impersonatedBy())),
                 TD(reportCell),
                 TD(s.reportType()),
                 TD(s.comment()),
@@ -1238,15 +1252,16 @@ public class ReportsController extends SpringActionController
             {
                 for (User recipient : _validRecipients)
                 {
+                    // if the report is already public, send the notification but don't update the policy. Update it
+                    // first, so a rejected update doesn't tell the recipient about a report they still can't see.
+                    if (!ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(_report.getDescriptor().getAccess()))
+                        ReportUtil.updateReportSecurityPolicy(getViewContext(), _report, recipient.getUserId(), true);
+
                     NotificationService.get().sendMessageForRecipient(
                         getContainer(), getUser(), recipient,
                         form.getMessageSubject(), form.getMessageBody(), _report.getRunReportURL(getViewContext()),
                         form.getReportId().toString(), Report.SHARE_REPORT_TYPE
                     );
-
-                    // if the report is already public, send the notification but don't update the policy
-                    if (!ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(_report.getDescriptor().getAccess()))
-                        ReportUtil.updateReportSecurityPolicy(getViewContext(), _report, recipient.getUserId(), true);
 
                     String auditMsg = "The following report was shared: recipient: " + recipient.getName() + " (" + recipient.getUserId() + ")"
                             + ", reportId: " + _report.getDescriptor().getReportId()

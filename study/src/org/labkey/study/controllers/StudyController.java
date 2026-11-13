@@ -7909,7 +7909,6 @@ public class StudyController extends BaseStudyController
     {
         private static final int DATASET_ID = 5001;
         private Container _folder;
-        private StudyImpl _study;
         private DatasetDefinition _dataset;
         private User _user;
 
@@ -7922,15 +7921,15 @@ public class StudyController extends BaseStudyController
             StudyImpl mutable = StudyManager.getInstance().getStudy(_folder).createMutable();
             mutable.setSecurityType(SecurityType.ADVANCED_WRITE);
             StudyManager.getInstance().updateStudy(getAdmin(), mutable);
-            _study = StudyManager.getInstance().getStudy(_folder);
+            StudyImpl study = StudyManager.getInstance().getStudy(_folder);
 
-            _dataset = createDataset("Restricted");
+            _dataset = (DatasetDefinition) StudyService.get().createDataset(_folder, getAdmin(), "Restricted", DATASET_ID, false);
 
             // Folder Editor satisfies the action's @RequiresPermission, but the study grants only per-dataset access
             _user = createUserInRole(_folder, EditorRole.class);
-            MutableSecurityPolicy studyPolicy = new MutableSecurityPolicy(_study);
+            MutableSecurityPolicy studyPolicy = new MutableSecurityPolicy(study);
             studyPolicy.addRoleAssignment(_user, RestrictedReaderRole.class);
-            _study.savePolicy(studyPolicy, getAdmin());
+            study.savePolicy(studyPolicy, getAdmin());
         }
 
         @Test
@@ -7953,23 +7952,6 @@ public class StudyController extends BaseStudyController
             MutableSecurityPolicy policy = new MutableSecurityPolicy(_dataset);
             policy.addRoleAssignment(_user, role);
             _dataset.savePolicy(policy, getAdmin());
-        }
-
-        private DatasetDefinition createDataset(String name)
-        {
-            StudyManager manager = StudyManager.getInstance();
-            manager.createDatasetDefinition(getAdmin(), _folder, DATASET_ID);
-
-            DatasetDefinition def = manager.getDatasetDefinition(_study, DATASET_ID).createMutable();
-            def.setName(name);
-            def.setLabel(name);
-
-            String domainURI = manager.getDomainURI(_folder, getAdmin(), def);
-            def.setTypeURI(domainURI);
-            OntologyManager.ensureDomainDescriptor(domainURI, name, _folder);
-            manager.updateDatasetDefinition(getAdmin(), def);
-
-            return manager.getDatasetDefinition(_study, DATASET_ID);
         }
     }
 }

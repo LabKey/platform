@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.SimplePostCommand;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
@@ -42,15 +43,12 @@ import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldKey;
-import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
-import org.labkey.test.util.PermissionsHelper;
-import org.labkey.test.util.SimpleHttpRequest;
-import org.labkey.test.util.SimpleHttpResponse;
 import org.labkey.test.util.StudyHelper;
+import org.labkey.test.util.TestUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,6 +62,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.labkey.test.util.PermissionsHelper.FOLDER_ADMIN_ROLE;
 import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
 
@@ -221,7 +220,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
     // GH Issue 1450: shared visits live in the project, so a subfolder admin must not be able to import over them
     @Test
-    public void testImportVisitMapDeniedInSubfolder()
+    public void testImportVisitMapDeniedInSubfolder() throws Exception
     {
         String studyPath = getProjectName() + "/" + STUDY1;
         String visitMap = """
@@ -231,36 +230,23 @@ public class SharedStudyTest extends BaseWebDriverTest
                 </visitMap>""";
 
         log("Grant admin in the subfolder only, leaving the project alone");
-        _userHelper.createUser(visitAdminUser);
-        new ApiPermissionsHelper(this).addMemberToRole(visitAdminUser, FOLDER_ADMIN_ROLE, PermissionsHelper.MemberType.user, studyPath);
+        TestUser visitAdmin = new TestUser(visitAdminUser).create(this).setInitialPassword().addPermission(FOLDER_ADMIN_ROLE, studyPath);
         List<String> visitsBeforeImport = getProjectVisitLabels();
 
         log("Post a visit map to the subfolder, bypassing the form's redirect to the project");
-        clickFolder(STUDY1);
-        impersonate(visitAdminUser);
-        SimpleHttpResponse response = postVisitMap(studyPath, visitMap);
-        stopImpersonating();
-
-        assertEquals("Expected the import to be refused", HttpStatus.SC_FORBIDDEN, response.getResponseCode());
-        assertEquals("Visit map import from a subfolder rewrote the project's shared visits",
-                visitsBeforeImport, getProjectVisitLabels());
-    }
-
-    private SimpleHttpResponse postVisitMap(String containerPath, String visitMap)
-    {
-        SimpleHttpRequest request = new SimpleHttpRequest(WebTestHelper.buildURL("study", containerPath, "importVisitMap",
-                Map.of("content", visitMap)), "POST");
-        request.copySession(getDriver()); // post as the impersonated user; carries the CSRF token
-        request.clearLogin();             // rely solely on the impersonated session, not admin basic-auth
-
+        SimplePostCommand command = new SimplePostCommand("study", "importVisitMap");
+        command.setParameters(Map.of("content", visitMap));
         try
         {
-            return request.getResponse();
+            command.execute(visitAdmin.getUserConnection(), studyPath);
+            fail("Subfolder admin imported a visit map over the project's shared visits");
         }
-        catch (IOException e)
+        catch (CommandException e)
         {
-            throw new RuntimeException(e);
+            assertEquals("Expected the import to be refused", HttpStatus.SC_FORBIDDEN, e.getStatusCode());
         }
+        assertEquals("Visit map import from a subfolder rewrote the project's shared visits",
+                visitsBeforeImport, getProjectVisitLabels());
     }
 
     private List<String> getProjectVisitLabels()
