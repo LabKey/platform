@@ -27,6 +27,7 @@ import org.labkey.api.util.DebugInfoDumper;
 
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -315,10 +316,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
         {
             final AtomicInteger calls = new AtomicInteger();
             final BlockingCache<Integer,Integer> bc = new BlockingCache<>(_cache, createLoader(calls, 1000));
-            final Object start = new Object();
+            final CountDownLatch start = new CountDownLatch(1);
             Runnable r = () -> {
                 Random r1 = new Random();
-                synchronized (start) { try{start.wait(1000);}catch(InterruptedException x){/* */} }
+                try { start.await(); } catch (InterruptedException x) { /* */ }
                 for (int i=0 ; i<100 ; i++)
                 {
                     int k = r1.nextInt();
@@ -330,7 +331,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
             assertEquals(5, _map.size());
         }
 
-        private void createAndStartThreads(Runnable r, Object start, int count)
+        private void createAndStartThreads(Runnable r, CountDownLatch start, int count)
         {
             Thread[] threads = new Thread[count];
             for (int i=0 ; i < threads.length ; i++)
@@ -338,7 +339,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
             for (Thread thread : threads)
                 thread.start();
             Thread.yield();
-            synchronized (start) { start.notifyAll(); }
+            start.countDown();
             for (Thread thread : threads)
                 try { thread.join(); } catch (InterruptedException x) {}
         }
@@ -350,9 +351,9 @@ public class BlockingCache<K, V> implements Cache<K, V>
             final BlockingCache<Integer, Integer> bc = new BlockingCache<>(_cache, createLoader(calls, 5000), 1000);
 
             final AtomicInteger timeouts = new AtomicInteger();
-            final Object start = new Object();
+            final CountDownLatch start = new CountDownLatch(1);
             Runnable r = () -> {
-                synchronized (start) { try{start.wait(1000);}catch(InterruptedException x){/* */} }
+                try { start.await(); } catch (InterruptedException x) { /* */ }
                 try
                 {
                     bc.get(1000);

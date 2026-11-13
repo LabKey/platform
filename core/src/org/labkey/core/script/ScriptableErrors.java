@@ -24,6 +24,7 @@ import org.mozilla.javascript.ScriptRuntime;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Wrapper;
+import org.mozilla.javascript.lc.type.TypeInfoFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,6 @@ public class ScriptableErrors extends NativeJavaObject
 
     private ScriptableErrors(Scriptable scope, Object obj)
     {
-        this.parent = scope;
         if (obj instanceof Wrapper)
             obj = ((Wrapper)obj).unwrap();
 
@@ -78,14 +78,15 @@ public class ScriptableErrors extends NativeJavaObject
         else
             throw new EvaluatorException("Invalid argument to ScriptableErrors(): " + obj);
 
-        this.staticType = this.errors.getClass();
+        this.parent = scope;
+        this.staticType = TypeInfoFactory.GLOBAL.create(this.errors.getClass());
         initMembers();
         initPrototype(scope);
     }
 
     public ScriptableErrors(Scriptable scope, ValidationException errors)
     {
-        super(scope, errors, errors.getClass());
+        super(scope, errors, TypeInfoFactory.GLOBAL.create(errors.getClass()));
         this.errors = errors;
         initPrototype(scope);
     }

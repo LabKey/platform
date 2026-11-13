@@ -347,14 +347,10 @@ public class ScriptTrigger implements Trigger
     public static Script getServerContext(Container c, User u)
     {
         String jsCode = PageFlowUtil.class.getName() + ".jsInitObject(" + ContainerUser.class.getName() + ".create(" + ContainerManager.class.getName() + ".getForId(" + PageFlowUtil.jsString(c.getId()) + "), " + UserManager.class.getName() + ".getUser(" + u.getUserId() + ")), null, null, false).toMap()";
-        Context ctx = Context.enter();
-        try
+
+        try (Context ctx = Context.enter())
         {
             return ctx.compileString("module.exports = " + jsCode, SERVER_CONTEXT_SCRIPT_NAME + ".js", 1, null);
-        }
-        finally
-        {
-            Context.exit();
         }
     }
 

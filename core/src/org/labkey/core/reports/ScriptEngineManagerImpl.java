@@ -69,6 +69,7 @@ import org.labkey.core.reports.report.python.PythonRemoteScriptEngine;
 import org.labkey.core.reports.report.python.PythonScriptEngine;
 import org.labkey.core.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.core.reports.report.r.RserveScriptEngineFactory;
+import org.labkey.core.script.RhinoLanguageVersion;
 import org.labkey.core.script.RhinoScriptEngine;
 
 import javax.script.ScriptEngine;
@@ -92,6 +93,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 {
     private static final Logger LOG = LogHelper.getLogger(ScriptEngineManagerImpl.class, "Script engine anomalies");
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
+    private static final String RHINO_KEY = ENGINE_DEF_MAP_PREFIX + "js";
     private static final String ALL_ENGINES = "ALL";
     private static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
 
@@ -614,6 +616,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             String key = makeKey(def.getExtensions());
 
             setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
+
+            RhinoLanguageVersion version = isRhino(def) ? RhinoLanguageVersion.fromVersion(def.getLanguageVersion()) : null;
+            if (version != null)
+                setProp(Props.languageVersion.name(), String.valueOf(version.getVersion()), key);
         }
 
         // Issue 22354: It's a little heavy-handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
@@ -639,6 +645,17 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     private static String makeKey(String[] engineExtensions)
     {
         return ENGINE_DEF_MAP_PREFIX + StringUtils.join(engineExtensions, ',');
+    }
+
+    public static boolean isRhino(ExternalScriptEngineDefinition def)
+    {
+        return !def.isExternal() && RHINO_KEY.equals(makeKey(def.getExtensions()));
+    }
+
+    public static @NotNull RhinoLanguageVersion getRhinoLanguageVersion()
+    {
+        RhinoLanguageVersion version = RhinoLanguageVersion.fromVersion(getProp(Props.languageVersion.name(), RHINO_KEY));
+        return version != null ? version : RhinoLanguageVersion.DEFAULT;
     }
 
     private static ExternalScriptEngineDefinition createDefinition(Map<String, String> props, boolean isFromStartupProps)
@@ -817,6 +834,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 record.put("remote", def.isRemote());
                 record.put("sandboxed", def.isSandboxed());
                 record.put("containerOverrides", overrides.getOrDefault(def.getRowId(), Map.of()));
+            }
+            else if (factory instanceof ScriptService)
+            {
+                record.put("languageVersion", getRhinoLanguageVersion().name());
             }
 
             try

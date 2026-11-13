@@ -1326,7 +1326,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 return Collections.unmodifiableMap(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap());
             }), "Size in bytes of each database schema, including indexes; temp excluded");
 
-            metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by factory class, with engine class, file extensions, type, whether each is external, enabled, remote, and how many folders select each engine for reports and pipelines");
+            metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, " +
+                    "file extensions, whether each is external and enabled, the server-side JavaScript language level, and how many folders select each engine for reports and pipelines");
             metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
             UsageMetricGroup roleAssignments = metrics.group("roleAssignments", "Direct assignments of designer roles to users or groups, by role, across all containers");
             final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
