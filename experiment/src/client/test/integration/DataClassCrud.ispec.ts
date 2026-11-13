@@ -22,6 +22,7 @@ import {
     createSource,
     deleteSourceType,
     getDataClassRowIdByName,
+    getSourceDataByName,
     initProject,
     MVTC_FIELD_PROP,
     TC_FIELD_PROP,
@@ -91,18 +92,6 @@ export async function insertDataClassData(
         rowId: caseInsensitive(row, 'rowId'),
     }));
 }
-export async function getDataClassDataByName(dataName: string, queryName: string, columns: string = 'Name, RowId', folderOptions: RequestOptions , userOptions: RequestOptions, debug?: boolean) : Promise<any> {
-    const response = await server.post('query', 'selectRows', {
-        schemaName: 'exp.data',
-        queryName,
-        'query.Name~eq': dataName,
-        'query.columns': columns,
-    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
-    if (debug)
-        console.log(response);
-    return response.body.rows[0];
-}
-
 describe('Data Class Designer', () => {
     it('Lack designer or Reader permission', async () => {
         await checkLackDesignerOrReaderPerm(server, 'DataClass', topFolderOptions, readerUserOptions, editorUserOptions, designerOptions);
@@ -609,7 +598,7 @@ describe('Multi Value Text Choice', () => {
         let dataNameImported = ["S-" + dataCount++];
         importText += dataNameImported + "\timport no column\n";
         await ExperimentCRUDUtils.importData(server, importText, dataType, "IMPORT", topFolderOptions, editorUserOptions);
-        let result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        let result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual([]);
 
         // import data with mvtc fieldname column header, with blank, single, multi values
@@ -621,13 +610,13 @@ describe('Multi Value Text Choice', () => {
         await ExperimentCRUDUtils.importData(server, importText, dataType, "IMPORT", topFolderOptions, editorUserOptions);
         const dataImportedRowIds = [];
         // verify imported data mvtc
-        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual([]);
         dataImportedRowIds.push(caseInsensitive(result, 'rowId'));
-        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual(['agent']);
         dataImportedRowIds.push(caseInsensitive(result, 'rowId'));
-        result = await getDataClassDataByName(dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'agent', 'cDNA', 'Plasma']);
         dataImportedRowIds.push(caseInsensitive(result, 'rowId'));
 
@@ -638,11 +627,11 @@ describe('Multi Value Text Choice', () => {
             { 'rowId': dataImportedRowIds[2], 'description': 'blank column' },
         ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
 
-        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual([]);
-        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual(['agent']);
-        result = await getDataClassDataByName(dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'agent', 'cDNA', 'Plasma']);
 
         // update data using updateRows api, mvtc column blank or empty or empty array
@@ -652,11 +641,11 @@ describe('Multi Value Text Choice', () => {
             { 'rowId': dataImportedRowIds[2], [fieldName]: [] },
         ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
 
-        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual([]);
-        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual([]);
-        result = await getDataClassDataByName(dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[2], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual([]);
 
         // values are Abnormal|agent|cDNA|Plasma
@@ -669,7 +658,7 @@ describe('Multi Value Text Choice', () => {
                     { 'rowId': dataImportedRowIds[0], [fieldName]: val },
                 ], 'exp.data', dataType, topFolderOptions, editorUserOptions
             );
-            result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+            result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
             expect(caseInsensitive(result, fieldName)).toEqual(expected);
         }
 
@@ -682,7 +671,7 @@ describe('Multi Value Text Choice', () => {
                     { 'rowId': dataImportedRowIds[1], [fieldName]: val },
                 ], 'exp.data', dataType, topFolderOptions, editorUserOptions
             );
-            result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+            result = await getSourceDataByName(server, dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
             expect(caseInsensitive(result, fieldName)).toEqual(expected);
         }
 
@@ -691,9 +680,9 @@ describe('Multi Value Text Choice', () => {
         importText += dataNameImported[0] + "\t\timport blank column\n";
         importText += dataNameImported[1] + "\t\timport single value\n";
         await ExperimentCRUDUtils.importData(server, importText, dataType, "UPDATE", topFolderOptions, editorUserOptions);
-        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual([]);
-        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual([]);
 
         // update with import to set mvtc from blank to multi values
@@ -701,9 +690,9 @@ describe('Multi Value Text Choice', () => {
         importText += dataNameImported[0] + "\tAbnormal, agent\timport multi value\n";
         importText += dataNameImported[1] + "\tcDNA, Plasma, Abnormal\timport multi values\n";
         await ExperimentCRUDUtils.importData(server, importText, dataType, "UPDATE", topFolderOptions, editorUserOptions);
-        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'agent']);
-        result = await getDataClassDataByName(dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[1], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'cDNA', 'Plasma']);
 
         // merge with import to change mvtc and create new data
@@ -712,9 +701,9 @@ describe('Multi Value Text Choice', () => {
         importText += dataNameImported[0] + "\tPlasma, Abnormal\timport multi value\n";
         importText += newMerged + "\tagent, cDNA\timport multi values\n";
         await ExperimentCRUDUtils.importData(server, importText, dataType, "MERGE", topFolderOptions, editorUserOptions);
-        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual(['Abnormal', 'Plasma']);
-        result = await getDataClassDataByName(newMerged, dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, newMerged, dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual(['agent', 'cDNA']);
 
         // insert using insertRows api, with single mvtc value
@@ -820,7 +809,7 @@ describe('Multi Value Text Choice', () => {
             }
         };
         await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions}).expect(successfulResponse);
-        result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
+        result = await getSourceDataByName(server, dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual('Abnormal, Plasma'); // convert from ['Abnormal', 'Plasma'] to 'Abnormal, Plasma'
 
 
@@ -1107,7 +1096,7 @@ describe('Data CRUD', () => {
         expect(caseInsensitive(row2, fieldName)).toBe('mergeVal2');
 
         // verify new data was created by merge
-        const newDataRow = await getDataClassDataByName(newDataName, dataType, '*', topFolderOptions, adminOptions);
+        const newDataRow = await getSourceDataByName(server, newDataName, dataType, '*', topFolderOptions, adminOptions);
         expect(caseInsensitive(newDataRow, 'Name')).toBe(newDataName);
         expect(caseInsensitive(newDataRow, 'description')).toBe('mergeNew');
         expect(caseInsensitive(newDataRow, fieldName)).toBe('mergeNewVal');
