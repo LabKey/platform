@@ -277,6 +277,7 @@ public class QueryModule extends DefaultModule
         if (null != PipelineService.get())
             PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider(this));
         QueryController.registerAdminConsoleLinks();
+        ReportsController.registerAdminConsoleLinks();
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
@@ -396,6 +397,8 @@ public class QueryModule extends DefaultModule
             QueryController.SaveRowsTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
+            ReportServiceImpl.ScriptAuthorshipTestCase.class,
+            ReportsController.ScriptReportAuthorsTestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,
             SelectRowsStreamHack.TestCase.class,

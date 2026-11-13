@@ -155,6 +155,12 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         }
     }
 
+    /** Deletes the property values saved for {@code entityId}, for example ones imported for a report that then failed to save */
+    public void deleteProperties(@NotNull String entityId, Container container)
+    {
+        OntologyManager.deleteOntologyObject(makeLsid(entityId), container, false);
+    }
+
     private String makeLsid(String entityId)
     {
         return "urn:uuid:" + entityId;

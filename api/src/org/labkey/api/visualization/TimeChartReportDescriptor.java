@@ -69,6 +69,15 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
     }
 
     @Override
+    public @Nullable String getPointClickFn(@Nullable String json)
+    {
+        if (StringUtils.isBlank(json))
+            return null;
+
+        return StringUtils.trimToNull(new JSONObject(json).optString("pointClickFn", null));
+    }
+
+    @Override
     protected String adjustPropertyValue(@Nullable FolderExportContext context, String key, Object value)
     {
         if (null != context && context.isAlternateIds() && "json".equals(key))
