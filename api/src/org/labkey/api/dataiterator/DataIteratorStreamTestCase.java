@@ -18,7 +18,7 @@ package org.labkey.api.dataiterator;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.RuntimeBatchValidationException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
@@ -50,36 +50,30 @@ public class DataIteratorStreamTestCase extends Assert
         };
     }
 
-    private static void assertStreamFailsOnInvalidRow(String invalidA)
+    private static DataIteratorBuilder failOn(String invalidA)
     {
-        String message = "invalid row a=" + invalidA;
-        DataIteratorBuilder tx = DataIteratorUtil.mapTransformer(data(), null, row -> {
+        return DataIteratorUtil.mapTransformer(data(), null, row -> {
             if (invalidA.equals(row.get("a")))
-                throw new RuntimeValidationException(message);
+                throw new RuntimeValidationException("invalid row a=" + invalidA);
             return row;
         });
+    }
 
+    private static void assertStreamFailsOnInvalidRow(String invalidA)
+    {
+        DataIteratorContext context = new DataIteratorContext();
         List<Map<String, Object>> rows;
         try
         {
-            rows = tx.getDataIterator(new DataIteratorContext()).stream().toList();
+            rows = failOn(invalidA).getDataIterator(context).stream().toList();
         }
-        catch (RuntimeException e)
+        catch (RuntimeBatchValidationException e)
         {
-            assertTrue("Expected a validation failure carrying '" + message + "' but got: " + e, causeChainHasValidationError(e, message));
+            assertSame("Stream should fail with the context's errors", context.getErrors(), e.getErrors());
+            assertEquals("invalid row a=" + invalidA, e.getErrors().getLastRowError().getMessage());
             return;
         }
         fail("Expected stream to fail on invalid row a=" + invalidA + " but stream silently returned " + rows.size() + " of " + ROW_COUNT + " rows");
-    }
-
-    private static boolean causeChainHasValidationError(Throwable t, String message)
-    {
-        for (Throwable cur = t; cur != null; cur = cur.getCause() == cur ? null : cur.getCause())
-        {
-            if (cur instanceof BatchValidationException || (cur.getMessage() != null && cur.getMessage().contains(message)))
-                return true;
-        }
-        return false;
     }
 
     @Test
@@ -92,5 +86,16 @@ public class DataIteratorStreamTestCase extends Assert
     public void testInvalidFirstRowFailsStream()
     {
         assertStreamFailsOnInvalidRow("1");
+    }
+
+    @Test
+    public void testInvalidRowRecordedInContextWhenNotFailFast()
+    {
+        DataIteratorContext context = new DataIteratorContext();
+        context.setFailFast(false);
+        List<Map<String, Object>> rows = failOn("2").getDataIterator(context).stream().toList();
+        assertEquals(List.of("1", "3"), rows.stream().map(row -> row.get("a")).toList());
+        assertEquals(1, context.getErrors().getRowErrors().size());
+        assertEquals(2, context.getErrors().getLastRowError().getRowNumber());
     }
 }
