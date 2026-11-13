@@ -42,19 +42,27 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
@@ -70,6 +78,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.premium.PremiumService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -109,17 +118,26 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.reports.report.view.ScriptReportDesignBean;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -129,7 +147,9 @@ import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.ImageUtil;
@@ -158,6 +178,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.query.DataViewsWebPartFactory;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.vfs.FileLike;
@@ -195,11 +216,24 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.reports.model.ViewCategoryManager.UNCATEGORIZED_ROWID;
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.H3;
+import static org.labkey.api.util.DOM.Renderable;
+import static org.labkey.api.util.DOM.STRONG;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TH;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
 public class ReportsController extends SpringActionController
@@ -357,6 +391,142 @@ public class ReportsController extends SpringActionController
     public ReportsController()
     {
         setActionResolver(_actionResolver);
+    }
+
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "script reports by non-developers", new ActionURL(ScriptReportAuthorsAction.class, ContainerManager.getRoot()), AdminOperationsPermission.class);
+    }
+
+    private record ScriptReportSave(Date created, @Nullable Integer createdBy, @Nullable Integer impersonatedBy, String container, @Nullable Integer reportId, String reportName, String reportType, String comment) {}
+
+    private record Flagged<T>(long checked, List<T> flagged)
+    {
+        static <T> Flagged<T> of(Stream<T> stream, Predicate<T> flag)
+        {
+            return stream.collect(Collectors.teeing(Collectors.counting(), Collectors.filtering(flag, Collectors.toList()), Flagged::new));
+        }
+    }
+
+    // Lists script report saves and existing script reports by users who now lack the site-level Trusted Analyst or Platform Developer permission that creating one requires
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class ScriptReportAuthorsAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ReportType"), ReportServiceImpl.getInstance().getScriptReportTypes(), CompareType.IN);
+            filter.addCondition(FieldKey.fromParts("Comment"), "Report deleted", CompareType.NEQ_OR_NULL);
+            TableInfo table = Objects.requireNonNull(Objects.requireNonNull(AuditLogService.getAuditLogSchema(getUser(), getContainer()))
+                .getTable(ReportAuditProvider.EVENT_NAME, ContainerFilter.Type.AllFolders.create(getContainer(), getUser())));
+
+            // Bind to a record, since binding to ReportAuditEvent throws on events from deleted folders
+            Flagged<ScriptReportSave> saves;
+            try (Stream<ScriptReportSave> stream = new TableSelector(table, Set.of("Created", "CreatedBy", "ImpersonatedBy", "Container", "ReportId", "ReportName", "ReportType", "Comment"), filter, new Sort("-Created"))
+                .uncachedStream(ScriptReportSave.class))
+            {
+                saves = Flagged.of(stream, s -> lacksRole(s.createdBy()));
+            }
+            List<ScriptReportSave> flaggedSaves = saves.flagged();
+
+            // The audit log only goes back to 24.11, so also check who created and last modified the script reports that still exist
+            Flagged<Report> reports;
+            try (Stream<Report> stream = ReportServiceImpl.getInstance().streamScriptReports())
+            {
+                reports = Flagged.of(stream, r -> lacksRole(r.getDescriptor().getCreatedBy()) || lacksRole(r.getDescriptor().getModifiedBy()));
+            }
+            List<Report> flaggedReports = reports.flagged().stream()
+                .sorted(Comparator.comparing((Report r) -> r.getDescriptor().getModified(), Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
+
+            String checked = "Checked " + StringUtilsLabKey.pluralize(saves.checked(), "script report save") + " in the audit log and " +
+                StringUtilsLabKey.pluralize(reports.checked(), "existing script report") + " across all folders.";
+            if (flaggedSaves.isEmpty() && flaggedReports.isEmpty())
+                return new HtmlView(DIV(DIV(cl("labkey-message"), "No problematic reports found."), DIV(checked)));
+
+            return new HtmlView(DIV(
+                DIV(checked + " Folder admins renaming or importing reports also appear here, so review each one."),
+                H3("Audit log (starting in 24.11)"),
+                flaggedSaves.isEmpty() ? DIV("No script report saves by users who do not currently have the Platform Developer or Trusted Analyst role.") : DIV(
+                    DIV(cl("labkey-error"), StringUtilsLabKey.pluralize(flaggedSaves.size(), "script report save") + " by users without the Platform Developer or Trusted Analyst role."),
+                    TABLE(cl("table", "table-condensed", "table-bordered", "table-striped"),
+                        headerRow("Date", "Folder", "User", "Impersonated By", "Report", "Report Type", "Event", "Report Status"),
+                        flaggedSaves.stream().map(this::renderSave))),
+                H3("Existing script reports"),
+                flaggedReports.isEmpty() ? DIV("No existing script reports created or last modified by users currently without the Platform Developer or Trusted Analyst role.") : DIV(
+                    DIV(cl("labkey-error"), StringUtilsLabKey.pluralize(flaggedReports.size(), "existing script report") + " created or last modified by users without the Platform Developer or Trusted Analyst role."),
+                    TABLE(cl("table", "table-condensed", "table-bordered", "table-striped"),
+                        headerRow("Folder", "Report", "Report Type", "Created", "Created By", "Modified", "Modified By"),
+                        flaggedReports.stream().map(this::renderReport)))));
+        }
+
+        // A deleted user can't be cleared
+        private static boolean lacksRole(@Nullable Integer userId)
+        {
+            User user = null == userId ? null : UserManager.getUser(userId);
+            return null == user || !user.isTrustedAnalyst();
+        }
+
+        private static Renderable headerRow(String... labels)
+        {
+            return TR(Arrays.stream(labels).map(label -> TH(at(style, "white-space: nowrap"), label)));
+        }
+
+        private Renderable dateCell(Date date)
+        {
+            return TD(at(style, "white-space: nowrap"), DateUtil.formatDateTime(getContainer(), date));
+        }
+
+        private String userName(int userId)
+        {
+            User user = UserManager.getUser(userId);
+            return null == user ? "Deleted user " + userId : user.getDisplayName(getUser());
+        }
+
+        private Renderable renderReport(Report report)
+        {
+            ReportDescriptor d = report.getDescriptor();
+            Container c = ContainerManager.getForId(d.getContainerId());
+            return TR(TD(null == c ? d.getContainerId() : c.getPath()),
+                TD(null == c ? d.getReportName() : A(at(href, new ActionURL(RunReportAction.class, c).addParameter("reportId", d.getReportId().toString())), d.getReportName())),
+                TD(report.getType()),
+                dateCell(d.getCreated()),
+                TD(userName(d.getCreatedBy())),
+                dateCell(d.getModified()),
+                TD(userName(d.getModifiedBy())));
+        }
+
+        private Renderable renderSave(ScriptReportSave s)
+        {
+            Container c = ContainerManager.getForId(s.container());
+            User impersonator = null == s.impersonatedBy() ? null : UserManager.getUser(s.impersonatedBy());
+            // Look in every folder, since saves before the cross-folder check could update a report in another folder
+            Report report = null == s.reportId() ? null : ReportServiceImpl.getInstance().getReportInAnyContainer(s.reportId());
+            Container reportContainer = null == report ? null : ContainerManager.getForId(report.getDescriptor().getContainerId());
+
+            Object reportCell = s.reportName();
+            String status = "Deleted";
+            if (null != reportContainer)
+            {
+                reportCell = A(at(href, new ActionURL(RunReportAction.class, reportContainer).addParameter("reportId", report.getDescriptor().getReportId().toString())), s.reportName());
+                status = reportContainer.equals(c) ? "Still exists" : "Still exists in " + reportContainer.getPath();
+            }
+
+            return TR(dateCell(s.created()),
+                TD(null == c ? "Deleted folder " + s.container() : c.getPath()),
+                TD(null == s.createdBy() ? "" : userName(s.createdBy())),
+                TD(null == impersonator ? "" : impersonator.getDisplayName(getUser())),
+                TD(reportCell),
+                TD(s.reportType()),
+                TD(s.comment()),
+                TD(null == reportContainer ? status : STRONG(status)));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Script Reports by Non-Developers", getClass(), getContainer());
+        }
     }
 
     public static class CreateSessionForm
@@ -4090,6 +4260,83 @@ public class ReportsController extends SpringActionController
             job = new RReportJob(ReportsPipelineProvider.NAME, info,
                     new ModuleReportIdentifier(ModuleLoader.getInstance().getModule("query"), Path.parse("/test/test.R")), root);
             testSerialize(job, _log);
+        }
+    }
+
+    public static class ScriptReportAuthorsTestCase extends AbstractContainerScopingTest
+    {
+        // Report names are unique per run, so audit events and reports left by earlier runs can't affect the assertions
+        @Test
+        public void testFlagsScriptReportsByUsersLackingRole() throws Exception
+        {
+            Container folder = createContainer("A");
+            User developer = createUserInRole(folder, EditorRole.class);
+            grantRootRole(developer, PlatformDeveloperRole.class);
+            User editor = createUserInRole(folder, EditorRole.class);
+
+            String trustedName = saveScriptReport(folder, developer);
+            String flaggedName = saveScriptReport(folder, editor);
+
+            String[] sections = getSections();
+            assertTrue("Audit log section should list the editor's save", sections[0].contains(flaggedName));
+            assertTrue("Editor's report should be marked as still existing", auditRow(sections[0], flaggedName).contains("Still exists"));
+            assertTrue("Existing reports section should list the editor's report", sections[1].contains(flaggedName));
+            assertFalse("A Platform Developer's report should not be flagged", String.join("", sections).contains(trustedName));
+        }
+
+        @Test
+        public void testFlagsSavesInDeletedFolders() throws Exception
+        {
+            Container folder = ContainerManager.createContainer(createContainer("B"), "deleted", getAdmin());
+            User editor = createUserInRole(folder, EditorRole.class);
+            String flaggedName = saveScriptReport(folder, editor);
+            ContainerManager.deleteAll(folder, getAdmin());
+
+            String[] sections = getSections();
+            assertTrue("Audit log section should still list a save from a deleted folder", sections[0].contains(flaggedName));
+            String row = auditRow(sections[0], flaggedName);
+            assertTrue("Audit log section should show the deleted folder's id", row.contains("Deleted folder " + folder.getId()));
+            assertTrue("Report from a deleted folder should be marked deleted", row.contains("<td>Deleted</td>"));
+            assertFalse("Existing reports section should not list a report from a deleted folder", sections[1].contains(flaggedName));
+        }
+
+        // Saves can no longer bypass the role check, so the user saves as a Platform Developer and then loses the role
+        private String saveScriptReport(Container folder, User user) throws Exception
+        {
+            String name = "script-report-authors-" + GUID.makeGUID();
+            Report report = Objects.requireNonNull(ReportService.get().createReportInstance(RReport.TYPE));
+            report.getDescriptor().setReportName(name);
+            boolean grant = !user.hasRootPermission(PlatformDeveloperPermission.class);
+            if (grant)
+                grantRootRole(user, PlatformDeveloperRole.class);
+            ReportService.get().saveReportEx(new DefaultContainerUser(folder, user), "script-report-authors-key", report, true);
+            if (grant)
+            {
+                MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot().getPolicy());
+                rootPolicy.removeRoleAssignment(user, RoleManager.getRole(PlatformDeveloperRole.class));
+                SecurityPolicyManager.savePolicyForTests(rootPolicy, getAdmin());
+            }
+            return name;
+        }
+
+        private static String auditRow(String section, String reportName)
+        {
+            int nameIndex = section.indexOf(reportName);
+            assertTrue("No row for " + reportName, nameIndex >= 0);
+            return section.substring(section.lastIndexOf("<tr>", nameIndex), section.indexOf("</tr>", nameIndex));
+        }
+
+        // Audit log section, then existing reports section
+        private String[] getSections() throws Exception
+        {
+            MockHttpServletResponse response = get(new ActionURL(ScriptReportAuthorsAction.class, ContainerManager.getRoot()), getAdmin());
+            assertStatus(HttpServletResponse.SC_OK, response);
+            String html = response.getContentAsString();
+            assertFalse("Page should report problems", html.contains("No problematic reports found."));
+            String marker = "Existing script reports</h3>";
+            int split = html.indexOf(marker);
+            assertTrue("Page should have an existing reports section", split >= 0);
+            return new String[] {html.substring(0, split), html.substring(split + marker.length())};
         }
     }
 }
