@@ -66,11 +66,11 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.OutOfRangeDisplayColumn;
 import org.labkey.api.data.PropertySchema;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.Table;
@@ -214,7 +214,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
-import org.labkey.core.admin.SiteSettingsUpdater;
 import org.labkey.core.admin.AllowListType;
 import org.labkey.core.admin.ConnectionUsageTsvWriter;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
@@ -225,6 +224,7 @@ import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.OptionalFeatureServiceImpl;
 import org.labkey.core.admin.OptionalFeatureStartupListener;
+import org.labkey.core.admin.SiteSettingsUpdater;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
 import org.labkey.core.admin.importer.MissingValueImporterFactory;
 import org.labkey.core.admin.importer.ModulePropertiesImporterFactory;
@@ -362,7 +362,6 @@ import org.radeox.test.macro.list.ExampleListFormatterTest;
 import org.radeox.test.macro.list.SimpleListTest;
 
 import javax.management.StandardMBean;
-
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -1327,7 +1326,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 return Collections.unmodifiableMap(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap());
             }), "Size in bytes of each database schema, including indexes; temp excluded");
 
-            metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, whether each is external and enabled, and the server-side JavaScript language level");
+            metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, " +
+                    "file extensions, whether each is external and enabled, the server-side JavaScript language level, and how many folders select each engine for reports and pipelines");
             metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
             UsageMetricGroup roleAssignments = metrics.group("roleAssignments", "Direct assignments of designer roles to users or groups, by role, across all containers");
             final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
@@ -1577,6 +1577,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            org.labkey.api.util.DirectoryArchive.TestCase.class,
             AdminController.FileRootPermissionTestCase.class,
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,

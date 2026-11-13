@@ -2241,6 +2241,7 @@ public class CoreController extends SpringActionController
                     record.put("outputFileName", def.getOutputFileName());
                     record.put("pandocEnabled", String.valueOf(def.isPandocEnabled()));
                     record.put("docker", String.valueOf(def.isDocker()));
+                    record.put("remoteRunner", def.isRemoteRunner());
                     record.put("dockerImageRowId", def.getDockerImageRowId());
                     record.put("dockerImageConfig", def.getDockerImageConfig());
                     record.put("default", String.valueOf(def.isDefault()));
@@ -2312,7 +2313,7 @@ public class CoreController extends SpringActionController
                 //
                 // If the engine is remote then don't validate the exe and command line values
                 //
-                if (!def.isRemote())
+                if (!def.isRemote() && !def.isRemoteRunner())
                 {
                     File rexe = new File(def.getExePath());
                     if (!rexe.exists())
