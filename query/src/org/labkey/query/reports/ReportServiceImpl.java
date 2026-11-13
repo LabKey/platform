@@ -442,8 +442,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         }
 
         // GH Issue 1649: generic report actions, such as study-reports-saveReportView, can write a chart's config too
-        if (descriptor instanceof VisualizationReportDescriptor vizDescriptor)
-            vizDescriptor.validatePointClickFn(context.getUser(), vizDescriptor.getJSON(), null != stored ? stored.getDescriptor() : null, errors);
+        descriptor.validateContent(context.getUser(), null != stored ? stored.getDescriptor() : null, errors);
 
         return errors.isEmpty();
     }
@@ -527,7 +526,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             throw new UnauthorizedException("A report can only be saved from the folder that it belongs to.");
         Report stored = null != existing ? _getInstance(existing) : null;
         validateScriptAuthorship(user, c, descriptor, stored);
-        validatePointClickFn(user, descriptor, stored);
+        validateDescriptorContent(user, descriptor, stored);
 
         boolean reportExists = null != existing;
         if (reportExists)
@@ -571,28 +570,25 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     }
 
     /**
-     * GH Issue 1649: the database-level twin of the pointClickFn check in tryValidateReportPermissions, so folder import
-     * and skipValidation saves can't add chart JavaScript either. The persisted report type picks the client renderer
-     * while the descriptor class (descriptorType, also from the input) picks the server's config parser, so when they
-     * disagree, check with both parsers.
+     * GH Issue 1649: the database-level twin of the validateContent check in tryValidateReportPermissions, so folder
+     * import and skipValidation saves can't add chart JavaScript either. The persisted report type picks the client
+     * renderer while the descriptor class (descriptorType, also from the input) picks the server's config parser, so
+     * when they disagree, also check the config with the type's own descriptor class.
      */
-    private void validatePointClickFn(User user, ReportDescriptor descriptor, @Nullable Report stored)
+    private void validateDescriptorContent(User user, ReportDescriptor descriptor, @Nullable Report stored)
     {
-        if (user.isTrustedBrowserDev())
-            return;
-
-        List<VisualizationReportDescriptor> parsers = new ArrayList<>(2);
-        if (descriptor instanceof VisualizationReportDescriptor vizDescriptor)
-            parsers.add(vizDescriptor);
-        Report typeReport = createReportInstance(descriptor.getReportType());
-        if (null != typeReport && typeReport.getDescriptor() instanceof VisualizationReportDescriptor typeDescriptor &&
-            !typeDescriptor.getClass().equals(descriptor.getClass()))
-            parsers.add(typeDescriptor);
-
-        String json = descriptor.getProperty(ReportDescriptor.Prop.json);
         ReportDescriptor storedDescriptor = null != stored ? stored.getDescriptor() : null;
         List<ValidationError> errors = new ArrayList<>();
-        parsers.forEach(parser -> parser.validatePointClickFn(user, json, storedDescriptor, errors));
+        descriptor.validateContent(user, storedDescriptor, errors);
+
+        Report typeReport = createReportInstance(descriptor.getReportType());
+        if (null != typeReport && !typeReport.getDescriptor().getClass().equals(descriptor.getClass()))
+        {
+            ReportDescriptor typeDescriptor = typeReport.getDescriptor();
+            typeDescriptor.setProperty(ReportDescriptor.Prop.json, descriptor.getProperty(ReportDescriptor.Prop.json));
+            typeDescriptor.validateContent(user, storedDescriptor, errors);
+        }
+
         if (!errors.isEmpty())
             throw new UnauthorizedException(errors.getFirst().getMessage());
     }
@@ -1094,7 +1090,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                 }
             }
 
-            // Save before deleting the same-named report so a save refused by validateScriptAuthorship or validatePointClickFn leaves it in place
+            // Save before deleting the same-named report so a save refused by validateScriptAuthorship or validateDescriptorContent leaves it in place
             int rowId;
             try
             {
@@ -1291,7 +1287,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     {
         TableInfo table = getTable();
         SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(table, "r")
-            .append(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").append(")");
+            .append(SQLFragment.unsafe(" WHERE r.ContainerId IN (SELECT EntityId FROM ")).append(CoreSchema.getInstance().getTableInfoContainers(), "c").append(SQLFragment.unsafe(")"));
         return new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class);
     }
 
@@ -1440,6 +1436,28 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         }
 
         @Test
+        public void testMismatchedDescriptorCannotHidePointClickFn() throws Exception
+        {
+            Container folder = createContainer("K");
+            ContainerUser folderAdmin = new DefaultContainerUser(folder, createUserInRole(folder, FolderAdminRole.class));
+            User developer = createUserInRole(folder, FolderAdminRole.class);
+            grantRootRole(developer, PlatformDeveloperRole.class);
+
+            // The query descriptor's validateContent ignores the config, so only the chart type's own descriptor sees the function
+            assertThrows(UnauthorizedException.class, () -> ReportService.get().saveReportEx(folderAdmin, KEY, newMismatchedChart("function(){alert(1)}"), false));
+            assertNull("Import should skip the chart", importReport(folder, folderAdmin.getUser(), newMismatchedChart("function(){alert(1)}")));
+            assertEquals(List.of(), reportIds(folder));
+            assertNotNull("A mismatched chart without a pointClickFn should still save",
+                ReportService.get().saveReportEx(folderAdmin, KEY, newMismatchedChart(null), false));
+
+            // A trusted browser developer may import it, which also shows the import keeps the mismatch
+            Report imported = importReport(folder, developer, newMismatchedChart("function(){alert(1)}"));
+            assertNotNull("Import should save the chart", imported);
+            assertEquals(ReportService.GENERIC_CHART_REPORT_TYPE, imported.getType());
+            assertFalse(imported.getDescriptor().getClass().equals(Objects.requireNonNull(ReportService.get().createReportInstance(ReportService.GENERIC_CHART_REPORT_TYPE)).getDescriptor().getClass()));
+        }
+
+        @Test
         public void testPlatformDeveloperImportsPointClickFnChart() throws Exception
         {
             Container folder = createContainer("G");
@@ -1490,8 +1508,19 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
 
         private static Report newChart(String name, @Nullable String pointClickFn)
         {
-            Report report = Objects.requireNonNull(ReportService.get().createReportInstance(GenericChartReport.TYPE));
+            Report report = Objects.requireNonNull(ReportService.get().createReportInstance(ReportService.GENERIC_CHART_REPORT_TYPE));
             report.getDescriptor().setReportName(name);
+            report.getDescriptor().setReportKey(KEY);
+            report.getDescriptor().setProperty(ReportDescriptor.Prop.json, chartJson(pointClickFn));
+            return report;
+        }
+
+        // A chart type whose descriptor is a query report's, as an import's descriptorType can arrange
+        private static Report newMismatchedChart(@Nullable String pointClickFn)
+        {
+            Report report = Objects.requireNonNull(ReportService.get().createReportInstance(QueryReport.TYPE));
+            report.getDescriptor().setReportType(ReportService.GENERIC_CHART_REPORT_TYPE);
+            report.getDescriptor().setReportName("mismatched-chart-" + GUID.makeGUID());
             report.getDescriptor().setReportKey(KEY);
             report.getDescriptor().setProperty(ReportDescriptor.Prop.json, chartJson(pointClickFn));
             return report;

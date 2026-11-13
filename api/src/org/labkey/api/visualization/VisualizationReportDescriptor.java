@@ -70,6 +70,12 @@ abstract public class VisualizationReportDescriptor extends ReportDescriptor
         return getPointClickFn(getJSON());
     }
 
+    @Override
+    public void validateContent(User user, @Nullable ReportDescriptor stored, List<ValidationError> errors)
+    {
+        validatePointClickFn(user, getJSON(), stored, errors);
+    }
+
     /** GH Issue 1649: only trusted browser developers may add or change the point click function in {@code json}. */
     public void validatePointClickFn(User user, @Nullable String json, @Nullable ReportDescriptor stored, List<ValidationError> errors)
     {
