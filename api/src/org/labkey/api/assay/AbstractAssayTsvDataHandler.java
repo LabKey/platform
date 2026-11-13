@@ -354,8 +354,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             @SuppressWarnings("unchecked")
             public <T> T convert(Class<T> type, Object value)
             {
-                if (value instanceof String s && s.length() > 1 && s.charAt(0) == '0' && StringUtils.isNumeric(s))
-                    return (T) s;
+                if (value instanceof String s)
+                {
+                    String trimmed = s.trim();
+                    if (trimmed.length() > 1 && trimmed.charAt(0) == '0' && StringUtils.isNumeric(trimmed))
+                        return (T) trimmed;
+                }
                 return converter.convert(type, value);
             }
         };
