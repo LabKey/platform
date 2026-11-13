@@ -220,7 +220,7 @@ public class ApiKeyManager
         });
     }
 
-    public void updateLastUsed(String apikey)
+    public void updateLastUsed(int rowId)
     {
         DbScope scope = CoreSchema.getInstance().getScope();
 
@@ -228,15 +228,15 @@ public class ApiKeyManager
         {
             SQLFragment sql = new SQLFragment("UPDATE ")
                 .append(CoreSchema.getInstance().getTableAPIKeys())
-                .unsafeAppend(" SET LastUsed = ? WHERE Crypt = ?")
+                .unsafeAppend(" SET LastUsed = ? WHERE RowId = ?")
                 .add(new Date())
-                .add(crypt(apikey));
+                .add(rowId);
             new SqlExecutor(scope).execute(sql);
             t.commit();
         }
     }
 
-    public record ApiKeyAuthentication(int createdBy, int rowId, @Nullable Class<? extends Role> restrictionRole)
+    public record ApiKeyAuthentication(int createdBy, int rowId, @Nullable Class<? extends Role> restrictionRole, @Nullable String description)
     {
         public @Nullable User getUser()
         {
@@ -273,7 +273,7 @@ public class ApiKeyManager
 
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
-            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId", "RestrictionRole"), filter, null).getObject(ApiKeyAuthentication.class);
+            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId", "RestrictionRole", "Description"), filter, null).getObject(ApiKeyAuthentication.class);
             t.commit();
         }
 
