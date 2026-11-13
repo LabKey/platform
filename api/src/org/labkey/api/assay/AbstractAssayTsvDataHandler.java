@@ -85,6 +85,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.RuntimeBatchValidationException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -603,7 +604,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             // check if we are merging the re-imported data
             if (context != null && context.getReRunId() != null && context.getReImportOption() == MERGE_DATA)
             {
-                DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                DataIteratorBuilder mergedData;
+                try
+                {
+                    mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                }
+                catch (RuntimeBatchValidationException e)
+                {
+                    throw e.getErrors();
+                }
                 fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
             }
 

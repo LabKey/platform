@@ -37,6 +37,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.RuntimeBatchValidationException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
@@ -63,6 +64,8 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
  * Static helpers for assembling DataIterator pipelines: matching a source iterator's columns to a target
@@ -429,20 +432,22 @@ public class DataIteratorUtil
      */
     public static DataIteratorBuilder mapTransformer(DataIteratorBuilder dibIn, Function<List<String>, List<String>> columnEnumerator, Function<Map<String,Object>, Map<String,Object>> fn)
     {
-        return context -> new _MapTransformer(dibIn.getDataIterator(context), fn, columnEnumerator);
+        return context -> new _MapTransformer(context, dibIn.getDataIterator(context), fn, columnEnumerator);
     }
 
 
     public static class _MapTransformer extends MapDataIterator.MapDataIteratorImpl
     {
         ArrayList<ColumnInfo> _columns;
+        final DataIteratorContext _context;
         final Function<Map<String,Object>, Map<String,Object>> _fn;
         Map<String,Object> _sourceMap;
         Map<String,Object> _outputMap;
 
-        _MapTransformer(DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, @Nullable Function<List<String>, List<String>> columnEnumerator)
+        _MapTransformer(DataIteratorContext context, DataIterator in, Function<Map<String,Object>, Map<String,Object>> fn, @Nullable Function<List<String>, List<String>> columnEnumerator)
         {
             super(wrapMap(in, false), false);
+            _context = context;
             _fn = fn;
 
             var map = DataIteratorUtil.createColumnNameMap(in);
@@ -485,19 +490,25 @@ public class DataIteratorUtil
         public boolean next() throws BatchValidationException
         {
             _currentMap = null;
-            if (!_input.next())
-                return false;
-            _sourceMap = ((MapDataIterator)_input).getMap();
-            try
+            while (_input.next())
             {
-                _outputMap = _fn.apply(_sourceMap);
+                _sourceMap = ((MapDataIterator)_input).getMap();
+                try
+                {
+                    _outputMap = _fn.apply(_sourceMap);
+                    return true;
+                }
+                catch (RuntimeValidationException e)
+                {
+                    ValidationException vex = e.getValidationException();
+                    if (vex.getRowNumber() == -1 && asInteger(_input.get(0)) instanceof Integer row)
+                        vex.setRowNumber(row);
+                    _context.getErrors().addRowError(vex);
+                    _context.checkShouldCancel();
+                    // Below the error limit, skip the row; the error stays in the context for the caller
+                }
             }
-            catch (RuntimeValidationException e)
-            {
-                throw new BatchValidationException(e.getValidationException());
-            }
-
-            return true;
+            return false;
         }
 
         @Override
@@ -545,7 +556,8 @@ public class DataIteratorUtil
             }
             catch (BatchValidationException x)
             {
-                return false;
+                // Iteration ending early is indistinguishable from exhausted input, so a Stream must fail instead
+                throw new RuntimeBatchValidationException(x);
             }
         }
 
