@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -38,6 +40,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
+import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.UserManager.SessionHandler;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -60,6 +64,7 @@ import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -67,6 +72,7 @@ import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -220,7 +226,7 @@ public class ApiKeyManager
         });
     }
 
-    public void updateLastUsed(String apikey)
+    public void updateLastUsed(int rowId)
     {
         DbScope scope = CoreSchema.getInstance().getScope();
 
@@ -228,15 +234,15 @@ public class ApiKeyManager
         {
             SQLFragment sql = new SQLFragment("UPDATE ")
                 .append(CoreSchema.getInstance().getTableAPIKeys())
-                .unsafeAppend(" SET LastUsed = ? WHERE Crypt = ?")
+                .unsafeAppend(" SET LastUsed = ? WHERE RowId = ?")
                 .add(new Date())
-                .add(crypt(apikey));
+                .add(rowId);
             new SqlExecutor(scope).execute(sql);
             t.commit();
         }
     }
 
-    public record ApiKeyAuthentication(int createdBy, int rowId, @Nullable Class<? extends Role> restrictionRole)
+    public record ApiKeyAuthentication(int createdBy, int rowId, @Nullable Class<? extends Role> restrictionRole, @Nullable String description)
     {
         public @Nullable User getUser()
         {
@@ -273,7 +279,7 @@ public class ApiKeyManager
 
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
-            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId", "RestrictionRole"), filter, null).getObject(ApiKeyAuthentication.class);
+            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId", "RestrictionRole", "Description"), filter, null).getObject(ApiKeyAuthentication.class);
             t.commit();
         }
 
@@ -373,6 +379,30 @@ public class ApiKeyManager
 
             ApiKeyManager.get().deleteKey(user, created.rowId());
             assertNull(ApiKeyManager.get().authenticateFromApiKey(created.apiKey()));
+        }
+
+        @Test
+        public void testDescriptionInLoginAuditEvent() throws InvalidEmailException
+        {
+            User user = TestContext.get().getUser();
+            // Unique description defeats AuthenticationManager's duplicate-message suppression
+            String description = "ApiKeyManager.TestCase " + GUID.makeGUID();
+            String apiKey = ApiKeyManager.get().createKey(user, 10, description);
+
+            try
+            {
+                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(new MockHttpServletRequest(), SecurityManager.API_KEY, apiKey, null, false);
+                assertEquals(AuthenticationStatus.Success, result.getStatus());
+
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Comment"), description, CompareType.CONTAINS);
+                List<UserManager.UserAuditEvent> events = AuditLogService.get().getAuditEvents(ContainerManager.getRoot(), user, UserManager.USER_AUDIT_EVENT, filter, null);
+                assertEquals(1, events.size());
+                assertEquals(user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + UserManager.UserAuditEvent.API_KEY + " (\"" + description + "\").", events.getFirst().getComment());
+            }
+            finally
+            {
+                ApiKeyManager.get().deleteKey(apiKey);
+            }
         }
 
         @Test(expected = IllegalStateException.class)
