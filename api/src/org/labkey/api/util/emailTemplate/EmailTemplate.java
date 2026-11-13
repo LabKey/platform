@@ -159,7 +159,7 @@ public abstract class EmailTemplate
         replacements.add("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : c.getName());
         replacements.add("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : c.getPath());
         replacements.add("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString());
-        replacements.add("homePageURL", String.class, "The home page of this installation", ContentType.Plain, c -> ActionURL.getBaseServerURL()); // TODO: Use AppProps.getHomePageUrl() instead?
+        replacements.add("homePageURL", String.class, "The home page of this installation", ContentType.Plain, c -> ActionURL.getBaseServerURLWithContextPath()); // TODO: Use AppProps.getHomePageUrl() instead?
     }
 
     public EmailTemplate(@NotNull String name, String description, String subject, String body, @NotNull ContentType contentType, Scope scope)

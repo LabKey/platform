@@ -972,7 +972,7 @@ public class LoginController extends SpringActionController
                 LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
                 Message msg = MailHelper.createMessage(laf.getSystemEmailAddress(), user.getEmail());
                 msg.setSubject(laf.getShortName() + " Password Reset Attempt Failed");
-                msg.setText(failureEmailMessage + "\n\nThe " + laf.getCompanyName() + " " + laf.getShortName() + " home page is " + ActionURL.getBaseServerURL() + ".");
+                msg.setText(failureEmailMessage + "\n\nThe " + laf.getCompanyName() + " " + laf.getShortName() + " home page is " + ActionURL.getBaseServerURLWithContextPath() + ".");
                 MailHelper.send(msg, user, c);
             }
             catch (MessagingException e)

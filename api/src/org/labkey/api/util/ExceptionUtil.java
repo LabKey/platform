@@ -1300,7 +1300,7 @@ public class ExceptionUtil
                     if (errorView == null)
                     {
                         // context can be null for configuration exceptions depending on how far server got through initialization
-                        errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
+                        errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURLWithContextPath())), new ErrorView(renderer), pageConfig);
                     }
 
                     addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);

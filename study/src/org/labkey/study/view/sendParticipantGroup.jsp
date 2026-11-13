@@ -72,7 +72,7 @@
     <br/><br/>
 
     <b>Message link:</b>
-    <div><%=h(sendGroupUrl.getBaseServerURI() + PageFlowUtil.decode(sendGroupUrl.toString()))%></div>
+    <div><%=h(PageFlowUtil.decode(sendGroupUrl.getURIString()))%></div>
     <div><a class="labkey-text-link" target="_blank" href="<%=h(sendGroupUrl)%>" rel="noopener noreferrer">Preview Link</a></div>
     <br/>
 

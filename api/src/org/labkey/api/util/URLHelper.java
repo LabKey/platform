@@ -189,7 +189,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     }
 
     // Scheme check is here for test SAML redirect, which is to the same host ("localhost") but a different scheme
-    private boolean isSameOrigin(URLHelper other)
+    public boolean isSameOrigin(URLHelper other)
     {
         return getHost().equalsIgnoreCase(other.getHost()) && getScheme().equalsIgnoreCase(other.getScheme()) && getEffectivePort() == other.getEffectivePort();
     }
@@ -223,6 +223,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     }
 
 
+    /** Scheme, host, and port only; no context path. Use getURIString() for a full URL. */
     public String getBaseServerURI()
     {
         return getBaseServer(getScheme(), getHost(), getPort()).toString();

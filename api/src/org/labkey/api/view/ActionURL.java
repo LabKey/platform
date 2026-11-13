@@ -141,17 +141,17 @@ public class ActionURL extends URLHelper implements Cloneable
         return super.getHost();
     }
 
-    private static String getBaseServerURL(String scheme, String host, int port)
+    private static String getBaseServerURLWithContextPath(String scheme, String host, int port)
     {
         StringBuilder sb = getBaseServer(scheme, host, port);
         sb.append(AppProps.getInstance().getContextPath());
         return sb.toString();
     }
 
-    public static String getBaseServerURL()
+    public static String getBaseServerURLWithContextPath()
     {
         AppProps props = AppProps.getInstance();
-        return getBaseServerURL(props.getScheme(), props.getServerName(), props.getServerPort());
+        return getBaseServerURLWithContextPath(props.getScheme(), props.getServerName(), props.getServerPort());
     }
 
 

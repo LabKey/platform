@@ -145,7 +145,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     {
         if (recipient != null)
         {
-            String fullUrlStr = linkUrl.getBaseServerURI() + linkUrl;
+            String fullUrlStr = linkUrl.getURIString();
 
             // create the notification message email
             MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
