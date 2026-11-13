@@ -3,14 +3,20 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import { hookServer, IntegrationTestServer, RequestOptions, successfulResponse, testSeed } from '@labkey/test';
+import {
+    generateFieldName,
+    hookServer,
+    IntegrationTestServer,
+    RequestOptions,
+    successfulResponse,
+    testSeed,
+} from '@labkey/test';
 import mock from 'mock-fs';
 
 import {
     AssayDesignFieldOptions,
     createAssayDesign,
     createDomainField,
-    generateFieldNameForImport,
     getAuditLogsForTransaction,
     getRunQueryRow,
     ImportRunOptions,
@@ -29,7 +35,6 @@ import {
     Row
 } from '@labkey/components';
 
-// @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
 const PROJECT_NAME = 'ArrayImportRunActionTest Project';
 
@@ -43,7 +48,7 @@ const RUN_TEXT_CHOICE_FIELD_NAME = 'runTextChoiceField';
 const RESULT_FIELD_NAME = 'resultStringField';
 const RESULT_FILE_FIELD_NAME = 'resultFileField';
 const RESULT_TC_FIELD_NAME = 'resultTextChoiceField';
-const RESULT_MVTC_FIELD_NAME = 'resultMC ' + generateFieldNameForImport();
+const RESULT_MVTC_FIELD_NAME = 'resultMC ' + generateFieldName(10);
 
 let context;
 let ASSAY_A_ID: number;
@@ -72,12 +77,12 @@ beforeAll(async () => {
     let resultFields = [
         createDomainField({ name: RESULT_FIELD_NAME }),
         createDomainField({ name: RESULT_FILE_FIELD_NAME, rangeURI: RANGE_URIS.FILELINK }),
-        createDomainField({name: RESULT_TC_FIELD_NAME, ...TC_FIELD_PROP} as Partial<IDomainField>)
+        createDomainField({ name: RESULT_TC_FIELD_NAME, ...TC_FIELD_PROP })
     ];
 
     if (supportMultiChoice) {
         console.log("Assay result MVTC field name: " + RESULT_MVTC_FIELD_NAME);
-        resultFields.push(createDomainField({name: RESULT_MVTC_FIELD_NAME, ...MVTC_FIELD_PROP} as Partial<IDomainField>));
+        resultFields.push(createDomainField({ name: RESULT_MVTC_FIELD_NAME, ...MVTC_FIELD_PROP }));
     }
 
     let assayFields: AssayDesignFieldOptions = {
@@ -88,7 +93,7 @@ beforeAll(async () => {
         runFields: [
             createDomainField({ name: RUN_FILE_FIELD_NAME, rangeURI: RANGE_URIS.FILELINK }),
             createDomainField({ name: RUN_FILE_FIELD_TWO_NAME, rangeURI: RANGE_URIS.FILELINK }),
-            createDomainField({name: RUN_TEXT_CHOICE_FIELD_NAME, ...TC_FIELD_PROP} as Partial<IDomainField>)
+            createDomainField({ name: RUN_TEXT_CHOICE_FIELD_NAME, ...TC_FIELD_PROP })
         ],
         resultFields,
     };
