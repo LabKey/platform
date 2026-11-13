@@ -167,6 +167,7 @@ import org.labkey.experiment.lineage.ExpLineageServiceImpl;
 import org.labkey.experiment.lineage.LineagePerfTest;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.pipeline.XarTestPipelineJob;
+import org.labkey.experiment.samples.DataClassAttachmentExportImportTestCase;
 import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
@@ -1122,6 +1123,7 @@ public class ExperimentModule extends SpringModule
         return Set.of(
             EdgeDiagnosticsTestCase.class,
             ExperimentController.ContainerScopingTestCase.class,
+            DataClassAttachmentExportImportTestCase.class,
             DataColorTable.TestCase.class,
             DataMapDiffColumnTestCase.class,
             DomainImpl.TestCase.class,

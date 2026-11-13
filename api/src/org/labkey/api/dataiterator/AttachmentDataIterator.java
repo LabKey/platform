@@ -131,6 +131,9 @@ public class AttachmentDataIterator extends WrapperDataIterator
                         continue;
                     }
 
+                    // Archive files are named by position among same-named values, so every row must take its slot
+                    String archiveName = null == attachmentDir ? null : p.uniquifier.uniquify(str);
+
                     if (str.equals(oldAttachmentValue)) // no change
                         continue;
 
@@ -144,7 +147,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
                     }
 
                     filename = str;
-                    InputStream aIS = attachmentDir.getDir(p.domainProperty.getName()).getInputStream(p.uniquifier.uniquify(filename));
+                    InputStream aIS = attachmentDir.getDir(p.domainProperty.getName()).getInputStream(archiveName);
                     if (aIS == null)
                     {
                         errors.addRowError(new ValidationException("Could not find referenced file " + filename, p.domainProperty.getName()));
