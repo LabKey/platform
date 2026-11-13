@@ -152,6 +152,12 @@ public class IssueListDef extends Entity
         return PropertyService.get().getDomain(getDomainContainer(user), uri, forUpdate);
     }
 
+    /** False when the module that provides this list's domain kind isn't deployed */
+    public boolean isDomainKindRegistered()
+    {
+        return PropertyService.get().getDomainKindByName(getDomainKindName(getKind())) != null;
+    }
+
     public AbstractIssuesListDefDomainKind getDomainKind()
     {
         return (AbstractIssuesListDefDomainKind)PropertyService.get().getDomainKindByName(getDomainKindName(getKind()));

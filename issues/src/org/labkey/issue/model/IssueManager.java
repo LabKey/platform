@@ -259,6 +259,8 @@ public class IssueManager
         if (issue.getIssueDefId() != null)
         {
             IssueListDef issueListDef = getIssueListDef(issue.getContainerFromId(), issue.getIssueDefId());
+            if (issueListDef == null)
+                return null;
             UserSchema userSchema = QueryService.get().getUserSchema(user, c, IssuesQuerySchema.SCHEMA_NAME);
             TableInfo table = userSchema.getTable(issueListDef.getName());
 
@@ -1067,7 +1069,9 @@ public class IssueManager
         if (container != null)
             return IssueListDefCache.getIssueListDefs(container);
         else
-            return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).getArrayList(IssueListDef.class);
+            return new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), null, null).stream(IssueListDef.class)
+                .filter(IssueListDef::isDomainKindRegistered)
+                .toList();
     }
 
     @Nullable

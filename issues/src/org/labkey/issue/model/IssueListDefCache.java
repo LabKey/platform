@@ -15,6 +15,7 @@
  */
 package org.labkey.issue.model;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -24,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +39,7 @@ import java.util.Map;
  */
 public class IssueListDefCache
 {
+    private static final Logger LOG = LogHelper.getLogger(IssueListDefCache.class, "Issue list definition cache");
     private static final Cache<Container, IssueDefCollections> ISSUE_DEF_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Issue list definitions", (c, argument) -> new IssueDefCollections(c));
 
     private static class IssueDefCollections
@@ -52,6 +55,12 @@ public class IssueListDefCache
             Map<String, List<IssueListDef>> domainKindMap = new HashMap<>();
 
             new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), SimpleFilter.createContainerFilter(c), null).forEach(IssueListDef.class, issueDef -> {
+
+                if (!issueDef.isDomainKindRegistered())
+                {
+                    LOG.warn("Ignoring issue list \"{}\" in {}: domain kind \"{}\" is not registered", issueDef.getName(), c.getPath(), issueDef.getKind());
+                    return;
+                }
 
                 rowIdMap.put(issueDef.getRowId(), issueDef);
                 nameMap.put(issueDef.getName(), issueDef);
