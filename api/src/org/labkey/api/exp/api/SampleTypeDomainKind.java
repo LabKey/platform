@@ -308,7 +308,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        SQLFragment ret = new SQLFragment("SELECT exp.object.objectid FROM exp.object INNER JOIN exp.material ON exp.object.objecturi = exp.material.lsid WHERE exp.material.cpastype = ?");
+        SQLFragment ret = SQLFragment.unsafe("SELECT exp.object.objectid FROM exp.object INNER JOIN exp.material ON exp.object.objecturi = exp.material.lsid WHERE exp.material.cpastype = ?");
         ret.add(domain.getTypeURI());
         return ret;
     }
@@ -601,8 +601,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             if (StringUtils.isEmpty(scope) || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(scope))
             {
                 String table = domain.getStorageTableName();
-                allRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE RowId IN (")
-                        .unsafeAppend("SELECT RowId FROM ").append(getStorageSchemaName()).unsafeAppend(".").append(table)
+                allRowsSQL = SQLFragment.unsafe("SELECT * FROM exp.material WHERE RowId IN (")
+                        .unsafeAppend("SELECT RowId FROM ").appendDottedIdentifiers(getStorageSchemaName(), table)
                         .unsafeAppend(") AND RootMaterialRowId = RowId");
             }
 

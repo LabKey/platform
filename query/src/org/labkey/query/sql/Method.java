@@ -466,7 +466,7 @@ public abstract class Method
             @Override
             public MethodInfo getMethodInfo()
             {
-                return new TimestampInfo(this);
+                return new TimestampDiffInfo(this);
             }
         });
         labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
@@ -539,7 +539,9 @@ public abstract class Method
                         SQLFragment cte = SQLFragment.unsafe("SELECT 2 as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, "__test__two__", "_two", cte);
-                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
+                        SQLFragment tokenSql = new SQLFragment();
+                        tokenSql.setSqlUnsafe(token);
+                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -558,7 +560,9 @@ public abstract class Method
                         SQLFragment cte = SQLFragment.unsafe("SELECT 3 as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, "__test_three__", "_three", cte);
-                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
+                        SQLFragment tokenSql = new SQLFragment();
+                        tokenSql.setSqlUnsafe(token);
+                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -578,7 +582,9 @@ public abstract class Method
                         cte.unsafeAppend("SELECT (").append(arguments[0]).unsafeAppend(")*(").append(arguments[1]).unsafeAppend(") as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, GUID.makeGUID(), "_times", cte);
-                        ret.unsafeAppend("(SELECT x FROM ").append(new SQLFragment().setSqlUnsafe(token)).unsafeAppend(" y)");
+                        SQLFragment tokenSql = new SQLFragment();
+                        tokenSql.setSqlUnsafe(token);
+                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -691,6 +697,39 @@ public abstract class Method
                     arguments[0] = new SQLFragment(i.name());
             }
             return super.getSQL(dialect, arguments);
+        }
+    }
+
+
+    static class TimestampDiffInfo extends TimestampInfo
+    {
+        public TimestampDiffInfo(Method method)
+        {
+            super(method);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            // pgjdbc rewrites {fn timestampdiff(u, a, b)} as extract(u from (b-a)) before numbering placeholders, which swaps bound values
+            if (!dialect.isPostgreSQL())
+                return super.getSQL(dialect, arguments);
+
+            SQLFragment diff = new SQLFragment().unsafeAppend("(").append(arguments[2]).unsafeAppend(") - (").append(arguments[1]).unsafeAppend(")");
+            return switch (TimestampDiffInterval.parse(arguments[0]))
+            {
+                case SQL_TSI_DAY -> new SQLFragment().unsafeAppend("EXTRACT(day FROM ").append(diff).unsafeAppend(")");
+                // Issue 25146: pgjdbc extracts the interval's field rather than its total in these units
+                case SQL_TSI_SECOND -> epoch(diff);
+                case SQL_TSI_MINUTE -> epoch(diff).unsafeAppend("/60.0");
+                case SQL_TSI_HOUR -> epoch(diff).unsafeAppend("/3600.0");
+                case null, default -> throw new QueryParseException("TIMESTAMPDIFF supports SQL_TSI_SECOND, SQL_TSI_MINUTE, SQL_TSI_HOUR, or SQL_TSI_DAY on PostgreSQL", null, -1, -1);
+            };
+        }
+
+        private static SQLFragment epoch(SQLFragment diff)
+        {
+            return new SQLFragment().unsafeAppend("EXTRACT(epoch FROM ").append(diff).unsafeAppend(")");
         }
     }
 
@@ -1427,6 +1466,9 @@ public abstract class Method
                 User user = (User) QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
+                // Role impersonation and LimitedUser have no groups; "IN ()" is a syntax error
+                if (user.getGroups().size() == 0)
+                    return new SQLFragment("(1=0)");
                 SQLFragment ret = new SQLFragment();
                 // Inline the IDs: appendInClause() may create a temp table in the LabKey DB, but this SQL can run against an external data source
                 ret.unsafeAppend("(").append(groupArg).unsafeAppend(") IN (");

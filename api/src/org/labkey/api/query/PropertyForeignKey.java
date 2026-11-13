@@ -128,7 +128,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 
     static public SQLFragment getMvIndicatorSQL()
     {
-        return new SQLFragment("exp.ObjectProperty.MvIndicator");
+        return SQLFragment.unsafe("exp.ObjectProperty.MvIndicator");
     }
 
     protected BaseColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)

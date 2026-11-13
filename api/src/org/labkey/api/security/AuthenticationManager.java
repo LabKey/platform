@@ -1894,8 +1894,20 @@ public class AuthenticationManager
         UsageMetricsService.get().registerUsageMetrics(ModuleLoader.getInstance().getCoreModule().getName(), metrics -> {
             Supplier<Map<String, Long>> supplier = () -> AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
                 .collect(Collectors.groupingBy(config->config.getAuthenticationProvider().getName(), Collectors.counting()));
+            metrics.put("authenticationConfigurations", supplier, "Enabled authentication configurations by provider (Database, LDAP, SAML, CAS, etc.)");
 
-            return metrics.put("authenticationConfigurations", supplier, "Enabled authentication configurations by provider (Database, LDAP, SAML, CAS, etc.)");
+            Supplier<Map<String, Object>> settings = () -> Map.of(
+                "selfRegistration", isRegistrationEnabled(),
+                "autoCreateAccounts", isAutoCreateAccountsEnabled(),
+                "selfServiceEmailChanges", isSelfServiceEmailChangesEnabled(),
+                "acceptOnlyFicamProviders", isAcceptOnlyFicamProviders(),
+                "defaultDomainSet", !getDefaultDomain().isEmpty(),
+                "loginAttemptControl", isLoginAttemptControlEnabled(),
+                "loginAttemptLimit", getLoginAttemptLimit(),
+                "loginAttemptPeriod", getLoginAttemptPeriod(),
+                "loginAttemptResetTime", getLoginAttemptResetTime()
+            );
+            return metrics.put("authenticationSettings", settings, "Effective global authentication settings (limit login attempts, allow self sign-up, etc.)");
         });
     }
 

@@ -96,7 +96,11 @@ public class RolapTestSchema extends UserSchema
                     if (null == v)
                         sql.unsafeAppend("CAST(NULL AS ").append(d.getSqlTypeNameAsSql(t)).unsafeAppend(t.isText() ? "(100)" : "").unsafeAppend(")");
                     else
-                        sql.append(new SQLFragment().setSqlUnsafe(RolapCubeDef.toSqlLiteral(t,v)));
+                    {
+                        SQLFragment literal = new SQLFragment();
+                        literal.setSqlUnsafe(RolapCubeDef.toSqlLiteral(t,v));
+                        sql.append(literal);
+                    }
                     sql.unsafeAppend(" AS ").appendIdentifier(d.quoteIdentifier(c.getName()));
                 }
             }

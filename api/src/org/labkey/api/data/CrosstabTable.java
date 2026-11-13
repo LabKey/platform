@@ -221,8 +221,8 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     {
         sql.unsafeAppend("SELECT ");
 
-        SQLFragment instanceCountExpr = new SQLFragment("(");
-        SQLFragment sortPatternExpr = new SQLFragment("(");
+        SQLFragment instanceCountExpr = SQLFragment.unsafe("(");
+        SQLFragment sortPatternExpr = SQLFragment.unsafe("(");
         String plus = "";
 
         String sep = "";
@@ -242,16 +242,16 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             //append to the instance count and sort pattern expressions
             instanceCountExpr.append(plus);
             instanceCountExpr.unsafeAppend("MAX(");
-            instanceCountExpr.append(PIVOT_ALIAS);
+            instanceCountExpr.appendIdentifier(PIVOT_ALIAS);
             instanceCountExpr.unsafeAppend(".");
-            instanceCountExpr.append(getMemberInstanceCountAlias(member));
+            instanceCountExpr.appendIdentifier(getMemberInstanceCountAlias(member));
             instanceCountExpr.unsafeAppend(")");
 
             sortPatternExpr.append(plus);
             sortPatternExpr.unsafeAppend("MAX(");
-            sortPatternExpr.append(PIVOT_ALIAS);
+            sortPatternExpr.appendIdentifier(PIVOT_ALIAS);
             sortPatternExpr.unsafeAppend(".");
-            sortPatternExpr.append(getMemberSortPatternAlias(member));
+            sortPatternExpr.appendIdentifier(getMemberSortPatternAlias(member));
             sortPatternExpr.unsafeAppend(")");
 
             plus = " + ";
@@ -261,11 +261,11 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
                 //wrap the pivoted aggregate value in a max since we'll be grouping by the row dimensions
                 sql.append(sep);
                 sql.unsafeAppend("MAX(");
-                sql.append(PIVOT_ALIAS);
+                sql.appendIdentifier(PIVOT_ALIAS);
                 sql.unsafeAppend(".");
-                sql.append(AggregateColumnInfo.getColumnName(member, measure));
+                sql.appendIdentifier(AggregateColumnInfo.getColumnName(member, measure));
                 sql.unsafeAppend(") AS ");
-                sql.append(AggregateColumnInfo.getColumnName(member, measure));
+                sql.appendIdentifier(AggregateColumnInfo.getColumnName(member, measure));
             } //for each measure
         } //for each member
 
@@ -279,11 +279,11 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
                 //wrap the pivoted aggregate value in a max since we'll be grouping by the row dimensions
                 sql.append(sep);
                 sql.unsafeAppend("MAX(");
-                sql.append(PIVOT_ALIAS);
+                sql.appendIdentifier(PIVOT_ALIAS);
                 sql.unsafeAppend(".");
-                sql.append(AggregateColumnInfo.getColumnName(null, measure));
+                sql.appendIdentifier(AggregateColumnInfo.getColumnName(null, measure));
                 sql.unsafeAppend(") AS ");
-                sql.append(AggregateColumnInfo.getColumnName(null, measure));
+                sql.appendIdentifier(AggregateColumnInfo.getColumnName(null, measure));
             } //for each measure
         }
         //end the instance count/sort pattern expressions
@@ -294,12 +294,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.append(sep);
         sql.append(instanceCountExpr);
         sql.unsafeAppend(" AS ");
-        sql.append(COL_INSTANCE_COUNT);
+        sql.appendIdentifier(COL_INSTANCE_COUNT);
 
         sql.append(sep);
         sql.append(sortPatternExpr);
         sql.unsafeAppend(" AS ");
-        sql.append(COL_SORT_PATTERN);
+        sql.appendIdentifier(COL_SORT_PATTERN);
 
         sql.unsafeAppend("\nFROM (\n");
 
@@ -307,7 +307,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
         //alias the pivot query
         sql.unsafeAppend("\n) AS ");
-        sql.append(PIVOT_ALIAS);
+        sql.appendIdentifier(PIVOT_ALIAS);
 
         //finally group by the row dimensions
         sql.unsafeAppend("\nGROUP BY ");
@@ -315,7 +315,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         for (CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
             sql.append(sep)
-                .append(PIVOT_ALIAS + ".")
+                .appendIdentifier(PIVOT_ALIAS).unsafeAppend(".")
                 .appendIdentifier(rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
@@ -331,7 +331,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         for(CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
             sql.append(sep)
-                .append(AGG_FILTERED_ALIAS + ".")
+                .appendIdentifier(AGG_FILTERED_ALIAS).unsafeAppend(".")
                 .appendIdentifier(rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
@@ -364,7 +364,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             for(CrosstabMeasure measure : getSettings().getMeasures())
             {
                 sql.unsafeAppend(",\n");
-                sql.append(AggregateColumnInfo.getColumnName(null, measure));
+                sql.appendIdentifier(AggregateColumnInfo.getColumnName(null, measure));
            } //for each measure
         }
 
@@ -372,7 +372,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.unsafeAppend("\nFROM (\n");
         Map<FieldKey,ColumnInfo> filterColMap = addAggQuery(sql);
         sql.unsafeAppend("\n) AS ");
-        sql.append(AGG_FILTERED_ALIAS);
+        sql.appendIdentifier(AGG_FILTERED_ALIAS);
 
         if(null != getAggregateFilter())
         {
@@ -398,7 +398,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.unsafeAppend("SELECT * FROM (\n");
         sql.append(Table.getSelectSQL(groupTable, reqCols, null, null));
         sql.unsafeAppend("\n) AS ");
-        sql.append(AGG_ALIAS);
+        sql.appendIdentifier(AGG_ALIAS);
 
         return getAggregateFilterColMap(reqCols);
     } //addAggQuery()
@@ -459,7 +459,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         for(CrosstabDimension dim : getSettings().getRowAxis().getDimensions())
         {
             sql.append(sep);
-            sql.append(AGG_OR_ALIAS);
+            sql.appendIdentifier(AGG_OR_ALIAS);
             sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sep = ",";
@@ -470,7 +470,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         addAggQuery(sql);
 
         sql.unsafeAppend("\n) AS ");
-        sql.append(AGG_OR_ALIAS);
+        sql.appendIdentifier(AGG_OR_ALIAS);
 
         //now add the agg filters
         sql.unsafeAppend("\n");
@@ -479,7 +479,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         //end the inner-join table
         //aliased as ROWMEMS_ALIAS
         sql.unsafeAppend(") AS ");
-        sql.append(ROWMEMS_ALIAS);
+        sql.appendIdentifier(ROWMEMS_ALIAS);
         sql.unsafeAppend(" ON (");
 
         //joined on the row dimensions
@@ -487,11 +487,11 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         for(CrosstabDimension dim : getSettings().getRowAxis().getDimensions())
         {
             sql.append(sep);
-            sql.append(ROWMEMS_ALIAS);
+            sql.appendIdentifier(ROWMEMS_ALIAS);
             sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sql.unsafeAppend("=");
-            sql.append(joinAlias);
+            sql.appendIdentifier(joinAlias);
             sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sep = " AND ";

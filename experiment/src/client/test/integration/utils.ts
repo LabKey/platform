@@ -1187,6 +1187,8 @@ export async function checkDomainNameConflicts(server: IntegrationTestServer, do
         "Duplicate import alias 'keeperAlias' for fields 'Added', 'Keeper'.");
     await updateExpectError([...keeperFields, { name: 'Added', importAliases: 'Keeper' }], existingAliases,
         "Import alias 'Keeper' on field 'Added' conflicts with a field name.");
+    await updateExpectError([...keeperFields, { name: 'Added', label: reservedName }], existingAliases,
+        `Label '${reservedName}' on field 'Added' conflicts with a system field name.`);
     await updateExpectError(keeperFields, { ...existingAliases, Keeper: parentOf(name) },
         `An existing ${noun} property conflicts with parent alias header: Keeper`);
     await updateExpectError(keeperFields, { ...existingAliases, keeperAlias: parentOf(name) },

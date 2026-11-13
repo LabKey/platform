@@ -118,7 +118,8 @@ class QueryTracker
     public SQLFragment getSQLFragment()
     {
         // Avoid tripping up semicolon and unmatched quote detection, Issue 48731
-        SQLFragment sql = new SQLFragment().setSqlUnsafe(getSql());
+        SQLFragment sql = new SQLFragment();
+        sql.setSqlUnsafe(getSql());
         if (null != _parameters)
             sql.addAll(_parameters);
         return sql;

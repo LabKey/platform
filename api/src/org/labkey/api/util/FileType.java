@@ -490,31 +490,32 @@ public class FileType implements Serializable
         return FileUtil.appendName(parent, getName(parent, basename));
     }
 
-    public boolean isType(File file)
+    public boolean isType(@Nullable File file)
     {
         return isType(file, null, null);
     }
 
-    public boolean isType(FileLike file)
+    public boolean isType(@Nullable FileLike file)
     {
-        return isType(file.toNioPathForRead(), null, null);
+        return file != null && isType(file.toNioPathForRead(), null, null);
     }
 
-    public boolean isType(java.nio.file.Path path)
+    public boolean isType(@Nullable java.nio.file.Path path)
     {
         return isType(path, null, null);
     }
 
-    public boolean isType(java.nio.file.Path path, String contentType, byte[] header)
+    public boolean isType(@Nullable java.nio.file.Path path, @Nullable String contentType, byte @Nullable[] header)
     {
         if ((path == null) || (_dir != null && _dir.booleanValue() != Files.isDirectory(path)))
             return false;
 
-        return isType(path.getFileName().toString(), contentType, header);
+        // A root has no file name; use "" to match File.getName()
+        Path fileName = path.getFileName();
+        return isType(fileName == null ? "" : fileName.toString(), contentType, header);
     }
 
-
-    public boolean isType(File file, String contentType, byte[] header)
+    public boolean isType(@Nullable File file, @Nullable String contentType, byte @Nullable[] header)
     {
         if ((file == null) || (_dir != null && _dir.booleanValue() != file.isDirectory()))
             return false;
@@ -525,7 +526,7 @@ public class FileType implements Serializable
     /**
      * Checks if the path matches any of the suffixes 
      */
-    public boolean isType(String filePath)
+    public boolean isType(@Nullable String filePath)
     {
         return isType(filePath, null, null);
     }

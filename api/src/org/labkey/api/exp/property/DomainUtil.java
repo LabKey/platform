@@ -157,6 +157,9 @@ public class DomainUtil
         labelVsSystemField
     }
 
+    // GH Issue 1783: Sample Types surface this column as "Folder", leaving "Container" claimed only by a system import alias, so a field labeled "Container" outranks it and is overwritten with the row's container.
+    public static final Set<String> SYSTEM_FIELD_NAMES = Collections.unmodifiableSet(getNamesAndLabels(List.of("Container")));
+
     private DomainUtil()
     {
     }
@@ -1014,10 +1017,10 @@ public class DomainUtil
                         {
                             var dialect = domainTable.getSchema().getSqlDialect();
                             DatabaseIdentifier columnId = p.getPropertyDescriptor().getLegalSelectName(dialect);
-                            SQLFragment deletedArray = new SQLFragment("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
+                            SQLFragment deletedArray = SQLFragment.unsafe("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
                             SQLFragment columnFrag = new SQLFragment().appendIdentifier(columnId);
 
-                            SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
+                            SQLFragment sql = SQLFragment.unsafe("SELECT 1 FROM ")
                                     .append(domainTable)
                                     .unsafeAppend(" WHERE ")
                                     .append(dialect.array_some_in_array(columnFrag, deletedArray));
@@ -1640,8 +1643,7 @@ public class DomainUtil
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         // GH Issue 1257: import alias -> the fields declaring it.
         Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
-        // GH Issue 1589: explicit label -> the fields carrying it. Only populated when tallying, since label collisions
-        // are counted but not rejected.
+        // GH Issue 1589: explicit label -> the fields carrying it.
         Map<String, List<GWTPropertyDescriptor>> labelMap = new CaseInsensitiveLinkedHashMap<>();
         Set<String> fieldNames = new CaseInsensitiveHashSet();
         ValidationException exception = new ValidationException();
@@ -1669,15 +1671,12 @@ public class DomainUtil
                     importAliasMap.computeIfAbsent(alias, k -> new ArrayList<>()).add(field);
             }
 
-            if (tally != null)
-            {
-                // Only an explicitly set label counts. A label derived from the field name is not something anyone
-                // chose, and the only way to resolve a collision on one is to rename the field.
-                String label = StringUtils.trimToNull(field.getLabel());
-                // A label repeating its own field's name is redundant but not ambiguous.
-                if (label != null && !label.equalsIgnoreCase(name))
-                    labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
-            }
+            // Only an explicitly set label counts. A label derived from the field name is not something anyone chose,
+            // and the only way to resolve a collision on one is to rename the field.
+            String label = StringUtils.trimToNull(field.getLabel());
+            // A label repeating its own field's name is redundant but not ambiguous.
+            if (label != null && !label.equalsIgnoreCase(name))
+                labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
 
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
             {
@@ -1864,6 +1863,12 @@ public class DomainUtil
     {
         if (tally != null)
             tally.accept(rule, field);
+    }
+
+    /** Anchor the error on every field named in it so the designer can highlight each one. */
+    private static void addFieldErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
+    {
+        addFieldErrors(exception, updates, fields, message);
     }
 
     /** Anchor the error on every field named in it so the designer can highlight each one. */

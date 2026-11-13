@@ -85,7 +85,6 @@ public class StatementUtils
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardDataIteratorBuilder
     private boolean _selectIds = false;
-    private boolean _selectObjectUri = false;
     private boolean _allowUpdateAutoIncrement = false;
     private boolean _preferPKOverObjectUriAsKey = false;
 
@@ -167,12 +166,6 @@ public class StatementUtils
     public StatementUtils selectIds(boolean b)
     {
         _selectIds = b;
-        return this;
-    }
-
-    public StatementUtils selectObjectUri(boolean b)
-    {
-        _selectObjectUri = b;
         return this;
     }
 
@@ -385,7 +378,10 @@ public class StatementUtils
         }
         else if (useVariables)
         {
-            f.append(ph.variableName);
+            if (ph.variableName.startsWith(pgRowVarPrefix))
+                f.unsafeAppend(pgRowVarPrefix).appendIdentifier(makePgRowTypeName(ph.variableName));
+            else
+                f.appendIdentifier(ph.variableName);
         }
         else
         {
@@ -401,9 +397,9 @@ public class StatementUtils
         {
             f.unsafeAppend("CASE CAST(");
             appendParameterOrVariable(f, p);
-            f.unsafeAppend(" AS ").append(_dialect.getBooleanDataType()).unsafeAppend(")")
-                    .unsafeAppend(" WHEN ").append(_dialect.getBooleanTRUE()).unsafeAppend(" THEN 1.0 ")
-                    .unsafeAppend(" WHEN ").append(_dialect.getBooleanFALSE()).unsafeAppend(" THEN 0.0 ")
+            f.unsafeAppend(" AS ").append(_dialect.getBooleanDataTypeAsSql()).unsafeAppend(")")
+                    .unsafeAppend(" WHEN ").appendValue(true, _dialect).unsafeAppend(" THEN 1.0 ")
+                    .unsafeAppend(" WHEN ").appendValue(false, _dialect).unsafeAppend(" THEN 0.0 ")
                     .unsafeAppend(" ELSE NULL END");
             return f;
         }
@@ -430,9 +426,9 @@ public class StatementUtils
         sqlfObjectProperty.unsafeAppend(")");
         sqlfObjectProperty.append(ifTHEN);
         sqlfObjectProperty.unsafeAppend("INSERT INTO exp.ObjectProperty (objectid, propertyid, typetag, mvindicator, ");
-        sqlfObjectProperty.append(propertyType.getValueTypeColumn());
+        sqlfObjectProperty.appendIdentifier(propertyType.getValueTypeColumn());
         sqlfObjectProperty.unsafeAppend(") VALUES (");
-        sqlfObjectProperty.append(objectIdVar);
+        sqlfObjectProperty.appendIdentifier(objectIdVar);
         sqlfObjectProperty.unsafeAppend(",").appendValue(dp.getPropertyId());
         sqlfObjectProperty.unsafeAppend(",").appendStringLiteral(String.valueOf(propertyType.getStorageType()), _dialect);
         sqlfObjectProperty.unsafeAppend(",");
@@ -451,7 +447,7 @@ public class StatementUtils
     {
         var properties = null == domainProperties ? vocabularyProperties : domainProperties;
         sqlfDelete.unsafeAppend("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
-        sqlfDelete.append(objectIdVar);
+        sqlfDelete.appendIdentifier(objectIdVar);
         sqlfDelete.unsafeAppend(" AND PropertyId IN (");
         String separator = "";
         for (DomainProperty property : properties)
@@ -469,7 +465,7 @@ public class StatementUtils
         if (Operation.merge == _operation || Operation.update == _operation)
         {
             // this seems overkill actually, but I'm focused on optimizing insert right now (MAB)
-            sqlfPreselectObject.append(setKeyword).append(objectURIVar).unsafeAppend(" = COALESCE((");
+            sqlfPreselectObject.append(setKeyword).appendIdentifier(objectURIVar).unsafeAppend(" = COALESCE((");
             sqlfPreselectObject.unsafeAppend("SELECT ").appendIdentifier(table.getColumn(objectURIColumnName).getSelectIdentifier());
             sqlfPreselectObject.unsafeAppend(" FROM ").append(table.getSQLName());
             sqlfPreselectObject.append(getPkWhereClause(keys));
@@ -480,7 +476,7 @@ public class StatementUtils
         }
         else
         {
-            sqlfPreselectObject.append(setKeyword).append(objectURIVar).unsafeAppend(" = ");
+            sqlfPreselectObject.append(setKeyword).appendIdentifier(objectURIVar).unsafeAppend(" = ");
             appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
             sqlfPreselectObject.appendEOS();
         }
@@ -568,8 +564,6 @@ public class StatementUtils
         }
 
         String objectIdVar = null;
-        String objectURIVar = null;
-        boolean objectUriPreselectSet = false;
         boolean isMaterializedDomain = null != domain && null != domainKind && StringUtils.isNotEmpty(domainKind.getStorageSchemaName());
         if (alwaysInsertExpObject || (null != domain && !isMaterializedDomain) || !_vocabularyProperties.isEmpty())
         {
@@ -581,9 +575,9 @@ public class StatementUtils
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
 
                 objectIdVar = _dialect.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
-                sqlfDeclare.unsafeAppend("DECLARE ").append(objectIdVar).unsafeAppend(" BIGINT").appendEOS();
-                objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
-                sqlfDeclare.unsafeAppend("DECLARE ").append(objectURIVar).unsafeAppend(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).unsafeAppend("(300)").appendEOS();
+                sqlfDeclare.unsafeAppend("DECLARE ").appendIdentifier(objectIdVar).unsafeAppend(" BIGINT").appendEOS();
+                String objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
+                sqlfDeclare.unsafeAppend("DECLARE ").appendIdentifier(objectURIVar).unsafeAppend(" ").append(_dialect.getSqlTypeNameAsSql(JdbcType.VARCHAR)).unsafeAppend("(300)").appendEOS();
                 useVariables |= _dialect.isPostgreSQL();
 
                 ParameterHolder containerParameter = createParameter("container", JdbcType.GUID);
@@ -594,11 +588,10 @@ public class StatementUtils
                 if (hasObjectURIColumn || !_vocabularyProperties.isEmpty())
                 {
                     setObjectUriPreselect(sqlfPreselectObject, table, keys, objectURIVar, objectURIColumnName, objecturiParameter);
-                    objectUriPreselectSet = true;
                 }
 
                 SQLFragment sqlfWhereObjectURI = new SQLFragment();
-                sqlfWhereObjectURI.unsafeAppend("(ObjectURI = ").append(objectURIVar).unsafeAppend(")");
+                sqlfWhereObjectURI.unsafeAppend("(ObjectURI = ").appendIdentifier(objectURIVar).unsafeAppend(")");
 
                 // In the update case, it's still possible that there isn't a row in exp.Object - there might have been
                 // no properties in the domain when the row was originally inserted
@@ -609,13 +602,13 @@ public class StatementUtils
                 appendParameterOrVariable(sqlfInsertObject, objecturiParameter);
                 sqlfInsertObject.unsafeAppend(" AS ObjectURI, ");
                 Long ownerObjectId = updatable.getOwnerObjectId();
-                sqlfInsertObject.append( null == ownerObjectId ? "NULL" : String.valueOf(ownerObjectId) ).unsafeAppend(" AS OwnerObjectId");
+                sqlfInsertObject.appendValue(ownerObjectId).unsafeAppend(" AS OwnerObjectId");
                 sqlfInsertObject.unsafeAppend(" WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfInsertObject, containerParameter);
                 sqlfInsertObject.unsafeAppend(" AND ").append(sqlfWhereObjectURI).unsafeAppend(")").appendEOS();
 
                 // re-grab the object's ObjectId, in case it was just inserted
-                sqlfSelectObject.append(_dialect.isPostgreSQL() ? "" : "SET ").append(objectIdVar).unsafeAppend(" = (");
+                sqlfSelectObject.append(_dialect.isPostgreSQL() ? "" : "SET ").appendIdentifier(objectIdVar).unsafeAppend(" = (");
                 sqlfSelectObject.unsafeAppend("SELECT ObjectId FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
                 sqlfSelectObject.unsafeAppend(" AND ").append(sqlfWhereObjectURI).unsafeAppend(")").appendEOS();
@@ -637,19 +630,6 @@ public class StatementUtils
             }
         }
 
-        if (_selectObjectUri)
-        {
-            if (objectURIVar == null)
-            {
-                objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
-                sqlfDeclare.unsafeAppend("DECLARE ").append(objectURIVar).unsafeAppend(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).unsafeAppend("(300)").appendEOS();
-            }
-
-            if (!objectUriPreselectSet && (hasObjectURIColumn || !_vocabularyProperties.isEmpty()))
-            {
-                setObjectUriPreselect(sqlfPreselectObject, table, keys, objectURIVar, objectURIColumnName, objecturiParameter);
-            }
-        }
 
 
         //
@@ -742,7 +722,7 @@ public class StatementUtils
             SQLFragment valueSQL = new SQLFragment();
             if (column.getName().equalsIgnoreCase(objectIdColumnName))
             {
-                valueSQL.append(objectIdVar);
+                valueSQL.appendIdentifier(objectIdVar);
             }
             else if (column.getName().equalsIgnoreCase(updatable.getObjectURIColumnName()) && null != objecturiParameter)
             {
@@ -814,12 +794,7 @@ public class StatementUtils
                     rowIdVar = "_rowid_";
                 rowIdVar = _dialect.addReselect(sqlfInsertInto, autoIncrementColumn, rowIdVar);
                 if (useVariables)
-                    sqlfDeclare.unsafeAppend("DECLARE ").append(rowIdVar).unsafeAppend(" BIGINT").appendEOS();  // CONSIDER: Move this into addReselect()?
-            }
-
-            if (_selectObjectUri && hasObjectURIColumn)
-            {
-                _dialect.addReselect(sqlfInsertInto, table.getColumn(objectURIColumnName), objectURIVar);
+                    sqlfDeclare.unsafeAppend("DECLARE ").appendIdentifier(rowIdVar).unsafeAppend(" BIGINT").appendEOS();  // CONSIDER: Move this into addReselect()?
             }
         }
 
@@ -897,29 +872,19 @@ public class StatementUtils
 
         SQLFragment sqlfSelectIds = null;
 
-        if ((_selectIds && (null != objectIdVar || null != rowIdVar)) || (_selectObjectUri && null != objectURIVar))
+        if (_selectIds && (null != objectIdVar || null != rowIdVar))
         {
-            sqlfSelectIds = new SQLFragment("SELECT ");
+            sqlfSelectIds = SQLFragment.unsafe("SELECT ");
             comma = "";
-            if (_selectIds)
+            if (null != rowIdVar)
             {
-                if (null != rowIdVar)
-                {
-                    sqlfSelectIds.append(rowIdVar);
-                    _columnTracker.selectColumns.add(rowIdVar);
-                    comma = ",";
-                }
-                if (null != objectIdVar)
-                {
-                    sqlfSelectIds.append(comma).append(objectIdVar);
-                    _columnTracker.selectColumns.add(objectIdVar);
-                    comma = ",";
-                }
+                sqlfSelectIds.appendIdentifier(rowIdVar);
+                _columnTracker.selectColumns.add(rowIdVar);
+                comma = ",";
             }
-
-            if (_selectObjectUri && null != objectURIVar)
+            if (null != objectIdVar)
             {
-                sqlfSelectIds.append(comma).append(objectURIVar);
+                sqlfSelectIds.append(comma).appendIdentifier(objectIdVar);
                 _columnTracker.selectColumns.add(objectIdVar);
             }
         }
@@ -978,7 +943,7 @@ public class StatementUtils
                     ParameterHolder ph = e.getValue();
                     sqlfDeclare.append(comma);
                     String variable = sqlServerVariableDeclaration(sqlfDeclare, ph);
-                    select.append(comma).append(variable).unsafeAppend("=?");
+                    select.append(comma).appendIdentifier(variable).unsafeAppend("=?");
                     select.add(ph.p);
                     comma = ", ";
                 }
@@ -997,10 +962,11 @@ public class StatementUtils
         {
             // wrap in a function with a single ROW() constructor argument
             SQLFragment fn = new SQLFragment();
-            String fnName = _dialect.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
-            TempTableTracker.track(fnName, fn);
+            String fnBaseName = "fn_" + GUID.makeHash();
+            TempTableTracker.track(_dialect.getGlobalTempTablePrefix() + fnBaseName, fn);
 
-            String typeName = fnName + "type";
+            SQLFragment fnName = new SQLFragment().appendDottedIdentifiers(DbSchema.TEMP_SCHEMA_NAME, fnBaseName);
+            SQLFragment typeName = new SQLFragment().appendDottedIdentifiers(DbSchema.TEMP_SCHEMA_NAME, fnBaseName + "type");
             fn.unsafeAppend("CREATE TYPE ").append(typeName).unsafeAppend(" AS (");
             // TODO d.execute() doesn't handle temp schema
             SQLFragment call = new SQLFragment();
@@ -1011,7 +977,7 @@ public class StatementUtils
                 ParameterHolder ph = e.getValue();
                 String type = ph.getSqlTypeName(_dialect);
                 fn.unsafeAppend("\n").append(comma);
-                fn.append(makePgRowTypeName(ph.variableName));
+                fn.appendIdentifier(makePgRowTypeName(ph.variableName));
                 fn.unsafeAppend(" ");
                 fn.append(type);
                 // For PG (29687) we need the length for CHAR type
@@ -1038,25 +1004,15 @@ public class StatementUtils
                 call.unsafeAppend(" AS x(");
                 String sep = "";
 
-                if (_selectIds)
+                if (null != rowIdVar)
                 {
-                    if (null != rowIdVar)
-                    {
-                        call.unsafeAppend("A BIGINT");
-                        sep = ", ";
-                    }
-                    if (null != objectIdVar)
-                    {
-                        call.append(sep);
-                        call.unsafeAppend("B BIGINT");
-                        sep = ", ";
-                    }
+                    call.unsafeAppend("A BIGINT");
+                    sep = ", ";
                 }
-
-                if (_selectObjectUri && null != objectURIVar)
+                if (null != objectIdVar)
                 {
                     call.append(sep);
-                    call.unsafeAppend("C VARCHAR");
+                    call.unsafeAppend("B BIGINT");
                 }
 
                 call.unsafeAppend(")").appendEOS();
@@ -1087,7 +1043,7 @@ public class StatementUtils
             fn.unsafeAppend("END").appendEOS().unsafeAppend(" ").append(quoteToken).unsafeAppend(" LANGUAGE plpgsql").appendEOS();
             _log.debug(fn.toDebugString());
             _log.debug(call.toDebugString());
-            final SQLFragment drop = new SQLFragment("DROP TYPE IF EXISTS ").append(typeName).unsafeAppend(" CASCADE").appendEOS();
+            final SQLFragment drop = SQLFragment.unsafe("DROP TYPE IF EXISTS ").append(typeName).unsafeAppend(" CASCADE").appendEOS();
             _log.debug(drop.toDebugString());
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new ParameterMapStatement(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
@@ -1115,11 +1071,8 @@ public class StatementUtils
                 selectIndex++;
 
             if (null != objectIdVar)
-                ret.setObjectIdIndex(selectIndex++);
+                ret.setObjectIdIndex(selectIndex);
         }
-
-        if (_selectObjectUri && null != objectURIVar)
-            ret.setObjectUriIndex(selectIndex);
 
         return ret;
     }
@@ -1207,7 +1160,7 @@ public class StatementUtils
     {
         assert(_dialect.isSqlServer());
         String variable = ph.variableName;
-        sqlfDeclare.append(variable);
+        sqlfDeclare.appendIdentifier(variable);
         sqlfDeclare.unsafeAppend(" ");
         JdbcType jdbcType = ph.p.getType();
         assert null != jdbcType;
@@ -1255,16 +1208,16 @@ public class StatementUtils
         }
         if (value instanceof java.sql.Date sqlDate)
         {
-            f.unsafeAppend("{d ").append(_dialect.getStringHandler().quoteStringLiteral(DateUtil.formatIsoDate(sqlDate))).unsafeAppend("}");
+            f.unsafeAppend("{d ").appendStringLiteral(DateUtil.formatIsoDate(sqlDate), _dialect).unsafeAppend("}");
             return;
         }
         else if (value instanceof java.util.Date date)
         {
-            f.unsafeAppend("{ts ").append(_dialect.getStringHandler().quoteStringLiteral(DateUtil.formatIsoDateShortTime(date))).unsafeAppend("}");
+            f.unsafeAppend("{ts ").appendStringLiteral(DateUtil.formatIsoDateShortTime(date), _dialect).unsafeAppend("}");
             return;
         }
         assert value instanceof String;
-        f.append(_dialect.getStringHandler().quoteStringLiteral(String.valueOf(value)));
+        f.appendStringLiteral(String.valueOf(value), _dialect);
     }
 
     @SuppressWarnings("JUnitMalformedDeclaration")
@@ -1406,11 +1359,11 @@ public class StatementUtils
 
             // null value
             var actual = runToLiteral.apply(null);
-            assertEquals(new SQLFragment("NULL"), actual);
+            assertEquals(SQLFragment.unsafe("NULL"), actual);
 
             // Number
             actual = runToLiteral.apply(1234567890);
-            assertEquals(new SQLFragment("1234567890"), actual);
+            assertEquals(SQLFragment.unsafe("1234567890"), actual);
 
             // NowTimestamp
             var now = new NowTimestamp(dateLong);

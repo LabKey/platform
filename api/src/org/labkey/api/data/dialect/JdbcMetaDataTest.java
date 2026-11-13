@@ -48,7 +48,7 @@ public class JdbcMetaDataTest extends Assert
         // SQL Server doesn't support materialized views
         if (_testSchema.getSqlDialect().isPostgreSQL())
         {
-            new SqlExecutor(_testSchema).execute(new SQLFragment("REFRESH MATERIALIZED VIEW test.MaterializedView"));
+            new SqlExecutor(_testSchema).execute(SQLFragment.unsafe("REFRESH MATERIALIZED VIEW test.MaterializedView"));
             test("MaterializedView", CoreSchema.getInstance().getTableInfoContainers(), DatabaseTableType.MATERIALIZED_VIEW);
         }
     }

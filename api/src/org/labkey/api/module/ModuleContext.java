@@ -27,9 +27,9 @@ import org.labkey.api.module.DefaultModule.UpgradeMethod;
 import org.labkey.api.module.ModuleLoader.ModuleState;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.Formats.SafeDecimalFormat;
 
 import java.lang.reflect.InvocationTargetException;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -112,8 +112,8 @@ public class ModuleContext implements Cloneable
         _className = name;
     }
 
-    private static final DecimalFormat df2 = new DecimalFormat("0.00#");
-    private static final DecimalFormat df3 = new DecimalFormat("0.000");
+    private static final SafeDecimalFormat df2 = new SafeDecimalFormat("0.00#");
+    private static final SafeDecimalFormat df3 = new SafeDecimalFormat("0.000");
 
     public static String formatVersion(double version)
     {

@@ -575,14 +575,7 @@ public class Query
         assertParsed();
         if (!_parseErrors.isEmpty())
             return null;
-        // don't return hidden parameters
-        ArrayList<QueryService.ParameterDecl> ret = new ArrayList<>(_parameters.size());
-        for (QParameter p : _parameters)
-        {
-           if (!p.getName().startsWith("@@"))
-               ret.add(p);
-        }
-        return ret;
+        return new ArrayList<>(_parameters);
     }
 
 
