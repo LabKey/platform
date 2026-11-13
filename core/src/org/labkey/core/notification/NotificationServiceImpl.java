@@ -152,7 +152,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             m.setFrom(LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
             m.addRecipients(Message.RecipientType.TO, recipient.getEmail());
             m.setSubject(subject);
-            m.setTextContent(body + "\n" + linkUrl);
+            m.setTextContent(body + "\n" + fullUrlStr);
 
             // replicate the message body as html with an <a> tag
             String html = "<html><head></head><body>" +

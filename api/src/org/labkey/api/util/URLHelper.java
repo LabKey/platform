@@ -189,7 +189,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     }
 
     // Scheme check is here for test SAML redirect, which is to the same host ("localhost") but a different scheme
-    public boolean isSameOrigin(URLHelper other)
+    private boolean isSameOrigin(URLHelper other)
     {
         return getHost().equalsIgnoreCase(other.getHost()) && getScheme().equalsIgnoreCase(other.getScheme()) && getEffectivePort() == other.getEffectivePort();
     }
