@@ -804,6 +804,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 record.put("remote", def.isRemote());
                 record.put("sandboxed", def.isSandboxed());
             }
+            else if (factory instanceof ScriptService)
+            {
+                record.put("languageVersion", getRhinoLanguageVersion().name());
+            }
 
             try
             {
