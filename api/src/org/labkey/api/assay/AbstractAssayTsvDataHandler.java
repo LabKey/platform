@@ -17,6 +17,8 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -307,16 +309,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         // Allow String values through if the column is a lookup and the settings allow lookups by alternate key.
                         // The lookup table unique indices or display column value will be used to convert the column to the lookup value.
                         boolean allowAlternateKey = settings.getLookupResolutionType().useAlternateKey() && prop.getLookup() != null;
-                        // GH Issue 1881: force sample lookups to String, else an inferred integer strips leading zeros from names like "0587"
-                        if (allowAlternateKey && ExperimentService.get().isLookupToSamples(prop))
-                        {
-                            column.clazz = String.class;
-                        }
-                        else if (!(allowAlternateKey && column.clazz == String.class))
+                        if (!(allowAlternateKey && column.clazz == String.class))
                         {
                             // Otherwise, just use the expected PropertyDescriptor's column type
                             column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
                         }
+
+                        // GH Issue 1881: an integer conversion strips leading zeros from sample names like "0587", so keep those values as text
+                        if (allowAlternateKey && column.clazz != String.class && ExperimentService.get().isLookupToSamples(prop))
+                            column.converter = leadingZeroPreservingConverter(ConvertUtils.lookup(column.clazz));
                     }
                     else
                     {
@@ -343,6 +344,21 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             throw UnexpectedException.wrap(ioe);
         }
+    }
+
+    private static Converter leadingZeroPreservingConverter(Converter converter)
+    {
+        return new Converter()
+        {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <T> T convert(Class<T> type, Object value)
+            {
+                if (value instanceof String s && s.length() > 1 && s.charAt(0) == '0' && StringUtils.isNumeric(s))
+                    return (T) s;
+                return converter.convert(type, value);
+            }
+        };
     }
 
     @Override
