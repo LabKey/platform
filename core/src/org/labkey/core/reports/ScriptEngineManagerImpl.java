@@ -792,6 +792,15 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     {
         Map<String,Object> views = new LinkedHashMap<>();
 
+        // Folder level engine overrides
+        Map<Integer, Map<String, Integer>> overrides = new HashMap<>();
+        SQLFragment sql = new SQLFragment("SELECT EngineId, EngineContext, COUNT(*) AS Containers FROM ")
+                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                .unsafeAppend(" GROUP BY EngineId, EngineContext");
+        new SqlSelector(CoreSchema.getInstance().getSchema(), sql).forEach(rs ->
+                overrides.computeIfAbsent(rs.getInt("EngineId"), _ -> new HashMap<>())
+                        .put(rs.getString("EngineContext"), rs.getInt("Containers")));
+
         for (ScriptEngineFactory factory : getEngineFactories())
         {
             Map<String, Object> record = new HashMap<>();
@@ -807,6 +816,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 record.put("type", String.valueOf(def.getType()));
                 record.put("remote", def.isRemote());
                 record.put("sandboxed", def.isSandboxed());
+                record.put("containerOverrides", overrides.getOrDefault(def.getRowId(), Map.of()));
             }
 
             try
