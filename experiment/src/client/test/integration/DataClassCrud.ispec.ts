@@ -588,10 +588,11 @@ describe('Multi Value Text Choice', () => {
                 { 'name': 'S-' + dataCount++, 'description': 'empty array', [fieldName]: [] },
             ], dataType, topFolderOptions
         );
-        inserted.forEach(async (row) => {
-            let res = await ExperimentCRUDUtils.getRows(server, [caseInsensitive(row, 'RowId')], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        expect(inserted).toHaveLength(4);
+        for (const row of inserted) {
+            const res = await ExperimentCRUDUtils.getRows(server, [caseInsensitive(row, 'RowId')], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
             expect(caseInsensitive(res[0], fieldName)).toEqual([]);
-        });
+        }
 
         // import data with no mvtc column
         let importText = "Name\tDescription\n";

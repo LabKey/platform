@@ -760,7 +760,7 @@ describe('assay-importRun.api', () => {
             const reqAssayFields: AssayDesignFieldOptions = {
                 resultFields: [
                     createDomainField({ name: RESULT_FIELD_NAME }),
-                    createDomainField({ name: RESULT_MVTC_FIELD_NAME, ...MVTC_FIELD_PROP, required: true } as Partial<IDomainField>),
+                    createDomainField({ name: RESULT_MVTC_FIELD_NAME, ...MVTC_FIELD_PROP, required: true }),
                 ],
             };
             const reqAssay = await createAssayDesign(server, 'AssayRequiredMVTC', reqAssayFields, topFolderOptions);
