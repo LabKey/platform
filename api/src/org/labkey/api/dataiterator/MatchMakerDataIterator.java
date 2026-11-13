@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -40,8 +41,8 @@ import java.util.Map;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 
 /**
- * Passes rows through unchanged, reporting each input column that matches a column of the target table as that
- * target column.
+ * Passes rows through unchanged, reporting each input column that matches a column of the target table as a copy of
+ * that target column.  This is required to be compatible with DatasetDataIteratorBuilder which calls setPropertyURI().
  * Matching uses {@link DataIteratorUtil#matchColumns}, which parallels the row-at-a-time insert path's
  * {@link org.labkey.api.data.ImportAliasable.Helper#createImportMap} (via {@code AbstractQueryUpdateService.normalizeColumnNames()});
  * the two disagree on import aliases, ties between target columns, and duplicate input columns.
@@ -80,6 +81,7 @@ public class MatchMakerDataIterator extends WrapperDataIterator
     private final Map<String, TargetColumn> _targetColumns;
     private final Map<FieldKey, TargetColumn> _unmatchedColumns;
     private final TargetColumn[] _matches;
+    private final ColumnInfo[] _columns;
 
     /**
      * @param setupErrors collects matching errors, such as two input columns for one target column
@@ -112,6 +114,7 @@ public class MatchMakerDataIterator extends WrapperDataIterator
         Map<String, Integer> sourceColumnsMap = DataIteratorUtil.createColumnAndPropertyMap(input);
         List<ColumnInfo> matches = DataIteratorUtil.matchColumns(input, target, useImportAliases, setupErrors, c);
         _matches = new TargetColumn[input.getColumnCount() + 1];
+        _columns = new ColumnInfo[input.getColumnCount() + 1];
 
         for (int i = 1; i <= input.getColumnCount(); i++)
         {
@@ -128,6 +131,8 @@ public class MatchMakerDataIterator extends WrapperDataIterator
             Integer indexMv = null == col.getMvColumnName() ? null : sourceColumnsMap.get(col.getMvColumnName().getName());
             tc._indexMv = null == indexMv ? SimpleTranslator.NO_MV_INDEX : indexMv;
             _matches[i] = tc;
+            // Downstream builders mutate their input ColumnInfos, so don't expose the target's locked columns
+            _columns[i] = new BaseColumnInfo(col);
         }
     }
 
@@ -139,8 +144,8 @@ public class MatchMakerDataIterator extends WrapperDataIterator
     @Override
     public ColumnInfo getColumnInfo(int i)
     {
-        TargetColumn tc = getMatch(i);
-        return null == tc ? super.getColumnInfo(i) : tc._target;
+        ColumnInfo col = i < _columns.length ? _columns[i] : null;
+        return null == col ? super.getColumnInfo(i) : col;
     }
 
     /** The target column input column {@code i} matched, if any */
@@ -173,6 +178,14 @@ public class MatchMakerDataIterator extends WrapperDataIterator
             return new MatchMakerDataIterator(new StringTestIterator(headers, rows), target(), false, JunitUtil.getTestContainer(), setupErrors);
         }
 
+        private static void assertCopy(ColumnInfo target, ColumnInfo reported)
+        {
+            assertNotSame(target, reported);
+            assertEquals(target.getName(), reported.getName());
+            assertEquals(target.getPropertyURI(), reported.getPropertyURI());
+            assertFalse(((BaseColumnInfo) reported).isLocked());
+        }
+
         @Test
         public void reportsTargetColumnsForMatches() throws Exception
         {
@@ -188,12 +201,12 @@ public class MatchMakerDataIterator extends WrapperDataIterator
             {
                 assertFalse(setupErrors.getMessage(), setupErrors.hasErrors());
 
-                assertSame(intNotNull, it.getColumnInfo(1));
-                assertSame(intNull, it.getColumnInfo(2));
-                assertSame(text, it.getColumnInfo(3));
+                assertCopy(intNotNull, it.getColumnInfo(1));
+                assertCopy(intNull, it.getColumnInfo(2));
+                assertCopy(text, it.getColumnInfo(3));
                 assertEquals("Bogus", it.getColumnInfo(4).getName());
                 assertNull(it.getMatch(4));
-                TargetColumn textMatch = it.getTargetColumn(text);
+                TargetColumn textMatch = it.getTargetColumn(it.getColumnInfo(3));
                 assertNotNull(textMatch);
                 assertSame(text, textMatch.getTarget());
 
