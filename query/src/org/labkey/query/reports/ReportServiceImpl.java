@@ -1409,6 +1409,8 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             Report notMine = Objects.requireNonNull(getInstance().getStoredReport(id));
             ViewContext otherContext = ViewContext.getMockViewContext(otherAuthor, folder, folder.getStartURL(otherAuthor), false);
             assertThrows(UnauthorizedException.class, () -> ReportUtil.updateReportSecurityPolicy(otherContext, notMine, recipient.getUserId(), true));
+            assertEquals("A rejected save should restore the owner on the passed-in (possibly cached) instance",
+                owner.getUserId(), (int) notMine.getDescriptor().getOwner());
             Report unchanged = Objects.requireNonNull(getInstance().getStoredReport(id));
             assertEquals(owner.getUserId(), (int) unchanged.getDescriptor().getOwner());
             assertTrue("Policy should roll back with the report save",
@@ -1455,6 +1457,36 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
             assertNotNull("Import should save the chart", imported);
             assertEquals(ReportService.GENERIC_CHART_REPORT_TYPE, imported.getType());
             assertFalse(imported.getDescriptor().getClass().equals(Objects.requireNonNull(ReportService.get().createReportInstance(ReportService.GENERIC_CHART_REPORT_TYPE)).getDescriptor().getClass()));
+
+            // A folder admin's system rewrite of that chart (as CategoryListener does) leaves the config alone, so it passes
+            Report renamed = Objects.requireNonNull(getInstance().getStoredReport(imported.getDescriptor().getReportId()));
+            renamed.getDescriptor().setProperty(ReportDescriptor.Prop.queryName, "renamedQuery");
+            ReportService.get().saveReportEx(folderAdmin, KEY, renamed, true);
+
+            // But changing the function still fails
+            Report edited = Objects.requireNonNull(getInstance().getStoredReport(imported.getDescriptor().getReportId()));
+            edited.getDescriptor().setProperty(ReportDescriptor.Prop.json, chartJson("function(){alert(2)}"));
+            assertThrows(UnauthorizedException.class, () -> ReportService.get().saveReportEx(folderAdmin, KEY, edited, true));
+        }
+
+        @Test
+        public void testUnparseableStoredConfigAllowsSystemRewrite() throws Exception
+        {
+            Container folder = createContainer("L");
+            ContainerUser folderAdmin = new DefaultContainerUser(folder, createUserInRole(folder, FolderAdminRole.class));
+            Report chart = newChart("bad-json-chart-" + GUID.makeGUID(), null);
+            chart.getDescriptor().setProperty(ReportDescriptor.Prop.json, "{\"chartConfig\": {}, \"chartConfig\": {}}");
+            ReportIdentifier id = saveAsAdmin(folder, chart).getDescriptor().getReportId();
+
+            // The config is unchanged, so the rewrite doesn't need to parse it
+            Report renamed = Objects.requireNonNull(getInstance().getStoredReport(id));
+            renamed.getDescriptor().setProperty(ReportDescriptor.Prop.queryName, "renamedQuery");
+            ReportService.get().saveReportEx(folderAdmin, KEY, renamed, true);
+
+            // A different unparseable config still fails closed
+            Report edited = Objects.requireNonNull(getInstance().getStoredReport(id));
+            edited.getDescriptor().setProperty(ReportDescriptor.Prop.json, "{\"a\": 1, \"a\": 2}");
+            assertThrows(UnauthorizedException.class, () -> ReportService.get().saveReportEx(folderAdmin, KEY, edited, true));
         }
 
         @Test

@@ -27,6 +27,7 @@ import org.labkey.api.view.template.ClientDependency;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: brittp
@@ -80,6 +81,13 @@ abstract public class VisualizationReportDescriptor extends ReportDescriptor
     public void validatePointClickFn(User user, @Nullable String json, @Nullable ReportDescriptor stored, List<ValidationError> errors)
     {
         if (user.isTrustedBrowserDev())
+            return;
+
+        // The client picks its renderer by report type and reads the raw config, so an unchanged pair adds nothing.
+        // Compare before parsing so system rewrites (category delete, query rename, permission changes) still work for
+        // charts whose stored config org.json can't parse or whose stored descriptor class doesn't match the type.
+        if (null != stored && Objects.equals(stored.getReportType(), getReportType()) &&
+            Objects.equals(stored.getProperty(Prop.json), json))
             return;
 
         String fn;

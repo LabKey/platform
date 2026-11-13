@@ -748,18 +748,31 @@ public class ReportUtil
     public static void resetReportSecurityPolicy(ViewContext context, @NotNull Report report, @Nullable User owner, @NotNull User performer, boolean skipValidation)
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor());
-        report.getDescriptor().setOwner(owner != null ? owner.getUserId() : null); // null = "public", owner = "private"
-        savePolicyAndReport(context, report, policy, performer, skipValidation);
+        // null = "public", owner = "private"
+        savePolicyAndReport(context, report, policy, owner != null ? owner.getUserId() : null, performer, skipValidation);
     }
 
-    // Save both in one transaction so a rejected report save doesn't leave the new policy in place
-    private static void savePolicyAndReport(ViewContext context, Report report, MutableSecurityPolicy policy, User performer, boolean skipValidation)
+    /**
+     * Save both in one transaction so a rejected report save doesn't leave the new policy in place. The report is
+     * often the shared instance from the report cache, so put its owner back if the save is rejected.
+     */
+    private static void savePolicyAndReport(ViewContext context, Report report, MutableSecurityPolicy policy, @Nullable Integer owner, User performer, boolean skipValidation)
     {
+        ReportDescriptor descriptor = report.getDescriptor();
+        Integer previousOwner = descriptor.getOwner();
+        descriptor.setOwner(owner);
+        boolean saved = false;
         try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
         {
             SecurityPolicyManager.savePolicy(policy, performer);
-            ReportService.get().saveReportEx(context, report.getDescriptor().getReportKey(), report, skipValidation);
+            ReportService.get().saveReportEx(context, descriptor.getReportKey(), report, skipValidation);
             tx.commit();
+            saved = true;
+        }
+        finally
+        {
+            if (!saved)
+                descriptor.setOwner(previousOwner);
         }
     }
 
@@ -782,8 +795,8 @@ public class ReportUtil
             else if (!toAdd && !hasNoAssignedRoles)
                 policy.addRoleAssignment(principal, NoPermissionsRole.class);
             
-            report.getDescriptor().setOwner(null); // force the report to be "custom"
-            savePolicyAndReport(context, report, policy, context.getUser(), skipValidation);
+            // null owner forces the report to be "custom"
+            savePolicyAndReport(context, report, policy, null, context.getUser(), skipValidation);
         }
     }
 
@@ -816,7 +829,6 @@ public class ReportUtil
             }
         }
 
-        report.getDescriptor().setOwner(null);
-        savePolicyAndReport(context, report, policy, context.getUser(), skipValidation);
+        savePolicyAndReport(context, report, policy, null, context.getUser(), skipValidation);
     }
 }
