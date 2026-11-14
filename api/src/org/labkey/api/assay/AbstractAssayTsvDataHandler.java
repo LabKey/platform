@@ -85,7 +85,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.RuntimeBatchValidationException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -609,9 +608,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
                 }
-                catch (RuntimeBatchValidationException e)
+                catch (DbScope.RetryPassthroughException e)
                 {
-                    throw e.getErrors();
+                    e.rethrow(BatchValidationException.class);
+                    throw e.throwRuntimeException();
                 }
                 fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
             }

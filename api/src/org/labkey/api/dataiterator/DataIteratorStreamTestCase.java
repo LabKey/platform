@@ -18,7 +18,8 @@ package org.labkey.api.dataiterator;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.query.RuntimeBatchValidationException;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
@@ -67,10 +68,10 @@ public class DataIteratorStreamTestCase extends Assert
         {
             rows = failOn(invalidA).getDataIterator(context).stream().toList();
         }
-        catch (RuntimeBatchValidationException e)
+        catch (DbScope.RetryPassthroughException e)
         {
-            assertSame("Stream should fail with the context's errors", context.getErrors(), e.getErrors());
-            assertEquals("invalid row a=" + invalidA, e.getErrors().getLastRowError().getMessage());
+            assertSame("Stream should fail with the context's errors", context.getErrors(), e.getCause());
+            assertEquals("invalid row a=" + invalidA, ((BatchValidationException) e.getCause()).getLastRowError().getMessage());
             return;
         }
         fail("Expected stream to fail on invalid row a=" + invalidA + " but stream silently returned " + rows.size() + " of " + ROW_COUNT + " rows");

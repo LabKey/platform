@@ -29,6 +29,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -37,7 +38,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.RuntimeBatchValidationException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
@@ -557,7 +557,7 @@ public class DataIteratorUtil
             catch (BatchValidationException x)
             {
                 // Iteration ending early is indistinguishable from exhausted input, so a Stream must fail instead
-                throw new RuntimeBatchValidationException(x);
+                throw new DbScope.RetryPassthroughException(x);
             }
         }
 
