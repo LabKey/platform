@@ -1101,7 +1101,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                 // Deserializing imported the report's tag properties, which nothing will reference
                 if (null != descriptor.getEntityId())
                     ReportPropsManager.get().deleteProperties(descriptor.getEntityId(), ctx.getContainer());
-                ctx.getLogger().error("Report \"{}\" ({}) was not imported. {}", descriptor.getReportName(), xmlFileName, e.getMessage());
+                ctx.getLogger().warn("Report \"{}\" ({}) was not imported. {}", descriptor.getReportName(), xmlFileName, e.getMessage());
                 return null;
             }
 

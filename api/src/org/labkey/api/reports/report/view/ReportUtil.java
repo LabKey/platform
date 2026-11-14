@@ -80,6 +80,7 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.Errors;
@@ -755,20 +756,23 @@ public class ReportUtil
     /**
      * Save both in one transaction so a rejected report save doesn't leave the new policy in place. The report is
      * often the shared instance from the report cache, so put its owner back if the save is rejected.
-     * Save the report first: its save does the edit and share checks, and savePolicy can only find reports the
-     * performer can read, so saving the policy first turns a rejected change to another user's private report into
-     * an IllegalStateException instead of an UnauthorizedException.
+     * savePolicy can only find reports the performer can read, so it must run before the owner changes: clearing the
+     * owner first hides a private report from its non-admin owner.
      */
     private static void savePolicyAndReport(ViewContext context, Report report, MutableSecurityPolicy policy, @Nullable Integer owner, User performer, boolean skipValidation)
     {
+        Container c = ContainerManager.getForId(policy.getContainerId());
+        if (null == c || null == c.findSecurableResource(policy.getResourceId(), performer))
+            throw new UnauthorizedException();
+
         ReportDescriptor descriptor = report.getDescriptor();
         Integer previousOwner = descriptor.getOwner();
-        descriptor.setOwner(owner);
         boolean saved = false;
         try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
         {
-            ReportService.get().saveReportEx(context, descriptor.getReportKey(), report, skipValidation);
             SecurityPolicyManager.savePolicy(policy, performer);
+            descriptor.setOwner(owner);
+            ReportService.get().saveReportEx(context, descriptor.getReportKey(), report, skipValidation);
             tx.commit();
             saved = true;
         }
