@@ -54,9 +54,11 @@ import org.labkey.api.security.UserManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -369,7 +371,12 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 
     protected @Nullable TableInfo getSearchTable(@NotNull Container container, @NotNull ExpObject type)
     {
-        return QueryService.get().getUserSchema(User.getSearchUser(), container, getSearchSchemaKey()).getTable(type.getName());
+        return getSearchTable(getSearchSchemaKey(), container, type);
+    }
+
+    static @Nullable TableInfo getSearchTable(@NotNull SchemaKey schemaKey, @NotNull Container container, @NotNull ExpObject type)
+    {
+        return QueryService.get().getUserSchema(User.getSearchUser(), container, schemaKey).getTable(type.getName());
     }
 
     record TableCacheKey(int containerRowId, long expObjectRowId)
@@ -395,136 +402,172 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         index(queue, table);
     }
 
-    protected void processIndexValues(
-            Map<String, Object> props,
-            @NotNull ExpRunItemTableImpl<?> table,
-            Set<String> identifiersHi,
-            Set<String> identifiersMed,
-            Set<String> identifiersLo,
-            Set<String> keywordsHi,
-            Set<String> keywordsMed,
-            Set<String> keywordsLo,
-            JSONObject jsonData
-    )
+    /** One item's custom property values, sorted into the search properties they are indexed under */
+    record IndexValues(Set<String> identifiersHi, Set<String> identifiersMed, Set<String> identifiersLo,
+                       Set<String> keywordsHi, Set<String> keywordsMed, Set<String> keywordsLo, JSONObject jsonData)
+    {
+        IndexValues()
+        {
+            this(new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new JSONObject());
+        }
+
+        private void add(@NotNull ExpRunItemTableImpl<?> table, @NotNull FieldKey fieldKey, @NotNull ColumnInfo col, @Nullable Object o)
+        {
+            if (!col.getJdbcType().isText() && !col.getJdbcType().isInteger() && col.getJdbcType() != JdbcType.ARRAY)
+                return;
+
+            if (col.getName().equalsIgnoreCase("lsid") || col.getSqlTypeName().equalsIgnoreCase("lsidtype") || col.getSqlTypeName().equalsIgnoreCase("entityid"))
+                return;
+
+            List<String> values;
+            // Issue 929: index each element of a multi-value text choice (MVTC / ARRAY) column
+            if (col.getJdbcType() == JdbcType.ARRAY)
+            {
+                if (o == null)
+                    return;
+                o = col.convert(o);
+                if (o instanceof MultiChoice.Array mca)
+                {
+                    if (mca.isEmpty())
+                        return;
+                    values = new ArrayList<>(mca);
+                }
+                else
+                    return;
+            }
+            else
+            {
+                String s;
+                // Issue 52961: DataClass: Integer fields are not index for data class
+                if (o instanceof String)
+                    s = (String)o;
+                else if (isIntegral(o))
+                    s = String.valueOf(o);
+                else
+                    return;
+
+                if (col instanceof MultiValuedLookupColumn)
+                    values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
+                else
+                    values = Arrays.asList(s);
+            }
+
+            SearchService.PROPERTY searchProperty = table.getSearchIndexColumn(fieldKey);
+            if (searchProperty != null)
+            {
+                // Fow now only add indexed field values to search jsonData
+                if (!values.isEmpty())
+                {
+                    if (values.size() == 1)
+                        jsonData.put(fieldKey.toString(), values.getFirst());
+                    else
+                        jsonData.put(fieldKey.toString(), values);
+                }
+
+                switch (searchProperty)
+                {
+                    case identifiersHi -> {
+                        identifiersHi.addAll(values);
+                        return;
+                    }
+                    case identifiersMed -> {
+                        identifiersMed.addAll(values);
+                        return;
+                    }
+                    case identifiersLo -> {
+                        identifiersLo.addAll(values);
+                        return;
+                    }
+                    case keywordsHi -> {
+                        keywordsHi.addAll(values);
+                        return;
+                    }
+                    case keywordsMed -> {
+                        keywordsMed.addAll(values);
+                        return;
+                    }
+                    case keywordsLo -> {
+                        keywordsLo.addAll(values);
+                        return;
+                    }
+                    default ->
+                            LOG.debug("Unable to index column {} with property: {}. Not yet supported.", fieldKey.toString(), searchProperty.name());
+                }
+            }
+
+            if ("textarea".equalsIgnoreCase(col.getInputType()))
+            {
+                // treat multi-line text values as keywords, otherwise treat as an identifier
+                keywordsLo.addAll(values);
+            }
+            else
+            {
+                identifiersMed.addAll(values);
+            }
+        }
+
+        void addTo(Set<String> identifiersHi, Set<String> identifiersMed, Set<String> identifiersLo,
+                   Set<String> keywordsHi, Set<String> keywordsMed, Set<String> keywordsLo, JSONObject jsonData)
+        {
+            identifiersHi.addAll(this.identifiersHi);
+            identifiersMed.addAll(this.identifiersMed);
+            identifiersLo.addAll(this.identifiersLo);
+            keywordsHi.addAll(this.keywordsHi);
+            keywordsMed.addAll(this.keywordsMed);
+            keywordsLo.addAll(this.keywordsLo);
+            this.jsonData.keySet().forEach(key -> jsonData.put(key, this.jsonData.get(key)));
+        }
+    }
+
+    /**
+     * Reads the search columns of {@code rowIds} with one query. A RowId missing from the result was deleted or isn't
+     * in the table's container. Pass at most {@link SearchService#INDEXING_LIMIT} ids, since larger IN lists switch to a temp table.
+     */
+    static @NotNull Map<Long, IndexValues> getIndexValues(@NotNull ExpRunItemTableImpl<?> table, @NotNull Collection<Long> rowIds) throws SQLException
     {
         List<ColumnInfo> columns = table.getSearchIndexColumns();
-
+        if (rowIds.isEmpty())
+            return Map.of();
+        Map<Long, IndexValues> result = new HashMap<>();
         if (columns.isEmpty())
-            return;
+        {
+            rowIds.forEach(id -> result.put(id, new IndexValues()));
+            return result;
+        }
 
-        TableSelector ts = new TableSelector(table, columns, new SimpleFilter(ExpDataClassDataTable.Column.RowId.fieldKey(), getRowId()), null);
+        FieldKey rowIdKey = ExpDataClassDataTable.Column.RowId.fieldKey();
+        ColumnInfo rowIdCol = table.getColumn(rowIdKey);
+        List<ColumnInfo> selectColumns = columns;
+        if (rowIdCol != null && !columns.contains(rowIdCol))
+        {
+            // The display query adds the primary key anyway, so selecting it explicitly doesn't change the indexed values
+            selectColumns = new ArrayList<>(columns);
+            selectColumns.add(rowIdCol);
+        }
+
+        TableSelector ts = new TableSelector(table, selectColumns, new SimpleFilter().addInClause(rowIdKey, rowIds), null);
         ts.setForDisplay(true);
         try (Results r = ts.getResults())
         {
             Map<FieldKey, ColumnInfo> fields = r.getFieldMap();
-            if (r.next())
+            while (r.next())
             {
-                Map<FieldKey, Object> map = r.getFieldKeyRowMap();
+                Map<FieldKey, Object> row = r.getFieldKeyRowMap();
+                if (!(row.get(rowIdKey) instanceof Number rowId))
+                    continue;
+
+                IndexValues values = new IndexValues();
                 for (Map.Entry<FieldKey, ColumnInfo> entry : fields.entrySet())
-                {
-                    FieldKey fieldKey = entry.getKey();
-                    ColumnInfo col = entry.getValue();
-                    if (!col.getJdbcType().isText() && !col.getJdbcType().isInteger() && col.getJdbcType() != JdbcType.ARRAY)
-                        continue;
-
-                    if (col.getName().equalsIgnoreCase("lsid") || col.getSqlTypeName().equalsIgnoreCase("lsidtype") || col.getSqlTypeName().equalsIgnoreCase("entityid"))
-                        continue;
-
-                    Object o = map.get(fieldKey);
-
-                    List<String> values;
-                    // Issue 929: index each element of a multi-value text choice (MVTC / ARRAY) column
-                    if (col.getJdbcType() == JdbcType.ARRAY)
-                    {
-                        if (o == null)
-                            continue;
-                        o = col.convert(o);
-                        if (o instanceof MultiChoice.Array mca)
-                        {
-                            if (mca.isEmpty())
-                                continue;
-                            values = new ArrayList<>(mca);
-                        }
-                        else
-                            continue;
-                    }
-                    else
-                    {
-                        String s;
-                        // Issue 52961: DataClass: Integer fields are not index for data class
-                        if (o instanceof String)
-                            s = (String)o;
-                        else if (isIntegral(o))
-                            s = String.valueOf(o);
-                        else
-                            continue;
-
-                        if (col instanceof MultiValuedLookupColumn)
-                            values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
-                        else
-                            values = Arrays.asList(s);
-                    }
-
-                    SearchService.PROPERTY searchProperty = table.getSearchIndexColumn(fieldKey);
-                    if (searchProperty != null)
-                    {
-                        // Fow now only add indexed field values to search jsonData
-                        if (!values.isEmpty())
-                        {
-                            if (values.size() == 1)
-                                jsonData.put(fieldKey.toString(), values.getFirst());
-                            else
-                                jsonData.put(fieldKey.toString(), values);
-                        }
-
-                        switch (searchProperty)
-                        {
-                            case identifiersHi -> {
-                                identifiersHi.addAll(values);
-                                continue;
-                            }
-                            case identifiersMed -> {
-                                identifiersMed.addAll(values);
-                                continue;
-                            }
-                            case identifiersLo -> {
-                                identifiersLo.addAll(values);
-                                continue;
-                            }
-                            case keywordsHi -> {
-                                keywordsHi.addAll(values);
-                                continue;
-                            }
-                            case keywordsMed -> {
-                                keywordsMed.addAll(values);
-                                continue;
-                            }
-                            case keywordsLo -> {
-                                keywordsLo.addAll(values);
-                                continue;
-                            }
-                            default ->
-                                    LOG.debug("Unable to index column {} with property: {}. Not yet supported.", fieldKey.toString(), searchProperty.name());
-                        }
-                    }
-
-                    if ("textarea".equalsIgnoreCase(col.getInputType()))
-                    {
-                        // treat multi-line text values as keywords, otherwise treat as an identifier
-                        keywordsLo.addAll(values);
-                    }
-                    else
-                    {
-                        identifiersMed.addAll(values);
-                    }
-                }
+                    values.add(table, entry.getKey(), entry.getValue(), row.get(entry.getKey()));
+                result.put(rowId.longValue(), values);
             }
         }
-        catch (SQLException e)
-        {
-            // ignore
-        }
+        return result;
+    }
 
+    static void putIndexProps(Map<String, Object> props, Set<String> identifiersHi, Set<String> identifiersMed, Set<String> identifiersLo,
+                              Set<String> keywordsHi, Set<String> keywordsMed, Set<String> keywordsLo)
+    {
         // === Not stemmed
 
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
@@ -537,6 +580,34 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         props.put(SearchService.PROPERTY.keywordsHi.toString(), StringUtils.join(keywordsHi, " "));
         props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
         props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
+    }
 
+    protected void processIndexValues(
+            Map<String, Object> props,
+            @NotNull ExpRunItemTableImpl<?> table,
+            Set<String> identifiersHi,
+            Set<String> identifiersMed,
+            Set<String> identifiersLo,
+            Set<String> keywordsHi,
+            Set<String> keywordsMed,
+            Set<String> keywordsLo,
+            JSONObject jsonData
+    )
+    {
+        if (table.getSearchIndexColumns().isEmpty())
+            return;
+
+        try
+        {
+            IndexValues values = getIndexValues(table, List.of(getRowId())).get(getRowId());
+            if (values != null)
+                values.addTo(identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
+        }
+        catch (SQLException e)
+        {
+            // ignore
+        }
+
+        putIndexProps(props, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo);
     }
 }
