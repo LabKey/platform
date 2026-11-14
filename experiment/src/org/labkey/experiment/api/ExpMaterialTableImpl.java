@@ -57,10 +57,12 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.UnloggedTableGeneration;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -2435,37 +2437,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             DataIteratorBuilder dib = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, container, user, _ss.getImportAliasesIncludingAliquot())
                 .setFileLinkDirectory(SAMPLE_TYPE_FILE_DIRECTORY_NAME)
                 // LATE_POSTCOMMIT so indexing reads the materialized view after this change's POSTCOMMIT refresh signal
-                .setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
-                        // Built once per commit, not per batch, and shared by every batch's indexing
-                        UserSchema searchSchema = QueryService.get().getUserSchema(User.getSearchUser(), container, SamplesSchema.SCHEMA_SAMPLES);
-                        TableInfo searchTable = searchSchema == null ? null : searchSchema.getTable(_ss.getName());
-                        if (searchTable == null)
-                        {
-                            // Expected only when the sample type was deleted after this commit
-                            _log.debug("Skipping search indexing for sample type {}: no search table in {}", _ss.getName(), container.getPath());
-                            return;
-                        }
-
-                        List<String> lsids = searchIndexDataKeys.lsids();
-                        List<Long> orderedRowIds = searchIndexDataKeys.orderedRowIds();
-
-                        // Issue 51263: order by RowId to reduce deadlock
-                        ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                                queue.addRunnable((q) ->
-                                {
-                                    for (ExpMaterialImpl expMaterial : expService.getExpMaterials(sublist))
-                                        expMaterial.index(q, searchTable);
-                                })
-                        );
-
-                        ListUtils.partition(lsids, 100).forEach(sublist ->
-                                queue.addRunnable((q) ->
-                                {
-                                    for (ExpMaterialImpl expMaterial : expService.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(q, searchTable);
-                                })
-                        );
-                    }, DbScope.CommitTaskOption.LATE_POSTCOMMIT)
+                .setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(
+                        () -> queueSearchIndexing(queue, container, _ss, searchIndexDataKeys), DbScope.CommitTaskOption.LATE_POSTCOMMIT)
                 );
 
             dib = LoggingDataIterator.wrap(dib);
@@ -2475,6 +2448,38 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** Changes made through {@code container}'s table can include samples in other folders, which are indexed with their own folder's table */
+    static void queueSearchIndexing(@NotNull SearchService.TaskIndexingQueue queue, @NotNull Container container, @NotNull ExpSampleTypeImpl sampleType, @NotNull ExpDataIterators.SearchIndexDataKeys keys)
+    {
+        UserSchema searchSchema = QueryService.get().getUserSchema(User.getSearchUser(), container, SamplesSchema.SCHEMA_SAMPLES);
+        TableInfo searchTable = null;
+        if (searchSchema != null)
+            searchTable = searchSchema.getTable(sampleType.getName());
+        if (searchTable == null)
+        {
+            // Expected only when the sample type was deleted after this commit
+            _log.debug("Skipping search indexing for sample type {}: no search table in {}", sampleType.getName(), container.getPath());
+            return;
+        }
+
+        // Shared by every batch of this commit; the batches run one at a time on the indexer's runner thread
+        Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new ConcurrentHashMap<>();
+        tableCache.put(new AbstractRunItemImpl.TableCacheKey(container, sampleType), searchTable);
+        queueIndexBatches(queue, RowId, keys.orderedRowIds(), tableCache);
+        queueIndexBatches(queue, LSID, keys.lsids(), tableCache);
+    }
+
+    private static void queueIndexBatches(SearchService.TaskIndexingQueue queue, ExpMaterialTable.Column keyColumn, List<?> keys,
+                                          Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache)
+    {
+        ListUtils.partition(keys, SearchService.INDEXING_LIMIT).forEach(sublist -> queue.addRunnable(q -> {
+            // Issue 51263: order by RowId to reduce deadlock
+            List<Material> batch = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), new SimpleFilter().addInClause(keyColumn.fieldKey(), sublist), new Sort(RowId.name()))
+                    .getArrayList(Material.class);
+            ExpMaterialImpl.indexBatch(q, batch, tableCache);
+        }));
     }
 
     @Override
