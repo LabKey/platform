@@ -4176,6 +4176,19 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /** Cached per-column values and distinct counts, so the faceted filter can skip its SELECT DISTINCT. */
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectData.class)
+    public static class GetColumnFacetsAction extends ReadOnlyApiAction<FilterSuggestionsRequest>
+    {
+        @Override
+        public Object execute(FilterSuggestionsRequest request, BindException errors)
+        {
+            return FilterSuggestionService.getColumnFacets(getUser(), getContainer(), request);
+        }
+    }
+
     private SimpleFilter getFilterFromQueryForm(QueryForm form)
     {
         QuerySettings settings = form.getQuerySettings();

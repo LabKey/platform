@@ -108,23 +108,36 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
 
         SQLFragment sql = new SQLFragment("SELECT S.").appendIdentifier(column.getAlias()).append(" AS value FROM (")
             .append(selectSql)
-            .append(") S WHERE S.").appendIdentifier(column.getAlias()).append(" IS NOT NULL");
-        // One extra row for a blank value, which is dropped, and one to detect overflow
-        sql = table.getSqlDialect().limitRows(sql, ColumnFactsCache.DISTINCT_VALUE_LIMIT + 2);
+            .append(") S");
+        // Two extra rows for a null and a blank value, which are dropped, and one to detect overflow
+        int limit = ColumnFactsCache.DISTINCT_VALUE_LIMIT + 3;
+        sql = table.getSqlDialect().limitRows(sql, limit);
         service.bindNamedParameters(sql, parameters);
         service.validateNamedParameters(sql);
 
         List<String> values = new ArrayList<>();
         int count = 0;
+        int rows = 0;
+        boolean truncated = false;
+        boolean hasBlank = false;
         for (String value : new SqlSelector(table.getSchema().getScope(), sql, queryLogging).setQueryTimeout(QUERY_TIMEOUT_SECONDS).getArrayList(String.class))
         {
+            rows++;
             if (value == null || value.isBlank())
+            {
+                hasBlank = true;
                 continue;
+            }
             count++;
             if (value.length() <= MAX_VALUE_LENGTH)
                 values.add(type == SuggestionColumn.Type.INT ? toIntegerString(value) : value);
+            else
+                truncated = true;
         }
-        return new ColumnFact.Values(count > ColumnFactsCache.DISTINCT_VALUE_LIMIT ? null : values);
+        // Every distinct blank-ish value is its own row and is dropped without counting, so a full fetch can hide
+        // values even when the count is under the limit. Then the list can't be trusted to be the whole set.
+        boolean overflow = count > ColumnFactsCache.DISTINCT_VALUE_LIMIT || rows == limit;
+        return new ColumnFact.Values(overflow ? null : values, truncated, hasBlank);
     }
 
     @Override
