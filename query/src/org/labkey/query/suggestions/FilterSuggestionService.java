@@ -219,8 +219,7 @@ public class FilterSuggestionService
      *                       valuesFromData set describes the rows the request selects.
      * @param valuesFromData values were read from the data the request selects. False for a column whose values come
      *                       from its definition, such as a boolean or Text Choice, where they are the options the
-     *                       column allows and some may match no row; and for a multi-valued lookup, whose values are
-     *                       read from its target table without the request's filters or container filter.
+     *                       column allows and some may match no row.
      * @param distinctCount  COUNT(DISTINCT), known even when values is null. Counted in SQL, so unlike values it
      *                       includes blank strings and does not collapse numerically equal text; expect it to exceed
      *                       values.size() by a little rather than treating a difference as truncation.
