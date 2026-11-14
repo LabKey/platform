@@ -2476,8 +2476,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         ListUtils.partition(keys, SearchService.INDEXING_LIMIT).forEach(sublist -> queue.addRunnable(q -> {
             // Issue 51263: order by RowId to reduce deadlock
-            List<Material> batch = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), new SimpleFilter().addInClause(keyColumn.fieldKey(), sublist), new Sort(RowId.name()))
-                    .getArrayList(Material.class);
+            List<Material> batch = ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(),
+                    ExpMaterialImpl.getIndexColumnNames(), new SimpleFilter().addInClause(keyColumn.fieldKey(), sublist), new Sort(RowId.name())));
             ExpMaterialImpl.indexBatch(q, batch, tableCache);
         }));
     }
