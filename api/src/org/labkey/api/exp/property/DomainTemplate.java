@@ -16,7 +16,7 @@
 package org.labkey.api.exp.property;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +45,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -68,9 +69,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class DomainTemplate
 {
+    private static final Logger LOG = LogHelper.getLogger(DomainTemplate.class, "Domain template resolution");
+    // Hit on every table build for affected domains, so warn once per missing module or group
+    private static final Set<String> WARNED_MISSING = new CopyOnWriteArraySet<>();
+
     private final String _moduleName;
     private final String _templateGroup;
     private final String _templateName;
@@ -99,21 +105,23 @@ public class DomainTemplate
     {
         if (moduleName == null || groupName == null || templateName == null)
         {
-            LogManager.getLogger(DomainTemplate.class).warn("Module, group, and template name required to get domain template");
+            LOG.warn("Module, group, and template name required to get domain template");
             return null;
         }
 
         Module module = ModuleLoader.getInstance().getModule(moduleName);
         if (module == null)
         {
-            LogManager.getLogger(DomainTemplate.class).warn("Module '{}' for domain template not found", moduleName);
+            if (WARNED_MISSING.add(moduleName))
+                LOG.warn("Module '{}' for domain template not found; further warnings for this module suppressed", moduleName);
             return null;
         }
 
         DomainTemplateGroup group = DomainTemplateGroup.get(module, groupName);
         if (group == null)
         {
-            LogManager.getLogger(DomainTemplate.class).warn("Domain template group '{}' not found in module '{}'", groupName, moduleName);
+            if (WARNED_MISSING.add(moduleName + "/" + groupName))
+                LOG.warn("Domain template group '{}' not found in module '{}'; further warnings for this group suppressed", groupName, moduleName);
             return null;
         }
 
