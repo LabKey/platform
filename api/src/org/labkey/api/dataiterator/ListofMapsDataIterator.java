@@ -37,13 +37,5 @@ public class ListofMapsDataIterator extends AbstractMapDataIterator.ListOfMapsDa
         {
             super(new ListofMapsDataIterator(colNames, rows));
         }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            // GH Issue 1867: the iterator was built on a throwaway context, so hand its omitted rows to the pipeline's
-            context.setOmittedColumnRows(((ListofMapsDataIterator) di).getOmittedColumnRows());
-            return di;
-        }
     }
 }

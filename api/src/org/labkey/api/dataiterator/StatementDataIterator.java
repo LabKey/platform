@@ -35,7 +35,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -58,7 +57,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -96,8 +94,6 @@ public class StatementDataIterator extends AbstractDataIterator
     Integer _rowIdIndex = null;
     Integer _objectIdIndex = null;
     Integer _objectUriIndex = null;
-    // By this iterator's column name, the row numbers whose source row omitted the column
-    protected Map<String, BitSet> _omittedColumnRows = Map.of();
     protected int _batchSize = -1;
     int _currentBatchSize = 0;
     int _currentTxSize = 0;
@@ -208,11 +204,8 @@ public class StatementDataIterator extends AbstractDataIterator
                 if (null != to)
                 {
                     FieldKey mvName = col.getMvColumnName();
-                    BitSet omittedRows = _omittedColumnRows.get(col.getName());
-                    Parameter useDefault = null == omittedRows ? null : stmt.getParameter(StatementUtils.useDefaultParameterName(to.getName()));
                     bindings.add(new Triple(_data.getSupplier(i), to,
-                                            (null != mvName ? getMvParameter(stmt, mvName) : null),
-                                            useDefault, omittedRows));
+                                            (null != mvName ? getMvParameter(stmt, mvName) : null)));
                 }
             }
             _bindings[set] = bindings.toArray(new Triple[0]);
@@ -247,19 +240,15 @@ public class StatementDataIterator extends AbstractDataIterator
 
     private static class Triple
     {
-        Triple(Supplier<?> from, Parameter to, Parameter mv, @Nullable Parameter useDefault, @Nullable BitSet omittedRows)
+        Triple(Supplier from, Parameter to, Parameter mv)
         {
             this.from = from;
             this.to = to;
             this.mv = mv;
-            this.useDefault = useDefault;
-            this.omittedRows = omittedRows;
         }
         Supplier from;
         Parameter to;
         Parameter mv;
-        Parameter useDefault;
-        BitSet omittedRows;
     }
 
     @Override
@@ -379,12 +368,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 {
                     Object value = binding.from.get();
                     if (null == value)
-                    {
-                        // GH Issue 1867: a row that omitted the column gets its database default; an explicit null stays NULL
-                        if (null != binding.useDefault && binding.omittedRows.get(_currentRowNumber))
-                            binding.useDefault.setValue(1);
                         continue;
-                    }
                     if (value instanceof MvFieldWrapper)
                     {
                         if (null != binding.mv)

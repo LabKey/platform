@@ -250,6 +250,14 @@ public class QueryModule extends DefaultModule
             false,
             OptionalFeatureService.FeatureType.Deprecated
         ));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            QueryService.DEPRECATED_ALLOW_RAGGED_IMPORT_ROWS,
+            "Allow importRows rows with differing fields",
+            "By default the importRows API rejects a request whose rows do not all supply the same fields. Enabling this feature accepts such requests, storing NULL for any field a row omits. This option will be removed in a future release of LabKey Server.",
+            false,
+            false,
+            OptionalFeatureService.FeatureType.Deprecated
+        ));
     }
 
 

@@ -24,7 +24,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.query.QueryUpdateService;
 
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,7 +61,6 @@ public class DataIteratorContext
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
     private String _dataSource;
     private boolean _withLookupRemapping = true;
-    private Map<String, BitSet> _omittedColumnRows = null;
 
     private final Map<String, Object> _responseInfo = new HashMap<>(); // information from the import/loadRows context to be passed back to the API response object
     private Logger _logger;
@@ -245,28 +243,6 @@ public class DataIteratorContext
     public void addAlternateKeys(Set<String> alternateKeys)
     {
         _alternateKeys.addAll(alternateKeys);
-    }
-
-    /** GH Issue 1867: by input column name, the row numbers whose source row omits that column, so inserts can give them the database default */
-    @NotNull
-    public Map<String, BitSet> getOmittedColumnRows()
-    {
-        return null == _omittedColumnRows ? Map.of() : _omittedColumnRows;
-    }
-
-    /** First registration wins: the pipeline's own source is built before any nested pipeline that shares this context */
-    public void setOmittedColumnRows(@NotNull Map<String, BitSet> omittedColumnRows)
-    {
-        if (null == _omittedColumnRows)
-            _omittedColumnRows = omittedColumnRows;
-    }
-
-    /** Scopes registration to one pipeline: returns the current map, to be restored when that pipeline finishes */
-    public @Nullable Map<String, BitSet> replaceOmittedColumnRows(@Nullable Map<String, BitSet> omittedColumnRows)
-    {
-        Map<String, BitSet> previous = _omittedColumnRows;
-        _omittedColumnRows = omittedColumnRows;
-        return previous;
     }
 
     public boolean shouldCancel()

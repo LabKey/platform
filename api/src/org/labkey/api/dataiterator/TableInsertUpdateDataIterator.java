@@ -24,7 +24,6 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RuntimeSQLException;
@@ -42,7 +41,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -263,7 +261,6 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             }
             else
             {
-                _omittedColumnRows = resolveOmittedColumnRows();
                 stmt = getInsertStatement(constants);
             }
 
@@ -310,7 +307,6 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
         //pass in the voc cols in this builder
         StatementUtils utils = new StatementUtils(StatementUtils.Operation.insert, _table)
                 .skip(_skipColumnNames)
-                .omittable(_omittedColumnRows.keySet())
                 .allowSetAutoIncrement(_context.supportsAutoIncrementKey())
                 .updateBuiltinColumns(false)
                 .selectIds(_selectIds)
@@ -318,30 +314,6 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                 .setVocabularyProperties(_adhocPropColumns);
         stmt = utils.createStatement(_conn, _container, null);
         return stmt;
-    }
-
-    /** Re-keys the source's omitted-column rows from input names (which may be aliases) to this iterator's column names */
-    private Map<String, BitSet> resolveOmittedColumnRows()
-    {
-        Map<String, BitSet> omitted = _context.getOmittedColumnRows();
-        if (omitted.isEmpty())
-            return Map.of();
-
-        Map<String, ColumnInfo> importMap = ImportAliasable.Helper.createImportMap(_table.getColumns(), false);
-        Map<String, Integer> columns = DataIteratorUtil.createColumnNameMap(_data);
-        Map<String, BitSet> ret = new CaseInsensitiveHashMap<>();
-        omitted.forEach((name, rows) -> {
-            ColumnInfo col = importMap.get(name);
-            String columnName = null == col ? name : col.getName();
-            // A row omits the column only if it lacks every spelling that maps to it
-            if (columns.containsKey(columnName))
-                ret.merge(columnName, rows, (a, b) -> {
-                    BitSet both = (BitSet) a.clone();
-                    both.and(b);
-                    return both;
-                });
-        });
-        return ret;
     }
 
     protected ParameterMapStatement getMergeStatement(Map<String, Object> constants) throws SQLException
