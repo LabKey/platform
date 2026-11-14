@@ -879,7 +879,7 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
-        clearCacheAfterCommit();
+        clearCacheAfterCommit(() -> _removeFromCache(container, false));
 
         auditRunnable.run();
     }
@@ -920,6 +920,7 @@ public class ContainerManager
         }
 
         clearCache();
+        clearCacheAfterCommit(ContainerManager::clearCache);
 
         auditRunnable.run();
     }
@@ -947,12 +948,12 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         clearCache();
-        clearCacheAfterCommit();
+        clearCacheAfterCommit(ContainerManager::clearCache);
 
         addAuditEvent(user, container, archive ? "Container has been archived." : "Archived container has been restored.");
     }
 
-    private static void clearCacheAfterCommit()
+    private static void clearCacheAfterCommit(Runnable uncache)
     {
         // GH Issue 1504: Clear again after the commit has propagated the new state to other threads and transactions. Do this in a
         // commit task since the caller may have started (or joined) a transaction; if not, it runs immediately.
@@ -963,7 +964,7 @@ public class ContainerManager
             DATABASE_QUERY_LOCK.lock();
             try
             {
-                clearCache();
+                uncache.run();
             }
             finally
             {
@@ -984,6 +985,7 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
+        clearCacheAfterCommit(() -> _removeFromCache(container, false));
 
         auditRunnable.run();
     }
@@ -2982,6 +2984,35 @@ public class ContainerManager
         }
 
         @Test
+        public void testSubfolderSeesProjectLockState()
+        {
+            User user = TestContext.get().getUser();
+            Container project = createContainer(getRoot(), "ContainerManager$TestCase-Lock-" + GUID.makeGUID(), user);
+            try
+            {
+                Container subfolder = createContainer(createContainer(project, "child", user), "grandchild", user);
+                assertEquals(project, subfolder.getProject());
+
+                updateLockState(project, LockState.Inaccessible, () -> {});
+                assertEquals(LockState.Inaccessible, getProjectLockState(subfolder));
+
+                updateLockState(project, LockState.Unlocked, () -> {});
+                assertEquals(LockState.Unlocked, getProjectLockState(subfolder));
+            }
+            finally
+            {
+                deleteAll(project, user);
+            }
+        }
+
+        private LockState getProjectLockState(Container c)
+        {
+            Container project = c.getProject();
+            assertNotNull(project);
+            return project.getLockState();
+        }
+
+        @Test
         public void testMissesCached()
         {
             User user = TestContext.get().getUser();
@@ -3243,6 +3274,7 @@ public class ContainerManager
         }
     }
 
+    /** Not in the database, so getParent() and getProject() can't look up a fake parent or project; they return null in that case */
     public static Container createFakeContainer(@Nullable String name, @Nullable Container parent)
     {
         return new Container(parent, name, GUID.makeGUID(), 1, 0, new Date(), 0, false);
