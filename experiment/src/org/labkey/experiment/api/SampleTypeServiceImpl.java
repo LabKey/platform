@@ -395,7 +395,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
-        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> new ExpMaterialImpl(m).indexWithTableCache(queue, tableCache));
+        List<Material> batch = selector.getArrayList(Material.class);
+        batch.forEach(m -> tracker.advance(m.getRowId()));
+        ExpMaterialImpl.indexBatch(queue, batch, tableCache);
 
         if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
