@@ -71,6 +71,7 @@ import java.util.Set;
 public interface QueryService
 {
     String DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS = "queryDisableManagedTriggerColumns";
+    String DEPRECATED_ALLOW_RAGGED_IMPORT_ROWS = "queryAllowRaggedImportRows";
     String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
     String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
     String MAX_QUERY_SELECTION = "maxQuerySelection";

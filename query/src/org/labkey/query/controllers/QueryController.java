@@ -137,7 +137,7 @@ import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader.PoolStati
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ProvenanceRecordingParams;
@@ -223,6 +223,7 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.ButtonBuilder;
@@ -4543,7 +4544,7 @@ public class QueryController extends SpringActionController
                     throws SQLException, BatchValidationException
             {
                 BatchValidationException errors = new BatchValidationException();
-                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.getFirst().keySet(), rows);
+                DataIteratorBuilder it = MapDataIterator.of(rows);
                 qus.importRows(user, container, it, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
@@ -4799,6 +4800,11 @@ public class QueryController extends SpringActionController
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys || commandType == CommandType.delete)
                 f = new RowMapFactory<>();
             CaseInsensitiveHashMap<Object> referenceCasing = new CaseInsensitiveHashMap<>();
+            // GH Issue 1867: row maps share casing state, so a later row's spelling of a key would hide earlier rows' values
+            CaseInsensitiveHashMap<String> keySpellings = new CaseInsensitiveHashMap<>();
+            Set<String> firstRowKeys = null;
+            boolean requireSquareRows = commandType == CommandType.importRows &&
+                    !OptionalFeatureService.get().isFeatureEnabled(QueryService.DEPRECATED_ALLOW_RAGGED_IMPORT_ROWS);
             boolean loggedConflictingCasing = false;
 
             for (int idx = 0; idx < rows.length(); ++idx)
@@ -4816,7 +4822,31 @@ public class QueryController extends SpringActionController
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>(new HashMap<>(), referenceCasing) : f.getRowMap();
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
-                    boolean conflictingCasing = JsonUtil.fillMapShallow(jsonObj, rowMap);
+                    boolean conflictingCasing = false;
+                    for (String key : jsonObj.keySet())
+                    {
+                        String spelling = keySpellings.get(key);
+                        if (null == spelling)
+                        {
+                            spelling = key;
+                            keySpellings.put(key, key);
+                        }
+                        Object value = jsonObj.get(key);
+                        conflictingCasing |= rowMap.put(spelling, JSONObject.NULL == value ? null : value) != null;
+                    }
+                    if (requireSquareRows)
+                    {
+                        Set<String> rowKeys = new HashSet<>(rowMap.keySet());
+                        if (null == firstRowKeys)
+                            firstRowKeys = rowKeys;
+                        else if (!firstRowKeys.equals(rowKeys))
+                        {
+                            Set<String> expected = firstRowKeys;
+                            throw new IllegalArgumentException("rows[" + idx + "] must supply the same fields as rows[0]. Missing: " +
+                                    expected.stream().filter(k -> !rowKeys.contains(k)).sorted().toList() + "; unexpected: " +
+                                    rowKeys.stream().filter(k -> !expected.contains(k)).sorted().toList() + ".");
+                        }
+                    }
                     if (conflictingCasing && !loggedConflictingCasing)
                     {
                         loggedConflictingCasing = true;
