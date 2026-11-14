@@ -42,7 +42,7 @@
 %>
 <html>
 <head>
-    <base href="<%=h(ActionURL.getBaseServerURL())%>">
+    <base href="<%=h(ActionURL.getBaseServerURLWithContextPath())%>">
 <%=PageFlowUtil.getStylesheetIncludes(form.getContainer())
 %></head>
 

@@ -223,6 +223,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     }
 
 
+    /** Scheme, host, and port only; no context path. Use getURIString() for a full URL. */
     public String getBaseServerURI()
     {
         return getBaseServer(getScheme(), getHost(), getPort()).toString();

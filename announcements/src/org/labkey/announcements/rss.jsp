@@ -29,7 +29,7 @@
 <rss version="2.0">
 <channel>
     <title><%=h(laf.getShortName())%>: <%=h(laf.getDescription())%></title>
-    <link><%=h(ActionURL.getBaseServerURL())%></link>
+    <link><%=h(ActionURL.getBaseServerURLWithContextPath())%></link>
     <description><%=h(laf.getShortName())%>: <%=h(laf.getDescription())%></description>
 <%
     for (AnnouncementModel ann : bean.announcementModels)
