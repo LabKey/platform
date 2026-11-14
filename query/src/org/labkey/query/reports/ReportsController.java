@@ -138,7 +138,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -392,11 +391,6 @@ public class ReportsController extends SpringActionController
     public ReportsController()
     {
         setActionResolver(_actionResolver);
-    }
-
-    public static void registerAdminConsoleLinks()
-    {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "script reports by non-developers", new ActionURL(ScriptReportAuthorsAction.class, ContainerManager.getRoot()), AdminOperationsPermission.class);
     }
 
     private record ScriptReportSave(Date created, @Nullable Integer createdBy, @Nullable Integer impersonatedBy, String container, @Nullable Integer reportId, String reportName, String reportType, String comment) {}
