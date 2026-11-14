@@ -167,10 +167,14 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         ContainerManager.addContainerListener(this);
         ContainerManager.addSecurableResourceProvider((c, u) -> {
             List<ReportDescriptor> ret = new ArrayList<>();
-            for (Report report : ReportService.get().getReports(u, c))
+            // Unfiltered, since admins manage access to other users' private reports
+            for (Report report : ReportService.get().getReports(null, c))
             {
-                if (report.getDescriptor().hasPermission(u, AdminPermission.class))
-                    ret.add(report.getDescriptor());
+                // Creators can share their own reports; the report save's share check still applies
+                ReportDescriptor descriptor = report.getDescriptor();
+                boolean creator = descriptor.getCreatedBy() != 0 && descriptor.getCreatedBy() == u.getUserId();
+                if (creator || descriptor.hasPermission(u, AdminPermission.class))
+                    ret.add(descriptor);
             }
             return ret;
         });

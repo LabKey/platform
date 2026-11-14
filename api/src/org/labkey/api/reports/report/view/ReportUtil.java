@@ -756,8 +756,6 @@ public class ReportUtil
     /**
      * Save both in one transaction so a rejected report save doesn't leave the new policy in place. The report is
      * often the shared instance from the report cache, so put its owner back if the save is rejected.
-     * savePolicy can only find reports the performer can read, so it must run before the owner changes: clearing the
-     * owner first hides a private report from its non-admin owner.
      */
     private static void savePolicyAndReport(ViewContext context, Report report, MutableSecurityPolicy policy, @Nullable Integer owner, User performer, boolean skipValidation)
     {
