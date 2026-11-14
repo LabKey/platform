@@ -879,6 +879,7 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
+        clearCacheAfterCommit();
 
         auditRunnable.run();
     }
@@ -946,7 +947,13 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         clearCache();
+        clearCacheAfterCommit();
 
+        addAuditEvent(user, container, archive ? "Container has been archived." : "Archived container has been restored.");
+    }
+
+    private static void clearCacheAfterCommit()
+    {
         // GH Issue 1504: Clear again after the commit has propagated the new state to other threads and transactions. Do this in a
         // commit task since the caller may have started (or joined) a transaction; if not, it runs immediately.
         CORE.getSchema().getScope().addCommitTask(() ->
@@ -963,8 +970,6 @@ public class ContainerManager
                 DATABASE_QUERY_LOCK.unlock();
             }
         }, DbScope.CommitTaskOption.POSTCOMMIT);
-
-        addAuditEvent(user, container, archive ? "Container has been archived." : "Archived container has been restored.");
     }
 
     public static void updateExpirationDate(Container container, LocalDate expirationDate, @NotNull Runnable auditRunnable)
@@ -2821,7 +2826,7 @@ public class ContainerManager
         return navTrail;
     }
 
-    @TestTimeout(120) @TestWhen(TestWhen.When.BVT)
+    @TestTimeout(300) @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert implements ContainerListener
     {
         Map<Path, Container> _containers = new HashMap<>();

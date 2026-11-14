@@ -76,7 +76,6 @@ import org.springframework.validation.BindException;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.Serializable;
-import java.lang.ref.WeakReference;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -125,7 +124,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     private transient Module _defaultModule;
 
-    private transient WeakReference<Container> _parent;
+    private @Nullable GUID _parentId;
 
     private ContainerType _containerType;
 
@@ -259,7 +258,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = new GUID(id);
-        _parent = new WeakReference<>(dirParent);
+        _parentId = null == dirParent ? null : dirParent.getEntityId();
         _rowId = rowId;
         _sortOrder = sortOrder;
         _created = created;
@@ -401,13 +400,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public Container getParent()
     {
-        Container parent = _parent == null ? null : _parent.get();
-        if (null == parent && !_path.isEmpty())
-        {
-            parent = ContainerManager.getForPath(_path.getParent());
-            _parent = new WeakReference<>(parent);
-        }
-        return parent;
+        // Look up on every call; holding the parent object would return stale state after the parent is uncached
+        if (null != _parentId)
+            return ContainerManager.getForId(_parentId);
+
+        // Pipeline job JSON serialized without _parentId
+        return _path.isEmpty() ? null : ContainerManager.getForPath(_path.getParent());
     }
 
     /**
