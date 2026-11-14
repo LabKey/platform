@@ -319,7 +319,7 @@ public class DbScope
     };
 
     // Used only for testing and internal marker
-    @SuppressWarnings("NullAway")
+    @SuppressWarnings({"NullAway", "DataFlowIssue"})
     protected DbScope()
     {
         _dbScopeLoader = null;
@@ -334,6 +334,7 @@ public class DbScope
         _provisionedTableCache = null;
         _rds = false;
         _escape = null;
+        _dialect = null;
     }
 
     // Used only for testing
@@ -374,7 +375,7 @@ public class DbScope
         private @Nullable String _displayName = null;
         private boolean _primary = false;
 
-        @SuppressWarnings({"unused", "NullAway"}) // Used by BeanObjectFactory
+        @SuppressWarnings({"unused", "NullAway", "DataFlowIssue"}) // Used by BeanObjectFactory
         public LabKeyDataSource()
         {
             _ds = null;
@@ -437,7 +438,7 @@ public class DbScope
             return _displayName;
         }
 
-        public void setDisplayName(String displayName)
+        public void setDisplayName(@Nullable String displayName)
         {
             _displayName = displayName;
         }
@@ -598,11 +599,7 @@ public class DbScope
             {
                 _dialect = SqlDialectManager.getFromMetaData(dbmd, true, dataSource.isPrimary());
                 MemTracker.getInstance().remove(_dialect);
-
-                if (_dialect != null)
-                {
-                    additionalLogging = _dialect.prepare(this);
-                }
+                additionalLogging = _dialect.prepare(this);
             }
             finally
             {
@@ -782,8 +779,7 @@ public class DbScope
         //       which is not feasible.
         if (isTransactionActive())
         {
-            TransactionImpl transaction = getCurrentTransactionImpl();
-            assert null != transaction;
+            TransactionImpl transaction = Objects.requireNonNull(getCurrentTransactionImpl());
             if (transactionKind.getKind().equals(transaction.getTransactionKind().getKind()))
             {
                 transaction.increment(transactionKind.isReleaseLocksOnFinalCommit(), Arrays.asList(locks));
@@ -946,7 +942,7 @@ public class DbScope
             }
         }
 
-        return result;
+        return Objects.requireNonNull(result);
     }
 
 
@@ -961,7 +957,7 @@ public class DbScope
     static final ThreadLocal<Boolean> _inScopeExecuteWithRetry = ThreadLocal.withInitial(() -> false);
 
 
-    public interface RetryFn<ReturnType>
+    public interface RetryFn<ReturnType extends @Nullable Object>
     {
         ReturnType exec(@Nullable Transaction tx) throws PessimisticLockingFailureException, RuntimeSQLException;
     }
@@ -978,8 +974,9 @@ public class DbScope
 
         public <T extends Throwable> void rethrow(Class<T> clazz) throws T
         {
-            if (clazz.isAssignableFrom(getCause().getClass()))
-                throw (T) getCause();
+            Throwable cause = getCause();
+            if (null != cause && clazz.isAssignableFrom(cause.getClass()))
+                throw clazz.cast(cause);
         }
 
         /* this "returns" RuntimeException so the caller can do the following to avoid compiler warnings:
@@ -995,19 +992,19 @@ public class DbScope
      * If there's a deadlock exception, retry two more times after a delay. Won't retry if we're already in a transaction
      * fn() should throw DeadlockLoserDataAccessException or RuntimeSQLException to get the retry behavior
      */
-    public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
+    public <ReturnType extends @Nullable Object> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
     {
         return _executeWithRetry(true, fn, extraLocks);
     }
 
-
-    public <ReturnType> ReturnType executeWithRetryReadOnly(RetryFn<ReturnType> fn)
+    public <ReturnType extends @Nullable Object> ReturnType executeWithRetryReadOnly(RetryFn<ReturnType> fn)
     {
         return _executeWithRetry(false, fn);
     }
 
 
-    private <ReturnType> ReturnType _executeWithRetry(boolean useTx, RetryFn<ReturnType> fn, Lock... extraLocks)
+    @SuppressWarnings("NullAway") // NullAway ignores the @Nullable bound on ReturnType unless JSpecifyMode is enabled
+    private <ReturnType extends @Nullable Object> ReturnType _executeWithRetry(boolean useTx, RetryFn<ReturnType> fn, Lock... extraLocks)
     {
         final boolean isNested = _inScopeExecuteWithRetry.get();
 
@@ -1176,7 +1173,7 @@ public class DbScope
     class ConnectionHolder
     {
         private int _refCount = 0;
-        private Connection _conn;
+        private @Nullable Connection _conn;
 
         public ConnectionHolder()
         {
@@ -1193,15 +1190,15 @@ public class DbScope
 
             _refCount++;
 
-            log(() -> 1 == _refCount ? "New connection [1]: " + _conn.toString() : "Existing connection [" + _refCount + "]: " + _conn.toString());
+            log(() -> 1 == _refCount ? "New connection [1]: " + _conn : "Existing connection [" + _refCount + "]: " + _conn);
             log(() -> _refCount > 2 ? "ConnectionHolder RefCount: " + _refCount : null);
 
-            return _conn;
+            return Objects.requireNonNull(_conn);
         }
 
         public synchronized boolean release(Connection conn)
         {
-            log(() -> 1 == _refCount ? "Releasing connection [1]: " + conn.toString() : "Attempting to decrease count of connection [" + _refCount + "]: " + conn.toString());
+            log(() -> 1 == _refCount ? "Releasing connection [1]: " + conn : "Attempting to decrease count of connection [" + _refCount + "]: " + conn);
 
             if (_conn == null)
                 throw new ConnectionAlreadyReleasedException("Connection has already been nulled out, but was passed: " + conn);
@@ -1249,7 +1246,7 @@ public class DbScope
         }
     }
 
-    private void log(Supplier<String> supplier)
+    private void log(Supplier<@Nullable String> supplier)
     {
         if (LOG.isDebugEnabled())
         {
@@ -1325,8 +1322,8 @@ public class DbScope
         }
     }
 
-    static Class<?> classDelegatingConnection = null;
-    static Method methodGetInnermostDelegate = null;
+    static @Nullable Class<?> classDelegatingConnection = null;
+    static @Nullable Method methodGetInnermostDelegate = null;
     static boolean isDelegating = false;
     static boolean isDelegationInitialized;
     private static final Object delegationLock = new Object();
@@ -1380,11 +1377,11 @@ public class DbScope
         // This approach is required for Commons DBCP (default Tomcat connection pool)
         ensureDelegation(conn);
 
-        if (isDelegating && classDelegatingConnection.isAssignableFrom(conn.getClass()))
+        if (isDelegating && Objects.requireNonNull(classDelegatingConnection).isAssignableFrom(conn.getClass()))
         {
             try
             {
-                delegate = (Connection) methodGetInnermostDelegate.invoke(conn);
+                delegate = (Connection) Objects.requireNonNull(methodGetInnermostDelegate).invoke(conn);
             }
             catch (Exception x)
             {
@@ -1834,9 +1831,9 @@ public class DbScope
                 addScope(dsName, ds);
             }
 
-            _labkeyScope = getDbScope(labkeyDsName);
+            DbScope labkeyScope = getDbScope(labkeyDsName);
 
-            if (null == _labkeyScope)
+            if (null == labkeyScope)
             {
                 ConfigurationException ce = new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
                 Throwable cause = DbScope.getDataSourceFailure(labkeyDsName);
@@ -1845,7 +1842,8 @@ public class DbScope
                 throw ce;
             }
 
-            _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
+            _labkeyScope = labkeyScope;
+            labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(labkeyScope);
         }
     }
 
@@ -2361,7 +2359,7 @@ public class DbScope
     interface ConnectionMap
     {
         @Nullable Integer get(Connection c);
-        Integer put(Connection c, Integer spid);
+        @Nullable Integer put(Connection c, Integer spid);
     }
 
 
@@ -2377,7 +2375,7 @@ public class DbScope
             }
 
             @Override
-            public synchronized Integer put(Connection c, Integer spid)
+            public synchronized @Nullable Integer put(Connection c, Integer spid)
             {
                 return m.put(c,spid);
             }
@@ -2432,7 +2430,7 @@ public class DbScope
             _max = max;
         }
 
-        public V put(K key, V value)
+        public @Nullable V put(K key, V value)
         {
             return _map.put(new _IdentityWrapper(key), value);
         }
@@ -2442,6 +2440,7 @@ public class DbScope
             return _map.get(new _IdentityWrapper(key));
         }
 
+        @SuppressWarnings("unchecked")
         private void _purge()
         {
             _IdentityWrapper w;
@@ -2516,7 +2515,7 @@ public class DbScope
             }
 
             @Override
-            public <T extends Runnable> T add(TransactionImpl transaction, T task)
+            <T extends Runnable> T add(TransactionImpl transaction, T task)
             {
                 task.run();
                 return task;
@@ -2525,7 +2524,7 @@ public class DbScope
 
         abstract CommitTaskQueue getQueue(TransactionImpl transaction);
 
-        public void run(TransactionImpl transaction)
+        private void run(TransactionImpl transaction)
         {
             try
             {
@@ -2537,7 +2536,7 @@ public class DbScope
             }
         }
 
-        public <T extends Runnable> T add(TransactionImpl transaction, T task)
+        <T extends Runnable> T add(TransactionImpl transaction, T task)
         {
             return getQueue(transaction).add(task);
         }
@@ -2791,6 +2790,7 @@ public class DbScope
             _auditEvent = event;
         }
 
+        @SuppressWarnings("unchecked")
         @Nullable <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
         {
             return (Cache<K, V>)_caches.get(cache);
@@ -3177,12 +3177,21 @@ public class DbScope
 
         private void _testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
         {
-            SQLFragment sql = SQLFragment.unsafe("SELECT (");
-            sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
-            sql.unsafeAppend(") AS Diff");
+            SQLFragment sql = SQLFragment.unsafe("SELECT (")
+                .append(dialect.getDateDiff(part, castToDateTime(dialect, date1), castToDateTime(dialect, date2)))
+                .unsafeAppend(") AS Diff");
 
-            int actual = new SqlSelector(scope, sql).getObject(Integer.class);
-            assertEquals(expected, actual);
+            Integer actual = new SqlSelector(scope, sql).getObject(Integer.class);
+            assertEquals(Integer.valueOf(expected), actual);
+        }
+
+        private SQLFragment castToDateTime(SqlDialect dialect, String date)
+        {
+            return SQLFragment.unsafe("CAST(")
+                .appendStringLiteral(date, dialect)
+                .unsafeAppend(" AS ")
+                .append(dialect.getDefaultDateTimeDataTypeAsSql())
+                .unsafeAppend(")");
         }
     }
 
@@ -3482,7 +3491,7 @@ public class DbScope
 
                     // POSTCOMMIT tasks must run detached from the transaction, exactly as they do under commit()
                     assertEquals("POSTCOMMIT task should have run exactly once", 1, transactionsSeenByPostCommitTask.size());
-                    assertNull("POSTCOMMIT tasks must not see an active transaction", transactionsSeenByPostCommitTask.get(0));
+                    assertNull("POSTCOMMIT tasks must not see an active transaction", transactionsSeenByPostCommitTask.getFirst());
 
                     // ...and the transaction must be back on the thread, still active and still usable
                     assertTrue(scope.isTransactionActive());
@@ -3598,7 +3607,9 @@ public class DbScope
                 }
                 // Should be aborted because the inner transaction never called commit() before it was closed
                 assertTrue(getLabKeyScope().isTransactionActive());
-                assertTrue(getLabKeyScope().getCurrentTransactionImpl()._aborted);
+                TransactionImpl current = getLabKeyScope().getCurrentTransactionImpl();
+                assertNotNull(current);
+                assertTrue(current._aborted);
                 // This call should cause an IllegalStateException
                 t.commit();
             }
@@ -3739,8 +3750,8 @@ public class DbScope
                 {
                     // wait for background to acquire first locks
                     bkg.start();
-                    // wait for bkg to acquire lock2
-                    bkgHasLock2.await(60, TimeUnit.SECONDS);
+                    boolean bkgAcquiredLock2 = bkgHasLock2.await(60, TimeUnit.SECONDS);
+                    assertTrue("Background thread didn't acquire lock2 within 60 seconds", bkgAcquiredLock2);
                     // try to acquire my second lock
                     // this should cause a deadlock
                     try (Transaction inner = CoreSchema.getInstance().getScope().ensureTransaction(lock2))
