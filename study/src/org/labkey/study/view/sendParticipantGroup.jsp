@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -72,7 +71,7 @@
     <br/><br/>
 
     <b>Message link:</b>
-    <div><%=h(PageFlowUtil.decode(sendGroupUrl.getURIString()))%></div>
+    <div><%=h(sendGroupUrl.getURIString())%></div>
     <div><a class="labkey-text-link" target="_blank" href="<%=h(sendGroupUrl)%>" rel="noopener noreferrer">Preview Link</a></div>
     <br/>
 

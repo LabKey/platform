@@ -157,7 +157,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             // replicate the message body as html with an <a> tag
             String html = "<html><head></head><body>" +
                     PageFlowUtil.filter(body, true, true) +
-                    "<br/><a href='" + fullUrlStr + "'>" + fullUrlStr + "</a>" +
+                    "<br/><a href='" + PageFlowUtil.filter(fullUrlStr) + "'>" + PageFlowUtil.filter(fullUrlStr) + "</a>" +
                     "</body></html>";
             m.setEncodedHtmlContent(html);
 
