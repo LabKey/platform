@@ -1192,12 +1192,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         final String materialAlias = "_m_";
         final String materialIndexedAlias = "_mi_";
         // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
-        SQLFragment sql = new SQLFragment("SELECT ").append(materialAlias).unsafeAppend(".* FROM ").
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT ").unsafeAppend(ExpMaterialImpl.getIndexColumnsSelectList(materialAlias)).unsafeAppend(" FROM ").
                 append(getTinfoMaterial(), "_m_").
                 unsafeAppend(" LEFT OUTER JOIN ").append(getTinfoMaterialIndexed(), "_mi_").
                 unsafeAppend(" ON ").append(materialAlias).unsafeAppend(".RowId = ").
-                append(materialIndexedAlias).append(".MaterialId WHERE Container = ? AND LSID NOT LIKE '%:" +
-                        StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
+                unsafeAppend(materialIndexedAlias).unsafeAppend(".MaterialId").
+                // The planner doesn't carry RowId > ? across the outer join, so without its own bound the join reads materialindexed from the start every batch
+                unsafeAppend(" AND ").unsafeAppend(materialIndexedAlias).unsafeAppend(".MaterialId > ?").add(minRowId).
+                unsafeAppend(" WHERE Container = ? AND LSID NOT LIKE '%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
         sql.add(container.getId());
         sql.add(minRowId);
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, materialAlias, getTinfoMaterialIndexed(), materialIndexedAlias).toSQLFragment(null, null);
@@ -1210,7 +1212,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        List<Material> batch = selector.getArrayList(Material.class);
+        List<Material> batch = ExpMaterialImpl.readIndexMaterials(selector);
         batch.forEach(m -> tracker.advance(m.getRowId()));
         ExpMaterialImpl.indexBatch(queue, batch, new HashMap<>());
 

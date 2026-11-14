@@ -33,6 +33,7 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -79,6 +80,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.dao.PessimisticLockingFailureException;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,6 +89,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -588,10 +591,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         try (Connection ignored = scope.getConnection())
         {
             Map<String, List<String>> aliases = getAliases(materials.stream().map(ExpMaterialImpl::getLSID).toList());
-            Map<Long, String> runNames = new HashMap<>();
-            ExperimentServiceImpl.get().getExpRuns(materials.stream().map(ExpMaterialImpl::getRunId).filter(Objects::nonNull).collect(Collectors.toSet()))
-                    .forEach(run -> runNames.put(run.getRowId(), run.getName()));
-            Map<Long, ExpProtocolApplicationImpl> apps = getProtocolApplications(materials.stream().map(m -> m._object.getSourceApplicationId()).filter(Objects::nonNull).collect(Collectors.toSet()));
+            Map<Long, String> runNames = getRunNames(materials.stream().map(ExpMaterialImpl::getRunId).filter(Objects::nonNull).collect(Collectors.toSet()));
+            Map<Long, ApplicationNames> apps = getApplicationNames(materials.stream().map(m -> m._object.getSourceApplicationId()).filter(Objects::nonNull).collect(Collectors.toSet()));
 
             Map<GroupKey, List<ExpMaterialImpl>> groups = materials.stream()
                     .collect(Collectors.groupingBy(m -> new GroupKey(m.getContainer().getId(), m.getCpasType()), LinkedHashMap::new, Collectors.toList()));
@@ -642,7 +643,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     private static void createGroupIndexDocuments(List<ExpMaterialImpl> group, Map<TableCacheKey, TableInfo> tableCache, Map<String, List<String>> aliases,
-                                                  Map<Long, String> runNames, Map<Long, ExpProtocolApplicationImpl> apps, List<WebdavResource> docs)
+                                                  Map<Long, String> runNames, Map<Long, ApplicationNames> apps, List<WebdavResource> docs)
     {
         ExpMaterialImpl first = group.getFirst();
         Container container = first.getContainer();
@@ -670,11 +671,13 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             if (ctx.table() != null && v == null)
                 continue;
 
-            ExpProtocolApplicationImpl app = m._object.getSourceApplicationId() == null ? null : apps.get(m._object.getSourceApplicationId());
-            ExpProtocol protocol = app == null ? null : app.getProtocol();
-            groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()),
-                    m.getRunId() == null ? null : runNames.get(m.getRunId()),
-                    protocol == null ? null : protocol.getName(), app == null ? null : app.getName()));
+            String runName = null;
+            if (m.getRunId() != null)
+                runName = runNames.get(m.getRunId());
+            ApplicationNames app = ApplicationNames.NONE;
+            if (m._object.getSourceApplicationId() != null)
+                app = apps.getOrDefault(m._object.getSourceApplicationId(), ApplicationNames.NONE);
+            groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()), runName, app.protocolName(), app.applicationName()));
         }
         docs.addAll(groupDocs);
     }
@@ -691,16 +694,93 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return aliases;
     }
 
-    private static @NotNull Map<Long, ExpProtocolApplicationImpl> getProtocolApplications(@NotNull Collection<Long> rowIds)
+    private static @NotNull Map<Long, String> getRunNames(@NotNull Collection<Long> rowIds)
     {
         if (rowIds.isEmpty())
             return Map.of();
 
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), rowIds);
-        Map<Long, ExpProtocolApplicationImpl> apps = new HashMap<>();
-        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolApplication(), filter, null)
-                .forEach(ProtocolApplication.class, app -> apps.put(app.getRowId(), new ExpProtocolApplicationImpl(app)));
-        return apps;
+        TableInfo runTi = ExperimentServiceImpl.get().getTinfoExperimentRun();
+        SQLFragment sql = new SQLFragment()
+                .unsafeAppend("SELECT r.RowId, r.Name FROM ").append(runTi, "r")
+                .unsafeAppend(" WHERE ").appendInClause("r.RowId", rowIds, runTi.getSqlDialect());
+        Map<Long, String> names = new HashMap<>();
+        new SqlSelector(runTi.getSchema(), sql).forEach(rs -> names.put(rs.getLong(1), rs.getString(2)));
+        return names;
+    }
+
+    private record ApplicationNames(@Nullable String applicationName, @Nullable String protocolName)
+    {
+        static final ApplicationNames NONE = new ApplicationNames(null, null);
+    }
+
+    private static @NotNull Map<Long, ApplicationNames> getApplicationNames(@NotNull Collection<Long> rowIds)
+    {
+        if (rowIds.isEmpty())
+            return Map.of();
+
+        TableInfo appTi = ExperimentServiceImpl.get().getTinfoProtocolApplication();
+        SQLFragment sql = new SQLFragment()
+                .unsafeAppend("SELECT pa.RowId, pa.Name, p.Name FROM ").append(appTi, "pa")
+                .unsafeAppend(" LEFT JOIN ").append(ExperimentServiceImpl.get().getTinfoProtocol(), "p")
+                .unsafeAppend(" ON p.LSID = pa.ProtocolLSID WHERE ").appendInClause("pa.RowId", rowIds, appTi.getSqlDialect());
+        Map<Long, ApplicationNames> names = new HashMap<>();
+        new SqlSelector(appTi.getSchema(), sql).forEach(rs -> names.put(rs.getLong(1), new ApplicationNames(rs.getString(2), rs.getString(3))));
+        return names;
+    }
+
+    /** The exp.material columns a sample search document reads */
+    private static final List<String> INDEX_COLUMNS = List.of("RowId", "LSID", "Name", "CpasType", "Container", "Description", "RunId",
+            "SourceApplicationId", "Created", "CreatedBy", "Modified", "ModifiedBy");
+
+    /** {@link #INDEX_COLUMNS} qualified by {@code alias}, for a select list read by {@link #readIndexMaterials} */
+    static @NotNull String getIndexColumnsSelectList(@NotNull String alias)
+    {
+        return INDEX_COLUMNS.stream().map(c -> alias + "." + c).collect(Collectors.joining(", "));
+    }
+
+    /** Ordered, since {@link #readIndexMaterials} reads a TableSelector's ResultSet */
+    static @NotNull Set<String> getIndexColumnNames()
+    {
+        return new LinkedHashSet<>(INDEX_COLUMNS);
+    }
+
+    /** Maps {@link #INDEX_COLUMNS} by hand, since bean reflection over every column cost about a third of the indexing thread's CPU */
+    static @NotNull List<Material> readIndexMaterials(@NotNull Selector selector)
+    {
+        List<Material> materials = new ArrayList<>();
+        selector.forEach(rs -> {
+            Material m = new Material();
+            m.setRowId(rs.getLong("RowId"));
+            m.setLSID(rs.getString("LSID"));
+            m.setName(rs.getString("Name"));
+            m.setCpasType(rs.getString("CpasType"));
+            m.setContainer(ContainerManager.getForId(rs.getString("Container")));
+            m.setDescription(rs.getString("Description"));
+            m.setRunId(getLong(rs, "RunId"));
+            m.setSourceApplicationId(getLong(rs, "SourceApplicationId"));
+            m.setCreated(rs.getTimestamp("Created"));
+            m.setCreatedBy(getInteger(rs, "CreatedBy"));
+            m.setModified(rs.getTimestamp("Modified"));
+            m.setModifiedBy(getInteger(rs, "ModifiedBy"));
+            materials.add(m);
+        });
+        return materials;
+    }
+
+    private static @Nullable Long getLong(ResultSet rs, String column) throws SQLException
+    {
+        long value = rs.getLong(column);
+        if (rs.wasNull())
+            return null;
+        return value;
+    }
+
+    private static @Nullable Integer getInteger(ResultSet rs, String column) throws SQLException
+    {
+        int value = rs.getInt(column);
+        if (rs.wasNull())
+            return null;
+        return value;
     }
 
     static final List<Pair<Long,Long>> updateLastIndexedList = new ArrayList<>();

@@ -110,7 +110,8 @@ public class SampleIndexDocumentTestCase extends Assert
         List<Material> materials = getMaterials(st);
         assertEquals("Samples of " + st.getName(), 4, materials.size());
 
-        Map<String, Map<String, Object>> batch = normalize(ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>()));
+        // Batch input comes from the indexing callers' column list, so a field it misses shows up as a difference
+        Map<String, Map<String, Object>> batch = normalize(ExpMaterialImpl.createIndexDocuments(getIndexMaterials(st), new HashMap<>()));
         Map<String, Map<String, Object>> oneAtATime = normalize(materials.stream().map(m -> new ExpMaterialImpl(m).createIndexDocument(null)).filter(Objects::nonNull).toList());
         assertEquals(oneAtATime, batch);
 
@@ -136,7 +137,7 @@ public class SampleIndexDocumentTestCase extends Assert
     {
         ExpSampleType st = createSampleType("IndexDeleted");
         insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of("name", "D1"), CaseInsensitiveHashMap.of("name", "D2")));
-        List<Material> materials = getMaterials(st);
+        List<Material> materials = getIndexMaterials(st);
         ExpMaterial d1 = sample(st.getName(), "D1");
         sample(st.getName(), "D2").delete(_user);
 
@@ -230,6 +231,12 @@ public class SampleIndexDocumentTestCase extends Assert
                 .getArrayList(Material.class);
     }
 
+    private static List<Material> getIndexMaterials(ExpSampleType st)
+    {
+        return ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), ExpMaterialImpl.getIndexColumnNames(),
+                new SimpleFilter(FieldKey.fromParts("CpasType"), st.getLSID()), new Sort("RowId")));
+    }
+
     private static void assertTokens(Map<String, Object> doc, SearchService.PROPERTY property, String... expected)
     {
         Object tokens = doc.get(property.toString());
@@ -257,6 +264,10 @@ public class SampleIndexDocumentTestCase extends Assert
                 view.put("body", IOUtils.toString(in, StandardCharsets.UTF_8));
             }
             view.put("container", doc.getContainerId().toString());
+            view.put("created", doc.getCreated());
+            view.put("createdBy", String.valueOf(doc.getCreatedBy()));
+            view.put("modified", doc.getLastModified());
+            view.put("modifiedBy", String.valueOf(doc.getModifiedBy()));
             result.put(doc.getDocumentId(), view);
         }
         return result;

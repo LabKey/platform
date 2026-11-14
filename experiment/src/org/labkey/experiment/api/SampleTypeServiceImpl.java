@@ -378,11 +378,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue, long minRowId)
     {
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
-        SQLFragment sql = new SQLFragment("SELECT m.* FROM ")
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT ").unsafeAppend(ExpMaterialImpl.getIndexColumnsSelectList("m")).unsafeAppend(" FROM ")
                 .append(getTinfoMaterial(), "m")
                 .unsafeAppend(" LEFT OUTER JOIN ")
                 .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
-                .unsafeAppend(" ON m.RowId = mi.MaterialId WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
+                // The planner doesn't carry m.RowId > ? across the outer join, so without its own bound the join reads materialindexed from the start every batch
+                .unsafeAppend(" ON m.RowId = mi.MaterialId AND mi.MaterialId > ?").add(minRowId)
+                .unsafeAppend(" WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .unsafeAppend(" AND m.cpasType = ?").add(sampleType.getLSID())
                 .unsafeAppend(" AND m.RowId > ?").add(minRowId)
                 .unsafeAppend(" AND (mi.lastIndexed IS NULL OR mi.lastIndexed < ? OR (m.modified IS NOT NULL AND mi.lastIndexed < m.modified))")
@@ -395,7 +397,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
-        List<Material> batch = selector.getArrayList(Material.class);
+        List<Material> batch = ExpMaterialImpl.readIndexMaterials(selector);
         batch.forEach(m -> tracker.advance(m.getRowId()));
         ExpMaterialImpl.indexBatch(queue, batch, tableCache);
 
