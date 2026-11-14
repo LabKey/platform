@@ -26,8 +26,11 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -41,6 +44,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.ExpDataIterators;
@@ -49,6 +53,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -179,6 +184,40 @@ public class SampleIndexDocumentTestCase extends Assert
         assertNotNull("X1 indexed", doc);
         assertEquals(_subfolder.getEntityId().toString(), doc.get("container"));
         assertTokens(doc, SearchService.PROPERTY.identifiersMed, "delta");
+    }
+
+    @Test
+    public void testSetMaterialLastIndexed() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexLastIndexed");
+        DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
+        // Never committed, so neither the samples nor these writes reach the background indexer
+        try (DbScope.Transaction ignored = scope.ensureTransaction())
+        {
+            insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of("name", "L1"), CaseInsensitiveHashMap.of("name", "L2")));
+            long l1 = sample(st.getName(), "L1").getRowId();
+            long l2 = sample(st.getName(), "L2").getRowId();
+            long t = 1_800_000_000_123L;
+
+            // First write inserts; a repeated RowId keeps its latest time; a RowId with no sample is skipped
+            ExperimentServiceImpl.get().setMaterialLastIndexed(List.of(new Pair<>(l2, t), new Pair<>(l1, t + 5), new Pair<>(l1, t), new Pair<>(-1L, t)));
+            assertEquals(t + 5, lastIndexed(l1));
+            assertEquals(t, lastIndexed(l2));
+            assertNull(new SqlSelector(scope, new SQLFragment().unsafeAppend("SELECT LastIndexed FROM exp.materialindexed WHERE MaterialId = -1")).getObject(Date.class));
+
+            // Second write updates
+            ExperimentServiceImpl.get().setMaterialLastIndexed(List.of(new Pair<>(l1, t + 10)));
+            assertEquals(t + 10, lastIndexed(l1));
+            assertEquals(t, lastIndexed(l2));
+        }
+    }
+
+    private static long lastIndexed(long rowId)
+    {
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT LastIndexed FROM exp.materialindexed WHERE MaterialId = ?").add(rowId);
+        Date d = new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(), sql).getObject(Date.class);
+        assertNotNull("lastIndexed for " + rowId, d);
+        return d.getTime();
     }
 
     private static ExpSampleType createSampleType(String name) throws Exception

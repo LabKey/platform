@@ -83,8 +83,6 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -296,6 +294,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1304,54 +1303,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         if (null == updates || updates.isEmpty())
             return;
-        DbScope dbscope = getSchema().getScope();
-        try (Connection c = dbscope.getConnection())
+
+        // Latest time per sample, since one upsert can't touch a row twice; RowId order keeps lock order consistent (Issue 51263)
+        TreeMap<Long, Long> latest = new TreeMap<>();
+        updates.forEach(p -> latest.merge(p.first, p.second, Math::max));
+
+        DbScope scope = getSchema().getScope();
+        // Holding the thread's connection lets every chunk reuse it instead of borrowing and validating one per chunk
+        try (Connection ignored = scope.getConnection())
         {
-            Parameter updateMaterialId = new Parameter("materialid", JdbcType.INTEGER);
-            Parameter updateTS = new Parameter("ts", JdbcType.TIMESTAMP);
-            SQLFragment updateSql = new SQLFragment("UPDATE " + getTinfoMaterialIndexed() + " SET LastIndexed = ? WHERE MaterialId = ?");
-            updateSql.add(updateTS);
-            updateSql.add(updateMaterialId);
-
-            Parameter insertTS = new Parameter("ts", JdbcType.TIMESTAMP);
-            Parameter insertRowId = new Parameter("rowid", JdbcType.INTEGER);
-            Parameter insertMaterialId = new Parameter("materialid", JdbcType.INTEGER);
-            SQLFragment insertSql = new SQLFragment("INSERT INTO " + getTinfoMaterialIndexed() + " (MaterialId, LastIndexed) " +
-                    "SELECT RowId, ? FROM " + getTinfoMaterial() + " WHERE RowId = ? AND " +
-                            " NOT EXISTS (SELECT MaterialId FROM " + getTinfoMaterialIndexed() + " WHERE MaterialId = ?)");
-            insertSql.add(insertTS);
-            insertSql.add(insertRowId);
-            insertSql.add(insertMaterialId);
-
-            try (ParameterMapStatement insertPM = new ParameterMapStatement(getSchema().getScope(), c, insertSql, null);
-                 ParameterMapStatement updatePM = new ParameterMapStatement(getSchema().getScope(), c, updateSql, null))
+            ListUtils.partition(new ArrayList<>(latest.keySet()), BatchSize.get(ROWS)).forEach(rowIds ->
             {
-                ListUtils.partition(updates, BatchSize.get(ROWS)).forEach(sublist ->
+                Timestamp[] times = rowIds.stream().map(id -> new Timestamp(latest.get(id))).toArray(Timestamp[]::new);
+                // The join skips samples deleted since they were indexed
+                SQLFragment sql = new SQLFragment()
+                        .unsafeAppend("INSERT INTO ").append(getTinfoMaterialIndexed()).unsafeAppend(" (MaterialId, LastIndexed)")
+                        .unsafeAppend(" SELECT u.id, u.ts FROM unnest(?::BIGINT[], ?::TIMESTAMP[]) AS u(id, ts)").add(rowIds.toArray(new Long[0])).add(times)
+                        .unsafeAppend(" JOIN ").append(getTinfoMaterial(), "m").unsafeAppend(" ON m.RowId = u.id ORDER BY u.id")
+                        .unsafeAppend(" ON CONFLICT (MaterialId) DO UPDATE SET LastIndexed = EXCLUDED.LastIndexed");
+                try
                 {
-                    try
-                    {
-                        for (Pair<Long, Long> p : sublist)
-                        {
-                            insertMaterialId.setValue(p.first);
-                            insertTS.setValue(new Timestamp(p.second));
-                            insertRowId.setValue(p.first);
-                            insertPM.addBatch();
-
-                            updateMaterialId.setValue(p.first);
-                            updateTS.setValue(new Timestamp(p.second));
-                            updatePM.addBatch();
-                        }
-                        insertPM.executeBatch();
-                        updatePM.executeBatch();
-                    }
-                    catch (PessimisticLockingFailureException | DataIntegrityViolationException e)
-                    {
-                        // if we're not in a transaction just keep going...
-                        if (dbscope.isTransactionActive())
-                            throw e;
-                    }
-                });
-            }
+                    new SqlExecutor(scope).execute(sql);
+                }
+                catch (PessimisticLockingFailureException | DataIntegrityViolationException e)
+                {
+                    // if we're not in a transaction just keep going...
+                    if (scope.isTransactionActive())
+                        throw e;
+                }
+            });
         }
         catch (SQLException x)
         {
