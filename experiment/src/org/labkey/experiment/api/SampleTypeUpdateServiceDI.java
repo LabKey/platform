@@ -461,7 +461,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // Issue 46639: "SampleId" column header not recognized when loading samples from pipeline trigger
         try
         {
-            if (rows instanceof DataLoader dataLoader) // junit test uses ListofMapsDataIterator
+            if (rows instanceof DataLoader dataLoader) // JUnit tests pass in-memory rows instead
             {
                 if (!context.isCrossTypeImport() && dataLoader.getColumnInfoMap().isEmpty())
                     dataLoader.setKnownColumns(getQueryTable().getColumns());

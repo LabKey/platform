@@ -496,10 +496,10 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     .collect(Collectors.toCollection(ArrayList::new));
             namesArrayList.add(CaseInsensitiveHashMap.of("name","NO_SUCH_MODULE"));
 
-            DataIterator di = new ListofMapsDataIterator(Set.of("Name"), namesArrayList);
-            assertFalse(di.supportsGetExistingRecord());
             var context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.INSERT);
+            DataIterator di = MapDataIterator.of(Set.of("Name"), namesArrayList).getDataIterator(context);
+            assertFalse(di.supportsGetExistingRecord());
             DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, null, context, true);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
