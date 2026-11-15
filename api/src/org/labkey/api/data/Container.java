@@ -259,8 +259,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = new GUID(id);
-        _parentId = null == dirParent ? null : dirParent.getEntityId();
-        _projectId = null == dirParent || dirParent.isRoot() ? null : dirParent.isProject() ? dirParent.getEntityId() : dirParent._projectId;
+        if (null != dirParent)
+        {
+            _parentId = dirParent.getEntityId();
+            _projectId = dirParent.isProject() ? dirParent.getEntityId() : dirParent._projectId;
+        }
         _rowId = rowId;
         _sortOrder = sortOrder;
         _created = created;
