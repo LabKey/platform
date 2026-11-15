@@ -1494,9 +1494,12 @@ public class SqlScriptController extends SpringActionController
             "extscheduler-26.000-26.001.sql", // extscheduler-26.001-26.002.sql is the PG equivalent of this script
             "onprc_ehr-25.000-25.001.sql", "onprc_ehr-25.001-25.002.sql", // These scripts created early versions of the audit.ArchiveAuditTables proc that were subsequently replaced
             "onprc_ehr-26.004-26.005.sql", // onprc_ehr-26.005-26.006.sql is the PG equivalent of this script
+            "sla-26.001-26.002.sql",       // sla-26.002-26.003.sql (in 26.7) is the PG equivalent of this script
             "snprc_ehr-26.000-26.001.sql", // Not needed on PostgreSQL
             "tnprc_ehr-26.001-26.002.sql", // Not needed on PostgreSQL
-            "tnprc_ehr-26.002-26.003.sql" // Not needed on PostgreSQL
+            "tnprc_ehr-26.002-26.003.sql", // Not needed on PostgreSQL
+            "tnprc_ehr-26.003-26.004.sql", // Not needed on PostgreSQL
+            "tnprc_ehr-26.004-26.005.sql" // Not needed on PostgreSQL
         );
 
         // VCS URL is "Unknown" in local builds, so find the enclosing git checkout instead
