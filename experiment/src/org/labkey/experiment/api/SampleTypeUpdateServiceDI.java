@@ -461,7 +461,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // Issue 46639: "SampleId" column header not recognized when loading samples from pipeline trigger
         try
         {
-            if (rows instanceof DataLoader dataLoader) // JUnit tests pass in-memory rows instead
+            if (rows instanceof DataLoader dataLoader) // Non-file sources (in-memory rows, query results) skip this header handling
             {
                 if (!context.isCrossTypeImport() && dataLoader.getColumnInfoMap().isEmpty())
                     dataLoader.setKnownColumns(getQueryTable().getColumns());
@@ -526,7 +526,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         DbScope scope = getSchema().getDbSchema().getScope();
-        List<Map<String, Object>> results = scope.executeWithRetry(transaction ->
+        List<Map<String, Object>> results = scope.executeWithRetry(_ ->
                 super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, insertOption, configParameters), extraScriptContext));
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())

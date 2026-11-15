@@ -58,7 +58,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -1087,7 +1086,6 @@ public class DomainImpl implements Domain
         uniqueIndexCols.forEach(col ->
                 colNames.add(col.getName()));
         uniqueIdProps.forEach(prop -> colNames.add(prop.getName()));
-        DataIterator mapsDi = MapDataIterator.of(colNames, rows, table.getName() + ".ensureUniqueIds").getDataIterator(ctx);
         SQLFragment sql = new SQLFragment().unsafeAppend("UPDATE ").append(table).unsafeAppend(" SET ");
         String separator = "";
         for (DomainProperty prop: uniqueIdProps)
@@ -1108,7 +1106,7 @@ public class DomainImpl implements Domain
             try
             {
                 ParameterMapStatement stmt1 = new ParameterMapStatement(scope, sql, null);
-                return new StatementDataIterator(dialect, mapsDi, ctx, stmt1);
+                return new StatementDataIterator(dialect, MapDataIterator.of(colNames, rows, table.getName() + ".ensureUniqueIds").getDataIterator(context), context, stmt1);
             }
             catch (SQLException x)
             {
