@@ -54,6 +54,8 @@ public interface ReportService
     Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());
 
     String LINK_REPORT_TYPE = "ReportService.linkReport";
+    String GENERIC_CHART_REPORT_TYPE = "ReportService.GenericChartReport";
+    String TIME_CHART_REPORT_TYPE = "ReportService.TimeChartReport";
 
     static ReportService get()
     {

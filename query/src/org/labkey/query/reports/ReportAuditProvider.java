@@ -20,7 +20,7 @@ import java.util.Set;
 
 public class ReportAuditProvider extends AbstractAuditTypeProvider
 {
-    private static final String EVENT_NAME = "ReportEvent";
+    public static final String EVENT_NAME = "ReportEvent";
     private static final String COLUMN_NAME_REPORT_ID = "ReportId";
     private static final String COLUMN_NAME_REPORT_NAME = "ReportName";
     private static final String COLUMN_NAME_REPORT_KEY = "ReportKey";

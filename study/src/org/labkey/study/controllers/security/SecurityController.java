@@ -502,6 +502,8 @@ public class SecurityController extends SpringActionController
         {
         }
 
+        // The calls below skip the report save's edit and share checks: this action requires admin, and an admin
+        // must be able to make another user's private report public. The script and chart JavaScript checks still run.
         @Override
         public boolean handlePost(PermissionsForm form, BindException errors)
         {
@@ -516,11 +518,11 @@ public class SecurityController extends SpringActionController
 
             if (form.getPermissionType().equals(PermissionType.privatePermission.toString()))
             {
-                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, getUser(), getUser());
+                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, getUser(), getUser(), true);
             }
             else if (form.getPermissionType().equals(PermissionType.defaultPermission.toString()))
             {
-                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, null, getUser());
+                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, null, getUser(), true);
             }
             else
             {
@@ -528,15 +530,15 @@ public class SecurityController extends SpringActionController
                 if (form.getRemove() != 0 || form.getAdd() != 0)
                 {
                     if (form.getRemove() != 0)
-                        ReportUtil.updateReportSecurityPolicy(getViewContext(), report, form.getRemove(), false);
+                        ReportUtil.updateReportSecurityPolicy(getViewContext(), report, form.getRemove(), false, true);
 
                     if (form.getAdd() != 0)
-                        ReportUtil.updateReportSecurityPolicy(getViewContext(), report, form.getAdd(), true);
+                        ReportUtil.updateReportSecurityPolicy(getViewContext(), report, form.getAdd(), true, true);
                 }
                 // set all at once
                 else
                 {
-                    ReportUtil.setReportSecurityPolicy(getViewContext(), report, form.getGroups(), form.getUsers());
+                    ReportUtil.setReportSecurityPolicy(getViewContext(), report, form.getGroups(), form.getUsers(), true);
                 }
             }
             return true;
