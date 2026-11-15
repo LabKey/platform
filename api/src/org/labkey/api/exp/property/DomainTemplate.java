@@ -66,16 +66,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DomainTemplate
 {
     private static final Logger LOG = LogHelper.getLogger(DomainTemplate.class, "Domain template resolution");
-    // Hit on every table build for affected domains, so warn once per missing module or group
-    private static final Set<String> WARNED_MISSING = new CopyOnWriteArraySet<>();
+    // Hit on every table build for affected domains, so warn once per missing module or group. Keys are lowercased to match ModuleLoader's case-insensitive lookup.
+    private static final Set<String> WARNED_MISSING = ConcurrentHashMap.newKeySet();
 
     private final String _moduleName;
     private final String _templateGroup;
@@ -112,7 +113,7 @@ public class DomainTemplate
         Module module = ModuleLoader.getInstance().getModule(moduleName);
         if (module == null)
         {
-            if (WARNED_MISSING.add(moduleName))
+            if (WARNED_MISSING.add(moduleName.toLowerCase(Locale.ROOT)))
                 LOG.warn("Module '{}' for domain template not found; further warnings for this module suppressed", moduleName);
             return null;
         }
@@ -120,7 +121,7 @@ public class DomainTemplate
         DomainTemplateGroup group = DomainTemplateGroup.get(module, groupName);
         if (group == null)
         {
-            if (WARNED_MISSING.add(moduleName + "/" + groupName))
+            if (WARNED_MISSING.add((moduleName + "/" + groupName).toLowerCase(Locale.ROOT)))
                 LOG.warn("Domain template group '{}' not found in module '{}'; further warnings for this group suppressed", groupName, moduleName);
             return null;
         }
