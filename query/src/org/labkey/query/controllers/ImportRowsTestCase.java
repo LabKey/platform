@@ -21,12 +21,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
@@ -38,7 +37,8 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.test.TestTimeout;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewServlet;
@@ -49,21 +49,28 @@ import java.util.List;
 import java.util.Map;
 
 /** GH Issue 1867: importRows rejects rows that differ in which fields they supply, and no command loses values when rows case a key differently */
-@TestTimeout(TestTimeout.DEFAULT * 5) // Each test creates and deletes a project
 public class ImportRowsTestCase extends Assert
 {
-    private static final String PROJECT_NAME = "ImportRowsTestProject";
-    private static final String LIST_NAME = "ImportRowsTestList";
+    // Unique per test so a failed test's rows can't leak into another's assertions
+    private final String _listName = "ImportRowsTest" + GUID.makeHash();
+
+    @BeforeClass
+    public static void setUp()
+    {
+        JunitUtil.deleteTestContainer();
+    }
+
+    @AfterClass
+    public static void tearDown()
+    {
+        JunitUtil.deleteTestContainer();
+    }
 
     @Before
-    public void doSetup() throws Exception
+    public void createList() throws Exception
     {
-        doCleanup();
         User user = TestContext.get().getUser();
-        Container project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, user);
-        ContainerManager.updateSearchable(project, false, user);
-
-        ListDefinition ld = ListService.get().createList(project, LIST_NAME, ListDefinition.KeyType.Varchar);
+        ListDefinition ld = ListService.get().createList(JunitUtil.getTestContainer(), _listName, ListDefinition.KeyType.Varchar);
         Domain domain = ld.getDomain();
         assertNotNull(domain);
         domain.addProperty(new PropertyStorageSpec("Name", JdbcType.VARCHAR));
@@ -71,14 +78,6 @@ public class ImportRowsTestCase extends Assert
         domain.addProperty(new PropertyStorageSpec("Volume", JdbcType.INTEGER));
         ld.setKeyName("Name");
         ld.save(user);
-    }
-
-    @After
-    public void doCleanup()
-    {
-        Container project = ContainerManager.getForPath(PROJECT_NAME);
-        if (project != null)
-            ContainerManager.deleteAll(project, TestContext.get().getUser());
     }
 
     @Test
@@ -154,46 +153,39 @@ public class ImportRowsTestCase extends Assert
         assertValue("S2", "Description", "b");
     }
 
-    private static @NotNull Container getProject()
+    private @NotNull TableInfo getTable()
     {
-        Container project = ContainerManager.getForPath(PROJECT_NAME);
-        assertNotNull(project);
-        return project;
-    }
-
-    private static @NotNull TableInfo getTable()
-    {
-        ListDefinition ld = ListService.get().getList(getProject(), LIST_NAME);
+        ListDefinition ld = ListService.get().getList(JunitUtil.getTestContainer(), _listName);
         assertNotNull(ld);
         TableInfo table = ld.getTable(TestContext.get().getUser());
         assertNotNull(table);
         return table;
     }
 
-    private static void saveRows(String commandName, List<Map<String, Object>> rows) throws Exception
+    private void saveRows(String commandName, List<Map<String, Object>> rows) throws Exception
     {
         MockHttpServletResponse response = postSaveRows(commandName, rows);
         assertEquals(commandName + " via saveRows failed: " + response.getContentAsString(), HttpServletResponse.SC_OK, response.getStatus());
     }
 
-    private static MockHttpServletResponse postSaveRows(String commandName, List<Map<String, Object>> rows) throws Exception
+    private MockHttpServletResponse postSaveRows(String commandName, List<Map<String, Object>> rows) throws Exception
     {
         JSONObject command = new JSONObject();
         command.put("command", commandName);
         command.put("schemaName", "lists");
-        command.put("queryName", LIST_NAME);
+        command.put("queryName", _listName);
         command.put("rows", new JSONArray(rows));
 
         JSONObject json = new JSONObject();
         json.put("commands", List.of(command));
 
         HttpServletRequest request = ViewServlet.mockRequest(RequestMethod.POST.name(),
-                DetailsURL.fromString("/query/saveRows.view").copy(getProject()).getActionURL(), TestContext.get().getUser(),
+                DetailsURL.fromString("/query/saveRows.view").copy(JunitUtil.getTestContainer()).getActionURL(), TestContext.get().getUser(),
                 Map.of("Content-Type", "application/json"), json.toString());
         return ViewServlet.mockDispatch(request, null);
     }
 
-    private static void assertValue(String key, String column, @Nullable Object expected)
+    private void assertValue(String key, String column, @Nullable Object expected)
     {
         Class<?> type = null == expected ? Object.class : expected.getClass();
         Object actual = new TableSelector(getTable(), PageFlowUtil.set(column)).getObject(key, type);
