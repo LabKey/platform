@@ -24,7 +24,7 @@ plugins {
 ext.commonsCsvVersion="1.14.1"
 ext.ddPlistVersion="1.30"
 ext.jhighlightVersion="2.0.0"
-ext.metadataExtractorVersion="2.21.0"
+ext.metadataExtractorVersion="2.22.0"
 ext.mime4jVersion="0.8.15"
 ext.parsoVersion="2.0.14"
 

@@ -23,6 +23,8 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
@@ -305,7 +307,7 @@ public enum PropertyType implements SimpleConvert
             return prefix + "Value";
         }
     },
-    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, CellType.NUMERIC, Integer.class, Integer.TYPE, Long.class, Long.TYPE)
+    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, CellType.NUMERIC, Integer.class, Integer.TYPE, Long.class, Long.TYPE, Short.class, Short.TYPE, Byte.class, Byte.TYPE)
     {
         @Override
         protected Object convertExcelValue(Cell cell) throws ConversionException
@@ -1161,6 +1163,8 @@ public enum PropertyType implements SimpleConvert
             if (t.jdbcType.equals(jdbcType))
                 return t;
         }
+        if (jdbcType == JdbcType.SMALLINT || jdbcType == JdbcType.TINYINT)
+            return INTEGER;
         if (throwIfNotFound)
             throw new IllegalArgumentException("No such JdbcType mapping: " + (null != jdbcType ? jdbcType.getClass().toString() : "null"));
         else
@@ -1212,5 +1216,29 @@ public enum PropertyType implements SimpleConvert
             case 'f' -> "floatValue";
             default -> throw new IllegalArgumentException("Unknown property type: " + this);
         };
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testSmallIntegerClasses()
+        {
+            assertEquals(INTEGER, getFromClass(Short.class));
+            assertEquals(INTEGER, getFromClass(Short.TYPE));
+            assertEquals(INTEGER, getFromClass(Byte.class));
+            assertEquals(INTEGER, getFromClass(Byte.TYPE));
+            assertEquals(INTEGER, getFromClass(Integer.class));
+            assertEquals(BIGINT, getFromClass(Long.class));
+        }
+
+        @Test
+        public void testSmallIntegerJdbcTypes()
+        {
+            assertEquals(INTEGER, getFromJdbcType(JdbcType.SMALLINT));
+            assertEquals(INTEGER, getFromJdbcType(JdbcType.TINYINT));
+            assertEquals(INTEGER, getFromJdbcType(JdbcType.INTEGER));
+            assertEquals(INTEGER, getFromClass(JdbcType.SMALLINT.getJavaClass()));
+            assertEquals(INTEGER, getFromClass(JdbcType.TINYINT.getJavaClass()));
+        }
     }
 }

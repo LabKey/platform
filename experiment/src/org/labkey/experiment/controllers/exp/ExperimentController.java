@@ -37,6 +37,7 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ConcurrencyLimit;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -181,9 +182,11 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
+import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresAnyOf;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
@@ -2506,7 +2509,7 @@ public class ExperimentController extends SpringActionController
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
                     if (!FileUtil.hasCloudScheme(realContent))                      // TODO: handle streaming from S3 to JSON
-                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, null);
+                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, -1, -1, null);
                     return null;
                 }
 
@@ -2560,9 +2563,19 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    @ConcurrencyLimit(value = 4, message = "Too many files are being parsed right now. Please retry in a few moments.")
     public class ParseFileAction extends MutatingApiAction<ParseForm>
     {
+        private static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
+        private static final int MAX_ROWS = 10_000;
+        private static final long MAX_CELLS = 500_000;
+        // Sized to heap, not upload size: POI peaks at about 20x the sheet XML, so 25 MB is about 600 MB per request
+        private static final long MAX_UNCOMPRESSED_BYTES = 25L * 1024 * 1024;
+        // Same as Excel's column limit
+        private static final int MAX_COLUMNS = 16_384;
+
         @Override
         public Object execute(ParseForm form, BindException errors) throws Exception
         {
@@ -2575,12 +2588,37 @@ public class ExperimentController extends SpringActionController
                 return true;
             }
 
+            // Checked before copying so oversized uploads never reach disk or the parser
+            if (formFile.getSize() > MAX_FILE_BYTES)
+                throw new ApiUsageException("File exceeds the maximum allowed size of " + (MAX_FILE_BYTES / (1024 * 1024)) + " MB.");
+
+            int maxRows = form.getMaxRows();
+            if (maxRows < 0 || maxRows > MAX_ROWS)
+                maxRows = MAX_ROWS;
+
             FileLike tempFile = null;
             try
             {
                 tempFile = FileUtil.createTempFileLike("parse", formFile.getOriginalFilename());
-                FileUtil.copyData(formFile.getInputStream(), tempFile.openOutputStream());
-                streamToJSON(tempFile, form.getFormat(), form.getMaxRows(), formFile.getOriginalFilename());
+                try (InputStream in = formFile.getInputStream(); OutputStream out = tempFile.openOutputStream())
+                {
+                    FileUtil.copyData(in, out);
+                }
+
+                String lowerCaseFileName = tempFile.getName().toLowerCase();
+                if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
+                {
+                    ExcelFactory.checkWorkbookContent(tempFile, MAX_UNCOMPRESSED_BYTES);
+                }
+                else
+                {
+                    // Other names are sniffed by content, which would let Excel skip the checks above
+                    DataLoaderFactory dlf = DataLoader.get().findFactory(tempFile, null);
+                    if (dlf instanceof ExcelLoader.Factory)
+                        throw new ApiUsageException("Excel files must have a .xls or .xlsx extension.");
+                }
+
+                streamToJSON(tempFile, form.getFormat(), maxRows, MAX_CELLS, MAX_COLUMNS, formFile.getOriginalFilename());
             }
             finally
             {
@@ -2593,7 +2631,7 @@ public class ExperimentController extends SpringActionController
 
 
     // SampleTypeTest
-    private void streamToJSON(FileLike realContent, String format, int maxRow, String originalFileName) throws IOException
+    private void streamToJSON(FileLike realContent, String format, int maxRow, long maxCells, int maxColumns, String originalFileName) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
@@ -2604,7 +2642,7 @@ public class ExperimentController extends SpringActionController
         {
             try (InputStream in = realContent.openInputStream())
             {
-                sheetsArray = ExcelFactory.convertExcelToJSON(in, extended, maxRow);
+                sheetsArray = ExcelFactory.convertExcelToJSON(in, extended, maxRow, maxCells);
             }
         }
         else
@@ -2619,11 +2657,24 @@ public class ExperimentController extends SpringActionController
                 DataLoader tabLoader = dlf.createLoader(in, true))
             {
                 tabLoader.setScanAheadLineCount(5000);
+                tabLoader.setMaxColumns(maxColumns);
+                tabLoader.setMaxInferenceCells(maxCells);
+                if (ignoreTypes)
+                    tabLoader.setInferTypes(false);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
 
-                if (ignoreTypes)
+                if (maxCells > -1)
+                {
                     for (ColumnDescriptor col : cols)
-                        col.clazz = String.class;
+                    {
+                        col.errorValues = DataLoader.ERROR_VALUE_USE_ORIGINAL;
+                    }
+                }
+
+                // Every output row has cols.length entries, so charge the full width per row, as the Excel path does.
+                // Throw only if the header alone is over budget; data rows past the budget are truncated below.
+                long cellCount = 1 + cols.length;
+                checkCellBudget(cellCount, maxCells);
 
                 JSONArray rowsArray = new JSONArray();
                 JSONArray headerArray = new JSONArray();
@@ -2641,11 +2692,23 @@ public class ExperimentController extends SpringActionController
                     }
                 }
                 rowsArray.put(headerArray);
+                boolean truncated = false;
                 for (Map<String, Object> rowMap : tabLoader)
                 {
-                    // headers count as a row to be consistent
-                    if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
+                    // Headers count as a row, matching the Excel path
+                    if (maxRow > -1 && maxRow <= rowsArray.length())
+                    {
+                        truncated = true;
                         break;
+                    }
+
+                    // Out of cell budget
+                    cellCount += 1 + cols.length;
+                    if (maxCells > -1 && cellCount > maxCells)
+                    {
+                        truncated = true;
+                        break;
+                    }
 
                     JSONArray rowArray = new JSONArray();
                     for (ColumnDescriptor col : cols)
@@ -2668,6 +2731,8 @@ public class ExperimentController extends SpringActionController
                 JSONObject sheetJSON = new JSONObject();
                 sheetJSON.put("name", "flat");
                 sheetJSON.put("data", rowsArray);
+                if (truncated)
+                    sheetJSON.put("truncated", true);
                 sheetsArray = new JSONArray();
                 sheetsArray.put(sheetJSON);
             }
@@ -2678,10 +2743,21 @@ public class ExperimentController extends SpringActionController
             JSONObject workbookJSON = new JSONObject();
             workbookJSON.put("fileName", realContent.getName());
             workbookJSON.put("sheets", sheetsArray);
+            // Lets callers that read whole files detect that rows were dropped by maxRows or the server cap
+            boolean truncated = false;
+            for (int i = 0; i < sheetsArray.length(); i++)
+                truncated |= sheetsArray.getJSONObject(i).optBoolean("truncated");
+            workbookJSON.put("truncated", truncated);
             if (originalFileName != null)
                 workbookJSON.put("originalFileName", originalFileName);
             writer.writeResponse(new ApiSimpleResponse(workbookJSON));
         }
+    }
+
+    private static void checkCellBudget(long cellCount, long maxCells)
+    {
+        if (maxCells > -1 && cellCount > maxCells)
+            throw new ApiUsageException("File is too large to parse; it exceeds " + maxCells + " cells.");
     }
 
 
