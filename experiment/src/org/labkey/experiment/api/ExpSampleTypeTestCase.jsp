@@ -40,7 +40,6 @@
 <%@ page import="org.labkey.api.data.queryprofiler.QueryCounter" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
-<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
 <%@ page import="org.labkey.api.dataiterator.ValidatorIterator" %>
 <%@ page import="org.labkey.api.data.validator.PrefetchingValidator" %>
 <%@ page import="org.labkey.api.data.validator.PropertyValidator" %>
@@ -1671,7 +1670,7 @@ private Set<Integer> validateLookups(PropertyDescriptor field, List<Object> valu
     List<Map<String, Object>> rows = values.stream().map(v -> (Map<String, Object>) CaseInsensitiveHashMap.of(field.getName(), v)).toList();
     DataIteratorContext context = new DataIteratorContext();
     context.setFailFast(false);
-    ValidatorIterator validate = new ValidatorIterator(new ListofMapsDataIterator(Set.of(field.getName()), rows), context, c, _user, Map.of(1, List.of(lookupValidator(field))));
+    ValidatorIterator validate = new ValidatorIterator(MapDataIterator.of(Set.of(field.getName()), rows).getDataIterator(context), context, c, _user, Map.of(1, List.of(lookupValidator(field))));
     while (validate.next())
     {
     }

@@ -194,7 +194,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
 
         if ("RoleAssignments".equals(tableName) && _groupFilterCondition != null)
         {
-            SQLFragment groupFilterFragment = new SQLFragment("UserId IN (SELECT UserId FROM core.Principals WHERE Type <> 'g' OR (type = 'g' AND UserId ")
+            SQLFragment groupFilterFragment = SQLFragment.unsafe("UserId IN (SELECT UserId FROM core.Principals WHERE Type <> 'g' OR (type = 'g' AND UserId ")
                 .append(_groupFilterCondition)
                 .unsafeAppend("))");
             filterClause = new AndClause(filterClause, new SQLClause(groupFilterFragment));
@@ -236,7 +236,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
 
         // Special handling for LookAndFeelResourceType, which must select from the source database. Keep in sync with
         // LookAndFeelResourceType.addWhereSql().
-        SQLFragment sql = new SQLFragment("Parent");
+        SQLFragment sql = SQLFragment.unsafe("Parent");
 
         if (copyContainers != null)
         {
@@ -252,8 +252,8 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         sql.unsafeAppend(" AND (DocumentName IN (?, ?) OR ")
             .add(AttachmentCache.FAVICON_FILE_NAME)
             .add(AttachmentCache.STYLESHEET_FILE_NAME)
-            .append("DocumentName LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
-            .append("DocumentName LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
+            .unsafeAppend("DocumentName LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
+            .unsafeAppend("DocumentName LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
         ret.addAll(copyAttachments(configuration, new SQLClause(sql), LookAndFeelResourceType.get()));
 
         return ret;
@@ -309,11 +309,10 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         {
             SQLFragment columnAlias = super.getValueSql(tableAlias);
 
-            //noinspection StringConcatenationInsideStringBufferAppend - SQLFragment flips out about unmatched quotes, so we're forced to use string concatenation
-            return new SQLFragment("(SELECT CASE WHEN idx > 0 THEN SUBSTRING(Properties, 1, idx - 1) + LOWER(SUBSTRING(Properties, idx, 36)) + SUBSTRING(Properties, idx + 36, LEN(Properties) - idx - 35) ELSE Properties END")
+            return SQLFragment.unsafe("(SELECT CASE WHEN idx > 0 THEN SUBSTRING(Properties, 1, idx - 1) + LOWER(SUBSTRING(Properties, idx, 36)) + SUBSTRING(Properties, idx + 36, LEN(Properties) - idx - 35) ELSE Properties END")
                 .unsafeAppend(" FROM (SELECT CAST(")
                 .append(columnAlias)
-                .append(" AS VARCHAR(MAX)) AS Properties, PATINDEX('%" + GUID.SQL_LIKE_GUID_PATTERN + "%', ")
+                .unsafeAppend(" AS VARCHAR(MAX)) AS Properties, PATINDEX(").appendStringLiteral("%" + GUID.SQL_LIKE_GUID_PATTERN + "%", getSqlDialect()).unsafeAppend(", ")
                 .append(columnAlias)
                 .unsafeAppend(") AS idx) AS Properties)");
         }

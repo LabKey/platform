@@ -217,8 +217,6 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
         @Override
         public boolean canRead(User user, boolean forRead)
         {
-            if ("/".equals(getPath()))
-                return true;
             return hasPermission(user, ReadPermission.class);
         }
 

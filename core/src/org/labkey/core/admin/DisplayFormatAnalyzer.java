@@ -101,7 +101,7 @@ public class DisplayFormatAnalyzer
         }
 
         new SqlSelector(CoreSchema.getInstance().getSchema(),
-            new SQLFragment("SELECT Container, QueryDefId AS RowId, \"schema\" AS SchemaName, Name AS QueryName FROM query.QueryDef WHERE metadata LIKE '%<formatString>%'")
+            SQLFragment.unsafe("SELECT Container, QueryDefId AS RowId, \"schema\" AS SchemaName, Name AS QueryName FROM query.QueryDef WHERE metadata LIKE '%<formatString>%'")
         )
             .stream(QueryCandidate.class)
             .forEach(candidate -> _queryDefXmlCandidatesMap.put(candidate.container(), candidate));
