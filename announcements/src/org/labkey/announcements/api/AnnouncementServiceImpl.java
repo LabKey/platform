@@ -190,6 +190,8 @@ public class AnnouncementServiceImpl implements AnnouncementService
         Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
 
         model = AnnouncementManager.getAnnouncement(c, RowId);
+        if (model == null)
+            throw new NotFoundException("No announcement with id " + RowId);
 
         if (!perm.allowUpdate(model))
         {
@@ -199,11 +201,9 @@ public class AnnouncementServiceImpl implements AnnouncementService
         model.setTitle(title);
         model.setBody(body);
 
-        List<AttachmentFile> files = Collections.emptyList();
-
         try
         {
-            AnnouncementManager.updateAnnouncement(c, u, RowId, model, files);
+            AnnouncementManager.updateAnnouncement(c, u, RowId, model, Collections.emptyList());
         }
         catch (IOException e)
         {

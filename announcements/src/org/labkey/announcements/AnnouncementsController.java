@@ -110,6 +110,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -3275,8 +3276,8 @@ public class AnnouncementsController extends SpringActionController
             User otherReader = createUserInRole(secure, ReaderRole.class);
             User editorA = createUserInRole(_folderA, EditorRole.class);
 
-            AnnouncementModel victim = insertMessage(secure, getAdmin(), "Victim thread", String.valueOf(member.getUserId()));
-            AnnouncementModel own = insertMessage(_folderA, editorA, "Own thread", null);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), secure, member);
+            AnnouncementModel own = insertThreadAs(editorA, _folderA);
 
             QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
             Map<String, Object> ownKey = Map.of("RowId", own.getRowId());
@@ -3286,7 +3287,7 @@ public class AnnouncementsController extends SpringActionController
             assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Title", "Overwritten", "memberListInput", memberList)));
             assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Container", secure.getId(), "Title", "Overwritten")));
 
-            assertEquals("Victim thread", AnnouncementManager.getAnnouncement(secure, victim.getRowId()).getTitle());
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(secure, victim.getRowId())).getTitle());
             assertEquals(List.of(member.getUserId()), AnnouncementManager.getPostMemberList(victim.getRowId()));
 
             // Positive control: an ordinary edit of the caller's own message still works
@@ -3299,21 +3300,38 @@ public class AnnouncementsController extends SpringActionController
         public void testQueryUpdateCannotRetargetWithinFolder() throws Exception
         {
             User editorA = createUserInRole(_folderA, EditorRole.class);
-            AnnouncementModel victim = insertMessage(_folderA, getAdmin(), "Victim thread", null);
-            AnnouncementModel own = insertMessage(_folderA, editorA, "Own thread", null);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(editorA, _folderA);
 
             QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
             assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", victim.getRowId(), "Title", "Overwritten")));
-            assertEquals("Victim thread", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
         }
 
-        private AnnouncementModel insertMessage(Container c, User user, String title, @Nullable String memberListInput) throws Exception
+        // GH Issue 1853
+        @Test
+        public void testUpdateFormCannotRetargetMessage() throws Exception
         {
-            AnnouncementModel insert = new AnnouncementModel();
-            insert.setTitle(title);
-            insert.setBody("body");
-            insert.setMemberListInput(memberListInput);
-            return AnnouncementManager.insertAnnouncement(c, user, insert, null, false);
+            User author = createUserInRole(_folderA, AuthorRole.class);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(author, _folderA);
+
+            ActionURL retarget = new ActionURL(UpdateAction.class, _folderA)
+                    .addParameter("entityId", own.getEntityId())
+                    .addParameter("rowId", victim.getRowId())
+                    .addParameter("title", "Overwritten")
+                    .addParameter("body", "body");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(retarget, author));
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+
+            // Positive control: the author can still edit their own message (302 to the thread)
+            ActionURL edit = new ActionURL(UpdateAction.class, _folderA)
+                    .addParameter("entityId", own.getEntityId())
+                    .addParameter("rowId", own.getRowId())
+                    .addParameter("title", "Edited")
+                    .addParameter("body", "body");
+            assertStatus(HttpServletResponse.SC_FOUND, post(edit, author));
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
         }
 
         private void updateMessage(QueryUpdateService qus, User user, Map<String, Object> oldKey, Map<String, Object> values) throws Exception
@@ -3322,6 +3340,15 @@ public class AnnouncementsController extends SpringActionController
             qus.updateRows(user, _folderA, List.of(new HashMap<>(values)), List.of(new HashMap<>(oldKey)), errors, null, null);
             if (errors.hasErrors())
                 throw errors;
+        }
+
+        private AnnouncementModel insertThreadAs(User creator, Container c, User... members) throws Exception
+        {
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Member list test thread");
+            insert.setBody("body");
+            insert.setMemberListInput(Arrays.stream(members).map(member -> String.valueOf(member.getUserId())).collect(Collectors.joining("\n")));
+            return AnnouncementManager.insertAnnouncement(c, creator, insert, null, false);
         }
 
         // Shared across tests, so reset the settings some tests change
