@@ -432,9 +432,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             {
                 values = getIndexValues(ctx.table(), List.of(getRowId())).get(getRowId());
             }
-            catch (SQLException e)
+            catch (SQLException | RuntimeException e)
             {
-                // ignore
+                throwIfRetryableOrInTransaction(e);
+                LOG.warn("Failed to read search values for sample {}; indexing it without them", getRowId(), e);
             }
         }
 
@@ -606,26 +607,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (RuntimeException e)
                 {
-                    if (isRetryable(e))
+                    // A failed statement aborts the whole transaction, so later groups can only continue outside one
+                    if (isRetryable(e) || scope.isTransactionActive())
                         throw e;
-
-                    // Index the rest of the group one sample at a time so one bad row doesn't stop the whole pass
-                    LOG.warn("Failed to index {} samples of type {} in {} together; indexing them individually", group.size(), group.getFirst().getCpasType(), group.getFirst().getContainer().getPath(), e);
-                    for (ExpMaterialImpl m : group)
-                    {
-                        try
-                        {
-                            WebdavResource doc = m.createIndexDocument(null);
-                            if (doc != null)
-                                docs.add(doc);
-                        }
-                        catch (RuntimeException x)
-                        {
-                            if (isRetryable(x))
-                                throw x;
-                            LOG.warn("Failed to index sample {}", m.getRowId(), x);
-                        }
-                    }
+                    LOG.warn("Failed to index {} samples of type {} in {}", group.size(), group.getFirst().getCpasType(), group.getFirst().getContainer().getPath(), e);
                 }
             }
             return docs;
@@ -650,19 +635,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleTypeImpl st = first.getSampleType();
         TableInfo table = st == null ? null : tableCache.computeIfAbsent(new TableCacheKey(container, st), _ -> getSearchTable(SCHEMA_SAMPLES, container, st));
         SampleTypeDocContext ctx = SampleTypeDocContext.create(container, st, table);
-
-        Map<Long, IndexValues> values = Map.of();
-        if (ctx.table() != null)
-        {
-            try
-            {
-                values = getIndexValues(ctx.table(), group.stream().map(ExpMaterialImpl::getRowId).toList());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-        }
+        Map<Long, IndexValues> values = getGroupIndexValues(ctx, group);
 
         List<WebdavResource> groupDocs = new ArrayList<>(group.size());
         for (ExpMaterialImpl m : group)
@@ -680,6 +653,106 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()), runName, app.protocolName(), app.applicationName()));
         }
         docs.addAll(groupDocs);
+    }
+
+    /** Like the single-sample path, a sample whose values can't be read is indexed without them; deleted samples are left out */
+    private static @NotNull Map<Long, IndexValues> getGroupIndexValues(@NotNull SampleTypeDocContext ctx, @NotNull List<ExpMaterialImpl> group)
+    {
+        ExpMaterialTableImpl table = ctx.table();
+        if (table == null)
+            return Map.of();
+
+        List<Long> rowIds = group.stream().map(ExpMaterialImpl::getRowId).toList();
+        Set<Long> unreadable = new HashSet<>();
+        Map<Long, IndexValues> values = new HashMap<>(readGroupIndexValues(table, rowIds, ctx.container(), unreadable));
+
+        List<Long> missing = rowIds.stream().filter(id -> !values.containsKey(id) && !unreadable.contains(id)).toList();
+        DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
+        if (!missing.isEmpty() && !scope.isTransactionActive())
+        {
+            // Outside a transaction the table can read a cached copy of the type's rows that briefly lags new samples; inside one it reads the live tables
+            LOG.debug("Rereading search values for {} samples of type {} in {} from the live tables", missing.size(), table.getName(), ctx.container().getPath());
+            try (DbScope.Transaction ignored = scope.ensureTransaction())
+            {
+                values.putAll(readGroupIndexValues(table, missing, ctx.container(), unreadable));
+            }
+            catch (RuntimeException e)
+            {
+                if (isRetryable(e))
+                    throw e;
+                LOG.warn("Failed to reread search values for {} samples of type {} in {}", missing.size(), table.getName(), ctx.container().getPath(), e);
+            }
+            missing = rowIds.stream().filter(id -> !values.containsKey(id) && !unreadable.contains(id)).toList();
+        }
+
+        if (!missing.isEmpty() || !unreadable.isEmpty())
+        {
+            // Only samples that still exist get a document without values
+            Set<Long> check = new HashSet<>(missing);
+            check.addAll(unreadable);
+            TableInfo materialTi = ExperimentServiceImpl.get().getTinfoMaterial();
+            Set<Long> existing = new HashSet<>(new TableSelector(materialTi, Collections.singleton("RowId"), new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), check), null).getCollection(Long.class));
+            existing.forEach(id -> values.put(id, new IndexValues()));
+            long hidden = missing.stream().filter(existing::contains).count();
+            if (hidden > 0)
+                LOG.warn("{} samples of type {} in {} aren't in its query table; indexing them without search values", hidden, table.getName(), ctx.container().getPath());
+        }
+        return values;
+    }
+
+    /**
+     * Retries one sample at a time when the group query fails, so a value that breaks it costs only its own sample's values.
+     * Samples whose values can't be read are added to {@code unreadable}.
+     */
+    private static @NotNull Map<Long, IndexValues> readGroupIndexValues(@NotNull ExpMaterialTableImpl table, @NotNull List<Long> rowIds, @NotNull Container container, @NotNull Set<Long> unreadable)
+    {
+        try
+        {
+            return getIndexValues(table, rowIds);
+        }
+        catch (SQLException | RuntimeException e)
+        {
+            throwIfRetryableOrInTransaction(e);
+
+            Map<Long, IndexValues> values = new HashMap<>();
+            // Every one-row query fails when the table itself is broken, and each failure logs its SQL, so stop after two in a row
+            int consecutiveFailures = 0;
+            for (Long rowId : rowIds)
+            {
+                if (consecutiveFailures >= 2)
+                {
+                    unreadable.add(rowId);
+                    continue;
+                }
+
+                try
+                {
+                    values.putAll(getIndexValues(table, List.of(rowId)));
+                    consecutiveFailures = 0;
+                }
+                catch (SQLException | RuntimeException x)
+                {
+                    throwIfRetryableOrInTransaction(x);
+                    unreadable.add(rowId);
+                    consecutiveFailures++;
+                }
+            }
+            LOG.warn("Failed to read search values for {} samples of type {} in {} together; {} of them can't be read", rowIds.size(), table.getName(), container.getPath(), rowIds.stream().filter(unreadable::contains).count(), e);
+            return values;
+        }
+    }
+
+    /** Deadlocks go to the caller's retry, and inside a transaction a failed statement aborts it, so nothing later could run */
+    private static void throwIfRetryableOrInTransaction(Exception e)
+    {
+        RuntimeException rx;
+        if (e instanceof RuntimeException r)
+            rx = r;
+        else
+            rx = new RuntimeSQLException((SQLException) e);
+
+        if (isRetryable(rx) || ExperimentServiceImpl.getExpSchema().getScope().isTransactionActive())
+            throw rx;
     }
 
     private static @NotNull Map<String, List<String>> getAliases(@NotNull Collection<String> lsids)
@@ -728,20 +801,25 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return names;
     }
 
-    /** The exp.material columns a sample search document reads */
-    private static final List<String> INDEX_COLUMNS = List.of("RowId", "LSID", "Name", "CpasType", "Container", "Description", "RunId",
-            "SourceApplicationId", "Created", "CreatedBy", "Modified", "ModifiedBy");
+    /** The exp.material columns a sample search document reads; ordered, since {@link #readIndexMaterials} reads a TableSelector's ResultSet */
+    static final LinkedHashSet<String> INDEX_COLUMNS = new LinkedHashSet<>(List.of(
+            ExpMaterialTable.Column.RowId.name(),
+            ExpMaterialTable.Column.LSID.name(),
+            ExpMaterialTable.Column.Name.name(),
+            ExpMaterialTable.Column.CpasType.name(),
+            "Container", // The query table exposes this as Folder
+            ExpMaterialTable.Column.Description.name(),
+            ExpMaterialTable.Column.RunId.name(),
+            ExpMaterialTable.Column.SourceApplicationId.name(),
+            ExpMaterialTable.Column.Created.name(),
+            ExpMaterialTable.Column.CreatedBy.name(),
+            ExpMaterialTable.Column.Modified.name(),
+            ExpMaterialTable.Column.ModifiedBy.name()));
 
     /** {@link #INDEX_COLUMNS} qualified by {@code alias}, for a select list read by {@link #readIndexMaterials} */
     static @NotNull String getIndexColumnsSelectList(@NotNull String alias)
     {
         return INDEX_COLUMNS.stream().map(c -> alias + "." + c).collect(Collectors.joining(", "));
-    }
-
-    /** Ordered, since {@link #readIndexMaterials} reads a TableSelector's ResultSet */
-    static @NotNull Set<String> getIndexColumnNames()
-    {
-        return new LinkedHashSet<>(INDEX_COLUMNS);
     }
 
     /** Maps {@link #INDEX_COLUMNS} by hand, since bean reflection over every column cost about a third of the indexing thread's CPU */
@@ -750,18 +828,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         List<Material> materials = new ArrayList<>();
         selector.forEach(rs -> {
             Material m = new Material();
-            m.setRowId(rs.getLong("RowId"));
-            m.setLSID(rs.getString("LSID"));
-            m.setName(rs.getString("Name"));
-            m.setCpasType(rs.getString("CpasType"));
+            m.setRowId(rs.getLong(ExpMaterialTable.Column.RowId.name()));
+            m.setLSID(rs.getString(ExpMaterialTable.Column.LSID.name()));
+            m.setName(rs.getString(ExpMaterialTable.Column.Name.name()));
+            m.setCpasType(rs.getString(ExpMaterialTable.Column.CpasType.name()));
             m.setContainer(ContainerManager.getForId(rs.getString("Container")));
-            m.setDescription(rs.getString("Description"));
-            m.setRunId(getLong(rs, "RunId"));
-            m.setSourceApplicationId(getLong(rs, "SourceApplicationId"));
-            m.setCreated(rs.getTimestamp("Created"));
-            m.setCreatedBy(getInteger(rs, "CreatedBy"));
-            m.setModified(rs.getTimestamp("Modified"));
-            m.setModifiedBy(getInteger(rs, "ModifiedBy"));
+            m.setDescription(rs.getString(ExpMaterialTable.Column.Description.name()));
+            m.setRunId(getLong(rs, ExpMaterialTable.Column.RunId.name()));
+            m.setSourceApplicationId(getLong(rs, ExpMaterialTable.Column.SourceApplicationId.name()));
+            m.setCreated(rs.getTimestamp(ExpMaterialTable.Column.Created.name()));
+            m.setCreatedBy(getInteger(rs, ExpMaterialTable.Column.CreatedBy.name()));
+            m.setModified(rs.getTimestamp(ExpMaterialTable.Column.Modified.name()));
+            m.setModifiedBy(getInteger(rs, ExpMaterialTable.Column.ModifiedBy.name()));
             materials.add(m);
         });
         return materials;

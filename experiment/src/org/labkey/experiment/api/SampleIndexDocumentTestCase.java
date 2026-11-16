@@ -30,7 +30,9 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -148,6 +150,42 @@ public class SampleIndexDocumentTestCase extends Assert
 
         Map<String, Map<String, Object>> docs = normalize(ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>()));
         assertEquals(List.of(d1.getDocumentId()), List.copyOf(docs.keySet()));
+    }
+
+    @Test
+    public void testFailedValuesQueryStillIndexes() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexBrokenColumn");
+        insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of("name", "B1", "TextField", "alpha"), CaseInsensitiveHashMap.of("name", "B2", "TextField", "beta")));
+        List<Material> materials = getIndexMaterials(st);
+
+        // A renamed storage column makes the type's query fail for every row, as a broken lookup would
+        TableInfo storage = ((ExpSampleTypeImpl) st).getTinfo();
+        SQLFragment textField = storage.getColumn("TextField").getSelectIdentifier().getSql();
+        SQLFragment broken = new SQLFragment().appendIdentifier("broken_textfield");
+        renameColumn(storage, st.getLSID(), textField, broken);
+        try
+        {
+            Map<String, Map<String, Object>> batch = normalize(ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>()));
+            Map<String, Map<String, Object>> oneAtATime = normalize(materials.stream().map(m -> new ExpMaterialImpl(m).createIndexDocument(null)).filter(Objects::nonNull).toList());
+            assertEquals(2, batch.size());
+            assertEquals(oneAtATime, batch);
+            batch.values().forEach(doc -> assertFalse(String.valueOf(doc.get(SearchService.PROPERTY.identifiersMed.toString())).contains("alpha")));
+        }
+        finally
+        {
+            renameColumn(storage, st.getLSID(), broken, textField);
+        }
+    }
+
+    private static void renameColumn(TableInfo storage, String lsid, SQLFragment from, SQLFragment to)
+    {
+        SQLFragment table = storage.getSQLName();
+        assertNotNull(table);
+        new SqlExecutor(storage.getSchema()).execute(new SQLFragment().unsafeAppend("ALTER TABLE ").append(table)
+                .unsafeAppend(" RENAME COLUMN ").append(from).unsafeAppend(" TO ").append(to));
+        // Otherwise the table can keep reading its cached copy of the rows, which still has the column
+        ExpMaterialTableImpl.removeMaterializedView(lsid);
     }
 
     @Test
@@ -272,7 +310,7 @@ public class SampleIndexDocumentTestCase extends Assert
 
     private static List<Material> getIndexMaterials(ExpSampleType st)
     {
-        return ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), ExpMaterialImpl.getIndexColumnNames(),
+        return ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), ExpMaterialImpl.INDEX_COLUMNS,
                 new SimpleFilter(FieldKey.fromParts("CpasType"), st.getLSID()), new Sort("RowId")));
     }
 
