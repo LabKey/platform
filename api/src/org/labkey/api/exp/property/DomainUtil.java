@@ -1633,7 +1633,7 @@ public class DomainUtil
      *
      * GH Issue 1783: {@code systemFieldNames} is {@link DomainKind#getSystemImportAliases()} run through
      * {@link #getNamesAndLabels}, so it is empty for a kind whose built-in columns claim their own tokens by name. A
-     * label matching one is counted, not rejected.
+     * label matching one is counted; only {@link #SYSTEM_FIELD_NAMES} is rejected, for every kind.
      */
     public static ValidationException validateProperties(@NotNull GWTDomain<?> updates, @NotNull Set<String> reservedNameSet,
             @NotNull Set<String> reservedPrefixes, @NotNull Set<String> systemFieldNames, boolean allowMultiChoice, boolean supportsNamingPattern,
@@ -1795,8 +1795,8 @@ public class DomainUtil
 
         // GH Issue 1589: ImportAliasable.Helper.createImportMap resolves propertyURI, name, label and import alias into
         // one case-insensitive map at precedence propertyURI < idFromName < alias < label < name, so a label that ties with
-        // any of them silently loses the token or steals it. All of these are counted, not rejected: the configurations
-        // save successfully today and blocking them would break existing domains.
+        // any of them silently loses the token or steals it. These are counted rather than rejected, since the
+        // configurations save successfully today; the one exception is SYSTEM_FIELD_NAMES below.
         labelMap.forEach((label, fields) -> {
             if (fields.size() > 1)
                 fields.forEach(f -> tally(tally, FieldNameRule.duplicateLabel, f));
@@ -1814,10 +1814,18 @@ public class DomainUtil
             if (reservedNames.contains(label))
                 fields.forEach(f -> tally(tally, FieldNameRule.labelVsReservedName, f));
 
-            // GH Issue 1783: a framework alias outranks a label, so the label is unreachable rather than overwritten --
-            // the same outcome as colliding with a column name, and not worth refusing a save that works today.
-            if (systemFieldNames.contains(label))
+            // GH Issue 1783: counted for every token the kind claims only through a system alias, since the collision is
+            // invisible in the designer -- the column it loses to is on screen under another name.
+            if (systemFieldNames.contains(label) || SYSTEM_FIELD_NAMES.contains(label))
                 fields.forEach(f -> tally(tally, FieldNameRule.labelVsSystemField, f));
+
+            // "Container" is refused outright, and not grandfathered: a stored one has to be renamed before the domain
+            // can be saved again.
+            if (SYSTEM_FIELD_NAMES.contains(label))
+            {
+                String names = "'" + fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
+                addFieldErrors(exception, updates, fields, "Label '" + label + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a system field name.");
+            }
         });
 
         return exception;
@@ -1863,12 +1871,6 @@ public class DomainUtil
     {
         if (tally != null)
             tally.accept(rule, field);
-    }
-
-    /** Anchor the error on every field named in it so the designer can highlight each one. */
-    private static void addFieldErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
-    {
-        addFieldErrors(exception, updates, fields, message);
     }
 
     /** Anchor the error on every field named in it so the designer can highlight each one. */
@@ -2098,10 +2100,17 @@ public class DomainUtil
         private static int tallyFor(Set<String> systemFieldNames, GWTPropertyDescriptor... fields)
         {
             int[] count = {0};
-            ValidationException errors = validateProperties(domain(fields), Set.of(), Set.of(), systemFieldNames, true, false,
+            validateProperties(domain(fields), Set.of(), Set.of(), systemFieldNames, true, false,
                     null, (rule, _) -> { if (rule == FieldNameRule.labelVsSystemField) count[0]++; });
-            assertFalse("A system field label is counted, never rejected: " + errors.getAllErrors(), errors.hasErrors());
             return count[0];
+        }
+
+        /** The save path, which passes no tally. {@code orig} is what the domain holds today, if anything. */
+        private static ValidationException errorsFor(Set<String> systemFieldNames, @Nullable GWTDomain<GWTPropertyDescriptor> orig,
+                GWTPropertyDescriptor... fields)
+        {
+            return validateProperties(domain(fields), Set.of(), Set.of(), systemFieldNames, true, false,
+                    getOriginalFieldPropertyIdNameMap(orig), null);
         }
 
         @Test
@@ -2121,10 +2130,50 @@ public class DomainUtil
         }
 
         @Test
-        public void aKindSupplyingNoAliasesCountsNothing()
+        public void containerIsCountedEvenForAKindSupplyingNoAliases()
         {
-            // Lists, datasets and assay domains name the column "Container" outright, so there is no hidden alias to lose to
-            assertEquals(0, tallyFor(Set.of(), field(FIELD_ONE, "Container", 0)));
+            // Lists, datasets and assay domains name the column "Container" outright, so there is no hidden alias to
+            // lose to -- but the label is just as unusable, and it is rejected for every kind
+            assertEquals(1, tallyFor(Set.of(), field(FIELD_ONE, "Container", 0)));
+            assertEquals(0, tallyFor(Set.of(), field(FIELD_ONE, "Comment", 0)));
+        }
+
+        @Test
+        public void containerLabelIsRejected()
+        {
+            ValidationException errors = errorsFor(Set.of(), null, field(FIELD_ONE, "Container", 0));
+            assertEquals(List.of("Label 'Container' on field '" + FIELD_ONE + "' conflicts with a system field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void storedLabelIsStillRejected()
+        {
+            // Re-saving a domain configured before this check is refused: the field is losing its value on every write
+            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Container", STORED_ID));
+            ValidationException errors = errorsFor(Set.of(), orig, field(FIELD_ONE, "Container", STORED_ID), field(FIELD_TWO, null, 0));
+            assertEquals(List.of("Label 'Container' on field '" + FIELD_ONE + "' conflicts with a system field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void storedAndNewFieldsWithTheLabelAreBothReported()
+        {
+            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Container", STORED_ID));
+            ValidationException errors = errorsFor(Set.of(), orig, field(FIELD_ONE, "Container", STORED_ID), field(FIELD_TWO, "Container", 0));
+            String expected = "Label 'Container' on fields '" + FIELD_ONE + "', '" + FIELD_TWO + "' conflicts with a system field name.";
+            assertEquals(expected, errors.getFieldErrors(FIELD_ONE).get(0));
+            assertEquals(expected, errors.getFieldErrors(FIELD_TWO).get(0));
+        }
+
+        @Test
+        public void anAliasTheKindSuppliesIsCountedButNotRejected()
+        {
+            // Only "Container" is refused; "comment" and anything else a kind claims stays a metric
+            ValidationException errors = errorsFor(getNamesAndLabels(List.of("container", "comment")), null,
+                    field(FIELD_ONE, "Comment", 0));
+            assertFalse("A kind-supplied alias other than Container is counted, never rejected: " + errors.getAllErrors(),
+                    errors.hasErrors());
         }
     }
 

@@ -193,7 +193,7 @@ abstract public class DomainKind<T> implements Handler<String>
      * name outranks them -- "container" on the column shown as "Folder", "comment" on the one shown as "Flag". A field
      * label matching one loses the token to that column, and nothing in the designer shows why: the colliding column is
      * on screen under a different name. {@link DomainUtil#validateProperties} counts these as labelVsSystemField; it
-     * does not reject them, since the label is unreachable rather than overwritten.
+     * rejects only {@link DomainUtil#SYSTEM_FIELD_NAMES}, which is narrower than what any kind returns here.
      *
      * A kind abstains by returning nothing: when the built-in column also carries the token as its own name, the
      * collision is visible in the designer and there is nothing to report.
