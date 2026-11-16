@@ -22,7 +22,9 @@ import org.labkey.api.data.SQLFragment;
 
 import java.util.Collection;
 
-/** Builds LabKey SQL source text; flagged so that getSQL() throws and any fragment it's appended to can't execute */
+/** Builds LabKey SQL source text; flagged so that getSQL() throws and any fragment it's appended to can't execute
+ * The functionality overlaps with the newer LabKeySQLFragment, but obviously this inherits from Builder.
+ * */
 public class SourceBuilder extends Builder
 {
     public SourceBuilder()

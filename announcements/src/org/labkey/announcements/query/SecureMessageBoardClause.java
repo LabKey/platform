@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.LabKeySQLFragment;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -73,7 +74,7 @@ class SecureMessageBoardClause extends SimpleFilter.FilterClause
     }
 
     @Override
-    public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+    public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
         throw new UnsupportedOperationException();
     }

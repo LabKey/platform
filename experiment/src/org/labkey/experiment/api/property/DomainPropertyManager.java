@@ -62,7 +62,7 @@ public class DomainPropertyManager
         @Override
         public List<ConditionalFormatWithPropertyId> load(@NotNull Container container, Object ignored)
         {
-            SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
+            SQLFragment sql = SQLFragment.unsafe("SELECT CF.* FROM ");
             sql.append(getExpSchema().getTable("ConditionalFormat"), "CF");
             sql.unsafeAppend(" WHERE CF.PropertyId IN ");
             sql.unsafeAppend("(SELECT PropertyId FROM ");
@@ -206,10 +206,9 @@ public class DomainPropertyManager
     {
         if (property.getPropertyId() != 0)
         {
-            SQLFragment deleteValidator = new SQLFragment(
-                    "DELETE FROM " + getTinfoValidator() +
-                        " WHERE Container = ? AND PropertyId = ? AND RowId = ?",
-                    property.getContainer(), property.getPropertyId(), validator.getRowId());
+            SQLFragment deleteValidator = new SQLFragment().unsafeAppend("DELETE FROM ")
+                    .append(getTinfoValidator().getSQLName())
+                    .unsafeAppend(" WHERE Container = ? AND PropertyId = ? AND RowId = ?").addAll(property.getContainer(), property.getPropertyId(), validator.getRowId());
             new SqlExecutor(getExpSchema()).execute(deleteValidator);
 
             VALIDATOR_CACHE.remove(property.getContainer());
@@ -238,7 +237,7 @@ public class DomainPropertyManager
     public void removeValidatorsForPropertyDescriptor(@NotNull Container c, int descriptorId)
     {
         // find validators associated with this PD, and not associated with others PDs
-        SQLFragment deleteValidators = new SQLFragment(
+        SQLFragment deleteValidators = SQLFragment.unsafe(
                 "DELETE FROM exp.PropertyValidator WHERE Container = ? AND PropertyId = ?",
                 c, descriptorId);
         new SqlExecutor(getExpSchema()).execute(deleteValidators);
@@ -251,11 +250,15 @@ public class DomainPropertyManager
     {
         SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-        SQLFragment validatorSQL = new SQLFragment("DELETE FROM " + getTinfoValidator() + " WHERE Container = ?", c.getId());
+        SQLFragment validatorSQL = new SQLFragment().unsafeAppend("DELETE FROM ").append(getTinfoValidator().getSQLName()).unsafeAppend(" WHERE Container = ?").addAll(c.getId());
         executor.execute(validatorSQL);
 
-        SQLFragment deleteConditionalFormatsSQL = new SQLFragment("DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId IN " +
-                "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Container = ?)", c.getId());
+        SQLFragment deleteConditionalFormatsSQL = new SQLFragment().unsafeAppend("DELETE FROM ")
+                .append(getTinfoConditionalFormat().getSQLName())
+                .unsafeAppend(" WHERE PropertyId IN "
+                    + "(SELECT PropertyId FROM ")
+                .append(OntologyManager.getTinfoPropertyDescriptor().getSQLName())
+                .unsafeAppend(" WHERE Container = ?)").addAll(c.getId());
         executor.execute(deleteConditionalFormatsSQL);
 
         VALIDATOR_CACHE.remove(c);
@@ -265,7 +268,7 @@ public class DomainPropertyManager
 
     public void deleteConditionalFormats(int propertyId)
     {
-        SQLFragment sql = new SQLFragment("DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId = ?", propertyId);
+        SQLFragment sql = new SQLFragment().unsafeAppend("DELETE FROM ").append(getTinfoConditionalFormat().getSQLName()).unsafeAppend(" WHERE PropertyId = ?").addAll(propertyId);
         new SqlExecutor(getExpSchema()).execute(sql);
         // Blow the cache
         CONDITIONAL_FORMAT_CACHE.clear();

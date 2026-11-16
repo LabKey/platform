@@ -77,6 +77,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.JsonTest;
+import org.labkey.api.data.LabKeySQLFragment;
 import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NameGenerator;
@@ -476,6 +477,7 @@ public class ApiModule extends CodeOnlyModule
             JsonTest.class,
             JsonUtil.TestCase.class,
             KeySharingJSONTokener.TestCase.class,
+            LabKeySQLFragment.TestCase.class,
             LimitedUser.TestCase.class,
             LookAheadDataIterator.TestCase.class,
             MailMetrics.TestCase.class,

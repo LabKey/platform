@@ -293,7 +293,7 @@ abstract public class ExpTableImpl<C extends Enum>
     @Override
     public void addRowIdCondition(SQLFragment condition)
     {
-        SQLFragment sqlCondition = new SQLFragment("RowId ");
+        SQLFragment sqlCondition = SQLFragment.unsafe("RowId ");
         sqlCondition.append(condition);
         addCondition(sqlCondition);
     }
@@ -301,7 +301,7 @@ abstract public class ExpTableImpl<C extends Enum>
     @Override
     public void addLSIDCondition(SQLFragment condition)
     {
-        SQLFragment sqlCondition = new SQLFragment("LSID ");
+        SQLFragment sqlCondition = SQLFragment.unsafe("LSID ");
         sqlCondition.append(condition);
         addCondition(sqlCondition);
     }
@@ -439,10 +439,10 @@ abstract public class ExpTableImpl<C extends Enum>
         {
             SQLFragment condition = new SQLFragment();
             condition.unsafeAppend("(");
-            String separator = "";
+            SQLFragment.SqlSeparator separator = SQLFragment.sep("", " OR ");
             for (String pattern : patterns)
             {
-                condition.append(separator);
+                condition.append(separator.next());
                 condition.appendIdentifier(_rootTable.getColumn(columnName).getAlias());
                 // Only use LIKE if the pattern contains a wildcard, since the database can be more efficient
                 // for = instead of LIKE. In some cases we're passed the LSID for a specific protocol,
@@ -456,7 +456,6 @@ abstract public class ExpTableImpl<C extends Enum>
                     condition.unsafeAppend(" = ?");
                 }
                 condition.add(pattern);
-                separator = " OR ";
             }
             condition.unsafeAppend(")");
             addCondition(condition);
@@ -502,7 +501,7 @@ abstract public class ExpTableImpl<C extends Enum>
         @Override
         public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)
         {
-            return new SQLFragment(tableAlias + "." + Objects.toString(_expObjectColumnName, "_exptable_object_"));
+            return new SQLFragment().appendIdentifier(tableAlias).unsafeAppend(".").append(Objects.toString(_expObjectColumnName, "_exptable_object_"));
         }
 
         @Override

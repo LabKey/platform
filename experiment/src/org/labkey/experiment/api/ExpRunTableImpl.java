@@ -197,8 +197,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return;
         }
         _inputMaterial = material;
-        addCondition(new SQLFragment( " LSID IN " +
-            "(SELECT RunLSID FROM " + ExperimentServiceImpl.get().getTinfoExperimentRunMaterialInputs() + " WHERE RowId = ?)", _inputMaterial.getRowId()));
+        addCondition(new SQLFragment().unsafeAppend(" LSID IN "
+                    + "(SELECT RunLSID FROM ")
+                .append(ExperimentServiceImpl.get().getTinfoExperimentRunMaterialInputs().getSQLName())
+                .unsafeAppend(" WHERE RowId = ?)").addAll(_inputMaterial.getRowId()));
     }
 
     @Override
@@ -220,8 +222,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return;
         }
         _inputData = data;
-        addCondition(new SQLFragment( " LSID IN " +
-            "(SELECT RunLSID FROM " + ExperimentServiceImpl.get().getTinfoExperimentRunDataInputs() + " WHERE RowId = ?)", _inputData.getRowId()));
+        addCondition(new SQLFragment().unsafeAppend(" LSID IN "
+                    + "(SELECT RunLSID FROM ")
+                .append(ExperimentServiceImpl.get().getTinfoExperimentRunDataInputs().getSQLName())
+                .unsafeAppend(" WHERE RowId = ?)").addAll(_inputData.getRowId()));
 
     }
 
@@ -237,11 +241,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         checkLocked();
         if (runs.isEmpty())
         {
-            addCondition(new SQLFragment("1 = 2"));
+            addCondition(SQLFragment.unsafe("1 = 2"));
         }
         else
         {
-            SQLFragment sql = new SQLFragment("RowID");
+            SQLFragment sql = SQLFragment.unsafe("RowID");
             sql.appendInClause(runs.stream().map(ExpRun::getRowId).toList(), getSqlDialect());
             addCondition(sql);
         }
@@ -256,8 +260,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         if (experiment == null)
             return;
         _experiment = experiment;
-        addCondition(new SQLFragment(" RowId IN ( SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " "
-                    +  " WHERE ExperimentId = " +  experiment.getRowId() + " ) "));
+        addCondition(new SQLFragment().unsafeAppend(" RowId IN ( SELECT ExperimentRunId FROM ")
+                .append(ExperimentServiceImpl.get().getTinfoRunList().getSQLName())
+                .unsafeAppend(" "
+                    + " WHERE ExperimentId = ")
+                .appendValue(experiment.getRowId())
+                .unsafeAppend(" ) "));
 
         if (_userSchema.getContainer().equals(ContainerManager.getSharedContainer()))
         {
@@ -323,10 +331,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return protocolColumn;
             case ProtocolStep:
             {
-                SQLFragment sql = new SQLFragment("(SELECT MIN(exp.Protocol.Name) FROM exp.Protocol " +
-                        "\nINNER JOIN exp.ProtocolApplication ON exp.Protocol.LSID = exp.ProtocolApplication.ProtocolLSID" +
-                        "\nWHERE exp.ProtocolApplication.CpasType = 'ProtocolApplication' AND exp.ProtocolApplication.RunId = " +
-                        ExprColumn.STR_TABLE_ALIAS + ".RowId)");
+                SQLFragment sql = new SQLFragment().unsafeAppend("(SELECT MIN(exp.Protocol.Name) FROM exp.Protocol "
+                            + "\nINNER JOIN exp.ProtocolApplication ON exp.Protocol.LSID = exp.ProtocolApplication.ProtocolLSID"
+                            + "\nWHERE exp.ProtocolApplication.CpasType = 'ProtocolApplication' AND exp.ProtocolApplication.RunId = ")
+                        .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                        .unsafeAppend(".RowId)");
 
                 return new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
             }
@@ -420,7 +429,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 replacedByRunCol.setShownInUpdateView(false);
                 return replacedByRunCol;
             case Replaced:
-                SQLFragment replacedSQL = new SQLFragment("CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".ReplacedByRunId IS NULL THEN ? ELSE ? END");
+                SQLFragment replacedSQL = new SQLFragment().unsafeAppend("CASE WHEN ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".ReplacedByRunId IS NULL THEN ? ELSE ? END");
                 replacedSQL.add(false);
                 replacedSQL.add(true);
                 var replacedCol = new ExprColumn(this, alias, replacedSQL, JdbcType.BOOLEAN);
@@ -429,10 +438,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 replacedCol.setShownInUpdateView(false);
                 return replacedCol;
             case ReplacesRun:
-                SQLFragment replacesSQL = new SQLFragment("(SELECT MIN(er.RowId) FROM ");
+                SQLFragment replacesSQL = SQLFragment.unsafe("(SELECT MIN(er.RowId) FROM ");
                 replacesSQL.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
                 replacesSQL.unsafeAppend(" WHERE er.ReplacedByRunId = ");
-                replacesSQL.append(ExprColumn.STR_TABLE_ALIAS);
+                replacesSQL.appendIdentifier(ExprColumn.STR_TABLE_ALIAS);
                 replacesSQL.unsafeAppend(".RowId)");
                 var replacesRunCol = new ExprColumn(this, "ReplacesRun", replacesSQL, JdbcType.INTEGER);
                 replacesRunCol.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
@@ -499,10 +508,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     public MutableColumnInfo addDataCountColumn(String alias, String roleName)
     {
         checkLocked();
-        SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.DataInput.DataId) FROM exp.DataInput " +
-                "\nINNER JOIN exp.ProtocolApplication ON exp.ProtocolApplication.RowId = exp.DataInput.TargetApplicationId" +
-                "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
-                "\nAND ");
+        SQLFragment sql = new SQLFragment().unsafeAppend("(SELECT COUNT(DISTINCT exp.DataInput.DataId) FROM exp.DataInput "
+                    + "\nINNER JOIN exp.ProtocolApplication ON exp.ProtocolApplication.RowId = exp.DataInput.TargetApplicationId"
+                    + "\nWHERE exp.ProtocolApplication.RunId = ")
+                .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                .unsafeAppend(".RowId"
+                    + "\nAND ");
         if (roleName == null)
         {
             sql.unsafeAppend("1 = 0");
@@ -576,8 +587,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     @Override
                     public SQLFragment getFromSQL()
                     {
-                        SQLFragment sql = new SQLFragment("SELECT pa.RunId, di.DataId AS ");
-                        sql.append(dataIdName);
+                        SQLFragment sql = SQLFragment.unsafe("SELECT pa.RunId, di.DataId AS ");
+                        sql.appendIdentifier(dataIdName);
                         sql.unsafeAppend(" FROM ");
                         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
                         sql.unsafeAppend(", ");
@@ -833,14 +844,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             {
                 if (displayField.equalsIgnoreCase(exp.getName()))
                 {
-                    ExprColumn result = new ExprColumn(parent.getParentTable(), FieldKey.fromParts(exp.getName()), new SQLFragment("~~PLACEHOLDER~~"), JdbcType.BOOLEAN, parent)
+                    ExprColumn result = new ExprColumn(parent.getParentTable(), FieldKey.fromParts(exp.getName()), SQLFragment.unsafe("~~PLACEHOLDER~~"), JdbcType.BOOLEAN, parent)
                     {
                         @Override
                         public SQLFragment getValueSql(String tableAlias)
                         {
-                            SQLFragment sql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
+                            SQLFragment sql = SQLFragment.unsafe("EXISTS (SELECT ExperimentId FROM ");
                             sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-                            sql.unsafeAppend(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).unsafeAppend(" AND ExperimentId = ").appendValue(exp.getRowId()).unsafeAppend(")");
+                            sql.unsafeAppend(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias)).unsafeAppend(" AND ExperimentId = ").appendValue(exp.getRowId()).unsafeAppend(")");
 
                             return getSqlDialect().wrapBooleanExpression(sql);
                         }
