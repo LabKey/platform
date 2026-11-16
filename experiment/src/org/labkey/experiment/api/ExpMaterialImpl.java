@@ -624,12 +624,16 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         Map<Long, IndexValues> values = getGroupIndexValues(ctx, group, unreadable);
 
         List<WebdavResource> groupDocs = new ArrayList<>(group.size());
+        int skipped = 0;
         for (ExpMaterialImpl m : group)
         {
             IndexValues v = values.get(m.getRowId());
             // Deleted, or not yet in the type's cached copy of its rows; left unrecorded, so it's indexed again later
             if (ctx.table() != null && v == null)
+            {
+                skipped++;
                 continue;
+            }
 
             String runName = null;
             if (m.getRunId() != null)
@@ -640,6 +644,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()), runName, app.protocolName(), app.applicationName(),
                     !unreadable.contains(m.getRowId())));
         }
+        if (skipped > 0)
+            LOG.debug("Skipped {} samples of type {} in {} that its query table didn't return", skipped, ctx.table().getName(), container.getPath());
         docs.addAll(groupDocs);
     }
 
