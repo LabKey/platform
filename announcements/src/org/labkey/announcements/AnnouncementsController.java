@@ -2918,6 +2918,10 @@ public class AnnouncementsController extends SpringActionController
             {
                 AnnouncementManager.updateAnnouncement(getContainer(), getUser(), thread.getRowId(), updatedThread, getAttachmentFileList());
             }
+            catch (UnauthorizedException | NotFoundException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
                 errors.reject(ERROR_MSG, "Failed to update thread in folder " + getContainer().getPath());
@@ -3292,7 +3296,7 @@ public class AnnouncementsController extends SpringActionController
 
             // Positive control: an ordinary edit of the caller's own message still works
             updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Title", "Edited"));
-            assertEquals("Edited", AnnouncementManager.getAnnouncement(_folderA, own.getRowId()).getTitle());
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
         }
 
         // GH Issue 1853
@@ -3332,6 +3336,33 @@ public class AnnouncementsController extends SpringActionController
                     .addParameter("body", "body");
             assertStatus(HttpServletResponse.SC_FOUND, post(edit, author));
             assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+        }
+
+        // GH Issue 1853
+        @Test
+        public void testUpdateThreadApiCannotRetargetMessage() throws Exception
+        {
+            User author = createUserInRole(_folderA, AuthorRole.class);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(author, _folderA);
+
+            ActionURL direct = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", victim.getRowId())
+                    .addParameter("thread.title", "Overwritten");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(direct, author));
+
+            // Identity fields alongside the author's own rowId must not redirect or reparent the write
+            ActionURL retarget = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", own.getRowId())
+                    .addParameter("thread.entityId", victim.getEntityId())
+                    .addParameter("thread.parent", victim.getEntityId())
+                    .addParameter("thread.title", "Edited");
+            assertStatus(HttpServletResponse.SC_OK, post(retarget, author));
+
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
         }
 
         private void updateMessage(QueryUpdateService qus, User user, Map<String, Object> oldKey, Map<String, Object> values) throws Exception
