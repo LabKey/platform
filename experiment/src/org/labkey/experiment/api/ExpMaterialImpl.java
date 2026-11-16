@@ -610,7 +610,12 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     // A failed statement aborts the whole transaction, so later groups can only continue outside one
                     if (isRetryable(e) || scope.isTransactionActive())
                         throw e;
-                    LOG.warn("Failed to index {} samples of type {} in {}", group.size(), group.getFirst().getCpasType(), group.getFirst().getContainer().getPath(), e);
+                    ExpMaterialImpl first = group.getFirst();
+                    String typeName = first.getCpasType();
+                    ExpSampleTypeImpl st = first.getSampleType();
+                    if (st != null)
+                        typeName = st.getName();
+                    LOG.warn("Failed to index {} samples of type {} in {}", group.size(), typeName, first.getContainer().getPath(), e);
                 }
             }
             return docs;

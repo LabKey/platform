@@ -41,7 +41,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
@@ -65,6 +64,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static java.util.Collections.emptyList;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.CpasType;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 
 public class SampleIndexDocumentTestCase extends Assert
 {
@@ -83,7 +86,7 @@ public class SampleIndexDocumentTestCase extends Assert
         _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, _user);
         _subfolder = ContainerManager.createContainer(_project, "sub", _user);
         SampleTypeService.get().createSampleType(_project, _user, PARENT_TYPE, null, List.of(new GWTPropertyDescriptor("name", "string")), emptyList(), -1, -1, -1, -1, null, null);
-        insertSamples(_project, PARENT_TYPE, List.of(CaseInsensitiveHashMap.of("name", "P1"), CaseInsensitiveHashMap.of("name", "P2")));
+        insertSamples(_project, PARENT_TYPE, List.of(CaseInsensitiveHashMap.of(Name.name(), "P1"), CaseInsensitiveHashMap.of(Name.name(), "P2")));
     }
 
     @After
@@ -107,12 +110,12 @@ public class SampleIndexDocumentTestCase extends Assert
         ExpSampleType st = createSampleType("IndexSamples");
         long p1 = sample(PARENT_TYPE, "P1").getRowId();
         insertSamples(_project, st.getName(), List.of(
-                row("name", "S1", "TextField", "alpha", "NoteField", "first line\nsecond line", "IntField", 41,
-                        "ParentRef", p1, "MaterialInputs/" + PARENT_TYPE, "P1", "Alias", "alias-one"),
-                CaseInsensitiveHashMap.of("name", "S2", "TextField", "beta", "IntField", 42)
+                row(Name.name(), "S1", "TextField", "alpha", "NoteField", "first line\nsecond line", "IntField", 41,
+                        "ParentRef", p1, "MaterialInputs/" + PARENT_TYPE, "P1", Alias.name(), "alias-one"),
+                CaseInsensitiveHashMap.of(Name.name(), "S2", "TextField", "beta", "IntField", 42)
         ));
         insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of("AliquotedFrom", "S1")));
-        insertSamples(_subfolder, st.getName(), List.of(CaseInsensitiveHashMap.of("name", "S3", "TextField", "gamma")));
+        insertSamples(_subfolder, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "S3", "TextField", "gamma")));
 
         List<Material> materials = getMaterials(st);
         assertEquals("Samples of " + st.getName(), 4, materials.size());
@@ -143,7 +146,7 @@ public class SampleIndexDocumentTestCase extends Assert
     public void testDeletedSampleHasNoDocument() throws Exception
     {
         ExpSampleType st = createSampleType("IndexDeleted");
-        insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of("name", "D1"), CaseInsensitiveHashMap.of("name", "D2")));
+        insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "D1"), CaseInsensitiveHashMap.of(Name.name(), "D2")));
         List<Material> materials = getIndexMaterials(st);
         ExpMaterial d1 = sample(st.getName(), "D1");
         sample(st.getName(), "D2").delete(_user);
@@ -156,7 +159,7 @@ public class SampleIndexDocumentTestCase extends Assert
     public void testFailedValuesQueryStillIndexes() throws Exception
     {
         ExpSampleType st = createSampleType("IndexBrokenColumn");
-        insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of("name", "B1", "TextField", "alpha"), CaseInsensitiveHashMap.of("name", "B2", "TextField", "beta")));
+        insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "B1", "TextField", "alpha"), CaseInsensitiveHashMap.of(Name.name(), "B2", "TextField", "beta")));
         List<Material> materials = getIndexMaterials(st);
 
         // A renamed storage column makes the type's query fail for every row, as a broken lookup would
@@ -192,7 +195,7 @@ public class SampleIndexDocumentTestCase extends Assert
     public void testChangeFromAnotherFolderKeepsValues() throws Exception
     {
         ExpSampleType st = createSampleType("IndexCrossFolder");
-        insertSamples(_subfolder, st.getName(), List.of(CaseInsensitiveHashMap.of("name", "X1", "TextField", "delta")));
+        insertSamples(_subfolder, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "X1", "TextField", "delta")));
         ExpMaterial x1 = sample(_subfolder, st.getName(), "X1");
 
         List<WebdavResource> docs = new ArrayList<>();
@@ -232,7 +235,7 @@ public class SampleIndexDocumentTestCase extends Assert
         // Never committed, so neither the samples nor these writes reach the background indexer
         try (DbScope.Transaction ignored = scope.ensureTransaction())
         {
-            insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of("name", "L1"), CaseInsensitiveHashMap.of("name", "L2")));
+            insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "L1"), CaseInsensitiveHashMap.of(Name.name(), "L2")));
             long l1 = sample(st.getName(), "L1").getRowId();
             long l2 = sample(st.getName(), "L2").getRowId();
             long t = 1_800_000_000_123L;
@@ -304,14 +307,14 @@ public class SampleIndexDocumentTestCase extends Assert
 
     private static List<Material> getMaterials(ExpSampleType st)
     {
-        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), new SimpleFilter(FieldKey.fromParts("CpasType"), st.getLSID()), new Sort("RowId"))
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), new SimpleFilter(CpasType.fieldKey(), st.getLSID()), new Sort(RowId.name()))
                 .getArrayList(Material.class);
     }
 
     private static List<Material> getIndexMaterials(ExpSampleType st)
     {
         return ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), ExpMaterialImpl.INDEX_COLUMNS,
-                new SimpleFilter(FieldKey.fromParts("CpasType"), st.getLSID()), new Sort("RowId")));
+                new SimpleFilter(CpasType.fieldKey(), st.getLSID()), new Sort(RowId.name())));
     }
 
     private static void assertTokens(Map<String, Object> doc, SearchService.PROPERTY property, String... expected)
