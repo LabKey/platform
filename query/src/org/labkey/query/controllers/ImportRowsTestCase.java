@@ -15,7 +15,6 @@
  */
 package org.labkey.query.controllers;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,19 +29,25 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.DetailsURL;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockPart;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.List;
@@ -76,6 +81,8 @@ public class ImportRowsTestCase extends Assert
         domain.addProperty(new PropertyStorageSpec("Name", JdbcType.VARCHAR));
         domain.addProperty(new PropertyStorageSpec("Description", JdbcType.VARCHAR));
         domain.addProperty(new PropertyStorageSpec("Volume", JdbcType.INTEGER));
+        DomainProperty attachment = domain.addProperty(new PropertyStorageSpec("Attachment", JdbcType.VARCHAR));
+        attachment.setType(PropertyService.get().getType(JunitUtil.getTestContainer(), PropertyType.ATTACHMENT.getXmlName()));
         ld.setKeyName("Name");
         ld.save(user);
     }
@@ -114,6 +121,21 @@ public class ImportRowsTestCase extends Assert
         assertValue("S1", "Description", null);
         assertValue("S2", "Description", "x");
         assertValue("S2", "Volume", 5);
+    }
+
+    // Clients send File values as separate multipart parts, so a row with a file omits that key from its JSON
+    @Test
+    public void testImportRowsWithPartialAttachments() throws Exception
+    {
+        MockPart file = new MockPart("Attachment::0::0", "attachment.txt", "attachment content".getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
+
+        MockHttpServletResponse response = postSaveRows("importRows", List.of(
+                Map.of("Name", "S1"),
+                Map.of("Name", "S2", "Attachment", JSONObject.NULL)), file);
+        assertEquals("importRows with attachments failed: " + response.getContentAsString(), HttpServletResponse.SC_OK, response.getStatus());
+
+        assertValue("S1", "Attachment", "attachment.txt");
+        assertValue("S2", "Attachment", null);
     }
 
     @Test
@@ -170,6 +192,11 @@ public class ImportRowsTestCase extends Assert
 
     private MockHttpServletResponse postSaveRows(String commandName, List<Map<String, Object>> rows) throws Exception
     {
+        return postSaveRows(commandName, rows, null);
+    }
+
+    private MockHttpServletResponse postSaveRows(String commandName, List<Map<String, Object>> rows, @Nullable MockPart file) throws Exception
+    {
         JSONObject command = new JSONObject();
         command.put("command", commandName);
         command.put("schemaName", "lists");
@@ -179,9 +206,17 @@ public class ImportRowsTestCase extends Assert
         JSONObject json = new JSONObject();
         json.put("commands", List.of(command));
 
-        HttpServletRequest request = ViewServlet.mockRequest(RequestMethod.POST.name(),
-                DetailsURL.fromString("/query/saveRows.view").copy(JunitUtil.getTestContainer()).getActionURL(), TestContext.get().getUser(),
-                Map.of("Content-Type", "application/json"), json.toString());
+        ActionURL url = new ActionURL(QueryController.SaveRowsAction.class, JunitUtil.getTestContainer());
+        User user = TestContext.get().getUser();
+        if (null == file)
+            return ViewServlet.POST(url, user, Map.of("Content-Type", "application/json"), json.toString());
+
+        // Mirror @labkey/api: rows travel in a "json" form field, files in their own parts. The mock request reads
+        // parameters only from its URL, so "json" also goes there to stand in for the container's form-field parsing.
+        url.addParameter("json", json.toString());
+        MockHttpServletRequest request = (MockHttpServletRequest) ViewServlet.mockRequest(RequestMethod.POST.name(), url, user, Map.of("Content-Type", "multipart/form-data; boundary=ImportRowsTestCase"), null);
+        request.addPart(new MockPart("json", json.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
+        request.addPart(file);
         return ViewServlet.mockDispatch(request, null);
     }
 

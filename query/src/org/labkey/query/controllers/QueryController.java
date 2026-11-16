@@ -4825,15 +4825,12 @@ public class QueryController extends SpringActionController
                     boolean conflictingCasing = false;
                     for (String key : jsonObj.keySet())
                     {
-                        String spelling = keySpellings.get(key);
-                        if (null == spelling)
-                        {
-                            spelling = key;
-                            keySpellings.put(key, key);
-                        }
                         Object value = jsonObj.get(key);
-                        conflictingCasing |= rowMap.put(spelling, JSONObject.NULL == value ? null : value) != null;
+                        conflictingCasing |= rowMap.put(getKeySpelling(keySpellings, key), JSONObject.NULL == value ? null : value) != null;
                     }
+                    // Clients send files as separate parts, so they must be in the row before comparing its fields
+                    if (allowRowAttachments())
+                        addRowAttachments(rowMap, idx, commandIndex, keySpellings);
                     if (requireSquareRows)
                     {
                         Set<String> rowKeys = new HashSet<>(rowMap.keySet());
@@ -4853,8 +4850,6 @@ public class QueryController extends SpringActionController
                         // Issue 52616; GH Issue 1332: log once per request, not once per conflicting row
                         LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
                     }
-                    if (allowRowAttachments())
-                        addRowAttachments(rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
@@ -5034,7 +5029,18 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
+        private static String getKeySpelling(CaseInsensitiveHashMap<String> keySpellings, String key)
+        {
+            String spelling = keySpellings.get(key);
+            if (null == spelling)
+            {
+                spelling = key;
+                keySpellings.put(key, key);
+            }
+            return spelling;
+        }
+
+        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex, CaseInsensitiveHashMap<String> keySpellings)
         {
             if (getFileMap() != null)
             {
@@ -5075,7 +5081,7 @@ public class QueryController extends SpringActionController
                     }
 
                     SpringAttachmentFile file = new SpringAttachmentFile(fileEntry.getValue());
-                    rowMap.put(fieldKey, file.isEmpty() ? null : file);
+                    rowMap.put(getKeySpelling(keySpellings, fieldKey), file.isEmpty() ? null : file);
                 }
             }
         }
