@@ -177,11 +177,11 @@ public class Portal implements ModuleChangeListener
         // Select all containers that are affected
         TableInfo webparts = Portal.getTableInfoPortalWebParts();
         SQLFragment where = filter.getSQLFragment(webparts, "WP");
-        SQLFragment selectContainers = new SQLFragment("SELECT DISTINCT Container FROM ").append(Portal.getTableInfoPortalWebParts()).unsafeAppend(" ").append(where);
+        SQLFragment selectContainers = SQLFragment.unsafe("SELECT DISTINCT Container FROM ").append(Portal.getTableInfoPortalWebParts()).unsafeAppend(" ").append(where);
         Collection<String> containersToClear = new SqlSelector(Portal.getSchema(), selectContainers).getCollection(String.class);
 
         // Clear the properties
-        SQLFragment update = new SQLFragment("UPDATE ");
+        SQLFragment update = SQLFragment.unsafe("UPDATE ");
         update.append(Portal.getTableInfoPortalWebParts());
         update.unsafeAppend(" SET Properties = NULL ");
         update.append(where);
@@ -207,7 +207,7 @@ public class Portal implements ModuleChangeListener
     {
         return metrics ->
         {
-            SQLFragment sql = new SQLFragment("SELECT Name, COUNT(*) AS C FROM ").
+            SQLFragment sql = SQLFragment.unsafe("SELECT Name, COUNT(*) AS C FROM ").
                     append(getTableInfoPortalWebParts(), "pwp").
                     unsafeAppend(" GROUP BY Name");
 
@@ -1015,7 +1015,7 @@ public class Portal implements ModuleChangeListener
             insertColumns.add("Properties");
             insertValues.add(p.getProperties());
 
-            SQLFragment insertSQL = new SQLFragment("INSERT INTO ")
+            SQLFragment insertSQL = SQLFragment.unsafe("INSERT INTO ")
                     .append(portalTable)
                     .unsafeAppend("\n(");
             String comma = "";
@@ -1045,10 +1045,10 @@ public class Portal implements ModuleChangeListener
         {
             // Either we're only updating or insert found that pageId or index is already there.
             // If index is already there for a different page, update will update other fields, but not index.
-            SQLFragment updateSQL = new SQLFragment("UPDATE ");
+            SQLFragment updateSQL = SQLFragment.unsafe("UPDATE ");
             updateSQL.append(portalTable);
 
-            SQLFragment indexSQL = new SQLFragment("CASE WHEN ? NOT IN\n(SELECT ");
+            SQLFragment indexSQL = SQLFragment.unsafe("CASE WHEN ? NOT IN\n(SELECT ");
             indexSQL.appendIdentifier(columnIndex.getSelectIdentifier()).unsafeAppend(" FROM ")
                     .add(p.getIndex())
                     .append(portalTable)

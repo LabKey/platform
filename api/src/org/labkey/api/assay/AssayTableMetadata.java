@@ -210,12 +210,12 @@ public class AssayTableMetadata
                     onBatch ? AssayProtocolSchema.BATCHES_TABLE_NAME : AssayProtocolSchema.RUNS_TABLE_NAME,
                     assayDataTable.getContainerFilter());
 
-            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ");
-            sqlf.append(targetStudyFieldKey.getName());
+            SQLFragment sqlf = SQLFragment.unsafe("SELECT DISTINCT ");
+            sqlf.appendIdentifier(targetStudyFieldKey.getName());
             sqlf.unsafeAppend(" FROM\n");
             sqlf.unsafeAppend(" __TARGET_STUDY_TABLE\n");
             sqlf.unsafeAppend("WHERE RowId IN (\n");
-            sqlf.unsafeAppend("  SELECT DISTINCT X.").append(targetStudyFieldKey.getTable().toSQLString());
+            sqlf.unsafeAppend("  SELECT DISTINCT X.").appendIdentifier(targetStudyFieldKey.getTable().toSQLString());
             sqlf.unsafeAppend("  FROM __DATA X\n");
             sqlf.unsafeAppend(")\n");
 
@@ -238,7 +238,7 @@ public class AssayTableMetadata
         else
         {
             // TargetStudy on results
-            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ");
+            SQLFragment sqlf = SQLFragment.unsafe("SELECT DISTINCT ");
             sqlf.append(targetStudyCol.getValueSql("x"));
             sqlf.unsafeAppend("\nFROM ");
             sqlf.append(assayDataTable.getFromSQL("x"));

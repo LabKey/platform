@@ -347,8 +347,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         checkLocked();
         if (condition.isEmpty())
             return;
-        SQLFragment tmp = new SQLFragment();
-        tmp.unsafeAppend("(").append(condition.getSQL()).unsafeAppend(")");
         _filter.addWhereClause(condition, fieldKeys);
     }
 
@@ -448,7 +446,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
         frag.unsafeAppend(" = ");
-        frag.append(Integer.toString(value));
+        frag.appendValue(value);
         addCondition(frag);
     }
 
@@ -459,7 +457,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
         frag.unsafeAppend(" = ");
-        frag.append(Float.toString(value));
+        frag.appendValue(value);
         addCondition(frag);
     }
 
@@ -525,7 +523,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             return getFromTable().getFromSQL(alias);
 
         // SELECT
-        SQLFragment ret = new SQLFragment("(SELECT ").append(getInnerFromColumns()).unsafeAppend(" FROM ");
+        SQLFragment ret = SQLFragment.unsafe("(SELECT ").append(getInnerFromColumns()).unsafeAppend(" FROM ");
 
         // FROM
         //   NOTE some filters depend on knowing the name of this table in the simple case, so don't alias it

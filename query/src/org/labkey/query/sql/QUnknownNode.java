@@ -38,7 +38,7 @@ public class QUnknownNode extends QNode implements SupportsAnnotations
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(getTokenText());
+        builder.appendSourceText(getTokenText());
     }
 
     // QUnknownNode is used to represent a table aka RANGE in the FROM list, need annotations for that

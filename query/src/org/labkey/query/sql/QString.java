@@ -56,7 +56,7 @@ public class QString extends QExpr implements IConstant
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(getTokenText());
+        builder.appendSourceText(getTokenText());
     }
 
     @Override

@@ -254,17 +254,31 @@ public class MailHelper
             // Check for configuration conflict
             if (_configurationConflict)
             {
+                MailMetrics.notConfigured();
                 throw new ConfigurationException("Multiple email transport methods are configured. Please configure only one email transport method.");
             }
 
             // Check if any provider is configured
-            if (_activeProvider == null)
+            EmailTransportProvider provider = _activeProvider;
+            if (provider == null)
             {
+                MailMetrics.notConfigured();
                 throw new ConfigurationException(noTransportConfiguredMessage());
             }
 
             // Send via the active provider
-            _activeProvider.send(m);
+            try (MailMetrics.Send metric = MailMetrics.startSend(provider.getName(), m))
+            {
+                try
+                {
+                    provider.send(m);
+                }
+                catch (MessagingException | RuntimeException e)
+                {
+                    metric.failed(e);
+                    throw e;
+                }
+            }
             addAuditEvent(user, c, m);
         }
         catch (MessagingException e)
@@ -559,6 +573,14 @@ public class MailHelper
 
         @Override
         public void run()
+        {
+            try (MailMetrics.Batch ignored = MailMetrics.startBatch(MailMetrics.Origin.BULK))
+            {
+                sendAll();
+            }
+        }
+
+        private void sendAll()
         {
             for (Map.Entry<Collection<String>, MimeMessage> entry : _messageMap.entrySet())
             {

@@ -42,12 +42,12 @@ public class LookAndFeelResourceType implements AttachmentParentType
     public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
         // Keep in sync with CoreMigrationSchemaHandler.copyAttachments()
-        sql.append(parentColumn).unsafeAppend(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(") AND (");
-        sql.append(documentNameColumn).unsafeAppend(" IN (?, ?) OR ");
+        sql.appendIdentifier(parentColumn).unsafeAppend(" IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(") AND (");
+        sql.appendIdentifier(documentNameColumn).unsafeAppend(" IN (?, ?) OR ");
         sql.add(AttachmentCache.FAVICON_FILE_NAME);
         sql.add(AttachmentCache.STYLESHEET_FILE_NAME);
-        sql.append(documentNameColumn).append(" LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ");
-        sql.append(documentNameColumn).append(" LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
+        sql.appendIdentifier(documentNameColumn).unsafeAppend(" LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ");
+        sql.appendIdentifier(documentNameColumn).unsafeAppend(" LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
     }
 
     @Override

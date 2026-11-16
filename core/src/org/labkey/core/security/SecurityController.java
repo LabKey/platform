@@ -1460,12 +1460,18 @@ public class SecurityController extends SpringActionController
             final String sourceUser = form.getCloneUser();
             if (sourceUser != null && !sourceUser.isEmpty())
             {
+                // Cloning copies assignments in every container, so require site-wide user management (site & app admins)
+                if (!getUser().hasRootPermission(UserManagementPermission.class))
+                    throw new UnauthorizedException("Only site and application administrators can clone permissions");
+
                 try
                 {
                     final ValidEmail emailToClone = new ValidEmail(sourceUser);
                     userToClone = UserManager.getUser(emailToClone);
                     if (userToClone == null)
                         errors.addError(new LabKeyError("Failed to clone user permissions " + emailToClone + ": User email does not exist in the system"));
+                    else if (userToClone.hasPrivilegedRole() && !getUser().hasSiteAdminPermission())
+                        errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users assigned a privileged role."));
                 }
                 catch (InvalidEmailException e)
                 {
@@ -1515,19 +1521,12 @@ public class SecurityController extends SpringActionController
                     }
                     else if (userToClone != null)
                     {
-                        if (userToClone.hasPrivilegedRole() && !getUser().hasSiteAdminPermission())
+                        try (Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
                         {
-                            errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users assigned a privileged role."));
-                        }
-                        else
-                        {
-                            try (Transaction transaction = DbScope.getLabKeyScope().ensureTransaction())
-                            {
-                                audit(newUser, "New user " + newUser.getEmail() + " had group memberships and role assignments cloned from user " + userToClone.getEmail());
-                                clonePermissions(userToClone, UserManager.getUser(email), getUser().hasSiteAdminPermission());
-                                result = HtmlStringBuilder.of(result).append(" Group memberships and role assignments were cloned from " + userToClone.getEmail() + ".").getHtmlString();
-                                transaction.commit();
-                            }
+                            audit(newUser, "New user " + newUser.getEmail() + " had group memberships and role assignments cloned from user " + userToClone.getEmail());
+                            clonePermissions(userToClone, UserManager.getUser(email), getUser().hasSiteAdminPermission());
+                            result = HtmlStringBuilder.of(result).append(" Group memberships and role assignments were cloned from " + userToClone.getEmail() + ".").getHtmlString();
+                            transaction.commit();
                         }
                     }
                     form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, newUser.getUserId(), h(newUser.getEmail()))));
@@ -2502,7 +2501,7 @@ public class SecurityController extends SpringActionController
                 new FolderAccessAction()
             );
 
-            // @RequiresPermission(UserManagementPermission.class)
+            // @RequiresPermission(AddUserPermission.class) or @RequiresPermission(UpdateUserPermission.class)
             assertForUserPermissions(user,
                 controller.new AddUsersAction(),
                 new ShowResetEmailAction(),

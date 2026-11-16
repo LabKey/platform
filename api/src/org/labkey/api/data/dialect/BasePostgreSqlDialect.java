@@ -344,7 +344,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     protected SQLFragment doExecute(SQLFragment qualifiedProcName, SQLFragment parameters)
     {
-        SQLFragment select = new SQLFragment("SELECT ");
+        SQLFragment select = SQLFragment.unsafe("SELECT ");
         select.append(qualifiedProcName);
         select.unsafeAppend("(");
         select.append(parameters);
@@ -424,7 +424,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch)
     {
-        SQLFragment result = new SQLFragment("POSITION(");
+        SQLFragment result = SQLFragment.unsafe("POSITION(");
         result.append(toFind);
         result.unsafeAppend(" IN ");
         result.append(toSearch);
@@ -441,7 +441,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length)
     {
-        return new SQLFragment("substr(").append(s).unsafeAppend(", ").append(start).unsafeAppend(", ").append(length).unsafeAppend(")");
+        return SQLFragment.unsafe("substr(").append(s).unsafeAppend(", ").append(start).unsafeAppend(", ").append(length).unsafeAppend(")");
     }
 
     @Override
@@ -529,11 +529,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             case Calendar.MONTH:
             {
-                return new SQLFragment("((EXTRACT(YEAR FROM ").append(value1).unsafeAppend(") - EXTRACT(YEAR FROM ").append(value2).unsafeAppend(")) * 12 + EXTRACT(MONTH FROM ").append(value1).unsafeAppend(") - EXTRACT(MONTH FROM ").append(value2).unsafeAppend("))::INT");
+                return SQLFragment.unsafe("((EXTRACT(YEAR FROM ").append(value1).unsafeAppend(") - EXTRACT(YEAR FROM ").append(value2).unsafeAppend(")) * 12 + EXTRACT(MONTH FROM ").append(value1).unsafeAppend(") - EXTRACT(MONTH FROM ").append(value2).unsafeAppend("))::INT");
             }
             case Calendar.YEAR:
             {
-                return new SQLFragment("(EXTRACT(YEAR FROM ").append(value1).unsafeAppend(") - EXTRACT(YEAR FROM ").append(value2).unsafeAppend("))::INT");
+                return SQLFragment.unsafe("(EXTRACT(YEAR FROM ").append(value1).unsafeAppend(") - EXTRACT(YEAR FROM ").append(value2).unsafeAppend("))::INT");
             }
             case Calendar.DATE:
             {
@@ -565,7 +565,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 throw new IllegalArgumentException("Unsupported time unit: " + part);
             }
         }
-        return new SQLFragment("(EXTRACT(EPOCH FROM (").append(value1).unsafeAppend(" - ").append(value2).unsafeAppend(")) / ").append(String.valueOf(divideBy)).unsafeAppend(")::INT");
+        return SQLFragment.unsafe("(EXTRACT(EPOCH FROM (").append(value1).unsafeAppend(" - ").append(value2).unsafeAppend(")) / ").appendValue(divideBy).unsafeAppend(")::INT");
     }
 
     @Override
@@ -680,13 +680,13 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     protected SQLFragment getDatabaseMaintenanceSql()
     {
-        return new SQLFragment("VACUUM ANALYZE");
+        return SQLFragment.unsafe("VACUUM ANALYZE");
     }
 
     @Override
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
     {
-        SQLFragment ret = new SQLFragment(" POSITION(");
+        SQLFragment ret = SQLFragment.unsafe(" POSITION(");
         ret.append(littleString);
         ret.unsafeAppend(" IN ");
         ret.append(bigString);
@@ -697,14 +697,14 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex)
     {
-        SQLFragment tmp = new SQLFragment("position(");
+        SQLFragment tmp = SQLFragment.unsafe("position(");
         tmp.append(littleString);
         tmp.unsafeAppend(" in substring(");
         tmp.append(bigString);
         tmp.unsafeAppend(" from ");
         tmp.append(startIndex);
         tmp.unsafeAppend("))");
-        SQLFragment ret = new SQLFragment("((");
+        SQLFragment ret = SQLFragment.unsafe("((");
         ret.append(startIndex);
         // TODO: code review this: I believe that this -1 is necessary to produce the correct results.
         ret.unsafeAppend(" - 1)");
@@ -786,7 +786,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
 
         // Get the parameters for the function and also a placeholder for the return if this function returns a resultset
-        SQLFragment sqlf = new SQLFragment(
+        SQLFragment sqlf = SQLFragment.unsafe(
                 "SELECT p.parameter_name, p.data_type, p.parameter_mode, p.ordinal_position FROM information_schema.parameters p" +
                         " JOIN information_schema.routines r ON p.specific_schema = r.specific_schema AND p.specific_name = r.specific_name " +
                         " WHERE p.specific_schema ILIKE ? AND r.routine_name ILIKE ? " +
@@ -925,14 +925,14 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment isNumericExpr(SQLFragment expression)
     {
         // 1/0, matching what SQL Server's ISNUMERIC() passthrough returns.
-        return new SQLFragment("(CASE WHEN CAST((").append(expression)
+        return SQLFragment.unsafe("(CASE WHEN CAST((").append(expression)
                 .unsafeAppend(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
     }
 
     @Override
     public SQLFragment weekIsoExpr(SQLFragment expression)
     {
-        return new SQLFragment("CAST(EXTRACT(week FROM (").append(expression).unsafeAppend(")) AS INTEGER)");
+        return SQLFragment.unsafe("CAST(EXTRACT(week FROM (").append(expression).unsafeAppend(")) AS INTEGER)");
     }
 
     @Override
@@ -940,7 +940,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         // Week 1 is whatever week contains Jan 1, and weeks start Sunday: (day of year + Sunday-based weekday of Jan 1 - 1) / 7, rounded down, plus one.
         // The VALUES subquery names the argument so it is evaluated once; spelled out twice, a volatile argument could read either side of midnight.
-        return new SQLFragment("(SELECT CAST(FLOOR((EXTRACT(doy FROM v.d) + EXTRACT(dow FROM date_trunc('year', v.d)) - 1) / 7) + 1 AS INTEGER) FROM (VALUES (CAST(")
+        return SQLFragment.unsafe("(SELECT CAST(FLOOR((EXTRACT(doy FROM v.d) + EXTRACT(dow FROM date_trunc('year', v.d)) - 1) / 7) + 1 AS INTEGER) FROM (VALUES (CAST(")
                 .append(expression)
                 .unsafeAppend(" AS TIMESTAMP))) AS v(d))");
     }
@@ -1086,7 +1086,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment getISOFormat(SQLFragment date)
     {
         // http://www.postgresql.org/docs/9.1/static/functions-formatting.html
-        SQLFragment iso = new SQLFragment("to_char(CAST((");
+        SQLFragment iso = SQLFragment.unsafe("to_char(CAST((");
         iso.append(date);
         iso.unsafeAppend(") AS TIMESTAMP), 'YYYY-MM-DD HH24:MI:SS.MS')");
         return iso;
@@ -1118,10 +1118,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         String nativeFn = passthroughFn.get(fn);
         if (null != nativeFn)
             return formatFunction(call, nativeFn, arguments);
-        else if (fn.equalsIgnoreCase("timestampdiff"))
-            return timestampdiff(arguments);
-        else
-            return super.formatJdbcFunction(fn, arguments);
+        if (fn.equalsIgnoreCase("timestampdiff"))
+            throw new UnsupportedOperationException("pgjdbc's {fn timestampdiff} swaps bound parameters; generate native SQL instead");
+        return super.formatJdbcFunction(fn, arguments);
     }
 
     @Override
@@ -1136,29 +1135,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         return true;
     }
 
-
-    /* 25146: timestampdiff() inconsistent between sql server and postgres
-     * As of dec/2015 {fn timestampdiff()} is not implemented correctly in pgjdbc
-     */
-    private SQLFragment timestampdiff(SQLFragment... arguments)
-    {
-        if (arguments[0].getSQL().equals("SQL_TSI_DAY"))
-            return super.formatJdbcFunction("timestampdiff", arguments);
-
-        SQLFragment epoch = new SQLFragment("EXTRACT(epoch FROM ");
-        epoch.unsafeAppend("(").append(arguments[2]).unsafeAppend(") - (").append(arguments[1]).unsafeAppend("))");
-
-        if (arguments[0].getSQL().equals("SQL_TSI_SECOND"))
-            return epoch;
-
-        if (arguments[0].getSQL().equals("SQL_TSI_MINUTE"))
-            return epoch.unsafeAppend("/60.0");
-
-        if (arguments[0].getSQL().equals("SQL_TSI_HOUR"))
-            return epoch.unsafeAppend("/3600.0");
-
-        return super.formatJdbcFunction("timestampdiff", arguments);
-    }
 
     @Override
     public boolean supportsBatchGeneratedKeys()

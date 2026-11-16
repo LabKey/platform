@@ -362,7 +362,11 @@ public abstract class SqlDialect
     public final @Nullable SQLFragment getSqlTypeNameAsSql(JdbcType type)
     {
         String sql = getSqlTypeName(type);
-        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+        if (null == sql)
+            return null;
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(sql);
+        return ret;
     }
 
     // Override for alternative behavior
@@ -375,14 +379,20 @@ public abstract class SqlDialect
     public final @Nullable SQLFragment getSqlCastTypeNameAsSql(JdbcType type)
     {
         String sql = getSqlCastTypeName(type);
-        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+        if (null == sql)
+            return null;
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(sql);
+        return ret;
     }
 
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
     public final SQLFragment getSqlTypeNameAsSql(PropertyStorageSpec prop)
     {
-        return new SQLFragment().setSqlUnsafe(getSqlTypeName(prop));
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getSqlTypeName(prop));
+        return ret;
     }
 
     protected @Nullable SQLFragment getDatabaseMaintenanceSql()
@@ -619,7 +629,7 @@ public abstract class SqlDialect
         String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
         String escapeToken = " ESCAPE '" + escapeChar + "'";
         sql.unsafeAppend(" ")
-            .append(getCaseInsensitiveLikeOperator())
+            .append(getCaseInsensitiveLikeOperatorAsSql())
             .unsafeAppend(" ")
             .appendValue(prefixLike)
             .append(escapeToken);
@@ -725,7 +735,9 @@ public abstract class SqlDialect
 
     public final SQLFragment getCaseInsensitiveLikeOperatorAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getCaseInsensitiveLikeOperator());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getCaseInsensitiveLikeOperator());
+        return ret;
     }
 
     public abstract String getVarcharLengthFunction();
@@ -847,28 +859,36 @@ public abstract class SqlDialect
 
     public final SQLFragment getDefaultDateTimeDataTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getDefaultDateTimeDataType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getDefaultDateTimeDataType());
+        return ret;
     }
 
     public abstract String getUniqueIdentType();
 
     public final SQLFragment getUniqueIdentTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getUniqueIdentType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getUniqueIdentType());
+        return ret;
     }
 
     public abstract String getGuidType();
 
     public final SQLFragment getGuidTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getGuidType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getGuidType());
+        return ret;
     }
 
     public abstract String getLsidType();
 
     public final SQLFragment getLsidTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getLsidType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getLsidType());
+        return ret;
     }
 
     public abstract String getTempTableKeyword();
@@ -900,7 +920,9 @@ public abstract class SqlDialect
 
     public final SQLFragment getDatePartAsSql(int part, String value)
     {
-        return new SQLFragment().setSqlUnsafe(getDatePart(part, value));
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getDatePart(part, value));
+        return ret;
     }
 
     public SQLFragment getDatePart(int part, SQLFragment value)
@@ -1052,7 +1074,7 @@ public abstract class SqlDialect
     {
         // Special case "*"... otherwise, just makeLegalIdentifier()
         if ("*".equals(columnName))
-            return new SQLFragment("*");
+            return SQLFragment.unsafe("*");
         else
             return new SQLFragment().appendIdentifier(makeLegalIdentifier(columnName));
     }
@@ -1069,7 +1091,7 @@ public abstract class SqlDialect
                 var optScope = DbScope.getDbScopesToTest().stream().filter(s -> s.getSqlDialect().getClass() == me.getClass()).findFirst();
                 if (optScope.isPresent())
                 {
-                    SQLFragment sql = new SQLFragment("SELECT NULL AS ").appendIdentifier(id);
+                    SQLFragment sql = SQLFragment.unsafe("SELECT NULL AS ").appendIdentifier(id);
                     try (var results = new SqlSelector(optScope.get(), sql).getResultSet(false))
                     {
                         assert id.getId().equals(results.getMetaData().getColumnName(1));
@@ -1671,7 +1693,9 @@ public abstract class SqlDialect
 
     public final SQLFragment getBooleanDataTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getBooleanDataType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getBooleanDataType());
+        return ret;
     }
 
     public String getBooleanTRUE()
@@ -1693,7 +1717,9 @@ public abstract class SqlDialect
 
     public final SQLFragment getBinaryDataTypeAsSql()
     {
-        return new SQLFragment().setSqlUnsafe(getBinaryDataType());
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getBinaryDataType());
+        return ret;
     }
 
     // We need to determine the database name from a data source, so we've implemented a helper that parses the JDBC connection
@@ -1753,7 +1779,7 @@ public abstract class SqlDialect
             schemaName = objectName.substring(0,objectName.indexOf("."));
             objectName = objectName.substring(objectName.indexOf(".")+1);
         }
-        SQLFragment sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", new SQLFragment("?, ?, ?, ?", objectName, schemaName, objectType, subObjectName));
+        SQLFragment sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", SQLFragment.unsafe("?, ?, ?, ?", objectName, schemaName, objectType, subObjectName));
         new SqlExecutor(schema).execute(sql);
     }
 
@@ -2094,7 +2120,7 @@ public abstract class SqlDialect
             SQLFragment ret = new SQLFragment();
             ret.unsafeAppend("CAST(");
             ret.append(sql).unsafeAppend(" AS ");
-            ret.append(getSqlTypeName(from)).unsafeAppend("(36))");
+            ret.append(getSqlTypeNameAsSql(from)).unsafeAppend("(36))");
             return ret;
         }
         // let server do default conversion
@@ -2149,7 +2175,11 @@ public abstract class SqlDialect
     public final @Nullable SQLFragment getSqlTypeNameFromObjectAsSql(Object o)
     {
         String sql = getSqlTypeNameFromObject(o);
-        return null == sql ? null : new SQLFragment().setSqlUnsafe(sql);
+        if (null == sql)
+            return null;
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(sql);
+        return ret;
     }
 
     /**
@@ -2332,7 +2362,7 @@ public abstract class SqlDialect
     public boolean isTableExists(DbScope scope, String schema, String name)
     {
         /* Does not handle overloaded functions for dialects that support them (Postgres) */
-        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.tables WHERE UPPER(table_schema) = UPPER(?) AND UPPER(table_name) = UPPER(?)");
+        SQLFragment sqlf = SQLFragment.unsafe("SELECT 1 FROM information_schema.tables WHERE UPPER(table_schema) = UPPER(?) AND UPPER(table_name) = UPPER(?)");
         sqlf.add(schema);
         sqlf.add(name);
         return new SqlSelector(scope, sqlf).exists();
@@ -2340,7 +2370,7 @@ public abstract class SqlDialect
 
     public boolean hasTriggers(DbSchema scope, String schema, String tableName)
     {
-        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.triggers WHERE UPPER(event_object_schema) = UPPER(?) AND UPPER(event_object_table) = UPPER(?)");
+        SQLFragment sqlf = SQLFragment.unsafe("SELECT 1 FROM information_schema.triggers WHERE UPPER(event_object_schema) = UPPER(?) AND UPPER(event_object_table) = UPPER(?)");
         sqlf.add(schema);
         sqlf.add(tableName);
         return new SqlSelector(scope, sqlf).exists();
@@ -2369,7 +2399,7 @@ public abstract class SqlDialect
     public boolean isProcedureExists(DbScope scope, String schema, String name)
     {
         /* Does not handle overloaded functions for dialects that support them (Postgres) */
-        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM INFORMATION_SCHEMA.ROUTINES WHERE UPPER(specific_schema) = UPPER(?) AND UPPER(routine_name) = UPPER(?)");
+        SQLFragment sqlf = SQLFragment.unsafe("SELECT 1 FROM INFORMATION_SCHEMA.ROUTINES WHERE UPPER(specific_schema) = UPPER(?) AND UPPER(routine_name) = UPPER(?)");
         sqlf.add(schema);
         sqlf.add(name);
         return new SqlSelector(scope, sqlf).exists();
@@ -2683,25 +2713,25 @@ public abstract class SqlDialect
         {
             // quotes backslashes etc
             for (String v : Arrays.asList("", " ", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
-                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
+                testEquals(v, SQLFragment.unsafe("SELECT ").appendStringLiteral(v, d));
 
             // test things that look like postgres escapes
             //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE
             for (String v : Arrays.asList("\\b", "\\f", "\\n", "\\r", "\\t", "\\1", "\\22", "\\333", "\\xf", "\\x20", "\\1234", "\\U12345678"))
-                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
+                testEquals(v, SQLFragment.unsafe("SELECT ").appendStringLiteral(v, d));
         }
 
         @Test
         public void testLikeOperator()
         {
             String stringLiteralPrefix = d.isSqlServer() ? " N" : " ";
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'ABC%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ABC").toDebugString(d));
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a!%bc%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "a%bc").toDebugString(d));
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'%ab!_C' ESCAPE '!'", d.appendCaseInsensitiveEndsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ab_C").toDebugString(d));
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'%a![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C").toDebugString(d));
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a![b]C_' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C", null, "_").toDebugString(d));
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a!_![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C", "_", "%").toDebugString(d));
-            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a[_[[b]C!d%' ESCAPE '['", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C!d", "_", "%", '[').toDebugString(d));
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'ABC%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(SQLFragment.unsafe("SELECT * FROM A WHERE Name"), "ABC").toDebugString(d));
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a!%bc%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(SQLFragment.unsafe("SELECT * FROM A WHERE Name"), "a%bc").toDebugString(d));
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'%ab!_C' ESCAPE '!'", d.appendCaseInsensitiveEndsWith(SQLFragment.unsafe("SELECT * FROM A WHERE Name"), "ab_C").toDebugString(d));
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'%a![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(SQLFragment.unsafe("SELECT * FROM A WHERE Name"), "a[b]C").toDebugString(d));
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a![b]C_' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(SQLFragment.unsafe("SELECT * FROM A WHERE Name"), "a[b]C", null, "_").toDebugString(d));
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a!_![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(SQLFragment.unsafe("SELECT * FROM A WHERE Name"), "a_[b]C", "_", "%").toDebugString(d));
+            assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a[_[[b]C!d%' ESCAPE '['", d.appendCaseInsensitiveLikeClause(SQLFragment.unsafe("SELECT * FROM A WHERE Name"), "a_[b]C!d", "_", "%", '[').toDebugString(d));
         }
     }
 
@@ -2750,11 +2780,11 @@ public abstract class SqlDialect
             DbSchema core = CoreSchema.getInstance().getSchema();
 
             // Plain legal names are emitted bare (no behavior change), through both execute() and buildProcedureCall()
-            assertTrue(dialect.execute(core, "fn_dropifexists", new SQLFragment("?, ?, ?, ?")).getSQL().contains("core.fn_dropifexists"));
+            assertTrue(dialect.execute(core, "fn_dropifexists", SQLFragment.unsafe("?, ?, ?, ?")).getSQL().contains("core.fn_dropifexists"));
             assertTrue(dialect.buildProcedureCall(core.getName(), "fn_dropifexists", 0, false, false, scope).getSQL().contains("core.fn_dropifexists"));
 
             // Names with special characters are quoted and embedded quotes are doubled (cannot break out of the quoted identifier)
-            assertTrue(dialect.execute(core, "a\"b", new SQLFragment("?")).getSQL().contains("\"a\"\"b\""));
+            assertTrue(dialect.execute(core, "a\"b", SQLFragment.unsafe("?")).getSQL().contains("\"a\"\"b\""));
             assertTrue(dialect.buildProcedureCall(core.getName(), "weird name", 0, false, false, scope).getSQL().contains("\"weird name\""));
 
             // A reserved word is quoted
@@ -2764,7 +2794,7 @@ public abstract class SqlDialect
             assertTrue(dialect.buildProcedureCall("weird schema", "proc", 0, false, false, scope).getSQL().contains("\"weird schema\""));
 
             // Control characters are hard failures
-            assertThrows(IllegalArgumentException.class, () -> dialect.execute(core, "a\0b", new SQLFragment("?")));
+            assertThrows(IllegalArgumentException.class, () -> dialect.execute(core, "a\0b", SQLFragment.unsafe("?")));
             assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a\0b", 0, false, false, scope));
             // A dotted name is rejected: schema and procedure are separate parameters, so a '.' in a single component is an ambiguous schema-qualified reference
             assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a.b", 0, false, false, scope));

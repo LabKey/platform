@@ -20,12 +20,16 @@ import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.AIFeaturesStatus;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -37,10 +41,14 @@ import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.mock.web.MockHttpSession;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -105,6 +113,7 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
     Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
     String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
     String ENABLE_AI_FEATURES = "enableAIFeatures";
+    String ENABLE_LABKEY_ASSISTANT = "enableLabKeyAssistant";
 
     // Interface for MCP classes that we will "ingest" using Spring annotations. Provides a few helper methods.
     interface McpImpl
@@ -212,6 +221,95 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
 
     void close(HttpSession session, ChatClient chat);
 
+    int MAX_ISSUED_CONVERSATION_IDS = 16;
+
+    /** The chat holding an agent conversation's model memory. */
+    default ChatClient getConversationChat(HttpSession session, String agentName, GUID conversationId, Supplier<String> systemPromptSupplier, boolean createIfNotExists, @Nullable Set<String> toolNames)
+    {
+        return getChat(session, agentName + ":" + conversationId, systemPromptSupplier, createIfNotExists, toolNames);
+    }
+
+    /**
+     * Issues a new conversation id to this session for the named agent, closing that agent's oldest conversation past
+     * the limit.
+     */
+    default @NotNull GUID issueConversationId(HttpSession session, User user, String agentName)
+    {
+        GUID conversationId = new GUID();
+        GUID evicted = null;
+        Map<String, SequencedSet<GUID>> issued = getIssuedConversationIds(session);
+        synchronized (issued)
+        {
+            SequencedSet<GUID> ids = issued.computeIfAbsent(agentName, _ -> new LinkedHashSet<>());
+            ids.add(conversationId);
+            if (ids.size() > MAX_ISSUED_CONVERSATION_IDS)
+                evicted = ids.removeFirst();
+        }
+
+        if (null != evicted)
+            closeConversation(session, user, agentName, evicted);
+        return conversationId;
+    }
+
+    /** The agent that issued this conversation id to this session, or null if none did. */
+    default @Nullable String getIssuingAgentName(HttpSession session, GUID conversationId)
+    {
+        Map<String, SequencedSet<GUID>> issued = getIssuedConversationIds(session);
+        synchronized (issued)
+        {
+            return issued.entrySet().stream()
+                    .filter(e -> e.getValue().contains(conversationId))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(null);
+        }
+    }
+
+    /** The conversation id if this session was issued it by the named agent; never issues one. */
+    default @Nullable GUID resolveIssuedConversationId(HttpSession session, String agentName, @Nullable String supplied)
+    {
+        if (!GUID.isGUID(supplied))
+            return null;
+
+        // Only honor an id this agent previously issued this session. This prevents a same-session caller from
+        // splicing into another conversation by guessing or replaying a GUID.
+        GUID candidate = new GUID(supplied);
+        Map<String, SequencedSet<GUID>> issued = getIssuedConversationIds(session);
+        synchronized (issued)
+        {
+            SequencedSet<GUID> ids = issued.get(agentName);
+            return null != ids && ids.contains(candidate) ? candidate : null;
+        }
+    }
+
+    /** True while the model still holds this conversation's memory. */
+    default boolean isConversationOpen(HttpSession session, String agentName, GUID conversationId)
+    {
+        return null != getConversationChat(session, agentName, conversationId, () -> "", false, null);
+    }
+
+    /** Clears the model's memory, the issued id, and the display transcript. */
+    default void closeConversation(HttpSession session, User user, String agentName, GUID conversationId)
+    {
+        ChatClient chat = getConversationChat(session, agentName, conversationId, () -> "", false, null);
+        if (null != chat)
+            close(session, chat);
+        Map<String, SequencedSet<GUID>> issued = getIssuedConversationIds(session);
+        synchronized (issued)
+        {
+            SequencedSet<GUID> ids = issued.get(agentName);
+            if (null != ids)
+                ids.remove(conversationId);
+        }
+        ChatHistoryService.get().deleteChatHistory(session, user, conversationId);
+    }
+
+    /** Agent name to the conversation ids it issued, oldest first; synchronize on it. */
+    private static Map<String, SequencedSet<GUID>> getIssuedConversationIds(HttpSession session)
+    {
+        return SessionHelper.getAttribute(session, "issuedConversationIds", HashMap::new);
+    }
+
     record MessageResponse(String contentType, String text, HtmlString html) {}
 
     record VectorDocument(String id, String text, Map<String, Object> metadata) {}
@@ -263,5 +361,45 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
     default HttpView<Object> getAssistantStatusView()
     {
         return new HtmlView(HtmlString.of("LabKey Assistant features are not available."));
+    }
+
+    class TestCase extends Assert
+    {
+        private static final String AGENT = "TestAgent";
+
+        @Test
+        public void testResolveIssuedConversationId()
+        {
+            McpService svc = NoopMcpService.get();
+            HttpSession session = new MockHttpSession();
+            GUID issued = svc.issueConversationId(session, User.guest, AGENT);
+            GUID unknown = new GUID();
+
+            assertEquals(issued, svc.resolveIssuedConversationId(session, AGENT, issued.toString()));
+            assertNull("Another agent's id", svc.resolveIssuedConversationId(session, "OtherAgent", issued.toString()));
+            assertNull("Unknown id", svc.resolveIssuedConversationId(session, AGENT, unknown.toString()));
+            assertNull("Must never issue an id", svc.resolveIssuedConversationId(session, AGENT, unknown.toString()));
+            assertNull("Invalid id", svc.resolveIssuedConversationId(session, AGENT, "not-a-guid"));
+            assertNull("Missing id", svc.resolveIssuedConversationId(session, AGENT, null));
+
+            assertEquals(AGENT, svc.getIssuingAgentName(session, issued));
+            assertNull("Unknown id", svc.getIssuingAgentName(session, unknown));
+        }
+
+        @Test
+        public void testIssuedConversationIdLimit()
+        {
+            McpService svc = NoopMcpService.get();
+            HttpSession session = new MockHttpSession();
+            GUID oldest = svc.issueConversationId(session, User.guest, AGENT);
+            GUID otherAgent = svc.issueConversationId(session, User.guest, "OtherAgent");
+            for (int i = 0; i < MAX_ISSUED_CONVERSATION_IDS - 1; i++)
+                svc.issueConversationId(session, User.guest, AGENT);
+            GUID newest = svc.issueConversationId(session, User.guest, AGENT);
+
+            assertNull("Oldest id evicted", svc.resolveIssuedConversationId(session, AGENT, oldest.toString()));
+            assertNotNull("Newer id kept", svc.resolveIssuedConversationId(session, AGENT, newest.toString()));
+            assertEquals("Limit is per agent", otherAgent, svc.resolveIssuedConversationId(session, "OtherAgent", otherAgent.toString()));
+        }
     }
 }

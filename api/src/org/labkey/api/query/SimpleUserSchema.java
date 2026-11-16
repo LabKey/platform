@@ -195,6 +195,7 @@ public class SimpleUserSchema extends UserSchema
         protected ColumnInfo _objectUriCol;
         protected ColumnInfo _objectIdCol;
         protected Domain _domain;
+        private boolean _domainMissing;
         protected boolean _readOnly;
 
 
@@ -466,12 +467,17 @@ public class SimpleUserSchema extends UserSchema
             if (_objectUriCol == null)
                 return null;
 
+            // Property columns are built from the domain at init, so a domain created later can't apply to this table
+            if (_domainMissing && !forUpdate)
+                return null;
+
             if (_domain == null || (forUpdate && !_domain.isMutable()))
                 _domain = PropertyService.get().getDomain(getDomainContainer(), getDomainURI(), forUpdate);
 
             if (_domain != null && !forUpdate && _domain.isMutable())
                 _domain = PropertyService.get().getDomain(getDomainContainer(), getDomainURI(), forUpdate);
 
+            _domainMissing = _domain == null;
             return _domain;
         }
 

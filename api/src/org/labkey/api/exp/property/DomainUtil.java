@@ -153,8 +153,12 @@ public class DomainUtil
         duplicateLabel,
         labelVsFieldName,
         labelVsImportAlias,
-        labelVsReservedName
+        labelVsReservedName,
+        labelVsSystemField
     }
+
+    // GH Issue 1783: Sample Types surface this column as "Folder", leaving "Container" claimed only by a system import alias, so a field labeled "Container" outranks it and is overwritten with the row's container.
+    public static final Set<String> SYSTEM_FIELD_NAMES = Collections.unmodifiableSet(getNamesAndLabels(List.of("Container")));
 
     private DomainUtil()
     {
@@ -1013,10 +1017,10 @@ public class DomainUtil
                         {
                             var dialect = domainTable.getSchema().getSqlDialect();
                             DatabaseIdentifier columnId = p.getPropertyDescriptor().getLegalSelectName(dialect);
-                            SQLFragment deletedArray = new SQLFragment("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
+                            SQLFragment deletedArray = SQLFragment.unsafe("CAST(? AS TEXT[])").add(deletedValues.toArray(new String[0]));
                             SQLFragment columnFrag = new SQLFragment().appendIdentifier(columnId);
 
-                            SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
+                            SQLFragment sql = SQLFragment.unsafe("SELECT 1 FROM ")
                                     .append(domainTable)
                                     .unsafeAppend(" WHERE ")
                                     .append(dialect.array_some_in_array(columnFrag, deletedArray));
@@ -1633,8 +1637,7 @@ public class DomainUtil
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         // GH Issue 1257: import alias -> the fields declaring it.
         Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
-        // GH Issue 1589: explicit label -> the fields carrying it. Only populated when tallying, since label collisions
-        // are counted but not rejected.
+        // GH Issue 1589: explicit label -> the fields carrying it.
         Map<String, List<GWTPropertyDescriptor>> labelMap = new CaseInsensitiveLinkedHashMap<>();
         Set<String> fieldNames = new CaseInsensitiveHashSet();
         ValidationException exception = new ValidationException();
@@ -1662,15 +1665,12 @@ public class DomainUtil
                     importAliasMap.computeIfAbsent(alias, k -> new ArrayList<>()).add(field);
             }
 
-            if (tally != null)
-            {
-                // Only an explicitly set label counts. A label derived from the field name is not something anyone
-                // chose, and the only way to resolve a collision on one is to rename the field.
-                String label = StringUtils.trimToNull(field.getLabel());
-                // A label repeating its own field's name is redundant but not ambiguous.
-                if (label != null && !label.equalsIgnoreCase(name))
-                    labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
-            }
+            // Only an explicitly set label counts. A label derived from the field name is not something anyone chose,
+            // and the only way to resolve a collision on one is to rename the field.
+            String label = StringUtils.trimToNull(field.getLabel());
+            // A label repeating its own field's name is redundant but not ambiguous.
+            if (label != null && !label.equalsIgnoreCase(name))
+                labelMap.computeIfAbsent(label, k -> new ArrayList<>()).add(field);
 
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
             {
@@ -1787,10 +1787,10 @@ public class DomainUtil
             }
         });
 
-        // GH Issue 1589: tally-only. ImportAliasable.Helper.createImportMap resolves propertyURI, name, label and import
-        // alias into one case-insensitive map at precedence propertyURI < propName < alias < label < name, so a label
-        // that ties with any of them silently loses the token or steals it. Counted, not rejected: these configurations
-        // save successfully today and blocking them would break existing domains.
+        // GH Issue 1589: ImportAliasable.Helper.createImportMap resolves propertyURI, name, label and import alias into
+        // one case-insensitive map at precedence propertyURI < propName < alias < label < name, so a label that ties with
+        // any of them silently loses the token or steals it. Only the system-field collision below is rejected; the rest
+        // are counted, since those configurations save successfully today and blocking them would break existing domains.
         labelMap.forEach((label, fields) -> {
             if (fields.size() > 1)
                 fields.forEach(f -> tally(tally, FieldNameRule.duplicateLabel, f));
@@ -1807,6 +1807,14 @@ public class DomainUtil
 
             if (reservedNames.contains(label))
                 fields.forEach(f -> tally(tally, FieldNameRule.labelVsReservedName, f));
+
+            // GH Issue 1783
+            if (SYSTEM_FIELD_NAMES.contains(label))
+            {
+                fields.forEach(f -> tally(tally, FieldNameRule.labelVsSystemField, f));
+                String names = "'" + fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
+                addFieldErrors(exception, updates, fields, "Label '" + label + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a system field name.");
+            }
         });
 
         return exception;
@@ -1856,6 +1864,12 @@ public class DomainUtil
 
     /** Anchor an import alias error on every field that declares the offending alias so the designer can highlight them. */
     private static void addImportAliasErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
+    {
+        addFieldErrors(exception, updates, fields, message);
+    }
+
+    /** Anchor the error on every field named in it so the designer can highlight each one. */
+    private static void addFieldErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
     {
         for (GWTPropertyDescriptor field : fields)
             exception.addError(new PropertyValidationError(getDomainErrorMessage(updates, message), field.getName(), field.getPropertyId()));
@@ -2049,6 +2063,59 @@ public class DomainUtil
                     errors.getGlobalErrorStrings());
             assertTrue("Only one named field declares the alias, so it is not a duplicate: " + errors.getAllErrors(),
                     errors.getFieldErrors(FIELD_ONE).isEmpty());
+        }
+    }
+
+    /**
+     * GH Issue 1783: a stored system-field label is rejected too, so an affected domain cannot be saved again until the
+     * label is fixed. The integration test covers the rest of the rule but cannot reach these cases -- it would have to
+     * save a label the API refuses.
+     */
+    public static class SystemFieldLabelTestCase extends Assert
+    {
+        private static final String FIELD_ONE = "LabelFieldOne";
+        private static final String FIELD_TWO = "LabelFieldTwo";
+        private static final int STORED_ID = 7;
+
+        private static GWTPropertyDescriptor field(String name, @Nullable String label, int propertyId)
+        {
+            GWTPropertyDescriptor pd = new GWTPropertyDescriptor(name, PropertyType.STRING.getTypeUri());
+            pd.setLabel(label);
+            pd.setPropertyId(propertyId);
+            return pd;
+        }
+
+        private static GWTDomain<GWTPropertyDescriptor> domain(GWTPropertyDescriptor... fields)
+        {
+            GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
+            domain.setFields(Arrays.asList(fields));
+            return domain;
+        }
+
+        /** No reserved names or prefixes, so only the label rules are in play. */
+        private static ValidationException validate(GWTDomain<GWTPropertyDescriptor> orig, GWTPropertyDescriptor... fields)
+        {
+            return validateProperties(domain(fields), Set.of(), Set.of(), true, false, getOriginalFieldPropertyIdNameMap(orig), null);
+        }
+
+        @Test
+        public void storedLabelIsStillRejected()
+        {
+            // Re-saving a domain configured before this check is refused: the field is losing its value on every write
+            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Container", STORED_ID));
+            ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID), field(FIELD_TWO, null, 0));
+            assertEquals(List.of("Label 'Container' on field '" + FIELD_ONE + "' conflicts with a system field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void storedAndNewFieldsWithTheLabelAreBothReported()
+        {
+            GWTDomain<GWTPropertyDescriptor> orig = domain(field(FIELD_ONE, "Container", STORED_ID));
+            ValidationException errors = validate(orig, field(FIELD_ONE, "Container", STORED_ID), field(FIELD_TWO, "Container", 0));
+            String expected = "Label 'Container' on fields '" + FIELD_ONE + "', '" + FIELD_TWO + "' conflicts with a system field name.";
+            assertEquals(expected, errors.getFieldErrors(FIELD_ONE).get(0));
+            assertEquals(expected, errors.getFieldErrors(FIELD_TWO).get(0));
         }
     }
 

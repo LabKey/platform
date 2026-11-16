@@ -391,7 +391,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 fkSpecimen = fkSpecimen.getParent();
             }
 
-            sql.append(") AS " + assaySubqueryAlias + " ON ");
+            sql.unsafeAppend(") AS ").appendIdentifier(assaySubqueryAlias).unsafeAppend(" ON ");
             ArrayList<FieldKey> pkFieldKeys = new ArrayList<>();
             for (ColumnInfo pk : _assayDataTable.getPkColumns())
             {
@@ -418,36 +418,36 @@ public class SpecimenForeignKey extends LookupForeignKey
 
             sql.unsafeAppend("\n\tLEFT OUTER JOIN ");
             sql.append(vialTableInfo.getFromSQL(vialSubqueryAlias));
-            sql.append(" ON " + vialSubqueryAlias + ".GlobalUniqueId = ");
+            sql.unsafeAppend(" ON ").appendIdentifier(vialSubqueryAlias).unsafeAppend(".GlobalUniqueId = ");
 
             // Do type conversion if needed
             if (_assaySpecimenIdCol.getJdbcType() == JdbcType.VARCHAR)
             {
-                sql.append(assaySubqueryAlias);
+                sql.appendIdentifier(assaySubqueryAlias);
                 sql.unsafeAppend(".");
                 sql.appendIdentifier(_assaySpecimenIdCol.getAlias());
             }
             else
             {
                 sql.unsafeAppend("CAST(");
-                sql.append(assaySubqueryAlias);
+                sql.appendIdentifier(assaySubqueryAlias);
                 sql.unsafeAppend(".");
                 sql.appendIdentifier(_assaySpecimenIdCol.getAlias());
                 sql.unsafeAppend(" AS ");
-                sql.append(dialect.getSqlTypeName(JdbcType.VARCHAR));
+                sql.append(dialect.getSqlTypeNameAsSql(JdbcType.VARCHAR));
                 sql.unsafeAppend(")");
             }
 
             if (targetStudy != null)
             {
                 // We're in the middle of a link to study, so ignore what the user selected as the target when they uploaded
-                sql.append(" AND " + vialSubqueryAlias + ".Container = ?");
+                sql.unsafeAppend(" AND ").appendIdentifier(vialSubqueryAlias).unsafeAppend(".Container = ?");
                 sql.add(targetStudy.getId());
             }
             else if (_containerList != null && _containerList.size() == 1)
             {
                 // We've determined that there is only one target study container (see .getTargetStudyContainers())
-                sql.append(" AND " + vialSubqueryAlias + ".Container = ?");
+                sql.unsafeAppend(" AND ").appendIdentifier(vialSubqueryAlias).unsafeAppend(".Container = ?");
                 sql.add(_containerList.getFirst().getId());
             }
             else
@@ -586,16 +586,16 @@ public class SpecimenForeignKey extends LookupForeignKey
 
                 sql.unsafeAppend("\n\tLEFT OUTER JOIN ");
                 sql.append(specimenTableInfo.getFromSQL(specimenSubqueryAlias));
-                sql.unsafeAppend(" ON ").append(specimenTableInfo.getColumn("rowid").getValueSql(specimenSubqueryAlias)).append(" = " + vialSubqueryAlias + ".Specimen");
-                sql.unsafeAppend(" AND ").append(specimenTableInfo.getColumn("container").getValueSql(specimenSubqueryAlias)).append(" = " + vialSubqueryAlias + ".Container");
+                sql.unsafeAppend(" ON ").append(specimenTableInfo.getColumn("rowid").getValueSql(specimenSubqueryAlias)).unsafeAppend(" = ").appendIdentifier(vialSubqueryAlias).unsafeAppend(".Specimen");
+                sql.unsafeAppend(" AND ").append(specimenTableInfo.getColumn("container").getValueSql(specimenSubqueryAlias)).unsafeAppend(" = ").appendIdentifier(vialSubqueryAlias).unsafeAppend(".Container");
                 if (_specimenFilter != null)
                 {
                     sql.unsafeAppend(" AND ");
                     sql.append(_specimenFilter.getSQLFragment(dialect));
                 }
 
-                sql.append("\n\tLEFT OUTER JOIN study.study AS " + studySubqueryAlias);
-                sql.append(" ON " + studySubqueryAlias + ".Container = ").append(specimenTableInfo.getColumn("container").getValueSql(specimenSubqueryAlias));
+                sql.unsafeAppend("\n\tLEFT OUTER JOIN study.study AS ").appendIdentifier(studySubqueryAlias);
+                sql.unsafeAppend(" ON ").appendIdentifier(studySubqueryAlias).unsafeAppend(".Container = ").append(specimenTableInfo.getColumn("container").getValueSql(specimenSubqueryAlias));
                 map.put(specimenSubqueryAlias, sql);
             }
         }
@@ -616,23 +616,23 @@ public class SpecimenForeignKey extends LookupForeignKey
             if (_assayParticipantIdCol != null || _assayVisitIdCol != null || _assayDateCol != null)
             {
                 // We want NULL if there's no match based on specimen id
-                sql.append("CASE WHEN (" + studyAlias + ".TimepointType IS NULL) THEN NULL ELSE (CASE WHEN (");
+                sql.unsafeAppend("CASE WHEN (").appendIdentifier(studyAlias).unsafeAppend(".TimepointType IS NULL) THEN NULL ELSE (CASE WHEN (");
                 if (_assayParticipantIdCol != null)
                 {
                     // Check if the participants match, or if they're both NULL
-                    sql.append("(" + specimenAlias + ".ParticipantId = ");
+                    sql.unsafeAppend("(").appendIdentifier(specimenAlias).unsafeAppend(".ParticipantId = ");
 
                     // See if we need to cast - Postgres 8.3 is picky about these comparisons
                     if (_assayParticipantIdCol.getJavaClass() != String.class)
                     {
-                        sql.append("CAST(" + targetStudyAlias + "." + _assayParticipantIdCol.getAlias().getId() + " AS VARCHAR)");
+                        sql.unsafeAppend("CAST(").appendDottedIdentifiers(targetStudyAlias, _assayParticipantIdCol.getAlias()).unsafeAppend(" AS VARCHAR)");
                     }
                     else
                     {
-                        sql.append(targetStudyAlias + "." + _assayParticipantIdCol.getAlias().getId());
+                        sql.appendDottedIdentifiers(targetStudyAlias, _assayParticipantIdCol.getAlias());
                     }
                     sql.unsafeAppend(" OR ");
-                    sql.append("(" + specimenAlias + ".ParticipantId IS NULL AND " + targetStudyAlias + "." + _assayParticipantIdCol.getAlias().getId() + " IS NULL))");
+                    sql.unsafeAppend("(").appendIdentifier(specimenAlias).unsafeAppend(".ParticipantId IS NULL AND ").appendDottedIdentifiers(targetStudyAlias, _assayParticipantIdCol.getAlias()).unsafeAppend(" IS NULL))");
                 }
                 if (_assayVisitIdCol != null || _assayDateCol != null)
                 {
@@ -645,11 +645,11 @@ public class SpecimenForeignKey extends LookupForeignKey
                     {
                         // If we're in a visit-based study, check that both the visits match or are null. Also,
                         // if the assay has a date column and it has a value, it needs to match as well.
-                        sql.append("((" + studyAlias + ".TimepointType IS NULL OR " + studyAlias + ".TimepointType = '" + TimepointType.VISIT + "')");
-                        sql.append(" AND (" + specimenAlias + ".SequenceNum = " + targetStudyAlias + "." + _assayVisitIdCol.getAlias().getId() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + _assayVisitIdCol.getAlias().getId() + " IS NULL))");
+                        sql.unsafeAppend("((").appendIdentifier(studyAlias).unsafeAppend(".TimepointType IS NULL OR ").appendIdentifier(studyAlias).unsafeAppend(".TimepointType = ").appendValue(TimepointType.VISIT).unsafeAppend(")");
+                        sql.unsafeAppend(" AND (").appendIdentifier(specimenAlias).unsafeAppend(".SequenceNum = ").appendDottedIdentifiers(targetStudyAlias, _assayVisitIdCol.getAlias()).unsafeAppend(" OR (").appendIdentifier(specimenAlias).unsafeAppend(".Visit IS NULL AND ").appendDottedIdentifiers(targetStudyAlias, _assayVisitIdCol.getAlias()).unsafeAppend(" IS NULL))");
                         if (_assayDateCol != null)
                         {
-                            sql.append(" AND (" + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL OR " + dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " + dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias().getId()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL))");
+                            sql.unsafeAppend(" AND (").appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()).unsafeAppend(" IS NULL OR ").append(dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp")).unsafeAppend(" = ").append(dialect.getDateTimeToDateCast(new SQLFragment().appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()))).unsafeAppend(" OR (").appendIdentifier(specimenAlias).unsafeAppend(".drawtimestamp IS NULL AND ").appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()).unsafeAppend(" IS NULL))");
                             sql.unsafeAppend(")");
                             sql.unsafeAppend(" OR ");
                         }
@@ -661,9 +661,9 @@ public class SpecimenForeignKey extends LookupForeignKey
                     if (_assayDateCol != null)
                     {
                         // If we're in a relative date or continuous date study, check that the dates match or are both NULL
-                        sql.append("((" + studyAlias + ".TimepointType = '" + TimepointType.DATE + "' OR " + studyAlias + ".TimepointType = '" + TimepointType.CONTINUOUS + "' OR " + studyAlias + ".TimepointType IS NULL) AND (" +
-                                dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " +
-                                dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias().getId()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL)))");
+                        sql.unsafeAppend("((").appendIdentifier(studyAlias).unsafeAppend(".TimepointType = ").appendValue(TimepointType.DATE).unsafeAppend(" OR ").appendIdentifier(studyAlias).unsafeAppend(".TimepointType = ").appendValue(TimepointType.CONTINUOUS).unsafeAppend(" OR ").appendIdentifier(studyAlias).unsafeAppend(".TimepointType IS NULL) AND (")
+                                .append(dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp")).unsafeAppend(" = ")
+                                .append(dialect.getDateTimeToDateCast(new SQLFragment().appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()))).unsafeAppend(" OR (").appendIdentifier(specimenAlias).unsafeAppend(".drawtimestamp IS NULL AND ").appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()).unsafeAppend(" IS NULL)))");
                     }
                     sql.unsafeAppend(")");
                 }
@@ -673,7 +673,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             }
             else
             {
-                sql.append("CAST(NULL AS " + dialect.getBooleanDataType() + ")");
+                sql.unsafeAppend("CAST(NULL AS ").append(dialect.getBooleanDataTypeAsSql()).unsafeAppend(")");
             }
             return sql;
         }

@@ -76,7 +76,6 @@ import org.springframework.validation.BindException;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.Serializable;
-import java.lang.ref.WeakReference;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -125,7 +124,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     private transient Module _defaultModule;
 
-    private transient WeakReference<Container> _parent;
+    private @Nullable GUID _parentId;
+    private @Nullable GUID _projectId;
 
     private ContainerType _containerType;
 
@@ -259,7 +259,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = new GUID(id);
-        _parent = new WeakReference<>(dirParent);
+        if (null != dirParent)
+        {
+            _parentId = dirParent.getEntityId();
+            _projectId = dirParent.isProject() ? dirParent.getEntityId() : dirParent._projectId;
+        }
         _rowId = rowId;
         _sortOrder = sortOrder;
         _created = created;
@@ -401,13 +405,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public Container getParent()
     {
-        Container parent = _parent == null ? null : _parent.get();
-        if (null == parent && !_path.isEmpty())
-        {
-            parent = ContainerManager.getForPath(_path.getParent());
-            _parent = new WeakReference<>(parent);
-        }
-        return parent;
+        // Look up on every call; holding the parent object would return stale state after the parent is uncached
+        if (null != _parentId)
+            return ContainerManager.getForId(_parentId);
+
+        // Pipeline job JSON serialized without _parentId
+        return _path.isEmpty() ? null : ContainerManager.getForPath(_path.getParent());
     }
 
     /**
@@ -485,6 +488,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         // Root has no project
         if (isRoot())
             return null;
+
+        if (isProject())
+            return this;
+
+        // On the permission-check path, so one lookup instead of a getParent() per level
+        if (null != _projectId)
+            return ContainerManager.getForId(_projectId);
 
         Container project = this;
         while (!project.isProject())
@@ -685,11 +695,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public boolean hasAncestor(Container possibleAncestor)
     {
-        if (isRoot() || getParent() == null)
+        Container parent = isRoot() ? null : getParent();
+        if (null == parent)
             return false;
-        if (getParent().equals(possibleAncestor))
+        if (parent.equals(possibleAncestor))
             return true;
-        return getParent().hasAncestor(possibleAncestor);
+        return parent.hasAncestor(possibleAncestor);
     }
 
     public Container getChild(String folderName)
@@ -1107,7 +1118,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return;
 
         boolean isChanged = false;
-        Set<Module> existingModules = new HashSet<>(getParent().getActiveModules(false, false, user));
+        Container parent = getParent();
+        Set<Module> existingModules = new HashSet<>(parent.getActiveModules(false, false, user));
 
         boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
         for (Module m : newModules)
@@ -1129,7 +1141,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (isChanged)
         {
-            getParent().setActiveModules(existingModules, user);
+            parent.setActiveModules(existingModules, user);
         }
     }
 
@@ -1242,13 +1254,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
             else
             {
                 // if this is a subfolder, set active modules to inherit from parent
-                Set<Module> parentModules = getParent().getActiveModules(false, false, user);
+                Container parent = getParent();
+                Set<Module> parentModules = parent.getActiveModules(false, false, user);
                 for (Module module : parentModules)
                 {
                     if (userCanAccessModule(module, userHasEnableRestrictedModules))
                     {
                         //set the default module for the subfolder to be the default module of the parent.
-                        Module parentDefault = getParent().getDefaultModule(user);
+                        Module parentDefault = parent.getDefaultModule(user);
                         if (module.equals(parentDefault))
                         {
                             try (var ignore = SpringActionController.ignoreSqlUpdates())
@@ -1582,7 +1595,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public SecurableResource getParentResource()
     {
         SecurableResource parent = getParent();
-        return this.equals(getParent()) ? null : parent;
+        return this.equals(parent) ? null : parent;
     }
 
     @Override

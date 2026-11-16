@@ -137,7 +137,7 @@ import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader.PoolStati
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ProvenanceRecordingParams;
@@ -4543,7 +4543,7 @@ public class QueryController extends SpringActionController
                     throws SQLException, BatchValidationException
             {
                 BatchValidationException errors = new BatchValidationException();
-                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.getFirst().keySet(), rows);
+                DataIteratorBuilder it = MapDataIterator.of(rows.getFirst().keySet(), rows);
                 qus.importRows(user, container, it, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
@@ -8567,10 +8567,24 @@ public class QueryController extends SpringActionController
 
     enum PromptResource
     {
-        ExpressionAssistant,
-        LabKeySql;
+        ExpressionAssistant(true),
+        LabKeySql(true),
+        LabKeySqlExpressions(false);
+
+        private final boolean _appendExpressionReference;
+
+        PromptResource(boolean appendExpressionReference)
+        {
+            _appendExpressionReference = appendExpressionReference;
+        }
 
         String resource()
+        {
+            String markdown = load();
+            return _appendExpressionReference ? markdown + "\n" + LabKeySqlExpressions.load() : markdown;
+        }
+
+        private String load()
         {
             try
             {

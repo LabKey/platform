@@ -702,7 +702,7 @@ public class DbSchema
         }
     }
 
-    private static Integer checkContainerColumns(DbSchema curSchema, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId)
+    private static Integer checkContainerColumns(DbSchema curSchema, SQLFragment sbSqlCmd, SQLFragment tempTableName, String moduleName, Integer rowId)
     {
         int row = rowId;
         SQLFragment sbSql = new SQLFragment();
@@ -718,8 +718,8 @@ public class DbSchema
             {
                 if (col.getName().equalsIgnoreCase("Container"))
                 {
-                    sbSql.append(" INSERT INTO " + tempTableName );
-                    sbSql.append(" SELECT " + (++row) + " AS rowId, ").appendValue(t.getSelectName()).unsafeAppend(" AS TableName, ");
+                    sbSql.unsafeAppend(" INSERT INTO ").append(tempTableName);
+                    sbSql.unsafeAppend(" SELECT ").appendValue(++row).unsafeAppend(" AS rowId, ").appendValue(t.getSelectName()).unsafeAppend(" AS TableName, ");
                     List<ColumnInfo> pkColumns = t.getPkColumns();
 
                     if (pkColumns.size() == 1)
@@ -806,7 +806,7 @@ public class DbSchema
             Set<DbSchema> schemas = module.getSchemasToTest();
 
             for (DbSchema schema : schemas)
-                lastRowId = checkContainerColumns(schema, sbCheck, tempTableName, module.getName(), lastRowId);
+                lastRowId = checkContainerColumns(schema, sbCheck, tTemplate.getSQLName(), module.getName(), lastRowId);
         }
 
         tTemplate.track();

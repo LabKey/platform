@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.UnexpectedException;
@@ -527,6 +528,22 @@ abstract public class QNode implements Cloneable
             assertNotEquals(parse("a+b"), parse("a-b"));
             // tree equals does not do arithmetic
             assertNotEquals(parse("1+2"), parse("2+1"));
+        }
+
+        @Test
+        public void testSourceText()
+        {
+            assertEquals("'a;b'", parse("'a;b'").getSourceText());
+            assertEquals("'say \"hi'", parse("'say \"hi'").getSourceText());
+            assertEquals("$t.Temp°C", parse("$t.Temp°C").getSourceText());
+
+            SourceBuilder source = new SourceBuilder();
+            source.appendSourceText("'a;b'");
+            assertThrows(IllegalStateException.class, source::getSQL);
+            assertTrue(SQLFragment.unsafe("SELECT ").append(source).hasError());
+            assertThrows(IllegalStateException.class, () -> new SourceBuilder().add(1));
+            assertThrows(IllegalStateException.class, () -> new SourceBuilder().appendValue("x"));
+            assertThrows(IllegalStateException.class, () -> new SourceBuilder().append(SQLFragment.unsafe("?", 1)));
         }
     }
 }

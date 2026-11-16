@@ -201,10 +201,11 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
             failure: this.onFailure
         };
 
-        LABKEY.Ajax.request({
+        this.request = LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('query', 'getColumnSummaryStats.api', this.containerPath),
             method: "POST",
             params: this.getParamsFromQueryConfig(),
+            cancellable: true, // GH Issue 1568: closing the dialog stops the query
             scope: this,
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), this),
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
@@ -380,7 +381,16 @@ Ext4.define('LABKEY.ext4.ColumnSummaryStatisticsPanel', {
         return Ext4.DomQuery.select('input[name=stat-cb]', this.getDisplayView().getEl().dom);
     },
 
-    onFailure : function(response) {
+    onDestroy : function() {
+        if (this.request)
+            this.request.abort();
+        this.callParent();
+    },
+
+    onFailure : function(response, xhr) {
+        if (LABKEY.Ajax.isAborted(xhr))
+            return;
+
         var message = response.exception ? 'There was an error calculating one or more statistics.' : response.message;
         this.add({
             xtype: 'box',

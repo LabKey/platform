@@ -36,10 +36,20 @@ LABKEY.WebSocket = new function ()
     var _callbacks = {};
     var _modalShowing = false;
     var _shouldAddFocusListener = true;
+    var _keepAliveStarted = false;
+
+    // Shorter than the idle timeout of common proxies, e.g. nginx's 60 s default, which close a silent socket
+    var KEEPALIVE_INTERVAL_MS = 30000;
+
+    // Identifies this page load; @labkey/api sends it with requests the server may cancel when this socket asks or closes
+    LABKEY.tabId = LABKEY.tabId || LABKEY.Utils.generateUUID();
 
     function openWebsocket() {
         if (_websocket !== null || !('WebSocket' in window)) return;
-        _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
+        const wsUrl = new URL(`${LABKEY.contextPath}/_websocket/notifications`, window.location.origin);
+        wsUrl.protocol = window.location.protocol === "http:" ? "ws:" : "wss:";
+        wsUrl.searchParams.set("tabId", LABKEY.tabId);
+        _websocket = new WebSocket(wsUrl.toString());
         _websocket.onmessage = websocketOnMessage;
         _websocket.onclose = websocketOnClose;
         _websocket.onerror = websocketConnectionFailure;
@@ -52,6 +62,22 @@ LABKEY.WebSocket = new function ()
             });
             _shouldAddFocusListener = false;
         }
+
+        startKeepAlive();
+    }
+
+    /**
+     * Keeps a visible tab's socket open so it can cancel the tab's abandoned requests. A hidden tab's socket is left to
+     * idle out, freeing its server connection (GH Issue 1574), and the focus listener reopens it.
+     */
+    function startKeepAlive() {
+        if (_keepAliveStarted || !LABKEY.user.isSignedIn || !(LABKEY.experimental && LABKEY.experimental.cancelAbandonedRequests)) return;
+        _keepAliveStarted = true;
+
+        // The server ignores any message type but "cancel"
+        setInterval(function() {
+            if (!document.hidden) send({ type: 'ping' });
+        }, KEEPALIVE_INTERVAL_MS);
     }
 
     function websocketConnectionFailure() {
@@ -244,8 +270,16 @@ LABKEY.WebSocket = new function ()
         openWebsocket();
     };
 
+    /** Sends a JSON message to the server. Returns false, dropping the message, if the socket isn't open. */
+    var send = function(message) {
+        if (_websocket === null || _websocket.readyState !== WebSocket.OPEN) return false;
+        _websocket.send(JSON.stringify(message));
+        return true;
+    };
+
     return {
         initWebSocket: initWebSocket,
+        send: send,
         addServerEventListener: addServerEventListener,
         checkForExpiredSession: checkForExpiredSession
     };

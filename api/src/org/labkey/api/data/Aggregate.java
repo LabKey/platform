@@ -82,7 +82,7 @@ public class Aggregate
             DatabaseIdentifier as = null;
             SqlDialect d = Objects.requireNonNull(CoreSchema.getInstance().getSqlDialect());
             if ("*".equals(columnName))
-                c =  new SQLFragment("*");
+                c =  SQLFragment.unsafe("*");
             else
                 c = d.makeDatabaseIdentifier(columnName).getSql();
             if (null != asName)
@@ -468,7 +468,7 @@ public class Aggregate
         sb.append(_type.getSQLFunctionName(null)).unsafeAppend("(");
         if (_distinct)
             sb.unsafeAppend("DISTINCT ");
-        sb.append(getFieldKey().toSQLString());
+        sb.appendIdentifier(getFieldKey().toSQLString());
         sb.unsafeAppend(") AS ").appendIdentifier(alias);
         return sb;
     }

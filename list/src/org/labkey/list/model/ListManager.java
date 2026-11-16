@@ -219,11 +219,11 @@ public class ListManager implements SearchService.DocumentProvider
     /**
      * Utility method now that ListTable is ContainerFilter aware; TableInfo.getSelectName() returns now returns null
      */
-    String getListTableName(TableInfo ti)
+    @Nullable SQLFragment getListTableName(TableInfo ti)
     {
         if (ti instanceof ListTable lti)
-            return lti.getRealTable().getSelectName();
-        return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
+            return lti.getRealTable().getSQLName();
+        return ti.getSQLName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
     }
 
     @Nullable
@@ -629,9 +629,18 @@ public class ListManager implements SearchService.DocumentProvider
     // Delete a single list item from the index after item delete
     public void deleteItemIndex(final ListDefinition list, @NotNull final String entityId)
     {
+        deleteItemIndex(list, List.of(entityId));
+    }
+
+    // Delete list items from the index after item delete
+    public void deleteItemIndex(final ListDefinition list, @NotNull final Collection<String> entityIds)
+    {
+        if (entityIds.isEmpty())
+            return;
+
         // Transaction-aware is good practice. But it happens to be critical in the case of calling indexEntireList()
         // because it turns off JDBC caching, using a non-transacted connection (bad news if we call it mid-transaction).
-        new DeleteItemIndexTask(list).register(getListMetadataSchema().getScope(), List.of(entityId), DbScope.CommitTaskOption.POSTCOMMIT);
+        new DeleteItemIndexTask(list).register(getListMetadataSchema().getScope(), entityIds, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     private record ListKey(Container container, int listId) {}
@@ -1191,7 +1200,7 @@ public class ListManager implements SearchService.DocumentProvider
             if (null != keyColumn)
             {
                 var keySelectName = keyColumn.getSelectIdentifier();
-                SQLFragment sqlf = new SQLFragment("UPDATE ").appendIdentifier(getListTableName(sti))
+                SQLFragment sqlf = SQLFragment.unsafe("UPDATE ").append(getListTableName(sti))
                         .unsafeAppend(" SET LastIndexed = ").appendValue(new Timestamp(ms))
                         .unsafeAppend(" WHERE ").appendIdentifier(keySelectName).unsafeAppend(" = ?").add(pk);
                 new SqlExecutor(sti.getSchema()).execute(sqlf);

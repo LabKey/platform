@@ -49,6 +49,7 @@ public class ServerPrimaryKeyLock extends DbScope.ServerLock
         {
             forUpdate.append(and);
             forUpdate.appendIdentifier(pkColumn.getSelectIdentifier()).unsafeAppend("=?").add(pkValues[forUpdate.getParamsArray().length]);
+            and = " AND ";
         }
         forUpdate.unsafeAppend("\nFOR UPDATE");
     }

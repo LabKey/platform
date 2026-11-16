@@ -2472,7 +2472,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     @Nullable
     public ModuleContext getModuleContextFromDatabase(@NotNull String name)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM ").
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").
             append(getTableInfoModules(), "m").
             unsafeAppend(" WHERE LOWER(Name) = LOWER(?)").
             add(name);

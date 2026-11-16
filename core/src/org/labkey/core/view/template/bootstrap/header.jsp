@@ -46,6 +46,7 @@
 <%@ page import="org.labkey.core.view.PopupAdminView" %>
 <%@ page import="org.labkey.core.view.PopupUserView" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="static org.labkey.api.util.DOM.A" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.alt" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.href" %>
@@ -88,6 +89,7 @@
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
     String siteShortName = (laf.getShortName() != null && !laf.getShortName().isEmpty()) ? laf.getShortName() : null;
 
+    boolean showAssistant = PageTemplate.isAssistantAvailable(user);
     final NavTree optionsMenu = isStartupComplete ? PopupAdminView.createNavTree(context) : null;
     boolean hasPremiumModule = moduleLoader.hasModule("Premium");
     boolean isSMHostedOnly = !hasPremiumModule && moduleLoader.hasModule("SampleManagement");
@@ -138,6 +140,17 @@
     }
 %>
         <ul class="navbar-nav-lk">
+<%
+    if (showAssistant)
+    {
+        // Note: we only render the outer DOM for the button here, the React code will use it as a portal
+%>
+            <li class="navbar-assistant" id="sdms-navbar-assistant-button">
+            </li>
+<%
+    }
+%>
+
 <%
     boolean showSearch =
         isStartupComplete &&

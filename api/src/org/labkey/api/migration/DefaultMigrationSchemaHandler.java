@@ -116,7 +116,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         FieldKey containerFieldKey = getContainerFieldKey(sourceTable);
 
         if (containerFieldKey == SITE_WIDE_TABLE)
-            return new SQLClause(new SQLFragment("TRUE"));
+            return new SQLClause(SQLFragment.unsafe("TRUE"));
 
         return new InClause(containerFieldKey, containers);
     }
@@ -213,7 +213,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     // is only for provisioned tables that lack an ObjectId, MaterialId, or DataId column.
     protected void addObjectPropertyClause(OrClause orClause, DataFilter filter, TableInfo sourceTable, int propertyId)
     {
-        SQLFragment flagWhere = new SQLFragment("lsid IN (SELECT ObjectURI FROM exp.Object o INNER JOIN exp.ObjectProperty op ON o.ObjectId = op.ObjectId WHERE StringValue = ? AND PropertyId = ?)", filter.condition().getParamVals()[0], propertyId);
+        SQLFragment flagWhere = SQLFragment.unsafe("lsid IN (SELECT ObjectURI FROM exp.Object o INNER JOIN exp.ObjectProperty op ON o.ObjectId = op.ObjectId WHERE StringValue = ? AND PropertyId = ?)", filter.condition().getParamVals()[0], propertyId);
 
         orClause.addClause(
             new AndClause(
@@ -268,7 +268,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         getAttachmentTypes().forEach(type -> {
             SQLFragment sql = type.getSelectParentEntityIdsSql();
             Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
-            SQLFragment selectParents = new SQLFragment("Parent");
+            SQLFragment selectParents = SQLFragment.unsafe("Parent");
             // This query against the source database is likely to contain a large IN clause, so use an alternative InClauseGenerator
             sourceSchema.getSqlDialect().appendInClauseSqlWithCustomInClauseGenerator(selectParents, entityIds, getTempTableInClauseGenerator(sourceSchema.getScope()));
             ret.addAll(copyAttachments(configuration, new SQLClause(selectParents), type));

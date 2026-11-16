@@ -264,7 +264,7 @@ public class ApiQueryResponse implements ApiResponse
             }
             catch (Exception end)
             {
-                if (ExceptionUtil.isClientAbortException(end))
+                if (ExceptionUtil.isClientAbortException(end) || (thrownException != null && ExceptionUtil.isIgnorable(thrownException)))
                     return;
                 // Is it useful to throw this exception...
                 throw end;

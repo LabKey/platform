@@ -37,7 +37,7 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
-<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
+<%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
@@ -506,7 +506,7 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
     // and since merge is a different code path...
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Merged", "Value", 3.0));
-    int count = qus.mergeRows(_context.getUser(), study.getContainer(), new ListofMapsDataIterator(null, rows), errors, config, null);
+    int count = qus.mergeRows(_context.getUser(), study.getContainer(), MapDataIterator.of(rows), errors, config, null);
     assertEquals(1, count);
 
     events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
