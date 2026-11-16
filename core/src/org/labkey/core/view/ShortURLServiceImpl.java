@@ -17,6 +17,7 @@ package org.labkey.core.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -45,8 +46,10 @@ import org.labkey.api.view.UnauthorizedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@NullMarked
 public class ShortURLServiceImpl implements ShortURLService
 {
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
@@ -138,7 +141,7 @@ public class ShortURLServiceImpl implements ShortURLService
             {
                 newRecord = Table.insert(user, CoreSchema.getInstance().getTableInfoShortURL(), newRecord);
                 // Re-select entire row to ensure canonical casing for entityId, Issue 52162
-                newRecord = getForEntityId(newRecord.getResourceId());
+                newRecord = Objects.requireNonNull(getForEntityId(newRecord.getResourceId()));
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(newRecord));
                 // By default, the user who created it can manage it
                 policy.addRoleAssignment(user, EditorRole.class);
@@ -165,7 +168,7 @@ public class ShortURLServiceImpl implements ShortURLService
     }
 
     @Override
-    public String validateShortURL(String shortURL) throws ValidationException
+    public String validateShortURL(@Nullable String shortURL) throws ValidationException
     {
         if (shortURL == null || shortURL.trim().isEmpty())
         {
@@ -180,6 +183,7 @@ public class ShortURLServiceImpl implements ShortURLService
     }
 
     @Override
+    @Nullable
     public ShortURLRecord getForEntityId(@NotNull String entityId)
     {
         return new TableSelector(CoreSchema.getInstance().getTableInfoShortURL(),

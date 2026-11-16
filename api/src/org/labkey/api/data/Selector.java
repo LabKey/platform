@@ -70,10 +70,10 @@ public interface Selector
 
 
     /**
-     * @return a single simple class, java bean, or java record of the given {@code Class}
+     * @return a single simple class, java bean, or java record of the given {@code Class}, or null if there are no rows
      * @throws IllegalStateException if the {@code Selector} received more than one row
      */
-    <T> T getObject(Class<T> clazz);
+    @Nullable <T> T getObject(Class<T> clazz);
 
     /**
      * Returns a sequential Stream of objects or records representing rows from the database. Converts each result row

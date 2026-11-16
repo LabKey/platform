@@ -25,6 +25,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -104,6 +106,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -150,6 +153,7 @@ import java.util.stream.Collectors;
  * }
  * </pre>
  */
+@NullMarked
 public class DbScope
 {
     private static final Logger LOG = LogHelper.getLogger(DbScope.class, "Retrieving database connections and managing transactions");
@@ -166,7 +170,7 @@ public class DbScope
     private static final ModuleResourceCache<Map<String, TablesDocument>> SCHEMA_XML_CACHE =
         ModuleResourceCaches.create("Parsed schema XML metadata", new SchemaXmlCacheHandler(), ResourceRootProvider.getStandard(QueryService.MODULE_SCHEMAS_PATH));
 
-    private static volatile DbScope _labkeyScope = null;
+    private static volatile @Nullable DbScope _labkeyScope = null;
 
     /** Threads that we are attempting to cancel and shouldn't be allowed to get another DB connection */
     private static final Set<Thread> BANNED_THREADS = Collections.synchronizedSet(new HashSet<>());
@@ -185,7 +189,7 @@ public class DbScope
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final boolean _rds;
     private final String _escape; // LIKE escape character
-    private AutoCloseable _closeOnClose = null;
+    private @Nullable AutoCloseable _closeOnClose = null;
 
 
     /**
@@ -315,6 +319,7 @@ public class DbScope
     };
 
     // Used only for testing and internal marker
+    @SuppressWarnings("NullAway")
     protected DbScope()
     {
         _dbScopeLoader = null;
@@ -366,10 +371,10 @@ public class DbScope
         private final String _url;
 
         private boolean _logQueries = false;
-        private String _displayName = null;
+        private @Nullable String _displayName = null;
         private boolean _primary = false;
 
-        @SuppressWarnings("unused") // Used by BeanObjectFactory
+        @SuppressWarnings({"unused", "NullAway"}) // Used by BeanObjectFactory
         public LabKeyDataSource()
         {
             _ds = null;
@@ -496,7 +501,7 @@ public class DbScope
             return DEFAULT_APPLICATION_NAME;
         }
 
-        public void setConnectionProperty(String key, Object value)
+        public void setConnectionProperty(@Nullable String key, @Nullable Object value)
         {
             if (key == null || value == null)
                 return;
@@ -528,7 +533,7 @@ public class DbScope
         private void populateLabKeySpecificProperties()
         {
             Map<String, String> dsProperties = new HashMap<>();
-            ServletContext ctx = ModuleLoader.getServletContext();
+            ServletContext ctx = Objects.requireNonNull(ModuleLoader.getServletContext());
             IteratorUtils.asIterator(ctx.getInitParameterNames()).forEachRemaining(name -> {
                 if (name.startsWith("jdbc/" + getDsName() + ":"))
                     dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
@@ -692,7 +697,7 @@ public class DbScope
         return _databaseProductName;
     }
 
-    public String getDatabaseProductVersion()
+    public @Nullable String getDatabaseProductVersion()
     {
         // Dialect may be able to provide more useful version information
         return _dialect.getProductVersion(_databaseProductVersion);
@@ -958,7 +963,7 @@ public class DbScope
 
     public interface RetryFn<ReturnType>
     {
-        ReturnType exec(Transaction tx) throws PessimisticLockingFailureException, RuntimeSQLException;
+        ReturnType exec(@Nullable Transaction tx) throws PessimisticLockingFailureException, RuntimeSQLException;
     }
 
     /**
@@ -1628,6 +1633,7 @@ public class DbScope
     }
 
     // Verify that the two ways for determining schema names yield identical results
+    @NullUnmarked
     public static class SchemaNameTestCase extends Assert
     {
         @Test
@@ -1807,7 +1813,7 @@ public class DbScope
 
             for (String dsName : dsNames)
             {
-                LabKeyDataSource ds = dataSources.get(dsName);
+                LabKeyDataSource ds = Objects.requireNonNull(dataSources.get(dsName));
 
                 // Attempt to create databases in data sources required by modules
                 if (moduleDataSources.contains(dsName))
@@ -1940,7 +1946,7 @@ public class DbScope
     private static final boolean MOCK_EXISTING_CONNECTIONS = false;
 
     // Called on primary data source only
-    private static void detectOtherLabKeyInstances(Connection conn, LabKeyDataSource ds, String applicationName) throws ServletException
+    private static void detectOtherLabKeyInstances(Connection conn, LabKeyDataSource ds, @Nullable String applicationName) throws ServletException
     {
         try
         {
@@ -1963,7 +1969,7 @@ public class DbScope
         }
     }
 
-    private static void detectUnexpectedConnections(Connection conn, LabKeyDataSource ds, String applicationName) throws ServletException
+    private static void detectUnexpectedConnections(Connection conn, LabKeyDataSource ds, @Nullable String applicationName) throws ServletException
     {
         SqlDialect dialect = ds.getDialect();
         String databaseName = dialect.getDatabaseName(ds.getUrl());
@@ -2150,13 +2156,14 @@ public class DbScope
 
     public static DbScope getLabKeyScope()
     {
-        return _labkeyScope;
+        return Objects.requireNonNull(_labkeyScope);
     }
 
 
+    // Called from the dialect while the LabKey scope itself is being constructed, before _labkeyScope is set
     public boolean isLabKeyScope()
     {
-        return this == getLabKeyScope();
+        return this == _labkeyScope;
     }
 
     /**
@@ -2353,7 +2360,7 @@ public class DbScope
 
     interface ConnectionMap
     {
-        Integer get(Connection c);
+        @Nullable Integer get(Connection c);
         Integer put(Connection c, Integer spid);
     }
 
@@ -2364,7 +2371,7 @@ public class DbScope
 
         return new ConnectionMap() {
             @Override
-            public synchronized Integer get(Connection c)
+            public synchronized @Nullable Integer get(Connection c)
             {
                 return m.get(c);
             }
@@ -2430,7 +2437,7 @@ public class DbScope
             return _map.put(new _IdentityWrapper(key), value);
         }
 
-        public V get(K key)
+        public @Nullable V get(K key)
         {
             return _map.get(new _IdentityWrapper(key));
         }
@@ -2687,7 +2694,7 @@ public class DbScope
         Thread thread = getEffectiveThread();
         synchronized (_transaction)
         {
-            List<TransactionImpl> transactions = _transaction.get(thread);
+            List<TransactionImpl> transactions = Objects.requireNonNull(_transaction.get(thread));
             transactions.removeLast();
             if (transactions.isEmpty())
             {
@@ -2748,7 +2755,7 @@ public class DbScope
         /** The transaction has been abandoned because it wasn't commited */
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
-        private TransactionAuditProvider.TransactionAuditEvent _auditEvent = null;
+        private @Nullable TransactionAuditProvider.TransactionAuditEvent _auditEvent = null;
 
         private int _lockTimeout = 5;
         private TimeUnit _lockTimeoutUnit = TimeUnit.MINUTES;
@@ -2784,7 +2791,7 @@ public class DbScope
             _auditEvent = event;
         }
 
-        <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
+        @Nullable <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
         {
             return (Cache<K, V>)_caches.get(cache);
         }
@@ -3118,6 +3125,7 @@ public class DbScope
     // Test dialects that are in-use; only for tests that require connecting to the database.
     @TestWhen(TestWhen.When.DBSCOPE)
     @RunWith(Parameterized.class)
+    @NullUnmarked
     public static class DialectTestCase extends Assert
     {
         @Parameterized.Parameters(name = "{1}")
@@ -3180,6 +3188,7 @@ public class DbScope
 
     @TestWhen(TestWhen.When.DBSCOPE)
     @RunWith(Parameterized.class)
+    @NullUnmarked
     public static class GroupConcatTestCase extends Assert
     {
         @Parameterized.Parameters(name = "{1}")
@@ -3234,6 +3243,7 @@ public class DbScope
     }
 
     @TestWhen(TestWhen.When.DBSCOPE)
+    @NullUnmarked
     public static class TransactionTestCase extends Assert
     {
         @Test
@@ -3690,7 +3700,7 @@ public class DbScope
 
         private void attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier, Class<? extends Throwable> expectedException)
         {
-            final Object notifier = new Object();
+            final CountDownLatch bkgHasLock2 = new CountDownLatch(1);
             final List<Throwable> result = new ArrayList<>();
 
             // let's try to intentionally cause a deadlock
@@ -3704,10 +3714,7 @@ public class DbScope
 
                     try (Transaction txBg = CoreSchema.getInstance().getScope().ensureTransaction(lock2))
                     {
-                        synchronized (notifier)
-                        {
-                            notifier.notify();
-                        }
+                        bkgHasLock2.countDown();
                         // should block on fg thread, but we're not deadlocked yet
                         try (Transaction inner = CoreSchema.getInstance().getScope().ensureTransaction(lock1))
                         {
@@ -3731,12 +3738,9 @@ public class DbScope
                 try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(lock1))
                 {
                     // wait for background to acquire first locks
-                    synchronized (notifier)
-                    {
-                        bkg.start();
-                        // wait for bkg to acquire lock2
-                        notifier.wait(60 * 1000);
-                    }
+                    bkg.start();
+                    // wait for bkg to acquire lock2
+                    bkgHasLock2.await(60, TimeUnit.SECONDS);
                     // try to acquire my second lock
                     // this should cause a deadlock
                     try (Transaction inner = CoreSchema.getInstance().getScope().ensureTransaction(lock2))
@@ -3898,6 +3902,7 @@ public class DbScope
         }
     }
 
+    @NullUnmarked
     public static class PoolStatisticsTestCase extends Assert
     {
         @Test
