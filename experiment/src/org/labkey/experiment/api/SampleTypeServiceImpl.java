@@ -2699,10 +2699,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         @Test
-        public void testStoredContainerLabelDoesNotBlockFurtherSaves() throws Exception
+        public void testStoredContainerLabelBlocksFurtherSaves() throws Exception
         {
-            // GH Issue 1783: the label loses the token to the container column rather than overwriting the field, so it
-            // is counted and never refused -- an unrelated edit to such a domain still saves.
+            // GH Issue 1783: a stored "Container" label is not grandfathered, so the domain cannot be saved at all --
+            // not even an unrelated edit -- until the label is renamed. Same treatment the stored import alias gets.
             final User user = TestContext.get().getUser();
             Container c = null;
             try
@@ -2720,10 +2720,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 updateGwt.setFields(fields);
 
                 ValidationException ve = DomainUtil.updateDomainDescriptor(origGwt, updateGwt, c, user);
-                assertFalse("A stored system field label must not block an unrelated edit: " + ve.getMessage(),
-                        ve.getMessage().contains("conflicts with a system field name"));
-                // hasErrors() is no use here: the fixture's other field carries "Container" as an import alias, which
-                // GH Issue 1474 refuses on a stored field too. Only the label rule changed.
+                assertTrue("A stored system field label must still be refused: " + ve.getMessage(),
+                        ve.getMessage().contains("Label 'Container' on field 'LabelStealer' conflicts with a system field name."));
                 assertTrue("Expected the stored alias to still be refused: " + ve.getMessage(),
                         ve.getMessage().contains("Import alias 'Container' on field 'AliasStealer' conflicts with a reserved field name."));
             }
