@@ -1190,7 +1190,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Container container = queue.getContainer();
         final String materialAlias = "_m_";
         final String materialIndexedAlias = "_mi_";
-        // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
+        // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037)
         SQLFragment sql = new SQLFragment().unsafeAppend("SELECT ").unsafeAppend(ExpMaterialImpl.getIndexColumnsSelectList(materialAlias)).unsafeAppend(" FROM ").
                 append(getTinfoMaterial(), "_m_").
                 unsafeAppend(" LEFT OUTER JOIN ").append(getTinfoMaterialIndexed(), "_mi_").
@@ -1211,9 +1211,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
+        Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
         List<Material> batch = ExpMaterialImpl.readIndexMaterials(selector);
         batch.forEach(m -> tracker.advance(m.getRowId()));
-        ExpMaterialImpl.indexBatch(queue, batch, new HashMap<>());
+        ExpMaterialImpl.indexBatch(queue, batch, tableCache);
 
         if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents

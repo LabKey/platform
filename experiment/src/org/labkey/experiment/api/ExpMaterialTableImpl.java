@@ -2465,7 +2465,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         // Shared by every batch of this commit; the batches run one at a time on the indexer's runner thread
-        Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new ConcurrentHashMap<>();
+        Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
         tableCache.put(new AbstractRunItemImpl.TableCacheKey(container, sampleType), searchTable);
         queueIndexBatches(queue, RowId, keys.orderedRowIds(), tableCache);
         queueIndexBatches(queue, LSID, keys.lsids(), tableCache);

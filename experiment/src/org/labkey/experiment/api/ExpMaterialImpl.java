@@ -430,9 +430,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             if (st == null)
                 return new SampleTypeDocContext(container, null, null, null);
 
-            if (tableInfo == null)
-                tableInfo = getSearchTable(SCHEMA_SAMPLES, container, st);
-
             if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
                 throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", st.getName(), ExpMaterialTableImpl.class.getName()));
 
@@ -587,9 +584,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (RuntimeException e)
                 {
-                    // A failed statement aborts the whole transaction, so later groups can only continue outside one
-                    if (isRetryable(e) || scope.isTransactionActive())
-                        throw e;
+                    throwIfRetryableOrInTransaction(e);
                     ExpMaterialImpl first = group.getFirst();
                     String typeName = first.getCpasType();
                     ExpSampleTypeImpl st = first.getSampleType();
@@ -604,12 +599,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         {
             throw new RuntimeSQLException(e);
         }
-    }
-
-    // Deadlocks propagate so executeWithRetryReadOnly() can retry the batch
-    private static boolean isRetryable(RuntimeException e)
-    {
-        return e instanceof PessimisticLockingFailureException || (e instanceof RuntimeSQLException sqlx && SqlDialect.isTransactionException(sqlx));
     }
 
     private static void createGroupIndexDocuments(List<ExpMaterialImpl> group, Map<TableCacheKey, TableInfo> tableCache, Map<String, List<String>> aliases,
@@ -684,7 +673,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return values;
     }
 
-    /** No sample has this RowId, so a query for it reads no rows */
     private static final long NO_ROW_ID = -1;
 
     /** Retries each sample on its own, so a value that breaks the group query costs only its own sample's values */
@@ -718,7 +706,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return values;
     }
 
-    /** Deadlocks go to the caller's retry, and inside a transaction a failed statement aborts it, so nothing later could run */
+    /** Deadlocks go to {@link DbScope#executeWithRetryReadOnly}'s retry, and inside a transaction a failed statement aborts it, so nothing later could run */
     private static void throwIfRetryableOrInTransaction(Exception e)
     {
         RuntimeException rx;
@@ -727,7 +715,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         else
             rx = new RuntimeSQLException((SQLException) e);
 
-        if (isRetryable(rx) || ExperimentServiceImpl.getExpSchema().getScope().isTransactionActive())
+        boolean retryable = rx instanceof PessimisticLockingFailureException || (rx instanceof RuntimeSQLException sqlx && SqlDialect.isTransactionException(sqlx));
+        if (retryable || ExperimentServiceImpl.getExpSchema().getScope().isTransactionActive())
             throw rx;
     }
 
@@ -777,7 +766,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return names;
     }
 
-    /** The exp.material columns a sample search document reads; ordered, since {@link #readIndexMaterials} reads a TableSelector's ResultSet */
+    /** The exp.material columns a sample search document reads; ordered, since a TableSelector reads a ResultSet only over an ordered column set */
     static final LinkedHashSet<String> INDEX_COLUMNS = new LinkedHashSet<>(List.of(
             ExpMaterialTable.Column.RowId.name(),
             ExpMaterialTable.Column.LSID.name(),
@@ -798,7 +787,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return INDEX_COLUMNS.stream().map(c -> alias + "." + c).collect(Collectors.joining(", "));
     }
 
-    /** Maps {@link #INDEX_COLUMNS} by hand, since bean reflection over every column cost about a third of the indexing thread's CPU */
+    /** Fills only {@link #INDEX_COLUMNS}, by hand, since bean reflection over every column is slow at indexing volumes */
     static @NotNull List<Material> readIndexMaterials(@NotNull Selector selector)
     {
         List<Material> materials = new ArrayList<>();

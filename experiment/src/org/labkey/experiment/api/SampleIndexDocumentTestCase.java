@@ -59,11 +59,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
@@ -185,6 +183,8 @@ public class SampleIndexDocumentTestCase extends Assert
         ExpSampleType st = createSampleType("IndexBrokenColumn");
         insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "B1", "TextField", "alpha"), CaseInsensitiveHashMap.of(Name.name(), "B2", "TextField", "beta")));
         List<Material> materials = getIndexMaterials(st);
+        // Otherwise the background indexer can still be reading the table when its column is renamed
+        drainQueue();
 
         // A renamed storage column makes the type's query fail for every row, as a broken lookup would
         TableInfo storage = ((ExpSampleTypeImpl) st).getTinfo();
@@ -199,12 +199,12 @@ public class SampleIndexDocumentTestCase extends Assert
             assertTokens(batch.get(sample(st.getName(), "B1").getDocumentId()), SearchService.PROPERTY.identifiersHi, "B1");
             batch.values().forEach(doc -> assertFalse(String.valueOf(doc.get(SearchService.PROPERTY.identifiersMed.toString())).contains("alpha")));
 
-            // Unrecorded, so the crawler indexes them again once their values can be read
-            docs.forEach(doc -> doc.setLastIndexed(System.currentTimeMillis(), System.currentTimeMillis()));
-            Set<Long> rowIds = materials.stream().map(Material::getRowId).collect(Collectors.toSet());
+            // Unrecorded, so the crawler indexes them again once their values can be read. The lock keeps other indexing from changing the list meanwhile.
             synchronized (ExpMaterialImpl.updateLastIndexedList)
             {
-                assertTrue(ExpMaterialImpl.updateLastIndexedList.stream().noneMatch(p -> rowIds.contains(p.first)));
+                int pending = ExpMaterialImpl.updateLastIndexedList.size();
+                docs.forEach(doc -> doc.setLastIndexed(System.currentTimeMillis(), System.currentTimeMillis()));
+                assertEquals(pending, ExpMaterialImpl.updateLastIndexedList.size());
             }
         }
         finally
