@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -376,7 +377,10 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 
     static @Nullable TableInfo getSearchTable(@NotNull SchemaKey schemaKey, @NotNull Container container, @NotNull ExpObject type)
     {
-        return QueryService.get().getUserSchema(User.getSearchUser(), container, schemaKey).getTable(type.getName());
+        UserSchema schema = QueryService.get().getUserSchema(User.getSearchUser(), container, schemaKey);
+        if (schema == null)
+            return null;
+        return schema.getTable(type.getName());
     }
 
     record TableCacheKey(int containerRowId, long expObjectRowId)
@@ -529,14 +533,16 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         if (rowIds.isEmpty())
             return Map.of();
         Map<Long, IndexValues> result = new HashMap<>();
+        FieldKey rowIdKey = ExpDataClassDataTable.Column.RowId.fieldKey();
+        ColumnInfo rowIdCol = table.getColumn(rowIdKey);
         if (columns.isEmpty())
         {
-            rowIds.forEach(id -> result.put(id, new IndexValues()));
+            // Still read through the table, so rows deleted or outside its container get no values
+            if (rowIdCol != null)
+                new TableSelector(table, List.of(rowIdCol), new SimpleFilter().addInClause(rowIdKey, rowIds), null).getCollection(Long.class).forEach(id -> result.put(id, new IndexValues()));
             return result;
         }
 
-        FieldKey rowIdKey = ExpDataClassDataTable.Column.RowId.fieldKey();
-        ColumnInfo rowIdCol = table.getColumn(rowIdKey);
         List<ColumnInfo> selectColumns = columns;
         if (rowIdCol != null && !columns.contains(rowIdCol))
         {

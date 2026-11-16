@@ -59,9 +59,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
@@ -105,7 +107,7 @@ public class SampleIndexDocumentTestCase extends Assert
     }
 
     @Test
-    public void testBatchMatchesOneAtATime() throws Exception
+    public void testIndexColumnsBuildFullDocuments() throws Exception
     {
         ExpSampleType st = createSampleType("IndexSamples");
         long p1 = sample(PARENT_TYPE, "P1").getRowId();
@@ -132,8 +134,10 @@ public class SampleIndexDocumentTestCase extends Assert
         assertNotNull(s1.getSourceProtocol());
         assertTrue("run name in body", ((String) s1Doc.get("body")).contains(s1.getRun().getName()));
         assertTrue("protocol name in body", ((String) s1Doc.get("body")).contains(s1.getSourceProtocol().getName()));
+        assertTokens(s1Doc, SearchService.PROPERTY.identifiersHi, "S1", "alias-one");
+        assertTokens(s1Doc, SearchService.PROPERTY.keywordsHi, "S1");
         assertTokens(s1Doc, SearchService.PROPERTY.identifiersMed, "alpha", "41", "P1");
-        assertTokens(s1Doc, SearchService.PROPERTY.keywordsLo, "first", "second");
+        assertTokens(s1Doc, SearchService.PROPERTY.keywordsLo, "first", "second", "Sample");
 
         ExpMaterial s3 = sample(_subfolder, st.getName(), "S3");
         Map<String, Object> s3Doc = batch.get(s3.getDocumentId());
@@ -156,6 +160,26 @@ public class SampleIndexDocumentTestCase extends Assert
     }
 
     @Test
+    public void testTypeWithoutSearchColumns() throws Exception
+    {
+        ExpSampleType st = SampleTypeService.get().createSampleType(_project, _user, "IndexNoFields", null, List.of(new GWTPropertyDescriptor("name", "string")), emptyList(), -1, -1, -1, -1, null, null);
+        TableInfo table = QueryService.get().getUserSchema(_user, _project, SamplesSchema.SCHEMA_SAMPLES).getTableOrThrow(st.getName());
+        assertTrue("search columns of " + st.getName(), ((ExpMaterialTableImpl) table).getSearchIndexColumns().isEmpty());
+
+        insertSamples(_project, st.getName(), List.of(row(Name.name(), "N1", Alias.name(), "alias-n1"), CaseInsensitiveHashMap.of(Name.name(), "N2")));
+        List<Material> materials = getIndexMaterials(st);
+        ExpMaterial n1 = sample(st.getName(), "N1");
+        sample(st.getName(), "N2").delete(_user);
+
+        Map<String, Map<String, Object>> docs = normalize(ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>()));
+        assertEquals(List.of(n1.getDocumentId()), List.copyOf(docs.keySet()));
+        Map<String, Object> n1Doc = docs.get(n1.getDocumentId());
+        assertTokens(n1Doc, SearchService.PROPERTY.identifiersHi, "N1", "alias-n1");
+        assertTokens(n1Doc, SearchService.PROPERTY.keywordsHi, "N1");
+        assertTokens(n1Doc, SearchService.PROPERTY.keywordsLo, "Sample");
+    }
+
+    @Test
     public void testFailedValuesQueryStillIndexes() throws Exception
     {
         ExpSampleType st = createSampleType("IndexBrokenColumn");
@@ -169,11 +193,19 @@ public class SampleIndexDocumentTestCase extends Assert
         renameColumn(storage, st.getLSID(), textField, broken);
         try
         {
-            Map<String, Map<String, Object>> batch = normalize(ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>()));
-            Map<String, Map<String, Object>> oneAtATime = normalize(materials.stream().map(m -> new ExpMaterialImpl(m).createIndexDocument(null)).filter(Objects::nonNull).toList());
+            List<WebdavResource> docs = ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>());
+            Map<String, Map<String, Object>> batch = normalize(docs);
             assertEquals(2, batch.size());
-            assertEquals(oneAtATime, batch);
+            assertTokens(batch.get(sample(st.getName(), "B1").getDocumentId()), SearchService.PROPERTY.identifiersHi, "B1");
             batch.values().forEach(doc -> assertFalse(String.valueOf(doc.get(SearchService.PROPERTY.identifiersMed.toString())).contains("alpha")));
+
+            // Unrecorded, so the crawler indexes them again once their values can be read
+            docs.forEach(doc -> doc.setLastIndexed(System.currentTimeMillis(), System.currentTimeMillis()));
+            Set<Long> rowIds = materials.stream().map(Material::getRowId).collect(Collectors.toSet());
+            synchronized (ExpMaterialImpl.updateLastIndexedList)
+            {
+                assertTrue(ExpMaterialImpl.updateLastIndexedList.stream().noneMatch(p -> rowIds.contains(p.first)));
+            }
         }
         finally
         {

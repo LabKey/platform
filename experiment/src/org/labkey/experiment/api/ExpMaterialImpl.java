@@ -46,7 +46,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -309,15 +308,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @NotNull
     public Collection<String> getAliases()
     {
-        TableInfo mapTi = ExperimentService.get().getTinfoMaterialAliasMap();
-        TableInfo ti = ExperimentService.get().getTinfoAlias();
-        SQLFragment sql = new SQLFragment()
-                .unsafeAppend("SELECT a.name FROM ").append(mapTi, "m")
-                .unsafeAppend(" JOIN ").append(ti, "a")
-                .unsafeAppend(" ON m.alias = a.RowId WHERE m.lsid = ? ");
-        sql.add(getLSID());
-        ArrayList<String> aliases = new SqlSelector(mapTi.getSchema(), sql).getArrayList(String.class);
-        return Collections.unmodifiableList(aliases);
+        return Collections.unmodifiableList(getAliases(List.of(getLSID())).getOrDefault(getLSID(), List.of()));
     }
 
     /** Get the ObjectId of the ExpSampleType that this ExpMaterial belongs to. */
@@ -420,30 +411,15 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo tableInfo)
     {
-        if (!isIndexable())
-            return null;
-
+        Map<TableCacheKey, TableInfo> tableCache = new HashMap<>();
         ExpSampleTypeImpl st = getSampleType();
-        SampleTypeDocContext ctx = SampleTypeDocContext.create(getContainer(), st, tableInfo);
-        IndexValues values = null;
-        if (ctx.table() != null && !ctx.table().getSearchIndexColumns().isEmpty())
-        {
-            try
-            {
-                values = getIndexValues(ctx.table(), List.of(getRowId())).get(getRowId());
-            }
-            catch (SQLException | RuntimeException e)
-            {
-                throwIfRetryableOrInTransaction(e);
-                LOG.warn("Failed to read search values for sample {}; indexing it without them", getRowId(), e);
-            }
-        }
+        if (tableInfo != null && st != null && getContainer() != null)
+            tableCache.put(new TableCacheKey(getContainer(), st), tableInfo);
 
-        ExpRunImpl run = getRun();
-        ExpProtocolApplicationImpl app = getSourceApplication();
-        ExpProtocol protocol = app == null ? null : app.getProtocol();
-        return createIndexDocument(ctx, values, getAliases(), run == null ? null : run.getName(),
-                protocol == null ? null : protocol.getName(), app == null ? null : app.getName());
+        List<WebdavResource> docs = createIndexDocuments(List.of(_object), tableCache);
+        if (docs.isEmpty())
+            return null;
+        return docs.getFirst();
     }
 
     /** Per (container, sample type) state shared by every sample document in an indexing group */
@@ -470,9 +446,13 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
     }
 
-    /** Assembles the document from values already read, so it runs no queries of its own */
+    /**
+     * Assembles the document from values already read, so it runs no queries of its own.
+     * Without {@code recordLastIndexed}, the crawler indexes the sample again on its next pass.
+     */
     private @NotNull WebdavResource createIndexDocument(@NotNull SampleTypeDocContext ctx, @Nullable IndexValues values, @NotNull Collection<String> aliases,
-                                                       @Nullable String runName, @Nullable String protocolName, @Nullable String applicationName)
+                                                       @Nullable String runName, @Nullable String protocolName, @Nullable String applicationName,
+                                                       boolean recordLastIndexed)
     {
         Container container = ctx.container();
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
@@ -496,7 +476,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample");      // Treat the word "Sample" a low priority keyword
 
         StringBuilder body = new StringBuilder();
 
@@ -508,20 +487,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         // Add all String and Integer custom property descriptions and values to body
         JSONObject jsonData = new JSONObject();
-        ExpSampleTypeImpl st = ctx.sampleType();
-        if (null != st && ctx.table() != null && !ctx.table().getSearchIndexColumns().isEmpty())
-        {
-            Set<String> identifiersMed = new HashSet<>();
-            Set<String> identifiersLo = new HashSet<>();
-            Set<String> keywordsMed = new HashSet<>();
-            Set<String> keywordsLo = new HashSet<>();
-            if (values != null)
-                values.addTo(identifiersHi, identifiersMed, identifiersLo, keyworksHi, keywordsMed, keywordsLo, jsonData);
-            putIndexProps(props, identifiersHi, identifiersMed, identifiersLo, keyworksHi, keywordsMed, keywordsLo);
-        }
+        Set<String> identifiersMed = new HashSet<>();
+        Set<String> identifiersLo = new HashSet<>();
+        Set<String> keywordsMed = new HashSet<>();
+        Set<String> keywordsLo = new HashSet<>();
+        keywordsLo.add("Sample"); // Treat the word "Sample" a low priority keyword
+        if (values != null)
+            values.addTo(identifiersHi, identifiersMed, identifiersLo, keyworksHi, keywordsMed, keywordsLo, jsonData);
+        putIndexProps(props, identifiersHi, identifiersMed, identifiersLo, keyworksHi, keywordsMed, keywordsLo);
 
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
+        ExpSampleTypeImpl st = ctx.sampleType();
         if (null != st)
         {
             if (st.isMedia())
@@ -544,6 +521,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             @Override
             public void setLastIndexed(long ms, long modified)
             {
+                if (!recordLastIndexed)
+                    return;
+
                 // setLastIndexed() can get called very rapidly after a bulk insert/update
                 // so we'll collect these instead of updating one at a time
                 synchronized (updateLastIndexedList)
@@ -640,12 +620,14 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleTypeImpl st = first.getSampleType();
         TableInfo table = st == null ? null : tableCache.computeIfAbsent(new TableCacheKey(container, st), _ -> getSearchTable(SCHEMA_SAMPLES, container, st));
         SampleTypeDocContext ctx = SampleTypeDocContext.create(container, st, table);
-        Map<Long, IndexValues> values = getGroupIndexValues(ctx, group);
+        Set<Long> unreadable = new HashSet<>();
+        Map<Long, IndexValues> values = getGroupIndexValues(ctx, group, unreadable);
 
         List<WebdavResource> groupDocs = new ArrayList<>(group.size());
         for (ExpMaterialImpl m : group)
         {
             IndexValues v = values.get(m.getRowId());
+            // Deleted, or not yet in the type's cached copy of its rows; left unrecorded, so it's indexed again later
             if (ctx.table() != null && v == null)
                 continue;
 
@@ -655,96 +637,79 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             ApplicationNames app = ApplicationNames.NONE;
             if (m._object.getSourceApplicationId() != null)
                 app = apps.getOrDefault(m._object.getSourceApplicationId(), ApplicationNames.NONE);
-            groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()), runName, app.protocolName(), app.applicationName()));
+            groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()), runName, app.protocolName(), app.applicationName(),
+                    !unreadable.contains(m.getRowId())));
         }
         docs.addAll(groupDocs);
     }
 
-    /** Like the single-sample path, a sample whose values can't be read is indexed without them; deleted samples are left out */
-    private static @NotNull Map<Long, IndexValues> getGroupIndexValues(@NotNull SampleTypeDocContext ctx, @NotNull List<ExpMaterialImpl> group)
+    /**
+     * Values for each sample of the group that the table returns. A sample whose values can't be read gets empty ones
+     * if it still exists, and is added to {@code unreadable}.
+     */
+    private static @NotNull Map<Long, IndexValues> getGroupIndexValues(@NotNull SampleTypeDocContext ctx, @NotNull List<ExpMaterialImpl> group, @NotNull Set<Long> unreadable)
     {
         ExpMaterialTableImpl table = ctx.table();
         if (table == null)
             return Map.of();
 
         List<Long> rowIds = group.stream().map(ExpMaterialImpl::getRowId).toList();
-        Set<Long> unreadable = new HashSet<>();
-        Map<Long, IndexValues> values = new HashMap<>(readGroupIndexValues(table, rowIds, ctx.container(), unreadable));
-
-        List<Long> missing = rowIds.stream().filter(id -> !values.containsKey(id) && !unreadable.contains(id)).toList();
-        DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
-        if (!missing.isEmpty() && !scope.isTransactionActive())
-        {
-            // Outside a transaction the table can read a cached copy of the type's rows that briefly lags new samples; inside one it reads the live tables
-            LOG.debug("Rereading search values for {} samples of type {} in {} from the live tables", missing.size(), table.getName(), ctx.container().getPath());
-            try (DbScope.Transaction ignored = scope.ensureTransaction())
-            {
-                values.putAll(readGroupIndexValues(table, missing, ctx.container(), unreadable));
-            }
-            catch (RuntimeException e)
-            {
-                if (isRetryable(e))
-                    throw e;
-                LOG.warn("Failed to reread search values for {} samples of type {} in {}", missing.size(), table.getName(), ctx.container().getPath(), e);
-            }
-            missing = rowIds.stream().filter(id -> !values.containsKey(id) && !unreadable.contains(id)).toList();
-        }
-
-        if (!missing.isEmpty() || !unreadable.isEmpty())
-        {
-            // Only samples that still exist get a document without values
-            Set<Long> check = new HashSet<>(missing);
-            check.addAll(unreadable);
-            TableInfo materialTi = ExperimentServiceImpl.get().getTinfoMaterial();
-            Set<Long> existing = new HashSet<>(new TableSelector(materialTi, Collections.singleton("RowId"), new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), check), null).getCollection(Long.class));
-            existing.forEach(id -> values.put(id, new IndexValues()));
-            long hidden = missing.stream().filter(existing::contains).count();
-            if (hidden > 0)
-                LOG.warn("{} samples of type {} in {} aren't in its query table; indexing them without search values", hidden, table.getName(), ctx.container().getPath());
-        }
-        return values;
-    }
-
-    /**
-     * Retries one sample at a time when the group query fails, so a value that breaks it costs only its own sample's values.
-     * Samples whose values can't be read are added to {@code unreadable}.
-     */
-    private static @NotNull Map<Long, IndexValues> readGroupIndexValues(@NotNull ExpMaterialTableImpl table, @NotNull List<Long> rowIds, @NotNull Container container, @NotNull Set<Long> unreadable)
-    {
+        Map<Long, IndexValues> values;
         try
         {
-            return getIndexValues(table, rowIds);
+            values = new HashMap<>(getIndexValues(table, rowIds));
         }
         catch (SQLException | RuntimeException e)
         {
             throwIfRetryableOrInTransaction(e);
+            values = readOneAtATime(table, rowIds, unreadable);
+            LOG.warn("Failed to read search values for {} samples of type {} in {} together; {} of them can't be read", rowIds.size(), table.getName(), ctx.container().getPath(), unreadable.size(), e);
+        }
 
-            Map<Long, IndexValues> values = new HashMap<>();
-            // Every one-row query fails when the table itself is broken, and each failure logs its SQL, so stop after two in a row
-            int consecutiveFailures = 0;
-            for (Long rowId : rowIds)
-            {
-                if (consecutiveFailures >= 2)
-                {
-                    unreadable.add(rowId);
-                    continue;
-                }
+        if (!unreadable.isEmpty())
+        {
+            // Only samples that still exist get a document without values
+            TableInfo materialTi = ExperimentServiceImpl.get().getTinfoMaterial();
+            unreadable.retainAll(new TableSelector(materialTi, Collections.singleton(ExpMaterialTable.Column.RowId.name()),
+                    new SimpleFilter().addInClause(ExpMaterialTable.Column.RowId.fieldKey(), unreadable), null).getCollection(Long.class));
+            for (Long rowId : unreadable)
+                values.put(rowId, new IndexValues());
+        }
+        return values;
+    }
 
-                try
-                {
-                    values.putAll(getIndexValues(table, List.of(rowId)));
-                    consecutiveFailures = 0;
-                }
-                catch (SQLException | RuntimeException x)
-                {
-                    throwIfRetryableOrInTransaction(x);
-                    unreadable.add(rowId);
-                    consecutiveFailures++;
-                }
-            }
-            LOG.warn("Failed to read search values for {} samples of type {} in {} together; {} of them can't be read", rowIds.size(), table.getName(), container.getPath(), rowIds.stream().filter(unreadable::contains).count(), e);
+    /** No sample has this RowId, so a query for it reads no rows */
+    private static final long NO_ROW_ID = -1;
+
+    /** Retries each sample on its own, so a value that breaks the group query costs only its own sample's values */
+    private static @NotNull Map<Long, IndexValues> readOneAtATime(@NotNull ExpMaterialTableImpl table, @NotNull List<Long> rowIds, @NotNull Set<Long> unreadable)
+    {
+        Map<Long, IndexValues> values = new HashMap<>();
+        // A query that fails without reading a row means the table itself is broken, so every one-row query would fail too
+        try
+        {
+            getIndexValues(table, List.of(NO_ROW_ID));
+        }
+        catch (SQLException | RuntimeException e)
+        {
+            throwIfRetryableOrInTransaction(e);
+            unreadable.addAll(rowIds);
             return values;
         }
+
+        for (Long rowId : rowIds)
+        {
+            try
+            {
+                values.putAll(getIndexValues(table, List.of(rowId)));
+            }
+            catch (SQLException | RuntimeException e)
+            {
+                throwIfRetryableOrInTransaction(e);
+                unreadable.add(rowId);
+            }
+        }
+        return values;
     }
 
     /** Deadlocks go to the caller's retry, and inside a transaction a failed statement aborts it, so nothing later could run */
