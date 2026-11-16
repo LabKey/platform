@@ -16,6 +16,7 @@
 
 package org.labkey.api.visualization;
 
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -28,7 +29,7 @@ import org.labkey.api.view.ViewContext;
 */
 public abstract class TimeChartReport extends AbstractReport
 {
-    public static final String TYPE = "ReportService.TimeChartReport";
+    public static final String TYPE = ReportService.TIME_CHART_REPORT_TYPE;
 
     @Override
     public String getDescriptorType()

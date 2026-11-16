@@ -35,6 +35,7 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -1327,9 +1328,15 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(ImportVisitMapForm form, BindException errors) throws Exception
         {
+            // GH Issue 1450: For shared studies, don't allow visit maps to be imported from a subfolder
+            StudyImpl study = getStudyThrowIfNull();
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions() == Boolean.TRUE)
+                throw new UnauthorizedException("Visit map import is only allowed from the shared study root.");
+
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<>();
-            if (!importer.process(getUser(), getStudyThrowIfNull(), form.getContent(), VisitMapImporter.Format.Xml, errorMsg, _log))
+            if (!importer.process(getUser(), study, form.getContent(), VisitMapImporter.Format.Xml, errorMsg, _log))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
@@ -2538,6 +2545,13 @@ public class StudyController extends BaseStudyController
             }
 
             Study study = getStudy(getContainer());
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions() == Boolean.TRUE)
+            {
+                errors.reject(ERROR_MSG, "Can't create visits in a study with shared visits");
+                return;
+            }
+
             boolean isDateBased = study.getTimepointType() == TimepointType.DATE;
 
             form.validate(errors, study);
@@ -3051,7 +3065,13 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    //
+
+    /**
+     * Users who can link data to a study should be allowed to recall them.
+     * @see StudyPublishManager._publishData
+     */
+    @RequiresPermission(InsertPermission.class)
     public class DeletePublishedRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         private DatasetDefinition _def;
@@ -3062,9 +3082,11 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
         {
-            _def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), target.getDatasetId());
+            StudyImpl study = getStudyThrowIfNull();
+            _def = StudyManager.getInstance().getDatasetDefinition(study, target.getDatasetId());
             if (_def == null)
                 throw new IllegalArgumentException("Could not find a dataset definition for id: " + target.getDatasetId());
+
             if (!target.isDeleteAllData())
             {
                 _allLsids = DataRegionSelection.getSelected(getViewContext(), true);

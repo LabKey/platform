@@ -16,6 +16,7 @@
 package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.reports.Report;
@@ -32,6 +33,8 @@ import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.visualization.VisualizationController;
+
+import java.util.Objects;
 
 /**
  * User: klum
@@ -97,9 +100,19 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
 
             if (origJson != null)
             {
-                JSONObject origChartConfig = new JSONObject(origJson).getJSONObject("chartConfig");
-                JSONObject newChartConfig = new JSONObject(newJson).getJSONObject("chartConfig");
-                return newChartConfig != null && !newChartConfig.similar(origChartConfig);
+                if (Objects.equals(origJson, newJson))
+                    return false;
+                try
+                {
+                    JSONObject origChartConfig = new JSONObject(origJson).getJSONObject("chartConfig");
+                    JSONObject newChartConfig = new JSONObject(newJson).getJSONObject("chartConfig");
+                    return newChartConfig != null && !newChartConfig.similar(origChartConfig);
+                }
+                catch (JSONException e)
+                {
+                    // Unparseable config; save-time validation decides whether it's allowed
+                    return true;
+                }
             }
         }
         return false;
