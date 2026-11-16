@@ -66,21 +66,21 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
         SqlDialect dialect = getSqlDialect();
         AliasManager am = new AliasManager(dialect);
         SQLFragment parents = AttachmentService.get().getAttachmentParentTypes().stream()
-            .map(type -> new SQLFragment("SELECT ? AS ParentType, EntityId, Description FROM (")
+            .map(type -> SQLFragment.unsafe("SELECT ? AS ParentType, EntityId, Description FROM (")
                 .add(type.getUniqueName())
                 .append(type.getSelectEntityIdAndDescriptionSql())
                 .unsafeAppend(") ")
                 .appendIdentifier(am.decideAlias("x")))
             .filter(Objects::nonNull)
-            .collect(LabKeyCollectors.joining(new SQLFragment("\nUNION\n")));
+            .collect(LabKeyCollectors.joining(SQLFragment.unsafe("\nUNION\n")));
 
-        return new SQLFragment("(SELECT d.*, p.Description AS ParentDescription, ")
-            .append(dialect.wrapBooleanExpression(new SQLFragment("EntityId IS NULL")))
+        return SQLFragment.unsafe("(SELECT d.*, p.Description AS ParentDescription, ")
+            .append(dialect.wrapBooleanExpression(SQLFragment.unsafe("EntityId IS NULL")))
             .unsafeAppend(" AS Orphaned FROM ")
             .append(super.getFromSQL("d")) // core.Documents with container filter applied
             .unsafeAppend(" LEFT JOIN (\n")
             .append(parents)
             .unsafeAppend("\n) p ON d.Parent = p.EntityId AND d.ParentType = p.ParentType) ")
-            .append(alias);
+            .appendIdentifier(alias);
     }
 }

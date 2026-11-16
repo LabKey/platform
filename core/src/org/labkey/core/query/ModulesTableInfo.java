@@ -147,14 +147,14 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         if (null == s)
             sql.unsafeAppend("NULL");
         else
-            sql.append(h.quoteStringLiteral(s));
+            sql.appendStringLiteral(s, getSqlDialect());
     }
 
     private void appendBooleanLiteral(SQLFragment sql, String sep, boolean b)
     {
         sql.append(sep);
 
-        sql.append(getSqlDialect().getBooleanLiteral(b));
+        sql.appendValue(b, getSqlDialect());
     }
 
     @NotNull
@@ -214,10 +214,10 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
         // join with core.modules
         ret.unsafeAppend("(SELECT m.name, m.schemaversion, m.classname, m.schemas");
-        ret.unsafeAppend(",").append(tableName).unsafeAppend(".*");
+        ret.unsafeAppend(",").appendIdentifier(tableName).unsafeAppend(".*");
         ret.unsafeAppend("\n");
         ret.unsafeAppend("FROM ").append(getFromTable().getFromSQL("m")).unsafeAppend("\n");
-        ret.unsafeAppend("INNER JOIN ").append(token).unsafeAppend(" ").append(tableName).unsafeAppend(" ON m.name = ").append(tableName).unsafeAppend(".ModuleName\n");
+        ret.unsafeAppend("INNER JOIN ").append(token).unsafeAppend(" ").appendIdentifier(tableName).unsafeAppend(" ON m.name = ").appendIdentifier(tableName).unsafeAppend(".ModuleName\n");
         // CONSIDER: LEFT OUTER JOIN to include rows from core.modules for modules not currently installed
 
         // WHERE

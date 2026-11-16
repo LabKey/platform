@@ -90,7 +90,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         this.setDefaultVisibleColumns(defCols);
 
         //workbook true
-        this.addCondition(new SQLFragment("Type='workbook'"));
+        this.addCondition(SQLFragment.unsafe("Type='workbook'"));
 
         setInsertURL(new DetailsURL(new ActionURL(CoreController.CreateWorkbookAction.class, coreSchema.getContainer())));
 
