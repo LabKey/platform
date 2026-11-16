@@ -281,6 +281,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             Map<String, Map<String, Object>> aliases = _parentAliases.get(_domainUri);
 
             DomainUtil.validateProperties(gwtDomain, kindReserved, _kind.getReservedPropertyNamePrefixes(),
+                DomainUtil.getNamesAndLabels(_kind.getSystemImportAliases()),
                 _kind.allowMultiChoiceProperties(), _kind.supportsNamingPattern(),
                     null /*null on purpose to not forgive an existing field that keeps a name that only later became reserved*/,
                 (rule, _) -> _counts.add(rule.name(), kindName));

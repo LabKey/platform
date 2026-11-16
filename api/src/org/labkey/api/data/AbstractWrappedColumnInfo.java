@@ -648,6 +648,13 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    @NotNull
+    public Set<String> getSystemImportAliasSet()
+    {
+        return delegate.getSystemImportAliasSet();
+    }
+
+    @Override
     @Nullable
     public PropertyType getPropertyType()
     {
