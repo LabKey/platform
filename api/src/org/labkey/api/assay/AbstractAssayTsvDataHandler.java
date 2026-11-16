@@ -127,6 +127,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -346,6 +347,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
+    private static final Pattern LEADING_ZERO_INTEGER = Pattern.compile("[-+]?0\\d+");
+
     private static Converter leadingZeroPreservingConverter(Converter converter)
     {
         return new Converter()
@@ -357,7 +360,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (value instanceof String s)
                 {
                     String trimmed = s.trim();
-                    if (trimmed.length() > 1 && trimmed.charAt(0) == '0' && StringUtils.isNumeric(trimmed))
+                    if (LEADING_ZERO_INTEGER.matcher(trimmed).matches())
                         return (T) trimmed;
                 }
                 return converter.convert(type, value);
