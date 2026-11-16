@@ -603,7 +603,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             // check if we are merging the re-imported data
             if (context != null && context.getReRunId() != null && context.getReImportOption() == MERGE_DATA)
             {
-                DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                DataIteratorBuilder mergedData;
+                try
+                {
+                    mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                }
+                catch (DbScope.RetryPassthroughException e)
+                {
+                    e.rethrow(BatchValidationException.class);
+                    throw e.throwRuntimeException();
+                }
                 fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
             }
 
