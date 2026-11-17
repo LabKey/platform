@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -174,14 +175,17 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
             root.addChild(_table.getName(), getSuccessURL(null));
     }
 
-    protected void ensureUpdatable()
+    protected @NotNull QueryUpdateService ensureUpdatable()
     {
-        if (_table.getUpdateService() == null)
+        QueryUpdateService qus = _table.getUpdateService();
+        if (qus == null)
             throw new BadRequestException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
+        return qus;
     }
 
     protected List<Map<String, Object>> doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert)
     {
+        QueryUpdateService qus = ensureUpdatable();
         TableInfo table = form.getTable();
         if (!table.hasPermission(form.getUser(), insert ? InsertPermission.class : UpdatePermission.class))
         {
@@ -206,10 +210,6 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         }
 
         values = form.getTypedColumns();
-
-        QueryUpdateService qus = table.getUpdateService();
-        if (qus == null)
-            throw new IllegalArgumentException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
 
 
         List<Map<String, Object>> rows;
