@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -37,11 +38,14 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -51,6 +55,7 @@ import org.labkey.experiment.ExpDataIterators;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -59,6 +64,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static java.util.Collections.emptyList;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
@@ -228,12 +234,73 @@ public class SampleIndexDocumentTestCase extends Assert
         ExpMaterial x1 = sample(_subfolder, st.getName(), "X1");
 
         ExpMaterialTableImpl.CollectingIndexingQueue queue = new ExpMaterialTableImpl.CollectingIndexingQueue(_project);
-        ExpMaterialTableImpl.queueSearchIndexing(queue, _project, (ExpSampleTypeImpl) st, new ExpDataIterators.SearchIndexDataKeys(List.of(x1.getRowId()), List.of()));
+        ExpMaterialTableImpl.queueSearchIndexing(queue, new ExpDataIterators.SearchIndexDataKeys(List.of(x1.getRowId()), List.of()));
 
         Map<String, Object> doc = normalize(queue.docs).get(x1.getDocumentId());
         assertNotNull("X1 indexed", doc);
         assertEquals(_subfolder.getEntityId().toString(), doc.get("container"));
         assertTokens(doc, SearchService.PROPERTY.identifiersMed, "delta");
+    }
+
+    @Test
+    public void testDomainChangeWhileBatchQueued() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexStaleTable");
+        insertSamples(_project, st.getName(), List.of(row(Name.name(), "T1", "TextField", "alpha", "IntField", 41), row(Name.name(), "T2", "TextField", "beta")));
+        List<Long> rowIds = List.of(sample(st.getName(), "T1").getRowId(), sample(st.getName(), "T2").getRowId());
+        drainQueue();
+
+        // A commit's batches wait in the indexer's queue
+        List<Consumer<SearchService.TaskIndexingQueue>> held = new ArrayList<>();
+        ExpMaterialTableImpl.CollectingIndexingQueue holding = new ExpMaterialTableImpl.CollectingIndexingQueue(_project)
+        {
+            @Override
+            public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
+            {
+                held.add(r);
+            }
+        };
+        ExpMaterialTableImpl.queueSearchIndexing(holding, new ExpDataIterators.SearchIndexDataKeys(rowIds, List.of()));
+
+        // Meanwhile a field is removed, which queues a pass over the type
+        GWTDomain<GWTPropertyDescriptor> original = DomainUtil.getDomainDescriptor(_user, st.getDomain());
+        GWTDomain<GWTPropertyDescriptor> update = DomainUtil.getDomainDescriptor(_user, st.getDomain());
+        update.setFields(update.getFields(true).stream().filter(f -> !f.getName().equalsIgnoreCase("IntField")).toList());
+        ValidationException errors = SampleTypeService.get().updateSampleType(original, update, null, _project, _user, false, null);
+        assertFalse(errors.getMessage(), errors.hasErrors());
+        ExpSampleType changed = SampleTypeService.get().getSampleType(_project, st.getRowId());
+
+        // The queue runs the held batches before that pass, so let the pass finish, then put the samples back as they were before it.
+        // A write of the pass's still pending goes out with the held batch's below, whose later time wins.
+        drainQueue();
+        new SqlExecutor(ExperimentServiceImpl.getExpSchema()).execute(new SQLFragment().unsafeAppend("DELETE FROM exp.materialindexed WHERE MaterialId IN (?, ?)").addAll(rowIds));
+
+        ExpMaterialTableImpl.CollectingIndexingQueue queued = new ExpMaterialTableImpl.CollectingIndexingQueue(_project);
+        held.forEach(r -> r.accept(queued));
+        // Writes whatever the documents record now, rather than waiting for the background writer
+        long recordedAt = System.currentTimeMillis();
+        List<Pair<Long, Long>> pending;
+        synchronized (ExpMaterialImpl.updateLastIndexedList)
+        {
+            queued.docs.forEach(doc -> doc.setLastIndexed(recordedAt, recordedAt));
+            pending = List.copyOf(ExpMaterialImpl.updateLastIndexedList);
+            ExpMaterialImpl.updateLastIndexedList.clear();
+        }
+        ExperimentServiceImpl.get().setMaterialLastIndexed(pending);
+
+        ExpMaterialTableImpl.CollectingIndexingQueue pass = new ExpMaterialTableImpl.CollectingIndexingQueue(_project);
+        SampleTypeService.get().indexSampleType(changed, pass);
+
+        String id = sample(st.getName(), "T1").getDocumentId();
+        Map<String, Object> queuedDoc = normalize(queued.docs).get(id);
+        Map<String, Object> passDoc = normalize(pass.docs).get(id);
+        Map<String, Object> last = Objects.requireNonNullElse(passDoc, queuedDoc);
+        assertNotNull("T1 indexed", last);
+        String outcome = "the held batch indexed " + (queuedDoc == null ? null : queuedDoc.get(SearchService.PROPERTY.identifiersMed.toString()))
+                + " and the type pass " + (passDoc == null ? "skipped T1" : "reindexed T1");
+        Object tokens = last.get(SearchService.PROPERTY.identifiersMed.toString());
+        assertTrue("T1's last document lost its TextField value: " + outcome, String.valueOf(tokens).contains("alpha"));
+        assertFalse("T1's last document kept the removed field's value: " + outcome, String.valueOf(tokens).contains("41"));
     }
 
     @Test

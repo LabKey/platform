@@ -2468,7 +2468,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // LATE_POSTCOMMIT so indexing reads the materialized view after this change's POSTCOMMIT refresh signal
                 .setIndexFunction(searchIndexDataKeys ->
                         propertiesTable.getSchema().getScope().addCommitTask(() ->
-                                queueSearchIndexing(queue, container, _ss, searchIndexDataKeys), DbScope.CommitTaskOption.LATE_POSTCOMMIT));
+                                queueSearchIndexing(queue, searchIndexDataKeys), DbScope.CommitTaskOption.LATE_POSTCOMMIT));
 
             dib = LoggingDataIterator.wrap(dib);
             return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(dib, container, user, ExperimentServiceImpl.get().getTinfoMaterialAliasMap(), _ss, true));
@@ -2479,32 +2479,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    /** Changes made through {@code container}'s table can include samples in other folders, which are indexed with their own folder's table */
-    static void queueSearchIndexing(@NotNull SearchService.TaskIndexingQueue queue, @NotNull Container container, @NotNull ExpSampleTypeImpl sampleType, @NotNull ExpDataIterators.SearchIndexDataKeys keys)
+    static void queueSearchIndexing(@NotNull SearchService.TaskIndexingQueue queue, @NotNull ExpDataIterators.SearchIndexDataKeys keys)
     {
-        TableInfo searchTable = AbstractRunItemImpl.getSearchTable(SamplesSchema.SCHEMA_SAMPLES, container, sampleType);
-        if (searchTable == null)
-        {
-            // Expected only when the sample type was deleted after this commit
-            _log.debug("Skipping search indexing for sample type {}: no search table in {}", sampleType.getName(), container.getPath());
-            return;
-        }
-
-        // Shared by every batch of this commit; the batches run one at a time on the indexer's runner thread
-        Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
-        tableCache.put(new AbstractRunItemImpl.TableCacheKey(container, sampleType), searchTable);
-        queueIndexBatches(queue, RowId, keys.orderedRowIds(), tableCache);
-        queueIndexBatches(queue, LSID, keys.lsids(), tableCache);
+        queueIndexBatches(queue, RowId, keys.orderedRowIds());
+        queueIndexBatches(queue, LSID, keys.lsids());
     }
 
-    private static void queueIndexBatches(SearchService.TaskIndexingQueue queue, ExpMaterialTable.Column keyColumn, List<?> keys,
-                                          Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache)
+    /** Each batch builds its tables when it runs, since a table built earlier can predate a domain change made while the batch waited */
+    private static void queueIndexBatches(SearchService.TaskIndexingQueue queue, ExpMaterialTable.Column keyColumn, List<?> keys)
     {
         ListUtils.partition(keys, SearchService.INDEXING_LIMIT).forEach(sublist -> queue.addRunnable(q -> {
             // Issue 51263: order by RowId to reduce deadlock
             List<Material> batch = ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(),
                     ExpMaterialImpl.INDEX_COLUMNS, new SimpleFilter().addInClause(keyColumn.fieldKey(), sublist), new Sort(RowId.name())));
-            ExpMaterialImpl.indexBatch(q, batch, tableCache);
+            ExpMaterialImpl.indexBatch(q, batch, new HashMap<>());
         }));
     }
 
