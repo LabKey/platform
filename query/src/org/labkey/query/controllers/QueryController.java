@@ -324,6 +324,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.net.ssl.SSLException;
 import java.io.BufferedOutputStream;
@@ -3314,7 +3315,8 @@ public class QueryController extends SpringActionController
 
             if (_schema != null && _table != null)
             {
-                if (_table.hasPermission(getUser(), UpdatePermission.class))
+                if (_table.hasPermission(getUser(), UpdatePermission.class) &&
+                    (_table.getUpdateService() != null || (_table.hasUpdateURLOverride() && _table.allowQueryTableURLOverrides())))
                 {
                     StringExpression updateExpr = _form.getQueryDef().urlExpr(QueryAction.updateQueryRow, _schema.getContainer());
                     if (updateExpr != null)
@@ -3414,6 +3416,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
+            ensureUpdatable();
             if (getPageConfig().getTitle() == null)
                 setTitle("Insert Row");
 
@@ -3483,6 +3486,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
+            ensureUpdatable();
             ButtonBar bb = createSubmitCancelButtonBar(tableForm);
             UpdateView view = new UpdateView(tableForm, errors);
             view.getDataRegion().setButtonBar(bb);
@@ -8916,6 +8920,100 @@ public class QueryController extends SpringActionController
             rows.put(Map.of("TextField", val));
 
             return rows;
+        }
+    }
+
+    public static class UpdateRowFormTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "UpdateRowFormTestProject";
+        private static final String LIST_NAME = "Items";
+        private static final String PLAIN_QUERY = "ItemsQuery";
+        private static final String WRAPPER_QUERY = "ItemsWrapper";
+        private static final String KEY = "Name";
+        private static final String KEY_VALUE = "A";
+
+        @Before
+        public void doSetup() throws Exception
+        {
+            doCleanup();
+
+            User user = TestContext.get().getUser();
+            Container c = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, user);
+            ContainerManager.updateSearchable(c, false, user);
+
+            ListDefinition ld = ListService.get().createList(c, LIST_NAME, ListDefinition.KeyType.Varchar);
+            Domain domain = ld.getDomain();
+            assertNotNull(domain);
+            domain.addProperty(new PropertyStorageSpec(KEY, JdbcType.VARCHAR));
+            ld.setKeyName(KEY);
+            ld.save(user);
+
+            TableInfo listTable = ld.getTable(user);
+            assertNotNull(listTable);
+            QueryUpdateService qus = listTable.getUpdateService();
+            assertNotNull(qus);
+            BatchValidationException errors = new BatchValidationException();
+            qus.insertRows(user, c, List.of(new HashMap<>(Map.of(KEY, KEY_VALUE))), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            String sql = "SELECT " + KEY + " FROM " + LIST_NAME;
+            saveQuery(c, PLAIN_QUERY, sql, null);
+            saveQuery(c, WRAPPER_QUERY, sql, """
+                <tables xmlns="http://labkey.org/data/xml"><table tableName="%s" tableDbType="NOT_IN_DB">
+                <updateUrl>/query/updateQueryRow.view?schemaName=lists&amp;query.queryName=%s&amp;%s=${%s}</updateUrl>
+                </table></tables>""".formatted(WRAPPER_QUERY, LIST_NAME, KEY, KEY));
+        }
+
+        @After
+        public void doCleanup()
+        {
+            Container c = ContainerManager.getForPath(PROJECT_NAME);
+            if (c != null)
+                ContainerManager.deleteAll(c, TestContext.get().getUser());
+        }
+
+        private void saveQuery(Container c, String name, String sql, @Nullable String metadataXml)
+        {
+            User user = TestContext.get().getUser();
+            QueryDefinition qd = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), name);
+            qd.setSql(sql);
+            if (metadataXml != null)
+                qd.setMetadataXml(metadataXml);
+            qd.save(user, c);
+        }
+
+        private MockHttpServletResponse get(Class<? extends Controller> action, String queryName) throws Exception
+        {
+            ActionURL url = new ActionURL(action, ContainerManager.getForPath(PROJECT_NAME))
+                .addParameter("schemaName", "lists")
+                .addParameter("query.queryName", queryName)
+                .addParameter(KEY, KEY_VALUE);
+            return ViewServlet.mockDispatch(ViewServlet.mockRequest(RequestMethod.GET.name(), url, TestContext.get().getUser(), null, null), null);
+        }
+
+        @Test
+        public void testUpdatableTable() throws Exception
+        {
+            assertEquals(HttpServletResponse.SC_OK, get(UpdateQueryRowAction.class, LIST_NAME).getStatus());
+            assertEquals(HttpServletResponse.SC_OK, get(InsertQueryRowAction.class, LIST_NAME).getStatus());
+        }
+
+        @Test
+        public void testNonUpdatableQuery() throws Exception
+        {
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, get(UpdateQueryRowAction.class, PLAIN_QUERY).getStatus());
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, get(UpdateQueryRowsAction.class, PLAIN_QUERY).getStatus());
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, get(InsertQueryRowAction.class, PLAIN_QUERY).getStatus());
+        }
+
+        @Test
+        public void testUpdateUrlOverrideGridLink() throws Exception
+        {
+            MockHttpServletResponse grid = get(ExecuteQueryAction.class, WRAPPER_QUERY);
+            assertEquals(HttpServletResponse.SC_OK, grid.getStatus());
+            // Trailing '&' keeps this from matching the wrapper's own query.queryName=ItemsWrapper links
+            assertTrue("Update URL override did not produce an Edit link to the underlying list", grid.getContentAsString().contains("query.queryName=" + LIST_NAME + "&"));
         }
     }
 

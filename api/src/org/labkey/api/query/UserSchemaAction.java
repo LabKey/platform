@@ -35,6 +35,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -171,6 +172,12 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
     {
         if (_table != null)
             root.addChild(_table.getName(), getSuccessURL(null));
+    }
+
+    protected void ensureUpdatable()
+    {
+        if (_table.getUpdateService() == null)
+            throw new BadRequestException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
     }
 
     protected List<Map<String, Object>> doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert)
