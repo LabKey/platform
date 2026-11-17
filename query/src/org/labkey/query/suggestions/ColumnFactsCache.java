@@ -270,7 +270,7 @@ public class ColumnFactsCache
         List<Plan> plans = new ArrayList<>();
         for (SuggestionColumn column : described.columns())
         {
-            if (described.auditLogged().contains(column))
+            if (described.auditLogged().contains(column) || isThroughLookup(column) || described.lookups().containsKey(column))
                 continue;
             Scope columnScope = userScope;
             if (isShared(column))
@@ -334,6 +334,16 @@ public class ColumnFactsCache
         TracedOperation.tagActiveSpan("labkey.suggestion.columns_pending", pending);
         TracedOperation.tagActiveSpan("labkey.suggestion.columns_failed", failed);
         TracedOperation.tagActiveSpan("labkey.suggestion.budget_exhausted", budgetExhausted);
+    }
+
+    /**
+     * Whether the column's values are read through a lookup join, whose base column the query is free to prune: that
+     * has produced invalid SQL against nested queries, so the column falls back to the grid's own value query.
+     */
+    private static boolean isThroughLookup(SuggestionColumn column)
+    {
+        ColumnInfo info = column.getColumnInfo();
+        return info != null && info.getFieldKey().getParent() != null;
     }
 
     /** Whether the column's facts can follow the table's token, which shares them across users */
@@ -992,17 +1002,20 @@ public class ColumnFactsCache
         }
 
         @Test
-        public void testLookupDataIsNotShared()
+        public void testLookupColumnsAreNotRead()
         {
-            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
+            TestSource source = new TestSource(0);
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, source);
             TableInfo table = getTable(SAMPLE_TYPE);
             String email = "CreatedBy/Email";
-            FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of(email));
+            FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("CreatedBy", email));
             assertTrue(byFieldKey(described).containsKey(email));
 
             assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000).complete());
-            assertNotNull(cache.peek(context(table, _user), "shared", false, "values", email));
-            assertNull("The table's token doesn't cover data reached through a lookup", cache.peek(context(table, UserManager.getGuestUser()), "shared", true, "values", email));
+            assertEquals("A lookup's values are read through a join the query may prune", 0, source._calls.get());
+            for (SuggestionColumn column : described.columns())
+                assertNull(column.getFieldKey(), column.getValues());
+            assertNull(cache.peek(context(table, _user), "shared", false, "values", email));
         }
 
         @Test
@@ -1028,20 +1041,6 @@ public class ColumnFactsCache
             assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000).complete());
             assertNotNull(cache.peek(context(table, _user), "shared", false, "values", "viewer"));
             assertNull("A calculated value can depend on the user", cache.peek(context(table, UserManager.getGuestUser()), "shared", true, "values", "viewer"));
-        }
-
-        @Test
-        public void testLookupValuesComeFromRows()
-        {
-            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
-            TableInfo table = getTable(SAMPLE_TYPE);
-            FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("CreatedBy", "ModifiedBy"));
-            assertEquals(2, described.columns().size());
-            assertTrue(described.lookups().isEmpty());
-
-            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000).complete());
-            for (SuggestionColumn column : described.columns())
-                assertEquals(column.getFieldKey(), List.of(_user.getDisplayName(_user)), column.getValues());
         }
 
         @Test

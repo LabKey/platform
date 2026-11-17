@@ -38,6 +38,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.suggestions.FilterSuggestionContext;
@@ -179,9 +180,17 @@ public class FilterSuggestionService
         {
             if (resolved.readsData())
             {
-                ColumnFactsCache.FillResult result = ColumnFactsCache.get().fill(context, request.parameters(), resolved.filter(), described, tokens, ColumnFactsCache.DEFAULT_BUDGET_MS);
-                complete &= result.complete();
-                failed = result.failed();
+                if (hasChangeTokens(table))
+                {
+                    ColumnFactsCache.FillResult result = ColumnFactsCache.get().fill(context, request.parameters(), resolved.filter(), described, tokens, ColumnFactsCache.DEFAULT_BUDGET_MS);
+                    complete &= result.complete();
+                    failed = result.failed();
+                }
+                else
+                {
+                    // Nothing was read, so don't let a caller read the columns' absent facts as "no values"
+                    complete = false;
+                }
             }
         }
         catch (RuntimeException e)
@@ -322,6 +331,15 @@ public class FilterSuggestionService
             LOG.warn("Unable to estimate the row count for {}", table.getName(), e);
             return null;
         }
+    }
+
+    /**
+     * Whether a data change to the table moves a change token, which every cached fact is keyed by. Only sample tables
+     * supply one, so facts read from anything else would be served stale until they aged out.
+     */
+    private static boolean hasChangeTokens(TableInfo table)
+    {
+        return SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(table.getPublicSchemaName());
     }
 
     /** The first non-null token from a provider that handles the table; null keeps its facts per user. */
