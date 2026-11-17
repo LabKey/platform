@@ -22,8 +22,7 @@ const SMALL_TSV = 'small.tsv';
 const LONG_TSV = 'long.tsv';
 const XLSX = 'sampleType.xlsx';
 
-// Read eagerly so the real file is captured before mock-fs replaces the file system; relative to the module directory
-const XLSX_CONTENT = mock.load('test/sampledata/sampleType.xlsx', { lazy: false });
+const XLSX_CONTENT = mock.load('test/sampledata/sampleType.xlsx');
 
 let readerOptions: RequestOptions;
 
