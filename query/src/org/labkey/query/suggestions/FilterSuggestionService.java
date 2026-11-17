@@ -58,6 +58,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
+import static org.labkey.api.data.DataRegionSelection.MAX_QUERY_SELECTION_SIZE;
+
 /** Backs query-getFilterSuggestions.api: resolves the table, describes its candidate columns, and ranks suggestions. */
 public class FilterSuggestionService
 {
@@ -65,8 +67,6 @@ public class FilterSuggestionService
     private static final int MAX_SUGGESTIONS_LIMIT = 100;
     private static final String FILTER_REGION = "query";
     private static final String ALL_COLUMNS = "*";
-    // Matches the row count at which a grid stops counting exactly and shows "100,000+"
-    private static final long LARGE_TABLE_ROWS = 100_000;
 
     /**
      * @param columns    the grid's display column fieldKeys
@@ -236,7 +236,24 @@ public class FilterSuggestionService
         @Nullable Long distinctCount,
         boolean truncated,
         boolean hasBlank
-    ) {}
+    )
+    {
+        /** The facts this endpoint discloses, narrowed from everything the load gathered about the column. */
+        static ColumnFacet of(@NotNull SuggestionColumn column)
+        {
+            return new ColumnFacet(
+                column.getFieldKey(),
+                column.getGridFieldKey(),
+                column.getType().name(),
+                column.getValues(),
+                // A multi-valued lookup's values come from its target table, unscoped by this request
+                column.isValuesFromData() && !column.isMultiValued(),
+                column.getDistinctCount(),
+                column.isValuesTruncated(),
+                column.isValuesHaveBlank()
+            );
+        }
+    }
 
     /**
      * @param largeTable the table behind the query holds more rows than any grid would list values for. A coarse
@@ -252,14 +269,9 @@ public class FilterSuggestionService
         Filled filled = describeAndFill(user, container, request, resolved);
 
         Long estimate = resolved.readsData() ? getProvisionedRowCount(resolved.table()) : null;
-        boolean largeTable = estimate != null && estimate > LARGE_TABLE_ROWS;
+        boolean largeTable = estimate != null && estimate > MAX_QUERY_SELECTION_SIZE;
 
-        List<ColumnFacet> facets = filled.columns().stream()
-            .map(c -> new ColumnFacet(c.getFieldKey(), c.getGridFieldKey(), c.getType().name(), c.getValues(),
-                // A multi-valued lookup's values come from its target table, unscoped by this request
-                c.isValuesFromData() && !c.isMultiValued(),
-                c.getDistinctCount(), c.isValuesTruncated(), c.isValuesHaveBlank()))
-            .toList();
+        List<ColumnFacet> facets = filled.columns().stream().map(ColumnFacet::of).toList();
 
         // Nothing was read, so the facts say nothing about the data; don't let a caller read that as "no values".
         // A failed load reads the same way: its column reports no values, which is not the same as having none.
@@ -298,8 +310,9 @@ public class FilterSuggestionService
         try
         {
             // reltuples is a float; cast in SQL because the selector has no getter for Float
-            SQLFragment sql = new SQLFragment("SELECT CAST(reltuples AS BIGINT) FROM pg_class WHERE oid = to_regclass(?)")
-                .add(schemaName + "." + tableName);
+            SQLFragment sql = SQLFragment.unsafe(
+                    "SELECT CAST(reltuples AS BIGINT) FROM pg_class WHERE oid = to_regclass(quote_ident(?) || '.' || quote_ident(?))",
+                    schemaName, tableName);
             Long estimate = new SqlSelector(scope, sql).getObject(Long.class);
             // -1 means never analyzed in Postgres 14 and later; older versions report 0, indistinguishable from empty
             return estimate == null || estimate < 0 ? null : estimate;
