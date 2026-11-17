@@ -94,79 +94,37 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
         return stats;
     }
 
-    /**
-     * The column plus the lookup columns it is reached through. A display column's join reads its FK's base column,
-     * and a query selects only the columns asked for, so requesting the display column alone leaves the join
-     * pointing at one the inner select dropped.
-     */
-    private static List<ColumnInfo> withAncestors(QueryService service, TableInfo table, ColumnInfo column)
-    {
-        FieldKey parent = column.getFieldKey().getParent();
-        if (parent == null)
-            return List.of(column);
-
-        List<FieldKey> ancestors = new ArrayList<>();
-        for (FieldKey key = parent; key != null; key = key.getParent())
-            ancestors.add(key);
-
-        Map<FieldKey, ColumnInfo> resolved = service.getColumns(table, ancestors);
-        List<ColumnInfo> columns = new ArrayList<>();
-        ancestors.forEach(key -> {
-            ColumnInfo ancestor = resolved.get(key);
-            if (ancestor != null)
-                columns.add(ancestor);
-        });
-        // Last, and the instance the caller passed: the outer select reads values by this column's own alias
-        columns.add(column);
-        return columns;
-    }
-
     @Override
     public @NotNull ColumnFact.Values loadValues(@NotNull TableInfo table, @NotNull ColumnInfo column, @NotNull SuggestionColumn.Type type, @NotNull Map<String, Object> parameters, @Nullable SimpleFilter filter)
     {
         QueryService service = QueryService.get();
         QueryLogging queryLogging = new QueryLogging();
         SQLFragment selectSql = service.getSelectBuilder(table)
-            .columns(withAncestors(service, table, column))
+            .columns(List.of(column))
             .filter(filter)
             .queryLogging(queryLogging)
             .distinct(true)
             .buildSqlFragment();
 
-        // Distinct again out here: the inner one covers every column it projects, which for a lookup includes the
-        // base column the join reads, so two base values sharing a display value would each yield a row
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT S.").appendIdentifier(column.getAlias()).append(" AS value FROM (")
+        SQLFragment sql = new SQLFragment("SELECT S.").appendIdentifier(column.getAlias()).append(" AS value FROM (")
             .append(selectSql)
-            .append(") S");
-        // Two extra rows for a null and a blank value, which are dropped, and one to detect overflow
-        int limit = ColumnFactsCache.DISTINCT_VALUE_LIMIT + 3;
-        sql = table.getSqlDialect().limitRows(sql, limit);
+            .append(") S WHERE S.").appendIdentifier(column.getAlias()).append(" IS NOT NULL");
+        // One extra row for a blank value, which is dropped, and one to detect overflow
+        sql = table.getSqlDialect().limitRows(sql, ColumnFactsCache.DISTINCT_VALUE_LIMIT + 2);
         service.bindNamedParameters(sql, parameters);
         service.validateNamedParameters(sql);
 
         List<String> values = new ArrayList<>();
         int count = 0;
-        int rows = 0;
-        boolean truncated = false;
-        boolean hasBlank = false;
         for (String value : new SqlSelector(table.getSchema().getScope(), sql, queryLogging).setQueryTimeout(QUERY_TIMEOUT_SECONDS).getArrayList(String.class))
         {
-            rows++;
             if (value == null || value.isBlank())
-            {
-                hasBlank = true;
                 continue;
-            }
             count++;
             if (value.length() <= MAX_VALUE_LENGTH)
                 values.add(type == SuggestionColumn.Type.INT ? toIntegerString(value) : value);
-            else
-                truncated = true;
         }
-        // Every distinct blank-ish value is its own row and is dropped without counting, so a full fetch can hide
-        // values even when the count is under the limit. Then the list can't be trusted to be the whole set.
-        boolean overflow = count > ColumnFactsCache.DISTINCT_VALUE_LIMIT || rows == limit;
-        return new ColumnFact.Values(overflow ? null : values, truncated, hasBlank);
+        return new ColumnFact.Values(count > ColumnFactsCache.DISTINCT_VALUE_LIMIT ? null : values);
     }
 
     @Override

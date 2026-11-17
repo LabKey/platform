@@ -251,9 +251,9 @@ public class ColumnFactsCache
      * Sets cached facts on the columns, loading missing ones and waiting for them up to the budget.
      * @param filter  bounds the rows read from the table, but not the junction tables that multi-valued lookups read
      * @param tokens each table's change token, or null when its facts must not be shared across users
-     * @return what the request still doesn't know about the facts it asked for
+     * @return false when some fact wasn't available within the budget
      */
-    public FillResult fill(@NotNull FilterSuggestionContext context, @Nullable Map<String, Object> parameters, @Nullable SimpleFilter filter, @NotNull FilterSuggestionColumns.Described described,
+    public boolean fill(@NotNull FilterSuggestionContext context, @Nullable Map<String, Object> parameters, @Nullable SimpleFilter filter, @NotNull FilterSuggestionColumns.Described described,
                         @NotNull Function<TableInfo, String> tokens, long budgetMs)
     {
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(budgetMs);
@@ -282,7 +282,7 @@ public class ColumnFactsCache
         if (plans.isEmpty())
         {
             tagRequest(0, 0, 0, false);
-            return new FillResult(false, false);
+            return true;
         }
 
         List<CompletableFuture<Void>> loads = new ArrayList<>();
@@ -311,20 +311,7 @@ public class ColumnFactsCache
             }
         }
         tagRequest(plans.size(), pending, failed, !finished);
-        return new FillResult(pending > 0, failed > 0);
-    }
-
-    /**
-     * @param pending a fact hadn't loaded within the budget, so asking again later may answer it
-     * @param failed  a fact's load failed, and the failure is cached: asking again won't answer it until it expires
-     */
-    public record FillResult(boolean pending, boolean failed)
-    {
-        /** Every fact the request asked for is in hand, whether or not any of them failed. */
-        public boolean complete()
-        {
-            return !pending;
-        }
+        return pending == 0;
     }
 
     /** Tags the request's span with how many columns' facts were ready, since the loads run in traces of their own */
@@ -696,8 +683,6 @@ public class ColumnFactsCache
         }
 
         ColumnFact stats = _cache.get(plan.statsKey());
-        if (stats instanceof ColumnFact.Stats st)
-            column.setDistinctCount(st.distinctCount());
         if (plan.kind() != Kind.STRING)
         {
             // Stats that failed or haven't loaded yet leave the range unknown, so the column isn't treated as out of range
@@ -718,7 +703,7 @@ public class ColumnFactsCache
     {
         ColumnFact values = _cache.get(plan.valuesKey());
         if (values instanceof ColumnFact.Values v && !v.isOverflow())
-            plan.column().setValues(v.values(), v.truncated(), v.hasBlank());
+            plan.column().setValues(v.values());
         return FactState.of(values);
     }
 
@@ -932,7 +917,7 @@ public class ColumnFactsCache
             TableInfo table = getTable(SAMPLE_TYPE);
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
 
-            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "token-1", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "token-1", 30_000));
             Map<String, SuggestionColumn> columns = byFieldKey(described);
 
             assertEquals(Set.of("red", "green", "blue"), Set.copyOf(Objects.requireNonNull(columns.get("color").getValues())));
@@ -959,7 +944,7 @@ public class ColumnFactsCache
 
             int calls = source._calls.get();
             FilterSuggestionColumns.Described again = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
-            assertTrue("Cached facts should need no wait", cache.fill(context(table, _user), null, null, again, _ -> "token-1", 0).complete());
+            assertTrue("Cached facts should need no wait", cache.fill(context(table, _user), null, null, again, _ -> "token-1", 0));
             assertEquals(calls, source._calls.get());
             assertEquals(List.of("AAAA-999999"), byFieldKey(again).get("subject").getShapes());
         }
@@ -982,11 +967,11 @@ public class ColumnFactsCache
             TableInfo table = getTable(SAMPLE_TYPE);
             User other = UserManager.getGuestUser();
 
-            assertTrue(cache.fill(context(table, _user), null, null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> null, 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> null, 30_000));
             assertNotNull(cache.peek(context(table, _user), null, false, "values", "color"));
             assertNull("Facts of a table without a token must not cross users", cache.peek(context(table, other), null, false, "values", "color"));
 
-            assertTrue(cache.fill(context(table, _user), null, null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, other), "shared", true, "values", "color"));
             assertNull("A new token must miss", cache.peek(context(table, other), "changed", true, "values", "color"));
         }
@@ -1000,7 +985,7 @@ public class ColumnFactsCache
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of(email));
             assertTrue(byFieldKey(described).containsKey(email));
 
-            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, _user), "shared", false, "values", email));
             assertNull("The table's token doesn't cover data reached through a lookup", cache.peek(context(table, UserManager.getGuestUser()), "shared", true, "values", email));
         }
@@ -1012,7 +997,7 @@ public class ColumnFactsCache
             TableInfo table = getTable(SAMPLE_TYPE);
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("viewer"));
 
-            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "before", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "before", 30_000));
             assertNotNull(cache.peek(context(table, _user), "before", false, "values", "viewer"));
             assertNull("A per-user entry must miss once the table's token changes", cache.peek(context(table, _user), "after", false, "values", "viewer"));
         }
@@ -1025,7 +1010,7 @@ public class ColumnFactsCache
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("viewer"));
             assertTrue(byFieldKey(described).containsKey("viewer"));
 
-            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, _user), "shared", false, "values", "viewer"));
             assertNull("A calculated value can depend on the user", cache.peek(context(table, UserManager.getGuestUser()), "shared", true, "values", "viewer"));
         }
@@ -1039,7 +1024,7 @@ public class ColumnFactsCache
             assertEquals(2, described.columns().size());
             assertTrue(described.lookups().isEmpty());
 
-            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, described, _ -> "shared", 30_000));
             for (SuggestionColumn column : described.columns())
                 assertEquals(column.getFieldKey(), List.of(_user.getDisplayName(_user)), column.getValues());
         }
@@ -1062,7 +1047,7 @@ public class ColumnFactsCache
             ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
             TableInfo table = getTable(SAMPLE_TYPE);
 
-            assertTrue(cache.fill(context(table, _user), Map.of("bogus", 1), null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), Map.of("bogus", 1), null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, _user), "shared", true, "values", "color"));
         }
 
@@ -1084,7 +1069,7 @@ public class ColumnFactsCache
                 logged.add(copy);
             }
 
-            assertTrue(cache.fill(context(table, _user), null, null, new FilterSuggestionColumns.Described(logged, Map.of(), Set.of()), _ -> "token-2", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, new FilterSuggestionColumns.Described(logged, Map.of(), Set.of()), _ -> "token-2", 30_000));
             assertEquals(0, source._calls.get());
             for (SuggestionColumn column : logged)
             {
@@ -1104,7 +1089,7 @@ public class ColumnFactsCache
             FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("CreatedBy"));
             SuggestionColumn createdBy = described.columns().getFirst();
 
-            assertTrue(cache.fill(context(table, _user), null, null, new FilterSuggestionColumns.Described(described.columns(), described.lookups(), Set.of(createdBy)), _ -> "token-4", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, new FilterSuggestionColumns.Described(described.columns(), described.lookups(), Set.of(createdBy)), _ -> "token-4", 30_000));
             assertEquals(0, source._calls.get());
             assertNull(createdBy.getValues());
         }
@@ -1117,7 +1102,7 @@ public class ColumnFactsCache
 
             long start = System.currentTimeMillis();
             FilterSuggestionColumns.Described cold = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
-            assertFalse(cache.fill(context(table, _user), null, null, cold, _ -> "token-3", 100).complete());
+            assertFalse(cache.fill(context(table, _user), null, null, cold, _ -> "token-3", 100));
             assertTrue("Budget not honored", System.currentTimeMillis() - start < 1_500);
             assertNull(byFieldKey(cold).get("color").getValues());
             assertNull(byFieldKey(cold).get("concentration").getMin());
@@ -1126,7 +1111,7 @@ public class ColumnFactsCache
 
             assertTrue(cache.awaitIdle(60_000));
             FilterSuggestionColumns.Described warm = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
-            assertTrue("Late results should fill the cache", cache.fill(context(table, _user), null, null, warm, _ -> "token-3", 0).complete());
+            assertTrue("Late results should fill the cache", cache.fill(context(table, _user), null, null, warm, _ -> "token-3", 0));
             assertNotNull(byFieldKey(warm).get("color").getValues());
         }
 
@@ -1139,12 +1124,12 @@ public class ColumnFactsCache
             SimpleFilter firstSubject = new SimpleFilter(FieldKey.fromParts("subject"), "SUBJ-000000");
 
             FilterSuggestionColumns.Described filtered = FilterSuggestionColumns.describe(table, null, List.of("color", "thawCount"));
-            assertTrue(cache.fill(context(table, _user), null, firstSubject, filtered, _ -> "token-5", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, firstSubject, filtered, _ -> "token-5", 30_000));
             assertEquals(List.of("red"), byFieldKey(filtered).get("color").getValues());
             assertEquals(List.of("0"), byFieldKey(filtered).get("thawCount").getValues());
 
             FilterSuggestionColumns.Described unfiltered = FilterSuggestionColumns.describe(table, null, List.of("color"));
-            assertTrue(cache.fill(context(table, _user), null, null, unfiltered, _ -> "token-5", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, null, unfiltered, _ -> "token-5", 30_000));
             assertEquals("Filtered entries must not serve the unfiltered table", Set.of("red", "green", "blue"), Set.copyOf(Objects.requireNonNull(byFieldKey(unfiltered).get("color").getValues())));
         }
 
@@ -1162,13 +1147,13 @@ public class ColumnFactsCache
             );
             for (SimpleFilter filter : unshared)
             {
-                assertTrue(filter.toString(), cache.fill(context(table, _user), null, filter, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000).complete());
+                assertTrue(filter.toString(), cache.fill(context(table, _user), null, filter, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
                 assertNotNull(filter.toString(), cache.peek(context(table, _user), "shared", false, filter, "values", "color"));
                 assertNull(filter.toString(), cache.peek(context(table, other), "shared", true, filter, "values", "color"));
             }
 
             SimpleFilter own = new SimpleFilter(FieldKey.fromParts("thawCount"), 0);
-            assertTrue(cache.fill(context(table, _user), null, own, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000).complete());
+            assertTrue(cache.fill(context(table, _user), null, own, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
             assertNotNull("A filter on the table's own columns follows its token", cache.peek(context(table, other), "shared", true, own, "values", "color"));
         }
 

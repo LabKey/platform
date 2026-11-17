@@ -4177,16 +4177,16 @@ public class QueryController extends SpringActionController
         }
     }
 
-    /** Cached per-column values and distinct counts, so the faceted filter can skip its SELECT DISTINCT. */
+    /** Whether the query holds more rows than a grid would list a column's values for, which decides the faceted filter's opening tab. */
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public static class GetColumnFacetsAction extends ReadOnlyApiAction<FilterSuggestionsRequest>
+    public static class GetQuerySizeAction extends ReadOnlyApiAction<FilterSuggestionsRequest>
     {
         @Override
         public Object execute(FilterSuggestionsRequest request, BindException errors)
         {
-            return FilterSuggestionService.getColumnFacets(getUser(), getContainer(), request);
+            return FilterSuggestionService.getQuerySize(getUser(), getContainer(), request);
         }
     }
 
