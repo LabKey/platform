@@ -126,7 +126,7 @@ public class FilterSuggestionService
         if (term.isBlank())
             return new FilterSuggestionsResponse(List.of(), true);
 
-        Resolved resolved = resolve(user, container, request);
+        Resolved resolved = resolve(user, container, request.schemaName(), request.queryName(), getContainerFilter(request, container, user));
         UserSchema schema = resolved.schema();
         TableInfo table = resolved.table();
         SimpleFilter filter = getFilter(request, container, user);
@@ -178,6 +178,10 @@ public class FilterSuggestionService
         return new FilterSuggestionsResponse(suggestions, complete);
     }
 
+    /** The estimate covers the whole table, so it needs no view, columns, filters or container scope. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record QuerySizeRequest(String schemaName, String queryName) {}
+
     /** @param largeTable the table behind the query holds more rows than any grid would list values for. A coarse answer rather than the row estimate itself, which spans containers the caller may not read. */
     public record QuerySizeResponse(boolean largeTable) {}
 
@@ -185,9 +189,9 @@ public class FilterSuggestionService
      * Backs query-getQuerySize.api: whether listing one column's values over this query would scan more rows than a
      * grid ever lists, so the faceted filter can open on its expression tab rather than on a value list.
      */
-    public static @NotNull QuerySizeResponse getQuerySize(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request)
+    public static @NotNull QuerySizeResponse getQuerySize(@NotNull User user, @NotNull Container container, @NotNull QuerySizeRequest request)
     {
-        TableInfo table = resolve(user, container, request).table();
+        TableInfo table = resolve(user, container, request.schemaName(), request.queryName(), null).table();
         Long estimate = getProvisionedRowCount(table);
         boolean largeTable = estimate != null && estimate > MAX_QUERY_SELECTION_SIZE;
         TracedOperation.tagActiveSpan("labkey.query", table.getPublicSchemaName() + "." + table.getPublicName());
@@ -198,16 +202,16 @@ public class FilterSuggestionService
     private record Resolved(@NotNull UserSchema schema, @NotNull TableInfo table) {}
 
     /** Resolves the request's query with the same checks and messages as QueryForm, so this fails like query-getQuery.api */
-    private static Resolved resolve(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request)
+    private static Resolved resolve(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable ContainerFilter containerFilter)
     {
-        UserSchema schema = StringUtils.isBlank(request.schemaName()) ? null : QueryService.get().getUserSchema(user, container, request.schemaName());
+        UserSchema schema = StringUtils.isBlank(schemaName) ? null : QueryService.get().getUserSchema(user, container, schemaName);
         QueryForm.ensureSchemaNotNull(schema);
-        if (StringUtils.isBlank(request.queryName()))
+        if (StringUtils.isBlank(queryName))
             throw new NotFoundException("Query not specified");
 
-        TableInfo table = schema.getTable(request.queryName(), getContainerFilter(request, container, user));
+        TableInfo table = schema.getTable(queryName, containerFilter);
         if (table == null)
-            throw new NotFoundException("The specified query '" + request.queryName() + "' does not exist in schema '" + request.schemaName() + "'");
+            throw new NotFoundException("The specified query '" + queryName + "' does not exist in schema '" + schemaName + "'");
         if (!table.hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException();
         return new Resolved(schema, table);

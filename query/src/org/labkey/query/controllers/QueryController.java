@@ -4181,10 +4181,10 @@ public class QueryController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public static class GetQuerySizeAction extends ReadOnlyApiAction<FilterSuggestionsRequest>
+    public static class GetQuerySizeAction extends ReadOnlyApiAction<FilterSuggestionService.QuerySizeRequest>
     {
         @Override
-        public Object execute(FilterSuggestionsRequest request, BindException errors)
+        public Object execute(FilterSuggestionService.QuerySizeRequest request, BindException errors)
         {
             return FilterSuggestionService.getQuerySize(getUser(), getContainer(), request);
         }
