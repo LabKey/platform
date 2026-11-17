@@ -10551,20 +10551,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpSampleType getLookupSampleType(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
     {
-        Lookup lookup = dp.getLookup();
-        if (lookup == null)
+        if (!isLookupToSampleType(dp))
             return null;
+
+        Lookup lookup = dp.getLookup();
+        Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
+        return SampleTypeService.get().getSampleType(c, lookup.getQueryName(), true);
+    }
+
+    @Override
+    public boolean isLookupToSamples(DomainProperty dp)
+    {
+        return isLookupToSampleType(dp) || isLookupToMaterials(dp);
+    }
+
+    private boolean isLookupToSampleType(@Nullable DomainProperty dp)
+    {
+        Lookup lookup = dp == null ? null : dp.getLookup();
+        if (lookup == null)
+            return false;
 
         // TODO: Use concept URI instead of the lookup target schema to determine if the column is a sample.
         if (!(SamplesSchema.SCHEMA_SAMPLES.equals(lookup.getSchemaKey()) || SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Materials.name()).equals(lookup.getSchemaKey())))
-            return null;
+            return false;
 
         JdbcType type = dp.getPropertyType().getJdbcType();
-        if (!(type.isText() || type.isInteger()))
-            return null;
-
-        Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
-        return SampleTypeService.get().getSampleType(c, lookup.getQueryName(), true);
+        return type.isText() || type.isInteger();
     }
 
     @Override
