@@ -120,6 +120,7 @@ import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
@@ -496,6 +497,7 @@ public class ApiModule extends CodeOnlyModule
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
             Path.TestCase.class,
+            PropertyType.TestCase.class,
             Query.TestCase.class,
             QueryProfiler.TestCase.class,
             RReport.TestCase.class,

@@ -1393,7 +1393,7 @@ public class AnnouncementManager
             this.threadParentURL = AnnouncementsController.getThreadURL(c, recipient, parent);
             this.boardPath = c.getPath();
             this.boardURL = AnnouncementsController.getBeginURL(c);
-            this.siteURL = ActionURL.getBaseServerURL();
+            this.siteURL = ActionURL.getBaseServerURLWithContextPath();
             this.announcementModel = a;
             this.parentModel = parent;
             this.isResponse = isResponse;
