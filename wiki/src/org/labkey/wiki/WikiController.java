@@ -25,6 +25,7 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
@@ -64,6 +65,7 @@ import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -2384,7 +2386,7 @@ public class WikiController extends SpringActionController
             //web part to show the newly inserted page
             int webPartId = form.getWebPartId();
 
-            if (webPartId > 0)
+            if (webPartId > 0 && c.hasPermission(user, AdminPermission.class))
             {
                 //get web part referenced by webPartId
                 Portal.WebPart webPart = Portal.getPart(c, webPartId);
@@ -3078,6 +3080,43 @@ public class WikiController extends SpringActionController
             User editor = createUserInRole(folder, EditorRole.class);
             assertNotEquals("An editor must pass the attachment UpdatePermission guard, not be blocked at 403",
                 HttpServletResponse.SC_FORBIDDEN, post(url, editor).getStatus());
+        }
+
+        @Test
+        public void testSaveWikiRepointsWebPartOnlyForAdmin() throws Exception
+        {
+            // GH Issue 1861
+            Container folder = createContainer("WebPartFolder");
+            WikiManager.get().insertWiki(getAdmin(), folder, "original", "body", WikiRendererType.HTML, "Original");
+            Portal.addPart(folder, Portal.getPortalPart("Wiki"), WebPartFactory.LOCATION_BODY,
+                Map.of("name", "original", "webPartContainer", folder.getId()));
+            // addPart's returned WebPart never gets the inserted row's id
+            int webPartId = Portal.getParts(folder).stream()
+                .filter(part -> "Wiki".equals(part.getName()))
+                .findFirst().orElseThrow().getRowId();
+            ActionURL url = new ActionURL(SaveWikiAction.class, folder);
+
+            User author = createUserInRole(folder, AuthorRole.class);
+            assertStatus(HttpServletResponse.SC_OK, postJson(url, author, newPageJson("authorPage", webPartId)));
+            assertNotNull("The author's page should still be created", WikiSelectManager.getWiki(folder, "authorPage"));
+            Portal.WebPart webPart = Portal.getPart(folder, webPartId);
+            assertNotNull(webPart);
+            assertEquals("An author must not repoint the web part", "original", webPart.getPropertyMap().get("name"));
+
+            assertStatus(HttpServletResponse.SC_OK, postJson(url, getAdmin(), newPageJson("adminPage", webPartId)));
+            webPart = Portal.getPart(folder, webPartId);
+            assertNotNull(webPart);
+            assertEquals("An admin creating a page from the web part should repoint it", "adminPage", webPart.getPropertyMap().get("name"));
+        }
+
+        private JSONObject newPageJson(String name, int webPartId)
+        {
+            return new JSONObject()
+                .put("name", name)
+                .put("title", name)
+                .put("body", "<p>" + name + "</p>")
+                .put("rendererType", WikiRendererType.HTML.name())
+                .put("webPartId", webPartId);
         }
     }
 
