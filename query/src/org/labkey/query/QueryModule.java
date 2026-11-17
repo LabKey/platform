@@ -97,6 +97,7 @@ import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.ExpressionAssistantAgentAction;
+import org.labkey.query.controllers.ImportRowsTestCase;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.controllers.QueryMcp;
@@ -249,6 +250,14 @@ public class QueryModule extends DefaultModule
             false,
             OptionalFeatureService.FeatureType.Deprecated
         ));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            QueryService.DEPRECATED_ALLOW_RAGGED_IMPORT_ROWS,
+            "Allow importRows rows with differing fields",
+            "By default the importRows API rejects a request whose rows do not all supply the same fields. Enabling this feature accepts such requests, storing NULL for any field a row omits. This option will be removed in a future release of LabKey Server.",
+            false,
+            false,
+            OptionalFeatureService.FeatureType.Deprecated
+        ));
     }
 
 
@@ -391,6 +400,7 @@ public class QueryModule extends DefaultModule
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
             OlapController.ContainerScopingTestCase.class,
+            ImportRowsTestCase.class,
             QueryController.SaveRowsTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
