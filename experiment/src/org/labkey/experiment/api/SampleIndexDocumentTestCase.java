@@ -196,12 +196,12 @@ public class SampleIndexDocumentTestCase extends Assert
             assertTokens(batch.get(sample(st.getName(), "B1").getDocumentId()), SearchService.PROPERTY.identifiersHi, "B1");
             batch.values().forEach(doc -> assertFalse(String.valueOf(doc.get(SearchService.PROPERTY.identifiersMed.toString())).contains("alpha")));
 
-            // Unrecorded, so the crawler indexes them again once their values can be read. The lock keeps other indexing from changing the list meanwhile.
+            // Recorded, so a failure that repeats isn't retried on every crawl. The lock keeps the background writer from emptying the list before the check.
             synchronized (ExpMaterialImpl.updateLastIndexedList)
             {
-                int pending = ExpMaterialImpl.updateLastIndexedList.size();
                 docs.forEach(doc -> doc.setLastIndexed(System.currentTimeMillis(), System.currentTimeMillis()));
-                assertEquals(pending, ExpMaterialImpl.updateLastIndexedList.size());
+                List<Long> pending = ExpMaterialImpl.updateLastIndexedList.stream().map(Pair::getKey).toList();
+                assertTrue(pending.containsAll(materials.stream().map(Material::getRowId).toList()));
             }
         }
         finally

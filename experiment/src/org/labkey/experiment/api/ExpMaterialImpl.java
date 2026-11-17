@@ -444,13 +444,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
     }
 
-    /**
-     * Assembles the document from values already read, so it runs no queries of its own.
-     * Without {@code recordLastIndexed}, the crawler indexes the sample again on its next pass.
-     */
+    /** Assembles the document from values already read, so it runs no queries of its own */
     private @NotNull WebdavResource createIndexDocument(@NotNull SampleTypeDocContext ctx, @Nullable IndexValues values, @NotNull Collection<String> aliases,
-                                                       @Nullable String runName, @Nullable String protocolName, @Nullable String applicationName,
-                                                       boolean recordLastIndexed)
+                                                       @Nullable String runName, @Nullable String protocolName, @Nullable String applicationName)
     {
         Container container = ctx.container();
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
@@ -519,9 +515,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                if (!recordLastIndexed)
-                    return;
-
                 // setLastIndexed() can get called very rapidly after a bulk insert/update
                 // so we'll collect these instead of updating one at a time
                 synchronized (updateLastIndexedList)
@@ -611,8 +604,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleTypeImpl st = first.getSampleType();
         TableInfo table = st == null ? null : tableCache.computeIfAbsent(new TableCacheKey(container, st), _ -> getSearchTable(SCHEMA_SAMPLES, container, st));
         SampleTypeDocContext ctx = SampleTypeDocContext.create(container, st, table);
-        Set<Long> unreadable = new HashSet<>();
-        Map<Long, IndexValues> values = getGroupIndexValues(ctx, group, unreadable);
+        Map<Long, IndexValues> values = getGroupIndexValues(ctx, group);
 
         List<WebdavResource> groupDocs = new ArrayList<>(group.size());
         int skipped = 0;
@@ -632,8 +624,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             ApplicationNames app = ApplicationNames.NONE;
             if (m._object.getSourceApplicationId() != null)
                 app = apps.getOrDefault(m._object.getSourceApplicationId(), ApplicationNames.NONE);
-            groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()), runName, app.protocolName(), app.applicationName(),
-                    !unreadable.contains(m.getRowId())));
+            groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()), runName, app.protocolName(), app.applicationName()));
         }
         if (skipped > 0)
             LOG.debug("Skipped {} samples of type {} in {} that its query table didn't return", skipped, ctx.table().getName(), container.getPath());
@@ -642,14 +633,15 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     /**
      * Values for each sample of the group that the table returns. A sample whose values can't be read gets empty ones
-     * if it still exists, and is added to {@code unreadable}.
+     * if it still exists.
      */
-    private static @NotNull Map<Long, IndexValues> getGroupIndexValues(@NotNull SampleTypeDocContext ctx, @NotNull List<ExpMaterialImpl> group, @NotNull Set<Long> unreadable)
+    private static @NotNull Map<Long, IndexValues> getGroupIndexValues(@NotNull SampleTypeDocContext ctx, @NotNull List<ExpMaterialImpl> group)
     {
         ExpMaterialTableImpl table = ctx.table();
         if (table == null)
             return Map.of();
 
+        Set<Long> unreadable = new HashSet<>();
         List<Long> rowIds = group.stream().map(ExpMaterialImpl::getRowId).toList();
         Map<Long, IndexValues> values;
         try
