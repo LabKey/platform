@@ -404,6 +404,8 @@ public class QueryModule extends DefaultModule
             QueryController.SaveRowsTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
+            ReportServiceImpl.ScriptAuthorshipTestCase.class,
+            ReportsController.ScriptReportAuthorsTestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,
             SelectRowsStreamHack.TestCase.class,
