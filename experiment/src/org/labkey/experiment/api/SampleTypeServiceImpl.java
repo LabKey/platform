@@ -401,11 +401,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
         List<Material> batch = ExpMaterialImpl.readIndexMaterials(selector);
         batch.forEach(m -> tracker.advance(m.getRowId()));
-        ExpMaterialImpl.indexBatch(queue, batch, tableCache);
-
-        if (tracker.wasFull())
-            // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexSampleTypeMaterials(sampleType, q, tracker.getMaxRowId()));
+        try
+        {
+            ExpMaterialImpl.indexBatch(queue, batch, tableCache);
+        }
+        finally
+        {
+            if (tracker.wasFull())
+                // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
+                queue.addRunnable((q) -> indexSampleTypeMaterials(sampleType, q, tracker.getMaxRowId()));
+        }
     }
 
 

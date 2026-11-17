@@ -1214,11 +1214,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
         List<Material> batch = ExpMaterialImpl.readIndexMaterials(selector);
         batch.forEach(m -> tracker.advance(m.getRowId()));
-        ExpMaterialImpl.indexBatch(queue, batch, tableCache);
 
-        if (tracker.wasFull())
+        try
+        {
+            ExpMaterialImpl.indexBatch(queue, batch, tableCache);
+        }
+        finally
+        {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
+            if (tracker.wasFull())
+                queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
+        }
     }
 
     public void indexData(final @NotNull SearchService.TaskIndexingQueue queue, final Date modifiedSince, long minRowId)

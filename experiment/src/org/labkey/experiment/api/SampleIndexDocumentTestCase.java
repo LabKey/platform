@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -52,7 +51,6 @@ import org.labkey.experiment.ExpDataIterators;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -61,7 +59,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import static java.util.Collections.emptyList;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
@@ -230,30 +227,10 @@ public class SampleIndexDocumentTestCase extends Assert
         insertSamples(_subfolder, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "X1", "TextField", "delta")));
         ExpMaterial x1 = sample(_subfolder, st.getName(), "X1");
 
-        List<WebdavResource> docs = new ArrayList<>();
-        SearchService.TaskIndexingQueue queue = new SearchService.TaskIndexingQueue()
-        {
-            @Override
-            public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
-            {
-                r.accept(this);
-            }
-
-            @Override
-            public void addResource(@NotNull WebdavResource r)
-            {
-                docs.add(r);
-            }
-
-            @Override
-            public Container getContainer()
-            {
-                return _project;
-            }
-        };
+        ExpMaterialTableImpl.CollectingIndexingQueue queue = new ExpMaterialTableImpl.CollectingIndexingQueue(_project);
         ExpMaterialTableImpl.queueSearchIndexing(queue, _project, (ExpSampleTypeImpl) st, new ExpDataIterators.SearchIndexDataKeys(List.of(x1.getRowId()), List.of()));
 
-        Map<String, Object> doc = normalize(docs).get(x1.getDocumentId());
+        Map<String, Object> doc = normalize(queue.docs).get(x1.getDocumentId());
         assertNotNull("X1 indexed", doc);
         assertEquals(_subfolder.getEntityId().toString(), doc.get("container"));
         assertTokens(doc, SearchService.PROPERTY.identifiersMed, "delta");

@@ -76,6 +76,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.PessimisticLockingFailureException;
 
 import java.sql.Connection;
@@ -584,6 +585,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (RuntimeException e)
                 {
+                    // Deliberately broad: whatever breaks one sample type's documents must not cost the rest of the batch theirs
                     throwIfRetryableOrInTransaction(e);
                     ExpMaterialImpl first = group.getFirst();
                     String typeName = first.getCpasType();
@@ -654,8 +656,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         {
             values = new HashMap<>(getIndexValues(table, rowIds));
         }
-        catch (SQLException | RuntimeException e)
+        catch (SQLException | DataAccessException | RuntimeSQLException | ConversionException e)
         {
+            // Either an expression that fails on some rows' values, e.g. a calculated field casting text to an integer, or a domain out of sync with its storage table
             throwIfRetryableOrInTransaction(e);
             values = readOneAtATime(table, rowIds, unreadable);
             LOG.warn("Failed to read search values for {} samples of type {} in {} together; {} of them can't be read", rowIds.size(), table.getName(), ctx.container().getPath(), unreadable.size(), e);
@@ -679,12 +682,12 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     private static @NotNull Map<Long, IndexValues> readOneAtATime(@NotNull ExpMaterialTableImpl table, @NotNull List<Long> rowIds, @NotNull Set<Long> unreadable)
     {
         Map<Long, IndexValues> values = new HashMap<>();
-        // A query that fails without reading a row means the table itself is broken, so every one-row query would fail too
+        // A query that fails without reading a row means the table itself is broken, e.g. out of sync with its storage, so every one-row query would fail too
         try
         {
             getIndexValues(table, List.of(NO_ROW_ID));
         }
-        catch (SQLException | RuntimeException e)
+        catch (SQLException | DataAccessException | RuntimeSQLException | ConversionException e)
         {
             throwIfRetryableOrInTransaction(e);
             unreadable.addAll(rowIds);
@@ -697,7 +700,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             {
                 values.putAll(getIndexValues(table, List.of(rowId)));
             }
-            catch (SQLException | RuntimeException e)
+            catch (SQLException | DataAccessException | RuntimeSQLException | ConversionException e)
             {
                 throwIfRetryableOrInTransaction(e);
                 unreadable.add(rowId);

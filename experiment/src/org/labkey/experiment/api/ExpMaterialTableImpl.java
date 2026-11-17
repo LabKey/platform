@@ -2417,6 +2417,36 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /** Test seam: by sample type LSID, a queue that receives the search indexing persistRows queues */
     static final Map<String, SearchService.TaskIndexingQueue> _testIndexingQueues = new ConcurrentHashMap<>();
 
+    /** Test queue that runs indexing work the moment it's queued, as an idle indexer would, and keeps the documents */
+    static class CollectingIndexingQueue implements SearchService.TaskIndexingQueue
+    {
+        private final Container _container;
+        final List<WebdavResource> docs = Collections.synchronizedList(new ArrayList<>());
+
+        CollectingIndexingQueue(Container container)
+        {
+            _container = container;
+        }
+
+        @Override
+        public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
+        {
+            r.accept(this);
+        }
+
+        @Override
+        public void addResource(@NotNull WebdavResource r)
+        {
+            docs.add(r);
+        }
+
+        @Override
+        public Container getContainer()
+        {
+            return _container;
+        }
+    }
+
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
@@ -2430,19 +2460,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             final Container container = getContainer();
             final User user = getUserSchema().getUser();
-            ExperimentServiceImpl expService = ExperimentServiceImpl.get();
             SearchService.TaskIndexingQueue queue = Objects.requireNonNullElseGet(_testIndexingQueues.get(_ss.getLSID()),
                 () -> SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified));
 
             DataIteratorBuilder dib = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, container, user, _ss.getImportAliasesIncludingAliquot())
                 .setFileLinkDirectory(SAMPLE_TYPE_FILE_DIRECTORY_NAME)
                 // LATE_POSTCOMMIT so indexing reads the materialized view after this change's POSTCOMMIT refresh signal
-                .setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(
-                        () -> queueSearchIndexing(queue, container, _ss, searchIndexDataKeys), DbScope.CommitTaskOption.LATE_POSTCOMMIT)
-                );
+                .setIndexFunction(searchIndexDataKeys ->
+                        propertiesTable.getSchema().getScope().addCommitTask(() ->
+                                queueSearchIndexing(queue, container, _ss, searchIndexDataKeys), DbScope.CommitTaskOption.LATE_POSTCOMMIT));
 
             dib = LoggingDataIterator.wrap(dib);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(dib, container, user, expService.getTinfoMaterialAliasMap(), _ss, true));
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(dib, container, user, ExperimentServiceImpl.get().getTinfoMaterialAliasMap(), _ss, true));
         }
         catch (IOException e)
         {
@@ -2453,10 +2482,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /** Changes made through {@code container}'s table can include samples in other folders, which are indexed with their own folder's table */
     static void queueSearchIndexing(@NotNull SearchService.TaskIndexingQueue queue, @NotNull Container container, @NotNull ExpSampleTypeImpl sampleType, @NotNull ExpDataIterators.SearchIndexDataKeys keys)
     {
-        UserSchema searchSchema = QueryService.get().getUserSchema(User.getSearchUser(), container, SamplesSchema.SCHEMA_SAMPLES);
-        TableInfo searchTable = null;
-        if (searchSchema != null)
-            searchTable = searchSchema.getTable(sampleType.getName());
+        TableInfo searchTable = AbstractRunItemImpl.getSearchTable(SamplesSchema.SCHEMA_SAMPLES, container, sampleType);
         if (searchTable == null)
         {
             // Expected only when the sample type was deleted after this commit
@@ -2836,27 +2862,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          */
         private WebdavResource indexDocument(ExpSampleType st, String name, Callable<?> change) throws Exception
         {
-            List<WebdavResource> docs = Collections.synchronizedList(new ArrayList<>());
-            _testIndexingQueues.put(st.getLSID(), new SearchService.TaskIndexingQueue()
-            {
-                @Override
-                public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
-                {
-                    r.accept(this);
-                }
-
-                @Override
-                public void addResource(@NotNull WebdavResource r)
-                {
-                    docs.add(r);
-                }
-
-                @Override
-                public Container getContainer()
-                {
-                    return _c;
-                }
-            });
+            CollectingIndexingQueue queue = new CollectingIndexingQueue(_c);
+            _testIndexingQueues.put(st.getLSID(), queue);
 
             try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
             {
@@ -2869,7 +2876,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
 
             String title = "Sample - " + name;
-            return docs.stream()
+            return queue.docs.stream()
                 .filter(doc -> String.valueOf(doc.getProperties().get(SearchService.PROPERTY.title.toString())).startsWith(title))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("persistRows queued no search document for " + name));

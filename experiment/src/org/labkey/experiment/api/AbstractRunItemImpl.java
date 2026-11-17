@@ -430,14 +430,9 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                 if (o == null)
                     return;
                 o = col.convert(o);
-                if (o instanceof MultiChoice.Array mca)
-                {
-                    if (mca.isEmpty())
-                        return;
-                    values = new ArrayList<>(mca);
-                }
-                else
+                if (!(o instanceof MultiChoice.Array mca) || mca.isEmpty())
                     return;
+                values = new ArrayList<>(mca);
             }
             else
             {
@@ -499,15 +494,11 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                 }
             }
 
+            // treat multi-line text values as keywords, otherwise treat as an identifier
             if ("textarea".equalsIgnoreCase(col.getInputType()))
-            {
-                // treat multi-line text values as keywords, otherwise treat as an identifier
                 keywordsLo.addAll(values);
-            }
             else
-            {
                 identifiersMed.addAll(values);
-            }
         }
 
         void addTo(Set<String> identifiersHi, Set<String> identifiersMed, Set<String> identifiersLo,
@@ -525,7 +516,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 
     /**
      * Reads the search columns of {@code rowIds} with one query. A RowId missing from the result was deleted or isn't
-     * in the table's container. Pass at most {@link SearchService#INDEXING_LIMIT} ids, since larger IN lists switch to a temp table.
+     * in the table's container.
      */
     static @NotNull Map<Long, IndexValues> getIndexValues(@NotNull ExpRunItemTableImpl<?> table, @NotNull Collection<Long> rowIds) throws SQLException
     {
@@ -575,14 +566,11 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                               Set<String> keywordsHi, Set<String> keywordsMed, Set<String> keywordsLo)
     {
         // === Not stemmed
-
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
         props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
         props.put(SearchService.PROPERTY.identifiersLo.toString(), StringUtils.join(identifiersLo, " "));
 
-
         // === Stemmed
-
         props.put(SearchService.PROPERTY.keywordsHi.toString(), StringUtils.join(keywordsHi, " "));
         props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
         props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
