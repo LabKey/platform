@@ -188,6 +188,11 @@ public class FilterSuggestionService
     /**
      * Backs query-getQuerySize.api: whether listing one column's values over this query would scan more rows than a
      * grid ever lists, so the faceted filter can open on its expression tab rather than on a value list.
+     * <p>
+     * Two inaccuracies are deliberate, because the cost of each is one click on the other tab. No estimate — a query
+     * with no provisioned table behind it, an unanalyzed table, or a database this can't estimate — answers false,
+     * leaving the decision to the grid's own row count. And the estimate spans every container the domain covers,
+     * so a table that is large overall but small in this folder is reported large.
      */
     public static @NotNull QuerySizeResponse getQuerySize(@NotNull User user, @NotNull Container container, @NotNull QuerySizeRequest request)
     {
