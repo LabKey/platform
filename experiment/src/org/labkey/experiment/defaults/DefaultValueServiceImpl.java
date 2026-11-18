@@ -45,35 +45,42 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
-/*
- * User: brittp
- * Date: Jan 30, 2009
- * Time: 11:11:14 AM
- */
-
 public class DefaultValueServiceImpl implements DefaultValueService
 {
     private static final String USER_DEFAULT_VALUE_DOMAIN_PARENT = "UserDefaultValueParent";
 
     private final Lock _lock = new ReentrantLockWithName(DefaultValueServiceImpl.class, "_lock");
 
-    private String getContainerDefaultsLSID(Container container, Domain domain)
+    private static String getNamespaceSuffix(@NotNull Container container, @Nullable User user)
+    {
+        return getNamespaceSuffixForUserId(container, user == null ? null : String.valueOf(user.getUserId()));
+    }
+
+    private static String getNamespaceSuffixForUserId(@NotNull Container container, @Nullable String userId)
     {
         String suffix = "Folder-" + container.getRowId();
+        return userId == null ? suffix : suffix + ".User-" + userId;
+    }
+
+    private String getContainerDefaultsLSID(Container container, Domain domain)
+    {
         DomainKind<?> kind = domain.getDomainKind();
         if (kind != null && kind.isUserCreatedType())
-        {
-            Lsid domainLsid = new Lsid(domain.getTypeURI());
-            return (new Lsid(qualifyByDomainKind(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, domainLsid), suffix, domainLsid.getObjectId())).toString();
-        }
+            return getQualifiedContainerDefaultsLSID(container, domain);
         else // for internal domains (such as audit domains), the domain name and objectId are often not the same.
-            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, suffix, domain.getName())).toString();
+            return (new Lsid(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, getNamespaceSuffix(container, null), domain.getName())).toString();
 
+    }
+
+    private String getQualifiedContainerDefaultsLSID(Container container, Domain domain)
+    {
+        Lsid domainLsid = new Lsid(domain.getTypeURI());
+        return (new Lsid(qualifyByDomainKind(DOMAIN_DEFAULT_VALUE_LSID_PREFIX, domainLsid), getNamespaceSuffix(container, null), domainLsid.getObjectId())).toString();
     }
 
     private String getUserDefaultsParentLSID(Container container, User user, Domain domain)
     {
-        String suffix = "Folder-" + container.getRowId() + ".User-" + user.getUserId();
+        String suffix = getNamespaceSuffix(container, user);
         DomainKind<?> kind = domain.getDomainKind();
         if (kind != null && kind.isUserCreatedType())
         {
@@ -95,18 +102,18 @@ public class DefaultValueServiceImpl implements DefaultValueService
 
     private String getUserDefaultsWildcardLSID(Container container, Domain domain, boolean parentObject)
     {
-        String suffix = "Folder-" + container.getRowId() + ".User-" + WILD_CARD_PLACEHOLDER;
+        String suffix = getNamespaceSuffixForUserId(container, WILD_CARD_PLACEHOLDER);
         // getUserDefaultsLSID() appends the scope to the objectId, not to the namespace, so the wildcard has to match there
         String objectId = domain.getName() + (!parentObject ? "." + WILD_CARD_PLACEHOLDER : "");
         String lsid = (new Lsid(USER_DEFAULT_VALUE_LSID_PREFIX, suffix, objectId)).toString();
         // this hack is to include '%' characters in an LSID-like string.  The '%' character can't be part of the
         // lsid components passed to the Lsid constructor, or it will be encoded as '%25'.
-        return lsid.replaceAll(WILD_CARD_PLACEHOLDER, "%");
+        return lsid.replace(WILD_CARD_PLACEHOLDER, "%");
     }
 
     private String getUserDefaultsLSID(Container container, User user, Domain domain, String scope)
     {
-        String suffix = "Folder-" + container.getRowId() + ".User-" + user.getUserId();
+        String suffix = getNamespaceSuffix(container, user);
         String objectId = domain.getName();
         if (scope != null)
             objectId += "." + scope;
@@ -314,6 +321,9 @@ public class DefaultValueServiceImpl implements DefaultValueService
     public void clearDefaultValues(Container container, Domain domain)
     {
         clearDefaultValues(container, getContainerDefaultsLSID(container, domain));
+        // A domain whose kind no longer resolves (e.g., an orphaned dataset) may have stored its defaults under the qualified LSID
+        if (domain.getDomainKind() == null)
+            clearDefaultValues(container, getQualifiedContainerDefaultsLSID(container, domain));
         // get two expressions to delete all user-based defaults in this container:
         String userParentLsid = getUserDefaultsWildcardLSID(container, domain, true);
         String userScopesLsid = getUserDefaultsWildcardLSID(container, domain, false);

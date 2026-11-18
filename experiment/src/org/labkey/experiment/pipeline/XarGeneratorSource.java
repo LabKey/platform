@@ -33,6 +33,12 @@ public class XarGeneratorSource extends AbstractFileXarSource
     }
 
     @Override
+    protected boolean isDataFilePathRestricted()
+    {
+        return false;
+    }
+
+    @Override
     public FileLike getLogFilePath()
     {
         throw new UnsupportedOperationException();

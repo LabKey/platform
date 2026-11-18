@@ -45,6 +45,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -217,7 +218,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.009;
+        return 26.010;
     }
 
     @Nullable
@@ -1121,6 +1122,7 @@ public class ExperimentModule extends SpringModule
     {
         return Set.of(
             EdgeDiagnosticsTestCase.class,
+            AbstractFileXarSource.TestCase.class,
             ExperimentController.ContainerScopingTestCase.class,
             DataColorTable.TestCase.class,
             DataMapDiffColumnTestCase.class,

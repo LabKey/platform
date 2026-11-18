@@ -16,6 +16,7 @@ import mock from 'mock-fs';
 import {
     checkDomainName,
     checkDomainNameConflicts,
+    checkImportColumnResolution,
     checkLackDesignerOrReaderPerm,
     createSource,
     deleteSourceType,
@@ -133,6 +134,10 @@ describe('Data Class Designer', () => {
 
     it('Data class field name and import alias conflict validation', async () => {
         await checkDomainNameConflicts(server, 'DataClass', topFolderOptions, designerReaderOptions);
+    });
+
+    it('Data class import column resolution', async () => {
+        await checkImportColumnResolution(server, 'DataClass', topFolderOptions, adminOptions);
     });
 
     describe('Create/update/delete designs', () => {

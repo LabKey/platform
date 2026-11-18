@@ -413,6 +413,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setDefaultValueType(col.getDefaultValueType());
         setDefaultValue(col.getDefaultValue());
         setImportAliasesSet(col.getImportAliasSet());
+        setSystemImportAliasesSet(col.getSystemImportAliasSet());
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
@@ -497,6 +498,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setDefaultValueType(col.getDefaultValueType());
         setDefaultValue(col.getDefaultValue());
         setImportAliasesSet(col.getImportAliasSet());
+        setSystemImportAliasesSet(col.getSystemImportAliasSet());
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
@@ -692,13 +694,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (_parentTable == null)
             return null;
         return _parentTable.getSqlDialect();
-    }
-
-    // Return the actual value we have stashed; use this when copying attributes, so you don't hard-code label
-    @Override
-    public String getLabelValue()
-    {
-        return _label;
     }
 
     @Override
