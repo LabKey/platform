@@ -2386,7 +2386,7 @@ public class WikiController extends SpringActionController
             //web part to show the newly inserted page
             int webPartId = form.getWebPartId();
 
-            if (webPartId > 0 && c.hasPermission(user, AdminPermission.class))
+            if (webPartId > 0 && getPermissions().allowAdmin())
             {
                 //get web part referenced by webPartId
                 Portal.WebPart webPart = Portal.getPart(c, webPartId);
