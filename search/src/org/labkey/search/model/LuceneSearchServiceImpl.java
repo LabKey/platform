@@ -161,7 +161,7 @@ import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 
 public class LuceneSearchServiceImpl extends AbstractSearchService implements SearchMXBean
 {
-    private static final Logger _log = LogHelper.getLogger(LuceneSearchServiceImpl.class, "Full-text searching indexing operations");
+    private static final Logger _log = LogHelper.getThrottlingLogger(LuceneSearchServiceImpl.class, "Full-text searching indexing operations");
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
@@ -1334,7 +1334,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private void logAsWarning(WebdavResource r, String message, @Nullable String rootMessage)
     {
-        _log.warn("Can't index file \"" + getNameToLog(r) + "\" due to: " + message + (null != rootMessage ? " [" + rootMessage + "]" : ""));
+        _log.warn("Can't index file \"{}\" due to: {}{}", getNameToLog(r), message, null != rootMessage ? " [" + rootMessage + "]" : "");
     }
 
     private static class PreProcessingException extends Exception
