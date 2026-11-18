@@ -193,6 +193,17 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
+    public @NotNull Set<String> getSystemImportAliases()
+    {
+        // DatasetTableImpl puts "ptid" and "participantid" on the subject column, which a study names for itself.
+        // Only "ptid" is listed: "participantid" is the default subject column name, so in most studies the name
+        // outranks any label and rejecting it would refuse a save that works today. A study that renames its subject
+        // column leaves "participantid" unguarded, which this deliberately does not try to detect -- the kind has no
+        // Domain to resolve the name from.
+        return Set.of("ptid");
+    }
+
+    @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());

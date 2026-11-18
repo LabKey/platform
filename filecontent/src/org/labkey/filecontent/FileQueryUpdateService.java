@@ -85,6 +85,8 @@ import static org.labkey.api.webdav.FileSystemResource.DISPLAY_VALUE_SUFFIX;
  */
 public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
+    private final Map<Container, FileContentService.ManagedRoots> _rootsByContainer = new HashMap<>();
+
     private static final Logger _log = LogManager.getLogger(FileQueryUpdateService.class);
 
     private final Container _container;
@@ -291,21 +293,32 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         return _setRow(user, container, row, false);
     }
 
+    /** The data file URL carried on the row itself, or null when the row only identifies an existing one. */
+    private @Nullable String suppliedDataFileUrl(Map<String, Object> row)
+    {
+        if (row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+            return String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
+        if (row.containsKey("AbsoluteFilePath"))
+            return getDataFileUrlFromAbsoluteFilePath((String) row.get("AbsoluteFilePath"));
+        return null;
+    }
+
+    /** True when the row carries the path itself; otherwise findData reads it back off the stored row. */
+    private static boolean rowSuppliesDataFileUrl(Map<String, Object> row)
+    {
+        return row.containsKey(ExpDataTable.Column.DataFileUrl.name())
+                || (row.containsKey("AbsoluteFilePath")
+                    && !row.containsKey(ExpDataTable.Column.RowId.name())
+                    && !row.containsKey(ExpDataTable.Column.LSID.name()));
+    }
+
     /** @return Pair of the data object (if found), and the requested dataFileUrl (if specified in the row) */
     private Pair<ExpData, String> findData(Container container, Map<String, Object> row) throws ValidationException
     {
         String dataFileUrl = null;
 
-        if (row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
-        {
-            dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
-        }
-        else if (row.containsKey("AbsoluteFilePath") &&
-                !row.containsKey(ExpDataTable.Column.RowId.name()) &&
-                !row.containsKey(ExpDataTable.Column.LSID.name()))
-        {
-            dataFileUrl = getDataFileUrlFromAbsoluteFilePath((String) row.get("AbsoluteFilePath"));
-        }
+        if (rowSuppliesDataFileUrl(row))
+            dataFileUrl = suppliedDataFileUrl(row);
         else
         {
             try
@@ -366,6 +379,23 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         }
     }
 
+    /** Confines a data file URL to roots the user may read, whatever key on the row supplied it. */
+    /** One batch cannot change a container's roots, so resolve them once rather than per row. */
+    private FileContentService.ManagedRoots rootsFor(Container c)
+    {
+        return _rootsByContainer.computeIfAbsent(c, FileContentService::getManagedRoots);
+    }
+
+    private void validateDataFileUrl(@Nullable String dataFileUrl, Container container, User user) throws ValidationException
+    {
+        if (StringUtils.isEmpty(dataFileUrl) || "null".equals(dataFileUrl))
+            return;
+
+        java.nio.file.Path path = FileUtil.getAbsoluteCaseSensitivePath(container, FileUtil.createUri(dataFileUrl));
+        if (path == null || !FileContentService.isFileReadable(container, path.normalize(), user, rootsFor(container)))
+            throw new ValidationException("File not found under container's managed file roots: " + dataFileUrl);
+    }
+
     private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException
     {
         WebdavResource resource = davResourceFromKeys(row, container);
@@ -374,14 +404,22 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         ExpData data = p.getKey();
         String dataFileUrl = p.getValue();
 
+        // a path the caller supplies is confined to this folder whatever other keys accompany it; a URL read back off
+        // the existing row is not being stored, and rejecting it would block edits to rows that predate this check
+        String suppliedUrl = suppliedDataFileUrl(row);
+        if (suppliedUrl != null)
+            validateDataFileUrl(suppliedUrl, container, user);
+
         if (row.containsKey("AbsoluteFilePath")) // AbsoluteFilePath is a valid key for inserting exp.files record through api
         {
             String filePath = String.valueOf(row.get("AbsoluteFilePath"));
-            File file = new File(filePath);
-            if (!(file.exists() && Files.isRegularFile(file.toPath())))
-                throw new ValidationException("File not found or file type not allowed: " + String.valueOf(row.get("AbsoluteFilePath")));
+            java.nio.file.Path path = FileUtil.getAbsoluteCaseSensitiveFile(new File(filePath)).toPath().normalize();
+            if (!(Files.exists(path) && Files.isRegularFile(path)))
+                throw new ValidationException("File not found or file type not allowed: " + filePath);
             if (resource == null)
-                throw new ValidationException("File not found under container's managed file roots: " + String.valueOf(row.get("AbsoluteFilePath")));
+                resource = getWebdavUrlFromAbsoluteFilePath(path.toString(), container);
+            if (resource == null)
+                throw new ValidationException("File not found under container's managed file roots: " + filePath);
         }
 
         if (resource != null)
@@ -499,15 +537,15 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Nullable
-    private WebdavResource davResourceFromKeys(Map<String, Object> keys, Container container)
+    private WebdavResource davResourceFromKeys(Map<String, Object> keys, Container container) throws ValidationException
     {
         if (keys.containsKey(KEY_COL_DAV))
         {
-            return FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_DAV)));
+            return resourceInContainer(FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_DAV))), container);
         }
         else if (keys.containsKey(KEY_COL_ID))
         {
-            return FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_ID)));
+            return resourceInContainer(FileContentServiceImpl.getInstance().getResource(String.valueOf(keys.get(KEY_COL_ID))), container);
         }
         else
         {
@@ -522,13 +560,24 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     absoluteFilePath = FileContentServiceImpl.getInstance().getAbsolutePathFromDataFileUrl(data.getDataFileUrl(), container);
             }
             else if (keys.containsKey("AbsoluteFilePath"))
-                absoluteFilePath = String.valueOf(keys.get("AbsoluteFilePath"));
+                // normalized: getWebdavUrlFromAbsoluteFilePath tests a bare prefix, which a '..' segment would satisfy
+                absoluteFilePath = FileUtil.getAbsoluteCaseSensitiveFile(new File(String.valueOf(keys.get("AbsoluteFilePath")))).toPath().normalize().toString();
 
             if (absoluteFilePath != null)
-                return getWebdavUrlFromAbsoluteFilePath(absoluteFilePath, _container);
+                return getWebdavUrlFromAbsoluteFilePath(absoluteFilePath, container);
         }
 
         return null;
+    }
+
+    /** davUrl and id resolve against the whole server, so confine the result to this folder. */
+    private static @Nullable WebdavResource resourceInContainer(@Nullable WebdavResource resource, Container container) throws ValidationException
+    {
+        if (resource == null)
+            return null;
+        if (!container.getEntityId().equals(resource.getContainerId()))
+            throw new ValidationException("File is not in this folder: " + resource.getPath());
+        return resource;
     }
 
     private WebdavResource getWebdavUrlFromAbsoluteFilePath(@NotNull String absoluteFilePath, Container container)
