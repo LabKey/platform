@@ -700,8 +700,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             Domain d = source.getDomain();
 
-            // GH Issue 1904: dropping the provisioned table locks exp.material (via its FK) after the table itself, the reverse of readers; lock it first
-            if (null != source.getTinfo() && getExpSchema().getSqlDialect().isPostgreSQL())
+            // GH Issue 1904: lock the domain, then exp.material, before d.delete() locks the provisioned table, matching domain updates and readers
+            d.getDatabaseLock().lock();
+            if (null != d.getStorageTableName())
                 new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("LOCK TABLE ").append(getTinfoMaterial()).unsafeAppend(" IN ACCESS EXCLUSIVE MODE"));
 
             d.delete(user, auditUserComment);
