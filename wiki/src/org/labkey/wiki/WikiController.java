@@ -25,6 +25,7 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
@@ -76,6 +77,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -1945,8 +1947,8 @@ public class WikiController extends SpringActionController
     public static class EditWikiForm
     {
         private String _name;
-        private String _redirect;
-        private String _cancel;
+        private ReturnURLString _redirect;
+        private ReturnURLString _cancel;
         private String _format;
         private String _defName;
         private boolean _create;
@@ -1968,24 +1970,22 @@ public class WikiController extends SpringActionController
             _name = name;
         }
 
-        public String getRedirect()
+        public @Nullable ReturnURLString getRedirect()
         {
             return _redirect;
         }
 
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setRedirect(String redir)
+        public void setRedirect(@Nullable ReturnURLString redir)
         {
             _redirect = redir;
         }
 
-        public String getCancel()
+        public @Nullable ReturnURLString getCancel()
         {
             return _cancel;
         }
 
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setCancel(String cancel)
+        public void setCancel(@Nullable ReturnURLString cancel)
         {
             _cancel = cancel;
         }
@@ -2084,8 +2084,8 @@ public class WikiController extends SpringActionController
                 getContainer(),
                 wiki,
                 curVersion,
-                form.getRedirect(),
-                form.getCancel(),
+                Objects.toString(form.getRedirect(), null),
+                Objects.toString(form.getCancel(), null),
                 form.getFormat(),
                 form.getDefName(),
                 useVisualEditor,
@@ -3082,6 +3082,50 @@ public class WikiController extends SpringActionController
     }
 
     @TestWhen(TestWhen.When.BVT)
+    // GH Issue 1860 regression test
+    public static class EditWikiFormTestCase extends Assert
+    {
+        private static EditWikiForm bind(String url)
+        {
+            EditWikiForm form = new EditWikiForm();
+            form.setRedirect(new ReturnURLString(url));
+            form.setCancel(new ReturnURLString(url));
+            return form;
+        }
+
+        private static void assertDropped(String url)
+        {
+            EditWikiForm form = bind(url);
+            assertEquals("redirect should be dropped: " + url, "", Objects.toString(form.getRedirect(), null));
+            assertEquals("cancel should be dropped: " + url, "", Objects.toString(form.getCancel(), null));
+        }
+
+        @Test
+        public void testUnsafeUrlsDropped()
+        {
+            assertDropped("https://evil.example.com/phish");
+            assertDropped("//evil.example.com/phish");
+            assertDropped("javascript:alert(1)");
+            assertDropped("");
+        }
+
+        @Test
+        public void testLocalUrlKept()
+        {
+            EditWikiForm form = bind("/home/wiki-page.view?name=X");
+            assertTrue(Objects.toString(form.getRedirect(), "").contains("wiki-page.view"));
+            assertTrue(Objects.toString(form.getCancel(), "").contains("wiki-page.view"));
+        }
+
+        @Test
+        public void testUnboundIsNull()
+        {
+            EditWikiForm form = new EditWikiForm();
+            assertNull(form.getRedirect());
+            assertNull(form.getCancel());
+        }
+    }
+
     public static class PermissionTestCase extends AbstractActionPermissionTest
     {
         @Override
