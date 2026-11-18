@@ -989,6 +989,12 @@ public class DomainUtil
                     validationException.addError(new SimpleValidationError("Text choice value updates are not supported for multi-choice field: " + p.getName()));
                     return validationException;
                 }
+                if (!kind.allowTextChoiceValueRenames())
+                {
+                    // GitHub Issue 1928
+                    validationException.addError(new SimpleValidationError("Renaming in-use text choice values is not supported for this domain type: " + p.getName()));
+                    return validationException;
+                }
                 textChoiceValueUpdates.put(p, propTextChoiceValueUpdates);
             }
 
