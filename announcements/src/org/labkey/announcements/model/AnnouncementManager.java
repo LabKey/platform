@@ -106,6 +106,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -662,6 +663,28 @@ public class AnnouncementManager
         SQLFragment sql = SQLFragment.unsafe("SELECT UserId FROM ").append(_comm.getTableInfoMemberList()).unsafeAppend(" WHERE MessageId = ?", messageId);
 
         return new SqlSelector(_comm.getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    // An empty memberListInput clears the post's member list, so writes that don't supply one carry the current list
+    // forward. Members who can no longer read are dropped, otherwise validation rejects the whole post.
+    public static String getRetainedMemberListInput(Container c, List<Integer> memberListIds)
+    {
+        Settings settings = getMessageBoardSettings(c);
+        AnnouncementModel probe = new AnnouncementModel();
+        probe.setMemberListIds(memberListIds);
+
+        return memberListIds.stream()
+            .map(UserManager::getUser)
+            .filter(Objects::nonNull)
+            .filter(member -> getPermissions(c, member, settings).allowRead(probe))
+            .map(member -> String.valueOf(member.getUserId()))
+            .collect(Collectors.joining("\n"));
+    }
+
+    // The member list is saved per post, so keep this post's own list rather than the thread's latest
+    public static String getRetainedMemberListInput(Container c, int postId)
+    {
+        return getRetainedMemberListInput(c, getPostMemberList(postId));
     }
 
 
