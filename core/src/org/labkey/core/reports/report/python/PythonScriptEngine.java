@@ -30,14 +30,14 @@ import javax.script.ScriptContext;
  */
 public class PythonScriptEngine extends ExternalScriptEngine
 {
-    private static final String PACKAGES_FILE = "labkeyPythonPackages.txt";
+    protected static final String PACKAGES_FILE = "labkeyPythonPackages.txt";
 
     // Python appended to a user script to capture the modules it imports. The sidecar file's absolute path is
     // embedded (see getPackageCaptureEpilog) rather than derived from os.getcwd(), so that a script that changes the
     // working directory still writes the sidecar where recordPackageUsage() looks for it.
     // try/except means a capture failure can never break the script run.
     // Note: we are tracking module names as written in the source, not installable distribution names - 'yaml', not 'PyYAML'.
-    private static final String PACKAGE_CAPTURE_EPILOG = """
+    protected static final String PACKAGE_CAPTURE_EPILOG = """
             try:
                 import ast as _lk_ast, sys as _lk_sys
 
