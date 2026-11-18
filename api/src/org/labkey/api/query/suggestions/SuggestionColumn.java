@@ -44,6 +44,10 @@ public class SuggestionColumn
     private boolean _partialMatch;
     private final List<String> _nameExpressions = new ArrayList<>();
     private @Nullable List<String> _values;
+    private boolean _valuesFromData;
+    private boolean _valuesTruncated;
+    private boolean _valuesHaveBlank;
+    private @Nullable Long _distinctCount;
     private @Nullable List<String> _shapes;
     // Number for numeric columns, LocalDate for date columns
     private @Nullable Object _min;
@@ -174,6 +178,52 @@ public class SuggestionColumn
     public void setValues(@Nullable List<String> values)
     {
         _values = values;
+    }
+
+    /**
+     * Values read from the column's data, with what the read couldn't represent.
+     *
+     * @param truncated a value was too long to keep, so values is incomplete
+     * @param hasBlank  some row holds null or blank; blanks are never in values
+     */
+    public void setValues(@Nullable List<String> values, boolean truncated, boolean hasBlank)
+    {
+        _values = values;
+        _valuesFromData = true;
+        _valuesTruncated = truncated;
+        _valuesHaveBlank = hasBlank;
+    }
+
+    /**
+     * The values were read from the column's data. False for a column whose values come from its definition, such as
+     * a boolean or Text Choice: those are the options the column allows, which some may match no row.
+     */
+    public boolean isValuesFromData()
+    {
+        return _valuesFromData;
+    }
+
+    /** Some row holds null or blank; blanks are never in {@link #getValues()}. */
+    public boolean isValuesHaveBlank()
+    {
+        return _valuesHaveBlank;
+    }
+
+    /** A value was too long to keep, so {@link #getValues()} is incomplete. */
+    public boolean isValuesTruncated()
+    {
+        return _valuesTruncated;
+    }
+
+    /** COUNT(DISTINCT), known even when the column has too many values to list. Null when not loaded. */
+    public @Nullable Long getDistinctCount()
+    {
+        return _distinctCount;
+    }
+
+    public void setDistinctCount(@Nullable Long distinctCount)
+    {
+        _distinctCount = distinctCount;
     }
 
     public @Nullable List<String> getShapes()

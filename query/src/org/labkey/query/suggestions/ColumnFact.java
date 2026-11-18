@@ -30,8 +30,12 @@ public sealed interface ColumnFact
      */
     record Stats(@Nullable Object min, @Nullable Object max, @Nullable Long distinctCount, boolean rangeUnknown) implements ColumnFact {}
 
-    /** @param values null when the column has more than {@link ColumnFactsCache#DISTINCT_VALUE_LIMIT} distinct values */
-    record Values(@Nullable List<String> values) implements ColumnFact
+    /**
+     * @param values    null when the column has more than {@link ColumnFactsCache#DISTINCT_VALUE_LIMIT} distinct values
+     * @param truncated a value was too long to keep, so the list is incomplete even though it didn't overflow
+     * @param hasBlank  some row holds null or blank; blanks are left out of values but callers may still offer them
+     */
+    record Values(@Nullable List<String> values, boolean truncated, boolean hasBlank) implements ColumnFact
     {
         public Values
         {

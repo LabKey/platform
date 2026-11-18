@@ -26,6 +26,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -33,6 +36,9 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.suggestions.FilterSuggestionContext;
@@ -52,6 +58,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+
+import static org.labkey.api.data.DataRegionSelection.MAX_QUERY_SELECTION_SIZE;
 
 /** Backs query-getFilterSuggestions.api: resolves the table, describes its candidate columns, and ranks suggestions. */
 public class FilterSuggestionService
@@ -113,12 +121,17 @@ public class FilterSuggestionService
         }
     }
 
-    public static @NotNull FilterSuggestionsResponse getSuggestions(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request)
-    {
-        SuggestionTerm term = SuggestionTerm.parse(request.term());
-        if (term.isBlank())
-            return new FilterSuggestionsResponse(List.of(), true);
+    /** The resolved table and the filter bounding the rows its facts are read from. */
+    private record Resolved(@NotNull UserSchema schema, @NotNull TableInfo table, @Nullable SimpleFilter filter, boolean readsData) {}
 
+    /**
+     * The described columns carrying whatever facts loaded within the budget.
+     * @param failed a fact's load failed, so what's missing won't arrive by asking again
+     */
+    private record Filled(@NotNull TableInfo table, @NotNull List<SuggestionColumn> columns, boolean complete, boolean failed) {}
+
+    private static Resolved resolve(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request)
+    {
         // Same checks and messages as QueryForm, so this fails like query-getQuery.api
         UserSchema schema = StringUtils.isBlank(request.schemaName()) ? null : QueryService.get().getUserSchema(user, container, request.schemaName());
         QueryForm.ensureSchemaNotNull(schema);
@@ -133,15 +146,17 @@ public class FilterSuggestionService
         SimpleFilter filter = getFilter(request, container, user);
         // A filter on a column whose data may not be read would reveal it through the rows the filter selects
         boolean readsData = filter == null || isReadable(table, filter);
+        return new Resolved(schema, table, filter, readsData);
+    }
 
-        // No cached value or sample name is longer, so only the search can match
-        if (term.getRaw().length() > ColumnFactsLoader.MAX_VALUE_LENGTH)
-            return new FilterSuggestionsResponse(List.of(FilterSuggestion.search(term.getRaw())), true);
-
-        FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, getView(schema, request, user), request.columns());
+    private static Filled describeAndFill(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request, @NotNull Resolved resolved)
+    {
+        TableInfo table = resolved.table();
+        FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, getView(resolved.schema(), request, user), request.columns());
         List<SuggestionColumn> columns = described.columns();
 
         boolean complete = true;
+        boolean failed = false;
         FilterSuggestionContext context = new Context(table, container, user);
         for (FilterSuggestionProvider provider : QueryService.get().getFilterSuggestionProviders())
         {
@@ -163,8 +178,20 @@ public class FilterSuggestionService
 
         try
         {
-            if (readsData)
-                complete &= ColumnFactsCache.get().fill(context, request.parameters(), filter, described, tokens, ColumnFactsCache.DEFAULT_BUDGET_MS);
+            if (resolved.readsData())
+            {
+                if (hasChangeTokens(table))
+                {
+                    ColumnFactsCache.FillResult result = ColumnFactsCache.get().fill(context, request.parameters(), resolved.filter(), described, tokens, ColumnFactsCache.DEFAULT_BUDGET_MS);
+                    complete &= result.complete();
+                    failed = result.failed();
+                }
+                else
+                {
+                    // Nothing was read, so don't let a caller read the columns' absent facts as "no values"
+                    complete = false;
+                }
+            }
         }
         catch (RuntimeException e)
         {
@@ -172,11 +199,147 @@ public class FilterSuggestionService
             complete = false;
         }
 
-        List<FilterSuggestion> suggestions = FilterSuggestionRanker.rank(term, columns, getMaxSuggestions(request));
+        return new Filled(table, columns, complete, failed);
+    }
+
+    public static @NotNull FilterSuggestionsResponse getSuggestions(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request)
+    {
+        SuggestionTerm term = SuggestionTerm.parse(request.term());
+        if (term.isBlank())
+            return new FilterSuggestionsResponse(List.of(), true);
+
+        Resolved resolved = resolve(user, container, request);
+
+        // No cached value or sample name is longer, so only the search can match
+        if (term.getRaw().length() > ColumnFactsLoader.MAX_VALUE_LENGTH)
+            return new FilterSuggestionsResponse(List.of(FilterSuggestion.search(term.getRaw())), true);
+
+        Filled filled = describeAndFill(user, container, request, resolved);
+        List<FilterSuggestion> suggestions = FilterSuggestionRanker.rank(term, filled.columns(), getMaxSuggestions(request));
+        tagResponse(filled.table(), suggestions.size(), filled.complete());
+        return new FilterSuggestionsResponse(suggestions, filled.complete());
+    }
+
+    /**
+     * Backs query-getColumnFacets.api: what the server already knows about each requested column, so the faceted
+     * filter can list values, or decide not to ask for them, without a SELECT DISTINCT over the grid.
+     *
+     * @param values         the column's values, when it has few enough to list; otherwise null. Only a list with
+     *                       valuesFromData set describes the rows the request selects.
+     * @param valuesFromData values were read from the data the request selects. False for a column whose values come
+     *                       from its definition, such as a boolean or Text Choice, where they are the options the
+     *                       column allows and some may match no row.
+     * @param distinctCount  COUNT(DISTINCT), known even when values is null. Counted in SQL, so unlike values it
+     *                       includes blank strings and does not collapse numerically equal text; expect it to exceed
+     *                       values.size() by a little rather than treating a difference as truncation.
+     * @param truncated      a value was too long to cache, so values is incomplete and callers must query instead
+     * @param hasBlank       some row holds null or blank, which values never includes. Only meaningful with
+     *                       valuesFromData set.
+     */
+    public record ColumnFacet(
+        @NotNull String fieldKey,
+        @NotNull String gridFieldKey,
+        @NotNull String type,
+        @Nullable List<String> values,
+        boolean valuesFromData,
+        @Nullable Long distinctCount,
+        boolean truncated,
+        boolean hasBlank
+    )
+    {
+        /** The facts this endpoint discloses, narrowed from everything the load gathered about the column. */
+        static ColumnFacet of(@NotNull SuggestionColumn column)
+        {
+            return new ColumnFacet(
+                column.getFieldKey(),
+                column.getGridFieldKey(),
+                column.getType().name(),
+                column.getValues(),
+                // A multi-valued lookup's values come from its target table, unscoped by this request
+                column.isValuesFromData() && !column.isMultiValued(),
+                column.getDistinctCount(),
+                column.isValuesTruncated(),
+                column.isValuesHaveBlank()
+            );
+        }
+    }
+
+    /**
+     * @param largeTable the table behind the query holds more rows than any grid would list values for. A coarse
+     *                   answer rather than the row estimate itself, which spans containers the caller may not read.
+     * @param complete   every fact the request asked for was loaded. False when the budget ran out, a load failed,
+     *                   or the request's own filters meant no data could be read at all.
+     */
+    public record ColumnFacetsResponse(@NotNull List<ColumnFacet> columns, boolean largeTable, boolean complete) {}
+
+    public static @NotNull ColumnFacetsResponse getColumnFacets(@NotNull User user, @NotNull Container container, @NotNull FilterSuggestionsRequest request)
+    {
+        Resolved resolved = resolve(user, container, request);
+        Filled filled = describeAndFill(user, container, request, resolved);
+
+        Long estimate = resolved.readsData() ? getProvisionedRowCount(resolved.table()) : null;
+        boolean largeTable = estimate != null && estimate > MAX_QUERY_SELECTION_SIZE;
+
+        List<ColumnFacet> facets = filled.columns().stream().map(ColumnFacet::of).toList();
+
+        // Nothing was read, so the facts say nothing about the data; don't let a caller read that as "no values".
+        // A failed load reads the same way: its column reports no values, which is not the same as having none.
+        boolean complete = filled.complete() && !filled.failed() && resolved.readsData();
+        tagResponse(filled.table(), facets.size(), complete);
+        return new ColumnFacetsResponse(facets, largeTable, complete);
+    }
+
+    private static void tagResponse(TableInfo table, int count, boolean complete)
+    {
         TracedOperation.tagActiveSpan("labkey.query", table.getPublicSchemaName() + "." + table.getPublicName());
-        TracedOperation.tagActiveSpan("labkey.suggestion.count", suggestions.size());
+        TracedOperation.tagActiveSpan("labkey.suggestion.count", count);
         TracedOperation.tagActiveSpan("labkey.suggestion.complete", complete);
-        return new FilterSuggestionsResponse(suggestions, complete);
+    }
+
+    /**
+     * Postgres' own estimate for the table a provisioned domain is stored in, which costs one catalog lookup. It
+     * covers every container the domain spans, because that is the table a value list scans.
+     *
+     * @return null for a query with no provisioned table behind it, before that table has ever been analyzed, or on
+     *         any other database
+     */
+    private static @Nullable Long getProvisionedRowCount(TableInfo table)
+    {
+        Domain domain = table.getDomain();
+        DomainKind<?> kind = domain == null ? null : domain.getDomainKind();
+        String schemaName = kind == null ? null : kind.getStorageSchemaName();
+        String tableName = domain == null ? null : domain.getStorageTableName();
+        if (schemaName == null || tableName == null)
+            return null;
+
+        DbScope scope = kind.getScope();
+        if (scope == null || !scope.getSqlDialect().isPostgreSQL())
+            return null;
+
+        try
+        {
+            // reltuples is a float; cast in SQL because the selector has no getter for Float
+            SQLFragment sql = SQLFragment.unsafe(
+                    "SELECT CAST(reltuples AS BIGINT) FROM pg_class WHERE oid = to_regclass(quote_ident(?) || '.' || quote_ident(?))",
+                    schemaName, tableName);
+            Long estimate = new SqlSelector(scope, sql).getObject(Long.class);
+            // -1 means never analyzed in Postgres 14 and later; older versions report 0, indistinguishable from empty
+            return estimate == null || estimate < 0 ? null : estimate;
+        }
+        catch (RuntimeException e)
+        {
+            LOG.warn("Unable to estimate the row count for {}", table.getName(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Whether a data change to the table moves a change token, which every cached fact is keyed by. Only sample tables
+     * supply one, so facts read from anything else would be served stale until they aged out.
+     */
+    private static boolean hasChangeTokens(TableInfo table)
+    {
+        return SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(table.getPublicSchemaName());
     }
 
     /** The first non-null token from a provider that handles the table; null keeps its facts per user. */
