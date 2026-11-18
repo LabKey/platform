@@ -1,0 +1,229 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.query.controllers;
+
+import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewServlet;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockPart;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import java.util.List;
+import java.util.Map;
+
+/** GH Issue 1867: importRows rejects rows that differ in which fields they supply, and no command loses values when rows case a key differently */
+public class ImportRowsTestCase extends Assert
+{
+    // Unique per test so a failed test's rows can't leak into another's assertions
+    private final String _listName = "ImportRowsTest" + GUID.makeHash();
+
+    @BeforeClass
+    public static void setUp()
+    {
+        JunitUtil.deleteTestContainer();
+    }
+
+    @AfterClass
+    public static void tearDown()
+    {
+        JunitUtil.deleteTestContainer();
+    }
+
+    @Before
+    public void createList() throws Exception
+    {
+        User user = TestContext.get().getUser();
+        ListDefinition ld = ListService.get().createList(JunitUtil.getTestContainer(), _listName, ListDefinition.KeyType.Varchar);
+        Domain domain = ld.getDomain();
+        assertNotNull(domain);
+        domain.addProperty(new PropertyStorageSpec("Name", JdbcType.VARCHAR));
+        domain.addProperty(new PropertyStorageSpec("Description", JdbcType.VARCHAR));
+        domain.addProperty(new PropertyStorageSpec("Volume", JdbcType.INTEGER));
+        DomainProperty attachment = domain.addProperty(new PropertyStorageSpec("Attachment", JdbcType.VARCHAR));
+        attachment.setType(PropertyService.get().getType(JunitUtil.getTestContainer(), PropertyType.ATTACHMENT.getXmlName()));
+        ld.setKeyName("Name");
+        ld.save(user);
+    }
+
+    @Test
+    public void testRaggedImportRowsRejected() throws Exception
+    {
+        MockHttpServletResponse response = postSaveRows("importRows", List.of(
+                Map.of("Name", "S1"),
+                Map.of("Name", "S2", "Description", "x", "Volume", 5)));
+
+        assertNotEquals("Ragged importRows should fail", HttpServletResponse.SC_OK, response.getStatus());
+        String body = response.getContentAsString();
+        assertTrue("Error should name the row and the differing fields: " + body, body.contains("rows[1]") && body.contains("Description") && body.contains("Volume"));
+        assertEquals("Incorrect row count", 0L, new TableSelector(getTable()).getRowCount());
+    }
+
+    @Test
+    public void testRaggedImportRowsAllowedByFlag() throws Exception
+    {
+        OptionalFeatureService svc = OptionalFeatureService.get();
+        boolean wasEnabled = svc.isFeatureEnabled(QueryService.DEPRECATED_ALLOW_RAGGED_IMPORT_ROWS);
+        svc.setFeatureEnabled(QueryService.DEPRECATED_ALLOW_RAGGED_IMPORT_ROWS, true, TestContext.get().getUser());
+        try
+        {
+            saveRows("importRows", List.of(
+                    Map.of("Name", "S1"),
+                    Map.of("Name", "S2", "Description", "x", "Volume", 5)));
+        }
+        finally
+        {
+            svc.setFeatureEnabled(QueryService.DEPRECATED_ALLOW_RAGGED_IMPORT_ROWS, wasEnabled, TestContext.get().getUser());
+        }
+
+        assertEquals("Incorrect row count", 2L, new TableSelector(getTable()).getRowCount());
+        assertValue("S1", "Description", null);
+        assertValue("S2", "Description", "x");
+        assertValue("S2", "Volume", 5);
+    }
+
+    // Clients send File values as separate multipart parts, so a row with a file omits that key from its JSON
+    @Test
+    public void testImportRowsWithPartialAttachments() throws Exception
+    {
+        MockPart file = new MockPart("Attachment::0::0", "attachment.txt", "attachment content".getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
+
+        MockHttpServletResponse response = postSaveRows("importRows", List.of(
+                Map.of("Name", "S1"),
+                Map.of("Name", "S2", "Attachment", JSONObject.NULL)), file);
+        assertEquals("importRows with attachments failed: " + response.getContentAsString(), HttpServletResponse.SC_OK, response.getStatus());
+
+        assertValue("S1", "Attachment", "attachment.txt");
+        assertValue("S2", "Attachment", null);
+    }
+
+    @Test
+    public void testMixedKeyCasingImportRows() throws Exception
+    {
+        assertMixedKeyCasing("importRows");
+    }
+
+    @Test
+    public void testMixedKeyCasingInsert() throws Exception
+    {
+        assertMixedKeyCasing("insert");
+    }
+
+    @Test
+    public void testMixedKeyCasingUpdate() throws Exception
+    {
+        saveRows("insert", List.of(
+                Map.of("Name", "S1", "Description", "a"),
+                Map.of("Name", "S2", "Description", "b")));
+
+        saveRows("update", List.of(
+                Map.of("Name", "S1", "Description", "a2"),
+                Map.of("Name", "S2", "description", "b2")));
+
+        assertValue("S1", "Description", "a2");
+        assertValue("S2", "Description", "b2");
+    }
+
+    private void assertMixedKeyCasing(String command) throws Exception
+    {
+        saveRows(command, List.of(
+                Map.of("Name", "S1", "Description", "a"),
+                Map.of("Name", "S2", "description", "b")));
+
+        assertValue("S1", "Description", "a");
+        assertValue("S2", "Description", "b");
+    }
+
+    private @NotNull TableInfo getTable()
+    {
+        ListDefinition ld = ListService.get().getList(JunitUtil.getTestContainer(), _listName);
+        assertNotNull(ld);
+        TableInfo table = ld.getTable(TestContext.get().getUser());
+        assertNotNull(table);
+        return table;
+    }
+
+    private void saveRows(String commandName, List<Map<String, Object>> rows) throws Exception
+    {
+        MockHttpServletResponse response = postSaveRows(commandName, rows);
+        assertEquals(commandName + " via saveRows failed: " + response.getContentAsString(), HttpServletResponse.SC_OK, response.getStatus());
+    }
+
+    private MockHttpServletResponse postSaveRows(String commandName, List<Map<String, Object>> rows) throws Exception
+    {
+        return postSaveRows(commandName, rows, null);
+    }
+
+    private MockHttpServletResponse postSaveRows(String commandName, List<Map<String, Object>> rows, @Nullable MockPart file) throws Exception
+    {
+        JSONObject command = new JSONObject();
+        command.put("command", commandName);
+        command.put("schemaName", "lists");
+        command.put("queryName", _listName);
+        command.put("rows", new JSONArray(rows));
+
+        JSONObject json = new JSONObject();
+        json.put("commands", List.of(command));
+
+        ActionURL url = new ActionURL(QueryController.SaveRowsAction.class, JunitUtil.getTestContainer());
+        User user = TestContext.get().getUser();
+        if (null == file)
+            return ViewServlet.POST(url, user, Map.of("Content-Type", "application/json"), json.toString());
+
+        // Mirror @labkey/api: rows travel in a "json" form field, files in their own parts. The mock request reads
+        // parameters only from its URL, so "json" also goes there to stand in for the container's form-field parsing.
+        url.addParameter("json", json.toString());
+        MockHttpServletRequest request = (MockHttpServletRequest) ViewServlet.mockRequest(RequestMethod.POST.name(), url, user, Map.of("Content-Type", "multipart/form-data; boundary=ImportRowsTestCase"), null);
+        request.addPart(new MockPart("json", json.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET)));
+        request.addPart(file);
+        return ViewServlet.mockDispatch(request, null);
+    }
+
+    private void assertValue(String key, String column, @Nullable Object expected)
+    {
+        Class<?> type = null == expected ? Object.class : expected.getClass();
+        Object actual = new TableSelector(getTable(), PageFlowUtil.set(column)).getObject(key, type);
+        assertEquals(column + " of " + key, expected, actual);
+    }
+}

@@ -238,6 +238,10 @@ public class AnnouncementServiceImpl implements AnnouncementService
     {
         final List<Announcement> ret = new LinkedList<>();
 
+        // GH Issue 1662: without a user we can't apply member lists
+        if (AnnouncementManager.getMessageBoardSettings(container).isSecureOn())
+            return ret;
+
         for (AnnouncementModel ann : AnnouncementManager.getDiscussions(container, identifier))
         {
             ret.add(new AnnouncementImpl(ann));
