@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -111,6 +112,7 @@ import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.view.PermanentRedirectException;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -3081,21 +3083,20 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @TestWhen(TestWhen.When.BVT)
     // GH Issue 1860 regression test
     public static class EditWikiFormTestCase extends Assert
     {
-        private static EditWikiForm bind(String url)
+        private static EditWikiForm bind(Map<String, String> params)
         {
             EditWikiForm form = new EditWikiForm();
-            form.setRedirect(new ReturnURLString(url));
-            form.setCancel(new ReturnURLString(url));
+            BindException errors = BaseViewAction.defaultBindParameters(form, "form", new MutablePropertyValues(params));
+            assertFalse("Unexpected binding errors: " + errors.getAllErrors(), errors.hasErrors());
             return form;
         }
 
         private static void assertDropped(String url)
         {
-            EditWikiForm form = bind(url);
+            EditWikiForm form = bind(Map.of("redirect", url, "cancel", url));
             assertEquals("redirect should be dropped: " + url, "", Objects.toString(form.getRedirect(), null));
             assertEquals("cancel should be dropped: " + url, "", Objects.toString(form.getCancel(), null));
         }
@@ -3106,26 +3107,31 @@ public class WikiController extends SpringActionController
             assertDropped("https://evil.example.com/phish");
             assertDropped("//evil.example.com/phish");
             assertDropped("javascript:alert(1)");
-            assertDropped("");
         }
 
         @Test
         public void testLocalUrlKept()
         {
-            EditWikiForm form = bind("/home/wiki-page.view?name=X");
+            String url = "/home/wiki-page.view?name=X";
+            EditWikiForm form = bind(Map.of("redirect", url, "cancel", url));
             assertTrue(Objects.toString(form.getRedirect(), "").contains("wiki-page.view"));
             assertTrue(Objects.toString(form.getCancel(), "").contains("wiki-page.view"));
         }
 
         @Test
-        public void testUnboundIsNull()
+        public void testMissingOrEmptyIsNull()
         {
-            EditWikiForm form = new EditWikiForm();
-            assertNull(form.getRedirect());
-            assertNull(form.getCancel());
+            EditWikiForm missing = bind(Map.of("name", "X"));
+            assertNull(missing.getRedirect());
+            assertNull(missing.getCancel());
+
+            EditWikiForm empty = bind(Map.of("redirect", "", "cancel", ""));
+            assertNull(empty.getRedirect());
+            assertNull(empty.getCancel());
         }
     }
 
+    @TestWhen(TestWhen.When.BVT)
     public static class PermissionTestCase extends AbstractActionPermissionTest
     {
         @Override
