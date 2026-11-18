@@ -169,7 +169,8 @@ public class AttachmentServiceImpl implements AttachmentService
             throw new NotFoundException();
         }
 
-        boolean canInline = MimeMap.DEFAULT.canInlineFor(filename);
+        // Stored names may be extension-less content hashes, so the alias (the user-facing name) decides inlining
+        boolean canInline = MimeMap.DEFAULT.canInlineFor(null != alias ? alias : filename);
 
         // Default to rendering inline when possible, but let caller force download as an attachment
         boolean asAttachment = !canInline || !inlineIfPossible;
