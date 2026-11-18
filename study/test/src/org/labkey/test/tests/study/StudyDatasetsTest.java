@@ -21,6 +21,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.query.Filter;
+import org.labkey.remoteapi.query.InsertRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -29,6 +34,7 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
+import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
@@ -37,6 +43,7 @@ import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.FieldInfo;
+import org.labkey.test.params.study.DatasetDefinition;
 import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.DomainUtils;
@@ -48,6 +55,7 @@ import org.labkey.test.util.data.TestDataUtils;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -244,6 +252,53 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         checker().verifyEquals("Field data didn't import as expected", updatedValues.get("CF"),
                 drt.getDataAsText(0, "CF"));
         checker().screenShotIfNewError("Update_Dataset_With_Multi_Choice");
+    }
+
+    @Test // GH Issue 1928
+    public void testDatasetTextChoiceValueRename() throws IOException, CommandException
+    {
+        String datasetName = DomainUtils.DomainKind.StudyDatasetVisit.randomName("TC Rename");
+        FieldInfo tcField = FieldInfo.random("TC", FieldDefinition.ColumnType.TextChoice, DomainUtils.DomainKind.StudyDatasetVisit);
+        String fieldName = tcField.getName();
+        String containerPath = getProjectName() + "/" + getFolderName();
+        Connection conn = createDefaultConnection();
+
+        DatasetDefinition dataset = new DatasetDefinition(datasetName);
+        dataset.setFields(List.of(tcField.getFieldDefinition().setTextChoiceValues(List.of("a", "b", "c"))));
+        dataset.create(conn, containerPath);
+
+        InsertRowsCommand insert = new InsertRowsCommand("study", datasetName);
+        insert.setRows(List.of(
+                Map.of("MouseId", PTIDS[0], "SequenceNum", 0.1, fieldName, "a"),
+                Map.of("MouseId", PTIDS[1], "SequenceNum", 0.1, fieldName, "a"),
+                Map.of("MouseId", PTIDS[2], "SequenceNum", 0.1, fieldName, "b")
+        ));
+        insert.execute(conn, containerPath);
+
+        DatasetDesignerPage designerPage = _studyHelper.goToManageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickEditDefinition();
+        DomainFieldRow fieldRow = designerPage.getFieldsPanel().getField(fieldName).expand();
+        String updateMsg = fieldRow.updateLockedTextChoiceValue("a", "a renamed");
+        checker().verifyEquals("Value update message not as expected.",
+                "2 rows with value a will be updated to a renamed on save.", updateMsg);
+        designerPage.clickSave();
+
+        SelectRowsCommand select = new SelectRowsCommand("study", datasetName);
+        select.setColumns(List.of("MouseId", tcField.getFieldKey().toString()));
+        Map<String, String> actual = select.execute(conn, containerPath).getRows().stream()
+                .collect(Collectors.toMap(row -> (String) row.get("MouseId"), row -> String.valueOf(row.get(fieldName))));
+        assertEquals("Text choice values not renamed in existing rows.",
+                Map.of(PTIDS[0], "a renamed", PTIDS[1], "a renamed", PTIDS[2], "b"), actual);
+
+        SelectRowsCommand auditSelect = new SelectRowsCommand("auditLog", "DatasetAuditEvent");
+        auditSelect.setColumns(List.of("Comment", "NewRecordMap"));
+        auditSelect.addFilter("DatasetId/Label", datasetName, Filter.Operator.EQUAL);
+        auditSelect.addFilter("Comment", "A dataset record was modified", Filter.Operator.EQUAL);
+        List<Map<String, Object>> auditRows = auditSelect.execute(conn, containerPath).getRows();
+        assertEquals("Expected one dataset audit event per renamed row.", 2, auditRows.size());
+        auditRows.forEach(row -> checker().verifyTrue("Audit event doesn't record the renamed value: " + row.get("NewRecordMap"),
+                String.valueOf(row.get("NewRecordMap")).contains("=a%20renamed")));
     }
 
     @Test
