@@ -499,6 +499,7 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+            gwtDomain.setAllowTextChoiceValueRenames(kind.allowTextChoiceValueRenames());
             gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
@@ -518,6 +519,7 @@ public class DomainUtil
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+        gwtDomain.setAllowTextChoiceValueRenames(kind.allowTextChoiceValueRenames());
         gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
