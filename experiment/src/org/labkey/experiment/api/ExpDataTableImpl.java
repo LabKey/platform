@@ -332,8 +332,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             {
                 ExprColumn col = new ExprColumn(this, Column.Protocol.toString(), new SQLFragment().unsafeAppend("(SELECT ProtocolLSID FROM ")
                         .append(ExperimentServiceImpl.get().getTinfoProtocolApplication().getSQLName())
-                        .unsafeAppend(" pa "
-                            + " WHERE pa.RowId = ")
+                        .unsafeAppend(" pa WHERE pa.RowId = ")
                         .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
                         .unsafeAppend(".SourceApplicationId)"), JdbcType.VARCHAR, getColumn(Column.SourceProtocolApplication));
                 col.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(),"LSID"));

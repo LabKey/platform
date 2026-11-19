@@ -255,8 +255,7 @@ public class DomainPropertyManager
 
         SQLFragment deleteConditionalFormatsSQL = new SQLFragment().unsafeAppend("DELETE FROM ")
                 .append(getTinfoConditionalFormat().getSQLName())
-                .unsafeAppend(" WHERE PropertyId IN "
-                    + "(SELECT PropertyId FROM ")
+                .unsafeAppend(" WHERE PropertyId IN (SELECT PropertyId FROM ")
                 .append(OntologyManager.getTinfoPropertyDescriptor().getSQLName())
                 .unsafeAppend(" WHERE Container = ?)").addAll(c.getId());
         executor.execute(deleteConditionalFormatsSQL);
