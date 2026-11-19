@@ -250,6 +250,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -324,6 +325,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.net.ssl.SSLException;
 import java.io.BufferedOutputStream;
@@ -3314,7 +3316,12 @@ public class QueryController extends SpringActionController
 
             if (_schema != null && _table != null)
             {
-                if (_table.hasPermission(getUser(), UpdatePermission.class))
+                // DetailsView can't bind query parameters
+                if (_table.getNamedParameters().stream().anyMatch(QueryService.ParameterDecl::isRequired))
+                    throw new BadRequestException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' requires parameters, so it has no details page.");
+
+                // Like the grid, an allowed metadata override shows Edit regardless of the table's own permissions
+                if (allowsUpdateURLOverride(_table) || _table.hasPermission(getUser(), UpdatePermission.class))
                 {
                     StringExpression updateExpr = _form.getQueryDef().urlExpr(QueryAction.updateQueryRow, _schema.getContainer());
                     if (updateExpr != null)
@@ -3323,8 +3330,8 @@ public class QueryController extends SpringActionController
                         if (url != null)
                         {
                             ActionURL updateUrl = new ActionURL(url);
-                            ActionButton editButton = new ActionButton("Edit", updateUrl);
-                            bb.add(editButton);
+                            if (!isRejectedUpdateForm(_table, updateUrl))
+                                bb.add(new ActionButton("Edit", updateUrl));
                         }
                     }
                 }
@@ -3380,6 +3387,21 @@ public class QueryController extends SpringActionController
             return view;
         }
 
+        private static boolean allowsUpdateURLOverride(TableInfo table)
+        {
+            return table.hasUpdateURLOverride() && table.allowQueryTableURLOverrides();
+        }
+
+        // Custom update actions may not need an update service, but our own update forms reject tables without one
+        static boolean isRejectedUpdateForm(TableInfo table, ActionURL updateUrl)
+        {
+            if (table.getUpdateService() != null || allowsUpdateURLOverride(table))
+                return false;
+            return SpringActionController.getControllerName(UpdateQueryRowAction.class).equalsIgnoreCase(updateUrl.getController()) &&
+                Stream.of(UpdateQueryRowAction.class, UpdateQueryRowsAction.class)
+                    .anyMatch(action -> SpringActionController.getActionName(action).equalsIgnoreCase(updateUrl.getAction()));
+        }
+
         @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
@@ -3414,6 +3436,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
+            ensureUpdatable();
             if (getPageConfig().getTitle() == null)
                 setTitle("Insert Row");
 
@@ -3483,6 +3506,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
+            ensureUpdatable();
             ButtonBar bb = createSubmitCancelButtonBar(tableForm);
             UpdateView view = new UpdateView(tableForm, errors);
             view.getDataRegion().setButtonBar(bb);
@@ -8916,6 +8940,146 @@ public class QueryController extends SpringActionController
             rows.put(Map.of("TextField", val));
 
             return rows;
+        }
+    }
+
+    public static class UpdateRowFormTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "UpdateRowFormTestProject";
+        private static final String LIST_NAME = "Items";
+        private static final String PLAIN_QUERY = "ItemsQuery";
+        private static final String WRAPPER_QUERY = "ItemsWrapper";
+        private static final String PARAM_QUERY = "ItemsByName";
+        private static final String KEY = "Name";
+        private static final String KEY_VALUE = "A";
+
+        @Before
+        public void doSetup() throws Exception
+        {
+            doCleanup();
+
+            User user = TestContext.get().getUser();
+            Container c = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, user);
+            ContainerManager.updateSearchable(c, false, user);
+
+            ListDefinition ld = ListService.get().createList(c, LIST_NAME, ListDefinition.KeyType.Varchar);
+            Domain domain = ld.getDomain();
+            assertNotNull(domain);
+            domain.addProperty(new PropertyStorageSpec(KEY, JdbcType.VARCHAR));
+            ld.setKeyName(KEY);
+            ld.save(user);
+
+            TableInfo listTable = ld.getTable(user);
+            assertNotNull(listTable);
+            QueryUpdateService qus = listTable.getUpdateService();
+            assertNotNull(qus);
+            BatchValidationException errors = new BatchValidationException();
+            qus.insertRows(user, c, List.of(new HashMap<>(Map.of(KEY, KEY_VALUE))), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            String sql = "SELECT " + KEY + " FROM " + LIST_NAME;
+            saveQuery(c, PLAIN_QUERY, sql, null);
+            saveQuery(c, WRAPPER_QUERY, sql, """
+                <tables xmlns="http://labkey.org/data/xml"><table tableName="%s" tableDbType="NOT_IN_DB">
+                <updateUrl>/query/updateQueryRow.view?schemaName=lists&amp;query.queryName=%s&amp;%s=${%s}</updateUrl>
+                </table></tables>""".formatted(WRAPPER_QUERY, LIST_NAME, KEY, KEY));
+            saveQuery(c, PARAM_QUERY, "PARAMETERS (Wanted VARCHAR) " + sql + " WHERE " + KEY + " = Wanted", null);
+        }
+
+        @After
+        public void doCleanup()
+        {
+            Container c = ContainerManager.getForPath(PROJECT_NAME);
+            if (c != null)
+                ContainerManager.deleteAll(c, TestContext.get().getUser());
+        }
+
+        private void saveQuery(Container c, String name, String sql, @Nullable String metadataXml)
+        {
+            User user = TestContext.get().getUser();
+            QueryDefinition qd = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), name);
+            qd.setSql(sql);
+            if (metadataXml != null)
+                qd.setMetadataXml(metadataXml);
+            qd.save(user, c);
+        }
+
+        private ActionURL url(Class<? extends Controller> action, String queryName)
+        {
+            return new ActionURL(action, ContainerManager.getForPath(PROJECT_NAME))
+                .addParameter("schemaName", "lists")
+                .addParameter("query.queryName", queryName)
+                .addParameter(KEY, KEY_VALUE);
+        }
+
+        private MockHttpServletResponse get(Class<? extends Controller> action, String queryName) throws Exception
+        {
+            return ViewServlet.GET(url(action, queryName), TestContext.get().getUser(), Map.of());
+        }
+
+        private MockHttpServletResponse postToPlainQuery(Class<? extends Controller> action) throws Exception
+        {
+            ActionURL url = url(action, PLAIN_QUERY).addParameter(QueryUpdateForm.PREFIX + KEY, "B");
+            return ViewServlet.POST(url, TestContext.get().getUser(), Map.of("Content-Type", "application/x-www-form-urlencoded"), null);
+        }
+
+        private boolean hasEditButton(String queryName) throws Exception
+        {
+            MockHttpServletResponse details = get(DetailsQueryRowAction.class, queryName);
+            assertEquals(HttpServletResponse.SC_OK, details.getStatus());
+            return details.getContentAsString().contains(SpringActionController.getActionName(UpdateQueryRowAction.class));
+        }
+
+        @Test
+        public void testUpdatableTable() throws Exception
+        {
+            assertEquals(HttpServletResponse.SC_OK, get(UpdateQueryRowAction.class, LIST_NAME).getStatus());
+            assertEquals(HttpServletResponse.SC_OK, get(InsertQueryRowAction.class, LIST_NAME).getStatus());
+        }
+
+        @Test
+        public void testNonUpdatableQuery() throws Exception
+        {
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, get(UpdateQueryRowAction.class, PLAIN_QUERY).getStatus());
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, get(UpdateQueryRowsAction.class, PLAIN_QUERY).getStatus());
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, get(InsertQueryRowAction.class, PLAIN_QUERY).getStatus());
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, postToPlainQuery(UpdateQueryRowAction.class).getStatus());
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, postToPlainQuery(InsertQueryRowAction.class).getStatus());
+        }
+
+        @Test
+        public void testDetailsEditButton() throws Exception
+        {
+            assertTrue("Updatable list should offer Edit", hasEditButton(LIST_NAME));
+            assertFalse("Non-updatable query should not offer Edit", hasEditButton(PLAIN_QUERY));
+            assertTrue("Update URL override should offer Edit", hasEditButton(WRAPPER_QUERY));
+        }
+
+        @Test
+        public void testCustomUpdateAction()
+        {
+            Container c = ContainerManager.getForPath(PROJECT_NAME);
+            TableInfo table = QueryService.get().getUserSchema(TestContext.get().getUser(), c, "lists").getTable(PLAIN_QUERY);
+            assertNotNull(table);
+            assertTrue(DetailsQueryRowAction.isRejectedUpdateForm(table, new ActionURL(UpdateQueryRowAction.class, c)));
+            assertTrue(DetailsQueryRowAction.isRejectedUpdateForm(table, new ActionURL(UpdateQueryRowsAction.class, c)));
+            assertFalse(DetailsQueryRowAction.isRejectedUpdateForm(table, new ActionURL("custom", "edit", c)));
+        }
+
+        @Test
+        public void testDetailsRequiresParameters() throws Exception
+        {
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, get(DetailsQueryRowAction.class, PARAM_QUERY).getStatus());
+        }
+
+        @Test
+        public void testUpdateUrlOverrideGridLink() throws Exception
+        {
+            MockHttpServletResponse grid = get(ExecuteQueryAction.class, WRAPPER_QUERY);
+            assertEquals(HttpServletResponse.SC_OK, grid.getStatus());
+            // Trailing '&' keeps this from matching the wrapper's own query.queryName=ItemsWrapper links
+            assertTrue("Update URL override did not produce an Edit link to the underlying list", grid.getContentAsString().contains("query.queryName=" + LIST_NAME + "&"));
         }
     }
 
