@@ -45,6 +45,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -137,6 +138,7 @@ import org.labkey.experiment.api.ImportAbortResourceTestCase;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.SampleIndexDocumentTestCase;
 import org.labkey.experiment.api.SampleProvidedAmountAuditTestCase;
 import org.labkey.experiment.api.SampleTypeFilterSuggestionProvider;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
@@ -1121,6 +1123,7 @@ public class ExperimentModule extends SpringModule
     {
         return Set.of(
             EdgeDiagnosticsTestCase.class,
+            AbstractFileXarSource.TestCase.class,
             ExperimentController.ContainerScopingTestCase.class,
             DataColorTable.TestCase.class,
             DataMapDiffColumnTestCase.class,
@@ -1141,6 +1144,7 @@ public class ExperimentModule extends SpringModule
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
             SampleProvidedAmountAuditTestCase.class,
+            SampleIndexDocumentTestCase.class,
             SampleTypeFilterSuggestionProvider.TestCase.class,
             SampleTypeServiceImpl.TestCase.class,
             SpecialCharacterMetricsMaintenanceTask.TestCase.class,
