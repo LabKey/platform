@@ -545,8 +545,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // NOTE: This column is incorrectly named "Protocol", but we are keeping it for backwards compatibility to avoid breaking queries in hvtnFlow module
                 ExprColumn columnInfo = new ExprColumn(this, ExpDataTable.Column.Protocol.toString(), new SQLFragment().unsafeAppend("(SELECT ProtocolLSID FROM ")
                         .append(ExperimentServiceImpl.get().getTinfoProtocolApplication().getSQLName())
-                        .unsafeAppend(" pa "
-                            + " WHERE pa.RowId = ")
+                        .unsafeAppend(" pa WHERE pa.RowId = ")
                         .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
                         .unsafeAppend(".SourceApplicationId)"), JdbcType.VARCHAR);
                 columnInfo.setSqlTypeName("lsidtype");

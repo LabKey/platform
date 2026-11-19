@@ -197,8 +197,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return;
         }
         _inputMaterial = material;
-        addCondition(new SQLFragment().unsafeAppend(" LSID IN "
-                    + "(SELECT RunLSID FROM ")
+        addCondition(new SQLFragment().unsafeAppend(" LSID IN (SELECT RunLSID FROM ")
                 .append(ExperimentServiceImpl.get().getTinfoExperimentRunMaterialInputs().getSQLName())
                 .unsafeAppend(" WHERE RowId = ?)").addAll(_inputMaterial.getRowId()));
     }
@@ -222,8 +221,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return;
         }
         _inputData = data;
-        addCondition(new SQLFragment().unsafeAppend(" LSID IN "
-                    + "(SELECT RunLSID FROM ")
+        addCondition(new SQLFragment().unsafeAppend(" LSID IN (SELECT RunLSID FROM ")
                 .append(ExperimentServiceImpl.get().getTinfoExperimentRunDataInputs().getSQLName())
                 .unsafeAppend(" WHERE RowId = ?)").addAll(_inputData.getRowId()));
 
@@ -262,8 +260,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         _experiment = experiment;
         addCondition(new SQLFragment().unsafeAppend(" RowId IN ( SELECT ExperimentRunId FROM ")
                 .append(ExperimentServiceImpl.get().getTinfoRunList().getSQLName())
-                .unsafeAppend(" "
-                    + " WHERE ExperimentId = ")
+                .unsafeAppend(" WHERE ExperimentId = ")
                 .appendValue(experiment.getRowId())
                 .unsafeAppend(" ) "));
 

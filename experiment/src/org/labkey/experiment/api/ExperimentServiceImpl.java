@@ -1321,11 +1321,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Parameter insertMaterialId = new Parameter("materialid", JdbcType.INTEGER);
             SQLFragment insertSql = new SQLFragment().unsafeAppend("INSERT INTO ")
                     .append(getTinfoMaterialIndexed().getSQLName())
-                    .unsafeAppend(" (MaterialId, LastIndexed) "
-                        + "SELECT RowId, ? FROM ")
+                    .unsafeAppend(" (MaterialId, LastIndexed) SELECT RowId, ? FROM ")
                     .append(getTinfoMaterial().getSQLName())
-                    .unsafeAppend(" WHERE RowId = ? AND "
-                        + " NOT EXISTS (SELECT MaterialId FROM ")
+                    .unsafeAppend(" WHERE RowId = ? AND NOT EXISTS (SELECT MaterialId FROM ")
                     .append(getTinfoMaterialIndexed().getSQLName())
                     .unsafeAppend(" WHERE MaterialId = ?)");
             insertSql.add(insertTS);
@@ -5722,11 +5720,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             SQLFragment sql = new SQLFragment().unsafeAppend("DELETE FROM ")
                     .append(getTinfoRunList().getSQLName())
-                    .unsafeAppend(" WHERE ExperimentId IN ("
-                        + " SELECT E.RowId FROM ")
+                    .unsafeAppend(" WHERE ExperimentId IN (SELECT E.RowId FROM ")
                     .append(getTinfoExperiment().getSQLName())
-                    .unsafeAppend(" E "
-                        + " WHERE E.RowId = ")
+                    .unsafeAppend(" E WHERE E.RowId = ")
                     .appendValue(experiment.getRowId())
                     .unsafeAppend(" AND E.Container = ? )").addAll(experiment.getContainer());
             executor.execute(sql);

@@ -64,12 +64,11 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
             case LSID ->
             {
                 final SqlDialect dialect = getSqlDialect();
-                SQLFragment sql = new SQLFragment().unsafeAppend("")
-                        .append(dialect.concatenate(
-                                new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
-                                SQLFragment.unsafe("CAST(").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, "materialId").unsafeAppend(" AS VARCHAR)"),
-                                SQLFragment.unsafe("'.'"),
-                                SQLFragment.unsafe("CAST(").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, "targetApplicationId").unsafeAppend(" AS VARCHAR)")));
+                SQLFragment sql = dialect.concatenate(
+                        new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
+                        SQLFragment.unsafe("CAST(").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, "materialId").unsafeAppend(" AS VARCHAR)"),
+                        SQLFragment.unsafe("'.'"),
+                        SQLFragment.unsafe("CAST(").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, "targetApplicationId").unsafeAppend(" AS VARCHAR)"));
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
                 col.setHidden(true);
