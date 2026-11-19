@@ -74,10 +74,16 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
             byFieldKey.put(fieldKey, new Aggregates(min, max, distinct));
         }
 
-        Map<String, List<Aggregate.Result>> results = new TableSelector(table, columns, filter, null)
+        TableSelector selector = new TableSelector(table, columns, filter, null)
             .setNamedParameters(parameters)
-            .setQueryTimeout(QUERY_TIMEOUT_SECONDS)
-            .getAggregates(aggregates);
+            .setQueryTimeout(QUERY_TIMEOUT_SECONDS);
+        Map<String, List<Aggregate.Result>> results;
+        // Parallel loads share this table
+        // noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (table)
+        {
+            results = selector.getAggregates(aggregates);
+        }
 
         Map<FieldKey, ColumnFact.Stats> stats = new HashMap<>();
         byFieldKey.forEach((fieldKey, aggs) -> {
@@ -99,16 +105,22 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
     {
         QueryService service = QueryService.get();
         QueryLogging queryLogging = new QueryLogging();
-        SQLFragment selectSql = service.getSelectBuilder(table)
-            .columns(List.of(column))
-            .filter(filter)
-            .queryLogging(queryLogging)
-            .distinct(true)
-            .buildSqlFragment();
+        SQLFragment selectSql;
+        // Parallel loads share this table
+        // noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (table)
+        {
+            selectSql = service.getSelectBuilder(table)
+                .columns(column)
+                .filter(filter)
+                .queryLogging(queryLogging)
+                .distinct(true)
+                .buildSqlFragment();
+        }
 
-        SQLFragment sql = new SQLFragment("SELECT S.").appendIdentifier(column.getAlias()).append(" AS value FROM (")
+        SQLFragment sql = SQLFragment.unsafe("SELECT S.").appendIdentifier(column.getAlias()).unsafeAppend(" AS value FROM (")
             .append(selectSql)
-            .append(") S WHERE S.").appendIdentifier(column.getAlias()).append(" IS NOT NULL");
+            .unsafeAppend(") S WHERE S.").appendIdentifier(column.getAlias()).unsafeAppend(" IS NOT NULL");
         // One extra row for a blank value, which is dropped, and one to detect overflow
         sql = table.getSqlDialect().limitRows(sql, ColumnFactsCache.DISTINCT_VALUE_LIMIT + 2);
         service.bindNamedParameters(sql, parameters);
@@ -137,7 +149,14 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
             .setMaxRows(SHAPE_SAMPLE_SIZE)
             .setNamedParameters(parameters)
             .setQueryTimeout(QUERY_TIMEOUT_SECONDS);
-        try (Results results = selector.getResults(false))
+        Results results;
+        // Parallel loads share this table
+        // noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (table)
+        {
+            results = selector.getResults(false);
+        }
+        try (results)
         {
             while (results.next())
             {

@@ -47,7 +47,10 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.suggestions.FilterSuggestionContext;
 import org.labkey.api.query.suggestions.SuggestionColumn;
@@ -958,6 +961,34 @@ public class ColumnFactsCache
             ColumnInfo name = Objects.requireNonNull(table.getColumn("Name"));
             Map<FieldKey, ColumnFact.Shapes> shapes = new ColumnFactsLoader().loadShapes(table, List.of(name), Map.of(), null);
             assertEquals(List.of("A-999"), shapes.get(name.getFieldKey()).shapes());
+        }
+
+        @Test
+        public void testParallelLoadsShareQueryTable() throws Throwable
+        {
+            QueryDefinition query = QueryService.get().createQueryDef(_user, _c, SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME), GUID.makeHash());
+            query.setSql("PARAMETERS (MinThaw INTEGER DEFAULT 0) SELECT " + String.join(", ", FIELD_KEYS) + " FROM " + SAMPLE_TYPE + " WHERE thawCount >= MinThaw");
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo table = query.getTable(errors, false);
+            if (!errors.isEmpty())
+                throw errors.getFirst();
+            assertNotNull(table);
+            List<ColumnInfo> columns = FIELD_KEYS.stream().map(fieldKey -> Objects.requireNonNull(table.getColumn(fieldKey), fieldKey)).toList();
+
+            ColumnFactsLoader loader = new ColumnFactsLoader();
+            Map<String, Object> parameters = Map.of("MinThaw", 0);
+            Function<ColumnInfo, Set<String>> load = column -> {
+                List<String> values = loader.loadValues(table, column, SuggestionColumn.Type.STRING, parameters, null).values();
+                return values == null ? null : Set.copyOf(values);
+            };
+            List<Set<String>> expected = columns.stream().map(load).toList();
+
+            // Generating a query's SQL prunes its shared select list, so unlocked loads read each other's columns
+            AtomicInteger next = new AtomicInteger();
+            JunitUtil.createRaces(() -> {
+                int i = next.getAndIncrement() % columns.size();
+                assertEquals(columns.get(i).getName(), expected.get(i), load.apply(columns.get(i)));
+            }, columns.size(), 50, 60);
         }
 
         @Test
