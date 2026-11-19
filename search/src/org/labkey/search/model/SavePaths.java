@@ -58,7 +58,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
     SQLFragment pathFilter(TableInfo ti, String path)
     {
-        SQLFragment f = new SQLFragment(" Path=? ", path);
+        SQLFragment f = SQLFragment.unsafe(" Path=? ", path);
         if (null != ti.getColumn("csPath"))
         {
             f.unsafeAppend(" AND csPath=CHECKSUM(?)");
@@ -69,7 +69,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
     SQLFragment pathFilter(int parentId, String name)
     {
-        return new SQLFragment(" Parent=? AND Name=?", parentId, name);
+        return SQLFragment.unsafe(" Parent=? AND Name=?", parentId, name);
     }
 
     //
@@ -82,7 +82,7 @@ public class SavePaths implements DavCrawler.SavePaths
         if (null == last) last = nullDate;
         if (null == next) next = oldDate;
 
-        SQLFragment upd = new SQLFragment(
+        SQLFragment upd = SQLFragment.unsafe(
                 "UPDATE search.CrawlCollections SET LastCrawled=?, NextCrawl=? ",
                 last, next);
         upd.unsafeAppend(" WHERE " );
@@ -127,7 +127,7 @@ public class SavePaths implements DavCrawler.SavePaths
         int parentId = _getParentId(path);
         String name = path.isEmpty() ? "/" : path.getName();
 
-        SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
+        SQLFragment find = SQLFragment.unsafe("SELECT id FROM search.CrawlCollections WHERE ");
         find.append(pathFilter(parentId, name));
         id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
         if (id != null)
@@ -182,7 +182,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
         try
         {
-            SQLFragment insert = new SQLFragment(
+            SQLFragment insert = SQLFragment.unsafe(
                     """
                             INSERT INTO search.crawlcollections (parent, name, path, lastcrawled, nextcrawl)
                             SELECT ? as parent, ? as name, ? as path, ? as lastcrawled, ? as nextcrawl
@@ -264,7 +264,7 @@ public class SavePaths implements DavCrawler.SavePaths
                 nextCrawl = new Date(System.currentTimeMillis()+5*60000);
 
             String pathStr = toPathString(path);
-            SQLFragment f = new SQLFragment(
+            SQLFragment f = SQLFragment.unsafe(
                     "INSERT INTO search.crawlcollections (Path,Name,Parent,NextCrawl,LastCrawled) " +
                     "SELECT ?,?,?,?,? " +
                     "WHERE NOT EXISTS (SELECT Path FROM search.crawlcollections WHERE ");
@@ -327,19 +327,19 @@ public class SavePaths implements DavCrawler.SavePaths
 
         if (forceIndex)
         {
-            executor.execute(
+            executor.execute(SQLFragment.unsafe(
                     "UPDATE search.CrawlResources SET LastIndexed=NULL " +
                     "WHERE Parent IN (SELECT id FROM search.CrawlCollections " +
                     "  WHERE Path LIKE ?)",
-                    toPathString(path) + "%");
+                    toPathString(path) + "%"));
         }
 
-        executor.execute(
+        executor.execute(SQLFragment.unsafe(
                 "UPDATE search.CrawlCollections " +
                 "SET LastCrawled=NULL, NextCrawl=? " +
                 "WHERE Path LIKE ?",
                 // UNDONE LIKE ESCAPE
-                next, toPathString(path) + "%");
+                next, toPathString(path) + "%"));
     }
 
     
@@ -348,8 +348,8 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         assert failDate.getTime() < oldDate.getTime();
         new SqlExecutor(getSearchSchema()).execute(
-                "UPDATE search.CrawlResources SET LastIndexed=NULL WHERE LastIndexed<?",
-                oldDate);
+                SQLFragment.unsafe("UPDATE search.CrawlResources SET LastIndexed=NULL WHERE LastIndexed<?",
+                oldDate));
     }
 
 
@@ -358,8 +358,8 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         _log.debug("deleting crawler paths that start with '{}'", path);
         // UNDONE LIKE ESCAPE
-        new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", toPathString(path) + "%");
-        new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlCollections WHERE Path LIKE ?", toPathString(path) + "%");
+        new SqlExecutor(getSearchSchema()).execute(SQLFragment.unsafe("DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", toPathString(path) + "%"));
+        new SqlExecutor(getSearchSchema()).execute(SQLFragment.unsafe("DELETE FROM search.CrawlCollections WHERE Path LIKE ?", toPathString(path) + "%"));
         idcache.clear();
     }
 
@@ -367,7 +367,7 @@ public class SavePaths implements DavCrawler.SavePaths
     @Override
     public Date getNextCrawl()
     {
-        SQLFragment f = new SQLFragment("SELECT MIN(NextCrawl) FROM search.CrawlCollections WHERE LastCrawled IS NULL OR LastCrawled < ?");
+        SQLFragment f = SQLFragment.unsafe("SELECT MIN(NextCrawl) FROM search.CrawlCollections WHERE LastCrawled IS NULL OR LastCrawled < ?");
         f.add(System.currentTimeMillis() - 30*60000);
         return new SqlSelector(getSearchSchema(), f).getObject(Timestamp.class);
     }
@@ -380,7 +380,7 @@ public class SavePaths implements DavCrawler.SavePaths
         Date awhileago = new Date(Math.max(_startupTime, now.getTime() - 30*60000));
 
         SqlDialect dialect = getSearchSchema().getSqlDialect();
-        SQLFragment f = new SQLFragment("""
+        SQLFragment f = SQLFragment.unsafe("""
                 SELECT Parent, Name, Path, LastCrawled, NextCrawl
                 FROM search.CrawlCollections
                 WHERE NextCrawl < ? AND (LastCrawled IS NULL OR LastCrawled < ?)
@@ -392,7 +392,7 @@ public class SavePaths implements DavCrawler.SavePaths
         {
             Map<Path,Pair<Date,Date>> map = new LinkedHashMap<>();
             ArrayList<String> paths = new ArrayList<>(limit);
-            String or = " WHERE ";
+            SQLFragment.SqlSeparator or = SQLFragment.sep(" WHERE ", " OR ");
             SQLFragment updWHERE = new SQLFragment();
 
             try (ResultSet rs = new SqlSelector(getSearchSchema(), sel).getResultSet())
@@ -408,17 +408,16 @@ public class SavePaths implements DavCrawler.SavePaths
                     map.put(Path.parse(path), new Pair<>(lastCrawl, nextCrawl));
                     paths.add(path);
 
-                    updWHERE.append(or).unsafeAppend(" (Parent=? AND Name=?)");
+                    updWHERE.append(or.next()).unsafeAppend(" (Parent=? AND Name=?)");
                     updWHERE.add(parent);
                     updWHERE.add(name);
-                    or = " OR ";
                 }
             }
 
             // UPDATE LastCrawled so we won't try to crawl for a while
             if (!paths.isEmpty())
             {
-                SQLFragment upd = new SQLFragment("UPDATE search.CrawlCollections\nSET LastCrawled=?", now);
+                SQLFragment upd = SQLFragment.unsafe("UPDATE search.CrawlCollections\nSET LastCrawled=?", now);
                 upd.append(updWHERE);
                 new SqlExecutor(getSearchSchema()).execute(upd);
             }
@@ -440,7 +439,7 @@ public class SavePaths implements DavCrawler.SavePaths
     @Override
     public Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
     {
-        SQLFragment s = new SQLFragment(
+        SQLFragment s = SQLFragment.unsafe(
                 """
                         SELECT D.ChangeInterval, D.Path, D.id, F.Name, F.Modified, F.LastIndexed
                         FROM search.CrawlCollections D LEFT OUTER JOIN search.CrawlResources F on D.id=F.parent
@@ -461,7 +460,7 @@ public class SavePaths implements DavCrawler.SavePaths
         return map;
     }
 
-    String datetime = null;
+    SQLFragment datetime = null;
 
     @Override
     public boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, Date modified)
@@ -472,21 +471,21 @@ public class SavePaths implements DavCrawler.SavePaths
         try
         {
             if (null == datetime)
-                datetime = getSearchSchema().getSqlDialect().getDefaultDateTimeDataType();
+                datetime = getSearchSchema().getSqlDialect().getDefaultDateTimeDataTypeAsSql();
             if (modified.getTime() == Long.MIN_VALUE)
                 modified = null;
             int id = _getParentId(path);
             if (-1 == id)
                 return false;
-            SQLFragment upd = new SQLFragment(
-                    "UPDATE search.CrawlResources SET LastIndexed=?, Modified=CAST(? AS " + datetime + ") WHERE Parent=? AND Name=?",
-                    lastIndexed, modified, id, path.getName());
+            SQLFragment upd = SQLFragment.unsafe("UPDATE search.CrawlResources SET LastIndexed=?, Modified=CAST(? AS ", lastIndexed, modified)
+                    .append(datetime)
+                    .unsafeAppend(") WHERE Parent=? AND Name=?", id, path.getName());
             int count = new SqlExecutor(getSearchSchema()).execute(upd);
             if (count > 0)
                 return true;
-            SQLFragment ins = new SQLFragment(
-                    "INSERT INTO search.CrawlResources(Parent,Name,LastIndexed, Modified) VALUES (?,?,?,CAST(? AS " + datetime + "))",
-                    id, path.getName(), lastIndexed, modified);
+            SQLFragment ins = SQLFragment.unsafe("INSERT INTO search.CrawlResources(Parent,Name,LastIndexed, Modified) VALUES (?,?,?,CAST(? AS ", id, path.getName(), lastIndexed, modified)
+                    .append(datetime)
+                    .unsafeAppend("))");
             count = new SqlExecutor(getSearchSchema()).execute(ins);
             return count > 0;
         }

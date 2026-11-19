@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.security.permissions.AnalystPermission;
@@ -123,7 +124,7 @@ public class GroupManager
     private static int createSystemGroup(int userId, String name, PrincipalType type)
     {
         // See if principal with the given name already exists
-        Integer id = new SqlSelector(_core.getSchema(), "SELECT UserId FROM " + _core.getTableInfoPrincipals() + " WHERE Name = ?", name).getObject(Integer.class);
+        Integer id = new SqlSelector(_core.getSchema(), SQLFragment.unsafe("SELECT UserId FROM ").append(_core.getTableInfoPrincipals()).unsafeAppend(" WHERE Name = ?", name)).getObject(Integer.class);
 
         if (id != null)
             return id;

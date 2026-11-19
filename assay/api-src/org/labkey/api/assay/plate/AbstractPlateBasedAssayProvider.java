@@ -399,14 +399,13 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         {
             checkReadBeforeExecute();
             SQLFragment sql = new SQLFragment();
-            String separator = "";
+            SQLFragment.SqlSeparator separator = SQLFragment.sep("", " UNION ");
             EnumSet<StatsService.CurveFitType> enumSet = EnumSet.allOf(_enum);
             for (StatsService.CurveFitType e : enumSet)
             {
                 if (_provider.getCurveFits().contains(e))
                 {
-                    sql.append(separator);
-                    separator = " UNION ";
+                    sql.append(separator.next());
                     sql.unsafeAppend("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
                     sql.add(_valueGetter.getValue(e));
                     sql.add(_rowIdGetter.getRowId(e));

@@ -1149,8 +1149,8 @@ public class ContainerManager
                 ContainerFactory factory = new ContainerFactory();
                 // ContainerFactory only builds from a ResultSet (fromMap is unsupported), so iterate rows directly
                 new SqlSelector(CORE.getSchema(),
-                        "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                        parent.getId()).forEach(rs -> {
+                        SQLFragment.unsafe("SELECT * FROM ").append(CORE.getTableInfoContainers()).unsafeAppend(" WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
+                        parent.getId())).forEach(rs -> {
                     GUID id = new GUID(rs.getString("EntityId"));
                     // Reuse the cached instance; a fresh copy would replace it while Container-keyed caches keep pinning the old one
                     Container c = CACHE_ENTITY_ID.get(id);
@@ -1187,13 +1187,13 @@ public class ContainerManager
         if (null != entityId)
             return getForId(entityId);
 
-        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id), () -> CACHE_ROW_ID.put(id, CACHE_MISS_GUID));
+        return selectAndCache(SQLFragment.unsafe("SELECT * FROM ").append(CORE.getTableInfoContainers()).unsafeAppend(" WHERE RowId = ?", id), () -> CACHE_ROW_ID.put(id, CACHE_MISS_GUID));
     }
 
     /** Bypasses the cache, for rereading a container right after updating its row */
     private static @Nullable Container selectForRowId(int id)
     {
-        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id)).getObject(Container.class);
+        return new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT * FROM ").append(CORE.getTableInfoContainers()).unsafeAppend(" WHERE RowId = ?", id)).getObject(Container.class);
     }
 
     public static @Nullable Container getForId(@Nullable GUID guid)
@@ -1207,7 +1207,7 @@ public class ContainerManager
         if (null != CACHE_MISSING_ENTITY_ID.get(guid))
             return null;
 
-        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?", guid), () -> CACHE_MISSING_ENTITY_ID.put(guid, true));
+        return selectAndCache(SQLFragment.unsafe("SELECT * FROM ").append(CORE.getTableInfoContainers()).unsafeAppend(" WHERE EntityId = ?", guid), () -> CACHE_MISSING_ENTITY_ID.put(guid, true));
     }
 
     public static @Nullable Container getForId(@Nullable String id)
@@ -1293,7 +1293,7 @@ public class ContainerManager
                 if (tinfo.getTableType() == DatabaseTableType.NOT_IN_DB)
                     throw new RootContainerException("Container table has not been created");
 
-                Container result = new SqlSelector(CORE.getSchema(),"SELECT * FROM " + tinfo + " WHERE Parent IS NULL").getObject(Container.class);
+                Container result = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT * FROM ").append(tinfo).unsafeAppend(" WHERE Parent IS NULL")).getObject(Container.class);
 
                 if (result == null)
                     throw new RootContainerException("Root container does not exist");
@@ -1770,7 +1770,7 @@ public class ContainerManager
             // Issue 9901: Synchronize the transaction, but not the listeners
             try (DbScope.Transaction t = ensureTransaction())
             {
-                new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
+                new SqlExecutor(CORE.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoContainers()).unsafeAppend(" SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId()));
 
                 // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
                 c = selectForRowId(c.getRowId());
@@ -1838,7 +1838,7 @@ public class ContainerManager
                     throw new ApiUsageException("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
                 }
 
-                new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", newName, c.getId());
+                new SqlExecutor(CORE.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoContainers()).unsafeAppend(" SET Name=? WHERE EntityId=?", newName, c.getId()));
                 clearCache();  // Clear the entire cache, since containers cache their full paths
                 // Get new version since name has changed.
                 Container renamedContainer = getForId(c.getId());
@@ -1897,8 +1897,8 @@ public class ContainerManager
             for (int index = 0; index < siblings.size(); index++)
             {
                 Container current = siblings.get(index);
-                new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET SortOrder = ? WHERE EntityId = ?",
-                        resetToAlphabetical ? 0 : index, current.getId());
+                new SqlExecutor(CORE.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoContainers()).unsafeAppend(" SET SortOrder = ? WHERE EntityId = ?",
+                        resetToAlphabetical ? 0 : index, current.getId()));
             }
             // Clear after the commit has propagated the state to other threads and transactions
             // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
@@ -2013,8 +2013,8 @@ public class ContainerManager
             fireDeleteContainer(c, user);
 
             SqlExecutor sqlExecutor = new SqlExecutor(CORE.getSchema());
-            sqlExecutor.execute("DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerRowId=?", c.getRowId());
-            sqlExecutor.execute("DELETE FROM " + CORE.getTableInfoContainers() + " WHERE EntityId=?", c.getId());
+            sqlExecutor.execute(SQLFragment.unsafe("DELETE FROM ").append(CORE.getTableInfoContainerAliases()).unsafeAppend(" WHERE ContainerRowId=?", c.getRowId()));
+            sqlExecutor.execute(SQLFragment.unsafe("DELETE FROM ").append(CORE.getTableInfoContainers()).unsafeAppend(" WHERE EntityId=?", c.getId()));
             // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
             SecurityPolicyManager.removeAll(c);
             // and delete all container-based sequences
@@ -2275,7 +2275,7 @@ public class ContainerManager
 
     public static long getAuditCommentRequiredCount()
     {
-        SQLFragment sql = new SQLFragment(
+        SQLFragment sql = SQLFragment.unsafe(
                 "SELECT COUNT(*) FROM\n" +
                 "   core.containers c\n" +
                 "       JOIN prop.propertysets ps on c.entityid = ps.objectid\n" +
@@ -2290,7 +2290,7 @@ public class ContainerManager
         final MultiValuedMap<Container, Container> mm = new ArrayListValuedHashMap<>();
 
         // Get all containers and parents
-        SqlSelector selector = new SqlSelector(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC");
+        SqlSelector selector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT Parent, EntityId FROM ").append(CORE.getTableInfoContainers()).unsafeAppend(" ORDER BY SortOrder, LOWER(Name) ASC"));
 
         selector.forEach(rs -> {
             String parentId = rs.getString(1);
@@ -2315,7 +2315,7 @@ public class ContainerManager
         final MultiValuedMap<String, String> mmIds = new ArrayListValuedHashMap<>();
 
         // Get all containers and parents
-        Selector selector = new SqlSelector(CORE.getSchema(), "SELECT Parent, EntityId FROM " + CORE.getTableInfoContainers() + " ORDER BY SortOrder, LOWER(Name) ASC");
+        Selector selector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT Parent, EntityId FROM ").append(CORE.getTableInfoContainers()).unsafeAppend(" ORDER BY SortOrder, LOWER(Name) ASC"));
 
         selector.forEach(rs -> mmIds.put(rs.getString(1), rs.getString(2)));
 
@@ -2361,11 +2361,10 @@ public class ContainerManager
             return SQLFragment.unsafe("(NULL)");    // WHERE x IN (NULL) should match no rows
 
         SQLFragment csvList = SQLFragment.unsafe("(");
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
         for (Container container : containers)
         {
-            csvList.append(comma);
-            comma = ",";
+            csvList.append(comma.next());
             csvList.appendValue(container, d);
         }
         csvList.unsafeAppend(")");
@@ -2633,7 +2632,7 @@ public class ContainerManager
     public static List<String> getAliasesForContainer(Container c)
     {
         return Collections.unmodifiableList(new SqlSelector(CORE.getSchema(),
-                new SQLFragment("SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerRowId = ? ORDER BY Path",
+                SQLFragment.unsafe("SELECT Path FROM ").append(CORE.getTableInfoContainerAliases()).unsafeAppend(" WHERE ContainerRowId = ? ORDER BY Path",
                         c.getRowId())).getArrayList(String.class));
     }
 
@@ -2688,8 +2687,8 @@ public class ContainerManager
     {
         // We store the path as lower-case, so we don't need to also LOWER() on the value in core.ContainerAliases, letting the DB use the index
         Container[] ret = new SqlSelector(CORE.getSchema(),
-                "SELECT * FROM " + CORE.getTableInfoContainers() + " c, " + CORE.getTableInfoContainerAliases() + " ca WHERE ca.ContainerRowId = c.RowId AND ca.path = LOWER(?)",
-                path).getArray(Container.class);
+                SQLFragment.unsafe("SELECT * FROM ").append(CORE.getTableInfoContainers()).unsafeAppend(" c, ").append(CORE.getTableInfoContainerAliases()).unsafeAppend(" ca WHERE ca.ContainerRowId = c.RowId AND ca.path = LOWER(?)",
+                path)).getArray(Container.class);
 
         return ret.length == 0 ? null : ret[0];
     }
@@ -2791,8 +2790,8 @@ public class ContainerManager
         if (!newContainer)
         {
             policyCount = new SqlSelector(CORE.getSchema(),
-                "SELECT COUNT(*) FROM " + CORE.getTableInfoPolicies() + " WHERE ResourceId = ?",
-                c.getId()).getObject(Integer.class);
+                SQLFragment.unsafe("SELECT COUNT(*) FROM ").append(CORE.getTableInfoPolicies()).unsafeAppend(" WHERE ResourceId = ?",
+                c.getId())).getObject(Integer.class);
         }
 
         if (newContainer || 0 == policyCount.intValue())

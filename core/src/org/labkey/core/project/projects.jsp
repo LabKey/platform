@@ -106,7 +106,7 @@
     SimpleFilter filter = new SimpleFilter();
     filter.addInClause(new FieldKey(null, "containerType"), Arrays.asList(StringUtils.split(properties.get("containerTypes"), ";")));
     filter.addClause(new SimpleFilter.InClause(new FieldKey(null,"entityId"), Set.of(ContainerManager.getHomeContainer().getId(), ContainerManager.getSharedContainer().getId()), false, true));
-    filter.addClause(new SimpleFilter.SQLClause(new SQLFragment("Name NOT LIKE '\\_%' ESCAPE '\\'")));
+    filter.addClause(new SimpleFilter.SQLClause(SQLFragment.unsafe("Name NOT LIKE '\\_%' ESCAPE '\\'")));
     ContainerFilter cf = ContainerFilter.getContainerFilterByName(properties.get("containerFilter"),target,getUser());
     QuerySchema core = DefaultSchema.get(getUser(),target).getSchema("core");
     TableInfo t = core.getTable("Containers", cf);

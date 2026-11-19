@@ -534,7 +534,7 @@ public class AsyncQueryRequest<T>
                     try
                     {
                         AsyncQueryRequest<Object> request = new AsyncQueryRequest<>(new MockHttpServletResponse(), "testInterruptReleasesConnection", Map.of());
-                        SqlSelector selector = new SqlSelector(scope, "SELECT pg_sleep(30)");
+                        SqlSelector selector = new SqlSelector(scope, SQLFragment.unsafe("SELECT pg_sleep(30)"));
                         selector.setAsyncRequest(request);
                         request.waitForResult(() -> selector.getObject(Object.class));
                     }
@@ -547,7 +547,7 @@ public class AsyncQueryRequest<T>
                     {
                         // Checked before finishedWithThread(), whose cleanup would hide a leak
                         holderReleased.set(!scope.isThreadConnectionActive());
-                        new SqlSelector(scope, "SELECT 1").getObject(Integer.class);
+                        new SqlSelector(scope, SQLFragment.unsafe("SELECT 1")).getObject(Integer.class);
                     }
                     catch (Throwable t)
                     {

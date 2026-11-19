@@ -80,7 +80,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
             if (protocolPattern != null)
             {
                 typeFrag.unsafeAppend("\n");
-                typeFrag.unsafeAppend("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID LIKE ? THEN ?");
+                typeFrag.unsafeAppend("WHEN ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID LIKE ? THEN ?");
                 typeFrag.add(protocolPattern);
                 typeFrag.add(provider.getName());
             }
@@ -91,11 +91,11 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         typeColumn.setDisplayColumnFactory(TypeDisplayColumn::new);
         addColumn(typeColumn);
 
-        var runCountFragment = new SQLFragment("(SELECT COUNT(*) FROM ")
+        var runCountFragment = SQLFragment.unsafe("(SELECT COUNT(*) FROM ")
                 .append(ExperimentService.get().getTinfoExperimentRun(), "r")
-                .unsafeAppend(" WHERE r.ProtocolLSID = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID")
+                .unsafeAppend(" WHERE r.ProtocolLSID = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID")
                 .unsafeAppend(" AND ")
-                .append(getContainerFilter().getSQLFragment(getSchema(), new SQLFragment("r.container")))
+                .append(getContainerFilter().getSQLFragment(getSchema(), SQLFragment.unsafe("r.container")))
                 .unsafeAppend(")");
         addColumn(new ExprColumn(this, "RunCount", runCountFragment, JdbcType.INTEGER)).setHidden(true);
 
@@ -112,7 +112,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         setDefaultVisibleColumns(defaultCols);
 
         // TODO - this is a horrible way to filter out non-assay protocols
-        addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
+        addCondition(SQLFragment.unsafe("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
 
         setDetailsURL(detailsURL);
     }

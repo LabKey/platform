@@ -50,8 +50,7 @@ public class ParticipantGroupFilterClause extends SimpleFilter.FilterClause
         else
         {
             clause = new SimpleFilter.SQLClause(
-                    "ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)",
-                    new Object[] {group.getRowId()},
+                    SQLFragment.unsafe("ParticipantId IN (SELECT ParticipantId FROM study.ParticipantGroupMap WHERE GroupId=?)", group.getRowId()),
                     _ptid);
         }
         _clause = clause;

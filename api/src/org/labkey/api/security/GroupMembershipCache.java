@@ -53,16 +53,16 @@ public class GroupMembershipCache
 
     private final static CacheLoader<String, PrincipalArray> IMMEDIATE_GROUP_MEMBERSHIPS_LOADER = (key, argument) -> {
         int groupId = (Integer)argument;
-        SqlSelector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT GroupId FROM " + CORE.getTableInfoMembers() + " WHERE UserId = ?", groupId));
+        SqlSelector selector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT GroupId FROM ").append(CORE.getTableInfoMembers()).unsafeAppend(" WHERE UserId = ?", groupId));
 
         return new PrincipalArray(selector.getCollection(Integer.class));
     };
 
     private final static CacheLoader<String, PrincipalArray> GROUP_MEMBERS_LOADER = (key, argument) -> {
         Group group = (Group)argument;
-        Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment(
-            "SELECT Members.UserId FROM " + CORE.getTableInfoMembers() + " Members" +
-            " JOIN " + CORE.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
+        Selector selector = new SqlSelector(CORE.getSchema(), SQLFragment.unsafe(
+            "SELECT Members.UserId FROM ").append(CORE.getTableInfoMembers()).unsafeAppend(" Members" +
+            " JOIN ").append(CORE.getTableInfoPrincipals()).unsafeAppend(" Users ON Members.UserId = Users.UserId\n" +
             " WHERE Members.GroupId = ?" +
             // order: Site groups, project groups, users
             " ORDER BY Users.Type, CASE WHEN ( Users.Container IS NULL ) THEN 1 ELSE 2 END, Users.Name", group.getUserId()));

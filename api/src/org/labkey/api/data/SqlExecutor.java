@@ -63,6 +63,8 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
         return this;
     }
 
+    /** @deprecated Use {@link #execute(SQLFragment)}. */
+    @Deprecated
     public int execute(CharSequence sql, Object... params)
     {
         return execute(new SQLFragment(sql, params));

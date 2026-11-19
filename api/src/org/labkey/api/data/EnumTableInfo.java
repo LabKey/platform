@@ -112,17 +112,17 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         _valueGetter = valueGetter;
         _rowIdGetter = rowIdGetter;
 
-        ExprColumn column = new ExprColumn(this, "Value", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Value"), JdbcType.VARCHAR);
+        ExprColumn column = new ExprColumn(this, "Value", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".Value"), JdbcType.VARCHAR);
         column.setKeyField(!rowIdPK);
         setTitleColumn(column.getName());
         addColumn(column);
 
-        ExprColumn rowIdColumn = new ExprColumn(this, "RowId", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RowId"), JdbcType.INTEGER);
+        ExprColumn rowIdColumn = new ExprColumn(this, "RowId", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".RowId"), JdbcType.INTEGER);
         rowIdColumn.setKeyField(rowIdPK);
         rowIdColumn.setHidden(true);
         addColumn(rowIdColumn);
 
-        ExprColumn ordinalColumn = new ExprColumn(this, "Ordinal", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Ordinal"), JdbcType.INTEGER);
+        ExprColumn ordinalColumn = new ExprColumn(this, "Ordinal", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".Ordinal"), JdbcType.INTEGER);
         ordinalColumn.setHidden(true);
         addColumn(ordinalColumn);
     }
@@ -132,11 +132,10 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     {
         checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment();
-        String separator = "";
+        SQLFragment.SqlSeparator separator = SQLFragment.sep("", " UNION ");
         for (EnumType e : _enumSet)
         {
-            sql.append(separator);
-            separator = " UNION ";
+            sql.append(separator.next());
             sql.unsafeAppend("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
             sql.add(_valueGetter.getValue(e));
             sql.add(_rowIdGetter.getRowId(e));

@@ -3178,7 +3178,9 @@ public class DbScope
         private void _testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
         {
             SQLFragment sql = SQLFragment.unsafe("SELECT (");
-            sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
+            SQLFragment value1 = SQLFragment.unsafe("CAST(").appendValue(date1, dialect).unsafeAppend(" AS ").append(dialect.getDefaultDateTimeDataTypeAsSql()).unsafeAppend(")");
+            SQLFragment value2 = SQLFragment.unsafe("CAST(").appendValue(date2, dialect).unsafeAppend(" AS ").append(dialect.getDefaultDateTimeDataTypeAsSql()).unsafeAppend(")");
+            sql.append(dialect.getDateDiff(part, value1, value2));
             sql.unsafeAppend(") AS Diff");
 
             int actual = new SqlSelector(scope, sql).getObject(Integer.class);

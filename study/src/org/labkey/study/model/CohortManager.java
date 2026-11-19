@@ -539,7 +539,7 @@ public class CohortManager
                     updateSql.WHERE().unsafeAppend("ParticipantId = ? AND VisitRowId = ? AND Container = ?");
                 else
                     updateSql.WHERE().unsafeAppend("ParticipantId = ? AND Container = ?");
-                Table.batchExecute(StudySchema.getInstance().getSchema(), updateSql.getSQL(), participantVisitParams);
+                Table.batchExecute(StudySchema.getInstance().getSchema(), updateSql, participantVisitParams);
             }
 
             // update Participant:
@@ -549,7 +549,7 @@ public class CohortManager
                         .UPDATE().append(tableParticipant)
                         .SET().unsafeAppend("InitialCohortId = ?, CurrentCohortId = ?")
                         .WHERE().unsafeAppend("ParticipantId = ? AND Container = ?");
-                Table.batchExecute(StudySchema.getInstance().getSchema(), updateSql.getSQL(), participantParams);
+                Table.batchExecute(StudySchema.getInstance().getSchema(), updateSql, participantParams);
             }
         }
         catch (SQLException e)

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -33,7 +32,9 @@ public class ParameterMarkerInClauseGenerator implements InClauseGenerator
         if (params.isEmpty())
             return sql.unsafeAppend(" IN (NULL)");
         sql.unsafeAppend(" IN (");
-        sql.append(StringUtils.repeat("?", ", ", params.size()));
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
+        for (int i = 0; i < params.size(); i++)
+            sql.append(comma.next()).unsafeAppend("?");
         sql.unsafeAppend(")");
         sql.addAll(params);
         return sql;

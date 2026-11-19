@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.google.errorprone.annotations.CompileTimeConstant;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -357,7 +358,8 @@ public class SimpleFilter implements Filter
         private final SQLFragment _fragment;
         private final List<FieldKey> _fieldKeys;
 
-        @Deprecated //use SQLClause(SQLFragment)
+        /** @deprecated Use {@link #SQLClause(SQLFragment, FieldKey...)}. */
+        @Deprecated
         public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
             _needsTypeConversion = false;
@@ -438,10 +440,10 @@ public class SimpleFilter implements Filter
 
     public abstract static class OperationClause extends FilterClause
     {
-        private final String _operation;
+        private final SQLFragment _operation;
         private final List<FilterClause> _clauses;
 
-        protected OperationClause(String operation, FilterClause... clauses)
+        protected OperationClause(SQLFragment operation, FilterClause... clauses)
         {
             _operation = operation;
             _clauses = new ArrayList<>(Arrays.asList(clauses));
@@ -479,11 +481,12 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             SQLFragment sqlFragment = new SQLFragment();
-            String separator = "";
+            boolean first = true;
             for (FilterClause clause : _clauses)
             {
-                sqlFragment.append(separator);
-                separator = _operation;
+                if (!first)
+                    sqlFragment.append(_operation);
+                first = false;
                 sqlFragment.unsafeAppend("(");
                 sqlFragment.append(clause.toSQLFragment(columnMap, dialect));
                 sqlFragment.unsafeAppend(")");
@@ -496,11 +499,12 @@ public class SimpleFilter implements Filter
         public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             LabKeySQLFragment labKeySql = new LabKeySQLFragment();
-            String separator = "";
+            boolean first = true;
             for (FilterClause clause : _clauses)
             {
-                labKeySql.appendSourceText(separator);
-                separator = _operation;
+                if (!first)
+                    labKeySql.append(_operation);
+                first = false;
                 labKeySql.unsafeAppend("(");
                 labKeySql.append(clause.getLabKeySQLWhereClause(columnMap));
                 labKeySql.unsafeAppend(")");
@@ -516,7 +520,7 @@ public class SimpleFilter implements Filter
             {
                 sb.append(sep);
                 clause.appendFilterText(sb, formatter);
-                sep = _operation;
+                sep = _operation.getRawSQL();
             }
         }
 
@@ -530,7 +534,7 @@ public class SimpleFilter implements Filter
     {
         public OrClause(FilterClause... clauses)
         {
-            super(" OR ", clauses);
+            super(SQLFragment.unsafe(" OR "), clauses);
         }
 
         @Override
@@ -551,7 +555,7 @@ public class SimpleFilter implements Filter
     {
         public AndClause(FilterClause... clauses)
         {
-            super(" AND ", clauses);
+            super(SQLFragment.unsafe(" AND "), clauses);
         }
 
         @Override
@@ -1333,7 +1337,8 @@ public class SimpleFilter implements Filter
         return this;
     }
 
-    @Deprecated  //use addWhereClause(SQLFragment)
+    /** @deprecated Use {@link #addWhereClause(SQLFragment, FieldKey...)}. */
+    @Deprecated
     public SimpleFilter addWhereClause(String fragment, Object[] paramVals, FieldKey... fieldKeys)
     {
         _clauses.add(new SQLClause(fragment, paramVals, fieldKeys));
@@ -1450,11 +1455,11 @@ public class SimpleFilter implements Filter
         if (null == _clauses || _clauses.isEmpty())
             return ret;
 
-        String sAND = "WHERE ";
+        SQLFragment.SqlSeparator sAND = SQLFragment.sep("WHERE ", " AND ");
 
         for (FilterClause fc : _clauses)
         {
-            ret.append(sAND);
+            ret.append(sAND.next());
             ret.unsafeAppend("(");
             try
             {
@@ -1473,7 +1478,6 @@ public class SimpleFilter implements Filter
                 }
             }
             ret.unsafeAppend(")");
-            sAND = " AND ";
         }
 
         return ret;

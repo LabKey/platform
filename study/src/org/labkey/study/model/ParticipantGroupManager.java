@@ -580,7 +580,7 @@ public class ParticipantGroupManager
                     ParticipantGroupCache.uncache(c);
                     throw new ValidationException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
                 }
-                executor.execute(sql.getSQL(), group.getRowId(), id, participantIdMap.get(id));
+                executor.execute(new SQLFragment(sql).addAll(group.getRowId(), id, participantIdMap.get(id)));
             }
             ParticipantGroupCache.uncache(c);
 
@@ -783,7 +783,7 @@ public class ParticipantGroupManager
                 if (p == null)
                     throw new ValidationException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
 
-                executor.execute(sql.getSQL(), group.getRowId(), id, group.getContainerId());
+                executor.execute(new SQLFragment(sql).addAll(group.getRowId(), id, group.getContainerId()));
                 group.addParticipantId(id);
             }
             ParticipantGroupCache.uncache(c);
@@ -811,7 +811,7 @@ public class ParticipantGroupManager
         sql.unsafeAppend(" WHERE GroupId = ?");
 
         SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
-        executor.execute(sql.getSQL(), group.getRowId());
+        executor.execute(sql.add(group.getRowId()));
         ParticipantGroupCache.uncache(c);
     }
 
@@ -936,16 +936,16 @@ public class ParticipantGroupManager
             // remove any participant group mappings from the junction table
             SQLFragment sqlMapping = SQLFragment.unsafe("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "").unsafeAppend(" WHERE GroupId IN ");
             sqlMapping.unsafeAppend("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").unsafeAppend(" WHERE CategoryId = ?)");
-            executor.execute(sqlMapping.getSQL(), def.getRowId());
+            executor.execute(sqlMapping.add(def.getRowId()));
 
             // delete the participant groups
             SQLFragment sqlGroup = SQLFragment.unsafe("DELETE FROM ").append(getTableInfoParticipantGroup(), "").unsafeAppend(" WHERE RowId IN ");
             sqlGroup.unsafeAppend("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").unsafeAppend(" WHERE CategoryId = ?)");
-            executor.execute(sqlGroup.getSQL(), def.getRowId());
+            executor.execute(sqlGroup.add(def.getRowId()));
 
             // delete the participant list definition
             SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "").unsafeAppend(" WHERE RowId = ?");
-            executor.execute(sql.getSQL(), def.getRowId());
+            executor.execute(sql.add(def.getRowId()));
 
             ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.categoryDeleted(c, user, def);
             AuditLogService.get().addEvent(user, event);
@@ -975,11 +975,11 @@ public class ParticipantGroupManager
 
             // remove any participant group mappings from the junction table
             SQLFragment sqlMapping = SQLFragment.unsafe("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "").unsafeAppend(" WHERE GroupId = ? ");
-            executor.execute(sqlMapping.getSQL(), group.getRowId());
+            executor.execute(sqlMapping.add(group.getRowId()));
 
             // delete the participant group
             SQLFragment sqlGroup = SQLFragment.unsafe("DELETE FROM ").append(getTableInfoParticipantGroup(), "").unsafeAppend(" WHERE RowId = ? ");
-            executor.execute(sqlGroup.getSQL(), group.getRowId());
+            executor.execute(sqlGroup.add(group.getRowId()));
 
             // if this is a list type of group (we automatically create a category of the same name), clean up
             // the associated category if it is not referenced
@@ -990,7 +990,7 @@ public class ParticipantGroupManager
                 {
                     // delete the participant category
                     SQLFragment sqlCat = SQLFragment.unsafe("DELETE FROM ").append(getTableInfoParticipantCategory(), "").unsafeAppend(" WHERE RowId = ? ");
-                    executor.execute(sqlCat.getSQL(), cat.getRowId());
+                    executor.execute(sqlCat.add(cat.getRowId()));
                 }
             }
             ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.groupDeleted(c, user, group);

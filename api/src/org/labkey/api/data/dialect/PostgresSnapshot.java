@@ -24,6 +24,7 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.springframework.dao.DataAccessException;
 
@@ -106,7 +107,7 @@ public class PostgresSnapshot
     public static @NotNull String capture()
     {
         DbSchema schema = CoreSchema.getInstance().getSchema();
-        int version = new SqlSelector(schema, "SELECT current_setting('server_version_num')::int").getObject(Integer.class);
+        int version = new SqlSelector(schema, SQLFragment.unsafe("SELECT current_setting('server_version_num')::int")).getObject(Integer.class);
         StatementsSource statements = resolveStatements(schema);
         String statementsSql = StatementsStatus.AVAILABLE == statements.status() ? STATEMENTS_SQL.formatted(statements.view()) : NO_STATEMENTS_SQL;
 
@@ -132,17 +133,17 @@ public class PostgresSnapshot
      */
     private static @NotNull StatementsSource resolveStatements(DbSchema schema)
     {
-        String view = new SqlSelector(schema, """
+        String view = new SqlSelector(schema, SQLFragment.unsafe("""
                 SELECT quote_ident(n.nspname) || '.pg_stat_statements'
                 FROM pg_extension e INNER JOIN pg_namespace n ON n.oid = e.extnamespace
-                WHERE e.extname = 'pg_stat_statements'""").getObject(String.class);
+                WHERE e.extname = 'pg_stat_statements'""")).getObject(String.class);
 
         if (null == view)
             return new StatementsSource(StatementsStatus.NOT_INSTALLED, null);
 
         try
         {
-            new SqlSelector(schema, "SELECT 1 FROM " + view).setLogLevel(Level.OFF).exists();
+            new SqlSelector(schema, SQLFragment.unsafe("SELECT 1 FROM ").appendIdentifier(view)).setLogLevel(Level.OFF).exists();
             return new StatementsSource(StatementsStatus.AVAILABLE, view);
         }
         catch (DataAccessException e)

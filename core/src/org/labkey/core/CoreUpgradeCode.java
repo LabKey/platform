@@ -61,7 +61,7 @@ public class CoreUpgradeCode implements UpgradeCode
     @SuppressWarnings("UnusedDeclaration")
     private String getRootId()
     {
-        return new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT EntityId FROM core.Containers WHERE Parent IS NULL").getObject(String.class);
+        return new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT EntityId FROM core.Containers WHERE Parent IS NULL")).getObject(String.class);
     }
 
     // Not currently invoked, but available for future scripts

@@ -177,7 +177,7 @@ public class PlateSetImpl extends Entity implements PlateSet
             return 0;
 
         TableInfo table = AssayDbSchema.getInstance().getTableInfoPlate();
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) FROM ")
                 .append(table, "P")
                 .unsafeAppend(" WHERE PlateSet = ?")
                 .add(_rowId);

@@ -22,6 +22,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Represents a measure for the CrosstabTableInfo.
@@ -105,7 +106,7 @@ public class CrosstabMeasure
 
         public SQLFragment getSqlExpression(SqlDialect sqlDialect, SQLFragment columnSQL)
         {
-            SQLFragment result = new SQLFragment(getSqlFunction(sqlDialect));
+            SQLFragment result = new SQLFragment().appendIdentifier(Objects.requireNonNull(getSqlFunction(sqlDialect)));
             result.unsafeAppend("(");
             result.append(columnSQL);
             result.unsafeAppend(")");

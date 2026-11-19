@@ -127,7 +127,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
         deleteProps.unsafeAppend(")");
         new SqlExecutor(_prop.getSchema()).execute(deleteProps);
 
-        SQLFragment deleteSets = new SQLFragment("DELETE FROM " + _prop.getTableInfoPropertySets() + " WHERE ObjectId = ? AND ");
+        SQLFragment deleteSets = SQLFragment.unsafe("DELETE FROM ").append(_prop.getTableInfoPropertySets().getSQLName()).unsafeAppend(" WHERE ObjectId = ? AND ");
         deleteSets.add(c);
         appendWhereFilter(deleteSets);
         new SqlExecutor(_prop.getSchema()).execute(deleteSets);
@@ -254,7 +254,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     @Override
     public final Stream<Container> streamMatchingContainers(User user, String category)
     {
-        SQLFragment sql = new SQLFragment("SELECT ObjectId FROM " + _prop.getTableInfoPropertySets() + " WHERE UserId = ? AND Category = ?", user, category);
+        SQLFragment sql = SQLFragment.unsafe("SELECT ObjectId FROM ").append(_prop.getTableInfoPropertySets().getSQLName()).unsafeAppend(" WHERE UserId = ? AND Category = ?", user, category);
 
         return new SqlSelector(_prop.getSchema(), sql).uncachedStream(String.class)
             .map(ContainerManager::getForId)

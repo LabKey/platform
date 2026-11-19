@@ -135,7 +135,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             ensureBigObjectIds(
                 // Calling currval() is not an option since it requires a previous call to nextval() in this database session
                 new SqlSelector(primary, SQLFragment.unsafe("SELECT last_value FROM pg_sequences WHERE schemaname = ? AND sequencename = ?", schemaName, sequenceName)),
-                newValue -> new SqlExecutor(primary).execute("SELECT setval(?, ?)", schemaName + "." + sequenceName, newValue),
+                newValue -> new SqlExecutor(primary).execute(SQLFragment.unsafe("SELECT setval(?, ?)", schemaName + "." + sequenceName, newValue)),
                 desiredValue
             );
         }

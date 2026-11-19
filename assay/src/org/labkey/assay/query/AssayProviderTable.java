@@ -36,18 +36,18 @@ public class AssayProviderTable extends VirtualTable<AssaySchema>
 
         setDescription("Contains one row per registered assay provider.");
 
-        ExprColumn nameCol = new ExprColumn(this, "Name", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Name"), JdbcType.VARCHAR);
+        ExprColumn nameCol = new ExprColumn(this, "Name", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".Name"), JdbcType.VARCHAR);
         nameCol.setKeyField(true);
         addColumn(nameCol);
         setTitleColumn(nameCol.getName());
 
-        ExprColumn descCol = new ExprColumn(this, "Description", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Description"), JdbcType.VARCHAR);
+        ExprColumn descCol = new ExprColumn(this, "Description", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".Description"), JdbcType.VARCHAR);
         addColumn(descCol);
 
-        ExprColumn moduleCol = new ExprColumn(this, "Module", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Module"), JdbcType.VARCHAR);
+        ExprColumn moduleCol = new ExprColumn(this, "Module", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".Module"), JdbcType.VARCHAR);
         addColumn(moduleCol);
 
-        ExprColumn runLSIDPrefixCol = new ExprColumn(this, "RunLSIDPrefix", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunLSIDPrefix"), JdbcType.INTEGER);
+        ExprColumn runLSIDPrefixCol = new ExprColumn(this, "RunLSIDPrefix", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".RunLSIDPrefix"), JdbcType.INTEGER);
         runLSIDPrefixCol.setHidden(true);
         addColumn(runLSIDPrefixCol);
     }
@@ -57,12 +57,11 @@ public class AssayProviderTable extends VirtualTable<AssaySchema>
     {
         checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment();
-        String separator = "";
+        SQLFragment.SqlSeparator separator = SQLFragment.sep("", " UNION ");
 
         for (AssayProvider provider : AssayService.get().getAssayProviders())
         {
-            sql.append(separator);
-            separator = " UNION ";
+            sql.append(separator.next());
             sql.unsafeAppend("SELECT ? AS Name, ? AS Description, ? AS Module, ? AS RunLSIDPrefix");
             sql.add(provider.getName());
             // Trim to first sentence to avoid overly long Nab descriptions.

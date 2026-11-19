@@ -6993,7 +6993,7 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromLsid, toLsid FROM exp.Edge")
+                var edges = new SqlSelector(ExperimentService.get().getSchema(), SQLFragment.unsafe("SELECT fromLsid, toLsid FROM exp.Edge"))
                         .resultSetStream()
                         .map(r -> { try { return new Pair<>(r.getString(1), r.getString(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
                         .collect(toList());
@@ -7009,7 +7009,7 @@ public class ExperimentController extends SpringActionController
 
         public static Collection<Pair<Long, Long>> detectCycleEdges(DbSchema schema)
         {
-            var edges = new SqlSelector(schema, "SELECT fromObjectId, toObjectId FROM exp.Edge")
+            var edges = new SqlSelector(schema, SQLFragment.unsafe("SELECT fromObjectId, toObjectId FROM exp.Edge"))
                     .resultSetStream()
                     .map(r -> { try { return new Pair<>(r.getLong(1), r.getLong(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
                     .collect(toList());
@@ -7883,7 +7883,7 @@ public class ExperimentController extends SpringActionController
 
         public static @Nullable List<Long> detectCycleObjectIds(DbSchema schema)
         {
-            var edges = new SqlSelector(schema, "SELECT fromObjectId, toObjectId FROM exp.Edge")
+            var edges = new SqlSelector(schema, SQLFragment.unsafe("SELECT fromObjectId, toObjectId FROM exp.Edge"))
                     .resultSetStream()
                     .map(r -> { try { return new Pair<>(r.getLong(1), r.getLong(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
                     .collect(toList());

@@ -336,13 +336,11 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
             return false;
 
         SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-        SQLFragment sql = new SQLFragment(String.format("SELECT coalesce(MAX(%s(%s)),0) FROM %s.%s",
-                dialect.getVarcharLengthFunction(),
-                //Lowercase names for postgres (MSSQL is case-insensitive in this case)
-                prop.getPropertyDescriptor().getLegalSelectName(dialect).getSql().getRawSQL(),  // TODO String.format() is not the best way to handle SQLFragment.  use .append()
-                dialect.makeLegalIdentifier(schema.toLowerCase()),
-                dialect.makeLegalIdentifier(domain.getStorageTableName().toLowerCase())
-        ));
+        //Lowercase names for postgres (MSSQL is case-insensitive in this case)
+        SQLFragment sql = SQLFragment.unsafe("SELECT coalesce(MAX(").append(dialect.getVarcharLengthFunctionAsSql())
+                .unsafeAppend("(").appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect))
+                .unsafeAppend(")),0) FROM ").appendIdentifier(dialect.makeDatabaseIdentifier(schema.toLowerCase()))
+                .unsafeAppend(".").appendIdentifier(dialect.makeDatabaseIdentifier(domain.getStorageTableName().toLowerCase()));
 
         int maxSize = new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Integer.class);
         return prop.getScale() < maxSize;

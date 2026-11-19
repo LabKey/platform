@@ -4284,8 +4284,8 @@ public class StudyController extends BaseStudyController
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             _count = new SqlSelector(StudySchema.getInstance().getSchema(),
-                    "SELECT COUNT(VisitDate) FROM " + tinfoParticipantVisit + "\nWHERE Container = ?",
-                    getContainer()).getObject(Integer.class);
+                    SQLFragment.unsafe("SELECT COUNT(VisitDate) FROM ").append(tinfoParticipantVisit).unsafeAppend("\nWHERE Container = ?",
+                    getContainer())).getObject(Integer.class);
 
             return true;
         }

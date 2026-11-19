@@ -22,6 +22,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.property.PropertyService;
@@ -152,8 +153,8 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         if (svc != null)
         {
             svc.registerUsageMetrics(getName(), metrics -> {
-                metrics.put("issueDefCount", () -> new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issueListDef").getObject(Long.class), "Issue list definitions across all containers");
-                metrics.put("issuesCount", () -> new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issues").getObject(Long.class), "Issues across all containers and issue lists, open and closed");
+                metrics.put("issueDefCount", () -> new SqlSelector(IssuesSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT COUNT(*) FROM issues.issueListDef")).getObject(Long.class), "Issue list definitions across all containers");
+                metrics.put("issuesCount", () -> new SqlSelector(IssuesSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT COUNT(*) FROM issues.issues")).getObject(Long.class), "Issues across all containers and issue lists, open and closed");
 
                 return metrics;
             });
@@ -222,7 +223,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public void indexDeleted()
     {
-        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute("UPDATE issues.issues SET lastIndexed=NULL");
+        new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("UPDATE issues.issues SET lastIndexed=NULL"));
     }
 
     @Override

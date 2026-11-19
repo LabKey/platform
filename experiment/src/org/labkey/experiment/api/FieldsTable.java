@@ -41,8 +41,8 @@ public class FieldsTable extends BaseFieldsTable
     protected void addColumnSQL(SQLFragment sql)
     {
         // Note that within a range expression, LIKE wildcards (such as underscore) don't need to be escaped
-        addBooleanPatternColumn(sql, "pd.Name NOT", "%[^A-Za-z0-9_]%", "AlphaNumeric");
-        addBooleanPatternColumn(sql, "pd.Name", "%[/ \"&\\\\$}~,.]%", "SpecialCharacters");
+        addBooleanPatternColumn(sql, SQLFragment.unsafe("pd.Name NOT"), "%[^A-Za-z0-9_]%", "AlphaNumeric");
+        addBooleanPatternColumn(sql, SQLFragment.unsafe("pd.Name"), "%[/ \"&\\\\$}~,.]%", "SpecialCharacters");
         sql.unsafeAppend(", ").
                 append(getSqlDialect().getVarcharLengthFunctionAsSql()).
                 unsafeAppend("(pd.Name) AS FieldNameLength\n");
@@ -60,7 +60,7 @@ public class FieldsTable extends BaseFieldsTable
                 unsafeAppend(" AS StorageColumnNameMatch\n");
     }
 
-    private void addBooleanPatternColumn(SQLFragment sql, String expression, String pattern, String name)
+    private void addBooleanPatternColumn(SQLFragment sql, SQLFragment expression, String pattern, String name)
     {
         SQLFragment booleanExpression = new SQLFragment(expression)
             .unsafeAppend(" ")

@@ -675,26 +675,24 @@ public interface SearchService extends SearchMXBean
             if (null == lastIndexedTableAlias)
                 lastIndexedTableAlias = ExprColumn.STR_TABLE_ALIAS;
 
-            String or = "";
+            SQLFragment.SqlSeparator or = SQLFragment.sep("", " OR ");
             if (null != lastIndexed)
             {
-                _sqlf.append(lastIndexed.getValueSql(lastIndexedTableAlias)).unsafeAppend(" IS NULL");
+                _sqlf.append(or.next()).append(lastIndexed.getValueSql(lastIndexedTableAlias)).unsafeAppend(" IS NULL");
                 _fieldKeys.add(lastIndexed.getFieldKey());
-                or = " OR ";
             }
 
             if (null != modified && null != lastIndexed)
             {
-                _sqlf.append(or);
+                _sqlf.append(or.next());
                 _sqlf.append(modified.getValueSql(modifiedTableAlias)).unsafeAppend(">").append(lastIndexed.getValueSql(lastIndexedTableAlias));
                 _fieldKeys.add(modified.getFieldKey());
                 _fieldKeys.add(lastIndexed.getFieldKey());
-                or = " OR ";
             }
 
             if (null != modifiedSince && null != modified)
             {
-                _sqlf.append(or);
+                _sqlf.append(or.next());
                 _sqlf.append(modified.getValueSql(modifiedTableAlias)).unsafeAppend("> ?");
                 _sqlf.add(modifiedSince);
                 _fieldKeys.add(modified.getFieldKey());
@@ -736,7 +734,8 @@ public interface SearchService extends SearchMXBean
             if (this._sqlf.isEmpty() || null == tableAlias)
                 return _sqlf;
             String sql = Strings.CS.replace(_sqlf.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
-            SQLFragment ret = new SQLFragment(sql);
+            SQLFragment ret = new SQLFragment();
+            ret.setSqlUnsafe(sql);
             ret.addAll(_sqlf.getParams());
             return ret;
         }

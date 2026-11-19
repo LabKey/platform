@@ -158,12 +158,12 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 // Join to assay.hit to display hit selections
                 {
                     SqlDialect dialect = getSchema().getSqlDialect();
-                    SQLFragment plateHitsSQL = new SQLFragment("(CASE WHEN (SELECT ResultId FROM ")
+                    SQLFragment plateHitsSQL = SQLFragment.unsafe("(CASE WHEN (SELECT ResultId FROM ")
                             .append(AssayDbSchema.getInstance().getTableInfoHit(), "h")
-                            .unsafeAppend(" WHERE h.ResultId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
-                            .unsafeAppend(" AND h.RunId = ").append(ExprColumn.STR_TABLE_ALIAS + ".Run").unsafeAppend(")")
-                            .unsafeAppend(" IS NULL THEN ").append(dialect.getBooleanFALSE())
-                            .unsafeAppend(" ELSE ").append(dialect.getBooleanTRUE()).unsafeAppend(" END")
+                            .unsafeAppend(" WHERE h.ResultId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+                            .unsafeAppend(" AND h.RunId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".Run").unsafeAppend(")")
+                            .unsafeAppend(" IS NULL THEN ").appendValue(Boolean.FALSE, dialect)
+                            .unsafeAppend(" ELSE ").appendValue(Boolean.TRUE, dialect).unsafeAppend(" END")
                             .unsafeAppend(")");
 
                     ExprColumn plateHitsColumn = new ExprColumn(this, "Hit", plateHitsSQL, JdbcType.BOOLEAN);

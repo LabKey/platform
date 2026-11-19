@@ -476,7 +476,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (null != c && null != containerCol && isUseContainerFilter() && tinfo.needsContainerClauseAdded())
         {
             // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
-            filter.addClause(new SimpleFilter.SQLClause(containerCol.getName() + " = CAST('" + c.getId() + "' AS UniqueIdentifier)", new Object[0], containerCol.getFieldKey()));
+            filter.addClause(new SimpleFilter.SQLClause(new SQLFragment().appendIdentifier(containerCol.getName()).unsafeAppend(" = CAST(").appendValue(c.getEntityId()).unsafeAppend(" AS UniqueIdentifier)"), containerCol.getFieldKey()));
         }
 
         User user = null;
@@ -510,7 +510,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (selected.isEmpty() || selectorColumns.isEmpty())
         {
-            clause = new SimpleFilter.SQLClause("1 = 0", null);
+            clause = new SimpleFilter.SQLClause(SQLFragment.unsafe("1 = 0"));
         }
         else if (selectorColumns.size() == 1)
         {

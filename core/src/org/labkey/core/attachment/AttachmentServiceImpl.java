@@ -540,7 +540,7 @@ public class AttachmentServiceImpl implements AttachmentService
     public void clearLastIndexed(List<String> parentIds)
     {
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("Parent"), parentIds))
-            .addClause(new SimpleFilter.SQLClause("LastIndexed IS NOT NULL", null));
+            .addClause(new SimpleFilter.SQLClause(SQLFragment.unsafe("LastIndexed IS NOT NULL")));
         SQLFragment sql = SQLFragment.unsafe("UPDATE core.Documents SET LastIndexed = NULL ")
             .append(filter.getSQLFragment(CoreSchema.getInstance().getSqlDialect()));
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
@@ -1316,24 +1316,24 @@ public class AttachmentServiceImpl implements AttachmentService
 
     private SQLFragment sqlCascadeDelete(AttachmentParent parent)
     {
-        return new SQLFragment("DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Container = ? AND Parent = ?", parent.getContainerId(), parent.getEntityId());
+        return SQLFragment.unsafe("DELETE FROM ").append(coreTables().getTableInfoDocuments()).unsafeAppend(" WHERE Container = ? AND Parent = ?", parent.getContainerId(), parent.getEntityId());
     }
 
     private SQLFragment sqlDelete(AttachmentParent parent, String name)
     {
-        return new SQLFragment("DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Container = ? AND Parent = ? AND DocumentName = ?", parent.getContainerId(), parent.getEntityId(), name);
+        return SQLFragment.unsafe("DELETE FROM ").append(coreTables().getTableInfoDocuments()).unsafeAppend(" WHERE Container = ? AND Parent = ? AND DocumentName = ?", parent.getContainerId(), parent.getEntityId(), name);
     }
 
     private SQLFragment sqlRename(AttachmentParent parent, String oldName, String newName)
     {
-        return new SQLFragment("UPDATE " + coreTables().getTableInfoDocuments() + " SET DocumentName = ? WHERE Container = ? AND Parent = ? AND DocumentName = ?",
+        return SQLFragment.unsafe("UPDATE ").append(coreTables().getTableInfoDocuments()).unsafeAppend(" SET DocumentName = ? WHERE Container = ? AND Parent = ? AND DocumentName = ?",
                 newName, parent.getContainerId(), parent.getEntityId(), oldName);
     }
 
     private SQLFragment sqlMove(AttachmentParent parent, Container newContainer)
     {
         // TODO: consider an inClause
-        return new SQLFragment("UPDATE " + coreTables().getTableInfoDocuments() + " SET Container = ? WHERE Container = ? AND Parent=?",
+        return SQLFragment.unsafe("UPDATE ").append(coreTables().getTableInfoDocuments()).unsafeAppend(" SET Container = ? WHERE Container = ? AND Parent=?",
                 newContainer.getEntityId(), parent.getContainerId(), parent.getEntityId());
     }
 

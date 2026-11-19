@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
+import com.google.errorprone.annotations.CompileTimeConstant;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -1309,7 +1310,7 @@ public abstract class CompareType
 
             boolean hasResult = false;
             SQLFragment sql = new SQLFragment();
-            String sep = "";
+            SQLFragment.SqlSeparator sep = SQLFragment.sep("", " OR ");
 
             for (ColumnInfo column : this.getQueryColumns(paramNum))
             {
@@ -1320,8 +1321,7 @@ public abstract class CompareType
                 if (paramNum != null && column.isKeyField() && column.getJdbcType().isNumeric())
                 {
                     hasResult = true;
-                    sql.append(sep);
-                    sep = " OR ";
+                    sql.append(sep.next());
                     sql.appendIdentifier(column.getAlias());
                     sql.unsafeAppend(" = ");
                     sql.appendValue(paramNum);
@@ -1353,14 +1353,13 @@ public abstract class CompareType
                 {
                     columnSql = new SQLFragment();
                     columnSql.appendIdentifier(mappedColumn.getAlias());
-                    columnSql.unsafeAppend(" ").append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ");
-                    columnSql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(param));
-                    columnSql.append(LikeClause.sqlEscape());
+                    columnSql.unsafeAppend(" ").append(dialect.getCaseInsensitiveLikeOperatorAsSql()).unsafeAppend(" ");
+                    columnSql.append(dialect.concatenate(SQLFragment.unsafe(" '%'"), SQLFragment.unsafe("?"), SQLFragment.unsafe("'%' "))).add(LikeClause.escapeLikePattern(param));
+                    columnSql.unsafeAppend(LikeClause.SQL_ESCAPE);
                 }
 
                 hasResult = true;
-                sql.append(sep);
-                sep = " OR ";
+                sql.append(sep.next());
                 sql.append(columnSql);
             }
 
@@ -1375,17 +1374,18 @@ public abstract class CompareType
     private final String _displayValue;
     private final boolean _dataValueRequired;
     private final String _sql;
+    private final @Nullable SQLFragment _sqlFragment;
     private final String _scriptName;
 
     private String _valueSeparator;
 
-    protected CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
+    protected CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, @CompileTimeConstant String sql, String scriptName, OperatorType.Enum xmlType)
     {
         this(displayValue, urlKeys[0], scriptName, dataValueRequired, sql, xmlType);
         _urlKeys.addAll(Arrays.asList(urlKeys));
     }
 
-    protected CompareType(String displayValue, String urlKey, String scriptName, boolean dataValueRequired, String sql, OperatorType.Enum xmlType)
+    protected CompareType(String displayValue, String urlKey, String scriptName, boolean dataValueRequired, @CompileTimeConstant String sql, OperatorType.Enum xmlType)
     {
         _displayValue = displayValue;
         _preferredURLKey = urlKey;
@@ -1395,6 +1395,7 @@ public abstract class CompareType
         _xmlType = xmlType;
         _urlKeys.add(urlKey);
         _sql = sql;
+        _sqlFragment = null == sql ? null : SQLFragment.unsafe(sql);
     }
 
     public static Collection<CompareType> values()
@@ -1544,6 +1545,11 @@ public abstract class CompareType
         return _sql;
     }
 
+    public @Nullable SQLFragment getSqlFragment()
+    {
+        return null == _sqlFragment ? null : new SQLFragment(_sqlFragment);
+    }
+
     public String getFilterValueText()
     {
         return _sql;
@@ -1637,7 +1643,9 @@ public abstract class CompareType
 
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            return new SQLFragment().appendIdentifier(alias).append(_comparison.getSql());
+            SQLFragment ret = new SQLFragment().appendIdentifier(alias);
+            SQLFragment op = _comparison.getSqlFragment();
+            return null == op ? ret : ret.append(op);
         }
 
         protected String substituteLabKeySqlParams(String sql, Map<FieldKey, ? extends ColumnInfo> columnMap)
@@ -2065,7 +2073,7 @@ public abstract class CompareType
         private final String _filterTextOperator;
 
         // See Issue 51472
-        protected final String SS_CAST = "CAST(? AS DateTime)";
+        protected static final String SS_CAST = "CAST(? AS DateTime)";
 
         DateCompareClause(FieldKey fieldKey, CompareType t, String op, Object rawFilterValue, Calendar param0)
         {
@@ -2090,15 +2098,10 @@ public abstract class CompareType
             _paramVals = new Object[]{param0.getTime(), param1.getTime()};
         }
 
-        @Override
-        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
+        // See Issue 51472
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias, @CompileTimeConstant String op)
         {
-            // See Issue 51472
-            return dialect.isSqlServer() ?
-                new SQLFragment()
-                    .appendIdentifier(alias)
-                    .append(_comparison.getSql().replace("?", SS_CAST)) :
-                super.toWhereClause(dialect, alias);
+            return new SQLFragment().appendIdentifier(alias).unsafeAppend(op).unsafeAppend(dialect.isSqlServer() ? SS_CAST : "?");
         }
 
         @Override
@@ -2134,11 +2137,11 @@ public abstract class CompareType
         @Override
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            String q = dialect.isSqlServer() ? SS_CAST : "?";
+            boolean ss = dialect.isSqlServer();
             return new SQLFragment()
-                .appendIdentifier(alias).unsafeAppend(" >= ").append(q)
+                .appendIdentifier(alias).unsafeAppend(" >= ").unsafeAppend(ss ? SS_CAST : "?")
                 .unsafeAppend(" AND ")
-                .appendIdentifier(alias).unsafeAppend(" < ").append(q);
+                .appendIdentifier(alias).unsafeAppend(" < ").unsafeAppend(ss ? SS_CAST : "?");
         }
 
         @Override
@@ -2177,11 +2180,11 @@ public abstract class CompareType
         @Override
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            String q = dialect.isSqlServer() ? SS_CAST : "?";
+            boolean ss = dialect.isSqlServer();
             return new SQLFragment()
-                .appendIdentifier(alias).unsafeAppend(" < ").append(q)
+                .appendIdentifier(alias).unsafeAppend(" < ").unsafeAppend(ss ? SS_CAST : "?")
                 .unsafeAppend(" OR ")
-                .appendIdentifier(alias).unsafeAppend(" >= ").append(q);
+                .appendIdentifier(alias).unsafeAppend(" >= ").unsafeAppend(ss ? SS_CAST : "?");
         }
 
         @Override
@@ -2218,6 +2221,12 @@ public abstract class CompareType
         }
 
         @Override
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
+        {
+            return toWhereClause(dialect, alias, " >= ");
+        }
+
+        @Override
         protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
@@ -2239,6 +2248,12 @@ public abstract class CompareType
         DateGteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
         {
             super(fieldKey, DATE_GTE, " >= ", rawFilterValue, startValue);
+        }
+
+        @Override
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
+        {
+            return toWhereClause(dialect, alias, " >= ");
         }
 
         @Override
@@ -2266,6 +2281,12 @@ public abstract class CompareType
         }
 
         @Override
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
+        {
+            return toWhereClause(dialect, alias, " < ");
+        }
+
+        @Override
         protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
@@ -2287,6 +2308,12 @@ public abstract class CompareType
         DateLteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
         {
             super(fieldKey, DATE_LTE, " <= ", rawFilterValue, addOneDay(startValue));
+        }
+
+        @Override
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
+        {
+            return toWhereClause(dialect, alias, " < ");
         }
 
         @Override
@@ -2374,9 +2401,11 @@ public abstract class CompareType
             return CompareType.escapeLikePattern(value, defaultEscapeChar);
         }
 
+        static final String SQL_ESCAPE = " ESCAPE '" + defaultEscapeChar + "'";
+
         public static String sqlEscape()
         {
-            return " ESCAPE '" + defaultEscapeChar + "'";
+            return SQL_ESCAPE;
         }
 
         @Override
@@ -2419,8 +2448,8 @@ public abstract class CompareType
         {
             return new SQLFragment()
                 .appendIdentifier(alias).unsafeAppend(" ")
-                .append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ")
-                .append(dialect.concatenate("?", "'%'")).append(sqlEscape());
+                .append(dialect.getCaseInsensitiveLikeOperatorAsSql()).unsafeAppend(" ")
+                .append(dialect.concatenate(SQLFragment.unsafe("?"), SQLFragment.unsafe("'%'"))).unsafeAppend(SQL_ESCAPE);
         }
 
         @Override
@@ -2452,7 +2481,7 @@ public abstract class CompareType
         {
             return SQLFragment.unsafe("(")
                 .appendIdentifier(alias).unsafeAppend(" IS NULL OR ")
-                .appendIdentifier(alias).unsafeAppend(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ").append(dialect.concatenate("?", "'%'")).append(sqlEscape())
+                .appendIdentifier(alias).unsafeAppend(" NOT ").append(dialect.getCaseInsensitiveLikeOperatorAsSql()).unsafeAppend(" ").append(dialect.concatenate(SQLFragment.unsafe("?"), SQLFragment.unsafe("'%'"))).unsafeAppend(SQL_ESCAPE)
                 .unsafeAppend(")");
         }
 
@@ -2534,8 +2563,8 @@ public abstract class CompareType
         {
             return new SQLFragment()
                 .appendIdentifier(alias).unsafeAppend(" ")
-                .append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ")
-                .append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape());
+                .append(dialect.getCaseInsensitiveLikeOperatorAsSql()).unsafeAppend(" ")
+                .append(dialect.concatenate(SQLFragment.unsafe("'%'"), SQLFragment.unsafe("?"), SQLFragment.unsafe("'%'"))).unsafeAppend(SQL_ESCAPE);
         }
 
         @Override
@@ -2567,7 +2596,7 @@ public abstract class CompareType
         {
             return SQLFragment.unsafe("(")
                 .appendIdentifier(alias).unsafeAppend(" IS NULL OR ")
-                .appendIdentifier(alias).unsafeAppend(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).unsafeAppend(" ").append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape())
+                .appendIdentifier(alias).unsafeAppend(" NOT ").append(dialect.getCaseInsensitiveLikeOperatorAsSql()).unsafeAppend(" ").append(dialect.concatenate(SQLFragment.unsafe("'%'"), SQLFragment.unsafe("?"), SQLFragment.unsafe("'%'"))).unsafeAppend(SQL_ESCAPE)
                 .unsafeAppend(")");
         }
 
@@ -2598,12 +2627,10 @@ public abstract class CompareType
         @Override
         SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            String neq = CompareType.NEQ.getSql();
-            String isNull = CompareType.ISBLANK.getSql();
             return SQLFragment.unsafe("(")
-                .appendIdentifier(alias).append(neq)
+                .appendIdentifier(alias).unsafeAppend(" <> ?")
                 .unsafeAppend(" OR ")
-                .appendIdentifier(alias).append(isNull)
+                .appendIdentifier(alias).unsafeAppend(" IS NULL")
                 .unsafeAppend(")");
         }
     }

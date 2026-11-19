@@ -157,9 +157,9 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     private void addPlateCountColumn()
     {
-        SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS plateCount FROM ")
+        SQLFragment sql = SQLFragment.unsafe("(SELECT COUNT(*) AS plateCount FROM ")
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "PT")
-                .append(" WHERE PT.PlateSet = " + STR_TABLE_ALIAS + ".RowId)");
+                .unsafeAppend(" WHERE PT.PlateSet = " + STR_TABLE_ALIAS + ".RowId)");
         ExprColumn countCol = new ExprColumn(this, "PlateCount", sql, JdbcType.INTEGER);
         countCol.setDescription("The number of plates that are assigned to this plate set");
         addColumn(countCol);

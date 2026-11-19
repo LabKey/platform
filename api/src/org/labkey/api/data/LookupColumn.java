@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.google.errorprone.annotations.CompileTimeConstant;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -44,15 +45,22 @@ public class LookupColumn extends BaseColumnInfo
         /** The normal lookup join operator */
         leftOuter("LEFT OUTER");
         private final String _sql;
+        private final SQLFragment _sqlFragment;
 
-        JoinType(String sql)
+        JoinType(@CompileTimeConstant String sql)
         {
             _sql = sql;
+            _sqlFragment = SQLFragment.unsafe(sql);
         }
 
         public String getSQL()
         {
             return _sql;
+        }
+
+        public SQLFragment getSqlFragment()
+        {
+            return new SQLFragment(_sqlFragment);
         }
     }
 
@@ -238,7 +246,7 @@ public class LookupColumn extends BaseColumnInfo
             }
             else
             {
-                strJoin.append(_joinType.getSQL());
+                strJoin.unsafeAppend(_joinType == JoinType.inner ? "INNER" : "LEFT OUTER");
                 strJoin.unsafeAppend(" JOIN ");
 
                 addLookupSql(strJoin, lookupTable, colTableAlias);

@@ -140,18 +140,18 @@ public class UpgradeUtils
     private static List<SimpleFilter> getFiltersForGroupsWithDuplicateValues(final ColumnInfo column, @Nullable final ColumnInfo additionalGroupingColumn, @Nullable SimpleFilter filter, boolean caseSensitive, final boolean ignoreNulls)
     {
         TableInfo table = column.getParentTable();
-        String selectColumns = "Container";
-        String groupBy;
+        SQLFragment selectColumns = SQLFragment.unsafe("Container");
+        SQLFragment groupBy = new SQLFragment();
 
         if (caseSensitive)
-            groupBy = "t." + column.getSelectIdentifier();
+            groupBy.appendDottedIdentifiers("t", column.getSelectIdentifier());
         else
-            groupBy = "LOWER(t." + column.getSelectIdentifier() + ")";
+            groupBy.unsafeAppend("LOWER(").appendDottedIdentifiers("t", column.getSelectIdentifier()).unsafeAppend(")");
 
         if (null != additionalGroupingColumn)
         {
-            selectColumns = selectColumns + ", " + additionalGroupingColumn.getSelectIdentifier();
-            groupBy = groupBy + ", " + additionalGroupingColumn.getSelectIdentifier();
+            selectColumns.unsafeAppend(", ").appendIdentifier(additionalGroupingColumn.getSelectIdentifier());
+            groupBy.unsafeAppend(", ").appendIdentifier(additionalGroupingColumn.getSelectIdentifier());
         }
 
         SQLFragment sql = new SQLFragment();
@@ -160,18 +160,18 @@ public class UpgradeUtils
         sql.unsafeAppend(" FROM ");
         sql.append(table, "t");
 
-        String where = " WHERE ";
+        SQLFragment.SqlSeparator where = SQLFragment.sep(" WHERE ", " AND ");
 
         if (filter != null)
         {
             sql.unsafeAppend(" ");
             sql.append(filter.getSQLFragment(table, "t"));
-            where = " AND ";
+            where.next();
         }
 
         if (ignoreNulls)
         {
-            sql.append(where);
+            sql.append(where.next());
             sql.appendIdentifier(column.getSelectIdentifier());
             sql.unsafeAppend(" IS NOT NULL");
         }

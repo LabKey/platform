@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.util.ResultSetUtil;
 
@@ -158,11 +159,11 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
 
     public static class TestCase extends Assert
     {
-        String _testSql =
+        SQLFragment _testSql = SQLFragment.unsafe(
                 "SELECT 1 as a, CAST('one' as VARCHAR) as b UNION ALL " +
                 "SELECT 2 as a, CAST('two' as VARCHAR) as b UNION ALL " +
                 "SELECT CAST(null as INTEGER) as a, CAST('null' as VARCHAR) as b " +
-                "ORDER BY b";
+                "ORDER BY b");
         
         @Test
         public void test() throws Exception

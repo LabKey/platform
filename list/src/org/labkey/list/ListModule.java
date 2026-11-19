@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
@@ -155,9 +156,9 @@ public class ListModule extends SpringModule
         {
             svc.registerUsageMetrics(getName(), metrics -> {
                 DbSchema dbSchema = DbSchema.get("exp", DbSchemaType.Module);
-                metrics.put("listCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list").getObject(Long.class), "List definitions across all containers, including picklists");
-                metrics.put("publicPicklistCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist + "'").getObject(Long.class), "Shared (public) picklists across all containers");
-                metrics.put("privatePicklistCount", () -> new SqlSelector(dbSchema,"SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist + "'").getObject(Long.class), "Private picklists across all containers");
+                metrics.put("listCount", () -> new SqlSelector(dbSchema,SQLFragment.unsafe("SELECT COUNT(*) FROM exp.list")).getObject(Long.class), "List definitions across all containers, including picklists");
+                metrics.put("publicPicklistCount", () -> new SqlSelector(dbSchema,SQLFragment.unsafe("SELECT COUNT(*) FROM exp.list WHERE category =").appendValue(ListDefinition.Category.PublicPicklist)).getObject(Long.class), "Shared (public) picklists across all containers");
+                metrics.put("privatePicklistCount", () -> new SqlSelector(dbSchema,SQLFragment.unsafe("SELECT COUNT(*) FROM exp.list WHERE category =").appendValue(ListDefinition.Category.PrivatePicklist)).getObject(Long.class), "Private picklists across all containers");
                 return metrics;
             });
         }

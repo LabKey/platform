@@ -280,7 +280,7 @@ public class ClosureQueryHelper
         {
             Object ref = new Object();
             String tempTableName = "closinc_" + temptableNumber.incrementAndGet();
-            SQLFragment tableNameSql = new SQLFragment(tempTableName);
+            SQLFragment tableNameSql = new SQLFragment().appendIdentifier(tempTableName);
             tableNameSql.addTempToken(ref);
             ttt = TempTableTracker.track(tempTableName, ref);
             SQLFragment from = SQLFragment.unsafe("FROM temp.").append(familyTempTable).unsafeAppend(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").unsafeAppend(" ");
@@ -451,7 +451,7 @@ public class ClosureQueryHelper
         {
             Object ref = new Object();
             String familyTableName = "familyIds_" + temptableNumber.incrementAndGet();
-            SQLFragment tableNameSql = new SQLFragment(familyTableName);
+            SQLFragment tableNameSql = new SQLFragment().appendIdentifier(familyTableName);
             tableNameSql.addTempToken(ref);
             ttt = TempTableTracker.track(tableNameSql.getSQL(), ref);
 

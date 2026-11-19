@@ -329,7 +329,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             TableInfo ti = st.getTinfo();
             if (null != ti)
             {
-                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (rowId, name) SELECT ?, ? WHERE NOT EXISTS (SELECT rowId FROM " + ti + " WHERE rowId = ?)", getRowId(), getName(), getRowId());
+                new SqlExecutor(ti.getSchema()).execute(SQLFragment.unsafe("INSERT INTO ").append(ti).unsafeAppend(" (rowId, name) SELECT ?, ? WHERE NOT EXISTS (SELECT rowId FROM ", getRowId(), getName()).append(ti).unsafeAppend(" WHERE rowId = ?)", getRowId()));
                 SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.insert);
             }
         }

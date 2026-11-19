@@ -63,7 +63,7 @@ public class AssayUpgradeCode implements UpgradeCode
         {
             long numPlatesWithReplicates;
             {
-                SQLFragment plateRowIdsSql = new SQLFragment("""
+                SQLFragment plateRowIdsSql = SQLFragment.unsafe("""
                     SELECT DISTINCT P.RowId
                     FROM assay.Plate AS P
                     INNER JOIN assay.WellGroup AS WG ON WG.PlateId = P.RowId
@@ -81,7 +81,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
                 // Insert missing well positions into the "SAMPLE" well groups where name is NULL
                 {
-                    SQLFragment sql = new SQLFragment("""
+                    SQLFragment sql = SQLFragment.unsafe("""
                         INSERT INTO assay.WellGroupPositions (wellGroupId, wellId)
                         SELECT sampleWG.RowId AS wellGroupId, replicateWGP.wellId
                         FROM assay.WellGroup AS replicateWG
@@ -101,7 +101,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
             // Display the ReplicateGroup column by default on each plate set where WellGroup is currently displayed
             {
-                SQLFragment sql = new SQLFragment("""
+                SQLFragment sql = SQLFragment.unsafe("""
                     INSERT INTO assay.PlateSetProperty (PlateSetId, FieldKey)
                     SELECT DISTINCT PSP.PlateSetId, ? AS FieldKey
                     FROM assay.PlateSetProperty AS PSP WHERE PSP.FieldKey = ?
@@ -121,7 +121,7 @@ public class AssayUpgradeCode implements UpgradeCode
         List<List<?>> sampleZoneRowValues = new ArrayList<>();
 
         // Determine the set of plates that do not yet have a "SAMPLE" well group that does not have a name (a.k.a. "Sample zone").
-        SQLFragment needSampleZoneSql = new SQLFragment("""
+        SQLFragment needSampleZoneSql = SQLFragment.unsafe("""
             SELECT DISTINCT P.RowId, P.Container, WG.Template
             FROM assay.Plate AS P
             INNER JOIN assay.WellGroup AS WG ON WG.PlateId = P.RowId
@@ -162,7 +162,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
         if (!sampleZoneRowValues.isEmpty())
         {
-            String insertSql = "INSERT INTO assay.WellGroup (PlateId, LSID, Container, Template, TypeName) VALUES (?, ?, ?, ?, ?)";
+            SQLFragment insertSql = SQLFragment.unsafe("INSERT INTO assay.WellGroup (PlateId, LSID, Container, Template, TypeName) VALUES (?, ?, ?, ?, ?)");
             Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, sampleZoneRowValues);
         }
 

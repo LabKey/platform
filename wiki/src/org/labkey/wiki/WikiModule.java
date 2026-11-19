@@ -25,6 +25,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
@@ -215,7 +216,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     @Override
     public void indexDeleted()
     {
-        new SqlExecutor(CommSchema.getInstance().getSchema()).execute("UPDATE comm.pages SET lastIndexed=NULL");
+        new SqlExecutor(CommSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("UPDATE comm.pages SET lastIndexed=NULL"));
     }
 
     private WikiManager getWikiManager()

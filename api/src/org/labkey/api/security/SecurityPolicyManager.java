@@ -457,12 +457,10 @@ public class SecurityPolicyManager
         SqlExecutor executor = new SqlExecutor(core.getSchema());
 
         executor.execute(
-                "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN (SELECT ResourceId FROM " +
-                core.getTableInfoPolicies() + " WHERE Container = ?)",
-                c);
+                SQLFragment.unsafe("DELETE FROM ").append(core.getTableInfoRoleAssignments()).unsafeAppend(" WHERE ResourceId IN (SELECT ResourceId FROM ")
+                .append(core.getTableInfoPolicies()).unsafeAppend(" WHERE Container = ?)", c));
         executor.execute(
-                "DELETE FROM " + core.getTableInfoPolicies() + " WHERE Container = ?",
-                c);
+                SQLFragment.unsafe("DELETE FROM ").append(core.getTableInfoPolicies()).unsafeAppend(" WHERE Container = ?", c));
 
         removeAll();
     }
@@ -474,11 +472,11 @@ public class SecurityPolicyManager
         Set<Container> subtrees = ContainerManager.getAllChildren(c);
         SqlDialect dialect = core.getSqlDialect();
 
-        new SqlExecutor(core.getSchema()).execute(new SQLFragment("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
-                "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container")
+        new SqlExecutor(core.getSchema()).execute(SQLFragment.unsafe("DELETE FROM ").append(core.getTableInfoRoleAssignments()).unsafeAppend("\n" +
+                "WHERE ResourceId IN (SELECT ResourceId FROM ").append(core.getTableInfoPolicies()).unsafeAppend(" WHERE Container")
                 .appendInClause(subtrees, dialect)
                 .unsafeAppend(")"));
-        new SqlExecutor(core.getSchema()).execute(new SQLFragment("DELETE FROM " + core.getTableInfoPolicies() + "\n" +
+        new SqlExecutor(core.getSchema()).execute(SQLFragment.unsafe("DELETE FROM ").append(core.getTableInfoPolicies()).unsafeAppend("\n" +
                 "WHERE Container")
                 .appendInClause(subtrees, dialect));
 

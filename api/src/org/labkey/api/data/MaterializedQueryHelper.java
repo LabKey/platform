@@ -170,7 +170,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     {
                         String sql = selectQuery.getSQL().replace("${NAME}", _tableName);
                         List<Object> params = selectQuery.getParams();
-                        selectInto = new SQLFragment(sql,params);
+                        selectInto = new SQLFragment();
+                        selectInto.setSqlUnsafe(sql);
+                        selectInto.addAll(params);
                     }
                     else
                     {
@@ -928,14 +930,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             DbSchema temp = DbSchema.getTemp();
             temp.dropTableIfExists("MQH_TESTCASE");
-            new SqlExecutor(temp).execute("CREATE TABLE temp.MQH_TESTCASE (x INT)");
+            new SqlExecutor(temp).execute(SQLFragment.unsafe("CREATE TABLE temp.MQH_TESTCASE (x INT)"));
         }
 
         @After
         public void cleanup()
         {
             DbSchema temp = DbSchema.getTemp();
-            new SqlExecutor(temp).execute("DROP TABLE temp.MQH_TESTCASE");
+            new SqlExecutor(temp).execute(SQLFragment.unsafe("DROP TABLE temp.MQH_TESTCASE"));
         }
 
         @Test
@@ -950,7 +952,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 SQLFragment emptyA = mqh.getFromSql("_");
                 SQLFragment emptyB = mqh.getFromSql("_");
                 assertEquals(emptyA,emptyB);
-                new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)");
+                new SqlExecutor(temp).execute(SQLFragment.unsafe("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)"));
                 SQLFragment one = mqh.getFromSql("_");
                 assertNotEquals(emptyA, one);
             }
@@ -976,7 +978,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     {
                         while (System.currentTimeMillis() < stop)
                         {
-                            new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (" + r.nextInt()%1000 + ")");
+                            new SqlExecutor(temp).execute(SQLFragment.unsafe("INSERT INTO temp.MQH_TESTCASE (x) VALUES (").appendValue(r.nextInt()%1000).unsafeAppend(")"));
                             queries.incrementAndGet();
                             try { Thread.sleep(100); } catch (InterruptedException x) {/* */}
                         }
@@ -1088,7 +1090,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             DbSchema temp = DbSchema.getTemp();
             DbScope s = temp.getScope();
             Assume.assumeTrue("UNLOGGED is only supported on PostgreSQL", s.getSqlDialect().isPostgreSQL());
-            new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)");
+            new SqlExecutor(temp).execute(SQLFragment.unsafe("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)"));
             SQLFragment select = SQLFragment.unsafe("SELECT * FROM temp.MQH_TESTCASE");
 
             try (MaterializedQueryHelper mqh = new Builder("test", s, select).unlogged(true).build())

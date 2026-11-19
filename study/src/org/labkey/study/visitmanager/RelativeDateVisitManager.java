@@ -336,13 +336,13 @@ public class RelativeDateVisitManager extends VisitManager
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
 
-            int rowsUpdated = executor.execute("UPDATE " + tableParticipant + " SET StartDate=NULL WHERE StartDate= ? AND Container = ?", oldStartDate, c);
+            int rowsUpdated = executor.execute(SQLFragment.unsafe("UPDATE ").append(tableParticipant).unsafeAppend(" SET StartDate=NULL WHERE StartDate= ? AND Container = ?", oldStartDate, c));
 
             if (rowsUpdated > 0)
             {
                 //Now just start over computing *everything* as if we have brand new data...
-                executor.execute("DELETE FROM " + tableParticipantVisit + " WHERE Container=?", c);
-                executor.execute("DELETE FROM " + tableVisit + " WHERE Container=?", c);
+                executor.execute(SQLFragment.unsafe("DELETE FROM ").append(tableParticipantVisit).unsafeAppend(" WHERE Container=?", c));
+                executor.execute(SQLFragment.unsafe("DELETE FROM ").append(tableVisit).unsafeAppend(" WHERE Container=?", c));
 
                 //Now recompute everything
                 return updateParticipantVisits(user, getStudy().getDatasets());

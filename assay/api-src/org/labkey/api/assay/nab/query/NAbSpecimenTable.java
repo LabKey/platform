@@ -85,18 +85,17 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
     {
         // We need to do our filtering based on the run since we don't have a container column of our own
         clearConditions(CONTAINER_FIELD_KEY);
-        SQLFragment sql = new SQLFragment("RunId IN (SELECT RowId FROM ");
+        SQLFragment sql = SQLFragment.unsafe("RunId IN (SELECT RowId FROM ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "r");
         sql.unsafeAppend(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("r.Container")));
+        sql.append(filter.getSQLFragment(getSchema(), SQLFragment.unsafe("r.Container")));
         sql.unsafeAppend(")");
         addCondition(sql, CONTAINER_FIELD_KEY);
     }
 
     private SQLFragment getSelectedCurveFitAUC(boolean positive)
     {
-        String prefix = positive ? "Positive" : "";
-        SQLFragment sql = new SQLFragment("CASE (SELECT op.StringValue FROM ");
+        SQLFragment sql = SQLFragment.unsafe("CASE (SELECT op.StringValue FROM ");
         sql.append(OntologyManager.getTinfoObject(), "o");
         sql.unsafeAppend(", ");
         sql.append(OntologyManager.getTinfoObjectProperty(), "op");
@@ -106,34 +105,31 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "er");
         sql.unsafeAppend(" WHERE op.PropertyId = pd.PropertyId AND pd.Name = ?");
         sql.add(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
-        sql.append(" AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".RunId)");
+        sql.unsafeAppend(" AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".RunId)");
         sql.unsafeAppend("\nWHEN 'Polynomial' THEN ");
-        sql.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        sql.append(prefix);
-        sql.unsafeAppend("AUC_Poly");
+        sql.unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".");
+        sql.unsafeAppend(positive ? "PositiveAUC_Poly" : "AUC_Poly");
         sql.unsafeAppend("\nWHEN 'Five Parameter' THEN ");
-        sql.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        sql.append(prefix);
-        sql.unsafeAppend("AUC_5pl");
+        sql.unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".");
+        sql.unsafeAppend(positive ? "PositiveAUC_5pl" : "AUC_5pl");
         sql.unsafeAppend("\nWHEN 'Four Parameter' THEN ");
-        sql.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        sql.append(prefix);
-        sql.unsafeAppend("AUC_4pl");
+        sql.unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".");
+        sql.unsafeAppend(positive ? "PositiveAUC_4pl" : "AUC_4pl");
         sql.unsafeAppend("\nEND\n");
         return sql;
     }
 
     private SQLFragment getPercentNeutralizationMax()
     {
-        return new SQLFragment("(SELECT MAX(PercentNeutralization) FROM ")
+        return SQLFragment.unsafe("(SELECT MAX(PercentNeutralization) FROM ")
             .append(DilutionManager.getTableInfoDilutionData(), "dd")
-            .unsafeAppend(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId)");
+            .unsafeAppend(" WHERE dd.RunDataId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId)");
     }
 
     private SQLFragment getPercentNeutralizationInitialDilution()
     {
         // Issue 48437: Use AVG() since we can't guarantee that there will be just a single DilutionData row for the min dilution
-        SQLFragment sql = new SQLFragment("(SELECT AVG(PercentNeutralization) FROM ")
+        SQLFragment sql = SQLFragment.unsafe("(SELECT AVG(PercentNeutralization) FROM ")
             .append(DilutionManager.getTableInfoDilutionData(), "dd");
 
         // Issue 49036: InitialDilution does not always equal MinDilution (i.e. method Dilution vs Concentration)
@@ -144,13 +140,13 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         {
             List<ColumnInfo> columns = Arrays.asList(samplesTable.getColumn("LSID"), samplesTable.getColumn("InitialDilution"));
             SQLFragment samplesSql = QueryService.get().getSelectBuilder(samplesTable).columns(columns).buildSqlFragment();
-            return sql.unsafeAppend(" LEFT JOIN (").append(samplesSql).unsafeAppend(" ) x ON x.LSID = ").append(ExprColumn.STR_TABLE_ALIAS + ".SpecimenLsid")
-                    .unsafeAppend(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+            return sql.unsafeAppend(" LEFT JOIN (").append(samplesSql).unsafeAppend(" ) x ON x.LSID = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".SpecimenLsid")
+                    .unsafeAppend(" WHERE dd.RunDataId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId")
                     .unsafeAppend(" AND dd.Dilution = x.InitialDilution)");
         }
         else
         {
-            return sql.unsafeAppend(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+            return sql.unsafeAppend(" WHERE dd.RunDataId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId")
                     .unsafeAppend(" AND dd.Dilution = dd.MinDilution)");
         }
     }

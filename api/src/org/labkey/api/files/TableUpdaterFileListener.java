@@ -300,7 +300,7 @@ public class TableUpdaterFileListener implements FileListener
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(SQLFragment.unsafe("?", destPath), new SQLFragment(dialect.getSubstringFunction(_pathColumn.getSelectIdentifier().getSql(), new SQLFragment(Integer.toString(srcPath.length() + 1)), SQLFragment.unsafe("5000")))));
+            childPathsSQL.append(dialect.concatenate(SQLFragment.unsafe("?", destPath), new SQLFragment(dialect.getSubstringFunction(_pathColumn.getSelectIdentifier().getSql(), new SQLFragment().appendValue(srcPath.length() + 1), SQLFragment.unsafe("5000")))));
             childPathsSQL.append(whereClause);
             childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
 
@@ -339,7 +339,7 @@ public class TableUpdaterFileListener implements FileListener
             if (containerColumn != null)
                 filter.addCondition(containerColumn, container.getEntityId());
             else
-                filter.addCondition(new SimpleFilter.SQLClause("1 = 0", null));
+                filter.addCondition(new SimpleFilter.SQLClause(SQLFragment.unsafe("1 = 0")));
         }
 
         Sort sort = new Sort(_pathColumn.getFieldKey());

@@ -66,6 +66,13 @@ public class Aggregate
             return getName();
         }
 
+        /** @return the SQL function name as a fragment, or null for aggregates with no SQL function */
+        default @Nullable SQLFragment getNameAsSql(@Nullable SqlDialect dialect)
+        {
+            String fn = getSQLFunctionName(dialect);
+            return null == fn ? null : new SQLFragment().appendIdentifier(fn);
+        }
+
         /**
          * Get the generated SQL for calculating this aggregate (i.e. summary stat) value based on a TableInfo column.
          * @param dialect SQL dialect for the running server
@@ -96,7 +103,7 @@ public class Aggregate
                 return null;
 
             SQLFragment sb = new SQLFragment();
-            sb.append(getSQLFunctionName(dialect)).unsafeAppend("(");
+            sb.append(getNameAsSql(dialect)).unsafeAppend("(");
             if (distinct)
                 sb.unsafeAppend("DISTINCT ");
             sb.append(columnNameFragment);
@@ -182,12 +189,12 @@ public class Aggregate
              * @param jdbcType type of column
              * @return cast datatype, if a wider datatype is available
              */
-            private String castType(JdbcType jdbcType)
+            private SQLFragment castType(JdbcType jdbcType)
             {
                 return switch (jdbcType)
                 {
-                    case BIGINT, INTEGER, SMALLINT -> JdbcType.BIGINT.toString();
-                    case DECIMAL, DOUBLE, REAL -> "FLOAT";
+                    case BIGINT, INTEGER, SMALLINT -> SQLFragment.unsafe("BIGINT");
+                    case DECIMAL, DOUBLE, REAL -> SQLFragment.unsafe("FLOAT");
                     default -> null;
                 };
             }
@@ -221,7 +228,7 @@ public class Aggregate
                 if (jdbcType != null && (jdbcType.equals(JdbcType.INTEGER) || jdbcType.equals(JdbcType.BIGINT) || jdbcType.equals(JdbcType.SMALLINT)))
                 {
                     SQLFragment sb = new SQLFragment();
-                    sb.append(getSQLFunctionName(dialect)).unsafeAppend("(");
+                    sb.append(getNameAsSql(dialect)).unsafeAppend("(");
                     if (distinct)
                         sb.unsafeAppend("DISTINCT ");
                     sb.unsafeAppend("CAST(").append(columnNameFragment).unsafeAppend(" AS FLOAT)");
@@ -465,7 +472,7 @@ public class Aggregate
             return _type.getSQLColumnFragment(null, getFieldKey().toSQLString(), alias, JdbcType.INTEGER, _distinct, tableInnerSql);
 
         SQLFragment sb = new SQLFragment();
-        sb.append(_type.getSQLFunctionName(null)).unsafeAppend("(");
+        sb.append(_type.getNameAsSql(null)).unsafeAppend("(");
         if (_distinct)
             sb.unsafeAppend("DISTINCT ");
         sb.appendIdentifier(getFieldKey().toSQLString());

@@ -231,7 +231,7 @@ public class PropertyColumn extends LookupColumn
             sql.appendIdentifier(getTableAlias(tableAlias)).unsafeAppend(".ObjectId");
         sql.unsafeAppend(")");
 
-        String cast = getPropertySqlCastType();
+        SQLFragment cast = getPropertySqlCastType();
         if (null != cast)
         {
             sql.insert(0, "CAST(");
@@ -262,7 +262,7 @@ public class PropertyColumn extends LookupColumn
                 };
     }
 
-    private @Nullable String getPropertySqlCastType()
+    private @Nullable SQLFragment getPropertySqlCastType()
     {
         if (isMvIndicatorColumn())
             return null;
@@ -270,12 +270,12 @@ public class PropertyColumn extends LookupColumn
         return switch (_pd.getPropertyType())
         {
             case DOUBLE, DATE_TIME, DECIMAL, FLOAT -> null;
-            case TIME -> "TIME";
-            case DATE -> "DATE";
-            case INTEGER -> "INT";
-            case BOOLEAN -> getParentTable().getSqlDialect().getBooleanDataType();
-            case null, default -> getParentTable().getSqlDialect().getSqlTypeName(JdbcType.VARCHAR) +
-                    "(" + PropertyStorageSpec.DEFAULT_SIZE + ")";
+            case TIME -> SQLFragment.unsafe("TIME");
+            case DATE -> SQLFragment.unsafe("DATE");
+            case INTEGER -> SQLFragment.unsafe("INT");
+            case BOOLEAN -> getParentTable().getSqlDialect().getBooleanDataTypeAsSql();
+            case null, default -> new SQLFragment().append(getParentTable().getSqlDialect().getSqlTypeNameAsSql(JdbcType.VARCHAR))
+                    .unsafeAppend("(" + PropertyStorageSpec.DEFAULT_SIZE + ")");
         };
     }
 
@@ -306,7 +306,7 @@ public class PropertyColumn extends LookupColumn
         }
 
         strJoinNoContainer.unsafeAppend(" AND ");
-        strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment(tableAliasName + ".Container")));
+        strJoinNoContainer.append(getParentTable().getContainerFilter().getSQLFragment(getParentTable().getSchema(), new SQLFragment().appendDottedIdentifiers(tableAliasName, "Container")));
 
         return strJoinNoContainer;
     }

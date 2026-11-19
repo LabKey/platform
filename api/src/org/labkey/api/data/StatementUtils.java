@@ -299,6 +299,14 @@ public class StatementUtils
                 return "text[]";
             return dialect.getSqlTypeName(jdbcType);
         }
+
+        public SQLFragment getSqlTypeNameAsSql(SqlDialect dialect)
+        {
+            var jdbcType = p.getType();
+            if (JdbcType.ARRAY == jdbcType && _columnInfo != null && _columnInfo.getPropertyType() == PropertyType.MULTI_CHOICE)
+                return SQLFragment.unsafe("text[]");
+            return dialect.getSqlTypeNameAsSql(jdbcType);
+        }
     }
 
     private final static String pgRowVarPrefix = "$1.";
@@ -449,11 +457,10 @@ public class StatementUtils
         sqlfDelete.unsafeAppend("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
         sqlfDelete.appendIdentifier(objectIdVar);
         sqlfDelete.unsafeAppend(" AND PropertyId IN (");
-        String separator = "";
+        SQLFragment.SqlSeparator separator = SQLFragment.sep("", ", ");
         for (DomainProperty property : properties)
         {
-            sqlfDelete.append(separator);
-            separator = ", ";
+            sqlfDelete.append(separator.next());
             sqlfDelete.appendValue(property.getPropertyId());
         }
         sqlfDelete.unsafeAppend(")").appendEOS();
@@ -461,7 +468,7 @@ public class StatementUtils
 
     private void setObjectUriPreselect(SQLFragment sqlfPreselectObject, TableInfo table, LinkedHashMap<FieldKey, ColumnInfo> keys, String objectURIVar, String objectURIColumnName, ParameterHolder objecturiParameter)
     {
-        String setKeyword = _dialect.isPostgreSQL() ? "" : "SET ";
+        SQLFragment setKeyword = SQLFragment.unsafe(_dialect.isPostgreSQL() ? "" : "SET ");
         if (Operation.merge == _operation || Operation.update == _operation)
         {
             // this seems overkill actually, but I'm focused on optimizing insert right now (MAB)
@@ -747,7 +754,6 @@ public class StatementUtils
         // INSERT
         //
 
-        String comma;
         String rowIdVar = null;
         SQLFragment sqlfInsertInto = new SQLFragment();
 
@@ -767,22 +773,20 @@ public class StatementUtils
             else
             {
                 sqlfInsertInto.unsafeAppend(" (");
-                comma = "";
+                SQLFragment.SqlSeparator colComma = SQLFragment.sep("", ", ");
                 for (ColumnInfo colInfo : cols)
                 {
-                    sqlfInsertInto.append(comma);
-                    comma = ", ";
+                    sqlfInsertInto.append(colComma.next());
                     sqlfInsertInto.appendIdentifier(colInfo.getSelectIdentifier());
                     _columnTracker.insertColumns.add(colInfo.getName());
                 }
                 sqlfInsertInto.unsafeAppend(")");
 
                 sqlfInsertInto.unsafeAppend("\nSELECT ");
-                comma = "";
+                SQLFragment.SqlSeparator valueComma = SQLFragment.sep("", ", ");
                 for (SQLFragment valueSQL : values)
                 {
-                    sqlfInsertInto.append(comma);
-                    comma = ", ";
+                    sqlfInsertInto.append(valueComma.next());
                     sqlfInsertInto.append(valueSQL);
                 }
             }
@@ -807,7 +811,7 @@ public class StatementUtils
         {
             // Create a standard UPDATE table SET col1 = val1, col2 = val2 statement
             sqlfUpdate.unsafeAppend("UPDATE ").append(table.getSQLName()).unsafeAppend("\nSET ");
-            comma = "";
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
             int updateCount = 0;
             for (int i = 0; i < cols.size(); i++)
             {
@@ -821,8 +825,7 @@ public class StatementUtils
                 if (_dontUpdateColumnNames.contains(colName) || (remap.containsKey(colName) && _dontUpdateColumnNames.contains(remap.get(colName))))
                     continue;
 
-                sqlfUpdate.append(comma);
-                comma = ", ";
+                sqlfUpdate.append(comma.next());
                 sqlfUpdate.appendIdentifier(col.getSelectIdentifier());
                 sqlfUpdate.unsafeAppend(" = ");
                 sqlfUpdate.append(values.get(i));
@@ -875,16 +878,15 @@ public class StatementUtils
         if (_selectIds && (null != objectIdVar || null != rowIdVar))
         {
             sqlfSelectIds = SQLFragment.unsafe("SELECT ");
-            comma = "";
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
             if (null != rowIdVar)
             {
-                sqlfSelectIds.appendIdentifier(rowIdVar);
+                sqlfSelectIds.append(comma.next()).appendIdentifier(rowIdVar);
                 _columnTracker.selectColumns.add(rowIdVar);
-                comma = ",";
             }
             if (null != objectIdVar)
             {
-                sqlfSelectIds.append(comma).appendIdentifier(objectIdVar);
+                sqlfSelectIds.append(comma.next()).appendIdentifier(objectIdVar);
                 _columnTracker.selectColumns.add(objectIdVar);
             }
         }
@@ -937,15 +939,14 @@ public class StatementUtils
                 SQLFragment select = new SQLFragment();
                 sqlfDeclare.unsafeAppend("DECLARE ");
                 select.unsafeAppend("SELECT ");
-                comma = "";
+                SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
                 for (Map.Entry<String, ParameterHolder> e : parameters.entrySet())
                 {
                     ParameterHolder ph = e.getValue();
-                    sqlfDeclare.append(comma);
+                    sqlfDeclare.append(comma.next());
                     String variable = sqlServerVariableDeclaration(sqlfDeclare, ph);
                     select.append(comma).appendIdentifier(variable).unsafeAppend("=?");
                     select.add(ph.p);
-                    comma = ", ";
                 }
                 sqlfDeclare.appendEOS();
                 sqlfDeclare.append(select);
@@ -971,21 +972,19 @@ public class StatementUtils
             // TODO d.execute() doesn't handle temp schema
             SQLFragment call = new SQLFragment();
             call.append(fnName).unsafeAppend("(ROW(");
-            comma = "";
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
             for (Map.Entry<String, ParameterHolder> e : parameters.entrySet())
             {
                 ParameterHolder ph = e.getValue();
-                String type = ph.getSqlTypeName(_dialect);
-                fn.unsafeAppend("\n").append(comma);
+                fn.unsafeAppend("\n").append(comma.next());
                 fn.appendIdentifier(makePgRowTypeName(ph.variableName));
                 fn.unsafeAppend(" ");
-                fn.append(type);
+                fn.append(ph.getSqlTypeNameAsSql(_dialect));
                 // For PG (29687) we need the length for CHAR type
                 if (_dialect.isPostgreSQL() && JdbcType.CHAR.equals(ph.p.getType()))
                     fn.unsafeAppend("(").appendValue(ph.getScale()).unsafeAppend(")");
                 call.append(comma).unsafeAppend("?");
                 call.add(ph.p);
-                comma = ",";
             }
             fn.unsafeAppend("\n)").appendEOS();
             fn.unsafeAppend("CREATE FUNCTION ").append(fnName).unsafeAppend("(").append(typeName).unsafeAppend(") ");
@@ -994,7 +993,8 @@ public class StatementUtils
                 fn.unsafeAppend("SETOF RECORD");
             else
                 fn.unsafeAppend("void");
-            String quoteToken = "$x" + GUID.makeHash() + "$";
+            SQLFragment quoteToken = new SQLFragment();
+            quoteToken.setSqlUnsafe("$x" + GUID.makeHash() + "$");
             fn.unsafeAppend(" AS ").append(quoteToken).unsafeAppend("\n");
             call.unsafeAppend("))");
 
@@ -1002,16 +1002,16 @@ public class StatementUtils
             {
                 call.insert(0, "SELECT * FROM ");
                 call.unsafeAppend(" AS x(");
-                String sep = "";
+                SQLFragment.SqlSeparator sep = SQLFragment.sep("", ", ");
 
                 if (null != rowIdVar)
                 {
+                    call.append(sep.next());
                     call.unsafeAppend("A BIGINT");
-                    sep = ", ";
                 }
                 if (null != objectIdVar)
                 {
-                    call.append(sep);
+                    call.append(sep.next());
                     call.unsafeAppend("B BIGINT");
                 }
 
@@ -1026,7 +1026,7 @@ public class StatementUtils
             fn.append(sqlfDeclare);
 
             fn.unsafeAppend("BEGIN\n");
-            fn.unsafeAppend("-- ").append(_operation.name()).unsafeAppend("\n");
+            fn.unsafeAppend("-- ").appendIdentifier(_operation.name()).unsafeAppend("\n");
             Stream.of(sqlfPreselectObject, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty)
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(fn::append);
@@ -1131,13 +1131,13 @@ public class StatementUtils
     {
         SQLFragment sqlfWherePK = new SQLFragment();
         sqlfWherePK.unsafeAppend("\nWHERE ");
-        String and = "";
+        SQLFragment.SqlSeparator and = SQLFragment.sep("", " AND ");
         for (Map.Entry<FieldKey, ColumnInfo> e : keys.entrySet())
         {
             ColumnInfo keyCol = e.getValue();
             ParameterHolder keyColPh = createParameter(keyCol);
 
-            sqlfWherePK.append(and);
+            sqlfWherePK.append(and.next());
             sqlfWherePK.unsafeAppend("(");
             sqlfWherePK.appendIdentifier(keyCol.getSelectIdentifier());
             sqlfWherePK.unsafeAppend(" = ");
@@ -1151,7 +1151,6 @@ public class StatementUtils
                 sqlfWherePK.unsafeAppend(" IS NULL");
             }
             sqlfWherePK.unsafeAppend(")");
-            and = " AND ";
         }
         return sqlfWherePK;
     }
@@ -1171,17 +1170,17 @@ public class StatementUtils
         if (jdbcType.isText())
         {
             if ("NTEXT".equalsIgnoreCase(type) || "TEXT".equalsIgnoreCase(type) || ph.getScale()>4000)
-                type = "NVARCHAR(MAX)";
+                sqlfDeclare.unsafeAppend("NVARCHAR(MAX)");
             else
-                type = "NVARCHAR(4000)";
+                sqlfDeclare.unsafeAppend("NVARCHAR(4000)");
         }
-        // Add scale and precision for decimal values specifying scale
-        else if (jdbcType.isDecimal() && ph.getScale() > 0)
+        else
         {
-            type = type + "(" + ph.getPrecision() + "," + ph.getScale() + ")";
+            sqlfDeclare.append(ph.getSqlTypeNameAsSql(_dialect));
+            // Add scale and precision for decimal values specifying scale
+            if (jdbcType.isDecimal() && ph.getScale() > 0)
+                sqlfDeclare.unsafeAppend("(").appendValue(ph.getPrecision()).unsafeAppend(",").appendValue(ph.getScale()).unsafeAppend(")");
         }
-
-        sqlfDeclare.append(type);
         return variable;
     }
 
@@ -1196,9 +1195,9 @@ public class StatementUtils
             f.unsafeAppend("NULL");
             return;
         }
-        if (value instanceof Number)
+        if (value instanceof Number n)
         {
-            f.append(value.toString());
+            f.appendValue(n);
             return;
         }
         if (value instanceof NowTimestamp now)
@@ -1376,7 +1375,8 @@ public class StatementUtils
             var expected = String.format(isPostgres ? "{d '%s'}" : "{d N'%s'}", dateFormat.format(sqlDate));
 
             actual = runToLiteral.apply(sqlDate);
-            assertEquals(new SQLFragment(expected), actual);
+            assertEquals(expected, actual.getRawSQL());
+            assertTrue(actual.getParams().isEmpty());
 
             // util.Date
             var utilDate = new java.util.Date(dateLong);
@@ -1384,7 +1384,8 @@ public class StatementUtils
             expected = String.format(isPostgres ? "{ts '%s'}" : "{ts N'%s'}", dateFormat.format(utilDate));
 
             actual = runToLiteral.apply(utilDate);
-            assertEquals(new SQLFragment(expected), actual);
+            assertEquals(expected, actual.getRawSQL());
+            assertTrue(actual.getParams().isEmpty());
         }
 
         @Test

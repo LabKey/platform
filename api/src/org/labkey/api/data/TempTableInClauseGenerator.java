@@ -172,7 +172,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 throw new RuntimeSQLException(e);
             }
 
-            String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
+            SQLFragment indexSql = SQLFragment.unsafe("CREATE INDEX ").appendIdentifier("IX_Id" + new GUID().toStringNoDashes()).unsafeAppend(" ON ").append(tempTableInfo).unsafeAppend("(Id)");
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
                 new SqlExecutor(tempSchema).execute(indexSql);

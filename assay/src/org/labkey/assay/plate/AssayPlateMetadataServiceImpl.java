@@ -493,7 +493,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // that aren't associated with plates merged from the previous run
                 DbScope scope = AssayDbSchema.getInstance().getScope();
 
-                SQLFragment sql = new SQLFragment("SELECT AR.rowId FROM ").append(resultsTable, "AR")
+                SQLFragment sql = SQLFragment.unsafe("SELECT AR.rowId FROM ").append(resultsTable, "AR")
                         .unsafeAppend(" JOIN ").append(ExperimentService.get().getTinfoData(), "ED")
                         .unsafeAppend(" ON AR.dataid = ED.rowid")
                         .unsafeAppend(" WHERE ED.runId = ? ").add(run.getRowId())
@@ -1712,7 +1712,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     ExpRun prevRun = ExperimentService.get().getExpRun(_context.getReRunId());
                     if (prevRun != null)
                     {
-                        SQLFragment sql = new SQLFragment("SELECT AR.rowId FROM ").append(resultsTable, "AR")
+                        SQLFragment sql = SQLFragment.unsafe("SELECT AR.rowId FROM ").append(resultsTable, "AR")
                                 .unsafeAppend(" JOIN ").append(AssayDbSchema.getInstance().getTableInfoHit(), "HT")
                                 .unsafeAppend(" ON AR.welllsid = HT.welllsid")
                                 .unsafeAppend(" JOIN ").append(ExperimentService.get().getTinfoData(), "ED")

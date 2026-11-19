@@ -426,7 +426,7 @@ public final class WellTriggerFactory implements TriggerFactory
     {
         var map = new LongHashMap<String>();
         UserSchema schema = QueryService.get().getUserSchema(user, container, "plate");
-        SQLFragment sql = new SQLFragment("SELECT RowId, Type FROM plate.Well WHERE PlateId = ?").add(plateRowId);
+        SQLFragment sql = SQLFragment.unsafe("SELECT RowId, Type FROM plate.Well WHERE PlateId = ?", plateRowId);
         QueryService.get().getSelectBuilder(schema, sql.toDebugString())
                 .buildSqlSelector()
                 .forEach(r -> map.put(r.getLong(WellTable.Column.RowId.name()), r.getString(WellTable.Column.Type.name())));
@@ -438,7 +438,7 @@ public final class WellTriggerFactory implements TriggerFactory
     {
         var map = new LongHashMap<String>();
         UserSchema schema = QueryService.get().getUserSchema(user, container, "plate");
-        SQLFragment sql = new SQLFragment("SELECT RowId, ReplicateGroup FROM plate.Well WHERE PlateId = ?").add(plateRowId);
+        SQLFragment sql = SQLFragment.unsafe("SELECT RowId, ReplicateGroup FROM plate.Well WHERE PlateId = ?", plateRowId);
         QueryService.get().getSelectBuilder(schema, sql.toDebugString())
                 .buildSqlSelector()
                 .forEach(r -> map.put(r.getLong(WellTable.Column.RowId.name()), r.getString(WellTable.Column.ReplicateGroup.name())));

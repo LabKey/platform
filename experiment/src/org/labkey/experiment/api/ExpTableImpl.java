@@ -502,7 +502,7 @@ abstract public class ExpTableImpl<C extends Enum>
         @Override
         public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)
         {
-            return new SQLFragment().appendIdentifier(tableAlias).unsafeAppend(".").append(Objects.toString(_expObjectColumnName, "_exptable_object_"));
+            return new SQLFragment().appendIdentifier(tableAlias).unsafeAppend(".").appendIdentifier(Objects.toString(_expObjectColumnName, "_exptable_object_"));
         }
 
         @Override

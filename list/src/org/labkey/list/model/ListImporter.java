@@ -288,7 +288,7 @@ public class ListImporter
                                         sequence = src.substring(start + 1, end);
                                     if (!sequence.toLowerCase().startsWith("list."))
                                         sequence = "list." + sequence;
-                                    keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence, dialect);
+                                    keyupdate = SQLFragment.unsafe("SELECT setval(").appendStringLiteral(sequence, dialect);
                                 }
 
                                 String keyStorageColName = def.getDomain().getPropertyByName(def.getKeyName()).getPropertyDescriptor().getStorageColumnName();

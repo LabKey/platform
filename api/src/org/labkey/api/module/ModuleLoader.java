@@ -1908,14 +1908,14 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         String moduleName = context.getName();
 
         _log.info("Deleting module {}", moduleName);
-        String sql = "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND Filename " + dialect.getCaseInsensitiveLikeOperator() + " ?";
-
         Module m = getModule(moduleName);
         SchemaActions schemaActions = getSchemaActions(m, context);
 
         schemaActions.deleteList().forEach(schemaName -> {
             _log.info("Dropping schema \"{}\"", schemaName);
-            new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schemaName + "-%");
+            SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(_core.getTableInfoSqlScripts()).unsafeAppend(" WHERE ModuleName = ? AND Filename ", moduleName)
+                .append(dialect.getCaseInsensitiveLikeOperatorAsSql()).unsafeAppend(" ?", schemaName + "-%");
+            new SqlExecutor(_core.getSchema()).execute(sql);
             scope.getSqlDialect().dropSchema(scope, schemaName);
             scope.invalidateSchema(schemaName, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
             SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope

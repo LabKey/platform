@@ -1018,11 +1018,10 @@ public class Portal implements ModuleChangeListener
             SQLFragment insertSQL = SQLFragment.unsafe("INSERT INTO ")
                     .append(portalTable)
                     .unsafeAppend("\n(");
-            String comma = "";
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
             for (String name : insertColumns)
             {
-                insertSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
-                comma = ",";
+                insertSQL.append(comma.next()).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
             }
             insertSQL.unsafeAppend(")\n")
                     .unsafeAppend(" (SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?\n WHERE ? NOT IN (")
@@ -1066,11 +1065,10 @@ public class Portal implements ModuleChangeListener
             updateColumns.add("Properties");
 
             updateSQL.unsafeAppend("\nSET (");
-            String comma = "";
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
             for (String name : updateColumns)
             {
-                updateSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
-                comma = ",";
+                updateSQL.append(comma.next()).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
             }
             updateSQL.unsafeAppend(") =\n")
                     .unsafeAppend("(")

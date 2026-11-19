@@ -731,7 +731,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
         if (!toRemove.isEmpty())
         {
-            var sql = new SQLFragment("DELETE FROM ").append(table)
+            var sql = SQLFragment.unsafe("DELETE FROM ").append(table)
                     .unsafeAppend(" WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
             new SqlExecutor(table.getSchema()).execute(sql);
         }
@@ -742,7 +742,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             for (var criterion : toAdd)
                 criteriaToInsert.add(Arrays.asList(criterion.propertyId(), criterion.referencePropertyId(), criterion.domainId(), criterion.operation(), criterion.value()));
 
-            String sql = "INSERT INTO " + table + " (propertyId, referencePropertyId, domainId, operation, value) VALUES (?, ?, ?, ?, ?)";
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(table).unsafeAppend(" (propertyId, referencePropertyId, domainId, operation, value) VALUES (?, ?, ?, ?, ?)");
 
             try
             {
