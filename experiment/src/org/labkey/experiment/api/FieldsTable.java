@@ -41,15 +41,15 @@ public class FieldsTable extends BaseFieldsTable
     protected void addColumnSQL(SQLFragment sql)
     {
         // Note that within a range expression, LIKE wildcards (such as underscore) don't need to be escaped
-        addBooleanPatternColumn(sql, "pd.Name NOT", "%[^A-Za-z0-9_]%", "AlphaNumeric\n");
-        addBooleanPatternColumn(sql, "pd.Name", "%[/ \"&\\\\$}~,.]%", "SpecialCharacters\n");
+        addBooleanPatternColumn(sql, "pd.Name NOT", "%[^A-Za-z0-9_]%", "AlphaNumeric");
+        addBooleanPatternColumn(sql, "pd.Name", "%[/ \"&\\\\$}~,.]%", "SpecialCharacters");
         sql.unsafeAppend(", ").
-                append(getSqlDialect().getVarcharLengthFunction()).
+                append(getSqlDialect().getVarcharLengthFunctionAsSql()).
                 unsafeAppend("(pd.Name) AS FieldNameLength\n");
 
         // Identify fields at risk for issue 52666 as ones that would use a provisioned table name that doesn't match their
         // user-facing name, and that are attached to a domain that has a provisioned table
-        SQLFragment mismatchSql = new SQLFragment("(pd.StorageColumnName IS NULL OR pd.Name = pd.StorageColumnName) OR NOT EXISTS (SELECT dd.DomainId FROM ");
+        SQLFragment mismatchSql = SQLFragment.unsafe("(pd.StorageColumnName IS NULL OR pd.Name = pd.StorageColumnName) OR NOT EXISTS (SELECT dd.DomainId FROM ");
         mismatchSql.append(OntologyManager.getTinfoDomainDescriptor(), "dd");
         mismatchSql.unsafeAppend(" INNER JOIN ");
         mismatchSql.append(OntologyManager.getTinfoPropertyDomain(), "propDomain");
@@ -64,13 +64,14 @@ public class FieldsTable extends BaseFieldsTable
     {
         SQLFragment booleanExpression = new SQLFragment(expression)
             .unsafeAppend(" ")
-            .append(getSqlDialect().getCharClassLikeOperator()) // Need the operator that supports character classes
+            .append(getSqlDialect().getCharClassLikeOperatorAsSql()) // Need the operator that supports character classes
             .unsafeAppend(" ?");
 
         sql.unsafeAppend(", ")
             .append(getSqlDialect().wrapBooleanExpression(booleanExpression))
             .unsafeAppend(" AS ")
-            .append(name)
+            .appendIdentifier(name)
+            .unsafeAppend("\n")
             .add(pattern);
     }
 }

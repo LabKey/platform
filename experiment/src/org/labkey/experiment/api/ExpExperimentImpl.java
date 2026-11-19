@@ -116,7 +116,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public List<ExpRunImpl> getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
-        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+        SQLFragment sql = SQLFragment.unsafe(" SELECT ER.* "
                     + " FROM exp.ExperimentRun ER "
                     + " INNER JOIN exp.RunList RL ON ( ER.RowId = RL.ExperimentRunId ) "
                     + " WHERE RL.ExperimentId = ? ");
@@ -163,8 +163,9 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public void removeRun(User user, ExpRun run)
     {
-        SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList() +
-                " WHERE ExperimentId = ? AND ExperimentRunId = ?", getRowId(), run.getRowId());
+        SQLFragment sql = new SQLFragment().unsafeAppend("DELETE FROM ")
+                .append(ExperimentServiceImpl.get().getTinfoRunList().getSQLName())
+                .unsafeAppend(" WHERE ExperimentId = ? AND ExperimentRunId = ?").addAll(getRowId(), run.getRowId());
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {

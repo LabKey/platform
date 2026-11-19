@@ -328,8 +328,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
         String userParentLsid = getUserDefaultsWildcardLSID(container, domain, true);
         String userScopesLsid = getUserDefaultsWildcardLSID(container, domain, false);
         // Do a single call with both LIKE filters since it's faster than two separate calls
-        SQLFragment sql = new SQLFragment("SELECT ObjectURI FROM " + OntologyManager.getTinfoObject() + " WHERE ObjectURI LIKE ? OR ObjectURI LIKE ?",
-                userParentLsid, userScopesLsid);
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT ObjectURI FROM ").append(OntologyManager.getTinfoObject().getSQLName()).unsafeAppend(" WHERE ObjectURI LIKE ? OR ObjectURI LIKE ?").addAll(userParentLsid, userScopesLsid);
         OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), sql, container);
     }
 

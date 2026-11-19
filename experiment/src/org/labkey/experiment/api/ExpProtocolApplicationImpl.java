@@ -384,13 +384,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
         Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), getRowId()));
 
-        SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
+        SQLFragment commonSQL = SQLFragment.unsafe(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
 
-        SQLFragment materialSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial());
+        SQLFragment materialSQL = SQLFragment.unsafe("UPDATE ").append(ExperimentServiceImpl.get().getTinfoMaterial().getSQLName());
         materialSQL.append(commonSQL);
         new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(materialSQL);
 
-        SQLFragment dataSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoData());
+        SQLFragment dataSQL = SQLFragment.unsafe("UPDATE ").append(ExperimentServiceImpl.get().getTinfoData().getSQLName());
         dataSQL.append(commonSQL);
         new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
 
@@ -408,10 +408,12 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
-        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
-            dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
-                    "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-            " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId = ?", getRowId()), getContainer());
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment().unsafeAppend("SELECT ")
+                .append(dialect.concatenate(new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
+                    SQLFragment.unsafe("CAST(dataId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
+                .unsafeAppend(" FROM ")
+                .append(svc.getTinfoDataInput().getSQLName())
+                .unsafeAppend(" WHERE TargetApplicationId = ?").addAll(getRowId()), getContainer());
 
         return Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
     }
@@ -424,10 +426,12 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
-        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
-            dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
-                    "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-            " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId = ?", getRowId()), getContainer());
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment().unsafeAppend("SELECT ")
+                .append(dialect.concatenate(new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
+                    SQLFragment.unsafe("CAST(materialId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
+                .unsafeAppend(" FROM ")
+                .append(svc.getTinfoMaterialInput().getSQLName())
+                .unsafeAppend(" WHERE TargetApplicationId = ?").addAll(getRowId()), getContainer());
 
         return Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
     }

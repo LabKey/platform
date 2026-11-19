@@ -121,10 +121,10 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
 
     private ExprColumn createSampleCountColumn(@NotNull ContainerFilter sampleCountContainerFilter)
     {
-        SQLFragment liveCount = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial(), "m")
-                .unsafeAppend(" WHERE m.CpasType = ").append(ExprColumn.STR_TABLE_ALIAS + ".LSID")
+        SQLFragment liveCount = SQLFragment.unsafe("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial(), "m")
+                .unsafeAppend(" WHERE m.CpasType = ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID")
                 .unsafeAppend(" AND ")
-                .append(sampleCountContainerFilter.getSQLFragment(getSchema(), new SQLFragment("m.container")))
+                .append(sampleCountContainerFilter.getSQLFragment(getSchema(), SQLFragment.unsafe("m.container")))
                 .unsafeAppend(")");
 
         // Counting every sample of every type is the slowest column on this table at scale, so read counts a module

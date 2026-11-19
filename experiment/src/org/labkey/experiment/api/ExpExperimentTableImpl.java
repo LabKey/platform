@@ -50,7 +50,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     public ExpExperimentTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
         super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema, cf);
-        addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), FieldKey.fromParts("Hidden"));
+        addCondition(SQLFragment.unsafe("Hidden = ?", Boolean.FALSE), FieldKey.fromParts("Hidden"));
 
         ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteExpUrl));
@@ -91,7 +91,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn("RowId"));
             case RunCount:
-                ExprColumn runCountColumnInfo = new ExprColumn(this, "RunCount", new SQLFragment("(SELECT COUNT(*) FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)"), JdbcType.INTEGER);
+                ExprColumn runCountColumnInfo = new ExprColumn(this, "RunCount", new SQLFragment().unsafeAppend("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoRunList().getSQLName()).unsafeAppend(" WHERE ExperimentId = ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)"), JdbcType.INTEGER);
                 runCountColumnInfo.setDescription("Contains the number of runs associated with this run group");
                 setupNonEditableCol(runCountColumnInfo);
                 return runCountColumnInfo;
@@ -127,15 +127,15 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         final SQLFragment sql;
         if (run != null)
         {
-            SQLFragment existsSql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
+            SQLFragment existsSql = SQLFragment.unsafe("EXISTS (SELECT ExperimentId FROM ");
             existsSql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-            existsSql.unsafeAppend(" WHERE ExperimentRunId = ").appendValue(run.getRowId()).unsafeAppend(" AND ExperimentId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
+            existsSql.unsafeAppend(" WHERE ExperimentRunId = ").appendValue(run.getRowId()).unsafeAppend(" AND ExperimentId = ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
 
             sql = getSqlDialect().wrapBooleanExpression(existsSql);
         }
         else
         {
-            sql = new SQLFragment("?", false);
+            sql = SQLFragment.unsafe("?", false);
         }
 
         ColumnInfo expRowIdCol = getColumn(Column.RowId);
@@ -200,9 +200,11 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     @Override
     public BaseColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
-        SQLFragment sql = new SQLFragment("(SELECT COUNT(exp.experimentrun.rowid) FROM exp.experimentrun" +
-                "\nINNER JOIN exp.runlist ON exp.experimentrun.rowid = exp.runlist.experimentrunid" +
-                "\nAND exp.runlist.experimentid = " + ExprColumn.STR_TABLE_ALIAS + ".rowid");
+        SQLFragment sql = new SQLFragment().unsafeAppend("(SELECT COUNT(exp.experimentrun.rowid) FROM exp.experimentrun"
+                    + "\nINNER JOIN exp.runlist ON exp.experimentrun.rowid = exp.runlist.experimentrunid"
+                    + "\nAND exp.runlist.experimentid = ")
+                .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                .unsafeAppend(".rowid");
         if (parentProtocol != null)
         {
             sql.unsafeAppend("\nAND exp.experimentrun.protocollsid = ");

@@ -84,6 +84,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.LabKeySQLFragment;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
@@ -210,7 +211,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
-import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -7252,7 +7252,7 @@ public class ExperimentController extends SpringActionController
         {
             ensureUniqueIdLsids();
 
-            SQLFragment select = getOrderedRowsSql();
+            LabKeySQLFragment select = getOrderedRowsSql();
             // need to set the key field so selections are possible
             // need the SampleTypeUnits so we will display using that unit
             String metadata =
@@ -7273,7 +7273,7 @@ public class ExperimentController extends SpringActionController
                                    </columns>
                                </table>
                             </tables>""";
-            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.getExpSchema().getName(), select.getSQL(), metadata);
+            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.getExpSchema().getName(), select.getText(), metadata);
             return success("Session query created", Map.of("queryName", def.getName(), "ids", _ids));
         }
 
@@ -7293,7 +7293,7 @@ public class ExperimentController extends SpringActionController
             return ids;
         }
 
-        private SQLFragment getOrderedRowsSql()
+        private LabKeySQLFragment getOrderedRowsSql()
         {
             boolean isFMEnabled = InventoryService.isFreezerManagementEnabled(getContainer());
             String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
@@ -7338,22 +7338,21 @@ public class ExperimentController extends SpringActionController
             }
 
 
-            String sampleIdComma = "";
-            String uniqueIdComma = "";
+            SQLFragment.SqlSeparator sampleIdComma = SQLFragment.sep("", "\n,");
+            SQLFragment.SqlSeparator uniqueIdComma = SQLFragment.sep("", "\n,");
             int index = 1;
-            SQLFragment sampleIdValuesSql = new SQLFragment();
-            SQLFragment uniqueIdValuesSql = new SQLFragment();
+            LabKeySQLFragment sampleIdValuesSql = new LabKeySQLFragment();
+            LabKeySQLFragment uniqueIdValuesSql = new LabKeySQLFragment();
             for (String id : _ids)
             {
                 if (id.startsWith(SAMPLE_ID_PREFIX))
                 {
-                    sampleIdValuesSql.append(sampleIdComma).unsafeAppend("\t(").appendValue(index);
+                    sampleIdValuesSql.append(sampleIdComma.next()).unsafeAppend("\t(").appendValue(index);
                     sampleIdValuesSql.unsafeAppend(", ");
-                    sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
+                    sampleIdValuesSql.appendStringLiteral(id.substring(SAMPLE_ID_PREFIX.length()));
                     sampleIdValuesSql.unsafeAppend(", ");
-                    sampleIdValuesSql.append(LabKeySql.quoteString("null"));
+                    sampleIdValuesSql.appendStringLiteral("null");
                     sampleIdValuesSql.unsafeAppend(")");
-                    sampleIdComma = "\n,";
                 }
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
                 {
@@ -7364,13 +7363,12 @@ public class ExperimentController extends SpringActionController
                     {
                         for (String lsid : lsids)
                         {
-                            uniqueIdValuesSql.append(uniqueIdComma).unsafeAppend("\t(").appendValue(index);
+                            uniqueIdValuesSql.append(uniqueIdComma.next()).unsafeAppend("\t(").appendValue(index);
                             uniqueIdValuesSql.unsafeAppend(", ");
-                            uniqueIdValuesSql.append(LabKeySql.quoteString(idClean));
+                            uniqueIdValuesSql.appendStringLiteral(idClean);
                             uniqueIdValuesSql.unsafeAppend(", ");
-                            uniqueIdValuesSql.append(LabKeySql.quoteString(lsid));
+                            uniqueIdValuesSql.appendStringLiteral(lsid);
                             uniqueIdValuesSql.unsafeAppend(")");
-                            uniqueIdComma = "\n,";
                         }
                     }
                 }
@@ -7378,7 +7376,7 @@ public class ExperimentController extends SpringActionController
             }
 
             boolean haveData = !sampleIdValuesSql.isEmpty() || !_uniqueIdLsids.isEmpty();
-            SQLFragment sql = new SQLFragment();
+            LabKeySQLFragment sql = new LabKeySQLFragment();
             if (!sampleIdValuesSql.isEmpty())
             {
                 sql.unsafeAppend("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES\n");
@@ -7398,8 +7396,8 @@ public class ExperimentController extends SpringActionController
             }
 
             sql.unsafeAppend("SELECT ");
-            sql.unsafeAppend("\n\tOID.").append(StringUtils.join(orderedIdCols, ",\n\tOID."));
-            sql.unsafeAppend(",\n\t").append(StringUtils.join( sampleColumns, ",\n\t"));
+            sql.unsafeAppend("\n\tOID.").appendSourceText(StringUtils.join(orderedIdCols, ",\n\tOID."));
+            sql.unsafeAppend(",\n\t").appendSourceText(StringUtils.join( sampleColumns, ",\n\t"));
             sql.unsafeAppend("\nFROM\n(");
             if (!sampleIdValuesSql.isEmpty())
             {
@@ -7420,8 +7418,8 @@ public class ExperimentController extends SpringActionController
             }
             if (!haveData) // no data to return but return data in the expected shape.
             {
-                sql = new SQLFragment("SELECT\n");
-                sql.append(orderedIdCols.stream()
+                sql = LabKeySQLFragment.unsafe("SELECT\n");
+                sql.appendSourceText(orderedIdCols.stream()
                         .map(col -> {
                             int asIndex = col.indexOf("AS");
                             if (asIndex > 0)
@@ -7430,8 +7428,8 @@ public class ExperimentController extends SpringActionController
                                 return "NULL AS " + col;
                         })
                         .collect(Collectors.joining(",\t\n")));
-                sql.unsafeAppend(",\t\n").append(StringUtils.join(sampleColumns, ",\t\n"));
-                sql.unsafeAppend("\nFROM ").append(samplesTable).unsafeAppend(" S WHERE 1 = 2");
+                sql.unsafeAppend(",\t\n").appendSourceText(StringUtils.join(sampleColumns, ",\t\n"));
+                sql.unsafeAppend("\nFROM ").appendSourceText(samplesTable).unsafeAppend(" S WHERE 1 = 2");
                 return sql;
             }
             else
