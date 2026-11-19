@@ -2570,7 +2570,7 @@ public class ExperimentController extends SpringActionController
 
             // Checked before copying so oversized uploads never reach disk or the parser
             if (formFile.getSize() > MAX_FILE_BYTES)
-                throw new ApiUsageException("File exceeds the maximum allowed size of " + (MAX_FILE_BYTES / (1024 * 1024)) + " MB.");
+                throw new BadRequestException("File exceeds the maximum allowed size of " + (MAX_FILE_BYTES / (1024 * 1024)) + " MB.");
 
             int maxRows = form.getMaxRows();
             if (maxRows < 0 || maxRows > MAX_ROWS)
@@ -2595,10 +2595,14 @@ public class ExperimentController extends SpringActionController
                     // Other names are sniffed by content, which would let Excel skip the checks above
                     DataLoaderFactory dlf = DataLoader.get().findFactory(tempFile, null);
                     if (dlf instanceof ExcelLoader.Factory)
-                        throw new ApiUsageException("Excel files must have a .xls or .xlsx extension.");
+                        throw new BadRequestException("Excel files must have a .xls or .xlsx extension.");
                 }
 
                 streamToJSON(tempFile, form.getFormat(), maxRows, MAX_CELLS, MAX_COLUMNS, formFile.getOriginalFilename());
+            }
+            catch (ApiUsageException e)
+            {
+                throw new BadRequestException(e.getMessage(), e);
             }
             finally
             {
