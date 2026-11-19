@@ -160,8 +160,8 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     SqlDialect dialect = getSchema().getSqlDialect();
                     SQLFragment plateHitsSQL = SQLFragment.unsafe("(CASE WHEN (SELECT ResultId FROM ")
                             .append(AssayDbSchema.getInstance().getTableInfoHit(), "h")
-                            .unsafeAppend(" WHERE h.ResultId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId")
-                            .unsafeAppend(" AND h.RunId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".Run").unsafeAppend(")")
+                            .unsafeAppend(" WHERE h.ResultId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId")
+                            .unsafeAppend(" AND h.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".Run)")
                             .unsafeAppend(" IS NULL THEN ").appendValue(Boolean.FALSE, dialect)
                             .unsafeAppend(" ELSE ").appendValue(Boolean.TRUE, dialect).unsafeAppend(" END")
                             .unsafeAppend(")");

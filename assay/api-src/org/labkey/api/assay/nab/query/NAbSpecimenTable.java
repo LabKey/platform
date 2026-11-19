@@ -24,7 +24,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -123,7 +122,7 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
     {
         return SQLFragment.unsafe("(SELECT MAX(PercentNeutralization) FROM ")
             .append(DilutionManager.getTableInfoDilutionData(), "dd")
-            .unsafeAppend(" WHERE dd.RunDataId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId)");
+            .unsafeAppend(" WHERE dd.RunDataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
     }
 
     private SQLFragment getPercentNeutralizationInitialDilution()
@@ -140,13 +139,13 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         {
             List<ColumnInfo> columns = Arrays.asList(samplesTable.getColumn("LSID"), samplesTable.getColumn("InitialDilution"));
             SQLFragment samplesSql = QueryService.get().getSelectBuilder(samplesTable).columns(columns).buildSqlFragment();
-            return sql.unsafeAppend(" LEFT JOIN (").append(samplesSql).unsafeAppend(" ) x ON x.LSID = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".SpecimenLsid")
-                    .unsafeAppend(" WHERE dd.RunDataId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+            return sql.unsafeAppend(" LEFT JOIN (").append(samplesSql).unsafeAppend(" ) x ON x.LSID = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenLsid")
+                    .unsafeAppend(" WHERE dd.RunDataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId")
                     .unsafeAppend(" AND dd.Dilution = x.InitialDilution)");
         }
         else
         {
-            return sql.unsafeAppend(" WHERE dd.RunDataId = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+            return sql.unsafeAppend(" WHERE dd.RunDataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId")
                     .unsafeAppend(" AND dd.Dilution = dd.MinDilution)");
         }
     }

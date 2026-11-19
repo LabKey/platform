@@ -206,10 +206,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         getMutableColumn("RowId").setShownInUpdateView(false);
 
-        SQLFragment runIdSQL = new SQLFragment();
-        runIdSQL.unsafeAppend(ExprColumn.STR_TABLE_ALIAS);
-        runIdSQL.unsafeAppend(".");
-        runIdSQL.unsafeAppend(RUN_ID_ALIAS);
+        SQLFragment runIdSQL = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + "." + RUN_ID_ALIAS);
         ExprColumn runColumn = new ExprColumn(this, RUN_ID_ALIAS, runIdSQL, JdbcType.INTEGER);
         // TODO ContainerFilter make sure this is still correct
         // Can't rely on normal container filter propagation since assay-backed datasets will have different
@@ -487,7 +484,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
         else
             result.unsafeAppend(" innerResults.*,");
-        result.unsafeAppend(" innerData.RunId AS ").unsafeAppend(RUN_ID_ALIAS).unsafeAppend(", innerData.Container AS Container" );
+        result.unsafeAppend(" innerData.RunId AS " + RUN_ID_ALIAS + ", innerData.Container AS Container");
         result.unsafeAppend(" FROM\n");
         result.append(getFromTable().getFromSQL("innerResults"));
         result.unsafeAppend("\nINNER JOIN ");

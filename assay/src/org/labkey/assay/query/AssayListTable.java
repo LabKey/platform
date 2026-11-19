@@ -80,7 +80,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
             if (protocolPattern != null)
             {
                 typeFrag.unsafeAppend("\n");
-                typeFrag.unsafeAppend("WHEN ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID LIKE ? THEN ?");
+                typeFrag.unsafeAppend("WHEN " + ExprColumn.STR_TABLE_ALIAS + ".LSID LIKE ? THEN ?");
                 typeFrag.add(protocolPattern);
                 typeFrag.add(provider.getName());
             }
@@ -93,7 +93,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
 
         var runCountFragment = SQLFragment.unsafe("(SELECT COUNT(*) FROM ")
                 .append(ExperimentService.get().getTinfoExperimentRun(), "r")
-                .unsafeAppend(" WHERE r.ProtocolLSID = ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".LSID")
+                .unsafeAppend(" WHERE r.ProtocolLSID = " + ExprColumn.STR_TABLE_ALIAS + ".LSID")
                 .unsafeAppend(" AND ")
                 .append(getContainerFilter().getSQLFragment(getSchema(), SQLFragment.unsafe("r.container")))
                 .unsafeAppend(")");
