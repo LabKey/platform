@@ -20,6 +20,7 @@
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
+<%@ page import="org.labkey.api.collections.LabKeyCollectors" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
@@ -35,6 +36,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -62,27 +64,24 @@
         dependencies.add("internal/jQuery");
     }
 
-    String formatNavTrail(Collection<NavTree> list)
+    HtmlString formatNavTrail(Collection<NavTree> list)
     {
         if (null == list || list.isEmpty())
-            return "";
+            return HtmlString.EMPTY_STRING;
 
         try
         {
-            StringBuilder sb = new StringBuilder("<span style='color:#808080;'>");
-            String connector = " - ";
+            HtmlStringBuilder sb = HtmlStringBuilder.of().unsafeAppend("<span style='color:#808080;'>");
             for (NavTree n : list)
             {
-                sb.append(connector);
-                sb.append("<a style='text-decoration:underline; color:#808080;' href='").append(h(n.getHref())).append("'>").append(h(n.getText())).append("</a>");
-                connector = " - ";
+                sb.append(" - ");
+                sb.append(simpleLink(n.getText(), n.getHref()).style("text-decoration:underline; color:#808080;"));
             }
-            sb.append("</span>");
-            return sb.toString();
+            return sb.endTag("span").getHtmlString();
         }
         catch (Throwable t)
         {
-            return "";
+            return HtmlString.EMPTY_STRING;
         }
     }
 
@@ -159,7 +158,7 @@
         else if (totalHits > 0)
         {
             sb.append("Displaying all ")
-                .append(h(template.getResultNamePlural()));
+                .append(template.getResultNamePlural());
         }
 
         return sb.toString();
@@ -172,9 +171,9 @@
             .append(" ");
 
         if (totalHits == 1)
-            sb.append(h(template.getResultNameSingular()));
+            sb.append(template.getResultNameSingular());
         else
-            sb.append(h(template.getResultNamePlural()));
+            sb.append(template.getResultNamePlural());
 
         return sb.toString();
     }
@@ -297,7 +296,7 @@
             <small>
                 <a class="search-advanced-toggle">advanced options</a>
                 <% if (form.getIncludeHelpLink()) { %>
-                | <a target="_blank" href="<%=unsafe(SearchUtils.getHelpTopic().getHelpTopicHref())%>" rel="noopener noreferrer">help</a>
+                | <a target="_blank" href="<%=h(SearchUtils.getHelpTopic().getHelpTopicHref())%>" rel="noopener noreferrer">help</a>
                 <% } %>
             </small>
             <% } %>
@@ -451,8 +450,8 @@
                 int pageCount = (int)Math.ceil((double)hits / hitsPerPage);
             %>
             <div class="labkey-search-results-counts">
-                <div class="pull-left"><%=unsafe(getResultsSummary(hits, template))%></div>
-                <div class="pull-right"><%=unsafe(getPageSummary(hits, template, hitsPerPage, pageNo, pageCount))%></div>
+                <div class="pull-left"><%=h(getResultsSummary(hits, template))%></div>
+                <div class="pull-right"><%=h(getPageSummary(hits, template, hitsPerPage, pageNo, pageCount))%></div>
             </div>
             <%
                 for (SearchService.SearchHit hit : result.hits)
@@ -484,12 +483,12 @@
 
                         if (!StringUtils.isEmpty(hit.navtrail))
                         {
-                    %>&nbsp;<%=unsafe(formatNavTrail(parseNavTrail(hit.navtrail)))%><%
+                    %>&nbsp;<%=formatNavTrail(parseNavTrail(hit.navtrail))%><%
                         }
                         Collection<NavTree> actions = getActions(hit);
                         if (null != actions && !actions.isEmpty())
                         {
-                    %>&nbsp;<%=unsafe(formatNavTrail(actions))%><%
+                    %>&nbsp;<%=formatNavTrail(actions)%><%
                         }
                     %>
                     </div>
@@ -503,7 +502,7 @@
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
                         {
-                            %><%=unsafe(h(summary, false).toString().replace("&lt;br&gt;", "<br>"))%><%
+                            %><%=Arrays.stream(summary.split("<br>", -1)).map(HtmlString::of).collect(LabKeyCollectors.joining(HtmlString.BR))%><%
                         }
                     }
                 %>

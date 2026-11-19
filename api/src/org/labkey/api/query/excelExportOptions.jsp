@@ -30,11 +30,10 @@
     QueryView.ExcelExportOptionsBean model = (QueryView.ExcelExportOptionsBean) HttpView.currentModel();
 
     String guid = GUID.makeGUID();
-    String xlsxGUID = "xlsx_" + guid;
-    String xlsGUID = "xls_" + guid;
-    String iqyGUID = "iqy_" + guid;
-    String headerGUID = "header_" + guid;
-    String headerType = "xls_header_type";
+    HtmlString xlsxGUID = h("xlsx_" + guid);
+    HtmlString xlsGUID = h("xls_" + guid);
+    HtmlString iqyGUID = h("iqy_" + guid);
+    HtmlString headerGUID = h("header_" + guid);
     String exportSelectedId = "exportSelected_";
     String exportButtonId = "export_" + guid;
     String signButtonId = "sign_" + guid;
@@ -64,22 +63,22 @@
 %>
 <table class="lk-fields-table">
     <tr>
-        <td valign="center"><input type="radio" id="<%=h(xlsxGUID)%>" name="<%=hname(checkboxGroupName)%>" checked="checked" /></td>
-        <td valign="center"><label for="<%=h(xlsxGUID)%>">Excel Workbook (.xlsx)</label> <span style="font-size: smaller">Maximum 1,048,576 rows and 16,384 columns.</span></td>
+        <td valign="center"><input type="radio" id="<%=xlsxGUID%>" name="<%=hname(checkboxGroupName)%>" checked="checked" /></td>
+        <td valign="center"><label for="<%=xlsxGUID%>">Excel Workbook (.xlsx)</label> <span style="font-size: smaller">Maximum 1,048,576 rows and 16,384 columns.</span></td>
     </tr>
     <tr>
-        <td valign="center"><input type="radio" id="<%=h(xlsGUID)%>" name="<%=hname(checkboxGroupName)%>" /></td>
-        <td valign="center"><label for="<%=h(xlsGUID)%>">Excel Old Binary Workbook (.xls)</label> <span style="font-size: smaller">Maximum 65,536 rows and 256 columns.</span></td>
+        <td valign="center"><input type="radio" id="<%=xlsGUID%>" name="<%=hname(checkboxGroupName)%>" /></td>
+        <td valign="center"><label for="<%=xlsGUID%>">Excel Old Binary Workbook (.xls)</label> <span style="font-size: smaller">Maximum 65,536 rows and 256 columns.</span></td>
     </tr>
     <% if (model.getIqyURL() != null) { %>
         <tr>
-            <td valign="center"><input type="radio" id="<%=h(iqyGUID)%>" name="<%=hname(checkboxGroupName)%>"/></td>
-            <td valign="center"><label for="<%=h(iqyGUID)%>">Refreshable Web Query (.iqy)</label></td>
+            <td valign="center"><input type="radio" id="<%=iqyGUID%>" name="<%=hname(checkboxGroupName)%>"/></td>
+            <td valign="center"><label for="<%=iqyGUID%>">Refreshable Web Query (.iqy)</label></td>
         </tr>
     <% } %>
     <tr>
         <td colspan="2"><label>Column headers:<%=helpPopup("Column Header Options", HtmlString.unsafe(sb.toString()))%></label>
-            <select id="<%=unsafe(headerGUID)%>" name="<%=unsafe(headerType)%>">
+            <select id="<%=headerGUID%>" name="xls_header_type">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
@@ -108,10 +107,10 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($) {
         LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
-            var xlsExportEl = $("#<%=h(xlsGUID)%>");
-            var xlsxExportEl = $("#<%=h(xlsxGUID)%>");
-            var iqyExportEl = $("#<%=h(iqyGUID)%>");
-            var headerEl = $("#<%=h(headerGUID)%>");
+            var xlsExportEl = $("#<%=xlsGUID%>");
+            var xlsxExportEl = $("#<%=xlsxGUID%>");
+            var iqyExportEl = $("#<%=iqyGUID%>");
+            var headerEl = $("#<%=headerGUID%>");
             var includeSignButton = <%=model.isIncludeSignButton()%>;
 
             var exportSelectedEl = $("#<%=h(exportSelectedId)%>");

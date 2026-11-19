@@ -41,6 +41,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -94,7 +95,7 @@ public class LabKeyCollectors
         return toMapNullSafe(
             keyMapper,
             valueMapper,
-            (u, v) -> {
+            (u, _) -> {
                 throw new IllegalStateException(String.format("Duplicate key %s", u));
             },
             mapFactory);
@@ -226,17 +227,41 @@ public class LabKeyCollectors
     /**
      * Returns a {@link Collector} that joins {@link HtmlString}s into a single {@link HtmlString} separated by delimiter
      */
-    public static Collector<HtmlString, HtmlStringBuilder, HtmlString> joining(HtmlString delimiter) {
+    public static Collector<HtmlString, ?, HtmlString> joining(HtmlString delimiter) {
         return Collector.of(
-            HtmlStringBuilder::of,
-            (builder, hs) -> {
-                if (!builder.isEmpty())
-                    builder.append(delimiter);
-                builder.append(hs);
-            },
-            (h1, h2) -> { h1.append(h2.getHtmlString()); return h1; },
-            HtmlStringBuilder::getHtmlString
+            () -> new HtmlJoiner(delimiter),
+            HtmlJoiner::add,
+            HtmlJoiner::merge,
+            joiner -> joiner._builder.getHtmlString()
         );
+    }
+
+    private static class HtmlJoiner
+    {
+        private final HtmlString _delimiter;
+        private final HtmlStringBuilder _builder = HtmlStringBuilder.of();
+        // Counts elements rather than checking builder length, so empty elements still get delimiters
+        private boolean _hasElements = false;
+
+        private HtmlJoiner(HtmlString delimiter)
+        {
+            _delimiter = delimiter;
+        }
+
+        private void add(HtmlString hs)
+        {
+            if (_hasElements)
+                _builder.append(_delimiter);
+            _builder.append(hs);
+            _hasElements = true;
+        }
+
+        private HtmlJoiner merge(HtmlJoiner other)
+        {
+            if (other._hasElements)
+                add(other._builder.getHtmlString());
+            return this;
+        }
     }
 
     /**
@@ -277,6 +302,18 @@ public class LabKeyCollectors
             MultiValuedMap<Integer, Integer> mmap2 = list.stream().collect(toMultiValuedMap(i -> i, i -> i));
             assertEquals(15, mmap2.size());
             assertEquals(10, mmap2.keySet().size());
+        }
+
+        @Test
+        public void testHtmlJoining()
+        {
+            assertEquals("", Stream.<HtmlString>empty().collect(joining(HtmlString.BR)).toString());
+            assertEquals("&lt;a&gt;", Stream.of("<a>").map(HtmlString::of).collect(joining(HtmlString.BR)).toString());
+            assertEquals("<br/>a<br/><br/>b<br/>", Stream.of("", "a", "", "b", "").map(HtmlString::of).collect(joining(HtmlString.BR)).toString());
+            assertEquals(HtmlString.join(List.of(HtmlString.EMPTY_STRING, HtmlString.of("x")), HtmlString.BR), Stream.of(HtmlString.EMPTY_STRING, HtmlString.of("x")).collect(joining(HtmlString.BR)));
+
+            List<String> values = IntStream.range(0, 1000).mapToObj(i -> i % 7 == 0 ? "" : String.valueOf(i)).toList();
+            assertEquals(String.join(",", values), values.parallelStream().map(HtmlString::of).collect(joining(HtmlString.of(","))).toString());
         }
 
         @Test

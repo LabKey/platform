@@ -30,12 +30,9 @@
     QueryView.TextExportOptionsBean model = (QueryView.TextExportOptionsBean)HttpView.currentModel();
 
     String guid = GUID.makeGUID();
-    String delimGUID = "delim_" + guid;
-    String quoteGUID = "quote_" + guid;
-    String headerGUID = "header_" + guid;
-    String headerType = "txt_header_type";
-    String delim = "delim";
-    String quote = "quote";
+    HtmlString delimGUID = h("delim_" + guid);
+    HtmlString quoteGUID = h("quote_" + guid);
+    HtmlString headerGUID = h("header_" + guid);
     String exportSelectedId = "exportSelected_" + guid;
     String exportButtonId = "export_" + guid ;
     String signButtonId = "sign_" + guid;
@@ -74,17 +71,17 @@
 %>
 <table class="lk-fields-table">
     <tr>
-        <td><label for="<%=unsafe(delimGUID)%>">Separator:</label></td>
+        <td><label for="<%=delimGUID%>">Separator:</label></td>
         <td>
-            <select id="<%=unsafe(delimGUID)%>" name="<%=unsafe(delim)%>">
+            <select id="<%=delimGUID%>" name="delim">
                 <labkey:options value="<%=TSVWriter.DELIM.TAB%>" map="<%=delimiterMap%>" />
             </select>
         </td>
     </tr>
     <tr>
-        <td><label for="<%=unsafe(quoteGUID)%>">Quote:</label></td>
+        <td><label for="<%=quoteGUID%>">Quote:</label></td>
         <td>
-            <select id="<%=unsafe(quoteGUID)%>" name="<%=unsafe(quote)%>">
+            <select id="<%=quoteGUID%>" name="quote">
                 <labkey:options value="<%=TSVWriter.QUOTE.DOUBLE%>" map="<%=quoteMap%>" />
             </select>
         </td>
@@ -92,7 +89,7 @@
     <tr>
         <td><label>Column headers:<%=helpPopup("Column Header Options", HtmlString.unsafe(sb.toString()))%></label></td>
         <td>
-            <select id="<%=unsafe(headerGUID)%>" name="<%=unsafe(headerType)%>">
+            <select id="<%=headerGUID%>" name="txt_header_type">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
@@ -118,11 +115,11 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($) {
         LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
-            var delimEl = $("#<%=h(delimGUID)%>"),
-                quoteEl = $("#<%=h(quoteGUID)%>"),
+            var delimEl = $("#<%=delimGUID%>"),
+                quoteEl = $("#<%=quoteGUID%>"),
                 exportSelectedEl = $("#<%=h(exportSelectedId)%>"),
                 exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>"),
-                headerEl = $("#<%=h(headerGUID)%>");
+                headerEl = $("#<%=headerGUID%>");
             var includeSignButton = <%=model.isIncludeSignButton()%>;
 
             var doTsvExport = function(isSign) {

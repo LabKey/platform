@@ -95,7 +95,7 @@
     String conditionalStyling = (isParticipantsListPage) ? "overflow-y:auto;" : "overflow-y:auto; height: 470px;";
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-<%=unsafe(viewObject)%> = (function()
+<%=JavaScriptFragment.unsafe(viewObject)%> = (function()
 {
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
