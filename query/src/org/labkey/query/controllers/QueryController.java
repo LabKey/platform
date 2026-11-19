@@ -4201,6 +4201,19 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /** Whether the query holds more rows than a grid would list a column's values for, which decides the faceted filter's opening tab. */
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectData.class)
+    public static class GetQuerySizeAction extends ReadOnlyApiAction<FilterSuggestionService.QuerySizeRequest>
+    {
+        @Override
+        public Object execute(FilterSuggestionService.QuerySizeRequest request, BindException errors)
+        {
+            return FilterSuggestionService.getQuerySize(getUser(), getContainer(), request);
+        }
+    }
+
     private SimpleFilter getFilterFromQueryForm(QueryForm form)
     {
         QuerySettings settings = form.getQuerySettings();
