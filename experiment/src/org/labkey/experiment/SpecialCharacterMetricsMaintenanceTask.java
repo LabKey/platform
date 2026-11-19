@@ -35,6 +35,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -400,11 +401,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         {
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("Name", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("Prop", PropertyType.STRING.getTypeUri()));
-            ExpSampleType st = SampleTypeService.get().createSampleType(c, user, ST_NAME, null, props,
-                Collections.emptyList(), -1, -1, -1, -1, null);
+            ExpSampleType st = SampleTypeTestHelper.create(c, user, ST_NAME, new GWTPropertyDescriptor("Prop", PropertyType.STRING.getTypeUri()));
 
             DbScope scope = ExperimentService.get().getSchema().getScope();
             String tableName = st.getDomain().getStorageTableName();

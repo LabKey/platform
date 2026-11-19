@@ -42,6 +42,7 @@ import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.RequestTestUtil;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RuntimeSQLException;
@@ -1733,7 +1734,7 @@ public class ExceptionUtil
             User me = TestContext.get().getUser();
 
             // A statement cancelled by something other than the server is still an error
-            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(null, () -> {
+            RequestTestUtil.runOnRequestThread(() -> RequestTestUtil.doRequest(null, () -> {
                 assertFalse(isIgnorable(cancelledQuery()));
                 ExceptionResponse answer = handleIt(me, cancelledQuery());
                 assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
@@ -1742,7 +1743,7 @@ public class ExceptionUtil
             }));
 
             // The client is still waiting on a timed-out request, so it gets an error, but nothing's logged
-            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.TIMEOUT, () -> {
+            RequestTestUtil.runOnRequestThread(() -> RequestTestUtil.doRequest(RequestCancellation.Source.TIMEOUT, () -> {
                 assertTrue(isIgnorable(cancelledQuery()));
                 assertTrue(isRequestTimeout(cancelledQuery()));
                 assertTrue(isRequestTimeout(new AbortedRequestException("test")));
@@ -1762,7 +1763,7 @@ public class ExceptionUtil
             }));
 
             // Nobody's waiting on a disconnected client
-            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.CLIENT_DISCONNECT, () -> {
+            RequestTestUtil.runOnRequestThread(() -> RequestTestUtil.doRequest(RequestCancellation.Source.CLIENT_DISCONNECT, () -> {
                 assertTrue(isIgnorable(cancelledQuery()));
                 assertFalse(isRequestTimeout(cancelledQuery()));
                 assertFalse(isRequestTimeout(new AbortedRequestException("test")));

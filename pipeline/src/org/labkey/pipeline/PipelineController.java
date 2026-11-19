@@ -1781,8 +1781,8 @@ public class PipelineController extends SpringActionController
         public void testSavePipelineTriggerContainerScoping() throws Exception
         {
             User admin = getAdmin();
-            Container folderA = createContainer("A");
-            Container folderB = createContainer("B");
+            Container folderA = getSharedContainer("A");
+            Container folderB = getSharedContainer("B");
 
             // A pipeline trigger configuration that lives in folder B (Type/PipelineId are NOT NULL columns; their
             // values need not be valid registered names for the container guard to apply).
@@ -1828,7 +1828,7 @@ public class PipelineController extends SpringActionController
         public void testTriggerRunAsUser() throws Exception
         {
             User siteAdmin = getAdmin();
-            Container folder = createContainer("RunAs");
+            Container folder = getSharedContainer("A");
             Container project = folder.getProject();
             User reader = createUserInRole(project, ReaderRole.class);
             User folderAdmin = createUserInRole(folder, FolderAdminRole.class);
@@ -1895,7 +1895,7 @@ public class PipelineController extends SpringActionController
         @Test
         public void testFolderAdminCanManageTriggerWithoutParameterFunction() throws Exception
         {
-            Container c = createContainer("NoFunction");
+            Container c = getSharedContainer("A");
             User folderAdmin = createUserInRole(c, FolderAdminRole.class);
             assertFalse(folderAdmin.isTrustedAnalyst());
 
@@ -1913,7 +1913,7 @@ public class PipelineController extends SpringActionController
         @Test
         public void testFolderAdminCannotInsertParameterFunction() throws Exception
         {
-            Container c = createContainer("InsertFunction");
+            Container c = getSharedContainer("A");
             User folderAdmin = createUserInRole(c, FolderAdminRole.class);
 
             List<Object> configurations = List.of(
@@ -1940,7 +1940,7 @@ public class PipelineController extends SpringActionController
         @Test
         public void testFolderAdminCannotChangeParameterFunction() throws Exception
         {
-            Container c = createContainer("ChangeFunction");
+            Container c = getSharedContainer("A");
             User folderAdmin = createUserInRole(c, FolderAdminRole.class);
             int rowId = seedTrigger(c, FUNCTION);
 
@@ -1975,7 +1975,7 @@ public class PipelineController extends SpringActionController
         @Test
         public void testFolderAdminCanEditTriggerWithUnchangedParameterFunction() throws Exception
         {
-            Container c = createContainer("UnchangedFunction");
+            Container c = getSharedContainer("A");
             User folderAdmin = createUserInRole(c, FolderAdminRole.class);
             int rowId = seedTrigger(c, FUNCTION);
 
@@ -1997,8 +1997,8 @@ public class PipelineController extends SpringActionController
         @Test
         public void testUpdateRowsContainerScoping() throws Exception
         {
-            Container folderA = createContainer("UpdateA");
-            Container folderB = createContainer("UpdateB");
+            Container folderA = getSharedContainer("A");
+            Container folderB = getSharedContainer("B");
             User adminA = createUserInRole(folderA, FolderAdminRole.class);
             int rowId = seedTrigger(folderB, null);
             String name = (String) storedRow(rowId).get("Name");
@@ -2027,9 +2027,9 @@ public class PipelineController extends SpringActionController
         @Test
         public void testTrustedAnalystCanManageParameterFunction() throws Exception
         {
-            Container c = createContainer("TrustedFunction");
+            Container c = getSharedContainer("A");
             User developer = createUserInRole(c, FolderAdminRole.class);
-            grantRole(developer, ContainerManager.getRoot(), PlatformDeveloperRole.class);
+            grantRootRole(developer, PlatformDeveloperRole.class);
             assertTrue(developer.isTrustedAnalyst());
 
             Map<String, Object> row = triggerRow(configJson(FUNCTION));
@@ -2052,10 +2052,10 @@ public class PipelineController extends SpringActionController
         @Test
         public void testInvalidJsonRejectedForAllUsers() throws Exception
         {
-            Container c = createContainer("InvalidJson");
+            Container c = getSharedContainer("A");
             User folderAdmin = createUserInRole(c, FolderAdminRole.class);
             User developer = createUserInRole(c, FolderAdminRole.class);
-            grantRole(developer, ContainerManager.getRoot(), PlatformDeveloperRole.class);
+            grantRootRole(developer, PlatformDeveloperRole.class);
 
             for (User user : List.of(folderAdmin, developer))
             {
@@ -2079,7 +2079,7 @@ public class PipelineController extends SpringActionController
         @Test
         public void testFolderAdminCanRepairInvalidConfiguration() throws Exception
         {
-            Container c = createContainer("RepairJson");
+            Container c = getSharedContainer("A");
             User folderAdmin = createUserInRole(c, FolderAdminRole.class);
             int rowId = seedTrigger(c, null);
             Table.update(getAdmin(), triggerTable(), new CaseInsensitiveHashMap<>(Map.of("Configuration", INVALID_JSON)), rowId);
@@ -2099,9 +2099,9 @@ public class PipelineController extends SpringActionController
         @Test
         public void testLoadRowsRejectedInFavorOfInsertRows() throws Exception
         {
-            Container c = createContainer("LoadRows");
+            Container c = getSharedContainer("A");
             User developer = createUserInRole(c, FolderAdminRole.class);
-            grantRole(developer, ContainerManager.getRoot(), PlatformDeveloperRole.class);
+            grantRootRole(developer, PlatformDeveloperRole.class);
             Map<String, Object> row = triggerRow(configJson(null));
 
             // IMPORT backs the import action; MERGE backs ETL targets

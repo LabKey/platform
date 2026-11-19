@@ -745,24 +745,19 @@ public class QueryProfiler
 
     public static class TestCase extends Assert
     {
-        private static Query query(String sql, long elapsed)
-        {
-            return new Query(null, sql, null, elapsed, null, false);
-        }
-
         @Test
         public void testSlowestStatementTagsSpan()
         {
             Map<String, Object> tags = new HashMap<>();
             MutableSpan span = TagRecordingSpan.create(tags);
 
-            Query slow = query("SELECT * FROM core.containers", 2000);
+            Query slow = Query.TestCase.query("SELECT * FROM core.containers", 2000);
             tagActiveSpan(span, slow);
-            tagActiveSpan(span, query("SELECT 1", 1500));
-            tagActiveSpan(span, query("SELECT 2", 2000));
+            tagActiveSpan(span, Query.TestCase.query("SELECT 1", 1500));
+            tagActiveSpan(span, Query.TestCase.query("SELECT 2", 2000));
             assertEquals(Map.of(SLOW_SQL_HASH_TAG, HashHelpers.hash(slow.getSql()), SLOW_SQL_MS_TAG, 2000L), tags);
 
-            Query slower = query("SELECT 3", 2500);
+            Query slower = Query.TestCase.query("SELECT 3", 2500);
             tagActiveSpan(span, slower);
             assertEquals(Map.of(SLOW_SQL_HASH_TAG, HashHelpers.hash(slower.getSql()), SLOW_SQL_MS_TAG, 2500L), tags);
         }
@@ -772,8 +767,8 @@ public class QueryProfiler
         {
             Map<String, Object> first = new HashMap<>();
             Map<String, Object> second = new HashMap<>();
-            tagActiveSpan(TagRecordingSpan.create(first), query("SELECT * FROM temp.tt_lsids$0123456789abcdef0123456789abcdef", 2000));
-            tagActiveSpan(TagRecordingSpan.create(second), query("SELECT * FROM temp.tt_lsids$fedcba9876543210fedcba9876543210", 2000));
+            tagActiveSpan(TagRecordingSpan.create(first), Query.TestCase.query("SELECT * FROM temp.tt_lsids$0123456789abcdef0123456789abcdef", 2000));
+            tagActiveSpan(TagRecordingSpan.create(second), Query.TestCase.query("SELECT * FROM temp.tt_lsids$fedcba9876543210fedcba9876543210", 2000));
             assertEquals(first.get(SLOW_SQL_HASH_TAG), second.get(SLOW_SQL_HASH_TAG));
         }
     }

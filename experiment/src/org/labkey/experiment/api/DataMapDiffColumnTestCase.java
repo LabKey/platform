@@ -111,7 +111,7 @@ public class DataMapDiffColumnTestCase extends Assert
         Set<FieldKey> required = new LinkedHashSet<>(exported);
         displayColumns.forEach(dc -> dc.addQueryFieldKeys(required));
         Collection<ColumnInfo> selectColumns = QueryService.get().getColumns(table, required).values();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Comment"), comment);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AbstractAuditTypeProvider.COLUMN_NAME_COMMENT), comment);
 
         StringBuilder actual = new StringBuilder();
         StringBuilder expected = new StringBuilder();

@@ -407,55 +407,30 @@ public class SecurityQuery extends Query
             };
         }
 
+        private record Case(String name, List<SearchCategory> categories, Set<String> baseRead, Map<Class<? extends Permission>, Set<SearchCategory>> byPermission) {}
+
         @Test
-        public void testCategoryWithNoRequiredPermissionGoesToBaseRead()
+        public void testGroupCategoriesByRequiredPermission()
         {
             SearchCategory wiki = new SearchCategory("wiki", "Wiki Pages");
-
-            CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki));
-
-            assertEquals(Set.of("wiki"), result.baseReadCategoryNames());
-            assertTrue(result.categoriesByPermission().isEmpty());
-        }
-
-        @Test
-        public void testCategoriesSharingAPermissionAreGroupedTogether()
-        {
-            // Mirrors the real assay/assayBatch/assayRun categories, which all require the same permission.
+            // Mirrors the real assay/assayBatch/assayRun categories, which all require the same permission
             SearchCategory assay = categoryRequiring("assay", InsertPermission.class);
             SearchCategory assayBatch = categoryRequiring("assayBatch", InsertPermission.class);
             SearchCategory assayRun = categoryRequiring("assayRun", InsertPermission.class);
-
-            CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(List.of(assay, assayBatch, assayRun));
-
-            assertTrue(result.baseReadCategoryNames().isEmpty());
-            assertEquals(Set.of(InsertPermission.class), result.categoriesByPermission().keySet());
-            assertEquals(Set.of(assay, assayBatch, assayRun), Set.copyOf(result.categoriesByPermission().get(InsertPermission.class)));
-        }
-
-        @Test
-        public void testCategoriesWithDifferentPermissionsAreNotGroupedTogether()
-        {
-            SearchCategory data = categoryRequiring("data", InsertPermission.class);
             SearchCategory media = categoryRequiring("media", DeletePermission.class);
 
-            CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(List.of(data, media));
-
-            assertEquals(Set.of(InsertPermission.class, DeletePermission.class), result.categoriesByPermission().keySet());
-            assertEquals(List.of(data), result.categoriesByPermission().get(InsertPermission.class));
-            assertEquals(List.of(media), result.categoriesByPermission().get(DeletePermission.class));
-        }
-
-        @Test
-        public void testMixOfBaseReadAndPermissionRequiringCategories()
-        {
-            SearchCategory wiki = new SearchCategory("wiki", "Wiki Pages");
-            SearchCategory data = categoryRequiring("data", InsertPermission.class);
-
-            CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki, data));
-
-            assertEquals(Set.of("wiki"), result.baseReadCategoryNames());
-            assertEquals(List.of(data), result.categoriesByPermission().get(InsertPermission.class));
+            for (Case c : List.of(
+                new Case("no required permission", List.of(wiki), Set.of("wiki"), Map.of()),
+                new Case("shared permission", List.of(assay, assayBatch, assayRun), Set.of(), Map.of(InsertPermission.class, Set.of(assay, assayBatch, assayRun))),
+                new Case("different permissions", List.of(assay, media), Set.of(), Map.of(InsertPermission.class, Set.of(assay), DeletePermission.class, Set.of(media))),
+                new Case("mixed", List.of(wiki, assay), Set.of("wiki"), Map.of(InsertPermission.class, Set.of(assay)))))
+            {
+                CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(c.categories());
+                assertEquals(c.name(), c.baseRead(), result.baseReadCategoryNames());
+                Map<Class<? extends Permission>, Set<SearchCategory>> byPermission = new HashMap<>();
+                result.categoriesByPermission().forEach((permission, categories) -> byPermission.put(permission, Set.copyOf(categories)));
+                assertEquals(c.name(), c.byPermission(), byPermission);
+            }
         }
     }
 

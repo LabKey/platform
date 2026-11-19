@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.util.JunitUtil;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -240,32 +241,15 @@ public class ConnectionUsage
             _enabled = _wasEnabled;
         }
 
-        private static Snapshot measureOnNewThread(ThrowingRunnable block) throws Exception
+        private static Snapshot measureOnNewThread(JunitUtil.ThrowingRunnable block) throws Exception
         {
             AtomicReference<Snapshot> result = new AtomicReference<>();
-            AtomicReference<Throwable> failure = new AtomicReference<>();
-            Thread thread = new Thread(() -> {
+            JunitUtil.runOnNewThread("ConnectionUsage test", () -> {
                 Mark mark = mark();
-                try
-                {
-                    block.run();
-                }
-                catch (Throwable t)
-                {
-                    failure.set(t);
-                }
+                block.run();
                 result.set(measure(mark));
-            }, "ConnectionUsage test");
-            thread.start();
-            thread.join();
-            if (null != failure.get())
-                throw new AssertionError("Failure on test thread", failure.get());
+            });
             return result.get();
-        }
-
-        private interface ThrowingRunnable
-        {
-            void run() throws Exception;
         }
 
         @Test

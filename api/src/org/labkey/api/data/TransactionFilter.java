@@ -41,6 +41,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.TestContext;
@@ -448,11 +449,11 @@ public class TransactionFilter implements Filter
         @Test
         public void testIsTimedOut() throws Exception
         {
-            RequestCancellation.TestCase.runOnRequestThread(() -> {
+            RequestTestUtil.runOnRequestThread(() -> {
                 Thread thread = Thread.currentThread();
                 AtomicReference<RequestTracker> finished = new AtomicReference<>();
 
-                RequestCancellation.TestCase.doRequest(new MockHttpServletRequest("GET", "/test"), null, () -> {
+                RequestTestUtil.doRequest(new MockHttpServletRequest("GET", "/test"), null, () -> {
                     RequestTracker tracker = getRequestSummary(thread);
                     finished.set(tracker);
                     assertTrue("Read-only request past the cutoff", isTimedOut(thread, tracker, tracker.startTime() + 1));
@@ -460,17 +461,17 @@ public class TransactionFilter implements Filter
                 });
                 assertFalse("Finished request", isTimedOut(thread, finished.get(), Long.MAX_VALUE));
 
-                RequestCancellation.TestCase.doRequest(new MockHttpServletRequest("GET", "/test"), null, () -> {
+                RequestTestUtil.doRequest(new MockHttpServletRequest("GET", "/test"), null, () -> {
                     RequestTracker tracker = getRequestSummary(thread);
                     tracker.request().setAttribute(EXPORT_ATTRIBUTE_NAME, true);
                     assertFalse("Export", isTimedOut(thread, tracker, Long.MAX_VALUE));
                 });
 
-                RequestCancellation.TestCase.doRequest(new MockHttpServletRequest("POST", "/test"), null, () ->
+                RequestTestUtil.doRequest(new MockHttpServletRequest("POST", "/test"), null, () ->
                     assertFalse("Mutating request", isTimedOut(thread, getRequestSummary(thread), Long.MAX_VALUE)));
 
                 MockHttpServletRequest recycled = new MockHttpServletRequest("GET", "/test");
-                RequestCancellation.TestCase.doRequest(recycled, null, () -> {
+                RequestTestUtil.doRequest(recycled, null, () -> {
                     // A closed mock request throws on getAttribute(), like a request Tomcat has recycled
                     recycled.close();
                     assertFalse("Recycled request", isTimedOut(thread, getRequestSummary(thread), Long.MAX_VALUE));
@@ -488,10 +489,10 @@ public class TransactionFilter implements Filter
             setReadOnlyTimeout(2);
             try
             {
-                RequestCancellation.TestCase.runOnRequestThread(() -> {
+                RequestTestUtil.runOnRequestThread(() -> {
                     Thread thread = Thread.currentThread();
 
-                    RequestCancellation.TestCase.doRequest(null, () -> {
+                    RequestTestUtil.doRequest(null, () -> {
                         long start = System.currentTimeMillis();
                         try
                         {
@@ -505,7 +506,7 @@ public class TransactionFilter implements Filter
                     });
                     assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(thread).isEmpty());
 
-                    RequestCancellation.TestCase.doRequest(null, () -> {
+                    RequestTestUtil.doRequest(null, () -> {
                         getRequestSummary(thread).request().setAttribute(EXPORT_ATTRIBUTE_NAME, true);
                         // Long enough for a sweep after the timeout despite HeartBeat's lag
                         new SqlSelector(scope, "SELECT pg_sleep(12)").getObject(Object.class);
@@ -530,25 +531,19 @@ public class TransactionFilter implements Filter
             RequestCancellation._skipDriverCancel = true;
             try
             {
-                RequestCancellation.TestCase.runOnRequestThread(() -> {
+                RequestTestUtil.runOnRequestThread(() -> {
                     Thread requestThread = Thread.currentThread();
                     Thread canceller = new Thread(() -> {
                         try
                         {
-                            long start = System.currentTimeMillis();
-                            while (ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).isEmpty() && System.currentTimeMillis() - start < 10_000)
-                                //noinspection BusyWait
-                                Thread.sleep(100);
-                            // Let the statement reach the server
-                            Thread.sleep(500);
-                            ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).values().forEach(c -> c.forEach(w -> spids.add(w.getSPID())));
+                            RequestTestUtil.awaitStatementStarted(requestThread).values().forEach(c -> c.forEach(w -> spids.add(w.getSPID())));
                             cancelRequest(requestThread, getRequestSummary(requestThread), RequestCancellation.Source.TIMEOUT);
                         }
                         catch (InterruptedException ignored) {}
                     }, "TransactionFilter test canceller");
                     canceller.start();
 
-                    RequestCancellation.TestCase.doRequest(null, () -> {
+                    RequestTestUtil.doRequest(null, () -> {
                         long start = System.currentTimeMillis();
                         try
                         {
@@ -569,13 +564,11 @@ public class TransactionFilter implements Filter
             }
 
             assertNotNull("Query wasn't cancelled", queryFailure.get());
-            boolean cancelled = false;
-            for (Throwable t = queryFailure.get(); t != null && !cancelled; t = ExceptionUtil.getCause(t))
-                cancelled = t instanceof SQLException e && SqlDialect.isCancelException(e);
-            assertTrue("Query failed with something other than a cancel: " + queryFailure.get(), cancelled);
+            assertTrue("Query failed with something other than a cancel: " + queryFailure.get(),
+                JunitUtil.hasCause(queryFailure.get(), t -> t instanceof SQLException e && SqlDialect.isCancelException(e)));
 
             assertFalse("Request had no connections", spids.isEmpty());
-            assertEquals("Cancelled session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, spids));
+            assertEquals("Cancelled session went back to the pool", 0, RequestTestUtil.countLiveBackends(scope, spids));
         }
 
         /** Even with no request timeout, the sweep must resend a cancel that reached the request's connection while it was idle */
@@ -588,10 +581,10 @@ public class TransactionFilter implements Filter
             setReadOnlyTimeout(0);
             try
             {
-                RequestCancellation.TestCase.runOnRequestThread(() -> {
+                RequestTestUtil.runOnRequestThread(() -> {
                     Thread thread = Thread.currentThread();
 
-                    RequestCancellation.TestCase.doRequest(null, () -> {
+                    RequestTestUtil.doRequest(null, () -> {
                         // Holds a connection, so the cancel signals it rather than banning new ones
                         try (TableResultSet rs = new SqlSelector(scope, "SELECT 1").getResultSet(false))
                         {
@@ -633,10 +626,10 @@ public class TransactionFilter implements Filter
             String tabId = GUID.makeGUID();
             List<String> ids = List.of("r1");
 
-            RequestCancellation.TestCase.runOnRequestThread(() -> {
+            RequestTestUtil.runOnRequestThread(() -> {
                 Thread thread = Thread.currentThread();
 
-                RequestCancellation.TestCase.doRequest(cancellableRequest("GET", tabId, "r1"), null, () -> {
+                RequestTestUtil.doRequest(cancellableRequest("GET", tabId, "r1"), null, () -> {
                     assertEquals(Outcome.WRONG_USER, cancelRequests(userId + 1, SESSION_ID, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
                     assertEquals("Other tab", Outcome.NOT_FOUND, cancelRequests(userId, SESSION_ID, GUID.makeGUID(), ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
                     assertEquals("Other session", Outcome.NOT_FOUND, cancelRequests(userId, "OtherSession", tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1"));
@@ -645,7 +638,7 @@ public class TransactionFilter implements Filter
                     assertNull("Refused cancel was applied", RequestCancellation.getSource(thread));
                 });
 
-                RequestCancellation.TestCase.doRequest(cancellableRequest("POST", tabId, "r1"), null, () ->
+                RequestTestUtil.doRequest(cancellableRequest("POST", tabId, "r1"), null, () ->
                     assertEquals(Outcome.NOT_READ_ONLY, cancelRequests(userId, SESSION_ID, tabId, ids, RequestCancellation.Source.WS_MESSAGE).get("r1")));
             });
 
@@ -674,10 +667,10 @@ public class TransactionFilter implements Filter
         {
             DbScope scope = DbScope.getLabKeyScope();
 
-            RequestCancellation.TestCase.runOnRequestThread(() -> {
+            RequestTestUtil.runOnRequestThread(() -> {
                 Thread thread = Thread.currentThread();
 
-                RequestCancellation.TestCase.doRequest(null, () -> {
+                RequestTestUtil.doRequest(null, () -> {
                     try (TableResultSet rs = new SqlSelector(scope, "SELECT 1").getResultSet(false))
                     {
                         assertTrue(rs.next());
@@ -710,10 +703,7 @@ public class TransactionFilter implements Filter
                     }
                     catch (RuntimeException e)
                     {
-                        boolean aborted = false;
-                        for (Throwable t = e; t != null && !aborted; t = ExceptionUtil.getCause(t))
-                            aborted = t instanceof AbortedRequestException;
-                        assertTrue("Query failed with something other than the ban: " + e, aborted);
+                        assertTrue("Query failed with something other than the ban: " + e, JunitUtil.hasCause(e, t -> t instanceof AbortedRequestException));
                     }
                 });
                 assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(thread).isEmpty());
@@ -736,23 +726,18 @@ public class TransactionFilter implements Filter
             DbScope scope = DbScope.getLabKeyScope();
             AtomicReference<Map<String, Outcome>> outcomes = new AtomicReference<>();
 
-            RequestCancellation.TestCase.runOnRequestThread(() -> {
+            RequestTestUtil.runOnRequestThread(() -> {
                 Thread thread = Thread.currentThread();
                 Thread canceller = new Thread(() -> {
                     try
                     {
-                        long start = System.currentTimeMillis();
-                        while (ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread).isEmpty() && System.currentTimeMillis() - start < 10_000)
-                            //noinspection BusyWait
-                            Thread.sleep(100);
-                        // Let the statement reach the server
-                        Thread.sleep(500);
+                        RequestTestUtil.awaitStatementStarted(thread);
                         outcomes.set(cancel.get());
                     }
                     catch (InterruptedException ignored) {}
                 }, "TransactionFilter test canceller");
 
-                RequestCancellation.TestCase.doRequest(request, null, () -> {
+                RequestTestUtil.doRequest(request, null, () -> {
                     canceller.start();
                     long start = System.currentTimeMillis();
                     try

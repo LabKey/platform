@@ -48,7 +48,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 
@@ -160,6 +162,74 @@ public class JunitUtil
 
         if (iterations.intValue() != expected)
             throw new IllegalStateException("Did not execute runnable the expected number of times: " + iterations + " vs. " + expected);
+    }
+
+    @FunctionalInterface
+    public interface ThrowingRunnable
+    {
+        void run() throws Exception;
+    }
+
+    /**
+     * Runs body on a new thread that carries the caller's TestContext, waits up to a minute for it, and rethrows
+     * whatever it threw. Use it for work that must not share the test thread's connection, transaction, or request state.
+     */
+    public static void runOnNewThread(String threadName, ThrowingRunnable body) throws Exception
+    {
+        TestContext context = TestContext.get();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread thread = new Thread(() -> {
+            try
+            {
+                if (context != null)
+                    TestContext.setTestContext(context.getRequest(), context.getUser());
+                body.run();
+            }
+            catch (Throwable t)
+            {
+                failure.set(t);
+            }
+            finally
+            {
+                DbScope.finishedWithThread();
+            }
+        }, threadName);
+
+        thread.start();
+        thread.join(60_000);
+        Assert.assertFalse("Thread '" + threadName + "' didn't exit", thread.isAlive());
+
+        switch (failure.get())
+        {
+            case null -> {}
+            case Error e -> throw e;
+            case Exception e -> throw e;
+            default -> throw new RuntimeException(failure.get());
+        }
+    }
+
+    /** True if t or anything in its cause chain matches */
+    public static boolean hasCause(@Nullable Throwable t, Predicate<Throwable> match)
+    {
+        for (; t != null; t = ExceptionUtil.getCause(t))
+            if (match.test(t))
+                return true;
+        return false;
+    }
+
+    /** Skips the test unless the labkey scope is PostgreSQL */
+    public static void assumePostgres()
+    {
+        Assume.assumeTrue("Requires PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
+    }
+
+    /** Skips the test unless the JVM runs with -ea, for tests of code that only runs inside an assert */
+    public static void assumeAssertionsEnabled()
+    {
+        boolean enabled = false;
+        //noinspection AssertWithSideEffects,ConstantValue
+        assert enabled = true;
+        Assume.assumeTrue("Requires assertions to be enabled (-ea)", enabled);
     }
 
 

@@ -29,8 +29,10 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.JunitUtil;
@@ -60,6 +62,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *       then assert only on data they create.</li>
  *   <li>{@link #createUserInRole(Container, Class)} — make a user with a role assigned in <em>one</em> folder only
  *       (auto-cleaned). Use this to obtain a caller who is, say, admin in folder A, but has no rights in folder B.</li>
+ *   <li>{@link #createRestrictedContainer(String, Module...)} — a throwaway container only site admins can read.</li>
+ *   <li>{@link #createProject(String, Module...)} — a throwaway top-level project, for code that depends on project-level state.</li>
  *   <li>{@link #grantRootRole(User, Class)} — grant a site-wide role such as Platform Developer (auto-cleaned).</li>
  *   <li>{@link #get(ActionURL, User)} / {@link #post(ActionURL, User)} — dispatch an in-JVM request as a given user
  *       and inspect the {@link MockHttpServletResponse} status. Parameters travel on the {@link ActionURL}.</li>
@@ -117,6 +121,17 @@ public abstract class AbstractContainerScopingTest extends Assert
         return c;
     }
 
+    /** Like {@link #createContainer(String, Module...)}, but with its own policy, so only site admins can read it */
+    protected Container createRestrictedContainer(String name, Module... enabledModules)
+    {
+        Container c = createContainer(name, enabledModules);
+        // Non-empty, so the folder doesn't inherit the parent's policy
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
+        policy.addRoleAssignment(getAdmin(), ReaderRole.class);
+        SecurityPolicyManager.savePolicyForTests(policy, getAdmin());
+        return c;
+    }
+
     /**
      * Create a throwaway subfolder of {@code parent} (for example, one from {@link #createContainer(String, Module...)}),
      * registered for cleanup ahead of its parent.
@@ -125,6 +140,22 @@ public abstract class AbstractContainerScopingTest extends Assert
     {
         Container c = activateModules(ContainerManager.createContainer(parent, name, getAdmin()), enabledModules);
         _containers.addFirst(c);
+        return c;
+    }
+
+    /**
+     * Create a throwaway top-level project, registered for automatic cleanup. Use it only when the code under test
+     * depends on project-level state (project settings, the project's own policy, /Shared-vs-project lookups);
+     * otherwise {@link #createContainer(String, Module...)} is enough.
+     */
+    protected Container createProject(String name, Module... enabledModules)
+    {
+        String projectName = getClass().getName().replaceAll("[^A-Za-z0-9]", "_") + "-" + name;
+        Container existing = ContainerManager.getForPath(projectName);
+        if (existing != null)
+            ContainerManager.deleteAll(existing, getAdmin());
+        Container c = activateModules(ContainerManager.createContainer(ContainerManager.getRoot(), projectName, getAdmin()), enabledModules);
+        _containers.add(c);
         return c;
     }
 
@@ -182,14 +213,14 @@ public abstract class AbstractContainerScopingTest extends Assert
     }
 
     /**
-     * Grant {@code role} to an existing {@code user} in {@code scope}, on top of any roles it already holds in that
-     * container. Use this to build a caller with different roles in different folders (e.g. delete rights in a source
+     * Grant {@code role} to an existing user or group (including Guests) in {@code scope}, on top of any roles it
+     * already holds in that container. Use this to build a caller with different roles in different folders (e.g. delete rights in a source
      * folder but only read access in a target folder).
      */
-    protected void grantRole(User user, Container scope, Class<? extends Role> role) throws Exception
+    protected void grantRole(UserPrincipal principal, Container scope, Class<? extends Role> role) throws Exception
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(scope.getPolicy());
-        policy.addRoleAssignment(user, role);
+        policy.addRoleAssignment(principal, role);
         SecurityPolicyManager.savePolicyForTests(policy, getAdmin());
     }
 

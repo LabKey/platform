@@ -29,6 +29,7 @@ import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -1963,7 +1964,7 @@ public class SQLFragment
             verify(Arrays.asList(2, null), new HashSet<>(Arrays.asList(2, null)));
             verify(Collections.singletonList(null), Collections.singleton(null));
             // Large enough for the temp table generator
-            verify(IntStream.concat(IntStream.of(2), IntStream.rangeClosed(4, 2000)).boxed().toList(), Set.of(2));
+            verify(IntStream.concat(IntStream.of(2), IntStream.range(4, 4 + SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)).boxed().toList(), Set.of(2));
         }
 
         @Test
@@ -1979,18 +1980,11 @@ public class SQLFragment
         @Test
         public void testNotBeforeInClause()
         {
-            assumeAssertionsEnabled();
+            JunitUtil.assumeAssertionsEnabled();
             SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
             assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(new SQLFragment("x NOT"), List.of(1, 2)));
             assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(new SQLFragment("x not "), List.of()));
             assertThrows(AssertionError.class, () -> new SQLFragment("x NOT").appendInClause(List.of(1), dialect));
-        }
-
-        private static void assumeAssertionsEnabled()
-        {
-            boolean enabled = false;
-            assert enabled = true;
-            org.junit.Assume.assumeTrue(enabled);
         }
 
         private void verify(List<Integer> values, Set<Integer> expected)

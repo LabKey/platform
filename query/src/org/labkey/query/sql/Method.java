@@ -2216,9 +2216,8 @@ public abstract class Method
         @Test
         public void testJsonOperators()
         {
+            JunitUtil.assumePostgres();
             SqlDialect d = CoreSchema.getInstance().getSqlDialect();
-            if (!d.isPostgreSQL())
-                return;
 
             record Case(String json, String operator, String operand, String expected) {}
             List<Case> cases = List.of(

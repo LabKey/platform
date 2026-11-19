@@ -17,8 +17,6 @@ package org.labkey.api.data;
 
 import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -26,16 +24,11 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.security.User;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.CoreMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 
-import java.io.IOException;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.HashMap;
@@ -367,78 +360,10 @@ public final class RequestCancellation
 
     public static class TestCase extends Assert
     {
-        /** Runs body on a new thread that carries this test's TestContext, rethrowing whatever it throws */
-        public static void runOnRequestThread(Runnable body) throws Exception
-        {
-            HttpServletRequest testRequest = TestContext.get().getRequest();
-            User user = TestContext.get().getUser();
-            AtomicReference<Throwable> failure = new AtomicReference<>();
-            Thread thread = new Thread(() -> {
-                try
-                {
-                    TestContext.setTestContext(testRequest, user);
-                    body.run();
-                }
-                catch (Throwable t)
-                {
-                    failure.set(t);
-                }
-            }, "RequestCancellation test request");
-
-            thread.start();
-            thread.join(60_000);
-            assertFalse("Request thread didn't exit", thread.isAlive());
-
-            switch (failure.get())
-            {
-                case null -> {}
-                case Error e -> throw e;
-                case Exception e -> throw e;
-                default -> throw new RuntimeException(failure.get());
-            }
-        }
-
-        /** Runs body inside a TransactionFilter request on the current thread, cancelled first if cancelledBy is set */
-        public static void doRequest(@NotNull MockHttpServletRequest request, @Nullable Source cancelledBy, @NotNull Runnable body)
-        {
-            try
-            {
-                new TransactionFilter().doFilter(request, new MockHttpServletResponse(), (_, _) -> {
-                    if (cancelledBy != null)
-                    {
-                        Thread thread = Thread.currentThread();
-                        assertTrue(requestCancelled(thread, TransactionFilter.getRequestSummary(thread), cancelledBy));
-                    }
-                    body.run();
-                });
-            }
-            catch (IOException | ServletException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public static void doRequest(@Nullable Source cancelledBy, @NotNull Runnable body)
-        {
-            doRequest(new MockHttpServletRequest("GET", "/test"), cancelledBy, body);
-        }
-
-        /** Polls briefly, since a discarded session's backend exits only after the pool closes its connection */
-        static long countLiveBackends(DbScope scope, Set<Integer> spids) throws InterruptedException
-        {
-            SQLFragment live = SQLFragment.unsafe("SELECT COUNT(*) FROM pg_stat_activity WHERE pid ").appendInClause(spids, scope.getSqlDialect());
-            long start = System.currentTimeMillis();
-            long count;
-            while ((count = new SqlSelector(scope, live).getObject(Long.class)) > 0 && System.currentTimeMillis() - start < 5_000)
-                //noinspection BusyWait
-                Thread.sleep(100);
-            return count;
-        }
-
         @Test
         public void testCancelledOnce() throws Exception
         {
-            runOnRequestThread(() -> doRequest(null, () -> {
+            RequestTestUtil.runOnRequestThread(() -> RequestTestUtil.doRequest(null, () -> {
                 Thread thread = Thread.currentThread();
                 TransactionFilter.RequestTracker tracker = TransactionFilter.getRequestSummary(thread);
                 assertNull(getSource(thread));
@@ -454,7 +379,7 @@ public final class RequestCancellation
         @Test
         public void testStatementRecorded() throws Exception
         {
-            runOnRequestThread(() -> doRequest(Source.TIMEOUT, () -> {
+            RequestTestUtil.runOnRequestThread(() -> RequestTestUtil.doRequest(Source.TIMEOUT, () -> {
                 Cancelled cancelled = getCancelled(Thread.currentThread());
                 assertNotNull(cancelled);
 
@@ -468,7 +393,7 @@ public final class RequestCancellation
         @Test
         public void testStuckReportedAfterGracePeriod() throws Exception
         {
-            runOnRequestThread(() -> doRequest(null, () -> {
+            RequestTestUtil.runOnRequestThread(() -> RequestTestUtil.doRequest(null, () -> {
                 Thread thread = Thread.currentThread();
                 TransactionFilter.RequestTracker tracker = TransactionFilter.getRequestSummary(thread);
 
@@ -488,13 +413,13 @@ public final class RequestCancellation
         @Test
         public void testFinishedRequest() throws Exception
         {
-            runOnRequestThread(() -> {
+            RequestTestUtil.runOnRequestThread(() -> {
                 Thread thread = Thread.currentThread();
                 AtomicReference<TransactionFilter.RequestTracker> finished = new AtomicReference<>();
-                doRequest(null, () -> finished.set(TransactionFilter.getRequestSummary(thread)));
+                RequestTestUtil.doRequest(null, () -> finished.set(TransactionFilter.getRequestSummary(thread)));
 
                 requestCancelled(thread, finished.get(), Source.TIMEOUT);
-                doRequest(null, () -> assertNull("Cancel applied to the next request", getSource(thread)));
+                RequestTestUtil.doRequest(null, () -> assertNull("Cancel applied to the next request", getSource(thread)));
             });
         }
 
@@ -502,9 +427,9 @@ public final class RequestCancellation
         @Test
         public void testNestedRequest() throws Exception
         {
-            runOnRequestThread(() -> doRequest(Source.TIMEOUT, () -> {
+            RequestTestUtil.runOnRequestThread(() -> RequestTestUtil.doRequest(Source.TIMEOUT, () -> {
                 Thread thread = Thread.currentThread();
-                doRequest(null, () -> {});
+                RequestTestUtil.doRequest(null, () -> {});
                 assertEquals(Source.TIMEOUT, getSource(thread));
             }));
         }
@@ -535,16 +460,8 @@ public final class RequestCancellation
             long start = System.currentTimeMillis();
             queryThread.start();
 
-            Map<DbScope, Set<ConnectionWrapper>> connections = Map.of();
-            while (connections.isEmpty() && System.currentTimeMillis() - start < 10_000)
-            {
-                //noinspection BusyWait
-                Thread.sleep(100);
-                connections = ConnectionWrapper.getConnectionsByScopeForEffectiveThread(queryThread);
-            }
+            Map<DbScope, Set<ConnectionWrapper>> connections = RequestTestUtil.awaitStatementStarted(queryThread);
             assertFalse("Query thread never got a connection", connections.isEmpty());
-            // Let the statement reach the server
-            Thread.sleep(500);
 
             return new BlockedQuery(scope, queryThread, failure, connections.get(scope), start);
         }

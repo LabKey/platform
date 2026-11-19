@@ -20,11 +20,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.util.JunitUtil;
 import org.springframework.dao.DataAccessException;
 
 import java.util.Set;
@@ -156,7 +156,7 @@ public class PostgresSnapshot
         @Test
         public void testCapture()
         {
-            Assume.assumeTrue("Requires Postgres", CoreSchema.getInstance().getSqlDialect().isPostgreSQL());
+            JunitUtil.assumePostgres();
 
             // JSONObject rejects duplicate keys, so parsing also verifies statement keys are unique
             JSONObject snapshot = new JSONObject(capture());

@@ -336,18 +336,10 @@ public class TracedOperation implements AutoCloseable
 
             IllegalStateException thrown = new IllegalStateException("test");
             AtomicReference<TracedOperation> failed = new AtomicReference<>();
-            try
-            {
-                TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(op -> {
-                    failed.set(op);
-                    throw thrown;
-                });
-                fail("Expected the work's exception to propagate");
-            }
-            catch (IllegalStateException e)
-            {
-                assertSame(thrown, e);
-            }
+            assertSame(thrown, assertThrows(IllegalStateException.class, () -> TracedOperation.builder("labkey.test").resource("test").describedAs("test").run(op -> {
+                failed.set(op);
+                throw thrown;
+            })));
             assertFalse(failed.get()._completed);
             assertTrue(failed.get()._closed);
         }

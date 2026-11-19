@@ -559,16 +559,8 @@ public class AsyncQueryRequest<T>
                     }
                 }, "AsyncQueryRequest interrupt test " + i);
 
-                long start = System.currentTimeMillis();
                 requestThread.start();
-                while (ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).isEmpty() && System.currentTimeMillis() - start < 10_000)
-                {
-                    //noinspection BusyWait
-                    Thread.sleep(50);
-                }
-                // Let the statement reach the server
-                Thread.sleep(300);
-                ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).values().forEach(c -> c.forEach(w -> spids.add(w.getSPID())));
+                RequestTestUtil.awaitStatementStarted(requestThread).values().forEach(c -> c.forEach(w -> spids.add(w.getSPID())));
 
                 requestThread.interrupt();
                 requestThread.join(30_000);
@@ -578,7 +570,7 @@ public class AsyncQueryRequest<T>
                 assertTrue("Request thread's connection holder is still referenced", holderReleased.get());
                 assertNull("Next query on the request thread failed", nextQueryFailure.get());
                 assertFalse("Interrupted query had no connections", spids.isEmpty());
-                assertEquals("Cancelled session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, spids));
+                assertEquals("Cancelled session went back to the pool", 0, RequestTestUtil.countLiveBackends(scope, spids));
             }
         }
 
@@ -663,7 +655,7 @@ public class AsyncQueryRequest<T>
 
             assertTrue("Worker didn't finish", workerDone.await(10, TimeUnit.SECONDS));
             assertNull("Worker's connection release failed", workerFailure.get());
-            assertEquals("Stuck worker's session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, Set.of(workerSpid.get())));
+            assertEquals("Stuck worker's session went back to the pool", 0, RequestTestUtil.countLiveBackends(scope, Set.of(workerSpid.get())));
         }
 
         /** A query that reaches the database only after its request stopped waiting, where Statement.cancel() can't stop it, must still be cancelled */

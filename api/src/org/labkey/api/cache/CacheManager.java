@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Project;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.security.User;
@@ -296,7 +297,7 @@ public class CacheManager
         {
             try (Cache<Object, String> cache = getTemporaryCache(Object.class, 10, MINUTE, "Container key test", null))
             {
-                Container c = new Container(null, "", GUID.makeGUID(), 1, 1, null, 0, false);
+                Container c = ContainerManager.createFakeContainer("CacheKeyTest", null);
                 assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value"));
                 assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value", MINUTE));
                 assertThrows(IllegalArgumentException.class, () -> cache.get(c, null, (key, argument) -> "loaded"));

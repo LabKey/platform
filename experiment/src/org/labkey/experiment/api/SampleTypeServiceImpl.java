@@ -85,6 +85,7 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleChangeNotify;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -2597,10 +2598,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 projB = ContainerManager.createContainer(root, "SampleScopeB" + suffix, user);
                 Container subA = ContainerManager.createContainer(projA, "sub", user);
 
-                ExpSampleType stLocal = svc.createSampleType(subA, user, "ScopeLocal", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
-                ExpSampleType stProject = svc.createSampleType(projA, user, "ScopeProject", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
-                stShared = svc.createSampleType(shared, user, "ScopeShared" + suffix, null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
-                ExpSampleType stForeign = svc.createSampleType(projB, user, "ScopeForeign", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
+                ExpSampleType stLocal = SampleTypeTestHelper.create(subA, user, "ScopeLocal");
+                ExpSampleType stProject = SampleTypeTestHelper.create(projA, user, "ScopeProject");
+                stShared = SampleTypeTestHelper.create(shared, user, "ScopeShared" + suffix);
+                ExpSampleType stForeign = SampleTypeTestHelper.create(projB, user, "ScopeForeign");
 
                 // In scope from subA (current, project, Shared) -- resolves by rowId and by LSID.
                 assertNotNull("Local sample type should resolve by rowId", svc.getSampleType(subA, stLocal.getRowId(), true));
@@ -2627,13 +2628,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (projB != null)
                     ContainerManager.deleteAll(projB, user);
             }
-        }
-
-        private List<GWTPropertyDescriptor> nameProp()
-        {
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("name", "string"));
-            return props;
         }
     }
 }
