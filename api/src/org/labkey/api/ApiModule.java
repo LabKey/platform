@@ -108,6 +108,7 @@ import org.labkey.api.data.queryprofiler.Query;
 import org.labkey.api.data.queryprofiler.QueryCounter;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.dataiterator.CachingDataIterator;
+import org.labkey.api.dataiterator.DataIteratorStreamTestCase;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
@@ -444,6 +445,7 @@ public class ApiModule extends CodeOnlyModule
             Constants.TestCase.class,
             ConvertHelper.TestCase.class,
             CspCommentScanner.TestCase.class,
+            DataIteratorStreamTestCase.class,
             DataIteratorUtil.TestCase.class,
             DatabaseCache.TestCase.class,
             DateUtil.TestCase.class,
@@ -572,6 +574,7 @@ public class ApiModule extends CodeOnlyModule
             ContainerKeySimpleCache.TestCase.class,
             ContainerManager.TestCase.class,
             ContentSecurityPolicyFilter.TestCase.class,
+            DataIteratorUtil.TableMapTestCase.class,
             DbSchema.DDLMethodsTestCase.class,
             DbSchema.SchemaCasingTestCase.class,
             DbSchema.TableSelectTestCase.class,

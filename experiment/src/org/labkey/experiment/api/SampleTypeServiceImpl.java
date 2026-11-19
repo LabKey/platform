@@ -36,6 +36,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
@@ -113,6 +114,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
@@ -2627,6 +2629,89 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     ContainerManager.deleteAll(projA, user);
                 if (projB != null)
                     ContainerManager.deleteAll(projB, user);
+            }
+        }
+
+        /**
+         * GH Issue 1585: the container column is surfaced as "Folder", so "Container" is left to a framework import
+         * alias, which must outrank a user field's own alias or label. Built through Domain.save(), which runs no
+         * field-name validation: the alias design is refused by the API as a reserved name, and that is how the domains
+         * in the field came to carry either one. The label design would save normally.
+         */
+        private ExpSampleType createTypeStealingContainerToken(Container c, User user, String name) throws Exception
+        {
+            ExpSampleType st = SampleTypeTestHelper.create(c, user, name,
+                new GWTPropertyDescriptor("AliasStealer", "http://www.w3.org/2001/XMLSchema#string"),
+                new GWTPropertyDescriptor("LabelStealer", "http://www.w3.org/2001/XMLSchema#string"));
+
+            // ExpSampleType hands back a read-only instance; forUpdate gives one that can be saved
+            Domain domain = PropertyService.get().getDomain(c, st.getDomain().getTypeURI(), true);
+            domain.getPropertyByName("AliasStealer").setImportAliasSet(Set.of("Container"));
+            domain.getPropertyByName("LabelStealer").setLabel("Container");
+            domain.save(user);
+
+            return st;
+        }
+
+        @Test
+        public void testContainerTokenStaysWithTheContainerColumn() throws Exception
+        {
+            final User user = TestContext.get().getUser();
+            Container c = null;
+            try
+            {
+                c = ContainerManager.createContainer(ContainerManager.getRoot(), "ContainerToken" + GUID.makeHash(), user);
+                ExpSampleType st = createTypeStealingContainerToken(c, user, "ContainerTokenTheft");
+
+                TableInfo table = SampleTypeTestHelper.getTable(c, user, st);
+                Object rowId = SampleTypeTestHelper.insert(c, user, st, List.of(CaseInsensitiveHashMap.<Object>of(
+                    "name", "S1", "AliasStealer", "keepAlias", "LabelStealer", "keepLabel"))).get(0).get("rowId");
+
+                // An edit that touches neither field: the update pipeline supplies a Container column of its own here
+                SampleTypeTestHelper.update(c, user, st, List.of(CaseInsensitiveHashMap.<Object>of("rowId", rowId, "description", "touched")));
+
+                Map<String, Object> stored = new TableSelector(table, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null).getMap();
+                assertEquals("A field aliased Container kept its own value", "keepAlias", stored.get("AliasStealer"));
+                assertEquals("A field labeled Container kept its own value", "keepLabel", stored.get("LabelStealer"));
+            }
+            finally
+            {
+                if (c != null)
+                    ContainerManager.deleteAll(c, user);
+            }
+        }
+
+        @Test
+        public void testStoredContainerLabelBlocksFurtherSaves() throws Exception
+        {
+            // GH Issue 1783: a stored "Container" label is not grandfathered, so the domain cannot be saved at all --
+            // not even an unrelated edit -- until the label is renamed. Same treatment the stored import alias gets.
+            final User user = TestContext.get().getUser();
+            Container c = null;
+            try
+            {
+                c = ContainerManager.createContainer(ContainerManager.getRoot(), "ContainerLabel" + GUID.makeHash(), user);
+                ExpSampleType st = createTypeStealingContainerToken(c, user, "ContainerLabelBlocks");
+
+                // Re-read: the ExpSampleType was captured before the label was written
+                Domain stored = PropertyService.get().getDomain(c, st.getDomain().getTypeURI());
+                assertEquals("Fixture did not take", "Container", stored.getPropertyByName("LabelStealer").getLabel());
+                GWTDomain<GWTPropertyDescriptor> origGwt = DomainUtil.getDomainDescriptor(user, stored);
+                GWTDomain<GWTPropertyDescriptor> updateGwt = new GWTDomain<>(origGwt);
+                List<GWTPropertyDescriptor> fields = new ArrayList<>(updateGwt.getFields());
+                fields.add(new GWTPropertyDescriptor("Unrelated", "http://www.w3.org/2001/XMLSchema#string"));
+                updateGwt.setFields(fields);
+
+                ValidationException ve = DomainUtil.updateDomainDescriptor(origGwt, updateGwt, c, user);
+                assertTrue("A stored system field label must still be refused: " + ve.getMessage(),
+                        ve.getMessage().contains("Label 'Container' on field 'LabelStealer' conflicts with a system field name."));
+                assertTrue("Expected the stored alias to still be refused: " + ve.getMessage(),
+                        ve.getMessage().contains("Import alias 'Container' on field 'AliasStealer' conflicts with a reserved field name."));
+            }
+            finally
+            {
+                if (c != null)
+                    ContainerManager.deleteAll(c, user);
             }
         }
     }

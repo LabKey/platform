@@ -540,6 +540,21 @@ public class WrappedColumnInfo
         }
 
         @Override
+        public void setSystemImportAliasesSet(Set<String> importAliases)
+        {
+            checkLocked();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @NotNull
+                @Override
+                public Set<String> getSystemImportAliasSet()
+                {
+                    return importAliases;
+                }
+            };
+        }
+
+        @Override
         public void setPropertyType(PropertyType propertyType)
         {
             checkLocked();
