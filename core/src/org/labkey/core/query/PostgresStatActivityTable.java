@@ -99,7 +99,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
         addColumn(new BaseColumnInfo("backend_type", this,  JdbcType.VARCHAR));
 
         // Our calculated values
-        var threadCol = addColumn(new ExprColumn(this, "threadsAndRequests", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER));
+        var threadCol = addColumn(new ExprColumn(this, "threadsAndRequests", new SQLFragment().appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, "pid"), JdbcType.INTEGER));
         threadCol.setDisplayColumnFactory(ThreadDisplayColumn::new);
         addColumn(new BaseColumnInfo("running_time_ms", this, JdbcType.INTEGER));
         addColumn(new BaseColumnInfo("blocked_by", this, JdbcType.VARCHAR));
@@ -190,7 +190,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
                 throw new InvalidKeyException("No pid specified");
             }
             LOG.info("{} is killing Postgres PID {}", user.getEmail(), pid);
-            new SqlExecutor(getSchema()).execute(new SQLFragment("SELECT pg_terminate_backend(?)", pid));
+            new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("SELECT pg_terminate_backend(?)", pid));
             return oldRow;
         }
 

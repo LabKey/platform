@@ -444,7 +444,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     @Override
     public List<ExpRunImpl> getExpRuns()
     {
-        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+        SQLFragment sql = SQLFragment.unsafe(" SELECT ER.* "
                     + " FROM exp.ExperimentRun ER "
                     + " WHERE ER.ProtocolLSID = ?");
         sql.add(getLSID());
@@ -455,7 +455,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     @Override
     public Set<Container> getExpRunContainers()
     {
-        SQLFragment sql = new SQLFragment(" SELECT DISTINCT Container "
+        SQLFragment sql = SQLFragment.unsafe(" SELECT DISTINCT Container "
                     + " FROM exp.ExperimentRun ER "
                     + " WHERE ER.ProtocolLSID = ?");
         sql.add(getLSID());

@@ -206,12 +206,12 @@ public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
 
     public static class TestCase extends Assert
     {
-        private DataIterator make100Rows()
+        private DataIteratorBuilder make100Rows()
         {
             ArrayList<Map<String,Object>> maps = new ArrayList<>();
             for (int i=0 ; i<100 ; i++)
                 maps.add(CaseInsensitiveHashMap.of("key",i));
-            return new ListofMapsDataIterator(Set.of("key"), maps);
+            return MapDataIterator.of(Set.of("key"), maps);
         }
 
         AtomicInteger valueGenerator = new AtomicInteger();

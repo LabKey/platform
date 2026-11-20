@@ -347,7 +347,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public SQLFragment getDatabaseSizeSql(String databaseName)
     {
-        return new SQLFragment("SELECT pg_database_size(?)", databaseName);
+        return SQLFragment.unsafe("SELECT pg_database_size(?)", databaseName);
     }
 
     @Override
@@ -470,10 +470,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter)
     {
-        SQLFragment result = new SQLFragment("array_to_string(array(");
+        SQLFragment result = SQLFragment.unsafe("array_to_string(array(");
         result.append(selectSql);
         result.unsafeAppend("), ");
-        result.append(getStringHandler().quoteStringLiteral(delimiter));
+        result.appendStringLiteral(delimiter, this);
         result.unsafeAppend(")");
         return result;
     }
@@ -553,7 +553,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public SQLFragment getAnalyzeCommandForTable(SQLFragment tableName)
     {
-        return new SQLFragment("ANALYZE ").append(tableName);
+        return SQLFragment.unsafe("ANALYZE ").append(tableName);
     }
 
     private void initializeInClauseGenerator(DbScope scope)
@@ -686,7 +686,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public @NotNull Collection<Sequence> getAutoIncrementSequences(TableInfo table)
     {
-        SQLFragment sql = new SQLFragment("""
+        SQLFragment sql = SQLFragment.unsafe("""
             SELECT SchemaName, TableName, ColumnName, LastValue FROM (
                 SELECT
                     s.relname AS SequenceName, -- Not used
@@ -745,7 +745,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     {
         // This will handle both mixed case and special characters on PostgreSQL
         var legal = makeIdentifierFromMetaDataName(dbName);
-        return new SQLFragment("CREATE DATABASE ").appendIdentifier(legal).unsafeAppend(" WITH ENCODING 'UTF8'").getRawSQL();
+        return SQLFragment.unsafe("CREATE DATABASE ").appendIdentifier(legal).unsafeAppend(" WITH ENCODING 'UTF8'").getRawSQL();
     }
 
     @Override
@@ -774,7 +774,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         {
             case CreateTable -> result.addAll(getCreateTableStatements(change));
             case DropTable -> {
-                SQLFragment f = new SQLFragment("DROP TABLE ");
+                SQLFragment f = SQLFragment.unsafe("DROP TABLE ");
                 f.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 result.add(f);
             }
@@ -805,7 +805,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 
     private SQLFragment getDropIndexCommand(TableChange change, String indexName)
     {
-        SQLFragment f = new SQLFragment("DROP INDEX ");
+        SQLFragment f = SQLFragment.unsafe("DROP INDEX ");
         f.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(indexName);
         return f;
     }
@@ -815,7 +815,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         List<SQLFragment> statements = new ArrayList<>();
         for (String constraintName : change.getConstraintsToBeDroppedByName())
         {
-            SQLFragment f = new SQLFragment("ALTER TABLE ");
+            SQLFragment f = SQLFragment.unsafe("ALTER TABLE ");
             f.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             f.unsafeAppend(" DROP CONSTRAINT ").appendIdentifier(constraintName);
             statements.add(f);
@@ -859,26 +859,26 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 DatabaseIdentifier tempColumnIdent = makePropertyIdentifier(tempColumnName);
 
                 // 1) ADD temp column
-                SQLFragment addTemp = new SQLFragment("ALTER TABLE ");
+                SQLFragment addTemp = SQLFragment.unsafe("ALTER TABLE ");
                 addTemp.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 addTemp.unsafeAppend(" ADD COLUMN ").append(getSqlColumnSpec(column, tempColumnName));
                 statements.add(addTemp);
 
                 // 2) UPDATE: copy casted value to temp column
-                SQLFragment update = new SQLFragment("UPDATE ");
+                SQLFragment update = SQLFragment.unsafe("UPDATE ");
                 update.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 update.unsafeAppend(" SET ").appendIdentifier(tempColumnIdent);
-                update.unsafeAppend(" = CAST(").appendIdentifier(columnIdent).unsafeAppend(" AS ").append(getSqlTypeName(column)).unsafeAppend(")");
+                update.unsafeAppend(" = CAST(").appendIdentifier(columnIdent).unsafeAppend(" AS ").append(getSqlTypeNameAsSql(column)).unsafeAppend(")");
                 statements.add(update);
 
                 // 3) DROP original column
-                SQLFragment drop = new SQLFragment("ALTER TABLE ");
+                SQLFragment drop = SQLFragment.unsafe("ALTER TABLE ");
                 drop.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 drop.unsafeAppend(" DROP COLUMN ").appendIdentifier(columnIdent);
                 statements.add(drop);
 
                 // 4) RENAME temp column to original column name
-                SQLFragment rename = new SQLFragment("ALTER TABLE ");
+                SQLFragment rename = SQLFragment.unsafe("ALTER TABLE ");
                 rename.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 rename.unsafeAppend(" RENAME COLUMN ").appendIdentifier(tempColumnIdent).unsafeAppend(" TO ").appendIdentifier(columnIdent);
                 statements.add(rename);
@@ -890,7 +890,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 DatabaseIdentifier tempColumnIdent = makePropertyIdentifier(tempColumnName);
 
                 // 1) ADD temp column of text type
-                SQLFragment addTemp = new SQLFragment("ALTER TABLE ");
+                SQLFragment addTemp = SQLFragment.unsafe("ALTER TABLE ");
                 addTemp.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 addTemp.unsafeAppend(" ADD COLUMN ").append(getSqlColumnSpec(column, tempColumnName));
                 statements.add(addTemp);
@@ -899,7 +899,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 //    - NULL array -> NULL
                 //    - empty array -> NULL
                 //    - non-empty array -> concatenate array elements with comma (', ')
-                SQLFragment update = new SQLFragment("UPDATE ");
+                SQLFragment update = SQLFragment.unsafe("UPDATE ");
                 update.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 update.unsafeAppend(" SET ").appendIdentifier(tempColumnIdent).unsafeAppend(" = CASE ");
                 update.unsafeAppend(" WHEN ").appendIdentifier(columnIdent).unsafeAppend(" IS NULL THEN NULL ");
@@ -908,13 +908,13 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 statements.add(update);
 
                 // 3) DROP original column
-                SQLFragment drop = new SQLFragment("ALTER TABLE ");
+                SQLFragment drop = SQLFragment.unsafe("ALTER TABLE ");
                 drop.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 drop.unsafeAppend(" DROP COLUMN ").appendIdentifier(columnIdent);
                 statements.add(drop);
 
                 // 4) RENAME temp column to original column name
-                SQLFragment rename = new SQLFragment("ALTER TABLE ");
+                SQLFragment rename = SQLFragment.unsafe("ALTER TABLE ");
                 rename.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 rename.unsafeAppend(" RENAME COLUMN ").appendIdentifier(tempColumnIdent).unsafeAppend(" TO ").appendIdentifier(columnIdent);
                 statements.add(rename);
@@ -926,7 +926,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 DatabaseIdentifier tempColumnIdent = makePropertyIdentifier(tempColumnName);
 
                 // 1) ADD temp column of array type (e.g., text[])
-                SQLFragment addTemp = new SQLFragment("ALTER TABLE ");
+                SQLFragment addTemp = SQLFragment.unsafe("ALTER TABLE ");
                 addTemp.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 addTemp.unsafeAppend(" ADD COLUMN ").append(getSqlColumnSpec(column, tempColumnName));
                 statements.add(addTemp);
@@ -934,7 +934,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 // 2) UPDATE: copy converted value to temp column as single-element array
                 //    - NULL or blank ('') -> empty array []
                 //    - otherwise -> single-element array [text]
-                SQLFragment update = new SQLFragment("UPDATE ");
+                SQLFragment update = SQLFragment.unsafe("UPDATE ");
                 update.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 update.unsafeAppend(" SET ").appendIdentifier(tempColumnIdent);
                 update.unsafeAppend(" = CASE WHEN ").appendIdentifier(columnIdent).unsafeAppend(" IS NULL OR ").appendIdentifier(columnIdent).unsafeAppend(" = '' THEN ARRAY[]::text[] ELSE ARRAY[");
@@ -942,13 +942,13 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 statements.add(update);
 
                 // 3) DROP original column
-                SQLFragment drop = new SQLFragment("ALTER TABLE ");
+                SQLFragment drop = SQLFragment.unsafe("ALTER TABLE ");
                 drop.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 drop.unsafeAppend(" DROP COLUMN ").appendIdentifier(columnIdent);
                 statements.add(drop);
 
                 // 4) RENAME temp column to original column name
-                SQLFragment rename = new SQLFragment("ALTER TABLE ");
+                SQLFragment rename = SQLFragment.unsafe("ALTER TABLE ");
                 rename.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 rename.unsafeAppend(" RENAME COLUMN ").appendIdentifier(tempColumnIdent).unsafeAppend(" TO ").appendIdentifier(columnIdent);
                 statements.add(rename);
@@ -980,7 +980,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 
         if (!nonDateTimeClauses.isEmpty())
         {
-            SQLFragment alter = new SQLFragment("ALTER TABLE ");
+            SQLFragment alter = SQLFragment.unsafe("ALTER TABLE ");
             alter.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             alter.unsafeAppend(" ");
             String sep = "";
@@ -1004,7 +1004,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             DatabaseIdentifier newIdentifier = makePropertyIdentifier(oldToNew.getValue());
             if (!oldIdentifier.equals(newIdentifier))
             {
-                SQLFragment f = new SQLFragment("ALTER TABLE ");
+                SQLFragment f = SQLFragment.unsafe("ALTER TABLE ");
                 f.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 f.unsafeAppend(" RENAME COLUMN ").appendIdentifier(oldIdentifier).unsafeAppend(" TO ").appendIdentifier(newIdentifier);
                 statements.add(f);
@@ -1019,10 +1019,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         List<SQLFragment> sqlParts = new ArrayList<>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            SQLFragment sql = new SQLFragment("DROP COLUMN ");
+            SQLFragment sql = SQLFragment.unsafe("DROP COLUMN ");
             if (prop.getExactName())
             {
-                sql.append(quoteIdentifier(prop.getName()));
+                sql.appendIdentifier(quoteIdentifier(prop.getName()));
             }
             else
             {
@@ -1031,7 +1031,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             sqlParts.add(sql);
         }
 
-        SQLFragment f = new SQLFragment("ALTER TABLE ");
+        SQLFragment f = SQLFragment.unsafe("ALTER TABLE ");
         f.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
         f.unsafeAppend(" ").append(sqlParts, ", ");
         return f;
@@ -1057,7 +1057,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             }
         }
 
-        SQLFragment alter = new SQLFragment("ALTER TABLE ");
+        SQLFragment alter = SQLFragment.unsafe("ALTER TABLE ");
         alter.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
         alter.unsafeAppend(" ");
         String sep = "";
@@ -1071,7 +1071,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         statements.add(alter);
         if (null != pkColumn)
         {
-            SQLFragment addPk = new SQLFragment("ALTER TABLE ");
+            SQLFragment addPk = SQLFragment.unsafe("ALTER TABLE ");
             addPk.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             addPk.unsafeAppend(" ADD CONSTRAINT ").appendIdentifier(constraint.getName())
                 .unsafeAppend(" ").append(constraint.getType().toString()).unsafeAppend(" (")
@@ -1085,7 +1085,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     private List<SQLFragment> getDropConstraintsStatement(TableChange change)
     {
         return change.getConstraints().stream().map(constraint -> {
-            SQLFragment f = new SQLFragment("ALTER TABLE ");
+            SQLFragment f = SQLFragment.unsafe("ALTER TABLE ");
             f.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             f.unsafeAppend(" DROP CONSTRAINT ").appendIdentifier(constraint.getName());
             return f;
@@ -1146,7 +1146,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 foreignKey.getTableInfoProvisioned() :
                 schema.getTable(foreignKey.getTableName());
             String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
-            SQLFragment fkFrag = new SQLFragment("CONSTRAINT ");
+            SQLFragment fkFrag = SQLFragment.unsafe("CONSTRAINT ");
             fkFrag.appendIdentifier(constraintName)
                 .unsafeAppend(" FOREIGN KEY (")
                 .appendIdentifier(makePropertyIdentifier(foreignKey.getColumnName()))
@@ -1158,7 +1158,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             createTableSqlParts.add(fkFrag);
         }
 
-        SQLFragment create = new SQLFragment("CREATE TABLE ");
+        SQLFragment create = SQLFragment.unsafe("CREATE TABLE ");
         create.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
         create.unsafeAppend(" (").append(createTableSqlParts, ", ").unsafeAppend(")");
         statements.add(create);
@@ -1167,7 +1167,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             // Making this just for consistent naming
             Constraint constraint = new Constraint(change.getTableName(), Constraint.CONSTRAINT_TYPES.PRIMARYKEY, false, null);
 
-            SQLFragment addPk = new SQLFragment("ALTER TABLE ");
+            SQLFragment addPk = SQLFragment.unsafe("ALTER TABLE ");
             addPk.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             addPk.unsafeAppend(" ADD CONSTRAINT ").appendIdentifier(constraint.getName())
                 .unsafeAppend(" ").append(constraint.getType().toString()).unsafeAppend(" (")
@@ -1186,7 +1186,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
             String newIndexName = nameIndex(change.getTableName(), index.columnNames);
-            SQLFragment f = new SQLFragment("CREATE ");
+            SQLFragment f = SQLFragment.unsafe("CREATE ");
             if (index.isUnique)
                 f.unsafeAppend("UNIQUE ");
             f.unsafeAppend("INDEX ").appendIdentifier(newIndexName).unsafeAppend(" ON ");
@@ -1229,16 +1229,16 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     {
         SQLFragment colSpec = new SQLFragment();
         colSpec.appendIdentifier(makePropertyIdentifier(columnName)).unsafeAppend(" ");
-        colSpec.append(getSqlTypeName(prop));
+        colSpec.append(getSqlTypeNameAsSql(prop));
 
         // Apply size and precision to varchar and Decimal types
         if (prop.getJdbcType() == JdbcType.VARCHAR && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
         {
-            colSpec.unsafeAppend("(").append(prop.getSize().toString()).unsafeAppend(")");
+            colSpec.unsafeAppend("(").appendValue(prop.getSize()).unsafeAppend(")");
         }
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
         {
-            colSpec.append(DEFAULT_DECIMAL_SCALE_PRECISION);
+            colSpec.unsafeAppend(DEFAULT_DECIMAL_SCALE_PRECISION);
         }
 
         // CONSIDER let the PropertyType to modify PropertyStorageSpec in the cosntructor
@@ -1253,12 +1253,12 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             if (prop.getJdbcType() == JdbcType.BOOLEAN)
             {
                 colSpec.unsafeAppend(" DEFAULT ");
-                colSpec.append((Boolean)prop.getDefaultValue() ? getBooleanTRUE() : getBooleanFALSE());
+                colSpec.appendValue((Boolean)prop.getDefaultValue(), this);
             }
             else if (prop.getJdbcType() == JdbcType.VARCHAR)
             {
                 colSpec.unsafeAppend(" DEFAULT ");
-                colSpec.append(getStringHandler().quoteStringLiteral(prop.getDefaultValue().toString()));
+                colSpec.appendStringLiteral(prop.getDefaultValue().toString(), this);
             }
             else
             {
@@ -1306,7 +1306,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 
                     String name = rs.getString(1);
                     String[] oids = StringUtils.split(rs.getString(2), ' ');
-                    SQLFragment drop = new SQLFragment("DROP FUNCTION temp.").append(name);
+                    SQLFragment drop = SQLFragment.unsafe("DROP FUNCTION temp.").appendIdentifier(quoteIdentifier(name));
                     drop.unsafeAppend("(");
                     String comma = "";
                     for (String oid : oids)
@@ -1370,7 +1370,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public SQLFragment array_is_empty(SQLFragment a)
     {
-        return new SQLFragment("(cardinality(").append(a).unsafeAppend(")=0)");
+        return SQLFragment.unsafe("(cardinality(").append(a).unsafeAppend(")=0)");
     }
 
     @Override
@@ -1392,7 +1392,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public SQLFragment array_none_in_array(SQLFragment a, SQLFragment b)
     {
-        return new SQLFragment(" NOT (").append(array_some_in_array(a, b)).unsafeAppend(")");
+        return SQLFragment.unsafe(" NOT (").append(array_some_in_array(a, b)).unsafeAppend(")");
     }
 
     @Override
@@ -1440,7 +1440,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public SQLFragment array_element_like(SQLFragment a, String... values)
     {
-        SQLFragment sql = new SQLFragment("(");
+        SQLFragment sql = SQLFragment.unsafe("(");
         String sep = "";
         for (String value : values)
         {

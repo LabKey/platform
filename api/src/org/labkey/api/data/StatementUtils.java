@@ -409,7 +409,7 @@ public class StatementUtils
         }
     }
 
-    private void appendSQLFObjectProperty(SQLFragment sqlfObjectProperty, DomainProperty dp, String objectIdVar, String ifTHEN, String ifEND)
+    private void appendSQLFObjectProperty(SQLFragment sqlfObjectProperty, DomainProperty dp, String objectIdVar, SQLFragment ifTHEN, SQLFragment ifEND)
     {
         PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
         ParameterHolder v = createParameter(dp.getName(), dp.getPropertyURI(), propertyType.getJdbcType());
@@ -515,8 +515,8 @@ public class StatementUtils
         }
 
         useVariables = Operation.merge == _operation;
-        String ifTHEN = _dialect.isSqlServer() ? " BEGIN " : " THEN ";
-        String ifEND = _dialect.isSqlServer() ? " END " : " END IF ";
+        SQLFragment ifTHEN = SQLFragment.unsafe(_dialect.isSqlServer() ? " BEGIN " : " THEN ");
+        SQLFragment ifEND = SQLFragment.unsafe(_dialect.isSqlServer() ? " END " : " END IF ");
 
         if (null != c)
         {
@@ -608,7 +608,7 @@ public class StatementUtils
                 sqlfInsertObject.unsafeAppend(" AND ").append(sqlfWhereObjectURI).unsafeAppend(")").appendEOS();
 
                 // re-grab the object's ObjectId, in case it was just inserted
-                sqlfSelectObject.append(_dialect.isPostgreSQL() ? "" : "SET ").appendIdentifier(objectIdVar).unsafeAppend(" = (");
+                sqlfSelectObject.unsafeAppend(_dialect.isPostgreSQL() ? "" : "SET ").appendIdentifier(objectIdVar).unsafeAppend(" = (");
                 sqlfSelectObject.unsafeAppend("SELECT ObjectId FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
                 sqlfSelectObject.unsafeAppend(" AND ").append(sqlfWhereObjectURI).unsafeAppend(")").appendEOS();
@@ -858,7 +858,7 @@ public class StatementUtils
                 else
                 {
                     sqlfUpdate.unsafeAppend("IF ");
-                    sqlfUpdate.append(_dialect.isSqlServer() ? "@@ROWCOUNT=0" : "NOT FOUND");
+                    sqlfUpdate.unsafeAppend(_dialect.isSqlServer() ? "@@ROWCOUNT=0" : "NOT FOUND");
                     sqlfUpdate.append(ifTHEN).unsafeAppend("\n\t");
 
                     sqlfInsertInto.appendEOS();

@@ -40,7 +40,7 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         // We don't have our own Container column, so filter based on the Container column of this ProtocolInput's protocol
         FieldKey containerFK = FieldKey.fromParts("Container");
         clearConditions(containerFK);
-        SQLFragment sqlFragment = new SQLFragment("(SELECT p.Container FROM ");
+        SQLFragment sqlFragment = SQLFragment.unsafe("(SELECT p.Container FROM ");
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoProtocol(), "p");
         sqlFragment.unsafeAppend(" WHERE p.RowId = ProtocolId)");
 

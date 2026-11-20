@@ -1284,6 +1284,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /** Returns true if the property has a lookup to exp.Materials and is an int or string. */
     boolean isLookupToMaterials(DomainProperty dp);
 
+    /** Returns true if the property has a lookup to exp.Materials or a sample type (see getLookupSampleType) and is an int or string. */
+    boolean isLookupToSamples(DomainProperty dp);
+
     void registerNameExpressionType(String dataType, String schemaName, String queryname, String nameExpressionCol);
 
     UsageMetrics addDomainMetrics(UsageMetrics metrics);

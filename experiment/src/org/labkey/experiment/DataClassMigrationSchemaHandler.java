@@ -72,7 +72,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
             // There are a couple bad data class provisioned tables that lack an FK to exp.Data. In that case, craft the
             // container FilterClause explicitly.
             clause = new SQLClause(
-                new SQLFragment("LSID IN (SELECT LSID FROM exp.Data WHERE Container")
+                SQLFragment.unsafe("LSID IN (SELECT LSID FROM exp.Data WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
                     .unsafeAppend(")")
             );
@@ -110,7 +110,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
         Collection<String> copiedLsids = new TableSelector(targetTable, Collections.singleton("LSID")).getCollection(String.class);
 
         // Select all ObjectIds associated with the not-copied rows from the source database
-        SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data d INNER JOIN ")
+        SQLFragment objectIdSql = SQLFragment.unsafe("SELECT ObjectId FROM exp.Data d INNER JOIN ")
             .append(sourceTable.getSQLName())
             .unsafeAppend(" dc ON d.LSID = dc.LSID");
 
@@ -167,19 +167,19 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
         // Delete from exp.Data (and associated tables)
         LOG.info("   exp.DataInput");
         executor.execute(
-            new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ObjectId")
+            SQLFragment.unsafe("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ObjectId")
                 .append(objectIdClause)
                 .unsafeAppend(")")
         );
         LOG.info("   exp.DataAliasMap");
         executor.execute(
-            new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID IN (SELECT LSID FROM exp.Data WHERE ObjectId")
+            SQLFragment.unsafe("DELETE FROM exp.DataAliasMap WHERE LSID IN (SELECT LSID FROM exp.Data WHERE ObjectId")
                 .appendInClause(objectIds, dialect)
                 .unsafeAppend(")")
         );
         LOG.info("   exp.Data");
         executor.execute(
-            new SQLFragment("DELETE FROM exp.Data WHERE ObjectId")
+            SQLFragment.unsafe("DELETE FROM exp.Data WHERE ObjectId")
                 .append(objectIdClause)
         );
 

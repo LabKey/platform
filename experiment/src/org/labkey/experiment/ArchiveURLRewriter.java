@@ -16,18 +16,24 @@
 
 package org.labkey.experiment;
 
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -38,7 +44,17 @@ import java.util.Set;
  */
 public class ArchiveURLRewriter extends URLRewriter
 {
+    private static final Logger LOG = LogHelper.getLogger(ArchiveURLRewriter.class, "XAR (experiment archive) exporting");
+
     private final Set<String> _roles;
+
+    /** Resolving a container's roots hits the database, so do it once per export; a root reconfigured mid-export is not picked up. */
+    private final Map<Container, FileContentService.ManagedRoots> _rootsByContainer = new HashMap<>();
+
+    private FileContentService.ManagedRoots rootsFor(Container c)
+    {
+        return _rootsByContainer.computeIfAbsent(c, FileContentService::getManagedRoots);
+    }
 
     public ArchiveURLRewriter(boolean includeXarXml, Set<String> roles)
     {
@@ -54,7 +70,7 @@ public class ArchiveURLRewriter extends URLRewriter
             FileInfo existingInfo = _files.get(path);
             if (existingInfo != null)
             {
-                return existingInfo.getName();
+                return canonicalPathIfExportable(data, path, user) == null ? null : existingInfo.getName();
             }
             Path rootDir = null;
             if (run != null)
@@ -79,13 +95,30 @@ public class ArchiveURLRewriter extends URLRewriter
         return "Run" + run.getRowId();
     }
 
+    /** The canonical path, or null when this row's container must not export the file; records the exclusion either way. */
+    private Path canonicalPathIfExportable(ExpData data, Path path, User user)
+    {
+        Path canonical = FileUtil.getAbsoluteCaseSensitivePath(data.getContainer(), path.toUri());
+
+        // however the exp.data row got its URL, don't stream a file from outside the container's roots
+        if (canonical != null && FileContentService.isFileReadable(data.getContainer(), canonical, user, rootsFor(data.getContainer())))
+            return canonical;
+
+        LOG.debug("Excluding data file from export, not under a file root of {}: {} (exp.data row {})", data.getContainer().getPath(), canonical == null ? path : canonical, data.getRowId());
+        addExcluded(data, canonical == null ? path : canonical);
+        return null;
+    }
+
     public String addFile(ExpData data, Path path, String directoryName, Path rootDir, ExperimentDataHandler dataHandler, User user, String fileRootPath)
             throws ExperimentException
     {
         String name;
         try
         {
-            path = FileUtil.getAbsoluteCaseSensitivePath(data.getContainer(), path.toUri());
+            path = canonicalPathIfExportable(data, path, user);
+            if (path == null)
+                return null;
+
             boolean inSubTree = false;
             Path fileParentDir = path.getParent();
             while (fileParentDir != null)

@@ -101,11 +101,11 @@ public class FileLinkFileListener implements FileListener
         SqlDialect dialect = OntologyManager.getSqlDialect();
 
         // Build up SQL that can be used for both the file and any children
-        SQLFragment sharedSQL = new SQLFragment("UPDATE ");
+        SQLFragment sharedSQL = SQLFragment.unsafe("UPDATE ");
         sharedSQL.append(OntologyManager.getTinfoObjectProperty());
         sharedSQL.unsafeAppend(" SET StringValue = ");
 
-        SQLFragment standardWhereSQL = new SQLFragment(" WHERE PropertyId IN (SELECT PropertyId FROM ");
+        SQLFragment standardWhereSQL = SQLFragment.unsafe(" WHERE PropertyId IN (SELECT PropertyId FROM ");
         standardWhereSQL.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
         standardWhereSQL.unsafeAppend(" WHERE RangeURI = ?)");
         standardWhereSQL.add(PropertyType.FILE_LINK.getTypeUri());
@@ -141,10 +141,10 @@ public class FileLinkFileListener implements FileListener
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction("StringValue", Integer.toString(srcPath.length() + 1), "5000"))));
+            childPathsSQL.append(dialect.concatenate(SQLFragment.unsafe("?", destPath), new SQLFragment(dialect.getSubstringFunction("StringValue", Integer.toString(srcPath.length() + 1), "5000"))));
             childPathsSQL.append(standardWhereSQL);
             childPathsSQL.unsafeAppend(" AND ");
-            childPathsSQL.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment("StringValue")));
+            childPathsSQL.append(dialect.getStringIndexOfFunction(SQLFragment.unsafe("?", srcPath), SQLFragment.unsafe("StringValue")));
             childPathsSQL.unsafeAppend(" = 1");
 
             int childRows = new SqlExecutor(OntologyManager.getExpSchema()).execute(childPathsSQL);
@@ -182,7 +182,7 @@ public class FileLinkFileListener implements FileListener
     private void hardTableFileLinkColumns(final ForEachFileLinkColumn block)
     {
         // Figure out all of the FileLink columns in hard tables managed by OntologyManager
-        SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.DomainId, dd.StorageTableName, dd.StorageSchemaName, pd.Name, pd.StorageColumnName FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT dd.Container, dd.DomainId, dd.StorageTableName, dd.StorageSchemaName, pd.Name, pd.StorageColumnName FROM ");
         sql.append(OntologyManager.getTinfoDomainDescriptor(), "dd");
         sql.unsafeAppend(", ");
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
@@ -316,9 +316,9 @@ public class FileLinkFileListener implements FileListener
         frag.unsafeAppend("  )\n");
 
         hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
-            SQLFragment containerFrag = new SQLFragment("?", containerId);
+            SQLFragment containerFrag = SQLFragment.unsafe("?", containerId);
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
-            frag.unsafeAppend("UNION").append(StringUtils.isEmpty(filePath) ? "" : " ALL" /*keep duplicate*/).unsafeAppend("\n");
+            frag.unsafeAppend("UNION").unsafeAppend(StringUtils.isEmpty(filePath) ? "" : " ALL" /*keep duplicate*/).unsafeAppend("\n");
             frag.append(updater.listFilesQuery(skipCreatedModified, filePath, false));
         });
 
@@ -333,7 +333,7 @@ public class FileLinkFileListener implements FileListener
         hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
             if (PROVISIONED_SCHEMA_NAME.equalsIgnoreCase(schema.getName()))
             {
-                SQLFragment containerFrag = new SQLFragment("?", containerId);
+                SQLFragment containerFrag = SQLFragment.unsafe("?", containerId);
                 TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, "rowid", containerFrag);
                 if (!frag.isEmpty())
                     frag.unsafeAppend("UNION").unsafeAppend("").unsafeAppend("\n");

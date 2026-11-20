@@ -938,24 +938,14 @@ public abstract class CompareType
 
         public SQLFragment[] getParamSQLFragments(SqlDialect dialect)
         {
+            var sh = dialect.getStringHandler();
             Object[] params = getParamVals();
             SQLFragment[] fragments = new SQLFragment[params.length];
-
-            JdbcType type = null;
-            // Try to infer the type from the first non-null parameter
-            for (Object param : params)
-            {
-                if (param != null)
-                {
-                    type = JdbcType.valueOf(param.getClass());
-                    break;
-                }
-            }
 
             for (int i = 0; i < params.length; i++)
             {
                 fragments[i] = new SQLFragment();
-                fragments[i].setSqlUnsafe(escapeLabKeySqlValue(params[i], type));
+                fragments[i].setSqlUnsafe(sh.quoteStringLiteral(String.valueOf(params[i])));
             }
 
             return fragments;
@@ -1025,9 +1015,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "array_is_empty(" + getLabKeySQLColName(_fieldKey) + ")";
+            return LabKeySQLFragment.ofSourceText("array_is_empty(" + getLabKeySQLColName(_fieldKey) + ")");
         }
 
         @Override
@@ -1055,9 +1045,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "NOT array_is_empty(" + getLabKeySQLColName(_fieldKey) + ")";
+            return LabKeySQLFragment.ofSourceText("NOT array_is_empty(" + getLabKeySQLColName(_fieldKey) + ")");
         }
 
         @Override
@@ -1089,9 +1079,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "array_contains_all(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+            return LabKeySQLFragment.ofSourceText("array_contains_all(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")");
         }
 
         @Override
@@ -1129,9 +1119,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "array_contains_any(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+            return LabKeySQLFragment.ofSourceText("array_contains_any(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")");
         }
 
         @Override
@@ -1151,9 +1141,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "array_contains_none(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+            return LabKeySQLFragment.ofSourceText("array_contains_none(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")");
         }
         @Override
         public String getFilterOpText()
@@ -1190,9 +1180,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "array_is_same(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+            return LabKeySQLFragment.ofSourceText("array_is_same(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")");
         }
 
         @Override
@@ -1212,9 +1202,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "NOT array_is_same(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")";
+            return LabKeySQLFragment.ofSourceText("NOT array_is_same(" + getLabKeySQLColName(_fieldKey) + ", " + getParamVals()[0] + ")");
         }
 
         @Override
@@ -1682,13 +1672,13 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String comparisonSql = _comparison.getSql();
             if (comparisonSql == null)
                 throw new IllegalStateException("This compare type must override getLabKeySQLWhereClause.");
             String sql = getLabKeySQLColName(_fieldKey) + _comparison.getSql();
-            return substituteLabKeySqlParams(sql, columnMap);
+            return LabKeySQLFragment.ofSourceText(substituteLabKeySqlParams(sql, columnMap));
         }
 
         @Override
@@ -2152,11 +2142,11 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String selectName = getLabKeySQLColName(_fieldKey);
             String sql = selectName + " >= ? AND " + selectName + " < ?";
-            return substituteLabKeySqlParams(sql, columnMap);
+            return LabKeySQLFragment.ofSourceText(substituteLabKeySqlParams(sql, columnMap));
         }
 
         @Override
@@ -2195,11 +2185,11 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String selectName = getLabKeySQLColName(_fieldKey);
             String sql = selectName + " < ? OR " + selectName + " >= ?";
-            return substituteLabKeySqlParams(sql, columnMap);
+            return LabKeySQLFragment.ofSourceText(substituteLabKeySqlParams(sql, columnMap));
         }
 
         @Override
@@ -2434,10 +2424,10 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             Object value = getParamVals()[0];
-            return "STARTSWITH(" + getLabKeySQLColName(_fieldKey) + ", '" + escapeLabKeySqlValue(value, getColumnType(columnMap, JdbcType.VARCHAR), true) + "')";
+            return LabKeySQLFragment.ofSourceText("STARTSWITH(" + getLabKeySQLColName(_fieldKey) + ", '" + escapeLabKeySqlValue(value, getColumnType(columnMap, JdbcType.VARCHAR), true) + "')");
         }
 
         @Override
@@ -2467,10 +2457,10 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             Object value = getParamVals()[0];
-            return "(" + getLabKeySQLColName(_fieldKey) + " IS NULL OR " + getLabKeySQLColName(_fieldKey) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap, JdbcType.VARCHAR), true) + "%'" + sqlEscape() + ")";
+            return LabKeySQLFragment.ofSourceText("(" + getLabKeySQLColName(_fieldKey) + " IS NULL OR " + getLabKeySQLColName(_fieldKey) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap, JdbcType.VARCHAR), true) + "%'" + sqlEscape() + ")");
         }
 
         @Override
@@ -2549,10 +2539,10 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String colName = getLabKeySQLColName(_fieldKey);
-            return "LOWER(" + colName + ") LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%')" + sqlEscape();
+            return LabKeySQLFragment.ofSourceText("LOWER(" + colName + ") LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%')" + sqlEscape());
         }
 
         @Override
@@ -2582,10 +2572,10 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String colName = getLabKeySQLColName(_fieldKey);
-            return "(" + colName + " IS NULL OR LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%')" + sqlEscape() + ")";
+            return LabKeySQLFragment.ofSourceText("(" + colName + " IS NULL OR LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap, JdbcType.VARCHAR), true) + "%')" + sqlEscape() + ")");
         }
 
         @Override
@@ -2688,9 +2678,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "ISMEMBEROF(" + getParamVals()[0] + ", " + getLabKeySQLColName(_fieldKey) + ")";
+            return LabKeySQLFragment.ofSourceText("ISMEMBEROF(" + getParamVals()[0] + ", " + getLabKeySQLColName(_fieldKey) + ")");
         }
 
         @Override
