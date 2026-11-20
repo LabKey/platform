@@ -15,7 +15,6 @@
  */
 package org.labkey.api.files;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
@@ -565,7 +564,8 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             assertTrue(FileUtil.createNewFile(b));
             assertTrue(FileUtil.createNewFile(c));
 
-            waitForEvents(events, () -> events.get() >= 3);
+            // Event counts differ by OS, so wait for what the assertions check
+            waitForEvents(events, () -> created.containsAll(Set.of("a", "b", "c")));
 
             try (PrintWriter pw = PrintWriters.getPrintWriter(a))
             {
@@ -577,12 +577,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 pw.println("Hello World");
             }
 
-            waitForEvents(events, () -> events.get() >= (SystemUtils.IS_OS_WINDOWS ? 7 : 5));
+            waitForEvents(events, () -> modified.containsAll(Set.of("a", "c")));
 
             assertTrue(a.delete());
             assertTrue(b.delete());
 
-            waitForEvents(events, () -> events.get() >= (SystemUtils.IS_OS_WINDOWS ? 11 : 8));
+            waitForEvents(events, () -> deleted.containsAll(Set.of("a", "b")));
 
             FileUtil.deleteDir(testFolder);
 
