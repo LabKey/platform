@@ -108,7 +108,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
     public SQLFragment getFromSQL(String alias)
     {
         checkReadBeforeExecute();
-        SQLFragment ret = new SQLFragment("(SELECT * FROM (SELECT rl.* FROM ");
+        SQLFragment ret = SQLFragment.unsafe("(SELECT * FROM (SELECT rl.* FROM ");
         ret.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
         ret.unsafeAppend(", ");
         ret.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
@@ -117,7 +117,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         // Filter out hidden run groups
         ret.unsafeAppend(" WHERE e.Hidden = ? AND rl.ExperimentId = e.RowId AND rl.ExperimentRunId = er.RowId AND ");
         ret.add(false);
-        ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), new SQLFragment("er.Container")));
+        ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), SQLFragment.unsafe("er.Container")));
         ret.unsafeAppend(") X ");
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
         ret.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);

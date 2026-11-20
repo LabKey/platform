@@ -108,7 +108,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         // to a join) to avoid ambiguous column references.
         String joinColumnName = getJoinColumnName(sourceTable);
 
-        SQLFragment rowIdAndObjectIdSql = new SQLFragment("SELECT RowId, ObjectId FROM exp.Material WHERE ")
+        SQLFragment rowIdAndObjectIdSql = SQLFragment.unsafe("SELECT RowId, ObjectId FROM exp.Material WHERE ")
             .appendIdentifier(joinColumnName)
             .unsafeAppend(" IN (SELECT ")
             .appendIdentifier(joinColumnName)
@@ -153,28 +153,28 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             // Delete from exp.Material (and associated tables)
             LOG.info("   exp.MaterialInput");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId")
+                SQLFragment.unsafe("DELETE FROM exp.MaterialInput WHERE MaterialId")
                     .append(materialIdClause)
             );
             LOG.info("   exp.MaterialAliasMap");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.MaterialAliasMap WHERE LSID IN (SELECT LSID FROM exp.Material WHERE RowId")
+                SQLFragment.unsafe("DELETE FROM exp.MaterialAliasMap WHERE LSID IN (SELECT LSID FROM exp.Material WHERE RowId")
                     .append(materialIdClause)
                     .unsafeAppend(")")
             );
             LOG.info("   assay.Well");
             executor.execute(
-                new SQLFragment("UPDATE assay.Well SET SampleId = null WHERE SampleId")
+                SQLFragment.unsafe("UPDATE assay.Well SET SampleId = null WHERE SampleId")
                     .append(materialIdClause)
             );
             LOG.info("   inventory.Item");
             executor.execute(
-                new SQLFragment("DELETE FROM inventory.Item WHERE MaterialId")
+                SQLFragment.unsafe("DELETE FROM inventory.Item WHERE MaterialId")
                     .append(materialIdClause)
             );
             LOG.info("   exp.Material");
             executor.execute(
-                new SQLFragment("DELETE FROM exp.Material WHERE RowId")
+                SQLFragment.unsafe("DELETE FROM exp.Material WHERE RowId")
                     .append(materialIdClause)
             );
 

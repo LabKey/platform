@@ -22,8 +22,7 @@ const SMALL_TSV = 'small.tsv';
 const LONG_TSV = 'long.tsv';
 const XLSX = 'sampleType.xlsx';
 
-// Read eagerly so the real file is captured before mock-fs replaces the file system; relative to the module directory
-const XLSX_CONTENT = mock.load('test/sampledata/sampleType.xlsx', { lazy: false });
+const XLSX_CONTENT = mock.load('test/sampledata/sampleType.xlsx');
 
 let readerOptions: RequestOptions;
 
@@ -89,7 +88,8 @@ describe('ParseFileAction', () => {
 
     const chunk = '\t'.repeat(MAX_COLUMNS / 2);
     const tooBig = 'a'.repeat(MAX_FILE_BYTES + 1);
-    const wideLine = 'A' + '\t'.repeat(MAX_COLUMNS) + '\nx\n';
+    // Non-empty last field: TabLoader drops a trailing empty one, which would leave exactly MAX_COLUMNS
+    const wideLine = 'A' + '\tx'.repeat(MAX_COLUMNS) + '\nx\n';
     const quotedWide = '"a\nb"' + chunk + '"c\nd"' + chunk + '"e\nf"' + chunk + '\nx\n';
     const sizeMessage = 'File exceeds the maximum allowed size of 10 MB.';
     const extensionMessage = 'Excel files must have a .xls or .xlsx extension.';

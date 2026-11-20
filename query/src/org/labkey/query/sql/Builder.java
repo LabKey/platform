@@ -219,5 +219,4 @@ public class Builder extends SQLFragment
         appendPrefix(); appendIndent();
         return super.appendValue(B, d);
     }
-    /** /CONSIDER  */
 }

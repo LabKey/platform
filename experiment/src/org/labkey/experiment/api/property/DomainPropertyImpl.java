@@ -921,7 +921,7 @@ public class DomainPropertyImpl implements DomainProperty
                 if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isText())
                 {
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(
-                            new SQLFragment("UPDATE ").
+                            SQLFragment.unsafe("UPDATE ").
                                     append(OntologyManager.getTinfoObjectProperty()).
                                     unsafeAppend(" SET StringValue = DateTimeValue, DateTimeValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
@@ -929,18 +929,24 @@ public class DomainPropertyImpl implements DomainProperty
                 else if (!oldType.getJdbcType().isText() && newType.getJdbcType().isText())
                 {
                     new SqlExecutor(OntologyManager.getExpSchema()).execute(
-                            new SQLFragment("UPDATE ").
+                            SQLFragment.unsafe("UPDATE ").
                                     append(OntologyManager.getTinfoObjectProperty()).
                                     unsafeAppend(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
                 else if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isDateOrTime())
                 {
-                    String sqlTypeName = dialect.getSqlTypeName(newType.getJdbcType());
-                    String update = String.format("CAST(DateTimeValue AS %s)", sqlTypeName);
+                    SQLFragment update;
                     if (newType.getJdbcType() == JdbcType.TIME)
-                        update = dialect.getDateTimeToTimeCast("DateTimeValue");
-                    SQLFragment sqlFragment = new SQLFragment("UPDATE ")
+                    {
+                        update = new SQLFragment();
+                        update.setSqlUnsafe(dialect.getDateTimeToTimeCast("DateTimeValue"));
+                    }
+                    else
+                    {
+                        update = SQLFragment.unsafe("CAST(DateTimeValue AS ").append(dialect.getSqlTypeNameAsSql(newType.getJdbcType())).unsafeAppend(")");
+                    }
+                    SQLFragment sqlFragment = SQLFragment.unsafe("UPDATE ")
                             .append(OntologyManager.getTinfoObjectProperty())
                             .unsafeAppend(" SET DateTimeValue = ")
                             .append(update)
@@ -961,7 +967,7 @@ public class DomainPropertyImpl implements DomainProperty
 
             if (changedType && _pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
             {
-                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSQLName(), dialect.makeDatabaseIdentifier("StringValue"), _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
+                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSQLName(), dialect.makeDatabaseIdentifier("StringValue"), _pdOld.getFormat(), SQLFragment.unsafe("PropertyId = ?", _pdOld.getPropertyId()));
             }
         }
         else
@@ -995,7 +1001,7 @@ public class DomainPropertyImpl implements DomainProperty
         String trueValue = StringUtils.trimToNull(f.format(true));
         String falseValue = StringUtils.trimToNull(f.format(false));
         String nullValue = StringUtils.trimToNull(f.format(null));
-        SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).unsafeAppend(" SET ").
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(schemaTable).unsafeAppend(" SET ").
                 appendIdentifier(column).unsafeAppend(" = CASE WHEN ").
                 appendIdentifier(column).unsafeAppend(" IN ('1', 'true') THEN ? WHEN ").
                 appendIdentifier(column).unsafeAppend(" IN ('0', 'false') THEN ? ELSE ? END");

@@ -173,7 +173,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             handler.fixupQCFlagTable(this, _provider, _assayProtocol);
         }
 
-        SQLFragment protocolSQL = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
+        SQLFragment protocolSQL = SQLFragment.unsafe("RunId IN (SELECT er.RowId FROM ");
         protocolSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");
         protocolSQL.unsafeAppend(" WHERE ProtocolLSID = ?)");
         protocolSQL.add(_assayProtocol.getLSID());
@@ -185,10 +185,10 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
     {
         FieldKey containerFieldKey = FieldKey.fromParts("Container");
         clearConditions(containerFieldKey);
-        SQLFragment sql = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
+        SQLFragment sql = SQLFragment.unsafe("RunId IN (SELECT er.RowId FROM ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "er");
         sql.unsafeAppend(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("er.Container")));
+        sql.append(filter.getSQLFragment(getSchema(), SQLFragment.unsafe("er.Container")));
         sql.unsafeAppend(")");
 
         addCondition(sql, containerFieldKey);
