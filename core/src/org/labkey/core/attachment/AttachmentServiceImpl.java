@@ -164,19 +164,21 @@ public class AttachmentServiceImpl implements AttachmentService
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException
     {
-        if (null == filename || filename.isEmpty())
+        if (StringUtils.isBlank(filename))
         {
             throw new NotFoundException();
         }
 
+        String displayName = StringUtils.isBlank(alias) ? filename : alias;
+
         // Stored names may be extension-less content hashes, so the alias (the user-facing name) decides inlining
-        boolean canInline = MimeMap.DEFAULT.canInlineFor(null != alias ? alias : filename);
+        boolean canInline = MimeMap.DEFAULT.canInlineFor(displayName);
 
         // Default to rendering inline when possible, but let caller force download as an attachment
         boolean asAttachment = !canInline || !inlineIfPossible;
 
         response.reset();
-        writeDocument(new ResponseWriter(response), parent, filename, alias, asAttachment);
+        writeDocument(new ResponseWriter(response), parent, filename, displayName, asAttachment);
 
         User user = null;
         try
