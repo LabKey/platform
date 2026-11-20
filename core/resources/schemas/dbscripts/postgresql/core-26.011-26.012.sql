@@ -11,7 +11,8 @@ DECLARE
 BEGIN
     IF to_regclass('labbook.AttachmentPointer') IS NOT NULL THEN
         -- prop doesn't exist yet when core bootstraps, so read it only on upgrade
-        globalParent := (SELECT p.Value FROM prop.Properties p JOIN prop.PropertySets s ON s.Set = p.Set WHERE s.Category = 'ELN' AND p.Name = 'attachmentParentId');
+        globalParent := (SELECT p.Value FROM prop.Properties p JOIN prop.PropertySets s ON s.Set = p.Set
+            WHERE s.ObjectId = (SELECT EntityId FROM core.Containers WHERE Parent IS NULL) AND s.UserId = 0 AND s.Category = 'ELN' AND p.Name = 'attachmentParentId');
         ALTER TABLE labbook.AttachmentPointer SET SCHEMA core;
         ALTER TABLE core.AttachmentPointer RENAME COLUMN SourceId TO Parent;
         ALTER TABLE core.AttachmentPointer RENAME CONSTRAINT UQ_AttachmentPointer_Name_SourceId TO UQ_AttachmentPointer_Name_Parent;
