@@ -23,6 +23,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -54,12 +55,13 @@ import static org.labkey.experiment.samples.SampleTimelineAuditProvider.SAMPLE_N
 import static org.labkey.experiment.samples.SampleTimelineAuditProvider.SAMPLE_TYPE_ID_COLUMN_NAME;
 
 /**
- * GH Issue 1640: DetailedAuditLogDataIterator flushes audit events every 1,001 rows, and each sample's
- * provided amount must stay with that sample across flushes.
+ * GH Issue 1640: DetailedAuditLogDataIterator flushes audit events every {@link BatchSize.Kind#ROWS} rows, and each
+ * sample's provided amount must stay with that sample across flushes.
  */
 public class SampleProvidedAmountAuditTestCase extends Assert
 {
-    private static final int ROW_COUNT = 2500; // spans three audit batches
+    private static final int BATCH_SIZE = 10;
+    private static final int ROW_COUNT = 25; // spans three audit batches; the merge's update and insert halves each cross a flush
     private static final String PROVIDED_AMOUNT_KEY = USER_PROVIDED_DATA_PREFIX + StoredAmount.label();
 
     private static Container _c;
@@ -91,7 +93,10 @@ public class SampleProvidedAmountAuditTestCase extends Assert
             expected.put("S-" + i, i);
         }
 
-        SampleTypeTestHelper.insert(_c, _user, st, rows);
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, BATCH_SIZE))
+        {
+            SampleTypeTestHelper.insert(_c, _user, st, rows);
+        }
 
         assertProvidedAmounts(st, expected);
     }
@@ -117,7 +122,10 @@ public class SampleProvidedAmountAuditTestCase extends Assert
             expected.put("S-" + i, amount);
         }
 
-        QueryUpdateServiceTestUtil.merge(SampleTypeTestHelper.getTable(_c, _user, st), _user, _c, rows);
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, BATCH_SIZE))
+        {
+            QueryUpdateServiceTestUtil.merge(SampleTypeTestHelper.getTable(_c, _user, st), _user, _c, rows);
+        }
 
         assertProvidedAmounts(st, expected);
     }
