@@ -216,7 +216,7 @@ public class ExperimentStressTest
 
             try
             {
-                Thread.sleep(randomInt(10) * 200);
+                Thread.sleep(randomInt(10) * 20L);
                 insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert, mode == RunMode.withaliquot);
             }
             catch (Exception e)

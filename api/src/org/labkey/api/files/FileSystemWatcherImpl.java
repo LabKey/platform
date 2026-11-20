@@ -31,7 +31,6 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.PrintWriters;
 
@@ -54,6 +53,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -565,7 +565,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             assertTrue(FileUtil.createNewFile(b));
             assertTrue(FileUtil.createNewFile(c));
 
-            waitForEvents(events, 3);
+            waitForEvents(events, () -> events.get() >= 3);
 
             try (PrintWriter pw = PrintWriters.getPrintWriter(a))
             {
@@ -577,16 +577,17 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 pw.println("Hello World");
             }
 
-            waitForEvents(events, SystemUtils.IS_OS_WINDOWS ? 7 : 5);
+            waitForEvents(events, () -> events.get() >= (SystemUtils.IS_OS_WINDOWS ? 7 : 5));
 
             assertTrue(a.delete());
             assertTrue(b.delete());
 
-            waitForEvents(events, SystemUtils.IS_OS_WINDOWS ? 11 : 8);
+            waitForEvents(events, () -> events.get() >= (SystemUtils.IS_OS_WINDOWS ? 11 : 8));
 
             FileUtil.deleteDir(testFolder);
 
-            waitForEvents(events, SystemUtils.IS_OS_WINDOWS ? 14 : 10);
+            // The delete of a file inside a deleted directory may never be reported, so wait only for what the assertions require
+            waitForEvents(events, () -> !directoryDeleted.isEmpty());
 
             assertEquals(3, created.size());
             assertTrue(created.containsAll(Set.of("a", "b", "c")));
@@ -603,23 +604,21 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             assertNull(plm);
         }
 
-        private void waitForEvents(AtomicInteger events, int targetCount) throws InterruptedException
+        private void waitForEvents(AtomicInteger events, BooleanSupplier done) throws InterruptedException
         {
-            int i = 2;
-            Thread.sleep(i * 1000);
-            int maxSleepSeconds = 10;
+            long start = System.currentTimeMillis();
+            long deadline = start + TimeUnit.SECONDS.toMillis(10);
 
-            while (events.get() < targetCount && i < maxSleepSeconds)
+            while (!done.getAsBoolean() && System.currentTimeMillis() < deadline)
             {
                 //noinspection BusyWait
-                Thread.sleep(1000);
-                i++;
+                Thread.sleep(50);
             }
 
-            LOG.info("Waiting for file watcher events took {}", StringUtilsLabKey.pluralize(i, "second"));
+            // Lets duplicate or trailing events for this step land before the next step starts
+            Thread.sleep(250);
 
-            LOG.info("Actual event count: {} vs. target: {}", events.get(), targetCount);
-            //assertEquals(expectedEventCount, events.get());
+            LOG.info("Waiting for file watcher events took {} ms; event count: {}", System.currentTimeMillis() - start, events.get());
         }
     }
 }

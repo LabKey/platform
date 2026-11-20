@@ -76,6 +76,11 @@ public class TransactionFilter implements Filter
     // NOTE: can't use ThreadLocal for this as you can't inspect the values for other threads
     private static final Map<Thread, RequestTracker> _pendingRequests = Collections.synchronizedMap(new WeakHashMap<>());
 
+    private static final long SWEEP_INTERVAL_MS = 5_000;
+    private static final long TEST_SWEEP_INTERVAL_MS = 250;
+    private static final Object SWEEP_LOCK = new Object();
+    private static volatile long _sweepIntervalMs = SWEEP_INTERVAL_MS;
+
     public static final String READ_ONLY_ATTRIBUTE_NAME = "ReadOnlyHttpRequest";
     /** Read-only, but a legitimate export on a large instance can outlast the read-only timeout */
     public static final String EXPORT_ATTRIBUTE_NAME = "ExportHttpRequest";
@@ -181,8 +186,10 @@ public class TransactionFilter implements Filter
                         }
                         try
                         {
-                            //noinspection BusyWait
-                            Thread.sleep(5_000);
+                            synchronized (SWEEP_LOCK)
+                            {
+                                SWEEP_LOCK.wait(_sweepIntervalMs);
+                            }
                         }
                         catch (InterruptedException e)
                         {
@@ -431,6 +438,23 @@ public class TransactionFilter implements Filter
         return _pendingRequests.size();
     }
 
+    /** Server-wide, for tests that wait on the request timeout sweep. Close the result to restore the default interval. */
+    static AutoCloseable shortenSweepInterval()
+    {
+        setSweepInterval(TEST_SWEEP_INTERVAL_MS);
+        return () -> setSweepInterval(SWEEP_INTERVAL_MS);
+    }
+
+    private static void setSweepInterval(long ms)
+    {
+        _sweepIntervalMs = ms;
+        // Wakes the sweep so the new interval applies now rather than after the current wait
+        synchronized (SWEEP_LOCK)
+        {
+            SWEEP_LOCK.notifyAll();
+        }
+    }
+
     public static void shutDown(long msWaitForRequests)
     {
         while (msWaitForRequests > 0)
@@ -487,7 +511,7 @@ public class TransactionFilter implements Filter
 
             int originalTimeout = AppProps.getInstance().getReadOnlyHttpRequestTimeout();
             setReadOnlyTimeout(2);
-            try
+            try (AutoCloseable _ = shortenSweepInterval())
             {
                 RequestTestUtil.runOnRequestThread(() -> {
                     Thread thread = Thread.currentThread();
@@ -500,7 +524,7 @@ public class TransactionFilter implements Filter
                             fail("Query wasn't cancelled");
                         }
                         catch (RuntimeException ignored) {} // Checked by its source below
-                        // Timeout, HeartBeat's up-to-2 s lag, and the sweep's 5 s interval, with slack
+                        // Timeout, HeartBeat's up-to-2 s lag, and the sweep's interval, with slack
                         assertTrue("Cancel took too long", System.currentTimeMillis() - start < 15_000);
                         assertEquals(RequestCancellation.Source.TIMEOUT, RequestCancellation.getSource(thread));
                     });
@@ -509,7 +533,7 @@ public class TransactionFilter implements Filter
                     RequestTestUtil.doRequest(null, () -> {
                         getRequestSummary(thread).request().setAttribute(EXPORT_ATTRIBUTE_NAME, true);
                         // Long enough for a sweep after the timeout despite HeartBeat's lag
-                        new SqlSelector(scope, "SELECT pg_sleep(12)").getObject(Object.class);
+                        new SqlSelector(scope, "SELECT pg_sleep(5)").getObject(Object.class);
                         assertNull("Export was cancelled", RequestCancellation.getSource(thread));
                     });
                 });
@@ -579,7 +603,7 @@ public class TransactionFilter implements Filter
 
             int originalTimeout = AppProps.getInstance().getReadOnlyHttpRequestTimeout();
             setReadOnlyTimeout(0);
-            try
+            try (AutoCloseable _ = shortenSweepInterval())
             {
                 RequestTestUtil.runOnRequestThread(() -> {
                     Thread thread = Thread.currentThread();
@@ -600,7 +624,7 @@ public class TransactionFilter implements Filter
                                 fail("Query wasn't cancelled");
                             }
                             catch (RuntimeException ignored) {} // Checked by its source below
-                            // The sweep's 5 s interval, with slack
+                            // The sweep's interval, with slack
                             assertTrue("Cancel took too long", System.currentTimeMillis() - start < 15_000);
                             assertEquals(RequestCancellation.Source.WS_MESSAGE, RequestCancellation.getSource(thread));
                         }

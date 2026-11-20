@@ -1068,7 +1068,7 @@ public class ColumnFactsCache
         @Test
         public void testBudget() throws Exception
         {
-            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(2_000));
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(500));
             TableInfo table = getTable(SAMPLE_TYPE);
 
             long start = System.currentTimeMillis();

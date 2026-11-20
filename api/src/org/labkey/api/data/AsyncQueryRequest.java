@@ -68,6 +68,7 @@ public class AsyncQueryRequest<T>
     private static final String CLIENT_DISCONNECTED_TAG = "labkey.client_disconnected";
     private static final String ELAPSED_TAG = "labkey.async_query.ms";
     private static final long WORKER_EXIT_TIMEOUT_MS = 10_000;
+    private static volatile long _workerExitTimeoutMs = WORKER_EXIT_TIMEOUT_MS;
 
     /** Cancelled workers whose requests stopped waiting for them, re-cancelled by the request timeout sweep until they finish */
     private static final Set<AsyncQueryRequest<?>> _detached = ConcurrentHashMap.newKeySet();
@@ -308,13 +309,14 @@ public class AsyncQueryRequest<T>
      */
     synchronized private void awaitWorkerAfterInterrupt(Thread worker)
     {
-        long deadline = System.currentTimeMillis() + WORKER_EXIT_TIMEOUT_MS;
+        long timeout = _workerExitTimeoutMs;
+        long deadline = System.currentTimeMillis() + timeout;
         while (!_finished)
         {
             long remaining = deadline - System.currentTimeMillis();
             if (remaining <= 0)
             {
-                _log.warn("Async query thread '{}' still running {} ms after its request was interrupted", worker.getName(), WORKER_EXIT_TIMEOUT_MS);
+                _log.warn("Async query thread '{}' still running {} ms after its request was interrupted", worker.getName(), timeout);
                 // The worker still holds this thread's connection. Detaching keeps the thread's next request off it; marking
                 // discards it even if this request's cleanup releases it while the worker is still using it.
                 ConnectionWrapper.getConnectionsByScopeForEffectiveThread(Thread.currentThread()).values().forEach(c -> c.forEach(ConnectionWrapper::markCancelled));
@@ -635,7 +637,7 @@ public class AsyncQueryRequest<T>
                 }
             }, "AsyncQueryRequest stuck worker test");
 
-            try
+            try (AutoCloseable _ = overrideWorkerExitTimeout())
             {
                 requestThread.start();
                 assertTrue("Worker never got a connection", holding.await(10, TimeUnit.SECONDS));
@@ -711,17 +713,28 @@ public class AsyncQueryRequest<T>
                 }
             }, "AsyncQueryRequest detached worker test");
 
-            requestThread.start();
-            assertTrue("Worker never registered its statement", registered.await(10, TimeUnit.SECONDS));
-            requestThread.interrupt();
-            requestThread.join(WORKER_EXIT_TIMEOUT_MS + 10_000);
-            assertFalse("Request thread didn't exit", requestThread.isAlive());
-            assertTrue("Expected an aborted request, got " + failure.get(), failure.get() instanceof AbortedRequestException);
+            try (AutoCloseable _ = overrideWorkerExitTimeout();
+                 AutoCloseable _ = TransactionFilter.shortenSweepInterval())
+            {
+                requestThread.start();
+                assertTrue("Worker never registered its statement", registered.await(10, TimeUnit.SECONDS));
+                requestThread.interrupt();
+                requestThread.join(WORKER_EXIT_TIMEOUT_MS + 10_000);
+                assertFalse("Request thread didn't exit", requestThread.isAlive());
+                assertTrue("Expected an aborted request, got " + failure.get(), failure.get() instanceof AbortedRequestException);
 
-            // The sweep's 5 s interval, with slack
-            assertTrue("Worker didn't finish", workerDone.await(20, TimeUnit.SECONDS));
-            assertTrue("Query wasn't cancelled: " + queryFailure.get(), queryFailure.get() instanceof SQLException e && SqlDialect.isCancelException(e));
-            assertTrue("Cancel took too long: " + queryMs.get() + " ms", queryMs.get() < 15_000);
+                // The sweep's interval, with slack
+                assertTrue("Worker didn't finish", workerDone.await(20, TimeUnit.SECONDS));
+                assertTrue("Query wasn't cancelled: " + queryFailure.get(), queryFailure.get() instanceof SQLException e && SqlDialect.isCancelException(e));
+                assertTrue("Cancel took too long: " + queryMs.get() + " ms", queryMs.get() < 15_000);
+            }
+        }
+
+        /** Shortens the wait for a stuck worker server-wide; close the result to restore it */
+        private static AutoCloseable overrideWorkerExitTimeout()
+        {
+            _workerExitTimeoutMs = 1_000;
+            return () -> _workerExitTimeoutMs = WORKER_EXIT_TIMEOUT_MS;
         }
     }
 }
