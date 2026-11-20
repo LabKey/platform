@@ -149,12 +149,12 @@ public abstract class BaseWikiView extends JspView<Object>
         if (hasInsertPermission)
         {
             insertURL = new ActionURL(WikiController.EditWikiAction.class, c);
-            insertURL.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
+            insertURL.addCancelURL(url);
 
             // This is used to return back to page where Wiki webpart is being rendered.
             if (isWebPart())
             {
-                insertURL.addParameter("redirect", url.getLocalURIString());
+                insertURL.addReturnUrl(url);
                 insertURL.addParameter("webPartId", Integer.toString(_webPartId));
             }
 
@@ -162,7 +162,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 insertURL.addParameter("defName", wiki.getName());
 
             newURL = new ActionURL(WikiController.EditWikiAction.class, c);
-            newURL.addParameter("cancel", context.getActionURL().getLocalURIString());
+            newURL.addCancelURL(url);
         }
 
         if (perms.allowUpdate(wiki))
@@ -170,9 +170,9 @@ public abstract class BaseWikiView extends JspView<Object>
             versionsURL = wiki.getVersionsURL();
 
             updateContentURL = new ActionURL(WikiController.EditWikiAction.class, c);
-            updateContentURL.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
+            updateContentURL.addCancelURL(url);
             updateContentURL.addParameter("name", wiki.getName());
-            updateContentURL.addParameter("redirect", url.getLocalURIString());
+            updateContentURL.addReturnUrl(url);
         }
 
         if (isWebPart())

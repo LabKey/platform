@@ -36,6 +36,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -78,7 +79,6 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -1946,11 +1946,9 @@ public class WikiController extends SpringActionController
         }
     }
 
-    public static class EditWikiForm
+    public static class EditWikiForm extends ReturnUrlForm
     {
         private String _name;
-        private ReturnURLString _redirect;
-        private ReturnURLString _cancel;
         private String _format;
         private String _defName;
         private boolean _create;
@@ -1970,26 +1968,6 @@ public class WikiController extends SpringActionController
         public void setName(String name)
         {
             _name = name;
-        }
-
-        public @Nullable ReturnURLString getRedirect()
-        {
-            return _redirect;
-        }
-
-        public void setRedirect(@Nullable ReturnURLString redir)
-        {
-            _redirect = redir;
-        }
-
-        public @Nullable ReturnURLString getCancel()
-        {
-            return _cancel;
-        }
-
-        public void setCancel(@Nullable ReturnURLString cancel)
-        {
-            _cancel = cancel;
         }
 
         public String getFormat()
@@ -2086,8 +2064,8 @@ public class WikiController extends SpringActionController
                 getContainer(),
                 wiki,
                 curVersion,
-                Objects.toString(form.getRedirect(), null),
-                Objects.toString(form.getCancel(), null),
+                form.getReturnUrlHelper(),
+                form.getCancelActionURL(),
                 form.getFormat(),
                 form.getDefName(),
                 useVisualEditor,
@@ -3094,11 +3072,16 @@ public class WikiController extends SpringActionController
             return form;
         }
 
+        private static @Nullable String cancelUrl(EditWikiForm form)
+        {
+            return StringUtils.trimToNull(Objects.toString(form.getCancelUrl(), null));
+        }
+
         private static void assertDropped(String url)
         {
-            EditWikiForm form = bind(Map.of("redirect", url, "cancel", url));
-            assertEquals("redirect should be dropped: " + url, "", Objects.toString(form.getRedirect(), null));
-            assertEquals("cancel should be dropped: " + url, "", Objects.toString(form.getCancel(), null));
+            EditWikiForm form = bind(Map.of("returnUrl", url, "cancelUrl", url));
+            assertNull("returnUrl should be dropped: " + url, form.getReturnUrl());
+            assertNull("cancelUrl should be dropped: " + url, cancelUrl(form));
         }
 
         @Test
@@ -3113,21 +3096,21 @@ public class WikiController extends SpringActionController
         public void testLocalUrlKept()
         {
             String url = "/home/wiki-page.view?name=X";
-            EditWikiForm form = bind(Map.of("redirect", url, "cancel", url));
-            assertTrue(Objects.toString(form.getRedirect(), "").contains("wiki-page.view"));
-            assertTrue(Objects.toString(form.getCancel(), "").contains("wiki-page.view"));
+            EditWikiForm form = bind(Map.of("returnUrl", url, "cancelUrl", url));
+            assertTrue(Objects.toString(form.getReturnUrl(), "").contains("wiki-page.view"));
+            assertTrue(Objects.toString(cancelUrl(form), "").contains("wiki-page.view"));
         }
 
         @Test
         public void testMissingOrEmptyIsNull()
         {
             EditWikiForm missing = bind(Map.of("name", "X"));
-            assertNull(missing.getRedirect());
-            assertNull(missing.getCancel());
+            assertNull(missing.getReturnUrl());
+            assertNull(cancelUrl(missing));
 
-            EditWikiForm empty = bind(Map.of("redirect", "", "cancel", ""));
-            assertNull(empty.getRedirect());
-            assertNull(empty.getCancel());
+            EditWikiForm empty = bind(Map.of("returnUrl", "", "cancelUrl", ""));
+            assertNull(empty.getReturnUrl());
+            assertNull(cancelUrl(empty));
         }
     }
 
