@@ -61,6 +61,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -82,7 +83,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 public class AuditLogImpl implements AuditLogService, StartupListener
@@ -145,10 +145,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     // Each provider touches only its own domain and storage table, in its own transaction, and mostly waits on the database
     private static void initializeProviders(List<AuditTypeProvider> providers, User user)
     {
-        AtomicInteger threadNumber = new AtomicInteger();
         int threads = Math.clamp(providers.size(), 1, PROVIDER_INIT_THREADS);
 
-        try (ExecutorService pool = Executors.newFixedThreadPool(threads, r -> new Thread(r, "Audit Provider Init " + threadNumber.incrementAndGet())))
+        try (ExecutorService pool = Executors.newFixedThreadPool(threads, Thread.ofPlatform().name("Audit Provider Init ", 1).factory()))
         {
             List<Future<?>> futures = providers.stream()
                 .<Future<?>>map(provider -> pool.submit(() -> provider.initializeProvider(user)))
@@ -159,16 +158,12 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         }
         catch (ExecutionException e)
         {
-            if (e.getCause() instanceof RuntimeException re)
-                throw re;
-            if (e.getCause() instanceof Error err)
-                throw err;
-            throw new RuntimeException(e.getCause());
+            UnexpectedException.rethrow(e.getCause());
         }
         catch (InterruptedException e)
         {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

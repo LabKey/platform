@@ -167,6 +167,34 @@ public class ModuleArchiveTestCase extends Assert
         assertFalse(v2.isModified());
     }
 
+    @Test
+    public void testCaseOnlyRenameKeepsFile() throws IOException
+    {
+        long now = System.currentTimeMillis();
+        File exploded = writeArchive(now - 60_000, Map.of("dep.jar", "1", "app.jar", "1")).extractAll();
+
+        ModuleArchive v2 = writeArchive(now, Map.of("Dep.jar", "1", "App.jar", "2"));
+        v2.extractAll();
+
+        assertEquals("1", readVersion(libJar(exploded, "Dep.jar")));
+        assertEquals("2", readVersion(libJar(exploded, "App.jar")));
+        assertFalse(v2.isModified());
+    }
+
+    @Test
+    public void testFileAndDirectorySwapPlaces() throws IOException
+    {
+        long now = System.currentTimeMillis();
+        File exploded = writeArchive(now - 60_000, Map.of("a.jar", "1", "b/c.jar", "1")).extractAll();
+
+        ModuleArchive v2 = writeArchive(now, Map.of("a.jar/d.jar", "2", "b", "2"));
+        v2.extractAll();
+
+        assertEquals("2", readVersion(libJar(exploded, "a.jar/d.jar")));
+        assertEquals("2", readVersion(libJar(exploded, "b")));
+        assertFalse(v2.isModified());
+    }
+
     private static File libJar(File exploded, String name)
     {
         return FileUtil.appendPath(exploded, org.labkey.api.util.Path.parse("lib/" + name));

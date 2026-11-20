@@ -229,6 +229,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     }
 
     // pgjdbc's getImportedKeys() plans a nine-relation join per call (~4ms); this returns the same rows in ~0.3ms
+    // Don't look the table up with to_regclass(): it throws when the role lacks USAGE on the schema
     private static final String IMPORTED_KEYS_SQL = """
         SELECT
             (SELECT n.nspname FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.oid = con.confrelid) AS "PKTABLE_SCHEM",
@@ -238,8 +239,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             k.n AS "KEY_SEQ",
             con.conname AS "FK_NAME"
         FROM pg_catalog.pg_constraint con
+        JOIN pg_catalog.pg_class t ON t.oid = con.conrelid
+        JOIN pg_catalog.pg_namespace tn ON tn.oid = t.relnamespace
         CROSS JOIN LATERAL ROWS FROM (pg_catalog.unnest(con.conkey), pg_catalog.unnest(con.confkey)) WITH ORDINALITY AS k(fkattnum, pkattnum, n)
-        WHERE con.contype = 'f' AND con.conrelid = pg_catalog.to_regclass(pg_catalog.format('%I.%I', ?, ?))
+        WHERE con.contype = 'f' AND tn.nspname = ? AND t.relname = ?
         ORDER BY 1, 2, 6, 5""";
 
     @Override

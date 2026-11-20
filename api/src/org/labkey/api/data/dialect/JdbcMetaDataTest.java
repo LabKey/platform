@@ -26,7 +26,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcMetaDataSelector;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
@@ -72,8 +71,7 @@ public class JdbcMetaDataTest extends Assert
 
         for (String schemaName : List.of(CoreSchema.getInstance().getSchemaName(), ExperimentService.get().getSchema().getName(), AbstractAuditTypeProvider.SCHEMA_NAME))
         {
-            SQLFragment tablesSql = SQLFragment.unsafe("SELECT c.relname FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind IN ('r', 'p') AND n.nspname = ?", schemaName);
-            for (String tableName : new SqlSelector(scope, tablesSql).getArrayList(String.class))
+            for (String tableName : DbSchema.createFromMetaData(scope, schemaName, DbSchemaType.Bare).getTableNames())
                 assertImportedKeysMatch(scope, schemaName, tableName);
         }
 
