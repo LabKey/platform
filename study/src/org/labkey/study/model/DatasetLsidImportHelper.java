@@ -174,6 +174,9 @@ public class DatasetLsidImportHelper
         public static void tearDown()
         {
             JunitUtil.deleteTestContainer();
+            // MemTracker reports studies still referenced after their container is deleted as leaks
+            _visitStudy = null;
+            _dateStudy = null;
         }
 
         @Test
