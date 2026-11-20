@@ -768,7 +768,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         @Test
         public void testUnreplacedSubstitutionsThrow()
         {
-            for (List<String> unknowns : List.of(List.of("unknownParam"), List.of("firstUnknown", "secondUnknown")))
+            for (List<String> unknowns : List.of(List.of("missingParam"), List.of("firstUnknown", "secondUnknown")))
             {
                 String script = unknowns.stream().map(p -> "${" + p + "}").collect(Collectors.joining(" and ${" + KNOWN_PARAM + "} and "));
                 ScriptException e = assertThrows(script, ScriptException.class, () -> _engine.writeScriptFile(script, _context, List.of("R")));
