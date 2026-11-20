@@ -110,9 +110,9 @@ public class ContainerTable extends FilteredTable<UserSchema>
         PropertySchema propertySchema = PropertySchema.getInstance();
         TableInfo propertiesTable = propertySchema.getTableInfoProperties();
         TableInfo propertiesSets = propertySchema.getTableInfoPropertySets();
-        SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM ").append(propertiesTable).unsafeAppend(" p, ")
+        SQLFragment folderTypeSQL = SQLFragment.unsafe("(SELECT Value FROM ").append(propertiesTable).unsafeAppend(" p, ")
                 .append(propertySchema.getTableInfoPropertySets()).unsafeAppend(" ps ")
-                .append("WHERE ps.ObjectId = " + ExprColumn.STR_TABLE_ALIAS + ".EntityId AND ps.Category = ").appendValue(ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME)
+                .unsafeAppend("WHERE ps.ObjectId = ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".EntityId AND ps.Category = ").appendValue(ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME)
                 .unsafeAppend(    " AND ").append(propertiesSets.getColumn("set").getValueSql("ps")).unsafeAppend(" = ").append(propertiesTable.getColumn("set").getValueSql("p"))
                 .unsafeAppend(    " AND p.Name = ").appendValue(ContainerManager.FOLDER_TYPE_PROPERTY_NAME).unsafeAppend(")");
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
@@ -136,19 +136,20 @@ public class ContainerTable extends FilteredTable<UserSchema>
         typeCol.setReadOnly(true);
         typeCol.setUserEditable(false);
 
-        SQLFragment containerTypeSQL = new SQLFragment("CASE ");
+        SQLFragment containerTypeSQL = SQLFragment.unsafe("CASE ");
         for (String cType : ContainerTypeRegistry.get().getTypeNames())
         {
             // Skip over normal containers.  They become either 'project' or 'folder' below.
             if (cType.equalsIgnoreCase(NormalContainerType.NAME))
                 continue;
             containerTypeSQL = containerTypeSQL.
-                    unsafeAppend("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".Type = ").appendValue(cType,dialect).unsafeAppend(" THEN ").appendValue(cType,dialect).unsafeAppend(" ");
+                    unsafeAppend("WHEN ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".Type = ").appendValue(cType,dialect).unsafeAppend(" THEN ").appendValue(cType,dialect).unsafeAppend(" ");
         }
-        containerTypeSQL = containerTypeSQL.append(
-                    "WHEN "+ExprColumn.STR_TABLE_ALIAS+".entityid = ? THEN 'root' " +
-                    "WHEN "+ExprColumn.STR_TABLE_ALIAS+".parent = ? THEN 'project' " +
-                    "ELSE 'folder' END");
+        containerTypeSQL = containerTypeSQL.unsafeAppend("WHEN ")
+                .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                .unsafeAppend(".entityid = ? THEN 'root' WHEN ")
+                .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                .unsafeAppend(".parent = ? THEN 'project' ELSE 'folder' END");
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         containerTypeSQL.add(ContainerManager.getRoot().getEntityId());
         ExprColumn containerTypeColumn = new ExprColumn(this, "ContainerType", containerTypeSQL, JdbcType.VARCHAR);
@@ -182,10 +183,10 @@ public class ContainerTable extends FilteredTable<UserSchema>
         activeModules.setReadOnly(true);
         addColumn(activeModules);
 
-        SQLFragment webpartNamesSQL = new SQLFragment("(SELECT ")
-                .append(getSqlDialect().getGroupConcat(new SQLFragment("PWP.name"), true, true, ", "))
+        SQLFragment webpartNamesSQL = SQLFragment.unsafe("(SELECT ")
+                .append(getSqlDialect().getGroupConcat(SQLFragment.unsafe("PWP.name"), true, true, ", "))
                 .unsafeAppend(" FROM ").append(Portal.getTableInfoPortalWebParts(), "PWP")
-                .append(" WHERE PWP.container = " + ExprColumn.STR_TABLE_ALIAS + ".entityId)");
+                .unsafeAppend(" WHERE PWP.container = ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".entityId)");
         ExprColumn webpartColumn = new ExprColumn(this, "WebParts", webpartNamesSQL, JdbcType.VARCHAR);
         webpartColumn.setReadOnly(true);
         addColumn(webpartColumn);

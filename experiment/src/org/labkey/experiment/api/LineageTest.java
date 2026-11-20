@@ -36,7 +36,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
@@ -496,7 +496,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         context.setAllowImportLookupByAlternateKey(true);
 
         errors = new BatchValidationException();
-        listQus.loadRows(user, c, new ListofMapsDataIterator.Builder(Set.of("SampleId"), rows), context, null);
+        listQus.loadRows(user, c, MapDataIterator.of(Set.of("SampleId"), rows), context, null);
         if (errors.hasErrors())
             throw errors;
 

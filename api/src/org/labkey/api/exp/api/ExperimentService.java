@@ -404,7 +404,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
 
+    /** Returns the materials in the given container with the given LSIDs; LSIDs with no material there are omitted */
+    @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(@NotNull Container c, @NotNull Collection<String> lsids);
+
     @Nullable ExpMaterial getExpMaterial(String lsid);
+
+    /** Returns the material with the given LSID if it is in the given container */
+    @Nullable ExpMaterial getExpMaterial(@NotNull Container c, @NotNull String lsid);
 
     /**
      * Looks in all the sample types visible from the given container for a single match with the specified name
@@ -1277,6 +1283,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     /** Returns true if the property has a lookup to exp.Materials and is an int or string. */
     boolean isLookupToMaterials(DomainProperty dp);
+
+    /** Returns true if the property has a lookup to exp.Materials or a sample type (see getLookupSampleType) and is an int or string. */
+    boolean isLookupToSamples(DomainProperty dp);
 
     void registerNameExpressionType(String dataType, String schemaName, String queryname, String nameExpressionCol);
 

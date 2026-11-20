@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
@@ -705,10 +706,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         // get rid of the properties for this table
         if (null != getObjectUriColumn())
         {
+            DatabaseIdentifier objectUri = getDbTable().getSqlDialect().makeDatabaseIdentifier(getObjectUriColumn().getColumnName());
             SQLFragment lsids = new SQLFragment()
-                    .unsafeAppend("SELECT t.").append(getObjectUriColumn().getColumnName())
+                    .unsafeAppend("SELECT t.").appendIdentifier(objectUri)
                     .unsafeAppend(" FROM ").append(getDbTable(), "t")
-                    .unsafeAppend(" WHERE t.").append(getObjectUriColumn().getColumnName()).unsafeAppend(" IS NOT NULL");
+                    .unsafeAppend(" WHERE t.").appendIdentifier(objectUri).unsafeAppend(" IS NOT NULL");
             if (null != getDbTable().getColumn("container"))
             {
                 lsids.unsafeAppend(" AND t.Container = ?");

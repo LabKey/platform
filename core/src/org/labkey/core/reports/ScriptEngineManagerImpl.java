@@ -66,6 +66,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.reports.report.python.PythonScriptEngine;
 import org.labkey.core.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.core.reports.report.r.RserveScriptEngineFactory;
+import org.labkey.core.script.RhinoLanguageVersion;
 import org.labkey.core.script.RhinoScriptEngine;
 
 import javax.script.ScriptEngine;
@@ -89,6 +90,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 {
     private static final Logger LOG = LogHelper.getLogger(ScriptEngineManagerImpl.class, "Script engine anomalies");
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
+    private static final String RHINO_KEY = ENGINE_DEF_MAP_PREFIX + "js";
     private static final String ALL_ENGINES = "ALL";
     private static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
 
@@ -109,7 +111,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             String context = key.substring(colon + 1);
 
             // fetch script engine definitions scoped to the container
-            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+            SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
                 .unsafeAppend(" WHERE RowId IN (SELECT EngineId FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
@@ -429,7 +431,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             {
                 tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-                SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
+                SQLFragment sql = SQLFragment.unsafe("SELECT EngineId FROM ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
                         .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                         .add(container)
@@ -437,7 +439,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
                 if (!new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
                 {
-                    SQLFragment insert = new SQLFragment("INSERT INTO ")
+                    SQLFragment insert = SQLFragment.unsafe("INSERT INTO ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
                             .unsafeAppend(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
                             .add(def.getRowId())
@@ -448,7 +450,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 }
                 else
                 {
-                    SQLFragment update = new SQLFragment("UPDATE ")
+                    SQLFragment update = SQLFragment.unsafe("UPDATE ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
                             .unsafeAppend(" SET EngineId = ? ")
                             .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
@@ -471,7 +473,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         {
             tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-            SQLFragment sql = new SQLFragment("DELETE FROM ")
+            SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
                     .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
                     .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                     .add(container)
@@ -594,6 +596,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             String key = makeKey(def.getExtensions());
 
             setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
+
+            RhinoLanguageVersion version = isRhino(def) ? RhinoLanguageVersion.fromVersion(def.getLanguageVersion()) : null;
+            if (version != null)
+                setProp(Props.languageVersion.name(), String.valueOf(version.getVersion()), key);
         }
 
         // Issue 22354: It's a little heavy-handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
@@ -619,6 +625,17 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     private static String makeKey(String[] engineExtensions)
     {
         return ENGINE_DEF_MAP_PREFIX + StringUtils.join(engineExtensions, ',');
+    }
+
+    public static boolean isRhino(ExternalScriptEngineDefinition def)
+    {
+        return !def.isExternal() && RHINO_KEY.equals(makeKey(def.getExtensions()));
+    }
+
+    public static @NotNull RhinoLanguageVersion getRhinoLanguageVersion()
+    {
+        RhinoLanguageVersion version = RhinoLanguageVersion.fromVersion(getProp(Props.languageVersion.name(), RHINO_KEY));
+        return version != null ? version : RhinoLanguageVersion.DEFAULT;
     }
 
     private static ExternalScriptEngineDefinition createDefinition(Map<String, String> props, boolean isFromStartupProps)
@@ -786,6 +803,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 record.put("type", String.valueOf(def.getType()));
                 record.put("remote", def.isRemote());
                 record.put("sandboxed", def.isSandboxed());
+            }
+            else if (factory instanceof ScriptService)
+            {
+                record.put("languageVersion", getRhinoLanguageVersion().name());
             }
 
             try

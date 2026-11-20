@@ -1830,7 +1830,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         String filePathRoot = AssayRunUploadForm.getAssayDirectory(targetContainer, null).getAbsolutePath();
         TableInfo runsTable = experimentService.getTinfoExperimentRun();
         List<Long> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
-        SQLFragment updateSql = new SQLFragment("UPDATE ").append(runsTable)
+        SQLFragment updateSql = SQLFragment.unsafe("UPDATE ").append(runsTable)
                 .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                 .unsafeAppend(", modified = ").appendValue(new Date())
                 .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
@@ -1852,7 +1852,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // update Exp.Object where object.objecturi IN experimentrun.lsid
         TableInfo expObjectTable = OntologyManager.getTinfoObject();
-        updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
+        updateSql = SQLFragment.unsafe("UPDATE ").append(expObjectTable)
                 .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                 .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                 .append(runsTable)
@@ -1863,7 +1863,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // update Exp.Object where object.objecturi IN exp.data.lsid
         TableInfo expDataTable = experimentService.getTinfoData();
-        updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
+        updateSql = SQLFragment.unsafe("UPDATE ").append(expObjectTable)
                 .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                 .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                 .append(expDataTable)
@@ -1874,7 +1874,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         updateCounts.put("expObject", updateCounts.getOrDefault("expObject", 0) + expObjectCount);
 
         // update Exp.Data
-        updateSql = new SQLFragment("UPDATE ").append(expDataTable)
+        updateSql = SQLFragment.unsafe("UPDATE ").append(expDataTable)
                 .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                 .unsafeAppend(", modified = ").appendValue(new Date())
                 .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
@@ -1933,7 +1933,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
 
         // update exp.experiment
-        SQLFragment updateExperimentSql = new SQLFragment("UPDATE ").append(experimentTable)
+        SQLFragment updateExperimentSql = SQLFragment.unsafe("UPDATE ").append(experimentTable)
                 .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                 .unsafeAppend(", modified = ").appendValue(new Date())
                 .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
@@ -2015,7 +2015,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // update Exp.Object where object.objecturi IN batchLsids
         TableInfo expObjectTable = OntologyManager.getTinfoObject();
-        SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
+        SQLFragment updateSql = SQLFragment.unsafe("UPDATE ").append(expObjectTable)
                 .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                 .unsafeAppend(" WHERE objecturi ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, batchLsids);
@@ -2243,7 +2243,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 // TODO also use exp.data.objectId instead of objecturi
                 TableInfo expDataTable = ExperimentService.get().getTinfoData();
                 TableInfo expObjectTable = OntologyManager.getTinfoObject();
-                SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
+                SQLFragment updateSql = SQLFragment.unsafe("UPDATE ").append(expObjectTable)
                         .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                         .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                         .append(expDataTable)
@@ -2255,7 +2255,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                 var realTable = assayResultTable.getRealTable();
                 var realFileColumn = realTable.getColumn(fileField);
-                updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
+                updateSql = SQLFragment.unsafe("UPDATE ").append(assayResultTable.getRealTable())
                         .unsafeAppend(" SET ")
                         .appendIdentifier(realFileColumn.getSelectIdentifier())
                         .unsafeAppend(" = ").appendValue(updatedFile.getAbsolutePath())

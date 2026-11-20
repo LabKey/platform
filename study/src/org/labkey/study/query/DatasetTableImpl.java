@@ -229,7 +229,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable, Me
                         return _url;
                     }
                 };
-                column.setImportAliasesSet(Set.of("ptid","participantid"));
+                column.setSystemImportAliasesSet(Set.of("ptid","participantid"));
                 column.setInputType("text");
                 // TODO, need a way for a lookup to have a "text" input
                 column.setDisplayColumnFactory(colInfo -> {
@@ -415,6 +415,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable, Me
         var autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
         autoJoinColumn.setPropertyURI(null);
         autoJoinColumn.setImportAliasesSet(Set.of());// not a #participantid column
+        autoJoinColumn.setSystemImportAliasesSet(Set.of());
         autoJoinColumn.setDescription("Contains lookups to each Dataset that can be joined by the " + _dsd.getLabel() + " Dataset's '" + _dsd.getKeyTypeDescription() + "' combination.");
         autoJoinColumn.setKeyField(false);
         autoJoinColumn.setIsUnselectable(true);
@@ -873,7 +874,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable, Me
                     // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
                     // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
                     String sql = Strings.CS.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
-                    frag = new SQLFragment().setSqlUnsafe(sql).addAll(temp.getParams());
+                    frag = new SQLFragment();
+                    frag.setSqlUnsafe(sql);
+                    frag.addAll(temp.getParams());
                 }
                 else
                 {

@@ -148,10 +148,14 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 int idx = sql.indexOf("temp.InClause$");
                 if (idx > -1)
                 {
-                    SQLFragment newFragment = new SQLFragment("EXISTS (SELECT 1 FROM ")
-                        .append(sql.substring(idx, idx + 46))
+                    SQLFragment tempTable = new SQLFragment();
+                    tempTable.setSqlUnsafe(sql.substring(idx, idx + 46));
+                    SQLFragment column = new SQLFragment();
+                    column.setSqlUnsafe(sql.substring(1, sql.indexOf(" IN ")));
+                    SQLFragment newFragment = SQLFragment.unsafe("EXISTS (SELECT 1 FROM ")
+                        .append(tempTable)
                         .unsafeAppend(" WHERE ")
-                        .append(sql.substring(1, sql.indexOf(" IN ")))
+                        .append(column)
                         .unsafeAppend(" = Id)");
                     newFragment.addAll(fragment.getParams());
                     newFragment.addTempTokens(fragment);
@@ -183,7 +187,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             DbSchema sourceSchema = sourceExperimentRunsTable.getSchema();
 
             // Selects all assay runs (same filter used by assay.AssayRuns)
-            SQLFragment assayRunSql = new SQLFragment(
+            SQLFragment assayRunSql = SQLFragment.unsafe(
                 "ProtocolLSID IN (SELECT LSID FROM exp.Protocol x WHERE (ApplicationType = 'ExperimentRun') AND " +
                 "((SELECT MAX(pd.PropertyId) from exp.Object o, exp.ObjectProperty op, exp.PropertyDescriptor pd WHERE " +
                 "pd.PropertyId = op.PropertyId and op.ObjectId = o.ObjectId and o.ObjectURI = LSID AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL))"
@@ -198,7 +202,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             // Selects assay runs (regardless of their container) that were replaced by assay runs that are being
             // excluded
             FilterClause replaceByRunIdClause = new SQLClause(
-                new SQLFragment("ReplacedByRunId IS NOT NULL AND ReplacedByRunId IN (SELECT RowId FROM exp.ExperimentRun WHERE ")
+                SQLFragment.unsafe("ReplacedByRunId IS NOT NULL AND ReplacedByRunId IN (SELECT RowId FROM exp.ExperimentRun WHERE ")
                     .append(assayRunClause.toSQLFragment(null, sourceSchema.getSqlDialect()))
                     .unsafeAppend(")")
             );
@@ -206,7 +210,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             // Selects assay runs that were replaced by assay runs that are being excluded because they were replaced
             // by an excluded assay run. Yes, we actually have to do this...
             FilterClause replaceByReplacedRunIdClause = new SQLClause(
-                new SQLFragment("ReplacedByRunId IS NOT NULL AND ReplacedByRunId IN (SELECT RowId FROM exp.ExperimentRun WHERE ")
+                SQLFragment.unsafe("ReplacedByRunId IS NOT NULL AND ReplacedByRunId IN (SELECT RowId FROM exp.ExperimentRun WHERE ")
                     .append(replaceByRunIdClause.toSQLFragment(null, sourceSchema.getSqlDialect()))
                     .unsafeAppend(")")
             );
@@ -267,7 +271,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 new InClause(FieldKey.fromParts("ToObjectId", "Container"), containers)
             );
             case "Alias" -> new SQLClause(
-                new SQLFragment("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container")
+                SQLFragment.unsafe("RowId IN (SELECT Alias FROM exp.MaterialAliasMap WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
                     .unsafeAppend(" UNION SELECT Alias FROM exp.DataAliasMap WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
@@ -283,7 +287,7 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
                 )
             );
             case "ObjectLegacyNames" -> new SQLClause(
-                new SQLFragment("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container")
+                SQLFragment.unsafe("ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
                     .unsafeAppend(")")
             );
@@ -305,22 +309,22 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         LOG.info("   exp.Edge (FromObjectId)");
         executor.execute(
-            new SQLFragment("DELETE FROM exp.Edge WHERE FromObjectId")
+            SQLFragment.unsafe("DELETE FROM exp.Edge WHERE FromObjectId")
                 .append(objectIdClause)
         );
         LOG.info("   exp.Edge (ToObjectId)");
         executor.execute(
-            new SQLFragment("DELETE FROM exp.Edge WHERE ToObjectId")
+            SQLFragment.unsafe("DELETE FROM exp.Edge WHERE ToObjectId")
                 .append(objectIdClause)
         );
         LOG.info("   exp.ObjectProperty");
         executor.execute(
-            new SQLFragment("DELETE FROM exp.ObjectProperty WHERE ObjectId")
+            SQLFragment.unsafe("DELETE FROM exp.ObjectProperty WHERE ObjectId")
                 .append(objectIdClause)
         );
         LOG.info("   exp.Object");
         executor.execute(
-            new SQLFragment("DELETE FROM exp.Object WHERE ObjectId")
+            SQLFragment.unsafe("DELETE FROM exp.Object WHERE ObjectId")
                 .append(objectIdClause)
         );
     }

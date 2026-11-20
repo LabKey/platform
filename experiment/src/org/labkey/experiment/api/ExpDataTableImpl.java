@@ -309,10 +309,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
             case LastIndexed:
-                SQLFragment lastIndexedSql = new SQLFragment("(SELECT LastIndexed FROM ").
+                SQLFragment lastIndexedSql = SQLFragment.unsafe("(SELECT LastIndexed FROM ").
                         append(ExperimentServiceImpl.get().getTinfoDataIndexed(), "di").
                         unsafeAppend(" WHERE di.DataId = ").
-                        append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
+                        appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
                 var lastIndexed = new ExprColumn(this, Column.LastIndexed.name(), lastIndexedSql, JdbcType.TIMESTAMP);
                 lastIndexed.setDescription("Date when the data was last full-text search indexed in the system");
                 lastIndexed.setHidden(true);
@@ -330,9 +330,11 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case Protocol:
             {
-                ExprColumn col = new ExprColumn(this, Column.Protocol.toString(), new SQLFragment(
-                        "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
-                        " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR, getColumn(Column.SourceProtocolApplication));
+                ExprColumn col = new ExprColumn(this, Column.Protocol.toString(), new SQLFragment().unsafeAppend("(SELECT ProtocolLSID FROM ")
+                        .append(ExperimentServiceImpl.get().getTinfoProtocolApplication().getSQLName())
+                        .unsafeAppend(" pa WHERE pa.RowId = ")
+                        .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                        .unsafeAppend(".SourceApplicationId)"), JdbcType.VARCHAR, getColumn(Column.SourceProtocolApplication));
                 col.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(),"LSID"));
                 col.setSqlTypeName("lsidtype");
                 col.setHidden(true);
@@ -357,9 +359,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
             case RunApplication:
             {
-                SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
+                SQLFragment sql = SQLFragment.unsafe("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
-                        .unsafeAppend(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".runId")
+                        .unsafeAppend(" WHERE pa.runId = ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".runId")
                         .unsafeAppend(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
                         .unsafeAppend(")");
 
@@ -568,7 +570,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             throw new IllegalArgumentException("Attempt to unset experiment");
         if (experiment == null)
             return;
-        SQLFragment condition = new SQLFragment("exp.Data.RunId IN "
+        SQLFragment condition = SQLFragment.unsafe("exp.Data.RunId IN "
                 + " ( SELECT ExperimentRunId FROM exp.RunList "
                 + " WHERE ExperimentId = ? )");
         condition.add(experiment.getRowId());
@@ -592,7 +594,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         _run = run;
         if (run == null)
         {
-            addCondition(new SQLFragment("(RunId IS NULL)"), FieldKey.fromParts("RunId"));
+            addCondition(SQLFragment.unsafe("(RunId IS NULL)"), FieldKey.fromParts("RunId"));
         }
         else
         {
@@ -609,10 +611,12 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     @Override
     public MutableColumnInfo addDataInputColumn(String alias, String role)
     {
-        SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
-                "\nFROM exp.datainput" +
-                "\nWHERE " + ExprColumn.STR_TABLE_ALIAS +  ".SourceApplicationId = exp.datainput.TargetApplicationId" +
-                "\nAND ");
+        SQLFragment sql = new SQLFragment().unsafeAppend("(SELECT MIN(exp.datainput.dataid)"
+                    + "\nFROM exp.datainput"
+                    + "\nWHERE ")
+                .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                .unsafeAppend(".SourceApplicationId = exp.datainput.TargetApplicationId"
+                    + "\nAND ");
         if (role == null)
         {
             sql.unsafeAppend("1 = 0");
@@ -630,10 +634,12 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     @Override
     public MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleType sampleType)
     {
-        SQLFragment sql = new SQLFragment("(SELECT MIN(InputMaterial.RowId)" +
-            "\nFROM exp.materialInput" +
-            "\nINNER JOIN exp.material AS InputMaterial ON exp.materialInput.materialId = InputMaterial.RowId" +
-            "\nWHERE " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId = exp.materialInput.TargetApplicationId");
+        SQLFragment sql = new SQLFragment().unsafeAppend("(SELECT MIN(InputMaterial.RowId)"
+                    + "\nFROM exp.materialInput"
+                    + "\nINNER JOIN exp.material AS InputMaterial ON exp.materialInput.materialId = InputMaterial.RowId"
+                    + "\nWHERE ")
+                .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                .unsafeAppend(".SourceApplicationId = exp.materialInput.TargetApplicationId");
         if (sampleType != null)
         {
             sql.unsafeAppend("\nAND InputMaterial.CPASType = ?");
@@ -659,7 +665,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         getFilter().deleteConditions(FieldKey.fromParts("LSID"));
         if (_type != null)
         {
-            addCondition(new SQLFragment("LSID LIKE " + getSqlDialect().concatenate("'urn:lsid:%:'", "?", "'%'"), _type.getNamespacePrefix()), FieldKey.fromParts("LSID"));
+            SQLFragment pattern = getSqlDialect().concatenate(SQLFragment.unsafe("'urn:lsid:%:'"), SQLFragment.unsafe("?", _type.getNamespacePrefix()), SQLFragment.unsafe("'%'"));
+            addCondition(SQLFragment.unsafe("LSID LIKE ").append(pattern), FieldKey.fromParts("LSID"));
         }
     }
 
@@ -677,9 +684,11 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     @Override
     public MutableColumnInfo addInputRunCountColumn(String alias)
     {
-        SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.ProtocolApplication.RunId) " +
-                "FROM exp.ProtocolApplication INNER JOIN Exp.DataInput ON exp.ProtocolApplication.RowId = Exp.DataInput.TargetApplicationId " +
-                "WHERE Exp.DataInput.DataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
+        SQLFragment sql = new SQLFragment().unsafeAppend("(SELECT COUNT(DISTINCT exp.ProtocolApplication.RunId) "
+                    + "FROM exp.ProtocolApplication INNER JOIN Exp.DataInput ON exp.ProtocolApplication.RowId = Exp.DataInput.TargetApplicationId "
+                    + "WHERE Exp.DataInput.DataId = ")
+                .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                .unsafeAppend(".RowId)");
         var ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         return doAdd(ret);
     }

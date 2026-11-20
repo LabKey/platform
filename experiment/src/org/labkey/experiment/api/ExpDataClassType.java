@@ -67,7 +67,7 @@ public class ExpDataClassType implements AttachmentParentType
 
         // Get an expression that can extract an ObjectId from the LSID column and a WHERE clause to filter the rows
         // to LSIDs containing ObjectIds
-        Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(new SQLFragment("LSID"));
+        Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(SQLFragment.unsafe("LSID"));
         SQLFragment expressionToExtractObjectId = pair.first;
         SQLFragment where = pair.second;
 
@@ -101,13 +101,13 @@ public class ExpDataClassType implements AttachmentParentType
                     // ExpDataClass attachments use the LSID's ObjectId as the attachment parent EntityId, so we need
                     // to use a SQL expression to extract it.
                     selectStatements.add(
-                        new SQLFragment("\n    SELECT ")
+                        SQLFragment.unsafe("\n    SELECT ")
                             .append(expressionToExtractObjectId)
                             .unsafeAppend(" AS EntityId, ")
                             .append(dialect.concatenate(
-                                new SQLFragment("?", domain.getName()),
-                                new SQLFragment("':'"),
-                                new SQLFragment("Name")
+                                SQLFragment.unsafe("?", domain.getName()),
+                                SQLFragment.unsafe("':'"),
+                                SQLFragment.unsafe("Name")
                             ))
                             .unsafeAppend(" AS Description FROM ")
                             .append(ExperimentService.get().getTinfoData())
@@ -122,7 +122,7 @@ public class ExpDataClassType implements AttachmentParentType
 
         return selectStatements.isEmpty() ?
             NO_ROWS : // No ExpDataClasses with attachment columns
-            SQLFragment.join(selectStatements, new SQLFragment("\n    UNION"));
+            SQLFragment.join(selectStatements, SQLFragment.unsafe("\n    UNION"));
     }
 }
 

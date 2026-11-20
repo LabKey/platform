@@ -422,7 +422,7 @@ public class SecurityPolicyManager
         if (resources.isEmpty() || principals.isEmpty())
             return;
 
-        SQLFragment sql = new SQLFragment("DELETE FROM ");
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM ");
         sql.append(core.getTableInfoRoleAssignments());
         sql.unsafeAppend(" WHERE ResourceId ");
 
@@ -477,7 +477,7 @@ public class SecurityPolicyManager
         new SqlExecutor(core.getSchema()).execute(new SQLFragment("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
                 "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container")
                 .appendInClause(subtrees, dialect)
-                .append(")"));
+                .unsafeAppend(")"));
         new SqlExecutor(core.getSchema()).execute(new SQLFragment("DELETE FROM " + core.getTableInfoPolicies() + "\n" +
                 "WHERE Container")
                 .appendInClause(subtrees, dialect));

@@ -233,7 +233,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
             Collection<String> names = resolver.lookup(junit.getPath()).listNames();
             assertNotNull(resolver.lookup(junit.getPath().append("webdav")));
-            assertNotNull(names.contains("dav"));
+            assertTrue(names.contains("dav"));
 
             MutableSecurityPolicy policyRead = new MutableSecurityPolicy(cTest);
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);

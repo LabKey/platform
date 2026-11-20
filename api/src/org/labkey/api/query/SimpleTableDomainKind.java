@@ -178,7 +178,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
                 return sql;
             }
         }
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     @Override

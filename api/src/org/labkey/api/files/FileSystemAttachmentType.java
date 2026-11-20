@@ -42,6 +42,6 @@ public class FileSystemAttachmentType implements AttachmentParentType
     @Override
     public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId, Name AS Description FROM ").append(CoreSchema.getInstance().getMappedDirectories(), "md");
+        return SQLFragment.unsafe("SELECT EntityId, Name AS Description FROM ").append(CoreSchema.getInstance().getMappedDirectories(), "md");
     }
 }

@@ -142,8 +142,8 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
             @Override
             public SQLFragment getValueSql(String tableAlias)
             {
-                return new SQLFragment("(SELECT ")
-                    .append(getSqlDialect().getGroupConcat(new SQLFragment("AA.name"), false, false, new SQLFragment().appendStringLiteral(MultiValuedRenderContext.VALUE_DELIMITER, getSqlDialect()), true))
+                return SQLFragment.unsafe("(SELECT ")
+                    .append(getSqlDialect().getGroupConcat(SQLFragment.unsafe("AA.name"), false, false, new SQLFragment().appendStringLiteral(MultiValuedRenderContext.VALUE_DELIMITER, getSqlDialect()), true))
                     .unsafeAppend(" FROM ").append(ExperimentServiceImpl.get().getTinfoAlias(), "AA")
                     .unsafeAppend(" INNER JOIN ").append(aliasMapTable.get(), "MM")
                     .unsafeAppend(" ON AA.rowId = MM.alias")
@@ -201,7 +201,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     {
         var ret = table.wrapColumn(alias, table.getRealTable().getColumn("objectid"));
         if (asMultiValued) // use MultiValueForeignKey
-            ret.setFk(LineageForeignKey.createWithMultiValuedColumn(table.getUserSchema(), new SQLFragment("SELECT objectid FROM ").append(table.getFromSQL("qq")), inputs, table.getContainerFilter()));
+            ret.setFk(LineageForeignKey.createWithMultiValuedColumn(table.getUserSchema(), SQLFragment.unsafe("SELECT objectid FROM ").append(table.getFromSQL("qq")), inputs, table.getContainerFilter()));
         else // use LineageDisplayColumn
             ret.setFk(LineageForeignKey.createWithDisplayColumn(table.getUserSchema(), table, inputs, table.getContainerFilter()));
         ret.setCalculated(true);

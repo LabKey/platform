@@ -694,19 +694,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         SQLFragment sql = new SQLFragment();
         sql.unsafeAppend("(SELECT * FROM\n");
         sql.unsafeAppend("(SELECT ");
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
         for (String dataCol : dataCols)
         {
-            sql.append(comma);
-            sql.unsafeAppend("d.").append(dataCol);
-            comma = ", ";
+            sql.append(comma.next());
+            sql.unsafeAppend("d.").appendIdentifier(dialect.makeDatabaseIdentifier(dataCol));
         }
 
         if (hasProvisionedColumns)
         {
             for (String pCol : pCols)
             {
-                sql.append(comma);
+                sql.append(comma.next());
                 sql.append(provisioned.getColumn(pCol).getValueSql("p"));
             }
         }

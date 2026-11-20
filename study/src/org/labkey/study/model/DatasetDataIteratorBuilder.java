@@ -43,12 +43,12 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.Formats.SafeDecimalFormat;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -73,7 +73,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     boolean allowImportManagedKeys = false;
     boolean useImportAliases = false;
     Map<String, Map<Object, Object>>  _tableIdMapMap = Map.of();    // used to be handed in via StudyImportContext (see comments in DatasetUpdateService.Config)
-    public static final DecimalFormat SEQUENCE_NUM_FORMAT = new DecimalFormat("0.0000");
+    public static final SafeDecimalFormat SEQUENCE_NUM_FORMAT = new SafeDecimalFormat("0.0000");
 
     DataIteratorBuilder builder = null;
 
@@ -177,6 +177,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
             if (null != match)
             {
+                // NOTE: Setting properties on ColumnInfo owned by other code/datastructure is bad behavior (See MatchMakerDataIterator)
                 ((BaseColumnInfo)inputColumn).setPropertyURI(match.getPropertyURI());
 
                 if (match == lsidColumn || match == seqnumColumn || DatasetDomainKind._KEY.equals(match.getName()))
@@ -456,6 +457,10 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (null != c.getLabelValue() && map.containsKey(c.getLabelValue()))
             return map.get(c.getLabelValue());
         for (String alias : c.getImportAliasSet())
+            if (map.containsKey(alias))
+                return map.get(alias);
+        // GH Issue 1585: "ptid"/"participantid" live here now, not in the user alias set
+        for (String alias : c.getSystemImportAliasSet())
             if (map.containsKey(alias))
                 return map.get(alias);
         return null;

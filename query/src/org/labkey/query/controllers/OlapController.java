@@ -1554,9 +1554,9 @@ public class OlapController extends SpringActionController
         }
     }
 
-    @SuppressWarnings("unused")
-    @RequiresNoPermission
-    public class GetActiveAppConfigAction extends ReadOnlyApiAction
+    @SuppressWarnings("unused") // cds cube.js invokes this action
+    @RequiresPermission(ReadPermission.class)
+    public class GetActiveAppConfigAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -1591,6 +1591,7 @@ public class OlapController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
+                controller.new GetActiveAppConfigAction(),
                 controller.new GetCubeDefinitionAction(),
                 new TestMdxAction(),
                 new TestJsonAction(),

@@ -168,7 +168,7 @@ public class LookupColumn extends BaseColumnInfo
 
     public SQLFragment getJoinCondition(String tableAliasName)
     {
-        SQLFragment result = new SQLFragment("(");
+        SQLFragment result = SQLFragment.unsafe("(");
         result.append(getJoinCondition(tableAliasName, _foreignKey, _lookupKey, false));
         for (Map.Entry<ColumnInfo, Pair<ColumnInfo, Boolean>> entry : _additionalJoins.entrySet())
         {
@@ -230,7 +230,7 @@ public class LookupColumn extends BaseColumnInfo
             {
                 columnInfo.declareJoins(baseAlias, map);
             }
-            SQLFragment strJoin = new SQLFragment("\n\t");
+            SQLFragment strJoin = SQLFragment.unsafe("\n\t");
             TableInfo lookupTable = _lookupKey.getParentTable();
             if (isLateralJoin())
             {

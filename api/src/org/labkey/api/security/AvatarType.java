@@ -45,6 +45,6 @@ public class AvatarType implements AttachmentParentType
     @Override
     public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId, DisplayName AS Description FROM ").append(CoreSchema.getInstance().getTableInfoUsers(), "users");
+        return SQLFragment.unsafe("SELECT EntityId, DisplayName AS Description FROM ").append(CoreSchema.getInstance().getTableInfoUsers(), "users");
     }
 }

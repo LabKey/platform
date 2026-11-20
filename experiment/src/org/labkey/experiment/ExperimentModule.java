@@ -45,6 +45,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -218,7 +219,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.009;
+        return 26.010;
     }
 
     @Nullable
@@ -612,8 +613,8 @@ public class ExperimentModule extends SpringModule
                 if (AssayService.get() != null)
                 {
                     UsageMetricGroup assayMetrics = metrics.group("assay", "Assay usage. Each assay provider name maps to protocolCount (designs, archived included), runCount, resultRowCount (null if the provider doesn't count), and implementingClass");
-                    SQLFragment baseRunSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").unsafeAppend(" WHERE lsid LIKE ?");
-                    SQLFragment baseProtocolSQL = new SQLFragment("SELECT * FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").unsafeAppend(" WHERE lsid LIKE ? AND ApplicationType = ?");
+                    SQLFragment baseRunSQL = SQLFragment.unsafe("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").unsafeAppend(" WHERE lsid LIKE ?");
+                    SQLFragment baseProtocolSQL = SQLFragment.unsafe("SELECT * FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").unsafeAppend(" WHERE lsid LIKE ? AND ApplicationType = ?");
                     for (AssayProvider assayProvider : AssayService.get().getAssayProviders())
                     {
                         UsageMetricGroup protocolMetrics = assayMetrics.group(assayProvider.getName());
@@ -667,7 +668,7 @@ public class ExperimentModule extends SpringModule
                     ).getObject(Long.class), "Active assay designs with no transform script path containing @scripts; approximate");
 
                     assayMetrics.put("standardAssayWithPlateSupportCount", () -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class), "Assay designs with plate support enabled; archived included");
-                    SQLFragment runsWithPlateSQL = new SQLFragment("""
+                    SQLFragment runsWithPlateSQL = SQLFragment.unsafe("""
                         SELECT COUNT(*) FROM exp.experimentrun r
                             INNER JOIN exp.object o ON o.objectUri = r.lsid
                             INNER JOIN exp.objectproperty op ON op.objectId = o.objectId
@@ -703,7 +704,7 @@ public class ExperimentModule extends SpringModule
                         ) x WHERE count > 1""").getObject(Long.class), "Luminex and Standard assay runs imported with more than one data file");
 
                     UsageMetricGroup sampleLookupCountMetrics = assayMetrics.group("sampleLookupCount", "Assay fields that look up samples, by batch, run, and result domain; resultDomainWithMultiple counts result domains with more than one");
-                    SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
+                    SQLFragment baseAssaySampleLookupSQL = SQLFragment.unsafe("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
 
                     SQLFragment batchAssaySampleLookupSQL = new SQLFragment(baseAssaySampleLookupSQL);
                     batchAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Batch.getPrefix() + ".%");
@@ -717,7 +718,7 @@ public class ExperimentModule extends SpringModule
                     resultAssaySampleLookupSQL.add("urn:lsid:%:" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".%");
                     sampleLookupCountMetrics.put("resultDomain", () -> new SqlSelector(schema, resultAssaySampleLookupSQL).getObject(Long.class));
 
-                    SQLFragment resultAssayMultipleSampleLookupSQL = new SQLFragment(
+                    SQLFragment resultAssayMultipleSampleLookupSQL = SQLFragment.unsafe(
                             """
                                     SELECT COUNT(*) FROM (
                                         SELECT PD.domainid, COUNT(*) AS PropCount
@@ -776,16 +777,16 @@ public class ExperimentModule extends SpringModule
                 Supplier<Long> colorCount = Suppliers.memoize(() -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.datacolors").getObject(Long.class));
                 sampleColorMetrics.put("colorCount", colorCount, "Sample colors defined, archived included");
                 UsageMetrics colorDetailMetrics = sampleColorMetrics.reportedIf(() -> colorCount.get() > 0);
-                colorDetailMetrics.put("archivedColorCount", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = ?", true)).getObject(Long.class), "Archived sample colors");
+                colorDetailMetrics.put("archivedColorCount", () -> new SqlSelector(schema, SQLFragment.unsafe("SELECT COUNT(*) FROM exp.datacolors WHERE archived = ?", true)).getObject(Long.class), "Archived sample colors");
                 colorDetailMetrics.put("samplesWithColorCount", () -> new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE expmaterialcolor IS NOT NULL").getObject(Long.class), "Samples with a color assigned");
-                colorDetailMetrics.put("samplesWithArchivedColorCount", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = ?", true)).getObject(Long.class), "Samples assigned a color that is now archived");
+                colorDetailMetrics.put("samplesWithArchivedColorCount", () -> new SqlSelector(schema, SQLFragment.unsafe("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = ?", true)).getObject(Long.class), "Samples assigned a color that is now archived");
 
-                colorDetailMetrics.put("sampleTypesWithColorsEnabledCount", () -> new SqlSelector(schema, new SQLFragment(
+                colorDetailMetrics.put("sampleTypesWithColorsEnabledCount", () -> new SqlSelector(schema, SQLFragment.unsafe(
                         "SELECT COUNT(*) FROM exp.materialsource ms WHERE EXISTS (" +
                                 "SELECT 1 FROM exp.datacolors dc WHERE dc.container = ms.container AND dc.archived = ? AND NOT EXISTS (" +
                                 "SELECT 1 FROM exp.datatypecolorexclusion e WHERE e.datatype = ? AND e.datatyperowid = ms.rowid AND e.colorrowid = dc.rowid))",
                         false, ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types whose folder has at least one active color not excluded for the type");
-                colorDetailMetrics.put("sampleTypesWithColorsDisabledCount", () -> new SqlSelector(schema, new SQLFragment(
+                colorDetailMetrics.put("sampleTypesWithColorsDisabledCount", () -> new SqlSelector(schema, SQLFragment.unsafe(
                         "SELECT COUNT(DISTINCT datatyperowid) FROM exp.datatypecolorexclusion WHERE datatype = ?")
                         .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class), "Sample types with at least one color excluded, not necessarily all");
 
@@ -1122,6 +1123,7 @@ public class ExperimentModule extends SpringModule
     {
         return Set.of(
             EdgeDiagnosticsTestCase.class,
+            AbstractFileXarSource.TestCase.class,
             ExperimentController.ContainerScopingTestCase.class,
             DataColorTable.TestCase.class,
             DataMapDiffColumnTestCase.class,
@@ -1167,6 +1169,7 @@ public class ExperimentModule extends SpringModule
     {
         return Set.of(
             DomainUtil.ImportAliasTestCase.class,
+            DomainUtil.SystemFieldLabelTestCase.class,
             GraphAlgorithms.TestCase.class,
             LSIDRelativizer.TestCase.class,
             Lsid.TestCase.class,

@@ -77,6 +77,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.JsonTest;
+import org.labkey.api.data.LabKeySQLFragment;
 import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NameGenerator;
@@ -84,6 +85,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RecordFactory;
 import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RepeatedCommitTaskMonitor;
+import org.labkey.api.data.ResultSetImpl;
 import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -107,16 +109,19 @@ import org.labkey.api.data.queryprofiler.Query;
 import org.labkey.api.data.queryprofiler.QueryCounter;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.dataiterator.CachingDataIterator;
+import org.labkey.api.dataiterator.DataIteratorStreamTestCase;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.GenerateUniqueDataIterator;
 import org.labkey.api.dataiterator.LookAheadDataIterator;
+import org.labkey.api.dataiterator.MatchMakerDataIterator;
 import org.labkey.api.dataiterator.QueryDataIteratorBuilder;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
@@ -124,6 +129,8 @@ import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.jsp.RecompilingJspClassLoader;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.OperationsMXBean;
+import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
@@ -190,6 +197,7 @@ import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JSoupUtil;
@@ -198,6 +206,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.MailMetrics;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.MothershipReport;
@@ -306,6 +315,7 @@ public class ApiModule extends CodeOnlyModule
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
+        MailMetrics.registerMetricsProvider();
         AuditLogService.get().registerAuditType(new SystemUpgradeAuditProvider());
         // Handle system maintenance startup properties as late as possible; we want all system maintenance tasks to be registered first
         ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
@@ -412,6 +422,7 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            AbstractAgentAction.TestCase.class,
             Aggregate.TestCase.class,
             ApiResponseWriter.TestCase.class,
             ApiXmlWriter.TestCase.class,
@@ -435,6 +446,7 @@ public class ApiModule extends CodeOnlyModule
             Constants.TestCase.class,
             ConvertHelper.TestCase.class,
             CspCommentScanner.TestCase.class,
+            DataIteratorStreamTestCase.class,
             DataIteratorUtil.TestCase.class,
             DatabaseCache.TestCase.class,
             DateUtil.TestCase.class,
@@ -454,6 +466,7 @@ public class ApiModule extends CodeOnlyModule
             FieldKey.TestCase.class,
             FileType.TestCase.class,
             FileUtil.TestCase.class,
+            Formats.TestCase.class,
             GenerateUniqueDataIterator.TestCase.class,
             GUID.TestCase.class,
             HelpTopic.TestCase.class,
@@ -467,10 +480,13 @@ public class ApiModule extends CodeOnlyModule
             JsonTest.class,
             JsonUtil.TestCase.class,
             KeySharingJSONTokener.TestCase.class,
+            LabKeySQLFragment.TestCase.class,
             LimitedUser.TestCase.class,
             LookAheadDataIterator.TestCase.class,
+            MailMetrics.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
+            McpService.TestCase.class,
             MemTracker.TestCase.class,
             ModuleArchiveTestCase.class,
             ModuleContext.TestCase.class,
@@ -483,6 +499,7 @@ public class ApiModule extends CodeOnlyModule
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
             Path.TestCase.class,
+            PropertyType.TestCase.class,
             Query.TestCase.class,
             QueryProfiler.TestCase.class,
             RReport.TestCase.class,
@@ -559,6 +576,7 @@ public class ApiModule extends CodeOnlyModule
             ContainerKeySimpleCache.TestCase.class,
             ContainerManager.TestCase.class,
             ContentSecurityPolicyFilter.TestCase.class,
+            DataIteratorUtil.TableMapTestCase.class,
             DbSchema.DDLMethodsTestCase.class,
             DbSchema.SchemaCasingTestCase.class,
             DbSchema.TableSelectTestCase.class,
@@ -582,6 +600,7 @@ public class ApiModule extends CodeOnlyModule
             LabKeyCollectors.TestCase.class,
             LookAndFeelFolderPropertiesTest.class,
             MapLoader.MapLoaderTestCase.class,
+            MatchMakerDataIterator.TestCase.class,
             MaterialInputRoleComparator.TestCase.class,
             MimeMap.TestCase.class,
             ModuleHtmlView.TestCase.class,
@@ -600,6 +619,7 @@ public class ApiModule extends CodeOnlyModule
             RequestCancellation.TestCase.class,
             RepeatedCommitTaskMonitor.IntegrationTestCase.class,
             ResultSetDataIterator.TestCase.class,
+            ResultSetImpl.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
             SearchScope.TestCase.class,

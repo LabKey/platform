@@ -83,7 +83,7 @@ public class Builder extends SQLFragment
         return true;
     }
 
-    private void appendPrefix()
+    void appendPrefix()
     {
         for (int i = 0; i < _prefix.size(); i ++)
         {
@@ -95,7 +95,7 @@ public class Builder extends SQLFragment
         }
     }
 
-    private void appendIndent()
+    void appendIndent()
     {
         if (_fNewLine)
         {
@@ -219,5 +219,4 @@ public class Builder extends SQLFragment
         appendPrefix(); appendIndent();
         return super.appendValue(B, d);
     }
-    /** /CONSIDER  */
 }

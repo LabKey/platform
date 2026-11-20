@@ -58,7 +58,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
@@ -275,7 +275,7 @@ public class DomainImpl implements Domain
         SQLFragment sqlObjectIds = getDomainKind().sqlObjectIdsInDomain(this);
         if (sqlObjectIds == null)
             return Collections.emptySet();
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT exp.object.container FROM exp.object WHERE exp.object.objectid IN ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT exp.object.container FROM exp.object WHERE exp.object.objectid IN ");
         sql.append(sqlObjectIds);
         Set<Container> ret = new HashSet<>();
         for (String id : new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(String.class))
@@ -1086,29 +1086,25 @@ public class DomainImpl implements Domain
         uniqueIndexCols.forEach(col ->
                 colNames.add(col.getName()));
         uniqueIdProps.forEach(prop -> colNames.add(prop.getName()));
-        ListofMapsDataIterator mapsDi = new ListofMapsDataIterator(colNames, rows);
-        mapsDi.setDebugName(table.getName() + ".ensureUniqueIds");
         SQLFragment sql = new SQLFragment().unsafeAppend("UPDATE ").append(table).unsafeAppend(" SET ");
-        String separator = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
         for (DomainProperty prop: uniqueIdProps)
         {
             // Issue 50715: quote column names with spaces for update statement
-            sql.append(separator).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).unsafeAppend(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
-            separator = ",";
+            sql.append(comma.next()).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).unsafeAppend(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
         }
         sql.unsafeAppend(" WHERE ");
-        separator = "";
+        SQLFragment.SqlSeparator and = SQLFragment.sep("", " AND ");
         for (ColumnInfo col: uniqueIndexCols)
         {
-            sql.append(separator).append(col.getName()).unsafeAppend(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
-            separator = " AND ";
+            sql.append(and.next()).appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
         }
 
         DataIteratorBuilder it = context -> {
             try
             {
                 ParameterMapStatement stmt1 = new ParameterMapStatement(scope, sql, null);
-                return new StatementDataIterator(dialect, mapsDi, ctx, stmt1);
+                return new StatementDataIterator(dialect, MapDataIterator.of(colNames, rows, table.getName() + ".ensureUniqueIds").getDataIterator(context), context, stmt1);
             }
             catch (SQLException x)
             {

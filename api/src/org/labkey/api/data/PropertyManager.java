@@ -490,7 +490,7 @@ public class PropertyManager
 
             new SqlExecutor(SCHEMA.getSchema()).execute(
                     SCHEMA.getSqlDialect().execute(SCHEMA.getSchema(), "property_setValue",
-                            new SQLFragment("?, ?, ?", getSet(), name, _store.getSaveValue(this, value))));
+                            SQLFragment.unsafe("?, ?, ?", getSet(), name, _store.getSaveValue(this, value))));
         }
 
         public void save()
@@ -603,7 +603,7 @@ public class PropertyManager
         var setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
 
         SQLFragment deleteProps = new SQLFragment();
-        deleteProps.unsafeAppend("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());
+        deleteProps.unsafeAppend("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSQLName());
         deleteProps.unsafeAppend(" WHERE ").appendIdentifier(setSelectName).unsafeAppend(" IN ");
         deleteProps.unsafeAppend("(SELECT ").appendIdentifier(setSelectName).unsafeAppend(" FROM ").append(SCHEMA.getTableInfoPropertySets(), "ps");
         deleteProps.unsafeAppend(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
@@ -636,7 +636,7 @@ public class PropertyManager
 
         try (Transaction t = SCHEMA.getSchema().getScope().ensureTransaction())
         {
-            SQLFragment deleteProps = new SQLFragment("DELETE FROM ")
+            SQLFragment deleteProps = SQLFragment.unsafe("DELETE FROM ")
                 .append(SCHEMA.getTableInfoProperties())
                 .unsafeAppend(" WHERE ")
                 .appendIdentifier(setSelectName)
@@ -644,7 +644,7 @@ public class PropertyManager
                 .add(propertySet);
             executor.execute(deleteProps);
 
-            SQLFragment deleteSet = new SQLFragment("DELETE FROM ")
+            SQLFragment deleteSet = SQLFragment.unsafe("DELETE FROM ")
                 .append(SCHEMA.getTableInfoPropertySets())
                 .unsafeAppend(" WHERE ")
                 .appendIdentifier(setSelectName)

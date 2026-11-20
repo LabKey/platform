@@ -32,10 +32,9 @@ public final class GuidMapperColumn extends WrappedColumn
     public SQLFragment getValueSql(String tableAlias)
     {
         SQLFragment columnAlias = super.getValueSql(tableAlias);
-        //noinspection StringConcatenationInsideStringBufferAppend - SQLFragment flips out about unmatched quotes, so we're forced to use string concatenation
-        return new SQLFragment("CASE WHEN ")
+        return SQLFragment.unsafe("CASE WHEN ")
             .append(columnAlias)
-            .append(" LIKE '" + GUID.SQL_LIKE_GUID_PATTERN + "'")
+            .unsafeAppend(" LIKE ").appendStringLiteral(GUID.SQL_LIKE_GUID_PATTERN, getSqlDialect())
             .unsafeAppend(" THEN LOWER(")
             .append(columnAlias)
             .unsafeAppend(") ELSE ")

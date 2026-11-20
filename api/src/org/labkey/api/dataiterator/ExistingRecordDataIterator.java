@@ -300,7 +300,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
         private Pair<SQLFragment, Map<Integer, String>> getSelectExistingSql(int rows) throws BatchValidationException
         {
-            SQLFragment sqlf = new SQLFragment("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
+            SQLFragment sqlf = SQLFragment.unsafe("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
             String comma = "";
             Map<Integer, String> rowNumContainers = new IntHashMap<>();
             String container;
@@ -522,10 +522,10 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     .collect(Collectors.toCollection(ArrayList::new));
             namesArrayList.add(CaseInsensitiveHashMap.of("name","NO_SUCH_MODULE"));
 
-            DataIterator di = new ListofMapsDataIterator(Set.of("Name"), namesArrayList);
-            assertFalse(di.supportsGetExistingRecord());
             var context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.INSERT);
+            DataIterator di = MapDataIterator.of(Set.of("Name"), namesArrayList).getDataIterator(context);
+            assertFalse(di.supportsGetExistingRecord());
             DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, null, context, true, false);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;

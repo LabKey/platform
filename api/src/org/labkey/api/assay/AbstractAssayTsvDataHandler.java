@@ -17,6 +17,8 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +54,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.data.validator.UnderstandsMissingValues;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -124,6 +127,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -305,11 +309,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         // Allow String values through if the column is a lookup and the settings allow lookups by alternate key.
                         // The lookup table unique indices or display column value will be used to convert the column to the lookup value.
-                        if (!(settings.getLookupResolutionType().useAlternateKey() && column.clazz == String.class && prop.getLookup() != null))
+                        boolean allowAlternateKey = settings.getLookupResolutionType().useAlternateKey() && prop.getLookup() != null;
+                        if (!(allowAlternateKey && column.clazz == String.class))
                         {
                             // Otherwise, just use the expected PropertyDescriptor's column type
                             column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
                         }
+
+                        // GH Issue 1881: an integer conversion strips leading zeros from sample names like "0587", so keep those values as text
+                        if (allowAlternateKey && column.clazz != String.class && ExperimentService.get().isLookupToSamples(prop))
+                            column.converter = leadingZeroPreservingConverter(ConvertUtils.lookup(column.clazz));
                     }
                     else
                     {
@@ -336,6 +345,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             throw UnexpectedException.wrap(ioe);
         }
+    }
+
+    private static final Pattern LEADING_ZERO_INTEGER = Pattern.compile("[-+]?0\\d+");
+
+    private static Converter leadingZeroPreservingConverter(Converter converter)
+    {
+        return new Converter()
+        {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <T> T convert(Class<T> type, Object value)
+            {
+                if (value instanceof String s)
+                {
+                    String trimmed = s.trim();
+                    if (LEADING_ZERO_INTEGER.matcher(trimmed).matches())
+                        return (T) trimmed;
+                }
+                return converter.convert(type, value);
+            }
+        };
     }
 
     @Override
@@ -384,7 +414,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         throw new IllegalStateException("Assay results table expected to have dataId lookup column and " + assayResultLsidFieldKey + " column");
 
                     // select the assay results LSID column for all rows referenced by the data
-                    assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).unsafeAppend(" AS ObjectURI")
+                    assayResultLsidSql = SQLFragment.unsafe("SELECT ").append(lsidCol.getValueSql("X")).unsafeAppend(" AS ObjectURI")
                             .unsafeAppend(" FROM ").append(assayDataTable.getFromSQL("X"))
                             .unsafeAppend(" WHERE ").append(dataIdCol.getValueSql("X")).appendInClause(dataIds, assayDataTable.getSqlDialect());
                 }
@@ -411,7 +441,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (LOG.isDebugEnabled())
                 {
-                    SQLFragment t = new SQLFragment("SELECT o.*")
+                    SQLFragment t = SQLFragment.unsafe("SELECT o.*")
                             .unsafeAppend(" FROM ").append(OntologyManager.getTinfoObject(), "o")
                             .unsafeAppend(" WHERE Container = ?").add(run.getContainer())
                             .unsafeAppend(" AND ObjectURI IN (")
@@ -430,7 +460,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
 
                 // delete provenance for assay result rows
-                ProvenanceService.get().deleteProvenanceByLsids(run.getContainer(), user, new SQLFragment(" IN (").append(assayResultLsidSql).unsafeAppend(")"), true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
+                ProvenanceService.get().deleteProvenanceByLsids(run.getContainer(), user, SQLFragment.unsafe(" IN (").append(assayResultLsidSql).unsafeAppend(")"), true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
 
                 int count = OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer());
                 LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted {} ontology objects for assay result lsids", count);
@@ -438,7 +468,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             if (domain != null && domain.getStorageTableName() != null)
             {
-                SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
+                SQLFragment deleteSQL = SQLFragment.unsafe("DELETE FROM ");
                 deleteSQL.appendDottedIdentifiers(domain.getDomainKind().getStorageSchemaName(),domain.getStorageTableName());
                 deleteSQL.unsafeAppend(" WHERE DataId ").appendInClause(dataIds, ExperimentService.get().getSchema().getSqlDialect());
 
@@ -516,7 +546,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             Map<ExpMaterial, String> rowBasedInputMaterials = new LinkedHashMap<>();
 
-            DataIterator fileData = checkData(container, user, provider, protocol, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, rowBasedInputMaterials);
+            // checkData() and the insert both validate each row, so they share lookup and pattern caches
+            ValidatorContext validatorContext = new ValidatorContext(container, user);
+            DataIterator fileData = checkData(container, user, provider, protocol, dataTable, dataDomain, iter, settings, resolver, protocolInputMaterials, rowBasedInputMaterials, validatorContext);
             fileData = convertPropertyNamesToURIs(fileData, dataDomain);
 
             OntologyManager.RowCallback rowCallback = NO_OP_ROW_CALLBACK;
@@ -539,7 +571,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // Insert the data into the assay's data table.
                 // On insert, the raw data will have the provisioned table's rowId added to the list of maps
                 // autoFillDefaultResultColumns - only populate created/modified/by for results created separately from runs
-                insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns, rowCallback, context);
+                insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns, rowCallback, context, validatorContext);
             }
             catch (NoRowsException e)
             {
@@ -590,7 +622,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         TableInfo tableInfo,
         boolean autoFillDefaultColumns,
         OntologyManager.RowCallback rowCallback,
-        @Nullable AssayRunUploadContext<?> context
+        @Nullable AssayRunUploadContext<?> context,
+        ValidatorContext validatorContext
     ) throws SQLException, BatchValidationException, ExperimentException
     {
         OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data, protocol, provider);
@@ -599,7 +632,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             // check if we are merging the re-imported data
             if (context != null && context.getReRunId() != null && context.getReImportOption() == MERGE_DATA)
             {
-                DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                DataIteratorBuilder mergedData;
+                try
+                {
+                    mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                }
+                catch (DbScope.RetryPassthroughException e)
+                {
+                    e.rethrow(BatchValidationException.class);
+                    throw e.throwRuntimeException();
+                }
                 fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
             }
 
@@ -608,12 +650,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         if (tableInfo instanceof UpdateableTableInfo uti)
         {
-            OntologyManager.insertTabDelimited(uti, container, user, importHelper, fileData, autoFillDefaultColumns, LOG, rowCallback);
+            OntologyManager.insertTabDelimited(uti, container, user, importHelper, fileData, autoFillDefaultColumns, validatorContext, LOG, rowCallback);
         }
         else
         {
             var id = OntologyManager.ensureObject(container, data.getLSID());
-            OntologyManager.insertTabDelimited(container, user, id, importHelper, dataDomain, fileData, false, rowCallback);
+            OntologyManager.insertTabDelimited(container, user, id, importHelper, dataDomain, fileData, false, validatorContext, rowCallback);
         }
     }
 
@@ -691,7 +733,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             DataLoaderSettings settings,
             ParticipantVisitResolver resolver,
             Map<String, ExpMaterial> inputMaterials,
-            Map<ExpMaterial, String> rowBasedInputMaterials
+            Map<ExpMaterial, String> rowBasedInputMaterials,
+            ValidatorContext validatorContext
     ) throws BatchValidationException
     {
         final ExperimentService exp = ExperimentService.get();
@@ -814,7 +857,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // We want to share canonical casing between data rows, or we end up with an extra Map instance for each
         // data row which can add up quickly
         CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<>();
-        ValidatorContext validatorContext = new ValidatorContext(container, user);
 
         DomainProperty participantPD = participantPropFinder;
         DomainProperty specimenPD = specimenPropFinder;
@@ -1004,11 +1046,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     // note that sample lookup mapping and validation will happen separately below in the code which handles populating materialInputs
                     if (validatorMap.containsKey(pd) && !isSampleLookupById && !isSampleLookupByName)
                     {
+                        // The loader wraps every value of an MV-enabled column, but only UnderstandsMissingValues validators expect the wrapper
+                        Object unwrapped = o instanceof MvFieldWrapper mv ? mv.getValue() : o;
                         for (ColumnValidator validator : validatorMap.get(pd))
                         {
                             try
                             {
-                                String error = validator.validate(rowNum, o, validatorContext, null);
+                                String error = validator.validate(rowNum, validator instanceof UnderstandsMissingValues ? o : unwrapped, validatorContext, null);
                                 if (error != null)
                                     errors.add(new PropertyValidationError(error, pd.getName()));
                             }

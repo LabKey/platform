@@ -134,7 +134,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             String sequenceName = "object_objectid_seq";
             ensureBigObjectIds(
                 // Calling currval() is not an option since it requires a previous call to nextval() in this database session
-                new SqlSelector(primary, new SQLFragment("SELECT last_value FROM pg_sequences WHERE schemaname = ? AND sequencename = ?", schemaName, sequenceName)),
+                new SqlSelector(primary, SQLFragment.unsafe("SELECT last_value FROM pg_sequences WHERE schemaname = ? AND sequencename = ?", schemaName, sequenceName)),
                 newValue -> new SqlExecutor(primary).execute("SELECT setval(?, ?)", schemaName + "." + sequenceName, newValue),
                 desiredValue
             );
@@ -252,7 +252,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             Parameter aliquotAmount = new Parameter(AliquotVolume.name(), JdbcType.DOUBLE);
             Parameter availableAliquotAmount = new Parameter(AvailableAliquotVolume.name(), JdbcType.DOUBLE);
             ParameterMapStatement updateStmt = new ParameterMapStatement(scope, c,
-                    new SQLFragment("UPDATE ")
+                    SQLFragment.unsafe("UPDATE ")
                             .append(tInfo)
                             .unsafeAppend(" SET Units = ?, StoredAmount = ?, AliquotUnit = ?, AliquotVolume = ?, AvailableAliquotVolume = ? WHERE RowId = ?")
                             .addAll(units, amount, aliquotUnits, aliquotAmount, availableAliquotAmount, rowId), null);
@@ -268,7 +268,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
                 AtomicInteger batchCount = new AtomicInteger();
                 List<AuditTypeEvent> auditEvents = new ArrayList<>();
-                SQLFragment sql = new SQLFragment("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume, m.container FROM ")
+                SQLFragment sql = SQLFragment.unsafe("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume, m.container FROM ")
                     .append(tInfo, "m")
                     .unsafeAppend(" WHERE cpastype = ?").add(sampleType.getLSID())
                     .unsafeAppend(" AND (m.StoredAmount IS NOT NULL OR m.Units IS NOT NULL OR m.AliquotVolume IS NOT NULL OR m.AliquotUnit IS NOT NULL OR m.AvailableAliquotVolume IS NOT NULL)");
@@ -634,7 +634,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         // Set NOT NULL constraint
         SqlExecutor executor = new SqlExecutor(scope);
-        executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).unsafeAppend(" ALTER COLUMN rowId SET NOT NULL"));
+        executor.execute(SQLFragment.unsafe("ALTER TABLE expdataclass.").appendIdentifier(domain.getStorageTableName()).unsafeAppend(" ALTER COLUMN rowId SET NOT NULL"));
 
         // Add indexes back via StorageProvisioner
         storageProvisioner.ensureTableIndices(domain);
@@ -642,8 +642,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         // Add FK constraint (no StorageProvisioner API for FKs on existing tables)
         String fkName = "fk_rowid_" + domain.getStorageTableName() + "_data";
-        executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName())
-                .unsafeAppend(" ADD CONSTRAINT ").append(fkName)
+        executor.execute(SQLFragment.unsafe("ALTER TABLE expdataclass.").appendIdentifier(domain.getStorageTableName())
+                .unsafeAppend(" ADD CONSTRAINT ").appendIdentifier(fkName)
                 .unsafeAppend(" FOREIGN KEY (rowId) REFERENCES exp.Data(RowId)"));
         LOG.info("DataClass '{}' ({}) added FK constraint on 'rowId'", dc.getName(), dc.getRowId());
     }
@@ -652,14 +652,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
     {
         String tableName = domain.getStorageTableName();
         SQLFragment update = new SQLFragment()
-                .unsafeAppend("UPDATE expdataclass.").append(tableName).unsafeAppend("\n")
+                .unsafeAppend("UPDATE expdataclass.").appendIdentifier(tableName).unsafeAppend("\n")
                 .unsafeAppend("SET rowId = i.rowid\n")
                 .unsafeAppend("FROM (\n")
                 .unsafeAppend("  SELECT d.lsid, d.RowId\n")
                 .unsafeAppend("  FROM exp.data d\n")
                 .unsafeAppend("  WHERE d.cpasType = ?\n").add(domain.getTypeURI())
                 .unsafeAppend(") AS i\n")
-                .unsafeAppend("WHERE i.lsid = ").append(tableName).unsafeAppend(".lsid");
+                .unsafeAppend("WHERE i.lsid = ").appendIdentifier(tableName).unsafeAppend(".lsid");
 
         int count = new SqlExecutor(scope).execute(update);
         LOG.info("DataClass '{}' ({}) populated 'rowId' column, count={}", dc.getName(), dc.getRowId(), count);
@@ -722,7 +722,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
                 try (Transaction transaction = scope.beginTransaction())
                 {
-                    executor.execute(new SQLFragment("EXEC sp_rename ?, ?").add(oldName).add(newName));
+                    executor.execute(SQLFragment.unsafe("EXEC sp_rename ?, ?").add(oldName).add(newName));
                     Table.update(null, tinfoDomainDescriptor, PageFlowUtil.map("StorageTableName", newName), domain.domainId());
                     transaction.commit();
                 }
@@ -742,7 +742,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // Collect all the domains that have one or more storage columns names that are too long for PostgreSQL
         TableInfo tinfoPropertyDomain = OntologyManager.getTinfoPropertyDomain();
         TableInfo tinfoPropertyDescriptor = OntologyManager.getTinfoPropertyDescriptor();
-        SQLFragment sql = new SQLFragment("SELECT dd.DomainId, dd.Name AS DomainName, px.PropertyId, StorageSchemaName, StorageTableName, StorageColumnName, px.Name FROM ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT dd.DomainId, dd.Name AS DomainName, px.PropertyId, StorageSchemaName, StorageTableName, StorageColumnName, px.Name FROM ")
             .append(tinfoDomainDescriptor, "dd")
             .unsafeAppend(" INNER JOIN ")
             .append(tinfoPropertyDomain, "pd")
@@ -773,7 +773,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 // First, populate a new StorageNameGenerator with all the "good" names in this domain so we don't
                 // accidentally try to re-use one of them
                 StorageNameGenerator nameGenerator = new StorageNameGenerator(dialect);
-                SQLFragment domainSql = new SQLFragment("SELECT StorageColumnName FROM ")
+                SQLFragment domainSql = SQLFragment.unsafe("SELECT StorageColumnName FROM ")
                     .append(tinfoPropertyDomain, "pd")
                     .unsafeAppend(" INNER JOIN ")
                     .append(tinfoPropertyDescriptor, "px")
@@ -792,7 +792,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
                     try (Transaction transaction = scope.beginTransaction())
                     {
-                        executor.execute(new SQLFragment("EXEC sp_rename ?, ?, 'COLUMN'").add(oldName).add(newName));
+                        executor.execute(SQLFragment.unsafe("EXEC sp_rename ?, ?, 'COLUMN'").add(oldName).add(newName));
                         Table.update(null, tinfoPropertyDescriptor, PageFlowUtil.map("StorageColumnName", newName), property.propertyId());
                         transaction.commit();
                     }
@@ -1051,7 +1051,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 long newParentId = OntologyManager.ensureObject(container, group.getKey());
                 for (UserDefaultRow row : group.getValue())
                 {
-                    SQLFragment update = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoObject())
+                    SQLFragment update = SQLFragment.unsafe("UPDATE ").append(OntologyManager.getTinfoObject())
                         .unsafeAppend(" SET OwnerObjectId = ? WHERE ObjectId = ?").addAll(newParentId, row.objectId());
                     new SqlExecutor(ExperimentService.get().getSchema()).execute(update);
                     reparented++;
@@ -1095,7 +1095,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     /** A row already at the target was written under the new scheme and is newer, so it wins. */
     private static boolean renameObject(long objectId, String newUri)
     {
-        SQLFragment update = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoObject())
+        SQLFragment update = SQLFragment.unsafe("UPDATE ").append(OntologyManager.getTinfoObject())
             .unsafeAppend(" SET ObjectURI = ? WHERE ObjectId = ? AND NOT EXISTS (SELECT 1 FROM ")
             .append(OntologyManager.getTinfoObject(), "existing").unsafeAppend(" WHERE existing.ObjectURI = ?)")
             .addAll(newUri, objectId, newUri);
@@ -1112,4 +1112,18 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private record ContainerDefaultRow(long objectId, String objectURI, int domainId, int domainCount) implements DefaultValueRow {}
 
     private record UserDefaultRow(long objectId, String objectURI, long parentId, String parentURI, String container, int domainId, int domainCount) implements DefaultValueRow {}
+
+    /**
+     * Called from exp-26.009-26.010.sql
+     * GitHub Issue #1612: deleting a module dropped its provisioned schemas but kept the domains stored in them.
+     */
+    @SuppressWarnings("unused")
+    @DeferredUpgrade
+    public static void deleteDomainsWithMissingStorage(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        OntologyManager.deleteDomainsWithMissingStorage();
+    }
 }

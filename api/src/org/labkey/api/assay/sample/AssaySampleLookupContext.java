@@ -367,7 +367,7 @@ public class AssaySampleLookupContext
 
     private Set<MaterialInput> getCurrentMaterialInputs(long expRunRowId)
     {
-        var sql = new SQLFragment("""
+        var sql = SQLFragment.unsafe("""
             SELECT MI.MaterialId AS MaterialRowId, MI.Role AS MaterialInputRole
             FROM exp.MaterialInput MI
             INNER JOIN exp.ProtocolApplication PA ON MI.TargetApplicationId = PA.RowId

@@ -36,6 +36,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
@@ -112,6 +113,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
@@ -357,7 +359,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         queue.addRunnable((q) -> {
             // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
-            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+            SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ")
                     .append(getTinfoMaterialSource(), "ms")
                     .unsafeAppend(" WHERE ms.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                     .unsafeAppend(" AND ms.LSID = ?").add(sampleType.getLSID())
@@ -378,7 +380,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue, long minRowId)
     {
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
-        SQLFragment sql = new SQLFragment("SELECT m.* FROM ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT m.* FROM ")
                 .append(getTinfoMaterial(), "m")
                 .unsafeAppend(" LEFT OUTER JOIN ")
                 .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
@@ -429,7 +431,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         sql.unsafeAppend(" m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND pa.RunId = r.RowId AND ");
-        sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container")));
+        sql.append(filter.getSQLFragment(getExpSchema(), SQLFragment.unsafe("r.Container")));
         sql.unsafeAppend(" GROUP BY mi.Role ORDER BY mi.Role");
 
         Map<String, ExpSampleType> result = new LinkedHashMap<>();
@@ -454,7 +456,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void removeAutoLinkedStudy(@NotNull Container studyContainer)
     {
-        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterialSource())
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(getTinfoMaterialSource())
                 .unsafeAppend(" SET autolinkTargetContainer = NULL WHERE autolinkTargetContainer = ?")
                 .add(studyContainer.getId());
         new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
@@ -643,7 +645,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Set<Container> containers = new HashSet<>();
         if (c == null)
         {
-            SQLFragment containerSql = new SQLFragment("SELECT DISTINCT Container FROM ");
+            SQLFragment containerSql = SQLFragment.unsafe("SELECT DISTINCT Container FROM ");
             containerSql.append(getTinfoMaterial(), "m");
             containerSql.unsafeAppend(" WHERE CpasType = ?");
             containerSql.add(source.getLSID());
@@ -657,7 +659,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         int count = 0;
         for (Container toDelete : containers)
         {
-            SQLFragment sqlFilter = new SQLFragment("CpasType = ? AND Container = ?");
+            SQLFragment sqlFilter = SQLFragment.unsafe("CpasType = ? AND Container = ?");
             sqlFilter.add(source.getLSID());
             sqlFilter.add(toDelete);
             count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true, auditUserComment);
@@ -1333,6 +1335,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             ExpSampleType sampleType = null;
             if (sampleTypeLsid != null)
                 sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
+            // A sample type's own table audits only its samples, so each row's sample needn't be loaded
+            else if (tInfo instanceof ExpMaterialTableImpl materialTable && materialTable.getSampleType() != null)
+                sampleType = materialTable.getSampleType();
             else if (event.getSampleId() > 0)
             {
                 ExpMaterial sample = ExperimentService.get().getExpMaterial(event.getSampleId());
@@ -1578,7 +1583,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
                 Parameter count = new Parameter("rollupCount", JdbcType.INTEGER);
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE ").append(materialTable).unsafeAppend(" SET AliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
+                        SQLFragment.unsafe("UPDATE ").append(materialTable).unsafeAppend(" SET AliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
 
                 List<Map.Entry<Long, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
@@ -1613,7 +1618,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
                 Parameter count = new Parameter("AvailableAliquotCount", JdbcType.INTEGER);
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE ").append(materialTable).unsafeAppend(" SET AvailableAliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
+                        SQLFragment.unsafe("UPDATE ").append(materialTable).unsafeAppend(" SET AvailableAliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
 
                 List<Map.Entry<Long, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
@@ -1664,11 +1669,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     }
 
                     boolean isCountUnitType = sampleTypeBaseUnit.getKindOfQuantity() == KindOfQuantity.Count;
-                    String aliquotUnitSql = isCountUnitType ? "CASE WHEN MIN(im.units) = MAX(im.units) THEN MIN(im.units) ELSE ? END" : "?";
-
-                    SQLFragment statsSql = new SQLFragment("SELECT im.rootmaterialrowid, SUM(im.storedamount) AS total_volume, \n")
+                    SQLFragment statsSql = SQLFragment.unsafe("SELECT im.rootmaterialrowid, SUM(im.storedamount) AS total_volume, \n")
                             .unsafeAppend("SUM(CASE WHEN im.samplestate ").appendInClause(availableSampleStates, tableInfo.getSqlDialect()).unsafeAppend(" THEN im.storedamount ELSE 0 END) AS avail_volume, \n")
-                            .append(aliquotUnitSql)
+                            .unsafeAppend(isCountUnitType ? "CASE WHEN MIN(im.units) = MAX(im.units) THEN MIN(im.units) ELSE ? END" : "?")
                             .unsafeAppend(" AS common_unit \n").add(baseUnit)
                             .unsafeAppend("FROM exp.material im\n")
                             .unsafeAppend("WHERE im.rootmaterialrowid ")
@@ -1678,7 +1681,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                     SQLFragment quickRollUpSql = null;
 
-                    quickRollUpSql = new SQLFragment("UPDATE exp.material AS m SET \n")
+                    quickRollUpSql = SQLFragment.unsafe("UPDATE exp.material AS m SET \n")
                             .unsafeAppend("aliquotvolume = ROUND(COALESCE(stats.total_volume, 0)::NUMERIC, ?),\n").add(precisionScale)
                             .unsafeAppend("aliquotunit = stats.common_unit,\n")
                             .unsafeAppend("availablealiquotvolume = ROUND(COALESCE(stats.avail_volume, 0)::NUMERIC, ?)\n").add(precisionScale)
@@ -1691,7 +1694,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     new SqlExecutor(tableInfo.getSchema()).execute(quickRollUpSql);
 
                     // Now clear out rollups for samples that have zero aliquots
-                    SQLFragment quickClearRollupSql = new SQLFragment("UPDATE exp.material SET \n")
+                    SQLFragment quickClearRollupSql = SQLFragment.unsafe("UPDATE exp.material SET \n")
                             .unsafeAppend("aliquotvolume = 0, availablealiquotvolume = 0, ")
                             .unsafeAppend("aliquotunit = ?\n").add(baseUnit)
                             .unsafeAppend("WHERE rowid = rootmaterialrowid AND AliquotCount = 0 AND rowid ")
@@ -1712,7 +1715,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     Parameter availableAmount = new Parameter("availableAmount", JdbcType.DOUBLE);
 
                     ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                            new SQLFragment("UPDATE ").append(materialTable).unsafeAppend(" SET AliquotVolume = ?, AliquotUnit = ? , AvailableAliquotVolume = ? WHERE RowId = ? ").addAll(amount, unit, availableAmount, rowid), null);
+                            SQLFragment.unsafe("UPDATE ").append(materialTable).unsafeAppend(" SET AliquotVolume = ?, AliquotUnit = ? , AvailableAliquotVolume = ? WHERE RowId = ? ").addAll(amount, unit, availableAmount, rowid), null);
 
                     List<Map.Entry<Long, List<AliquotAmountUnitResult>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
 
@@ -1778,7 +1781,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
 
-        SQLFragment sql = new SQLFragment("SELECT rowid FROM ").append(tableInfo, "")
+        SQLFragment sql = SQLFragment.unsafe("SELECT rowid FROM ").append(tableInfo, "")
                 .unsafeAppend(" WHERE cpastype = ").appendValue(sampleTypeLsid)
                 .unsafeAppend(" AND rowid IN (")
                 .unsafeAppend(" SELECT DISTINCT rootmaterialrowid FROM ").append(tableInfo, "")
@@ -1889,7 +1892,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private SQLFragment getParentsOfAliquotsWithAmountsSql()
     {
-        return new SQLFragment(
+        return SQLFragment.unsafe(
     """
         SELECT DISTINCT parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
@@ -1900,7 +1903,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private SQLFragment getParentsOfAliquotsSql()
     {
-        return new SQLFragment(
+        return SQLFragment.unsafe(
     """
         SELECT DISTINCT parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
@@ -1935,7 +1938,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment("SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE ")
                 .unsafeAppend("a.rootMaterialRowId = m.rowId")
                 .unsafeAppend(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid ");
         dialect.appendInClauseSql(sql, sampleIds);
@@ -1962,7 +1965,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SqlDialect dialect = dbSchema.getSqlDialect();
 
         // Correlated so Postgres counts only the requested roots; a grouped join counts every aliquot on the server
-        SQLFragment sql = new SQLFragment(
+        SQLFragment sql = SQLFragment.unsafe(
                 """
                         SELECT m.RowId as SampleId, m.Units,
                         (SELECT COUNT(*) FROM exp.material a
@@ -1995,7 +1998,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         DbSchema exp = getExpSchema();
         SqlDialect dialect = exp.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment("SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate\n")
+        SQLFragment sql = SQLFragment.unsafe("SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate\n")
                 .unsafeAppend("FROM exp.material AS aliquot JOIN exp.material AS parent ON ")
                 .unsafeAppend("parent.rowid = aliquot.rootmaterialrowid")
                 .unsafeAppend(" WHERE ")
@@ -2461,7 +2464,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         ContainerFilter.ContainerFilterWithPermission cf = new ContainerFilter.AllInProject(container, searchUser);
         Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, Set.of());
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) FROM ");
         sql.append(tableInfo);
         sql.unsafeAppend(" WHERE ");
         if (isRootOnly)
@@ -2623,6 +2626,107 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     ContainerManager.deleteAll(projA, user);
                 if (projB != null)
                     ContainerManager.deleteAll(projB, user);
+            }
+        }
+
+        /**
+         * GH Issue 1585: the container column is surfaced as "Folder", so "Container" is left to a framework import
+         * alias, which must outrank a user field's own alias or label. Built through Domain.save(), which runs no
+         * field-name validation: the alias design is refused by the API as a reserved name, and that is how the domains
+         * in the field came to carry either one. The label design would save normally.
+         */
+        private ExpSampleType createTypeStealingContainerToken(Container c, User user, String name) throws Exception
+        {
+            List<GWTPropertyDescriptor> props = nameProp();
+            props.add(new GWTPropertyDescriptor("AliasStealer", "http://www.w3.org/2001/XMLSchema#string"));
+            props.add(new GWTPropertyDescriptor("LabelStealer", "http://www.w3.org/2001/XMLSchema#string"));
+            ExpSampleType st = get().createSampleType(c, user, name, null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+
+            // ExpSampleType hands back a read-only instance; forUpdate gives one that can be saved
+            Domain domain = PropertyService.get().getDomain(c, st.getDomain().getTypeURI(), true);
+            domain.getPropertyByName("AliasStealer").setImportAliasSet(Set.of("Container"));
+            domain.getPropertyByName("LabelStealer").setLabel("Container");
+            domain.save(user);
+
+            return st;
+        }
+
+        @Test
+        public void testContainerTokenStaysWithTheContainerColumn() throws Exception
+        {
+            final User user = TestContext.get().getUser();
+            Container c = null;
+            try
+            {
+                c = ContainerManager.createContainer(ContainerManager.getRoot(), "ContainerToken" + GUID.makeHash(), user);
+                ExpSampleType st = createTypeStealingContainerToken(c, user, "ContainerTokenTheft");
+
+                UserSchema schema = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_NAME);
+                TableInfo table = schema.getTable(st.getName());
+                QueryUpdateService qus = table.getUpdateService();
+
+                Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                row.put("name", "S1");
+                row.put("AliasStealer", "keepAlias");
+                row.put("LabelStealer", "keepLabel");
+
+                BatchValidationException errors = new BatchValidationException();
+                List<Map<String, Object>> inserted = qus.insertRows(user, c, List.of(row), errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+                Object rowId = inserted.get(0).get("rowId");
+
+                // An edit that touches neither field: the update pipeline supplies a Container column of its own here
+                Map<String, Object> update = new CaseInsensitiveHashMap<>();
+                update.put("rowId", rowId);
+                update.put("description", "touched");
+                errors = new BatchValidationException();
+                qus.updateRows(user, c, List.of(update), null, errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+
+                Map<String, Object> stored = new TableSelector(table, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null).getMap();
+                assertEquals("A field aliased Container kept its own value", "keepAlias", stored.get("AliasStealer"));
+                assertEquals("A field labeled Container kept its own value", "keepLabel", stored.get("LabelStealer"));
+            }
+            finally
+            {
+                if (c != null)
+                    ContainerManager.deleteAll(c, user);
+            }
+        }
+
+        @Test
+        public void testStoredContainerLabelBlocksFurtherSaves() throws Exception
+        {
+            // GH Issue 1783: a stored "Container" label is not grandfathered, so the domain cannot be saved at all --
+            // not even an unrelated edit -- until the label is renamed. Same treatment the stored import alias gets.
+            final User user = TestContext.get().getUser();
+            Container c = null;
+            try
+            {
+                c = ContainerManager.createContainer(ContainerManager.getRoot(), "ContainerLabel" + GUID.makeHash(), user);
+                ExpSampleType st = createTypeStealingContainerToken(c, user, "ContainerLabelBlocks");
+
+                // Re-read: the ExpSampleType was captured before the label was written
+                Domain stored = PropertyService.get().getDomain(c, st.getDomain().getTypeURI());
+                assertEquals("Fixture did not take", "Container", stored.getPropertyByName("LabelStealer").getLabel());
+                GWTDomain<GWTPropertyDescriptor> origGwt = DomainUtil.getDomainDescriptor(user, stored);
+                GWTDomain<GWTPropertyDescriptor> updateGwt = new GWTDomain<>(origGwt);
+                List<GWTPropertyDescriptor> fields = new ArrayList<>(updateGwt.getFields());
+                fields.add(new GWTPropertyDescriptor("Unrelated", "http://www.w3.org/2001/XMLSchema#string"));
+                updateGwt.setFields(fields);
+
+                ValidationException ve = DomainUtil.updateDomainDescriptor(origGwt, updateGwt, c, user);
+                assertTrue("A stored system field label must still be refused: " + ve.getMessage(),
+                        ve.getMessage().contains("Label 'Container' on field 'LabelStealer' conflicts with a system field name."));
+                assertTrue("Expected the stored alias to still be refused: " + ve.getMessage(),
+                        ve.getMessage().contains("Import alias 'Container' on field 'AliasStealer' conflicts with a reserved field name."));
+            }
+            finally
+            {
+                if (c != null)
+                    ContainerManager.deleteAll(c, user);
             }
         }
 

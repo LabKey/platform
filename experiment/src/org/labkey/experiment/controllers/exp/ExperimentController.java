@@ -37,6 +37,7 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ConcurrencyLimit;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -83,6 +84,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.LabKeySQLFragment;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
@@ -181,9 +183,11 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
+import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresAnyOf;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
@@ -207,7 +211,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
-import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -234,7 +237,6 @@ import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -345,7 +347,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
@@ -2438,26 +2439,8 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Data file " + _data.getDataFileUrl() + " does not exist on disk");
             }
 
-            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            if (root == null || !root.isUnderRoot(_data.getFileLike()))
-            {
-                FileContentService fileSvc = FileContentService.get();
-                if (fileSvc == null)
-                    throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
-
-                Path dataPath = _data.getFilePath();
-                boolean underFileRoot = Stream.of(FileContentService.ContentType.files, FileContentService.ContentType.assayfiles)
-                        .map(type -> fileSvc.getConfiguredFileRootPath(getContainer(), type))
-                        .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), dataPath.toUri()));
-
-                if (!underFileRoot)
-                {
-                    // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
-                    Container fileContainer = fileSvc.getContainerForFilePath(dataPath);
-                    if (fileContainer == null || !fileContainer.hasPermission(getUser(), ReadPermission.class))
-                        throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
-                }
-            }
+            if (!FileContentService.isFileReadable(getContainer(), _data.getFilePath(), getUser()))
+                throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
 
             //Issues 25667 and 31152
             if (form.isInline())
@@ -2506,7 +2489,7 @@ public class ExperimentController extends SpringActionController
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
                     if (!FileUtil.hasCloudScheme(realContent))                      // TODO: handle streaming from S3 to JSON
-                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, null);
+                        streamToJSON(FileSystemLike.wrapFile(realContent), form.getFormat(), -1, -1, -1, null);
                     return null;
                 }
 
@@ -2560,9 +2543,19 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    @ConcurrencyLimit(value = 4, message = "Too many files are being parsed right now. Please retry in a few moments.")
     public class ParseFileAction extends MutatingApiAction<ParseForm>
     {
+        private static final long MAX_FILE_BYTES = 10L * 1024 * 1024;
+        private static final int MAX_ROWS = 10_000;
+        private static final long MAX_CELLS = 500_000;
+        // Sized to heap, not upload size: POI peaks at about 20x the sheet XML, so 25 MB is about 600 MB per request
+        private static final long MAX_UNCOMPRESSED_BYTES = 25L * 1024 * 1024;
+        // Same as Excel's column limit
+        private static final int MAX_COLUMNS = 16_384;
+
         @Override
         public Object execute(ParseForm form, BindException errors) throws Exception
         {
@@ -2575,12 +2568,41 @@ public class ExperimentController extends SpringActionController
                 return true;
             }
 
+            // Checked before copying so oversized uploads never reach disk or the parser
+            if (formFile.getSize() > MAX_FILE_BYTES)
+                throw new BadRequestException("File exceeds the maximum allowed size of " + (MAX_FILE_BYTES / (1024 * 1024)) + " MB.");
+
+            int maxRows = form.getMaxRows();
+            if (maxRows < 0 || maxRows > MAX_ROWS)
+                maxRows = MAX_ROWS;
+
             FileLike tempFile = null;
             try
             {
                 tempFile = FileUtil.createTempFileLike("parse", formFile.getOriginalFilename());
-                FileUtil.copyData(formFile.getInputStream(), tempFile.openOutputStream());
-                streamToJSON(tempFile, form.getFormat(), form.getMaxRows(), formFile.getOriginalFilename());
+                try (InputStream in = formFile.getInputStream(); OutputStream out = tempFile.openOutputStream())
+                {
+                    FileUtil.copyData(in, out);
+                }
+
+                String lowerCaseFileName = tempFile.getName().toLowerCase();
+                if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
+                {
+                    ExcelFactory.checkWorkbookContent(tempFile, MAX_UNCOMPRESSED_BYTES);
+                }
+                else
+                {
+                    // Other names are sniffed by content, which would let Excel skip the checks above
+                    DataLoaderFactory dlf = DataLoader.get().findFactory(tempFile, null);
+                    if (dlf instanceof ExcelLoader.Factory)
+                        throw new BadRequestException("Excel files must have a .xls or .xlsx extension.");
+                }
+
+                streamToJSON(tempFile, form.getFormat(), maxRows, MAX_CELLS, MAX_COLUMNS, formFile.getOriginalFilename());
+            }
+            catch (ApiUsageException e)
+            {
+                throw new BadRequestException(e.getMessage(), e);
             }
             finally
             {
@@ -2593,7 +2615,7 @@ public class ExperimentController extends SpringActionController
 
 
     // SampleTypeTest
-    private void streamToJSON(FileLike realContent, String format, int maxRow, String originalFileName) throws IOException
+    private void streamToJSON(FileLike realContent, String format, int maxRow, long maxCells, int maxColumns, String originalFileName) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
         boolean extended = "jsonTSVExtended".equalsIgnoreCase(format);
@@ -2604,7 +2626,7 @@ public class ExperimentController extends SpringActionController
         {
             try (InputStream in = realContent.openInputStream())
             {
-                sheetsArray = ExcelFactory.convertExcelToJSON(in, extended, maxRow);
+                sheetsArray = ExcelFactory.convertExcelToJSON(in, extended, maxRow, maxCells);
             }
         }
         else
@@ -2619,11 +2641,24 @@ public class ExperimentController extends SpringActionController
                 DataLoader tabLoader = dlf.createLoader(in, true))
             {
                 tabLoader.setScanAheadLineCount(5000);
+                tabLoader.setMaxColumns(maxColumns);
+                tabLoader.setMaxInferenceCells(maxCells);
+                if (ignoreTypes)
+                    tabLoader.setInferTypes(false);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
 
-                if (ignoreTypes)
+                if (maxCells > -1)
+                {
                     for (ColumnDescriptor col : cols)
-                        col.clazz = String.class;
+                    {
+                        col.errorValues = DataLoader.ERROR_VALUE_USE_ORIGINAL;
+                    }
+                }
+
+                // Every output row has cols.length entries, so charge the full width per row, as the Excel path does.
+                // Throw only if the header alone is over budget; data rows past the budget are truncated below.
+                long cellCount = 1 + cols.length;
+                checkCellBudget(cellCount, maxCells);
 
                 JSONArray rowsArray = new JSONArray();
                 JSONArray headerArray = new JSONArray();
@@ -2641,11 +2676,23 @@ public class ExperimentController extends SpringActionController
                     }
                 }
                 rowsArray.put(headerArray);
+                boolean truncated = false;
                 for (Map<String, Object> rowMap : tabLoader)
                 {
-                    // headers count as a row to be consistent
-                    if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
+                    // Headers count as a row, matching the Excel path
+                    if (maxRow > -1 && maxRow <= rowsArray.length())
+                    {
+                        truncated = true;
                         break;
+                    }
+
+                    // Out of cell budget
+                    cellCount += 1 + cols.length;
+                    if (maxCells > -1 && cellCount > maxCells)
+                    {
+                        truncated = true;
+                        break;
+                    }
 
                     JSONArray rowArray = new JSONArray();
                     for (ColumnDescriptor col : cols)
@@ -2668,6 +2715,8 @@ public class ExperimentController extends SpringActionController
                 JSONObject sheetJSON = new JSONObject();
                 sheetJSON.put("name", "flat");
                 sheetJSON.put("data", rowsArray);
+                if (truncated)
+                    sheetJSON.put("truncated", true);
                 sheetsArray = new JSONArray();
                 sheetsArray.put(sheetJSON);
             }
@@ -2678,10 +2727,21 @@ public class ExperimentController extends SpringActionController
             JSONObject workbookJSON = new JSONObject();
             workbookJSON.put("fileName", realContent.getName());
             workbookJSON.put("sheets", sheetsArray);
+            // Lets callers that read whole files detect that rows were dropped by maxRows or the server cap
+            boolean truncated = false;
+            for (int i = 0; i < sheetsArray.length(); i++)
+                truncated |= sheetsArray.getJSONObject(i).optBoolean("truncated");
+            workbookJSON.put("truncated", truncated);
             if (originalFileName != null)
                 workbookJSON.put("originalFileName", originalFileName);
             writer.writeResponse(new ApiSimpleResponse(workbookJSON));
         }
+    }
+
+    private static void checkCellBudget(long cellCount, long maxCells)
+    {
+        if (maxCells > -1 && cellCount > maxCells)
+            throw new ApiUsageException("File is too large to parse; it exceeds " + maxCells + " cells.");
     }
 
 
@@ -7196,7 +7256,7 @@ public class ExperimentController extends SpringActionController
         {
             ensureUniqueIdLsids();
 
-            SQLFragment select = getOrderedRowsSql();
+            LabKeySQLFragment select = getOrderedRowsSql();
             // need to set the key field so selections are possible
             // need the SampleTypeUnits so we will display using that unit
             String metadata =
@@ -7217,7 +7277,7 @@ public class ExperimentController extends SpringActionController
                                    </columns>
                                </table>
                             </tables>""";
-            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.getExpSchema().getName(), select.getSQL(), metadata);
+            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.getExpSchema().getName(), select.getText(), metadata);
             return success("Session query created", Map.of("queryName", def.getName(), "ids", _ids));
         }
 
@@ -7237,7 +7297,7 @@ public class ExperimentController extends SpringActionController
             return ids;
         }
 
-        private SQLFragment getOrderedRowsSql()
+        private LabKeySQLFragment getOrderedRowsSql()
         {
             boolean isFMEnabled = InventoryService.isFreezerManagementEnabled(getContainer());
             String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
@@ -7282,22 +7342,21 @@ public class ExperimentController extends SpringActionController
             }
 
 
-            String sampleIdComma = "";
-            String uniqueIdComma = "";
+            SQLFragment.SqlSeparator sampleIdComma = SQLFragment.sep("", "\n,");
+            SQLFragment.SqlSeparator uniqueIdComma = SQLFragment.sep("", "\n,");
             int index = 1;
-            SQLFragment sampleIdValuesSql = new SQLFragment();
-            SQLFragment uniqueIdValuesSql = new SQLFragment();
+            LabKeySQLFragment sampleIdValuesSql = new LabKeySQLFragment();
+            LabKeySQLFragment uniqueIdValuesSql = new LabKeySQLFragment();
             for (String id : _ids)
             {
                 if (id.startsWith(SAMPLE_ID_PREFIX))
                 {
-                    sampleIdValuesSql.append(sampleIdComma).unsafeAppend("\t(").appendValue(index);
+                    sampleIdValuesSql.append(sampleIdComma.next()).unsafeAppend("\t(").appendValue(index);
                     sampleIdValuesSql.unsafeAppend(", ");
-                    sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
+                    sampleIdValuesSql.appendStringLiteral(id.substring(SAMPLE_ID_PREFIX.length()));
                     sampleIdValuesSql.unsafeAppend(", ");
-                    sampleIdValuesSql.append(LabKeySql.quoteString("null"));
+                    sampleIdValuesSql.appendStringLiteral("null");
                     sampleIdValuesSql.unsafeAppend(")");
-                    sampleIdComma = "\n,";
                 }
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
                 {
@@ -7308,13 +7367,12 @@ public class ExperimentController extends SpringActionController
                     {
                         for (String lsid : lsids)
                         {
-                            uniqueIdValuesSql.append(uniqueIdComma).unsafeAppend("\t(").appendValue(index);
+                            uniqueIdValuesSql.append(uniqueIdComma.next()).unsafeAppend("\t(").appendValue(index);
                             uniqueIdValuesSql.unsafeAppend(", ");
-                            uniqueIdValuesSql.append(LabKeySql.quoteString(idClean));
+                            uniqueIdValuesSql.appendStringLiteral(idClean);
                             uniqueIdValuesSql.unsafeAppend(", ");
-                            uniqueIdValuesSql.append(LabKeySql.quoteString(lsid));
+                            uniqueIdValuesSql.appendStringLiteral(lsid);
                             uniqueIdValuesSql.unsafeAppend(")");
-                            uniqueIdComma = "\n,";
                         }
                     }
                 }
@@ -7322,7 +7380,7 @@ public class ExperimentController extends SpringActionController
             }
 
             boolean haveData = !sampleIdValuesSql.isEmpty() || !_uniqueIdLsids.isEmpty();
-            SQLFragment sql = new SQLFragment();
+            LabKeySQLFragment sql = new LabKeySQLFragment();
             if (!sampleIdValuesSql.isEmpty())
             {
                 sql.unsafeAppend("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES\n");
@@ -7342,8 +7400,8 @@ public class ExperimentController extends SpringActionController
             }
 
             sql.unsafeAppend("SELECT ");
-            sql.unsafeAppend("\n\tOID.").append(StringUtils.join(orderedIdCols, ",\n\tOID."));
-            sql.unsafeAppend(",\n\t").append(StringUtils.join( sampleColumns, ",\n\t"));
+            sql.unsafeAppend("\n\tOID.").appendSourceText(StringUtils.join(orderedIdCols, ",\n\tOID."));
+            sql.unsafeAppend(",\n\t").appendSourceText(StringUtils.join( sampleColumns, ",\n\t"));
             sql.unsafeAppend("\nFROM\n(");
             if (!sampleIdValuesSql.isEmpty())
             {
@@ -7364,8 +7422,8 @@ public class ExperimentController extends SpringActionController
             }
             if (!haveData) // no data to return but return data in the expected shape.
             {
-                sql = new SQLFragment("SELECT\n");
-                sql.append(orderedIdCols.stream()
+                sql = LabKeySQLFragment.unsafe("SELECT\n");
+                sql.appendSourceText(orderedIdCols.stream()
                         .map(col -> {
                             int asIndex = col.indexOf("AS");
                             if (asIndex > 0)
@@ -7374,8 +7432,8 @@ public class ExperimentController extends SpringActionController
                                 return "NULL AS " + col;
                         })
                         .collect(Collectors.joining(",\t\n")));
-                sql.unsafeAppend(",\t\n").append(StringUtils.join(sampleColumns, ",\t\n"));
-                sql.unsafeAppend("\nFROM ").append(samplesTable).unsafeAppend(" S WHERE 1 = 2");
+                sql.unsafeAppend(",\t\n").appendSourceText(StringUtils.join(sampleColumns, ",\t\n"));
+                sql.unsafeAppend("\nFROM ").appendSourceText(samplesTable).unsafeAppend(" S WHERE 1 = 2");
                 return sql;
             }
             else

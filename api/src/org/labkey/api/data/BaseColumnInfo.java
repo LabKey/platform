@@ -197,7 +197,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         this(new FieldKey(null, rsmd.getColumnLabel(col)), JdbcType.valueOf(rsmd.getColumnType(col)));
         setSqlTypeName(rsmd.getColumnTypeName(col));
         // this identifier is not used to generate SQL
-        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment().setSqlUnsafe(rsmd.getColumnName(col))));
+        SQLFragment aliasSql = new SQLFragment();
+        aliasSql.setSqlUnsafe(rsmd.getColumnName(col));
+        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), aliasSql));
     }
 
     /* Most ColumnInfos represent a column in the database.  However, some are created only for meta-data purposes.
@@ -411,6 +413,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setDefaultValueType(col.getDefaultValueType());
         setDefaultValue(col.getDefaultValue());
         setImportAliasesSet(col.getImportAliasSet());
+        setSystemImportAliasesSet(col.getSystemImportAliasSet());
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
@@ -495,6 +498,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setDefaultValueType(col.getDefaultValueType());
         setDefaultValue(col.getDefaultValue());
         setImportAliasesSet(col.getImportAliasSet());
+        setSystemImportAliasesSet(col.getSystemImportAliasSet());
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
@@ -690,13 +694,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (_parentTable == null)
             return null;
         return _parentTable.getSqlDialect();
-    }
-
-    // Return the actual value we have stashed; use this when copying attributes, so you don't hard-code label
-    @Override
-    public String getLabelValue()
-    {
-        return _label;
     }
 
     @Override

@@ -79,6 +79,25 @@ public abstract class AbstractAuditHandler implements AuditHandler
      */
     protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents);
 
+    /** Creates the detailed record for one row of an {@link #addAuditEvent} call */
+    @FunctionalInterface
+    protected interface DetailedAuditRecordFactory
+    {
+        /** @param precedingEvents collects events the record must follow, such as an item's move out ahead of its move in, saved before the record's batch */
+        DetailedAuditTypeEvent create(@Nullable Map<String, Object> row, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents, List<AuditTypeEvent> precedingEvents);
+
+        /** Called once after the call's last record is created, to save what the records collected */
+        default void complete()
+        {
+        }
+    }
+
+    /** Called once per detailed {@link #addAuditEvent} call; override to load what every row's record needs in one pass */
+    protected DetailedAuditRecordFactory getDetailedAuditRecordFactory(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+    {
+        return (row, existingRow, providedValues, sideEffectEvents, _) -> createDetailedAuditRecord(user, c, tInfo, action, userComment, row, existingRow, providedValues, sideEffectEvents);
+    }
+
     /**
      * Allow for adding fields that may be present in the updated row but not represented in the original row
      *
@@ -142,13 +161,15 @@ public abstract class AbstractAuditHandler implements AuditHandler
                     AuditLogService auditLog = AuditLogService.get();
                     List<DetailedAuditTypeEvent> batch = new ArrayList<>();
                     List<AuditTypeEvent> sideEffectEvents = new ArrayList<>();
+                    List<AuditTypeEvent> precedingEvents = new ArrayList<>();
+                    DetailedAuditRecordFactory recordFactory = getDetailedAuditRecordFactory(user, c, auditConfigurable, action, userComment, rows, existingRows);
 
                     for (int i=0; i < rows.size(); i++)
                     {
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null == existingRows ? Collections.emptyMap() : existingRows.get(i);
                         Map<String, Object> providedValueRow = null == providedValues || providedValues.size() <= i  ? null : providedValues.get(i);
-                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow, providedValueRow, sideEffectEvents);
+                        DetailedAuditTypeEvent event = recordFactory.create(row, existingRow, providedValueRow, sideEffectEvents, precedingEvents);
 
                         switch (action)
                         {
@@ -188,10 +209,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                         }
                         batch.add(event);
                         if (batch.size() >= BatchSize.get(AUDIT))
-                        {
-                            auditLog.addEvents(user, batch, useTransactionAuditCache);
-                            batch.clear();
-                        }
+                            addBatch(auditLog, user, precedingEvents, batch, useTransactionAuditCache);
                         // a row can contribute more than one side effect, so bound these separately from the row batch
                         if (sideEffectEvents.size() >= BatchSize.get(AUDIT))
                         {
@@ -200,19 +218,25 @@ public abstract class AbstractAuditHandler implements AuditHandler
                         }
                     }
                     if (!batch.isEmpty())
-                    {
-                        auditLog.addEvents(user, batch, useTransactionAuditCache);
-                        batch.clear();
-                    }
+                        addBatch(auditLog, user, precedingEvents, batch, useTransactionAuditCache);
                     addSideEffectEvents(auditLog, user, sideEffectEvents, useTransactionAuditCache);
+                    recordFactory.complete();
                     break;
                 }
             }
         }
     }
 
+    private static void addBatch(AuditLogService auditLog, User user, List<AuditTypeEvent> precedingEvents, List<DetailedAuditTypeEvent> batch, boolean useTransactionAuditCache)
+    {
+        addSideEffectEvents(auditLog, user, precedingEvents, useTransactionAuditCache);
+        precedingEvents.clear();
+        auditLog.addEvents(user, batch, useTransactionAuditCache);
+        batch.clear();
+    }
+
     /**
-     * The one place side-effect events are written, so they can't pick up different batching or transaction-cache
+     * The one place side-effect and preceding events are written, so they can't pick up different batching or transaction-cache
      * behavior depending on which call path produced them. insertEvents() batches only a fully homogeneous list, so
      * group by event type and container -- each type is stored in its own provisioned table.
      */

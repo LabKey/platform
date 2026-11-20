@@ -69,14 +69,14 @@ public class GroupTableInfo extends VirtualTable
     public SQLFragment getFromSQL()
     {
         checkReadBeforeExecute();
-        SQLFragment sql = new SQLFragment("SELECT ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT ");
         String sep = "";
         
         //add the group-by columns
         for(ColumnInfo col : getGroupByColumns())
         {
             sql.append(sep);
-            sql.append(ALIAS_SOURCE);
+            sql.appendIdentifier(ALIAS_SOURCE);
             sql.unsafeAppend(".");
             sql.appendIdentifier(col.getAlias());
             sep = ",\n";
@@ -97,7 +97,7 @@ public class GroupTableInfo extends VirtualTable
 
         sql.append(QueryService.get().getSelectBuilder(source).columns(getDistinctColumns()).filter(_sourceFilter).buildSqlFragment());
         sql.unsafeAppend("\n) AS ");
-        sql.append(ALIAS_SOURCE);
+        sql.appendIdentifier(ALIAS_SOURCE);
 
         //group by
         sql.unsafeAppend("\nGROUP BY ");
@@ -105,7 +105,7 @@ public class GroupTableInfo extends VirtualTable
         for(ColumnInfo col : getGroupByColumns())
         {
             sql.append(sep);
-            sql.append(ALIAS_SOURCE);
+            sql.appendIdentifier(ALIAS_SOURCE);
             sql.unsafeAppend(".");
             sql.appendIdentifier(col.getAlias());
             sep = ",\n";

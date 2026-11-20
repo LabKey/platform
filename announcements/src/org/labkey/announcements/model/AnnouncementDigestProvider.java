@@ -324,7 +324,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             this.announcementModels = announcementModels;
             this.boardPath = c.getPath();
             this.boardURL = AnnouncementsController.getBeginURL(c);
-            this.siteUrl = ActionURL.getBaseServerURL();
+            this.siteUrl = ActionURL.getBaseServerURLWithContextPath();
             this.removeURL = new ActionURL(AnnouncementsController.EmailPreferencesAction.class, c);
             this.includeGroups = perm.includeGroups();
         }

@@ -268,7 +268,7 @@ public class SimpleFilter implements Filter
             return key.toSQLString();
         }
 
-        public abstract String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap);
+        public abstract LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap);
 
         public abstract SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect);
 
@@ -400,7 +400,7 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             throw new UnsupportedOperationException();
         }
@@ -424,7 +424,7 @@ public class SimpleFilter implements Filter
     {
         public FalseClause()
         {
-            super(new SQLFragment("0 = 1"));
+            super(SQLFragment.unsafe("0 = 1"));
         }
     }
 
@@ -432,7 +432,7 @@ public class SimpleFilter implements Filter
     {
         public TrueClause()
         {
-            super(new SQLFragment("1 = 1"));
+            super(SQLFragment.unsafe("1 = 1"));
         }
     }
 
@@ -493,19 +493,19 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            StringBuilder labKeySql = new StringBuilder();
+            LabKeySQLFragment labKeySql = new LabKeySQLFragment();
             String separator = "";
             for (FilterClause clause : _clauses)
             {
-                labKeySql.append(separator);
+                labKeySql.appendSourceText(separator);
                 separator = _operation;
-                labKeySql.append("(");
+                labKeySql.unsafeAppend("(");
                 labKeySql.append(clause.getLabKeySQLWhereClause(columnMap));
-                labKeySql.append(")");
+                labKeySql.unsafeAppend(")");
             }
-            return labKeySql.toString();
+            return labKeySql;
         }
 
         @Override
@@ -600,9 +600,9 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return "NOT (" + _clause.getLabKeySQLWhereClause(columnMap) + ")";
+            return LabKeySQLFragment.unsafe("NOT (").append(_clause.getLabKeySQLWhereClause(columnMap)).unsafeAppend(")");
         }
 
         @Override
@@ -632,16 +632,8 @@ public class SimpleFilter implements Filter
         {
             super(fieldKey);
             params = params == null ? new ArrayList<>() : new ArrayList<>(params); // possibly immutable
-            if (params.contains(null)) //params.size() == 0 ||
-            {
+            if (params.removeIf(p -> p == null || "".equals(p)))
                 _includeNull = true;
-                params.remove(null);
-            }
-            if (params.contains("")) //params.size() == 0 ||
-            {
-                _includeNull = true;
-                params.remove("");
-            }
 
             _paramVals = params.toArray();
             _comparison = comparison;
@@ -757,7 +749,7 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String alias = getLabKeySQLColName(getFieldKey());
             ColumnInfo col = columnMap != null ? columnMap.get(getFieldKey()) : null;
@@ -810,15 +802,15 @@ public class SimpleFilter implements Filter
                 }
             }
 
-            return in.toString();
+            return LabKeySQLFragment.ofSourceText(in.toString());
         }
 
         private void handleEmptyParams(DatabaseIdentifier alias, SQLFragment in)
         {
             if (isIncludeNull())
-                in.appendIdentifier(alias).unsafeAppend(" IS ").append(isNegated() ? "NOT " : "").unsafeAppend("NULL");
+                in.appendIdentifier(alias).unsafeAppend(" IS ").unsafeAppend(isNegated() ? "NOT " : "").unsafeAppend("NULL");
             else
-                in.append(isNegated() ? "1 = 1" : "0 = 1");
+                in.unsafeAppend(isNegated() ? "1 = 1" : "0 = 1");
         }
 
         @Override
@@ -871,7 +863,7 @@ public class SimpleFilter implements Filter
                 }
             }
 
-            in.append(isIncludeNull() || isNegated() ? "((" : "(");
+            in.unsafeAppend(isIncludeNull() || isNegated() ? "((" : "(");
 
             if (isNegated())
                 in.unsafeAppend("NOT ");
@@ -922,8 +914,8 @@ public class SimpleFilter implements Filter
             joins.keySet().forEach(a -> aliasManager.claimAlias(a, a));
             String alias = aliasManager.decideAlias("_drive_");
 
-            SQLFragment join = new SQLFragment("INNER JOIN ").append(tempTable).unsafeAppend(" ").append(alias)
-                .unsafeAppend(" ON ").append(pkColumn.getValueSql(tableAlias)).unsafeAppend(" = ").append(alias).unsafeAppend(".Id");
+            SQLFragment join = SQLFragment.unsafe("INNER JOIN ").append(tempTable).unsafeAppend(" ").appendIdentifier(alias)
+                .unsafeAppend(" ON ").append(pkColumn.getValueSql(tableAlias)).unsafeAppend(" = ").appendIdentifier(alias).unsafeAppend(".Id");
             join.addTempToken(tempTable);
             joins.put(alias, join);
             return true;
@@ -1015,7 +1007,7 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             ColumnInfo col = columnMap.get(getFieldKey());
 
@@ -1026,7 +1018,7 @@ public class SimpleFilter implements Filter
             }
 
             // Empty params list
-            return isNegated() ? "1 = 1" : "0 = 1";
+            return LabKeySQLFragment.ofSourceText(isNegated() ? "1 = 1" : "0 = 1");
         }
 
         @Override
@@ -1039,7 +1031,7 @@ public class SimpleFilter implements Filter
             if (!oc.getClauses().isEmpty())
                 return in.append(oc.toSQLFragment(columnMap, dialect));
 
-            return in.append(isNegated() ? "1 = 1" : "0 = 1");
+            return in.unsafeAppend(isNegated() ? "1 = 1" : "0 = 1");
         }
 
         private OperationClause getContainsClause(ColumnInfo colInfo)
@@ -1555,7 +1547,7 @@ public class SimpleFilter implements Filter
         {
             result.append(separator);
             separator = ") AND (";
-            result.append(filterClause.getLabKeySQLWhereClause(columns));
+            result.append(filterClause.getLabKeySQLWhereClause(columns).getText());
         }
         if (!result.isEmpty())
         {
@@ -1749,7 +1741,7 @@ public class SimpleFilter implements Filter
             var containsOneOfFrag = containsOneOf.getLabKeySQLWhereClause(Collections.emptyMap());
             assertEquals(
                 "(LOWER(\"Field2\") LIKE LOWER('%x%') ESCAPE '!') OR (LOWER(\"Field2\") LIKE LOWER('%u!_u%') ESCAPE '!')",
-                containsOneOfFrag
+                containsOneOfFrag.getText()
             );
             filter.addClause(containsOneOf);
 
@@ -1813,10 +1805,10 @@ public class SimpleFilter implements Filter
             test("1 = 1", "Foo has any value", new InClause(fieldKey, Collections.emptySet(), true, true), mockDialect);
             test("NOT (1 = 1)", "NOT (Foo has any value)", new NotClause(new InClause(fieldKey, Collections.emptySet(), true, true)), mockDialect);
             Map<FieldKey, ColumnInfo> map = Map.of(fieldKey, new BaseColumnInfo(fieldKey, JdbcType.VARCHAR));
-            assertEquals("0 = 1", new InClause(fieldKey, List.of()).getLabKeySQLWhereClause(map));
-            assertEquals("NOT (0 = 1)", new NotClause(new InClause(fieldKey, List.of())).getLabKeySQLWhereClause(map));
-            assertEquals("1 = 1", new InClause(fieldKey, List.of(), false, true).getLabKeySQLWhereClause(map));
-            assertEquals("NOT (1 = 1)", new NotClause(new InClause(fieldKey, List.of(), false, true)).getLabKeySQLWhereClause(map));
+            assertEquals("0 = 1", new InClause(fieldKey, List.of()).getLabKeySQLWhereClause(map).getText());
+            assertEquals("NOT (0 = 1)", new NotClause(new InClause(fieldKey, List.of())).getLabKeySQLWhereClause(map).getText());
+            assertEquals("1 = 1", new InClause(fieldKey, List.of(), false, true).getLabKeySQLWhereClause(map).getText());
+            assertEquals("NOT (1 = 1)", new NotClause(new InClause(fieldKey, List.of(), false, true)).getLabKeySQLWhereClause(map).getText());
 
             // Non-null parameters only
             test("(Foo IN (1, 2, 3))", "Foo IS ONE OF (1, 2, 3)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3)), mockDialect);
@@ -1981,26 +1973,26 @@ public class SimpleFilter implements Filter
             SqlDialect d = core.getSqlDialect();
 
             Collection<Integer> allUserIds = new TableSelector(CoreSchema.getInstance().getTableInfoUsersData(), Collections.singleton("UserId")).getCollection(Integer.class);
-            SQLFragment shortSql = new SQLFragment("SELECT * FROM core.UsersData WHERE UserId");
+            SQLFragment shortSql = SQLFragment.unsafe("SELECT * FROM core.UsersData WHERE UserId");
             d.appendInClauseSql(shortSql, allUserIds);
             assertEquals(allUserIds.size(), new SqlSelector(core, shortSql).getRowCount());
 
             ArrayList<Object> l = new ArrayList<>(allUserIds);
             while (l.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
                 l.addAll(allUserIds);
-            SQLFragment longSql = new SQLFragment("SELECT * FROM core.UsersData WHERE UserId");
+            SQLFragment longSql = SQLFragment.unsafe("SELECT * FROM core.UsersData WHERE UserId");
             d.appendInClauseSql(longSql, l);
             assertEquals(allUserIds.size(), new SqlSelector(core, longSql).getRowCount());
 
             Collection<String> allDisplayNames = new TableSelector(CoreSchema.getInstance().getTableInfoUsersData(), Collections.singleton("DisplayName")).getCollection(String.class);
-            SQLFragment shortSqlStr = new SQLFragment("SELECT * FROM core.UsersData WHERE DisplayName");
+            SQLFragment shortSqlStr = SQLFragment.unsafe("SELECT * FROM core.UsersData WHERE DisplayName");
             d.appendInClauseSql(shortSqlStr, allDisplayNames);
             assertEquals(allDisplayNames.size(), new SqlSelector(core, shortSqlStr).getRowCount());
 
             l = new ArrayList<>(allDisplayNames);
             while (l.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
                 l.addAll(allDisplayNames);
-            SQLFragment longSqlStr = new SQLFragment("SELECT * FROM core.UsersData WHERE DisplayName");
+            SQLFragment longSqlStr = SQLFragment.unsafe("SELECT * FROM core.UsersData WHERE DisplayName");
             d.appendInClauseSql(longSqlStr, l);
             assertEquals(allDisplayNames.size(), new SqlSelector(core, longSqlStr).getRowCount());
         }
@@ -2063,14 +2055,14 @@ public class SimpleFilter implements Filter
         @Test
         public void testEqualsAndHashCode()
         {
-            SQLClause clause1 = new SQLClause(new SQLFragment("This = That", 1, 2));
-            SQLClause clause2 = new SQLClause(new SQLFragment("This = That", 1, 2));
+            SQLClause clause1 = new SQLClause(SQLFragment.unsafe("This = That", 1, 2));
+            SQLClause clause2 = new SQLClause(SQLFragment.unsafe("This = That", 1, 2));
             assertEquals(clause1, clause2);
             assertEquals(clause1.hashCode(), clause2.hashCode());
-            SQLClause clause3 = new SQLClause(new SQLFragment("That = This", 1, 2));
+            SQLClause clause3 = new SQLClause(SQLFragment.unsafe("That = This", 1, 2));
             assertNotEquals(clause1, clause3);
             assertNotEquals(clause1.hashCode(), clause3.hashCode());
-            SQLClause clause4 = new SQLClause(new SQLFragment("This = That", 3, 4));
+            SQLClause clause4 = new SQLClause(SQLFragment.unsafe("This = That", 3, 4));
             assertNotEquals(clause1, clause4);
             assertNotEquals(clause1.hashCode(), clause4.hashCode());
         }
@@ -2098,14 +2090,14 @@ public class SimpleFilter implements Filter
             clause = new ContainsOneOfClause(fieldKey, List.of(), false);
             test("0 = 1", "Foo CONTAINS ONE OF (BLANK)", clause, dialect);
             test("NOT (0 = 1)", "NOT (Foo CONTAINS ONE OF (BLANK))", new NotClause(clause), dialect);
-            assertEquals("0 = 1", clause.getLabKeySQLWhereClause(map));
-            assertEquals("NOT (0 = 1)", new NotClause(clause).getLabKeySQLWhereClause(map));
+            assertEquals("0 = 1", clause.getLabKeySQLWhereClause(map).getText());
+            assertEquals("NOT (0 = 1)", new NotClause(clause).getLabKeySQLWhereClause(map).getText());
 
             clause = new ContainsOneOfClause(fieldKey, List.of(), false, true);
             test("1 = 1", "Foo DOES NOT CONTAIN ANY OF (BLANK)", clause, dialect);
             test("NOT (1 = 1)", "NOT (Foo DOES NOT CONTAIN ANY OF (BLANK))", new NotClause(clause), dialect);
-            assertEquals("1 = 1", clause.getLabKeySQLWhereClause(map));
-            assertEquals("NOT (1 = 1)", new NotClause(clause).getLabKeySQLWhereClause(map));
+            assertEquals("1 = 1", clause.getLabKeySQLWhereClause(map).getText());
+            assertEquals("NOT (1 = 1)", new NotClause(clause).getLabKeySQLWhereClause(map).getText());
         }
     }
 }
