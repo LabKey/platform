@@ -173,6 +173,6 @@ public class WikiEditModel
 
     public @Nullable String getSearchContext()
     {
-        return null == _wiki ? null : WikiManager.get().getSearchContext(_container, _wiki.getName());
+        return null == _wiki ? null : _wiki.getSearchContext();
     }
 }

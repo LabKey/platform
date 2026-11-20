@@ -555,6 +555,7 @@ public class WikiManager implements WikiService
         newWikiPage.setDisplayOrder(srcPage.getDisplayOrder());
         newWikiPage.setShowAttachments(srcPage.isShowAttachments());
         newWikiPage.setShouldIndex(srcPage.isShouldIndex());
+        newWikiPage.setSearchContext(srcPage.getSearchContext());
 
         //look up parent page via map
         if (pageIdMap != null)
@@ -882,7 +883,7 @@ public class WikiManager implements WikiService
                 return null;
             WikiVersion version = wiki.getLatestVersion();
             HtmlString html = version.getHtml(c, wiki);
-            return new RenderedWiki(name, version.getTitle(), html, wiki.getEntityId());
+            return new RenderedWiki(name, version.getTitle(), html, wiki.getEntityId(), getAncestorTitles(wiki), wiki.getSearchContext());
         }
         catch (Exception x)
         {
@@ -1090,16 +1091,6 @@ public class WikiManager implements WikiService
             .WHERE().unsafeAppend("Container = ").appendValue(c)
             .AND().unsafeAppend("SearchContext").IS_NOT_NULL())
             .getValueMap();
-    }
-
-    public @Nullable String getSearchContext(Container c, String name)
-    {
-        return new SqlSelector(comm.getSchema(), new SQLFragment()
-            .SELECT().unsafeAppend("SearchContext")
-            .FROM().append(comm.getTableInfoPages())
-            .WHERE().unsafeAppend("Container = ").appendValue(c)
-            .AND().unsafeAppend("Name = ").appendValue(name))
-            .getObject(String.class);
     }
 
     private List<String> getAncestorTitles(Wiki wiki)
@@ -1361,7 +1352,7 @@ public class WikiManager implements WikiService
 
             Date before = WikiSelectManager.getWikiFromDatabase(c, "pageA").getModified();
             assertEquals(new SearchContextUpdate(1, List.of("pageNA")), _m.setSearchContexts(c, Map.of("pageA", "Product · user guide · Topic A", "pageNA", "unused")));
-            assertEquals("Product · user guide · Topic A", _m.getSearchContext(c, "pageA"));
+            assertEquals("Product · user guide · Topic A", WikiSelectManager.getWikiFromDatabase(c, "pageA").getSearchContext());
             Date modified = WikiSelectManager.getWikiFromDatabase(c, "pageA").getModified();
             assertTrue("A changed search context counts as a modification", modified.after(before));
 
@@ -1373,10 +1364,26 @@ public class WikiManager implements WikiService
             edit.setTitle("Topic A");
             edit.setBody("second");
             _m.updateWiki(user, WikiSelectManager.getWikiFromDatabase(c, "pageA"), edit, false);
-            assertEquals("Product · user guide · Topic A", _m.getSearchContext(c, "pageA"));
+            assertEquals("Product · user guide · Topic A", WikiSelectManager.getWikiFromDatabase(c, "pageA").getSearchContext());
 
             assertEquals(new SearchContextUpdate(1, List.of()), _m.setSearchContexts(c, Map.of("pageA", " ")));
-            assertNull(_m.getSearchContext(c, "pageA"));
+            assertNull(WikiSelectManager.getWikiFromDatabase(c, "pageA").getSearchContext());
+
+            Wiki pageA = WikiSelectManager.getWikiFromDatabase(c, "pageA");
+            Integer versionId = pageA.getPageVersionId();
+            pageA.setSearchContext(" Product · admin guide ");
+            _m.updateWiki(user, pageA, null, false);
+            Wiki updated = WikiSelectManager.getWikiFromDatabase(c, "pageA");
+            assertEquals("Product · admin guide", updated.getSearchContext());
+            assertEquals("A page-only update adds no version", versionId, updated.getPageVersionId());
+
+            Wiki pageB = new Wiki(c, "pageB");
+            pageB.setSearchContext("Product · Topic B");
+            WikiVersion versionB = new WikiVersion();
+            versionB.setTitle("Topic B");
+            versionB.setBody("b");
+            _m.insertWiki(user, c, pageB, versionB, null, false, null);
+            assertEquals("Product · Topic B", WikiSelectManager.getWikiFromDatabase(c, "pageB").getSearchContext());
 
             purgePages(c, false);
         }

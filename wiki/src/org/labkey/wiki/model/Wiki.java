@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
@@ -53,6 +54,7 @@ public class Wiki extends Entity implements Serializable
     private Integer _pageVersionId;
     private boolean _showAttachments = true;
     private boolean _shouldIndex = true;
+    private String _searchContext;
 
     public Wiki()
     {
@@ -74,6 +76,7 @@ public class Wiki extends Entity implements Serializable
         _pageVersionId = wiki._pageVersionId;
         _showAttachments = wiki._showAttachments;
         _shouldIndex = wiki._shouldIndex;
+        _searchContext = wiki._searchContext;
     }
 
     public ActionURL getWikiURL(Class<? extends Controller> actionClass, String name)
@@ -208,6 +211,16 @@ public class Wiki extends Entity implements Serializable
     public void setShouldIndex(boolean shouldIndex)
     {
         _shouldIndex = shouldIndex;
+    }
+
+    public @Nullable String getSearchContext()
+    {
+        return _searchContext;
+    }
+
+    public void setSearchContext(@Nullable String searchContext)
+    {
+        _searchContext = StringUtils.trimToNull(searchContext);
     }
 
 

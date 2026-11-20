@@ -2384,6 +2384,7 @@ public class WikiController extends SpringActionController
             wiki.setParent(form.getParentId());
             wiki.setShowAttachments(form.isShowAttachments());
             wiki.setShouldIndex(form.isShouldIndex());
+            wiki.setSearchContext(form.getSearchContext());
 
             WikiVersion wikiversion = new WikiVersion(wikiname);
 
@@ -2396,7 +2397,6 @@ public class WikiController extends SpringActionController
             //insert new wiki and new version
             User user = getUser();
             getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false, null);
-            saveSearchContext(form, wikiname);
 
             //if webPartId was sent, update the corresponding
             //web part to show the newly inserted page
@@ -2427,12 +2427,6 @@ public class WikiController extends SpringActionController
             return resp;
         }
 
-        private void saveSearchContext(SaveWikiForm form, String name)
-        {
-            if (null != form.getSearchContext())
-                getWikiManager().setSearchContexts(getContainer(), Map.of(name, form.getSearchContext()));
-        }
-
         protected HashMap<String, Object> getWikiProps(Wiki wiki, WikiVersion wikiversion)
         {
             HashMap<String, Object> wikiProps = new HashMap<>();
@@ -2446,7 +2440,7 @@ public class WikiController extends SpringActionController
             wikiProps.put("pageVersionId", wiki.getPageVersionId());
             wikiProps.put("showAttachments", wiki.isShowAttachments());
             wikiProps.put("shouldIndex", wiki.isShouldIndex());
-            wikiProps.put("searchContext", getWikiManager().getSearchContext(getContainer(), wiki.getName()));
+            wikiProps.put("searchContext", wiki.getSearchContext());
 
             return wikiProps;
         }
@@ -2475,6 +2469,12 @@ public class WikiController extends SpringActionController
             String title = null == form.getTitle() || form.getTitle().isEmpty() ? form.getName() : form.getTitle();
             WikiRendererType currentRendererType = WikiRendererType.valueOf(form.getRendererType());
 
+            // null means the client didn't send it; leave the stored value alone
+            String oldSearchContext = wikiUpdate.getSearchContext();
+            if (null != form.getSearchContext())
+                wikiUpdate.setSearchContext(form.getSearchContext());
+            boolean searchContextChanged = !Objects.equals(oldSearchContext, wikiUpdate.getSearchContext());
+
             //only insert new version if something has changed
             if (wikiUpdate.getName().trim().compareTo(form.getName()) != 0 ||
                     wikiversion.getTitle().trim().compareTo(title) != 0 ||
@@ -2495,7 +2495,11 @@ public class WikiController extends SpringActionController
                 wikiversion.setRendererTypeEnum(currentRendererType);
                 getWikiManager().updateWiki(getUser(), wikiUpdate, wikiversion, false);
             }
-            saveSearchContext(form, wikiUpdate.getName());
+            else if (searchContextChanged)
+            {
+                // Search context isn't versioned, so update only the page
+                getWikiManager().updateWiki(getUser(), wikiUpdate, null, false);
+            }
 
             //return an API response containing the current wiki and version data
             ApiSimpleResponse resp = new ApiSimpleResponse("success", true);

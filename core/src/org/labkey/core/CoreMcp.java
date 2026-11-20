@@ -68,7 +68,9 @@ public class CoreMcp implements McpService.McpImpl
         return DocumentationService.get(context).searchDocumentation(query, topK);
     }
 
-    @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`.")
+    @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`. " +
+            "Returns its title, source URL, path (ancestor page titles), and, when set, a search context line naming the product, audience, and topic, " +
+            "along with the full HTML contents.")
     @RequiresNoPermission
     String retrieveDocument(ToolContext context,
             @ToolParam(description = "Id of the document to return") String id)

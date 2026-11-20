@@ -49,7 +49,8 @@ public interface WikiService extends TermsOfUseWikiSource
     WebPartView<?> getView(Container c, String name, boolean renderContentOnly);
     WebPartView<?> getHistoryView(Container c, String name);
 
-    record RenderedWiki (String name, String title, HtmlString html, String entityId) {}
+    /** {@code path} holds ancestor titles, root first; {@code searchContext} is extra text for search ranking, never displayed */
+    record RenderedWiki (String name, String title, HtmlString html, String entityId, List<String> path, @Nullable String searchContext) {}
 
     RenderedWiki getRenderedWiki(Container c, String name);
 
