@@ -244,6 +244,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             {
                 WikisDocument document = WikisDocument.Factory.newInstance();
                 WikisType wikis = document.addNewWikis();
+                Map<String, String> searchContexts = WikiManager.get().getSearchContexts(_parent._c);
 
                 for (WikiTree wikiTree : WikiSelectManager.getWikiTrees(_parent._c))
                 {
@@ -260,6 +261,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
                     wikiXml.setTitle(wikiVersion.getTitle());
                     wikiXml.setShowAttachments(wiki.isShowAttachments());
                     wikiXml.setShouldIndex(wiki.isShouldIndex());
+                    if (searchContexts.containsKey(wiki.getName()))
+                        wikiXml.setSearchContext(searchContexts.get(wiki.getName()));
                     List<String> attachmentNames = wiki.getAttachments().stream().map(Attachment::getName).toList();
                     wikiXml.setAttachmentsOrder(StringUtils.join(attachmentNames, ';'));
                     Collection<String> aliases = WikiSelectManager.getAliases(_parent._c, wiki.getRowId());

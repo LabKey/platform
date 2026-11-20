@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -52,6 +53,7 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresLogin;
@@ -115,6 +117,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -123,6 +126,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -2137,6 +2141,7 @@ public class WikiController extends SpringActionController
         private int _webPartId = -1;
         private boolean _showAttachments = true;
         private boolean _shouldIndex = true;
+        private String _searchContext;
 
         public GUID getEntityId()
         {
@@ -2281,6 +2286,18 @@ public class WikiController extends SpringActionController
         {
             _shouldIndex = shouldIndex;
         }
+
+        /** Null when the caller didn't send it, which leaves the stored value alone */
+        public @Nullable String getSearchContext()
+        {
+            return _searchContext;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSearchContext(@Nullable String searchContext)
+        {
+            _searchContext = searchContext;
+        }
     }
 
     @RequiresPermission(ReadPermission.class) //will check below
@@ -2379,6 +2396,7 @@ public class WikiController extends SpringActionController
             //insert new wiki and new version
             User user = getUser();
             getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false, null);
+            saveSearchContext(form, wikiname);
 
             //if webPartId was sent, update the corresponding
             //web part to show the newly inserted page
@@ -2409,6 +2427,12 @@ public class WikiController extends SpringActionController
             return resp;
         }
 
+        private void saveSearchContext(SaveWikiForm form, String name)
+        {
+            if (null != form.getSearchContext())
+                getWikiManager().setSearchContexts(getContainer(), Map.of(name, form.getSearchContext()));
+        }
+
         protected HashMap<String, Object> getWikiProps(Wiki wiki, WikiVersion wikiversion)
         {
             HashMap<String, Object> wikiProps = new HashMap<>();
@@ -2422,6 +2446,7 @@ public class WikiController extends SpringActionController
             wikiProps.put("pageVersionId", wiki.getPageVersionId());
             wikiProps.put("showAttachments", wiki.isShowAttachments());
             wikiProps.put("shouldIndex", wiki.isShouldIndex());
+            wikiProps.put("searchContext", getWikiManager().getSearchContext(getContainer(), wiki.getName()));
 
             return wikiProps;
         }
@@ -2470,6 +2495,7 @@ public class WikiController extends SpringActionController
                 wikiversion.setRendererTypeEnum(currentRendererType);
                 getWikiManager().updateWiki(getUser(), wikiUpdate, wikiversion, false);
             }
+            saveSearchContext(form, wikiUpdate.getName());
 
             //return an API response containing the current wiki and version data
             ApiSimpleResponse resp = new ApiSimpleResponse("success", true);
@@ -2781,6 +2807,60 @@ public class WikiController extends SpringActionController
             properties.save();
 
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    public static class SetSearchContextForm
+    {
+        private String _tsv;
+
+        public String getTsv()
+        {
+            return _tsv;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setTsv(String tsv)
+        {
+            _tsv = tsv;
+        }
+    }
+
+    /** Sets page search contexts from a TSV with "name" and "searchContext" columns; a blank searchContext clears it. */
+    @RequiresPermission(AdminPermission.class)
+    public static class SetSearchContextAction extends MutatingApiAction<SetSearchContextForm>
+    {
+        @Override
+        public void validateForm(SetSearchContextForm form, Errors errors)
+        {
+            if (StringUtils.isBlank(form.getTsv()))
+                errors.reject(ERROR_REQUIRED, "tsv is required");
+        }
+
+        @Override
+        public ApiResponse execute(SetSearchContextForm form, BindException errors) throws IOException
+        {
+            Map<String, String> searchContexts = new LinkedHashMap<>();
+            try (TabLoader loader = new TabLoader(form.getTsv(), true))
+            {
+                loader.setInferTypes(false);
+                List<String> columns = Arrays.stream(loader.getColumns()).map(cd -> cd.name).toList();
+                if (columns.stream().noneMatch("name"::equalsIgnoreCase) || columns.stream().noneMatch("searchContext"::equalsIgnoreCase))
+                    throw new ApiUsageException("tsv must have \"name\" and \"searchContext\" columns");
+                for (Map<String, Object> row : loader)
+                {
+                    String name = StringUtils.trimToNull(Objects.toString(row.get("name"), null));
+                    if (null != name)
+                        searchContexts.put(name, Objects.toString(row.get("searchContext"), null));
+                }
+            }
+
+            WikiManager.SearchContextUpdate update = WikiManager.get().setSearchContexts(getContainer(), searchContexts);
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
+            response.put("updated", update.changed());
+            response.put("unchanged", searchContexts.size() - update.changed() - update.notFound().size());
+            response.put("notFound", update.notFound());
+            return response;
         }
     }
 
@@ -3106,6 +3186,11 @@ public class WikiController extends SpringActionController
                 controller.new PrintAllAction(),
                 controller.new PrintAllRawAction(),
                 controller.new PrintBranchAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                new SetSearchContextAction()
             );
         }
     }

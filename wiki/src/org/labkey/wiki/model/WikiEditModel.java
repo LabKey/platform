@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -168,5 +169,10 @@ public class WikiEditModel
     public boolean isShouldIndex()
     {
         return null == _wiki || _wiki.isShouldIndex();
+    }
+
+    public @Nullable String getSearchContext()
+    {
+        return null == _wiki ? null : WikiManager.get().getSearchContext(_container, _wiki.getName());
     }
 }

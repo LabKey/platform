@@ -48,6 +48,11 @@
                 <xsd:documentation>Whether this page should be indexed by the search service for full text search</xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="searchContext" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>Additional text added to this page's search index entries to help search ranking; never displayed</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="attachmentsOrder" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>The order in which this page's attachments should appear, as a semicolon-delimited list of file names</xsd:documentation>

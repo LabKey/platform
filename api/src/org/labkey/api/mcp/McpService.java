@@ -312,7 +312,14 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
 
-    record VectorDocument(String id, String text, Map<String, Object> metadata) {}
+    /** {@code searchContext}, when present, is prepended to every chunk so each chunk embeds with the whole document's context. */
+    record VectorDocument(String id, String text, Map<String, Object> metadata, @Nullable String searchContext)
+    {
+        public VectorDocument(String id, String text, Map<String, Object> metadata)
+        {
+            this(id, text, metadata, null);
+        }
+    }
 
     /**
      * get a consolidated response (good for many text-oriented agents/use-cases)
@@ -352,6 +359,9 @@ public interface McpService extends ToolCallbackProvider, AIFeaturesStatus
      * oversized inputs.
      */
     void addDocuments(List<VectorDocument> documents);
+
+    /** Removes every chunk of the given documents, matched on the {@link VectorDocument#id()} they were added with. */
+    void deleteDocuments(List<String> documentIds);
 
     void saveVectorStore();
 

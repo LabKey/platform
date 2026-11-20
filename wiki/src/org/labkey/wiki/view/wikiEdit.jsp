@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.OptionBuilder" %>
@@ -61,6 +62,7 @@
         webPartId: <%=model.getWebPartId()%>,
         showAttachments: <%=model.isShowAttachments()%>,
         shouldIndex: <%=model.isShouldIndex()%>,
+        searchContext: <%=q(model.getSearchContext())%>,
         isDirty: false,
         useVisualEditor: <%=model.useVisualEditor()%>
     });
@@ -137,6 +139,16 @@
                     <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>shouldIndex">Index <%= helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></label></td>
                     <td width="99%">
                         <input type="checkbox" name="shouldIndex" id="<%=H_ID_PREFIX%>shouldIndex"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>searchContext">Search Context (not versioned) <%= helpPopup("Search Context", DOM.createHtmlFragment(
+                        DOM.P("Additional text that helps search find and rank this page, such as a short line describing its audience and topic. " +
+                            "It is added to the page's search index entries but never shown on the page."),
+                        DOM.P("Changes do not create a new page version.")
+                    ), 400) %></label></td>
+                    <td width="99%">
+                        <input type="text" name="searchContext" id="<%=H_ID_PREFIX%>searchContext" size="80"/>
                     </td>
                 </tr>
                 <tr>

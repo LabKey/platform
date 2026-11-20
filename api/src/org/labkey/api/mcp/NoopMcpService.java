@@ -133,6 +133,11 @@ class NoopMcpService implements McpService
     }
 
     @Override
+    public void deleteDocuments(List<String> documentIds)
+    {
+    }
+
+    @Override
     public void saveVectorStore()
     {
     }

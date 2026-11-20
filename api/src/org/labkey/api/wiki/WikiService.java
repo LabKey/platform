@@ -30,6 +30,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 
 public interface WikiService extends TermsOfUseWikiSource
@@ -127,7 +128,8 @@ public interface WikiService extends TermsOfUseWikiSource
      * Tools that consume vector store results (e.g. {@code retrieveDocument}) must use this same
      * format when constructing or interpreting document IDs.</p>
      *
+     * @param modifiedSince when set, only pages modified on or after it are replaced; otherwise every page is added
      * @return the number of documents added
      */
-    int populateVectorStore(Container container);
+    int populateVectorStore(Container container, @Nullable Date modifiedSince);
 }

@@ -17,7 +17,7 @@ const TabNames = Object.freeze({
     const _idPrefix = 'wiki-input-'; // This should be the same as the ID_PREFIX specified in wikiEdit.jsp
     const _idSel = '#' + _idPrefix;
     const _editorId = _idSel + 'body';
-    const _editableProps = ['name', 'title', 'parent', 'body', 'shouldIndex', 'showAttachments'];
+    const _editableProps = ['name', 'title', 'parent', 'body', 'shouldIndex', 'searchContext', 'showAttachments'];
     let _finished = false;
     let _newAttachmentIndex = 0;
     let _tocTree;
@@ -193,6 +193,7 @@ const TabNames = Object.freeze({
         $(_idSel + 'parent').keypress(setDirty).change(setDirty);
         $(_idSel + 'body').keypress(setDirty).change(setDirty);
         $(_idSel + 'shouldIndex').keypress(setDirty).change(setDirty);
+        $(_idSel + 'searchContext').keypress(setDirty).change(setDirty);
         $(_idSel + 'showAttachments').keypress(setDirty).change(setDirty);
         $('#wiki-file-link').click(addNewAttachmentInput);
 

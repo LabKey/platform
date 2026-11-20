@@ -220,6 +220,9 @@
       <column columnName="ShouldIndex">
         <isHidden>true</isHidden>
       </column>
+      <column columnName="SearchContext">
+        <isHidden>true</isHidden>
+      </column>
     </columns>
     <tableTitle>Pages</tableTitle>
     <pkColumnName>RowId</pkColumnName>

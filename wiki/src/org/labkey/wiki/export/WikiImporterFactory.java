@@ -93,6 +93,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
 
                 Set<String> importedFolderNames = new CaseInsensitiveHashSet();
                 Map<Wiki, String> parentsToBeSet = new HashMap<>();
+                Map<String, String> searchContexts = new HashMap<>();
 
                 // since the WikiWriter saves the webdav tree, the files need to be accessed as InputStreams
                 try (InputStream wikisIS = wikisDir.getInputStream(WikiWriterFactory.WIKIS_FILENAME))
@@ -125,6 +126,8 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                         {
                             parentsToBeSet.put(wiki, wikiXml.getParent());
                         }
+                        if (wikiXml.isSetSearchContext())
+                            searchContexts.put(wiki.getName(), wikiXml.getSearchContext());
                         importedFolderNames.add(folderName);
                     }
 
@@ -140,6 +143,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                     }
 
                     setParents(ctx, parentsToBeSet);
+                    WikiManager.get().setSearchContexts(ctx.getContainer(), searchContexts);
 
                     ctx.getLogger().info("{} wiki{} imported", importedFolderNames.size(), 1 == importedFolderNames.size() ? "" : "s");
                     ctx.getLogger().info("Done importing {}", getDescription());

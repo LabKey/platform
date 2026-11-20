@@ -93,6 +93,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -734,7 +735,7 @@ public class WikiManager implements WikiService
         LOG.debug("indexWikiContainerFast({})", wikiName);
         Container c = queue.getContainer();
         SQLFragment f = new SQLFragment();
-        f.unsafeAppend("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
+        f.unsafeAppend("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex, P.searchcontext,")
             .unsafeAppend("V.title, V.body, V.renderertype\n");
         f.unsafeAppend("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n");
         f.unsafeAppend("WHERE P.container = ?");
@@ -790,6 +791,9 @@ public class WikiManager implements WikiService
                 Map<String, Object> props = new HashMap<>();
                 props.put(SearchService.PROPERTY.title.toString(), wikiTitle);
                 props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
+                String searchContext = rs.getString("searchcontext");
+                if (null != searchContext)
+                    props.put(SearchService.PROPERTY.keywordsLo.toString(), searchContext);
 
                 try
                 {
@@ -978,7 +982,7 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public int populateVectorStore(Container container)
+    public int populateVectorStore(Container container, @Nullable Date modifiedSince)
     {
         McpService mcp = McpService.get();
         if (null == mcp.getVectorStore())
@@ -986,8 +990,16 @@ public class WikiManager implements WikiService
 
         ActionURL wikiBase = new ActionURL("wiki", "page", container);
         AtomicInteger count = new AtomicInteger();
+        Map<String, String> searchContexts = getSearchContexts(container);
 
-        for (String name : getNames(container))
+        List<String> names = null == modifiedSince ? getNames(container) : new SqlSelector(comm.getSchema(), new SQLFragment()
+            .SELECT().unsafeAppend("Name")
+            .FROM().append(comm.getTableInfoPages())
+            .WHERE().unsafeAppend("Container = ").appendValue(container)
+            .AND().unsafeAppend("Modified >= ").appendValue(modifiedSince))
+            .getArrayList(String.class);
+
+        for (String name : names)
         {
             Wiki wiki = WikiSelectManager.getWiki(container, name);
             if (null == wiki)
@@ -1008,9 +1020,11 @@ public class WikiManager implements WikiService
             if (!path.isEmpty())
                 metadata.put("path", path);
 
-            VectorDocument doc = new VectorDocument(container.getId() + "/" + wiki.getEntityId(), markdown, metadata);
+            VectorDocument doc = new VectorDocument(container.getId() + "/" + wiki.getEntityId(), markdown, metadata, searchContexts.get(name));
             try
             {
+                if (null != modifiedSince)
+                    mcp.deleteDocuments(List.of(doc.id()));
                 mcp.addDocuments(List.of(doc));
                 count.incrementAndGet();
             }
@@ -1022,6 +1036,70 @@ public class WikiManager implements WikiService
 
         mcp.saveVectorStore();
         return count.get();
+    }
+
+    public record SearchContextUpdate(int changed, List<String> notFound) {}
+
+    /**
+     * Sets each named page's search context, clearing it for a blank value. A page whose value changes gets a new
+     * Modified date so that incremental vector store population picks it up, and is queued for full-text re-indexing.
+     */
+    public SearchContextUpdate setSearchContexts(Container c, Map<String, String> searchContexts)
+    {
+        Set<String> names = Set.copyOf(getNames(c));
+        List<String> notFound = searchContexts.keySet().stream().filter(name -> !names.contains(name)).toList();
+        List<String> changed = new ArrayList<>();
+        try (DbScope.Transaction transaction = comm.getSchema().getScope().ensureTransaction())
+        {
+            SqlExecutor executor = new SqlExecutor(comm.getSchema());
+            Date now = new Date();
+            for (Map.Entry<String, String> entry : searchContexts.entrySet())
+            {
+                if (!names.contains(entry.getKey()))
+                    continue;
+                String searchContext = StringUtils.trimToNull(entry.getValue());
+                SQLFragment sql = new SQLFragment()
+                    .UPDATE().append(comm.getTableInfoPages())
+                    .SET().unsafeAppend("SearchContext = ").appendValue(searchContext)
+                    .COMMA().unsafeAppend(" Modified = ").appendValue(now)
+                    .COMMA().unsafeAppend(" LastIndexed = NULL")
+                    .WHERE().unsafeAppend("Container = ").appendValue(c)
+                    .AND().unsafeAppend("Name = ").appendValue(entry.getKey())
+                    .AND().unsafeAppend("SearchContext IS DISTINCT FROM ").appendValue(searchContext);
+                if (executor.execute(sql) > 0)
+                    changed.add(entry.getKey());
+            }
+            transaction.commit();
+        }
+        if (!changed.isEmpty())
+        {
+            WikiCache.uncache(c);
+            SearchService ss = getSearchService();
+            if (null != ss)
+                changed.forEach(name -> indexWikis(ss.defaultTask().getQueue(c, SearchService.PRIORITY.modified), null, name));
+        }
+        return new SearchContextUpdate(changed.size(), notFound);
+    }
+
+    /** Page name to search context, for pages that have one */
+    public Map<String, String> getSearchContexts(Container c)
+    {
+        return new SqlSelector(comm.getSchema(), new SQLFragment()
+            .SELECT().unsafeAppend("Name, SearchContext")
+            .FROM().append(comm.getTableInfoPages())
+            .WHERE().unsafeAppend("Container = ").appendValue(c)
+            .AND().unsafeAppend("SearchContext").IS_NOT_NULL())
+            .getValueMap();
+    }
+
+    public @Nullable String getSearchContext(Container c, String name)
+    {
+        return new SqlSelector(comm.getSchema(), new SQLFragment()
+            .SELECT().unsafeAppend("SearchContext")
+            .FROM().append(comm.getTableInfoPages())
+            .WHERE().unsafeAppend("Container = ").appendValue(c)
+            .AND().unsafeAppend("Name = ").appendValue(name))
+            .getObject(String.class);
     }
 
     private List<String> getAncestorTitles(Wiki wiki)
@@ -1192,6 +1270,7 @@ public class WikiManager implements WikiService
             assertNotNull(_m.comm.getTableInfoPages().getColumn("Container"));
             assertNotNull(_m.comm.getTableInfoPages().getColumn("EntityId"));
             assertNotNull(_m.comm.getTableInfoPages().getColumn("Name"));
+            assertNotNull(_m.comm.getTableInfoPages().getColumn("SearchContext"));
 
             assertNotNull("couldn't find table PageVersions", _m.comm.getTableInfoPageVersions());
             assertNotNull(_m.comm.getTableInfoPageVersions().getColumn("PageEntityId"));
@@ -1266,6 +1345,40 @@ public class WikiManager implements WikiService
             assertNull(WikiSelectManager.getWikiFromDatabase(c, "pageA"));
 
             purgePages(c, true);
+        }
+
+        @Test
+        public void testSearchContext() throws IOException
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            purgePages(c, false);
+
+            WikiVersion version = new WikiVersion();
+            version.setTitle("Topic A");
+            version.setBody("first");
+            _m.insertWiki(user, c, new Wiki(c, "pageA"), version, null, false, null);
+
+            Date before = WikiSelectManager.getWikiFromDatabase(c, "pageA").getModified();
+            assertEquals(new SearchContextUpdate(1, List.of("pageNA")), _m.setSearchContexts(c, Map.of("pageA", "Product · user guide · Topic A", "pageNA", "unused")));
+            assertEquals("Product · user guide · Topic A", _m.getSearchContext(c, "pageA"));
+            Date modified = WikiSelectManager.getWikiFromDatabase(c, "pageA").getModified();
+            assertTrue("A changed search context counts as a modification", modified.after(before));
+
+            assertEquals(new SearchContextUpdate(0, List.of()), _m.setSearchContexts(c, Map.of("pageA", "Product · user guide · Topic A")));
+            assertEquals(modified, WikiSelectManager.getWikiFromDatabase(c, "pageA").getModified());
+
+            // The column lives on Pages, so a new version keeps it
+            WikiVersion edit = new WikiVersion();
+            edit.setTitle("Topic A");
+            edit.setBody("second");
+            _m.updateWiki(user, WikiSelectManager.getWikiFromDatabase(c, "pageA"), edit, false);
+            assertEquals("Product · user guide · Topic A", _m.getSearchContext(c, "pageA"));
+
+            assertEquals(new SearchContextUpdate(1, List.of()), _m.setSearchContexts(c, Map.of("pageA", " ")));
+            assertNull(_m.getSearchContext(c, "pageA"));
+
+            purgePages(c, false);
         }
     }
 }
