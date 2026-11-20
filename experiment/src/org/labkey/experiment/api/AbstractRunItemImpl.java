@@ -303,14 +303,14 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 
     protected List<ExpRunImpl> getTargetRuns(TableInfo inputTable, String rowIdColumnName)
     {
-        SQLFragment sql = new SQLFragment("SELECT r.* FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT r.* FROM ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "r");
         sql.unsafeAppend("\nWHERE r.RowId IN (SELECT pa.RunId \nFROM ");
         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
         sql.unsafeAppend("\nINNER JOIN ");
         sql.append(inputTable, "i");
         sql.unsafeAppend(" ON pa.RowId = i.TargetApplicationId AND i.");
-        sql.append(rowIdColumnName);
+        sql.appendIdentifier(rowIdColumnName);
         sql.unsafeAppend(" = ?)");
         sql.add(getRowId());
         return ExpRunImpl.fromRuns(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ExperimentRun.class));

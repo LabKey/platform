@@ -331,16 +331,16 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         }
         else
         {
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT Container FROM ")
+            SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT Container FROM ")
                 .append(OntologyManager.getTinfoDomainDescriptor())
                 .unsafeAppend(" WHERE ");
 
             sql.append(domainNamespacePrefixes.stream()
-                .map(prefix -> new SQLFragment("DomainURI LIKE ?")
+                .map(prefix -> SQLFragment.unsafe("DomainURI LIKE ?")
                     // Use chop() to get rid of unwanted colon at the end
                     .add(StringUtils.chop(new LsidBuilder(prefix, null).build().toString()) + "%")
                 )
-                .collect(LabKeyCollectors.joining(new SQLFragment(" OR "))));
+                .collect(LabKeyCollectors.joining(SQLFragment.unsafe(" OR "))));
 
             ret = new SqlSelector(OntologyManager.getExpSchema(), sql).stream(String.class)
                 .map(ContainerManager::getForId)
@@ -698,18 +698,19 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     public UsageMetrics addUsageMetrics(UsageMetrics metrics)
     {
         DbSchema schema = ExperimentService.get().getSchema();
-        String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
+        SQLFragment lengthFn = schema.getSqlDialect().getVarcharLengthFunctionAsSql();
 
         metrics.group("propertyValidators", "Field validators")
                 .put("byType", () -> new SqlSelector(schema,
-                                new SQLFragment("SELECT typeuri, COUNT(*) AS count FROM exp.propertyvalidator GROUP BY typeuri")
+                                SQLFragment.unsafe("SELECT typeuri, COUNT(*) AS count FROM exp.propertyvalidator GROUP BY typeuri")
                         ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
                             x.put(m.get("typeuri").toString(), m.get("count"));
                             return x;
                         }), "Validators by type URI; a Text Choice field's choices are one validator")
                 .put("textChoiceValues", () -> new SqlSelector(schema,
-                                new SQLFragment("SELECT MIN(NumValues) AS min, MAX(NumValues) AS max, AVG(NumValues) AS avg FROM (")
-                                        .append(String.format("SELECT (%s(expression) - %s(replace(expression, '|', '')) + 1) AS NumValues FROM exp.propertyvalidator WHERE typeuri = ?", lengthFn, lengthFn))
+                                SQLFragment.unsafe("SELECT MIN(NumValues) AS min, MAX(NumValues) AS max, AVG(NumValues) AS avg FROM (")
+                                        .unsafeAppend("SELECT (").append(lengthFn).unsafeAppend("(expression) - ").append(lengthFn)
+                                        .unsafeAppend("(replace(expression, '|', '')) + 1) AS NumValues FROM exp.propertyvalidator WHERE typeuri = ?")
                                         .unsafeAppend(") AS X")
                                         .add("urn:lsid:labkey.com:PropertyValidator:textchoice")
                             ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
@@ -720,16 +721,16 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                             }), "Choices per Text Choice validator: min, max, and avg");
         metrics.group("propertyCountsByRange", "Fields across all domains by data type (range URI after # or xsd:); 'null' for none")
                 .putAll(() -> stripUriPrefixes(new SqlSelector(schema,
-                        new SQLFragment("SELECT CASE WHEN RangeURI IS NULL THEN 'null' ELSE RangeURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY RangeURI")
+                        SQLFragment.unsafe("SELECT CASE WHEN RangeURI IS NULL THEN 'null' ELSE RangeURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY RangeURI")
                 ).getValueMap(String.class)));
         metrics.group("propertyCountsByConcept", "Fields across all domains by concept URI (after # or xsd:); 'null' for none")
                 .putAll(() -> stripUriPrefixes(new SqlSelector(schema,
-                        new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
+                        SQLFragment.unsafe("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
                 ).getValueMap(String.class)));
         metrics.group("defaultValuePropertyCounts", "Fields with a saved folder- or user-level default value, by default value type and by owning domain's LSID namespace; counts fields, not saved values")
                 .put("folder", () -> savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "%.Folder-%"))
                 .put("user", () -> savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + ".Folder-%"));
-        metrics.put("conditionalFormattingFields", () -> new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class), "Fields with conditional formatting");
+        metrics.put("conditionalFormattingFields", () -> new SqlSelector(schema, SQLFragment.unsafe("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class), "Fields with conditional formatting");
         metrics.put("storageColumnNameMismatches", () -> {
             TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTableOrThrow(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
             return new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
@@ -747,7 +748,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         Map<String, Set<Integer>> byDomainKind = new HashMap<>();
 
         // One row per property/domain pair, so a property shared by two domains counts toward both kinds
-        SQLFragment sql = new SQLFragment("""
+        SQLFragment sql = SQLFragment.unsafe("""
                 SELECT DISTINCT OP.PropertyId, PD.DefaultValueType, DD.DomainURI
                 FROM exp.ObjectProperty OP
                     INNER JOIN exp.PropertyDescriptor PD ON PD.PropertyId = OP.PropertyId

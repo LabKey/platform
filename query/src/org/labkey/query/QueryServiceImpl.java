@@ -61,6 +61,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.LabKeySQLFragment;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.QueryLogging;
@@ -464,9 +465,9 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return (String) getParamVals()[0];
+            return LabKeySQLFragment.ofSourceText((String) getParamVals()[0]);
         }
 
         @Override

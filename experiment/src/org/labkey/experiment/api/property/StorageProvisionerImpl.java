@@ -598,7 +598,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     if (oldPd.getPropertyType() == PropertyType.MULTI_CHOICE && TEXT_CHOICE_CONCEPT_URI.equals(newPd.getConceptURI()))
                     {
                         var selectColumnName = prop.getPropertyDescriptor().getLegalSelectName(scope.getSqlDialect());
-                        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
+                        SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) FROM ")
                                 .appendDottedIdentifiers(kind.getStorageSchemaName(), domain.getStorageTableName())
                                 .unsafeAppend(" WHERE ")
                                 .appendIdentifier(selectColumnName)
@@ -1284,7 +1284,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     public ProvisioningReport getProvisioningReport(@Nullable String domainuri)
     {
         final ProvisioningReport report = new ProvisioningReport();
-        SQLFragment sql = new SQLFragment("SELECT domainid, name, storageschemaname, storagetablename FROM ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT domainid, name, storageschemaname, storagetablename FROM ")
                 .append(OntologyManager.getTinfoDomainDescriptor().getFromSQL("dd"));
         if (null != domainuri)
         {
@@ -1767,7 +1767,7 @@ renaming a property AND toggling mvindicator on in the same change.
                 @Override
                 public SQLFragment sqlObjectIdsInDomain(Domain domain)
                 {
-                    return new SQLFragment("NULL");
+                    return SQLFragment.unsafe("NULL");
                 }
 
                 @Override

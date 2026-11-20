@@ -42,6 +42,6 @@ public class ExpProtocolAttachmentType implements AttachmentParentType
     @Override
     public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT EntityId, Name AS Description FROM ").append(ExperimentService.get().getTinfoProtocol(), "ep");
+        return SQLFragment.unsafe("SELECT EntityId, Name AS Description FROM ").append(ExperimentService.get().getTinfoProtocol(), "ep");
     }
 }

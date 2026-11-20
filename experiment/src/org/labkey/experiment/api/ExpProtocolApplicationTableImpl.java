@@ -48,7 +48,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         // We don't have our own Container column, so filter based on the Container column of this ProtocolApplication's run
         FieldKey containerFK = FieldKey.fromParts("Container");
         clearConditions(containerFK);
-        SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM ");
+        SQLFragment sqlFragment = SQLFragment.unsafe("(SELECT er.Container FROM ");
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
         sqlFragment.unsafeAppend(" WHERE er.RowId = RunId)    ");
 
@@ -101,17 +101,16 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
     @Override
     public BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleType, String... roleNames)
     {
-        SQLFragment sql = new SQLFragment("(SELECT MIN(exp.MaterialInput.MaterialId) FROM exp.MaterialInput\nWHERE ");
+        SQLFragment sql = SQLFragment.unsafe("(SELECT MIN(exp.MaterialInput.MaterialId) FROM exp.MaterialInput\nWHERE ");
 
-        sql.append(ExprColumn.STR_TABLE_ALIAS + ".RowId = exp.MaterialInput.TargetApplicationId");
+        sql.appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId = exp.MaterialInput.TargetApplicationId");
         if (roleNames.length != 0)
         {
             sql.unsafeAppend("\nAND (");
-            String strOr = "";
+            SQLFragment.SqlSeparator strOr = SQLFragment.sep("", " OR ");
             for (String roleName : roleNames)
             {
-                sql.append(strOr);
-                strOr = " OR ";
+                sql.append(strOr.next());
                 sql.unsafeAppend("exp.MaterialInput.Role = ?");
                 sql.add(roleName);
             }
@@ -127,16 +126,15 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
     @Override
     public BaseColumnInfo createDataInputColumn(String name, final ExpSchema schema, String... roleNames)
     {
-        SQLFragment sql = new SQLFragment("(SELECT MIN(exp.DataInput.DataId) FROM exp.DataInput\nWHERE ");
-        sql.append(ExprColumn.STR_TABLE_ALIAS +".RowId = exp.DataInput.TargetApplicationId");
+        SQLFragment sql = SQLFragment.unsafe("(SELECT MIN(exp.DataInput.DataId) FROM exp.DataInput\nWHERE ");
+        sql.appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId = exp.DataInput.TargetApplicationId");
         if (roleNames.length != 0)
         {
             sql.unsafeAppend("\nAND (");
-            String strOr = "";
+            SQLFragment.SqlSeparator strOr = SQLFragment.sep("", " OR ");
             for (String roleName : roleNames)
             {
-                sql.append(strOr);
-                strOr = " OR ";
+                sql.append(strOr.next());
                 sql.unsafeAppend("\nexp.DataInput.Role = ?");
                 sql.add(roleName);
             }
