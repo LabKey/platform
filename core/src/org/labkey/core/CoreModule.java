@@ -909,6 +909,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (moduleContext.isNewInstall())
         {
             bootstrap();
+            Encryption.recordCurrentCipherForNewInstall();
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
@@ -1028,7 +1029,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
 
-        checkForMissingDbViews();
+        // Bootstrap scripts just created the views
+        if (!moduleContext.isNewInstall())
+            checkForMissingDbViews();
 
         ((SecretServiceImpl)SecretService.get()).handleStartupProperties();
         ProductConfiguration.handleStartupProperties();
