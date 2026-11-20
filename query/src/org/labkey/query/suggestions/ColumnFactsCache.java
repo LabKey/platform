@@ -92,6 +92,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -975,20 +976,28 @@ public class ColumnFactsCache
             assertNotNull(table);
             List<ColumnInfo> columns = FIELD_KEYS.stream().map(fieldKey -> Objects.requireNonNull(table.getColumn(fieldKey), fieldKey)).toList();
 
+            record Load(String name, Supplier<Object> run) {}
             ColumnFactsLoader loader = new ColumnFactsLoader();
             Map<String, Object> parameters = Map.of("MinThaw", 0);
-            Function<ColumnInfo, Set<String>> load = column -> {
-                List<String> values = loader.loadValues(table, column, SuggestionColumn.Type.STRING, parameters, null).values();
-                return values == null ? null : Set.copyOf(values);
-            };
-            List<Set<String>> expected = columns.stream().map(load).toList();
+            List<Load> loads = new ArrayList<>();
+            for (ColumnInfo column : columns)
+            {
+                loads.add(new Load("values of " + column.getName(), () -> {
+                    List<String> values = loader.loadValues(table, column, SuggestionColumn.Type.STRING, parameters, null).values();
+                    return values == null ? null : Set.copyOf(values);
+                }));
+                StatsRequest request = new StatsRequest(column, !column.getJdbcType().isText(), true);
+                loads.add(new Load("stats of " + column.getName(), () -> loader.loadStats(table, parameters, null, List.of(request)).get(column.getFieldKey())));
+                loads.add(new Load("shapes of " + column.getName(), () -> loader.loadShapes(table, List.of(column), parameters, null).get(column.getFieldKey())));
+            }
+            List<Object> expected = loads.stream().map(load -> load.run().get()).toList();
 
             // Generating a query's SQL prunes its shared select list, so unlocked loads read each other's columns
             AtomicInteger next = new AtomicInteger();
             JunitUtil.createRaces(() -> {
-                int i = next.getAndIncrement() % columns.size();
-                assertEquals(columns.get(i).getName(), expected.get(i), load.apply(columns.get(i)));
-            }, columns.size(), 50, 60);
+                int i = next.getAndIncrement() % loads.size();
+                assertEquals(loads.get(i).name(), expected.get(i), loads.get(i).run().get());
+            }, loads.size(), 50, 60);
         }
 
         @Test
