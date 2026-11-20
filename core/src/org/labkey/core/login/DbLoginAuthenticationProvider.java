@@ -16,6 +16,7 @@
 package org.labkey.core.login;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Throttle;
@@ -104,8 +105,8 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return true;
     }
 
-    private static final Throttle<String> API_KEY_LAST_USED_THROTTLE = new Throttle<>(String.class, "API key LastUsed updates",
-    1000, AUTH_LOGGING_THROTTLE_TTL, apiKey -> ApiKeyManager.get().updateLastUsed(apiKey));
+    private static final Throttle<Integer> API_KEY_LAST_USED_THROTTLE = new Throttle<>(Integer.class, "API key LastUsed updates",
+    1000, AUTH_LOGGING_THROTTLE_TTL, rowId -> ApiKeyManager.get().updateLastUsed(rowId));
 
     @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
@@ -122,8 +123,9 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                 if (user != null)
                 {
                     // Update core.ApiKeys.LastUsed (throttled)
-                    API_KEY_LAST_USED_THROTTLE.execute(password);
-                    return AuthenticationResponse.success(configuration, user).setSuccessDetails(UserManager.UserAuditEvent.API_KEY)
+                    API_KEY_LAST_USED_THROTTLE.execute(auth.rowId());
+                    String successDetails = UserManager.UserAuditEvent.API_KEY + (StringUtils.isNotBlank(auth.description()) ? " (\"" + auth.description() + "\")" : "");
+                    return AuthenticationResponse.success(configuration, user).setSuccessDetails(successDetails)
                         .setRequireSecondary(false) // API keys are exempt from secondary authentication, Issue 48764
                         .setAuthenticationProperties(Map.of(ApiKeyManager.API_KEY_ROW_ID, auth.rowId()));
                 }

@@ -275,7 +275,7 @@ public class DomainImpl implements Domain
         SQLFragment sqlObjectIds = getDomainKind().sqlObjectIdsInDomain(this);
         if (sqlObjectIds == null)
             return Collections.emptySet();
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT exp.object.container FROM exp.object WHERE exp.object.objectid IN ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT exp.object.container FROM exp.object WHERE exp.object.objectid IN ");
         sql.append(sqlObjectIds);
         Set<Container> ret = new HashSet<>();
         for (String id : new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(String.class))
@@ -1087,19 +1087,17 @@ public class DomainImpl implements Domain
                 colNames.add(col.getName()));
         uniqueIdProps.forEach(prop -> colNames.add(prop.getName()));
         SQLFragment sql = new SQLFragment().unsafeAppend("UPDATE ").append(table).unsafeAppend(" SET ");
-        String separator = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
         for (DomainProperty prop: uniqueIdProps)
         {
             // Issue 50715: quote column names with spaces for update statement
-            sql.append(separator).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).unsafeAppend(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
-            separator = ",";
+            sql.append(comma.next()).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).unsafeAppend(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
         }
         sql.unsafeAppend(" WHERE ");
-        separator = "";
+        SQLFragment.SqlSeparator and = SQLFragment.sep("", " AND ");
         for (ColumnInfo col: uniqueIndexCols)
         {
-            sql.append(separator).append(col.getName()).unsafeAppend(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
-            separator = " AND ";
+            sql.append(and.next()).appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
         }
 
         DataIteratorBuilder it = context -> {

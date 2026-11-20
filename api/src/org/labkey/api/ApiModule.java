@@ -77,6 +77,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.JsonTest;
+import org.labkey.api.data.LabKeySQLFragment;
 import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NameGenerator;
@@ -108,6 +109,7 @@ import org.labkey.api.data.queryprofiler.Query;
 import org.labkey.api.data.queryprofiler.QueryCounter;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.dataiterator.CachingDataIterator;
+import org.labkey.api.dataiterator.DataIteratorStreamTestCase;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
@@ -444,6 +446,7 @@ public class ApiModule extends CodeOnlyModule
             Constants.TestCase.class,
             ConvertHelper.TestCase.class,
             CspCommentScanner.TestCase.class,
+            DataIteratorStreamTestCase.class,
             DataIteratorUtil.TestCase.class,
             DatabaseCache.TestCase.class,
             DateUtil.TestCase.class,
@@ -477,6 +480,7 @@ public class ApiModule extends CodeOnlyModule
             JsonTest.class,
             JsonUtil.TestCase.class,
             KeySharingJSONTokener.TestCase.class,
+            LabKeySQLFragment.TestCase.class,
             LimitedUser.TestCase.class,
             LookAheadDataIterator.TestCase.class,
             MailMetrics.TestCase.class,
@@ -572,6 +576,7 @@ public class ApiModule extends CodeOnlyModule
             ContainerKeySimpleCache.TestCase.class,
             ContainerManager.TestCase.class,
             ContentSecurityPolicyFilter.TestCase.class,
+            DataIteratorUtil.TableMapTestCase.class,
             DbSchema.DDLMethodsTestCase.class,
             DbSchema.SchemaCasingTestCase.class,
             DbSchema.TableSelectTestCase.class,

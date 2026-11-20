@@ -289,7 +289,7 @@ public class LineageForeignKey extends AbstractForeignKey
 
         void addLevelColumn(@NotNull LevelColumnType level)
         {
-            SQLFragment sql = new SQLFragment("'#ERROR'");
+            SQLFragment sql = new SQLFragment().appendValue("#ERROR", getSqlDialect());
             var col = new ExprColumn(this, FieldKey.fromParts(level.columnName), sql, JdbcType.VARCHAR);
             col.setFk(new ByTypeLineageForeignKey(requireNonNull(getUserSchema()), level, cacheKeyPrefix, getContainerFilter()));
             col.setUserEditable(false);
@@ -301,7 +301,7 @@ public class LineageForeignKey extends AbstractForeignKey
 
         void addLineageColumn(String name, Integer depth, ExpLineageOptions.LineageExpType expType, String cpasType, String runProtocolLsid, String lookupColumnName)
         {
-            SQLFragment sql = new SQLFragment("'#ERROR'");
+            SQLFragment sql = new SQLFragment().appendValue("#ERROR", getSqlDialect());
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.INTEGER);
             col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid, getContainerFilter()));
             applyDisplayColumn(col, depth, expType, cpasType, lookupColumnName);
@@ -340,11 +340,11 @@ public class LineageForeignKey extends AbstractForeignKey
                             SQLFragment objectids;
                             if (null != _seedSql)
                             {
-                                objectids = new SQLFragment("(").append(_seedSql).unsafeAppend(")");
+                                objectids = SQLFragment.unsafe("(").append(_seedSql).unsafeAppend(")");
                             }
                             else
                             {
-                                objectids = new SQLFragment("(SELECT objectid FROM ").append(_seedTable.getFromSQL("qq")).unsafeAppend(")");
+                                objectids = SQLFragment.unsafe("(SELECT objectid FROM ").append(_seedTable.getFromSQL("qq")).unsafeAppend(")");
                             }
                             var ret = new LineageTableInfo("LineageTableInfo (" + (_parents ? "parents)" : "children)"), _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid, getLookupContainerFilter());
                             ret.setLocked(true);

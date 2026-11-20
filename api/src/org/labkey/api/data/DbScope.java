@@ -967,7 +967,7 @@ public class DbScope
     }
 
     /**
-     * Can be used to conveniently throw a typed exception out of executeWithRetry
+     * Carries a checked exception out of code that can't throw it, such as executeWithRetry, a lambda, or a Stream
      */
     public static class RetryPassthroughException extends RuntimeException
     {

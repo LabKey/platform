@@ -484,7 +484,7 @@ public class UserManager
     {
         TableInfo uat = getUserAuditSchemaTableInfo();
         SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(");
-        sql.append(distinct ?  "DISTINCT uat.CreatedBy" : "*");
+        sql.unsafeAppend(distinct ?  "DISTINCT uat.CreatedBy" : "*");
         sql.unsafeAppend(") FROM ");
         sql.append(uat, "uat");
         if (excludeSystemUsers)
