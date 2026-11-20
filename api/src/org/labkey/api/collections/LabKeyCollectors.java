@@ -240,7 +240,7 @@ public class LabKeyCollectors
     {
         private final HtmlString _delimiter;
         private final HtmlStringBuilder _builder = HtmlStringBuilder.of();
-        // Counts elements rather than checking builder length, so empty elements still get delimiters
+        // Tracks whether any element was added rather than checking builder length, so empty elements still get delimiters
         private boolean _hasElements = false;
 
         private HtmlJoiner(HtmlString delimiter)
@@ -259,7 +259,12 @@ public class LabKeyCollectors
         private HtmlJoiner merge(HtmlJoiner other)
         {
             if (other._hasElements)
-                add(other._builder.getHtmlString());
+            {
+                if (_hasElements)
+                    _builder.append(_delimiter);
+                _builder.append(other._builder);
+                _hasElements = true;
+            }
             return this;
         }
     }
