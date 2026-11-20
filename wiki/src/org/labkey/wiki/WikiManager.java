@@ -48,6 +48,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
@@ -105,6 +106,7 @@ public class WikiManager implements WikiService
 {
     public static final WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
+    public static final String EXPERIMENTAL_SEARCH_CONTEXT = "wikiSearchContext";
 
     private static final Logger LOG = LogManager.getLogger(WikiManager.class);
     private static final WikiManager _instance = new WikiManager();
@@ -119,6 +121,12 @@ public class WikiManager implements WikiService
     private WikiManager()
     {
         LOG.debug("WikiManager instantiated");
+    }
+
+    /** Off hides search context from editing, indexing, and retrieval; stored values are kept */
+    public static boolean isSearchContextEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SEARCH_CONTEXT);
     }
 
     public static WikiManager get()
@@ -793,7 +801,7 @@ public class WikiManager implements WikiService
                 props.put(SearchService.PROPERTY.title.toString(), wikiTitle);
                 props.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
                 String searchContext = rs.getString("searchcontext");
-                if (null != searchContext)
+                if (null != searchContext && isSearchContextEnabled())
                     props.put(SearchService.PROPERTY.keywordsLo.toString(), searchContext);
 
                 try
@@ -883,7 +891,7 @@ public class WikiManager implements WikiService
                 return null;
             WikiVersion version = wiki.getLatestVersion();
             HtmlString html = version.getHtml(c, wiki);
-            return new RenderedWiki(name, version.getTitle(), html, wiki.getEntityId(), getAncestorTitles(wiki), wiki.getSearchContext());
+            return new RenderedWiki(name, version.getTitle(), html, wiki.getEntityId(), getAncestorTitles(wiki), isSearchContextEnabled() ? wiki.getSearchContext() : null);
         }
         catch (Exception x)
         {
@@ -991,7 +999,7 @@ public class WikiManager implements WikiService
 
         ActionURL wikiBase = new ActionURL("wiki", "page", container);
         AtomicInteger count = new AtomicInteger();
-        Map<String, String> searchContexts = getSearchContexts(container);
+        boolean useSearchContext = isSearchContextEnabled();
 
         List<String> names = null == modifiedSince ? getNames(container) : new SqlSelector(comm.getSchema(), new SQLFragment()
             .SELECT().unsafeAppend("Name")
@@ -1021,7 +1029,7 @@ public class WikiManager implements WikiService
             if (!path.isEmpty())
                 metadata.put("path", path);
 
-            VectorDocument doc = new VectorDocument(container.getId() + "/" + wiki.getEntityId(), markdown, metadata, searchContexts.get(name));
+            VectorDocument doc = new VectorDocument(container.getId() + "/" + wiki.getEntityId(), markdown, metadata, useSearchContext ? wiki.getSearchContext() : null);
             try
             {
                 if (null != modifiedSince)

@@ -62,7 +62,9 @@
         webPartId: <%=model.getWebPartId()%>,
         showAttachments: <%=model.isShowAttachments()%>,
         shouldIndex: <%=model.isShouldIndex()%>,
+<% if (model.isSearchContextEnabled()) { %>
         searchContext: <%=q(model.getSearchContext())%>,
+<% } %>
         isDirty: false,
         useVisualEditor: <%=model.useVisualEditor()%>
     });
@@ -141,6 +143,7 @@
                         <input type="checkbox" name="shouldIndex" id="<%=H_ID_PREFIX%>shouldIndex"/>
                     </td>
                 </tr>
+<% if (model.isSearchContextEnabled()) { %>
                 <tr>
                     <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>searchContext">Search Context (not versioned) <%= helpPopup("Search Context", DOM.createHtmlFragment(
                         DOM.P("Additional text that helps search find and rank this page, such as a short line describing its audience and topic. " +
@@ -151,6 +154,7 @@
                         <input type="text" name="searchContext" id="<%=H_ID_PREFIX%>searchContext" size="80"/>
                     </td>
                 </tr>
+<% } %>
                 <tr>
                     <td class="labkey-form-label"><label for="<%=H_ID_PREFIX%>parent">Parent</label></td>
                     <td width="99%">

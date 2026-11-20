@@ -2384,7 +2384,8 @@ public class WikiController extends SpringActionController
             wiki.setParent(form.getParentId());
             wiki.setShowAttachments(form.isShowAttachments());
             wiki.setShouldIndex(form.isShouldIndex());
-            wiki.setSearchContext(form.getSearchContext());
+            if (WikiManager.isSearchContextEnabled())
+                wiki.setSearchContext(form.getSearchContext());
 
             WikiVersion wikiversion = new WikiVersion(wikiname);
 
@@ -2440,7 +2441,8 @@ public class WikiController extends SpringActionController
             wikiProps.put("pageVersionId", wiki.getPageVersionId());
             wikiProps.put("showAttachments", wiki.isShowAttachments());
             wikiProps.put("shouldIndex", wiki.isShouldIndex());
-            wikiProps.put("searchContext", wiki.getSearchContext());
+            if (WikiManager.isSearchContextEnabled())
+                wikiProps.put("searchContext", wiki.getSearchContext());
 
             return wikiProps;
         }
@@ -2471,7 +2473,7 @@ public class WikiController extends SpringActionController
 
             // null means the client didn't send it; leave the stored value alone
             String oldSearchContext = wikiUpdate.getSearchContext();
-            if (null != form.getSearchContext())
+            if (null != form.getSearchContext() && WikiManager.isSearchContextEnabled())
                 wikiUpdate.setSearchContext(form.getSearchContext());
             boolean searchContextChanged = !Objects.equals(oldSearchContext, wikiUpdate.getSearchContext());
 

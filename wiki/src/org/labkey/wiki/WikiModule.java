@@ -31,6 +31,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
@@ -79,6 +80,10 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         WikiService.setInstance(WikiManager.get());
 
         AttachmentService.get().registerAttachmentParentType(WikiType.get());
+
+        OptionalFeatureService.get().addExperimentalFeatureFlag(WikiManager.EXPERIMENTAL_SEARCH_CONTEXT, "Enable Wiki Search Context",
+            "Edit a per-page search context on the wiki edit page and add it to the page's search index and documentation vector store entries. " +
+            "Changing this setting doesn't re-index pages.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)

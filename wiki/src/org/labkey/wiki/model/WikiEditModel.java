@@ -171,6 +171,11 @@ public class WikiEditModel
         return null == _wiki || _wiki.isShouldIndex();
     }
 
+    public boolean isSearchContextEnabled()
+    {
+        return WikiManager.isSearchContextEnabled();
+    }
+
     public @Nullable String getSearchContext()
     {
         return null == _wiki ? null : _wiki.getSearchContext();
