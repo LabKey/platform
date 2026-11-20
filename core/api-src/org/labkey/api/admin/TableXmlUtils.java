@@ -17,17 +17,25 @@ package org.labkey.api.admin;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.admin.sitevalidation.SiteValidationResult;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -70,6 +78,27 @@ public class TableXmlUtils
         public void setViewProblem(boolean viewProblem)
         {
             _viewProblem = viewProblem;
+        }
+    }
+
+    /** Same answer as {@code compareXmlToMetaData(...).hasViewProblem()}, but reads only table names, not per-table metadata */
+    public static boolean hasMissingView(DbSchema schema)
+    {
+        try
+        {
+            TablesDocument tablesDocFromXml = DbScope.getSchemaXml(schema);
+            if (null == tablesDocFromXml)
+                return false;
+
+            Set<String> dbTableNames = new CaseInsensitiveHashSet(DbSchema.createFromMetaData(schema.getScope(), schema.getName(), DbSchemaType.Bare).getTableNames());
+
+            return Arrays.stream(tablesDocFromXml.getTables().getTableArray())
+                .anyMatch(xmlTable -> "VIEW".equalsIgnoreCase(xmlTable.getTableDbType()) && !dbTableNames.contains(xmlTable.getTableName()));
+        }
+        catch (Exception e)
+        {
+            _log.error("Exception loading schema {}", schema.getDisplayName(), e);
+            return false;
         }
     }
 
@@ -490,5 +519,39 @@ public class TableXmlUtils
         }
         rlOut.addWarn("WARNING: property ").append(propName).append(" value '").append(refProp).append("' doesn't match XML value '").append(targetProp).append("' for ").append(problematicItem).append(".");
         return true;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testHasMissingViewMatchesFullComparison()
+        {
+            List<DbSchema> schemasWithViews = DbSchema.getAllSchemasToTest().stream()
+                .filter(schema -> !getXmlViewNames(schema).isEmpty())
+                .toList();
+            assertFalse("No schema declares a view", schemasWithViews.isEmpty());
+
+            for (DbSchema schema : schemasWithViews)
+                assertEquals(schema.getName(), compareXmlToMetaData(schema, false, false, true).hasViewProblem(), hasMissingView(schema));
+
+            // Drop a view on a connection whose transaction is never committed
+            DbSchema schema = schemasWithViews.getFirst();
+            String viewName = getXmlViewNames(schema).getFirst();
+            try (DbScope.Transaction ignored = schema.getScope().ensureTransaction())
+            {
+                new SqlExecutor(schema.getScope()).execute(SQLFragment.unsafe("DROP VIEW ").append(schema.getTable(viewName)).append(SQLFragment.unsafe(" CASCADE")));
+                assertTrue(schema.getName() + "." + viewName, compareXmlToMetaData(schema, false, false, true).hasViewProblem());
+                assertTrue(schema.getName() + "." + viewName, hasMissingView(schema));
+            }
+        }
+
+        private static List<String> getXmlViewNames(DbSchema schema)
+        {
+            TablesDocument tablesDoc = DbScope.getSchemaXml(schema);
+            return null == tablesDoc ? List.of() : Arrays.stream(tablesDoc.getTables().getTableArray())
+                .filter(xmlTable -> "VIEW".equalsIgnoreCase(xmlTable.getTableDbType()))
+                .map(TableType::getTableName)
+                .toList();
+        }
     }
 }

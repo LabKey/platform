@@ -1383,7 +1383,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             .flatMap(p -> p.getSchemas().stream()
                 .filter(schema-> SchemaUpdateType.Before.getScript(p, schema) != null || SchemaUpdateType.After.getScript(p, schema) != null)
             )
-            .filter(schema -> TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasViewProblem())
+            .filter(TableXmlUtils::hasMissingView)
             .findAny()
             .ifPresent(schema ->
             {
@@ -1555,6 +1555,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SqlDialect.LabKeyScopeDialectTestCase.class,
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
+            TableXmlUtils.TestCase.class,
             UnknownSchemasTest.class,
             UserController.TestCase.class,
             ReportsTable.TestCase.class
