@@ -89,13 +89,12 @@
     String groupsDivId  = "groupsDiv" + getRequestScopedUID();
     String groupsPanelId  = "groupsPanel" + getRequestScopedUID();
 
-    String viewObject = "subjectHandler" + bean.getIndex();
     String param = getViewContext().getRequest().getParameter("pageId");
     boolean isParticipantsListPage = StudyFolderTabs.ParticipantsPage.PAGE_ID.equalsIgnoreCase(param);
     String conditionalStyling = (isParticipantsListPage) ? "overflow-y:auto;" : "overflow-y:auto; height: 470px;";
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-<%=JavaScriptFragment.unsafe(viewObject)%> = (function()
+subjectHandler<%=bean.getIndex()%> = (function()
 {
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
@@ -734,7 +733,7 @@
 })();
 
 
-Ext4.onReady(<%=JavaScriptFragment.unsafe(viewObject)%>.render, <%=JavaScriptFragment.unsafe(viewObject)%>);
+Ext4.onReady(subjectHandler<%=bean.getIndex()%>.render, subjectHandler<%=bean.getIndex()%>);
 </script>
 
 <div id="<%= h(outerDivId) %>">
