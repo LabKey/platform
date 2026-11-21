@@ -540,10 +540,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public void deleteProtocolApplications(List<ExpDataImpl> datasToDelete, User user)
     {
         beforeDeleteProtocolApplications(datasToDelete, user);
-        deleteProtocolApplications(List.of(this), user);
+        deleteProtocolApplicationRows(List.of(this), user);
     }
 
-    /** Per-run steps that must precede {@link #deleteProtocolApplications(Collection, User)} */
+    /** Per-run steps that must precede {@link #deleteProtocolApplicationRows} */
     public void beforeDeleteProtocolApplications(List<ExpDataImpl> datasToDelete, User user)
     {
         if (user == null || !canDelete(user))
@@ -560,7 +560,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     /** Deletes the runs' protocol applications, inputs, and parameters; each run must have had beforeDeleteProtocolApplications() called */
-    public static void deleteProtocolApplications(Collection<ExpRunImpl> runs, User user)
+    static void deleteProtocolApplicationRows(Collection<ExpRunImpl> runs, User user)
     {
         if (runs.isEmpty())
             return;
@@ -599,36 +599,44 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return new SQLFragment().appendInClause(SQLFragment.unsafe("RunId"), runIds, dialect);
     }
 
+    private static SQLFragment rowIdsInRuns(String table, SqlDialect dialect, List<Long> runIds)
+    {
+        return SQLFragment.unsafe("(SELECT RowId FROM " + table + " WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")");
+    }
+
     // Clean up DataInput and MaterialInput exp.object and properties
     private static void deleteInputObjects(ExperimentServiceImpl svc, SqlDialect dialect, Container container, List<Long> runIds)
     {
+        SQLFragment appIds = rowIdsInRuns("exp.ProtocolApplication", dialect, runIds);
+        SQLFragment dataIds = rowIdsInRuns("exp.Data", dialect, runIds);
+        SQLFragment materialIds = rowIdsInRuns("exp.Material", dialect, runIds);
         SQLFragment materialSQL = new SQLFragment().unsafeAppend("SELECT ")
                 .append(dialect.concatenate(new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
                         SQLFragment.unsafe("CAST(dataId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
                 .unsafeAppend(" FROM ")
                 .append(svc.getTinfoDataInput().getSQLName())
-                .unsafeAppend(" WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")");
+                .unsafeAppend(" WHERE TargetApplicationId IN ").append(appIds);
 
         SQLFragment materialInputSQL = new SQLFragment().unsafeAppend("SELECT ")
                 .append(dialect.concatenate(new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
                         SQLFragment.unsafe("CAST(materialId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
                 .unsafeAppend(" FROM ")
                 .append(svc.getTinfoMaterialInput().getSQLName())
-                .unsafeAppend(" WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")");
+                .unsafeAppend(" WHERE TargetApplicationId IN ").append(appIds);
 
         SQLFragment dataSQL = new SQLFragment().unsafeAppend("SELECT ")
                 .append(dialect.concatenate(new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
                         SQLFragment.unsafe("CAST(dataId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
                 .unsafeAppend(" FROM ")
                 .append(svc.getTinfoDataInput().getSQLName())
-                .unsafeAppend(" WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")");
+                .unsafeAppend(" WHERE DataId IN ").append(dataIds);
 
         SQLFragment dataInputSQL = new SQLFragment().unsafeAppend("SELECT ")
                 .append(dialect.concatenate(new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
                         SQLFragment.unsafe("CAST(materialId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
                 .unsafeAppend(" FROM ")
                 .append(svc.getTinfoMaterialInput().getSQLName())
-                .unsafeAppend(" WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")");
+                .unsafeAppend(" WHERE MaterialId IN ").append(materialIds);
 
         // Build a single UNION to help reduce DB round trips
         SQLFragment unionSQL = SQLFragment.unsafe("(")
@@ -652,17 +660,20 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     private static void deleteAppParametersAndInputs(SqlDialect dialect, List<Long> runIds)
     {
+        SQLFragment appIds = rowIdsInRuns("exp.ProtocolApplication", dialect, runIds);
+        SQLFragment dataIds = rowIdsInRuns("exp.Data", dialect, runIds);
+        SQLFragment materialIds = rowIdsInRuns("exp.Material", dialect, runIds);
         SQLFragment sql = new SQLFragment();
-        sql.unsafeAppend("DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")").appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN ").append(appIds).appendEOS();
 
         //per Josh: break relation between all datas with this run id and don't delete them
         sql.unsafeAppend("UPDATE exp.Data SET SourceApplicationId = NULL, RunId = NULL WHERE ").append(runIdIn(dialect, runIds)).appendEOS();
         sql.unsafeAppend("UPDATE exp.Material SET SourceApplicationId = NULL, RunId = NULL WHERE ").append(runIdIn(dialect, runIds)).appendEOS();
 
-        sql.unsafeAppend("DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")").appendEOS();
-        sql.unsafeAppend("DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")").appendEOS();
-        sql.unsafeAppend("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")").appendEOS();
-        sql.unsafeAppend("DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")").appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.DataInput WHERE TargetApplicationId IN ").append(appIds).appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN ").append(appIds).appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.DataInput WHERE DataId IN ").append(dataIds).appendEOS();
+        sql.unsafeAppend("DELETE FROM exp.MaterialInput WHERE MaterialId IN ").append(materialIds).appendEOS();
 
         new SqlExecutor(getExpSchema()).execute(sql);
     }
