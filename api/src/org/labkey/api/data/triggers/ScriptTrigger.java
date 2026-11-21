@@ -141,6 +141,12 @@ public class ScriptTrigger implements Trigger
     }
 
     @Override
+    public boolean isMergeRoutedByExistingRecord()
+    {
+        return true;
+    }
+
+    @Override
     public boolean isManagedColumnsEnabled()
     {
         // Ensure the flag is initialized

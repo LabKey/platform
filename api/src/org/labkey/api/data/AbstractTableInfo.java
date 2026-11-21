@@ -1934,9 +1934,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 columns.addAll(managedColumns.update());
             else
                 columns.addAll(managedColumns.insert());
+
+            // A routed MERGE batch mixes insert and update rows
+            if (insertOption.mergeRows && trigger.isMergeRoutedByExistingRecord())
+                columns.addAll(managedColumns.update());
         }
 
         return columns.isEmpty() ? null : columns;
+    }
+
+    /** True when a MERGE into this table fires update hooks for rows that already exist. */
+    public boolean isMergeRoutedByExistingRecord(@Nullable Container c)
+    {
+        return getTriggers(c).stream().anyMatch(Trigger::isMergeRoutedByExistingRecord);
     }
 
     private Collection<Trigger> _triggers = null;
@@ -2050,7 +2060,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (trackedRow != null && script.isManagedColumnsEnabled())
             {
                 var managed = script.getManagedColumns();
-                var managedCols = managed != null ? managed.getColumns(type) : null;
+                var managedCols = managed != null ? managed.getColumns(script.getRowEvent(type, insertOption, existingRecord)) : null;
 
                 // Verify the trigger did not add or remove columns that are not managed
                 if (trackedRow.hasStructuralChanges())

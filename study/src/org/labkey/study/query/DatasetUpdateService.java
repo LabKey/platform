@@ -28,6 +28,7 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -41,6 +42,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -61,6 +63,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -1106,6 +1109,95 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             // unchanged
             assertTrue(((String)map.get("lsid")).endsWith(":1001.S2.1.2345"));
             map.get("lsid");
+        }
+
+        /** GH Issue 1048: MERGE keeps omitted columns, and triggers that route MERGE see existing rows as updates */
+        @Test
+        public void mergeRoutesExistingRowsToUpdateHooks() throws Exception
+        {
+            createDataset();
+            insertS1();
+
+            UserSchema schema = QueryService.get().getUserSchema(_user, _container, StudyQuerySchema.SCHEMA_NAME);
+            assertNotNull(schema);
+            AbstractTableInfo table = (AbstractTableInfo) schema.getTable(DATASET_NAME, null, true, true);
+            assertNotNull(table);
+            List<String> events = new ArrayList<>();
+            table.addTriggerFactory((_, _, _) -> List.of(new Trigger()
+            {
+                @Override
+                public boolean isMergeRoutedByExistingRecord()
+                {
+                    return true;
+                }
+
+                @Override
+                public void beforeInsert(TableInfo t, Container c, User user, @Nullable InsertOption insertOption, @Nullable Map<String, Object> newRow, ValidationException errors, Map<String, Object> extraContext)
+                {
+                    assertNotNull(newRow);
+                    events.add("beforeInsert " + newRow.get(SUBJECT_COLUMN_NAME));
+                }
+
+                @Override
+                public void beforeUpdate(TableInfo t, Container c, User user, @Nullable InsertOption insertOption, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext)
+                {
+                    assertNotNull(newRow);
+                    assertNotNull(oldRow);
+                    // oldRow uses query column names, as in updateRows(), not storage names like participantid
+                    Map<String, Object> old = new CaseInsensitiveHashMap<>(oldRow);
+                    events.add("beforeUpdate " + newRow.get(SUBJECT_COLUMN_NAME) + " old " + old.get(SUBJECT_COLUMN_NAME) + " " + old.get("Field1"));
+                }
+
+                @Override
+                public void afterInsert(TableInfo t, Container c, User user, @Nullable Map<String, Object> newRow, ValidationException errors, Map<String, Object> extraContext)
+                {
+                    assertNotNull(newRow);
+                    events.add("afterInsert " + newRow.get(SUBJECT_COLUMN_NAME));
+                }
+
+                @Override
+                public void afterUpdate(TableInfo t, Container c, User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext)
+                {
+                    assertNotNull(newRow);
+                    assertNotNull(oldRow);
+                    events.add("afterUpdate " + newRow.get(SUBJECT_COLUMN_NAME));
+                }
+            }));
+            table.resetTriggers(_container);
+
+            QueryUpdateService qus = table.getUpdateService();
+            assertNotNull(qus);
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> rows = List.of(
+                    Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "1.2345", "Value1", "2.0"),
+                    Map.of(SUBJECT_COLUMN_NAME, "S2", "SequenceNum", "1.2345", "Value1", "2.0"));
+            int count = qus.mergeRows(_user, _container, MapDataIterator.of(rows), errors, null, null);
+            if (errors.hasErrors())
+                fail(errors.getMessage());
+            assertEquals(2, count);
+
+            // Rows are batched, so hooks for different rows may interleave
+            assertEquals(Set.of("beforeUpdate S1 old S1 x", "beforeInsert S2", "afterUpdate S1", "afterInsert S2"), Set.copyOf(events));
+            assertEquals(4, events.size());
+
+            Map<String, Object> s1 = new TableSelector(table, new SimpleFilter(FieldKey.fromParts(SUBJECT_COLUMN_NAME), "S1"), null).getMap();
+            assertNotNull(s1);
+            assertEquals(2.0d, s1.get("Value1"));
+            assertEquals("MERGE nulled a column it was not given", "x", s1.get("Field1"));
+        }
+
+        private void insertS1() throws Exception
+        {
+            UserSchema schema = QueryService.get().getUserSchema(_user, _container, StudyQuerySchema.SCHEMA_NAME);
+            assertNotNull(schema);
+            TableInfo t = schema.getTable(DATASET_NAME);
+            assertNotNull(t);
+            QueryUpdateService qus = t.getUpdateService();
+            assertNotNull(qus);
+            BatchValidationException errors = new BatchValidationException();
+            qus.insertRows(_user, _container, List.of(Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "1.2345", "Field1", "x", "Value1", "1.0")), errors, null, null);
+            if (errors.hasErrors())
+                fail(errors.getMessage());
         }
 
         @Before

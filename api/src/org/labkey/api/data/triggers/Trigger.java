@@ -150,6 +150,21 @@ public interface Trigger
         return true;
     }
 
+    /** When true, MERGE and REPLACE rows that match an existing record fire the update hooks with that record as the old row. */
+    default boolean isMergeRoutedByExistingRecord()
+    {
+        return false;
+    }
+
+    /** The event this trigger handles for a row, after routing MERGE rows by {@link #isMergeRoutedByExistingRecord()}. */
+    default TableInfo.TriggerType getRowEvent(TableInfo.TriggerType event, @Nullable QueryUpdateService.InsertOption insertOption, @Nullable Map<String, Object> existingRecord)
+    {
+        if (event == TableInfo.TriggerType.INSERT && insertOption != null && insertOption.mergeRows
+                && existingRecord != null && !existingRecord.isEmpty() && isMergeRoutedByExistingRecord())
+            return TableInfo.TriggerType.UPDATE;
+        return event;
+    }
+
     /**
      * Ensures all columns declared by {@link #getManagedColumns()} are present in {@code newRow}
      * before INSERT trigger fires.
@@ -270,6 +285,13 @@ public interface Trigger
                             ValidationException errors, Map<String, Object> extraContext,
                             @Nullable Map<String, Object> existingRecord) throws ValidationException
     {
+        TableInfo.TriggerType rowEvent = getRowEvent(event, insertOption, existingRecord);
+        if (rowEvent != event)
+        {
+            event = rowEvent;
+            oldRow = existingRecord;
+        }
+
         if (before)
         {
             switch (event)

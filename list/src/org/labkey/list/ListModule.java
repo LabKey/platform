@@ -241,6 +241,7 @@ public class ListModule extends SpringModule
         return Set.of(
             ListQueryUpdateService.AuditBatchTestCase.class,
             ListQueryUpdateService.GetRowsTestCase.class,
+            ListQueryUpdateService.MergeTestCase.class,
             ListQueryUpdateService.BatchedDeleteTestCase.class,
             ListQueryUpdateService.RowContainerCheckTestCase.class
         );
