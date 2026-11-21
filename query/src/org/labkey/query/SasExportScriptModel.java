@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryView;
@@ -34,19 +35,19 @@ public class SasExportScriptModel extends ExportScriptModel
         return getFilters(null, "%labkeyMakeFilter(", "", ",", ")");
     }
 
+    // Single quotes keep SAS from resolving & and % in values; an embedded quote is written twice
     @Override
     protected String quote(String value)
     {
-        return doubleQuote(value);
+        return "'" + Strings.CS.replace(StringUtils.defaultString(value), "'", "''") + "'";
     }
 
+    // labkey-api-sas 1.0.x only recognizes double-quoted operator names
     @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        if (operator.isDataValueRequired())
-            return quote(name) + "," + quote(operator.getScriptName()) + "," + quote(value);
-        else
-            return quote(name) + "," + quote(operator.getScriptName());
+        String expression = quote(name) + ",\"" + operator.getScriptName() + "\"";
+        return operator.isDataValueRequired() ? expression + "," + quote(value) : expression;
     }
 
     @Override
