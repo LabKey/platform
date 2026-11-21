@@ -1537,6 +1537,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             HealthCheckTestCase.class,
             LoggerController.TestCase.class,
             LoggingTestCase.class,
+            LoginAttemptDisableLoginProvider.TestCase.class,
             LoginController.TestCase.class,
             MarkdownTestCase.class,
             ModuleInfoTestCase.class,

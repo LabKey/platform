@@ -93,6 +93,8 @@ public class DbLoginManager implements DbLoginService
         public void passwordChanged(User user)
         {
             invalidateDbLoginSessions(user);
+            // Otherwise a user locked out by failed attempts can't sign in with the password they just reset
+            AuthenticationManager.resetModuleUserLoginDelay(user.getEmail());
         }
     }
 
