@@ -236,6 +236,7 @@ import org.labkey.api.view.RedirectorServlet;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.writer.ContainerUser;
@@ -496,6 +497,7 @@ public class ApiModule extends CodeOnlyModule
             MultiValuedRenderContext.TestCase.class,
             NameGenerator.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
+            PageConfig.TestCase.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
             Path.TestCase.class,
