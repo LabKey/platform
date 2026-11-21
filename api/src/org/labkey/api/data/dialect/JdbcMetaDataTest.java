@@ -30,7 +30,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.util.JunitUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -55,18 +54,13 @@ public class JdbcMetaDataTest extends Assert
     @Test
     public void testMaterializedView()
     {
-        // SQL Server doesn't support materialized views
-        if (_testSchema.getSqlDialect().isPostgreSQL())
-        {
-            new SqlExecutor(_testSchema).execute(SQLFragment.unsafe("REFRESH MATERIALIZED VIEW test.MaterializedView"));
-            test("MaterializedView", CoreSchema.getInstance().getTableInfoContainers(), DatabaseTableType.MATERIALIZED_VIEW);
-        }
+        new SqlExecutor(_testSchema).execute(SQLFragment.unsafe("REFRESH MATERIALIZED VIEW test.MaterializedView"));
+        test("MaterializedView", CoreSchema.getInstance().getTableInfoContainers(), DatabaseTableType.MATERIALIZED_VIEW);
     }
 
     @Test
     public void testImportedKeysMatchJdbc() throws SQLException
     {
-        JunitUtil.assumePostgres();
         DbScope scope = _testSchema.getScope();
 
         for (String schemaName : List.of(CoreSchema.getInstance().getSchemaName(), ExperimentService.get().getSchema().getName(), AbstractAuditTypeProvider.SCHEMA_NAME))
