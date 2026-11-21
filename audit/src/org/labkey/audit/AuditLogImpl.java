@@ -61,6 +61,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -77,6 +78,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -89,6 +94,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     private final Queue<Pair<User, AuditTypeEvent>> _eventTypeQueue = new LinkedList<>();
     private final AtomicBoolean  _logToDatabase = new AtomicBoolean(false);
     private static final Object STARTUP_LOCK = new Object();
+    private static final int PROVIDER_INIT_THREADS = 8;
 
     // Cache the audit events associated with transaction ids. We currently use these for interacting with objects
     // that were created immediately after they were created, so the cache size does not need to be very large and the defaultTimeToLive can be small.
@@ -120,11 +126,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     @Override
     public void moduleStartupComplete(ServletContext servletContext)
     {
-        // perform audit provider initialization
-        for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
-        {
-            provider.initializeProvider(User.getAdminServiceUser());
-        }
+        initializeProviders(AuditLogService.get().getAuditProviders(), User.getAdminServiceUser());
 
         // Synchronize so that we can guarantee that all events have already been added to the queue before we
         // start processing them
@@ -137,6 +139,31 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         {
             Pair<User, AuditTypeEvent> event = _eventTypeQueue.remove();
             addEvents(event.first, List.of(event.second));
+        }
+    }
+
+    // Each provider touches only its own domain and storage table, in its own transaction, and mostly waits on the database
+    private static void initializeProviders(List<AuditTypeProvider> providers, User user)
+    {
+        int threads = Math.clamp(providers.size(), 1, PROVIDER_INIT_THREADS);
+
+        try (ExecutorService pool = Executors.newFixedThreadPool(threads, Thread.ofPlatform().name("Audit Provider Init ", 1).factory()))
+        {
+            List<Future<?>> futures = providers.stream()
+                .<Future<?>>map(provider -> pool.submit(() -> provider.initializeProvider(user)))
+                .toList();
+
+            for (Future<?> future : futures)
+                future.get();
+        }
+        catch (ExecutionException e)
+        {
+            UnexpectedException.rethrow(e.getCause());
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+            throw UnexpectedException.wrap(e);
         }
     }
 

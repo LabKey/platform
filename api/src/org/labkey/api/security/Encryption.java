@@ -595,6 +595,20 @@ public class Encryption
         void deleteEncryptedContent();
     }
 
+    /** A brand-new database holds no legacy-cipher content, so record the current cipher to skip that migration. */
+    public static void recordCurrentCipherForNewInstall()
+    {
+        if (!isEncryptionPassPhraseSpecified() || !ModuleLoader.getInstance().shouldInsertData())
+            return;
+
+        WritablePropertyMap cipherProps = PropertyManager.getNormalStore().getWritableProperties(ENCRYPTION_CIPHER_CATEGORY, true);
+        if (cipherProps.get(CIPHER_PROPERTY) == null)
+        {
+            cipherProps.put(CIPHER_PROPERTY, AESConfig.current.getCipherName());
+            cipherProps.save();
+        }
+    }
+
     /**
      * Examines the database to determine whether algorithm or key migration is pending, and if so installs a
      * fallback algorithm. This allows HTTP requests to transparently decrypt not-yet-migrated values during the
