@@ -80,9 +80,9 @@
             <td>
                 <%= button("Save").submit(true).onClick("document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); document.forms['editorForm'].reshow.value = true; return true;") %>
                 <%= button("Save and Finish").submit(true).onClick("document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); return true;") %>
-                <%= unsafe(bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty() ?
-                        button("Cancel").href(bean.getReturnUrl()).toString() :
-                        button("Cancel").href(urlProvider(ReportUrls.class).urlManageViews(getContainer())).toString() ) %>
+                <%= bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty() ?
+                        button("Cancel").href(bean.getReturnUrl()) :
+                        button("Cancel").href(urlProvider(ReportUrls.class).urlManageViews(getContainer())) %>
                 <%= button("Restore default script").submit(true).onClick("if (confirm('Restore default script?  You will lose any changes made to this page.')) document.getElementById('customScript').value = DEFAULT_SCRIPT_VALUE; return false;") %>
             </td>
         </tr>

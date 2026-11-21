@@ -33,9 +33,6 @@
     String delimGUID = "delim_" + guid;
     String quoteGUID = "quote_" + guid;
     String headerGUID = "header_" + guid;
-    String headerType = "txt_header_type";
-    String delim = "delim";
-    String quote = "quote";
     String exportSelectedId = "exportSelected_" + guid;
     String exportButtonId = "export_" + guid ;
     String signButtonId = "sign_" + guid;
@@ -74,17 +71,17 @@
 %>
 <table class="lk-fields-table">
     <tr>
-        <td><label for="<%=unsafe(delimGUID)%>">Separator:</label></td>
+        <td><label for="<%=h(delimGUID)%>">Separator:</label></td>
         <td>
-            <select id="<%=unsafe(delimGUID)%>" name="<%=unsafe(delim)%>">
+            <select id="<%=h(delimGUID)%>" name="delim">
                 <labkey:options value="<%=TSVWriter.DELIM.TAB%>" map="<%=delimiterMap%>" />
             </select>
         </td>
     </tr>
     <tr>
-        <td><label for="<%=unsafe(quoteGUID)%>">Quote:</label></td>
+        <td><label for="<%=h(quoteGUID)%>">Quote:</label></td>
         <td>
-            <select id="<%=unsafe(quoteGUID)%>" name="<%=unsafe(quote)%>">
+            <select id="<%=h(quoteGUID)%>" name="quote">
                 <labkey:options value="<%=TSVWriter.QUOTE.DOUBLE%>" map="<%=quoteMap%>" />
             </select>
         </td>
@@ -92,7 +89,7 @@
     <tr>
         <td><label>Column headers:<%=helpPopup("Column Header Options", HtmlString.unsafe(sb.toString()))%></label></td>
         <td>
-            <select id="<%=unsafe(headerGUID)%>" name="<%=unsafe(headerType)%>">
+            <select id="<%=h(headerGUID)%>" name="txt_header_type">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
@@ -118,11 +115,11 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($) {
         LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
-            var delimEl = $("#<%=h(delimGUID)%>"),
-                quoteEl = $("#<%=h(quoteGUID)%>"),
-                exportSelectedEl = $("#<%=h(exportSelectedId)%>"),
-                exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>"),
-                headerEl = $("#<%=h(headerGUID)%>");
+            var delimEl = $(<%=q("#" + delimGUID)%>),
+                quoteEl = $(<%=q("#" + quoteGUID)%>),
+                exportSelectedEl = $(<%=q("#" + exportSelectedId)%>),
+                exportSelectedLabelEl = $(<%=q("#" + exportSelectedId + "_label")%>),
+                headerEl = $(<%=q("#" + headerGUID)%>);
             var includeSignButton = <%=model.isIncludeSignButton()%>;
 
             var doTsvExport = function(isSign) {
@@ -176,13 +173,13 @@
                 exportSelectedLabelEl.addClass('labkey-disabled');
             };
 
-            var exportButtonEl = $("#<%=h(exportButtonId)%>");
+            var exportButtonEl = $(<%=q("#" + exportButtonId)%>);
             exportButtonEl.click(function() {
                 doTsvExport(false)
             });
 
             if (includeSignButton) {
-                var signButtonEl = $("#<%=h(signButtonId)%>");
+                var signButtonEl = $(<%=q("#" + signButtonId)%>);
                 signButtonEl.click(function() {
                     doTsvExport(true);
                 });
