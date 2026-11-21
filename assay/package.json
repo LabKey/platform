@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.75.1"
+    "@labkey/components": "7.75.2-fb-textChoiceRename1928.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.4",

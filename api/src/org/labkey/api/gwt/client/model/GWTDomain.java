@@ -41,6 +41,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
     @Getter @Setter private boolean allowFileLinkProperties;
     @Getter @Setter private boolean allowAttachmentProperties;
     @Getter @Setter private boolean allowTextChoiceProperties;
+    @Getter @Setter private boolean allowTextChoiceValueRenames;
     @Getter @Setter private boolean allowMultiChoiceProperties;
     @Getter @Setter private boolean allowSampleSubjectProperties;
     @Getter @Setter private boolean allowTimepointProperties;
@@ -97,6 +98,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         this.allowTextChoiceProperties = src.allowTextChoiceProperties;
+        this.allowTextChoiceValueRenames = src.allowTextChoiceValueRenames;
         this.allowMultiChoiceProperties = src.allowMultiChoiceProperties;
         this.allowSampleSubjectProperties = src.allowSampleSubjectProperties;
         this.allowTimepointProperties = src.allowTimepointProperties;

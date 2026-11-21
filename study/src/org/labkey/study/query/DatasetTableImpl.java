@@ -50,6 +50,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
@@ -337,6 +338,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
                     if (pd != null)
                     {
+                        // GH Issue 1928: use the property's current validators rather than the storage column's copy
+                        if (!col.isMvIndicatorColumn())
+                            col.setValidators(PropertyService.get().getPropertyValidators(pd));
+
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
                         {
                             col.setDisplayColumnFactory(colInfo -> {
