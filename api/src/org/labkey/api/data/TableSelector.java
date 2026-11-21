@@ -580,8 +580,10 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     /**
-     * Generates the aggregate SQL now and runs it on {@link PreparedAggregates#execute()}, so a caller can serialize SQL generation without holding a lock while the query runs.
-     * @param maxCount when > 0 and the only aggregate is COUNT(*), bounds the inner select to maxCount + 1 rows so the database can stop early.
+     * Generates the aggregate SQL now and runs it on {@link PreparedAggregates#execute()}, so a caller can serialize
+     * SQL generation without holding a lock while the query runs.
+     * @param maxCount when > 0 and the only aggregate is COUNT(*), bounds the inner select to maxCount + 1 rows so the
+     *                database can stop early.
      */
     public PreparedAggregates prepareAggregates(final List<Aggregate> aggregates, int maxCount)
     {
@@ -601,7 +603,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         try
         {
-            return new PreparedAggregates(aggregates, sqlFactory._columnMap, sqlFactory.getSql(), sqlFactory.getStatementMaxRows());
+            return new PreparedAggregates(aggregates, sqlFactory._columnMap, sqlFactory.getSql());
         }
         finally
         {
@@ -616,14 +618,12 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         private final List<Aggregate> _aggregates;
         private final Map<FieldKey, ColumnInfo> _columnMap;
         private final @Nullable SQLFragment _sql;
-        private final @Nullable Integer _statementMaxRows;
 
-        private PreparedAggregates(List<Aggregate> aggregates, Map<FieldKey, ColumnInfo> columnMap, @Nullable SQLFragment sql, @Nullable Integer statementMaxRows)
+        private PreparedAggregates(List<Aggregate> aggregates, Map<FieldKey, ColumnInfo> columnMap, @Nullable SQLFragment sql)
         {
             _aggregates = aggregates;
             _columnMap = columnMap;
             _sql = sql;
-            _statementMaxRows = statementMaxRows;
         }
 
         /** Null when no aggregate applies to its column, in which case {@link #execute()} returns an empty map without querying. */
@@ -640,12 +640,6 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 public @Nullable SQLFragment getSql()
                 {
                     return _sql;
-                }
-
-                @Override
-                public @Nullable Integer getStatementMaxRows()
-                {
-                    return _statementMaxRows;
                 }
             };
 
