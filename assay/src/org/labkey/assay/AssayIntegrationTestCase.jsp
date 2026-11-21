@@ -252,6 +252,42 @@
         return material;
     }
 
+    private record CrossRunSource(File file, ExpData data, ExpRun run) {}
+
+    // A sample derivation run whose output is an assay data file, so importing that file makes it a cross-run input
+    private CrossRunSource createCrossRunSource(ExpMaterial material) throws Exception
+    {
+        var file = createAssayDataFile("ResultExpMaterialsLookup\n" + material.getName() + "\n");
+        var data = createUploadedData(file);
+        return new CrossRunSource(file, data, createProducingRun(material, data));
+    }
+
+    private ExpData createUploadedData(File file)
+    {
+        var data = ExperimentService.get().createData(c, UPLOADED_FILE, file.getName());
+        data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
+        data.save(user);
+        return data;
+    }
+
+    private ExpRun createProducingRun(ExpMaterial material, ExpData data) throws Exception
+    {
+        ExpRun run = ExperimentService.get().createExperimentRun(c, "external transform run");
+        run.setFilePathRoot(pipeRoot.getRootPath());
+        run.setProtocol(ExperimentService.get().ensureSampleDerivationProtocol(user));
+
+        return ExperimentService.get().saveSimpleExperimentRun(run,
+            Map.of(material, "sample"),
+            Collections.emptyMap(),
+            Collections.emptyMap(),
+            Map.of(data, "output file"),
+            Collections.emptyMap(),
+            info,
+            null,
+            false
+        );
+    }
+
     private ExpSampleType createSampleType() throws Exception
     {
         return createSampleType(SAMPLE_TYPE_NAME, "S-${genId}");
@@ -506,32 +542,12 @@
         // create a sample that will be used as an input to the run
         log.info("creating material");
         ExpMaterial material = createMaterial();
-        final var materialName = material.getName();
 
-        // create a file in the pipeline root to import
-        var file = createAssayDataFile("ResultExpMaterialsLookup\n" + materialName + "\n");
-
-        var firstData = ExperimentService.get().createData(c, UPLOADED_FILE, file.getName());
-        firstData.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
-        firstData.save(user);
-
-        // create a sample derivation run where the file is an output
-        ExpRun run = ExperimentService.get().createExperimentRun(c, "external transform run");
-        run.setFilePathRoot(pipeRoot.getRootPath());
-
-        ExpProtocol protocol = ExperimentService.get().ensureSampleDerivationProtocol(user);
-        run.setProtocol(protocol);
-
-        run = ExperimentService.get().saveSimpleExperimentRun(run,
-            Map.of(material, "sample"),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Map.of(firstData, "output file"),
-            Collections.emptyMap(),
-            info,
-            null,
-            false
-        );
+        // create a sample derivation run where a file in the pipeline root is an output
+        var source = createCrossRunSource(material);
+        var file = source.file();
+        var firstData = source.data();
+        var run = source.run();
 
         // verify the material is an input and the file is an output
         assertTrue(run.getMaterialInputs().containsKey(material));
@@ -574,6 +590,45 @@
         dataList = ExperimentService.get().getAllExpDataByURL(firstData.getDataFileUrl(), null);
         assertEquals(firstData, dataList.getFirst());
         assertEquals(1, dataList.size());
+    }
+
+    // Runs deleted together, including the one that produced a cross-run input, don't count as its other usages
+    @Test
+    public void testCrossRunFileInputsDeletedWithProducingRun() throws Exception
+    {
+        var assayPair = createAssay(context, false, false);
+        var source = createCrossRunSource(createMaterial());
+        var assayRun1 = assayImportFile(c, user, assayPair.first, assayPair.second, source.file(), true, null);
+        var assayRun2 = assayImportFile(c, user, assayPair.first, assayPair.second, source.file(), true, null);
+
+        String dataFileUrl = source.data().getDataFileUrl();
+        assertEquals(3, ExperimentService.get().getAllExpDataByURL(dataFileUrl, null).size());
+
+        ExperimentService.get().deleteExperimentRunsByRowIds(c, user, null,
+            List.of(source.run().getRowId(), assayRun1.getRowId(), assayRun2.getRowId()), null);
+
+        assertEquals(List.of(), ExperimentService.get().getAllExpDataByURL(dataFileUrl, null));
+    }
+
+    // The producing run is created last so the batch reaches it after the runs that consume its output
+    @Test
+    public void testCrossRunFileInputsDeletedBeforeProducingRun() throws Exception
+    {
+        var assayPair = createAssay(context, false, false);
+        var material = createMaterial();
+        var file = createAssayDataFile("ResultExpMaterialsLookup\n" + material.getName() + "\n");
+        var data = createUploadedData(file);
+        var assayRun1 = assayImportFile(c, user, assayPair.first, assayPair.second, file, true, null);
+        var assayRun2 = assayImportFile(c, user, assayPair.first, assayPair.second, file, true, null);
+        var producingRun = createProducingRun(material, data);
+
+        String dataFileUrl = data.getDataFileUrl();
+        assertEquals(3, ExperimentService.get().getAllExpDataByURL(dataFileUrl, null).size());
+
+        ExperimentService.get().deleteExperimentRunsByRowIds(c, user, null,
+            List.of(assayRun1.getRowId(), assayRun2.getRowId(), producingRun.getRowId()), null);
+
+        assertEquals(List.of(), ExperimentService.get().getAllExpDataByURL(dataFileUrl, null));
     }
 
     private Map<String, Object> getRealResult(DbSchema schema, String assayResultRealTable, long resultRowId)

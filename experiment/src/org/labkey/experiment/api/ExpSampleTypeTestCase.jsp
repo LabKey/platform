@@ -1644,6 +1644,63 @@ public void testBulkLookupsScopedToContainer() throws Exception
     assertTrue(ExperimentService.get().getExpMaterialsByLsid(c, emptyList()).isEmpty());
 }
 
+@Test
+public void testContainerRunDeleteAcrossBatches() throws Exception
+{
+    ExpSampleType st = createSampleType(generateSampleTypeName(), List.of(new GWTPropertyDescriptor("name", "string")), null);
+    ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+    int runCount = 5;
+
+    // Batches of [2, 2, 1], then one batch
+    for (int batchSize : List.of(2, runCount))
+    {
+        String msg = "batch size " + batchSize;
+        String prefix = "b" + batchSize + "-S";
+        Container sub = ContainerManager.ensureContainer(c, "runDelete-" + batchSize + "-" + st.getName(), _user);
+
+        // A derivation chain, so lineage edges and material inputs cross every batch boundary
+        insertSampleRows(sub, st.getName(), nameRows(List.of(prefix + 0)));
+        List<ExpRun> runs = new ArrayList<>();
+        for (int i = 1; i <= runCount; i++)
+        {
+            insertSampleRows(sub, st.getName(), List.of(CaseInsensitiveHashMap.of("name", prefix + i, "MaterialInputs/" + st.getName(), prefix + (i - 1))));
+            ExpRun run = st.getSample(sub, prefix + i).getRun();
+            assertNotNull(msg, run);
+            runs.add(run);
+        }
+
+        // Each run replaced by the next, so the ReplacedByRunId foreign key also crosses every boundary
+        for (int i = 0; i < runCount - 1; i++)
+        {
+            runs.get(i).setReplacedByRun(runs.get(i + 1));
+            runs.get(i).save(_user);
+        }
+
+        List<Long> runIds = runs.stream().map(ExpRun::getRowId).toList();
+        SimpleFilter runFilter = new SimpleFilter(FieldKey.fromParts("RunId"), runIds, CompareType.IN);
+        List<Long> appIds = new TableSelector(svc.getTinfoProtocolApplication(), Collections.singleton("RowId"), runFilter, null).getArrayList(Long.class);
+        SimpleFilter inputFilter = new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), appIds, CompareType.IN);
+        assertTrue(msg, new TableSelector(svc.getTinfoEdge(), runFilter, null).exists());
+        assertTrue(msg, new TableSelector(svc.getTinfoMaterialInput(), inputFilter, null).exists());
+
+        int runDeletes;
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, batchSize);
+             QueryCounter counter = new QueryCounter("DELETE FROM exp.ExperimentRun WHERE"))
+        {
+            svc.deleteAllExpObjInContainer(sub, _user);
+            runDeletes = counter.getCount();
+        }
+
+        assertEquals(msg, (runCount + batchSize - 1) / batchSize, runDeletes);
+        assertFalse(msg, new TableSelector(svc.getTinfoExperimentRun(), new SimpleFilter(FieldKey.fromParts("RowId"), runIds, CompareType.IN), null).exists());
+        assertFalse(msg, new TableSelector(svc.getTinfoProtocolApplication(), runFilter, null).exists());
+        assertFalse(msg, new TableSelector(svc.getTinfoEdge(), runFilter, null).exists());
+        assertFalse(msg, new TableSelector(svc.getTinfoMaterialInput(), inputFilter, null).exists());
+        assertFalse(msg, new TableSelector(OntologyManager.getTinfoObject(), new SimpleFilter(FieldKey.fromParts("ObjectURI"), runs.stream().map(ExpRun::getLSID).toList(), CompareType.IN), null).exists());
+        assertFalse(msg, new TableSelector(svc.getTinfoMaterial(), SimpleFilter.createContainerFilter(sub), null).exists());
+    }
+}
+
 private static List<Map<String, Object>> nameRows(List<String> names)
 {
     List<Map<String, Object>> rows = new ArrayList<>();
