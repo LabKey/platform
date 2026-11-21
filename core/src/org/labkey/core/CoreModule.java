@@ -1369,6 +1369,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
+        UserManager.addUserListener(new DbLoginManager.PasswordChangeListener());
 
         Encryption.checkMigration();
 
