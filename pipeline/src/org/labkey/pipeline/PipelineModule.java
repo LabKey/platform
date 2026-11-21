@@ -85,6 +85,7 @@ import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.ScriptTaskFactory;
+import org.labkey.pipeline.api.SimpleTaskFactory;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.cluster.ClusterStartup;
 import org.labkey.pipeline.importer.FolderImportJob;
@@ -337,7 +338,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PipelineJobMarshaller.TestCase.class,
             PipelineJacksonTyping.TestCase.class,
             PipelineJobServiceImpl.TestCase.class,
-            PipelineXStreamSecurity.TestCase.class
+            PipelineXStreamSecurity.TestCase.class,
+            SimpleTaskFactory.ParseInputTests.class
         );
     }
 
