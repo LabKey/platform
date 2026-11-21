@@ -85,6 +85,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -665,14 +666,14 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
+    // GH Issue 1688, GH Issue 1853: callers check permissions on rowId in c, so the update must not name another row or folder
+    public static AnnouncementModel updateAnnouncement(@NotNull Container c, User user, int rowId, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
-        Container c = ContainerManager.getForId(update.getContainerId());
-        if (c == null)
-            throw new NotFoundException("No container with id " + update.getContainerId());
-        AnnouncementModel current = getAnnouncement(c, update.getRowId());
+        if (!c.getId().equals(update.getContainerId()) || update.getRowId() != rowId)
+            throw new UnauthorizedException();
+        AnnouncementModel current = getAnnouncement(c, rowId);
         if (current == null)
-            throw new NotFoundException("No announcement with id " + update.getRowId());
+            throw new NotFoundException("No announcement with id " + rowId);
         update = validateModelWithSideEffects(update, c, user, false);
 
         update.beforeUpdate(user, current); // This preserves Created, CreatedBy, EntityId, etc.
@@ -1170,7 +1171,7 @@ public class AnnouncementManager
             model.setModifiedBy(reader.getUserId());
             model.setModified(bogusDate);
             Thread.sleep(10); // Quick sleep to ensure Modified > Created, even on a very fast test run
-            AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
+            AnnouncementManager.updateAnnouncement(folder, getAdmin(), model.getRowId(), model, List.of());
 
             // Re-select updated model
             AnnouncementModel updated = AnnouncementManager.getAnnouncement(folder, model.getRowId());
