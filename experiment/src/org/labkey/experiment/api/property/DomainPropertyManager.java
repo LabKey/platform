@@ -162,13 +162,13 @@ public class DomainPropertyManager
          * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
          * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
          */
-        String sql = "SELECT PV.* " +
-                "FROM " + getTinfoValidator() + " PV " +
-                "WHERE PV.Container=?\n";
+        SQLFragment sql = SQLFragment.unsafe("SELECT PV.* " +
+                "FROM ").append(getTinfoValidator()).unsafeAppend(" PV " +
+                "WHERE PV.Container=?\n", container);
 
         final MultiValuedMap<Integer, PropertyValidatorBean> validators = new ArrayListValuedHashMap<>();
 
-        new SqlSelector(getExpSchema(), sql, container).forEach(PropertyValidatorBean.class, pv -> {
+        new SqlSelector(getExpSchema(), sql).forEach(PropertyValidatorBean.class, pv -> {
             // Warn and skip property validators have unknown type URIs. Some instances in the field failed to run
             // upgrade code that cleared out obsolete 'urn:lsid:labkey.com:PropertyValidator:length' rows.
             if (PropertyService.get().getValidatorKind(pv.getTypeURI()) == null)

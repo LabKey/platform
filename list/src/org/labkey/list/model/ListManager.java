@@ -441,8 +441,8 @@ public class ListManager implements SearchService.DocumentProvider
                     newEntireListBodySetting != oldEntireListBodySetting
                 )
                 {
-                    SQLFragment sql = new SQLFragment("UPDATE ")
-                        .append(getListMetadataTable().getSelectName())
+                    SQLFragment sql = SQLFragment.unsafe("UPDATE ")
+                        .append(getListMetadataTable())
                         .unsafeAppend(" SET LastIndexed = NULL WHERE ListId = ? AND LastIndexed IS NOT NULL")
                         .add(list.getListId());
 
@@ -695,11 +695,11 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (list.getEachItemIndex())
         {
-            String lastIndexClause = reindex ? "(1=1) OR " : ""; //Prepend TRUE if we want to force a reindexing
+            SQLFragment lastIndexClause = SQLFragment.unsafe(reindex ? "(1=1) OR " : ""); //Prepend TRUE if we want to force a reindexing
 
             // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
-            lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
-            SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
+            lastIndexClause.unsafeAppend("LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)", list.getModified());
+            SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause));
 
             indexItems(queue, list, filter);
         }
@@ -825,7 +825,7 @@ public class ListManager implements SearchService.DocumentProvider
 
             // Enumerate all list rows in batches and re-index based on the value of reindex parameter
             // For now, enumerate all rows. In the future, pass in a PK filter for the single item change case?
-            SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause("(1=1)", null));
+            SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(SQLFragment.unsafe("(1=1)")));
 
             // Need to pass non-null modifiedSince for incremental indexing, otherwise all attachments will be returned
             // TODO: Pass modifiedSince into this method?
@@ -1162,7 +1162,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (null != table && null != getListTableName(table))
         {
             // Using EXISTS query should be reasonably efficient.
-            SQLFragment sql = new SQLFragment("SELECT 1 FROM ");
+            SQLFragment sql = SQLFragment.unsafe("SELECT 1 FROM ");
             sql.append(getListTableName(table));
             sql.unsafeAppend(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable());
             sql.unsafeAppend(" WHERE ListId = ? AND Container = ?)");
@@ -1178,7 +1178,7 @@ public class ListManager implements SearchService.DocumentProvider
     private void setLastIndexed(ListDefinition list, long ms)
     {
         // list table does not have an index on listid, so we should include container in the WHERE
-        SQLFragment update = new SQLFragment("UPDATE ").append(getListMetadataTable())
+        SQLFragment update = SQLFragment.unsafe("UPDATE ").append(getListMetadataTable())
                 .unsafeAppend(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
         new SqlExecutor(getListMetadataSchema()).execute(update);
         _listDefCache.remove(list.getContainer());
@@ -1218,7 +1218,7 @@ public class ListManager implements SearchService.DocumentProvider
         DbScope scope = listTable.getSchema().getScope();
 
         // Clear LastIndexed column of the exp.List table, which addresses the "index the entire list as a single document" case
-        clearLastIndexed(scope, listTable.getSelectName());
+        clearLastIndexed(scope, new SQLFragment().append(listTable));
 
         String listSchemaName = ListSchema.getInstance().getSchemaName();
 
@@ -1236,17 +1236,17 @@ public class ListManager implements SearchService.DocumentProvider
             if (null != domain && null != domain.getStorageTableName())
             {
                 LOG.info("List {} - {}: Set to index each item, so clearing last indexed", listDef.getContainerPath(), listDef.getName());
-                clearLastIndexed(scope, listSchemaName + "." + domain.getStorageTableName());
+                clearLastIndexed(scope, new SQLFragment().appendDottedIdentifiers(listSchemaName, domain.getStorageTableName()));
             }
         }
     }
 
-    private void clearLastIndexed(DbScope scope, String selectName)
+    private void clearLastIndexed(DbScope scope, SQLFragment table)
     {
         try
         {
             // Yes, that WHERE clause is intentional and makes a big performance improvement in some cases
-            new SqlExecutor(scope).execute("UPDATE " + selectName + " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+            new SqlExecutor(scope).execute(SQLFragment.unsafe("UPDATE ").append(table).unsafeAppend(" SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL"));
         }
         catch (Exception e)
         {

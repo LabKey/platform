@@ -386,21 +386,21 @@ public class SecurityManager
         SqlExecutor executor = new SqlExecutor(core.getSchema());
 
         // missing container
-        executor.execute("DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
-                "WHERE Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + ")");
+        executor.execute(SQLFragment.unsafe("DELETE FROM ").append(core.getTableInfoPrincipals()).unsafeAppend("\n" +
+                "WHERE Container NOT IN (SELECT EntityId FROM ").append(core.getTableInfoContainers()).unsafeAppend(")"));
 
         // container is not a project (but should be)
-        executor.execute("DELETE FROM " + core.getTableInfoPrincipals() + "\n" +
-                "WHERE Type='g' AND Container NOT IN (SELECT EntityId FROM " + core.getTableInfoContainers() + "\n" +
-                "\tWHERE Parent=? OR Parent IS NULL)", root);
+        executor.execute(SQLFragment.unsafe("DELETE FROM ").append(core.getTableInfoPrincipals()).unsafeAppend("\n" +
+                "WHERE Type='g' AND Container NOT IN (SELECT EntityId FROM ").append(core.getTableInfoContainers()).unsafeAppend("\n" +
+                "\tWHERE Parent=? OR Parent IS NULL)", root));
 
         // missing group
-        executor.execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                "WHERE GroupId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
+        executor.execute(SQLFragment.unsafe("DELETE FROM ").append(core.getTableInfoMembers()).unsafeAppend("\n" +
+                "WHERE GroupId NOT IN (SELECT UserId FROM ").append(core.getTableInfoPrincipals()).unsafeAppend(")"));
 
         // missing user
-        executor.execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
+        executor.execute(SQLFragment.unsafe("DELETE FROM ").append(core.getTableInfoMembers()).unsafeAppend("\n" +
+                "WHERE UserId NOT IN (SELECT UserId FROM ").append(core.getTableInfoPrincipals()).unsafeAppend(")"));
     }
 
     /** Move is handled by direct call from ContainerManager into SecurityManager */
@@ -1121,8 +1121,8 @@ public class SecurityManager
                 // If insert didn't return an id it must already exist... select it
                 if (null == userId)
                     userId = new SqlSelector(core.getSchema(),
-                            "SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Name = ?",
-                           email.getEmailAddress()).getObject(Integer.class);
+                            SQLFragment.unsafe("SELECT UserId FROM ").append(core.getTableInfoPrincipals()).unsafeAppend(" WHERE Name = ?",
+                           email.getEmailAddress())).getObject(Integer.class);
 
                 if (null == userId)
                 {
@@ -1374,7 +1374,7 @@ public class SecurityManager
             // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
             // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
 
-            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?", groupId);
+            SQLFragment sqlf = SQLFragment.unsafe("SELECT DISTINCT ResourceId FROM ").append(core.getTableInfoRoleAssignments()).unsafeAppend(" WHERE UserId = ?", groupId);
             List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);
 
             Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
@@ -1389,7 +1389,7 @@ public class SecurityManager
                 SimpleFilter f = new SimpleFilter(resourceId, id);
                 if (!new TableSelector(core.getTableInfoRoleAssignments(), f, null).exists())
                 {
-                    SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid, userid, role) VALUES (?, -3, 'org.labkey.api.security.roles.NoPermissionsRole')", id);
+                    SQLFragment insert = SQLFragment.unsafe("INSERT INTO ").append(core.getTableInfoRoleAssignments()).unsafeAppend(" (resourceid, userid, role) VALUES (?, -3, 'org.labkey.api.security.roles.NoPermissionsRole')", id);
                     new SqlExecutor(core.getSchema()).execute(insert);
                 }
             }
@@ -1433,8 +1433,8 @@ public class SecurityManager
             throw new IllegalArgumentException("Should not call deleteGroups() on the root");
 
         String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
-        new SqlSelector(core.getSchema(), "SELECT UserId FROM " + core.getTableInfoPrincipals() +
-            "\tWHERE Container=? AND Type LIKE ?", c, typeString).stream(Integer.class)
+        new SqlSelector(core.getSchema(), SQLFragment.unsafe("SELECT UserId FROM ").append(core.getTableInfoPrincipals())
+            .unsafeAppend("\tWHERE Container=? AND Type LIKE ?", c, typeString)).stream(Integer.class)
             .forEach((g) -> SecurityManager.deleteGroup(g, user));
     }
 
@@ -1447,8 +1447,8 @@ public class SecurityManager
             if (group.isSystemGroup())
                 throw new IllegalArgumentException("Can't remove a member from the " + group.getName() + " group");
 
-            SQLFragment sql = new SQLFragment(
-            "DELETE FROM " + core.getTableInfoMembers() + "\nWHERE GroupId = ? AND UserId ");
+            SQLFragment sql = SQLFragment.unsafe(
+            "DELETE FROM ").append(core.getTableInfoMembers()).unsafeAppend("\nWHERE GroupId = ? AND UserId ");
             sql.add(groupId);
             List<Integer> userIds = new ArrayList<>(membersToDelete.size());
             for (UserPrincipal userPrincipal : membersToDelete)
@@ -1563,7 +1563,7 @@ public class SecurityManager
 
         try
         {
-            executor.execute("INSERT INTO " + core.getTableInfoMembers() + " (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId());
+            executor.execute(SQLFragment.unsafe("INSERT INTO ").append(core.getTableInfoMembers()).unsafeAppend(" (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId()));
         }
         catch (DataIntegrityViolationException e)
         {
@@ -2008,19 +2008,16 @@ public class SecurityManager
         }
         else
         {
-            String sql = "SELECT Users.UserId, Users.Name\n" +
-                    "FROM " + core.getTableInfoMembers() + " JOIN " + core.getTableInfoPrincipals() + " Users ON " + core.getTableInfoMembers() + ".UserId = Users.UserId\n" +
-                    "WHERE GroupId = ?";
-            SQLFragment sqlFragment;
+            SQLFragment sqlFragment = SQLFragment.unsafe("SELECT Users.UserId, Users.Name\n" +
+                    "FROM ").append(core.getTableInfoMembers()).unsafeAppend(" JOIN ").append(core.getTableInfoPrincipals()).unsafeAppend(" Users ON ").append(core.getTableInfoMembers()).unsafeAppend(".UserId = Users.UserId\n" +
+                    "WHERE GroupId = ?", groupId);
             if (includeInactive)
             {
-                sql += "\nORDER BY Users.Name";
-                sqlFragment = new SQLFragment(sql, groupId);
+                sqlFragment.unsafeAppend("\nORDER BY Users.Name");
             }
             else
             {
-                sql += " AND Active=?" + "\nORDER BY Users.Name";
-                sqlFragment = new SQLFragment(sql, groupId, true);
+                sqlFragment.unsafeAppend(" AND Active=?" + "\nORDER BY Users.Name", true);
             }
             new SqlSelector(core.getSchema(), sqlFragment).forEach(rs -> members.add(new Pair<>(rs.getInt(1), rs.getString(2))));
         }
@@ -2078,7 +2075,7 @@ public class SecurityManager
 
     public static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure)
     {
-        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type != 'u' AND LOWER(Name) = ? AND Container ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT UserId FROM ").append(core.getTableInfoPrincipals()).unsafeAppend(" WHERE Type != 'u' AND LOWER(Name) = ? AND Container ");
         sql.add(groupName.toLowerCase());
 
         if (c == null || c.isRoot())

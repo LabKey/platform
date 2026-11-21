@@ -520,7 +520,7 @@ public final class RequestCancellation
             Thread queryThread = new Thread(() -> {
                 try
                 {
-                    new SqlSelector(scope, "SELECT pg_sleep(30)").getObject(Object.class);
+                    new SqlSelector(scope, SQLFragment.unsafe("SELECT pg_sleep(30)")).getObject(Object.class);
                 }
                 catch (Throwable t)
                 {

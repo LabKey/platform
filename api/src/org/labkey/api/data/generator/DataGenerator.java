@@ -549,7 +549,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             return Collections.emptyList();
 
         TableInfo tableInfo = ExpSchema.TableType.Materials.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Materials.toString(), containerFilter);
-        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId", limit, totalSampleCount);
+        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, SQLFragment.unsafe("RowId"), limit, totalSampleCount);
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
     }
 
@@ -559,17 +559,17 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             return Collections.emptyList();
 
         TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName(), containerFilter);
-        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId", limit, totalSampleCount);
+        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, SQLFragment.unsafe("RowId"), limit, totalSampleCount);
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class);
     }
 
-    private SQLFragment limitFromOffsetSqlFrag(TableInfo tableInfo, String columns, int limit, long totalCount)
+    private SQLFragment limitFromOffsetSqlFrag(TableInfo tableInfo, SQLFragment columns, int limit, long totalCount)
     {
         if (limit <= 0)
             return null;
 
         SqlDialect dialect = tableInfo.getSchema().getSqlDialect();
-        SQLFragment sql = new SQLFragment("SELECT " + columns);
+        SQLFragment sql = SQLFragment.unsafe("SELECT ").append(columns);
         SQLFragment fromSql = SQLFragment.unsafe(" FROM ").append(tableInfo, "dc");
 
         return dialect.limitRows(sql, fromSql, null, null, null, limit, totalCount > limit ? randomLong(0, totalCount-limit) : 0);
@@ -586,7 +586,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             _log.warn("Sample type '{}' not found.", sampleType.getName());
             return Collections.emptyList();
         }
-        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId, Name", limit, totalSampleCount);
+        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, SQLFragment.unsafe("RowId, Name"), limit, totalSampleCount);
         return Arrays.stream(new SqlSelector(tableInfo.getSchema(), sql).getMapArray()).toList();
     }
 
@@ -601,7 +601,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             _log.warn("Data class '{}' not found.", dataClass.getName());
             return Collections.emptyList();
         }
-        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId, Name", limit, totalSampleCount);
+        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, SQLFragment.unsafe("RowId, Name"), limit, totalSampleCount);
         return Arrays.stream(new SqlSelector(tableInfo.getSchema(), sql).getMapArray()).toList();
     }
 

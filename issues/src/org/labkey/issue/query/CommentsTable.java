@@ -118,10 +118,10 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
     {
         FieldKey containerFieldKey = FieldKey.fromParts("Container");
         clearConditions(containerFieldKey);
-        SQLFragment sql = new SQLFragment("IssueId IN (SELECT i.IssueId FROM ");
+        SQLFragment sql = SQLFragment.unsafe("IssueId IN (SELECT i.IssueId FROM ");
         sql.append(IssuesSchema.getInstance().getTableInfoIssues(), "i");
         sql.unsafeAppend(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("i.Container")));
+        sql.append(filter.getSQLFragment(getSchema(), SQLFragment.unsafe("i.Container")));
         sql.unsafeAppend(")");
         addCondition(sql, containerFieldKey);
     }

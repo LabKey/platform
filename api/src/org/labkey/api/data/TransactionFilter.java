@@ -495,7 +495,7 @@ public class TransactionFilter implements Filter
                         long start = System.currentTimeMillis();
                         try
                         {
-                            new SqlSelector(scope, "SELECT pg_sleep(30)").getObject(Object.class);
+                            new SqlSelector(scope, SQLFragment.unsafe("SELECT pg_sleep(30)")).getObject(Object.class);
                             fail("Query wasn't cancelled");
                         }
                         catch (RuntimeException ignored) {} // Checked by its source below
@@ -508,7 +508,7 @@ public class TransactionFilter implements Filter
                     RequestCancellation.TestCase.doRequest(null, () -> {
                         getRequestSummary(thread).request().setAttribute(EXPORT_ATTRIBUTE_NAME, true);
                         // Long enough for a sweep after the timeout despite HeartBeat's lag
-                        new SqlSelector(scope, "SELECT pg_sleep(12)").getObject(Object.class);
+                        new SqlSelector(scope, SQLFragment.unsafe("SELECT pg_sleep(12)")).getObject(Object.class);
                         assertNull("Export was cancelled", RequestCancellation.getSource(thread));
                     });
                 });
@@ -552,7 +552,7 @@ public class TransactionFilter implements Filter
                         long start = System.currentTimeMillis();
                         try
                         {
-                            new SqlSelector(scope, "SELECT pg_sleep(30)").getObject(Object.class);
+                            new SqlSelector(scope, SQLFragment.unsafe("SELECT pg_sleep(30)")).getObject(Object.class);
                         }
                         catch (RuntimeException e)
                         {
@@ -593,7 +593,7 @@ public class TransactionFilter implements Filter
 
                     RequestCancellation.TestCase.doRequest(null, () -> {
                         // Holds a connection, so the cancel signals it rather than banning new ones
-                        try (TableResultSet rs = new SqlSelector(scope, "SELECT 1").getResultSet(false))
+                        try (TableResultSet rs = new SqlSelector(scope, SQLFragment.unsafe("SELECT 1")).getResultSet(false))
                         {
                             assertTrue(rs.next());
                             assertTrue(cancelRequest(thread, getRequestSummary(thread), RequestCancellation.Source.WS_MESSAGE));
@@ -603,7 +603,7 @@ public class TransactionFilter implements Filter
                             long start = System.currentTimeMillis();
                             try
                             {
-                                new SqlSelector(scope, "SELECT pg_sleep(30)").getObject(Object.class);
+                                new SqlSelector(scope, SQLFragment.unsafe("SELECT pg_sleep(30)")).getObject(Object.class);
                                 fail("Query wasn't cancelled");
                             }
                             catch (RuntimeException ignored) {} // Checked by its source below
@@ -678,7 +678,7 @@ public class TransactionFilter implements Filter
                 Thread thread = Thread.currentThread();
 
                 RequestCancellation.TestCase.doRequest(null, () -> {
-                    try (TableResultSet rs = new SqlSelector(scope, "SELECT 1").getResultSet(false))
+                    try (TableResultSet rs = new SqlSelector(scope, SQLFragment.unsafe("SELECT 1")).getResultSet(false))
                     {
                         assertTrue(rs.next());
                         try (QuietCloser outer = deferCancellation())
@@ -700,12 +700,12 @@ public class TransactionFilter implements Filter
                     // Like an audit insert, work inside a deferral still gets a connection despite the ban
                     try (QuietCloser ignored = deferCancellation())
                     {
-                        assertEquals(Integer.valueOf(1), new SqlSelector(scope, "SELECT 1").getObject(Integer.class));
+                        assertEquals(Integer.valueOf(1), new SqlSelector(scope, SQLFragment.unsafe("SELECT 1")).getObject(Integer.class));
                     }
 
                     try
                     {
-                        new SqlSelector(scope, "SELECT 1").getObject(Integer.class);
+                        new SqlSelector(scope, SQLFragment.unsafe("SELECT 1")).getObject(Integer.class);
                         fail("Query after the deferred cancel wasn't stopped");
                     }
                     catch (RuntimeException e)
@@ -757,7 +757,7 @@ public class TransactionFilter implements Filter
                     long start = System.currentTimeMillis();
                     try
                     {
-                        new SqlSelector(scope, "SELECT pg_sleep(30)").getObject(Object.class);
+                        new SqlSelector(scope, SQLFragment.unsafe("SELECT pg_sleep(30)")).getObject(Object.class);
                         fail("Query wasn't cancelled");
                     }
                     catch (RuntimeException ignored) {} // Checked by its source below

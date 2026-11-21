@@ -127,5 +127,14 @@ public class Constraint
         };
 
         public abstract String getAbbrev();
+
+        public SQLFragment getSqlFragment()
+        {
+            return switch (this)
+            {
+                case UNIQUE -> SQLFragment.unsafe("UNIQUE");
+                case PRIMARYKEY -> SQLFragment.unsafe("PRIMARY KEY");
+            };
+        }
     }
 }

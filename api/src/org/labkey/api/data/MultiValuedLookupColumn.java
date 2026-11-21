@@ -78,7 +78,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(getTableAlias(tableAliasName)).unsafeAppend(".").appendIdentifier(_display.getAlias());
+        return new SQLFragment().appendIdentifier(getTableAlias(tableAliasName)).unsafeAppend(".").appendIdentifier(_display.getAlias());
     }
 
     /**
@@ -157,13 +157,13 @@ public class MultiValuedLookupColumn extends LookupColumn
             valueSql.append(lc.getValueSql(joinAlias));
             if (needsCast)
             {
-                String sqlType;
+                SQLFragment sqlType;
                 if ("userid".equalsIgnoreCase(lc.getSqlTypeName()))
-                    sqlType = "INTEGER";
+                    sqlType = SQLFragment.unsafe("INTEGER");
                 else if ("entityid".equalsIgnoreCase(lc.getSqlTypeName()))
-                    sqlType = dialect.getGuidType();
+                    sqlType = dialect.getGuidTypeAsSql();
                 else if ("lsidtype".equalsIgnoreCase(lc.getSqlTypeName()))
-                    sqlType = dialect.getLsidType();
+                    sqlType = dialect.getLsidTypeAsSql();
                 else
                     throw new IllegalStateException("Unexpected sql type '" + lc.getSqlTypeName() + "' for column '" + lc.getName() + "'");
                 valueSql.unsafeAppend(") AS ").append(sqlType).unsafeAppend(")");
@@ -185,7 +185,9 @@ public class MultiValuedLookupColumn extends LookupColumn
                 {
                     String join = Strings.CS.replace(fragment.getSQL(), "\n\t", "\n\t\t\t\t");
                     join = join.replace("LEFT OUTER", "INNER");
-                    select.append(join);
+                    SQLFragment joinSql = new SQLFragment();
+                    joinSql.setSqlUnsafe(join);
+                    select.append(joinSql);
                     select.addAll(fragment.getParams());
                     select.addTempTokens(fragment);
                 }

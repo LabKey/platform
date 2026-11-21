@@ -1208,7 +1208,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
         try (Transaction transaction = scope.ensureTransaction())
         {
-            Table.delete(data, new SimpleFilter().addWhereClause("Container=?", new Object[] {getContainer()}));
+            Table.delete(data, new SimpleFilter().addWhereClause(SQLFragment.unsafe("Container=?", getContainer())));
             StudyManager.datasetModified(this, true);
             transaction.commit();
         }
@@ -2160,7 +2160,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     Container rowsContainer = getContainer();
                     if (getDataSharingEnum() != DataSharing.NONE)
                         rowsContainer = getDefinitionContainer();
-                    filter.addWhereClause("Container=?", new Object[]{rowsContainer});
+                    filter.addWhereClause(SQLFragment.unsafe("Container=?", rowsContainer));
                 }
                 filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
                 Table.delete(data, filter);
@@ -2840,7 +2840,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         if (null == s)
             return;
 
-        List<Integer> ids = new SqlSelector(s, "SELECT domainid FROM exp.domaindescriptor WHERE domainuri like '%:StudyDataset%Folder-%' and domainuri not in (SELECT typeuri from study.dataset)").getArrayList(Integer.class);
+        List<Integer> ids = new SqlSelector(s, SQLFragment.unsafe("SELECT domainid FROM exp.domaindescriptor WHERE domainuri like '%:StudyDataset%Folder-%' and domainuri not in (SELECT typeuri from study.dataset)")).getArrayList(Integer.class);
         for (Integer id : ids)
         {
             Domain domain = PropertyService.get().getDomain(id.intValue());

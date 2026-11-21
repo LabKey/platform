@@ -48,6 +48,7 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -1349,7 +1350,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     static @Nullable Timestamp captureChangedSince()
     {
-        return new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(Timestamp.class);
+        return new SqlSelector(DbScope.getLabKeyScope(), SQLFragment.unsafe("SELECT CURRENT_TIMESTAMP")).getObject(Timestamp.class);
     }
 
     void audit(QueryService.AuditAction auditAction)

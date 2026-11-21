@@ -70,25 +70,24 @@ public class GroupTableInfo extends VirtualTable
     {
         checkReadBeforeExecute();
         SQLFragment sql = SQLFragment.unsafe("SELECT ");
-        String sep = "";
+        SQLFragment.SqlSeparator sep = SQLFragment.sep("", ",\n");
         
         //add the group-by columns
         for(ColumnInfo col : getGroupByColumns())
         {
-            sql.append(sep);
+            sql.append(sep.next());
             sql.appendIdentifier(ALIAS_SOURCE);
             sql.unsafeAppend(".");
             sql.appendIdentifier(col.getAlias());
-            sep = ",\n";
         }
 
         //add the measures
         for(CrosstabMeasure measure : getMeasures())
         {
-            sql.append(sep);
+            sql.append(sep.next());
             sql.append(measure.getSqlExpression(ALIAS_SOURCE));
             sql.unsafeAppend(" AS ");
-            sql.append(AggregateColumnInfo.getColumnName(null, measure));
+            sql.appendIdentifier(AggregateColumnInfo.getColumnName(null, measure));
         }
 
         //from the source table select
@@ -101,14 +100,13 @@ public class GroupTableInfo extends VirtualTable
 
         //group by
         sql.unsafeAppend("\nGROUP BY ");
-        sep = "";
+        sep = SQLFragment.sep("", ",\n");
         for(ColumnInfo col : getGroupByColumns())
         {
-            sql.append(sep);
+            sql.append(sep.next());
             sql.appendIdentifier(ALIAS_SOURCE);
             sql.unsafeAppend(".");
             sql.appendIdentifier(col.getAlias());
-            sep = ",\n";
         }
 
         return sql;

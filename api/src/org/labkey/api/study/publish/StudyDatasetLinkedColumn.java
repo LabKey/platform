@@ -33,8 +33,8 @@ public class StudyDatasetLinkedColumn extends ExprColumn
 
     public StudyDatasetLinkedColumn(TableInfo parent, String name, Dataset dataset, String rowIdName, User user)
     {
-        super(parent, name, new SQLFragment("(CASE WHEN " + "StudyDataJoin$" + dataset.getContainer().getRowId() +
-                "._key IS NOT NULL THEN " + dataset.getDatasetId() + " ELSE NULL END)"), JdbcType.INTEGER);
+        super(parent, name, SQLFragment.unsafe("(CASE WHEN ").appendDottedIdentifiers("StudyDataJoin$" + dataset.getContainer().getRowId(), "_key")
+                .unsafeAppend(" IS NOT NULL THEN ").appendValue(dataset.getDatasetId()).unsafeAppend(" ELSE NULL END)"), JdbcType.INTEGER);
 
         _dataset = dataset;
         _rowIdName = rowIdName;

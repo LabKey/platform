@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
@@ -158,7 +159,7 @@ public class WikiSelectManager
             //underlying database is case-sensitive)
             //Bug 2225
             wiki = new TableSelector(CommSchema.getInstance().getTableInfoPages(),
-                SimpleFilter.createContainerFilter(c).addWhereClause("LOWER(name) = LOWER(?)", new Object[] { name }),
+                SimpleFilter.createContainerFilter(c).addWhereClause(SQLFragment.unsafe("LOWER(name) = LOWER(?)", name)),
                 null).getObject(Wiki.class);
         }
 

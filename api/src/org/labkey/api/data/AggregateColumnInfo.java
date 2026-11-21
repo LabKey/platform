@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.StringExpression;
@@ -184,7 +185,9 @@ public class AggregateColumnInfo extends BaseColumnInfo
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(tableAliasName + "." + getName());
+        if (FilteredTable.filterNameAlias.equals(tableAliasName))
+            return SQLFragment.unsafe(FilteredTable.filterNameAlias + ".").appendIdentifier(getName());
+        return new SQLFragment().appendDottedIdentifiers(tableAliasName, getName());
     }
 
     public static String getColumnName(@Nullable CrosstabMember member, CrosstabMeasure measure)

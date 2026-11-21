@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 
@@ -44,7 +45,8 @@ public class ContainerUtil
         if (null == key)
             key = "Container";
 
-        String delete = "DELETE FROM " + tinfo + " WHERE " + key + " NOT IN (SELECT EntityId FROM " + tinfoContainers + ")";
+        SQLFragment delete = SQLFragment.unsafe("DELETE FROM ").append(tinfo).unsafeAppend(" WHERE ").appendIdentifier(key)
+            .unsafeAppend(" NOT IN (SELECT EntityId FROM ").append(tinfoContainers).unsafeAppend(")");
         return new SqlExecutor(tinfo.getSchema()).execute(delete);
     }
 
@@ -63,7 +65,7 @@ public class ContainerUtil
         if (null == key)
             key = "Container";
 
-        String delete = "DELETE FROM " + tinfo + " WHERE " + key + " = ?";
-        return new SqlExecutor(tinfo.getSchema()).execute(delete, c);
+        SQLFragment delete = SQLFragment.unsafe("DELETE FROM ").append(tinfo).unsafeAppend(" WHERE ").appendIdentifier(key).unsafeAppend(" = ?", c);
+        return new SqlExecutor(tinfo.getSchema()).execute(delete);
     }
 }

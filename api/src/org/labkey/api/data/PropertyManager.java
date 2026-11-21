@@ -618,7 +618,7 @@ public class PropertyManager
         SqlExecutor sqlx = new SqlExecutor(SCHEMA.getSchema());
         sqlx.execute(deleteProps);
 
-        SQLFragment deleteSets = new SQLFragment("DELETE FROM " + SCHEMA.getTableInfoPropertySets() + " WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+        SQLFragment deleteSets = SQLFragment.unsafe("DELETE FROM ").append(SCHEMA.getTableInfoPropertySets().getSQLName()).unsafeAppend(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
         deleteSets.add(user);
         deleteSets.add(objectId);
         deleteSets.add(category);

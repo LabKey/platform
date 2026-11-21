@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -193,7 +194,7 @@ public class DefaultStudyDesignTable<SchemaType extends StudyDesignQuerySchema> 
         DbScope scope =  StudyDesignSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            Table.delete(data, new SimpleFilter().addWhereClause("Container=?", new Object[] {getContainer()}));
+            Table.delete(data, new SimpleFilter().addWhereClause(SQLFragment.unsafe("Container=?", getContainer())));
             transaction.commit();
         }
     }

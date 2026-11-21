@@ -163,7 +163,7 @@ public class LabKeySQLFragment extends SQLFragment
             assertTrue(new LabKeySQLFragment().addAll(List.of()).getParams().isEmpty());
 
             LabKeySQLFragment withCte = LabKeySQLFragment.unsafe("SELECT 1");
-            withCte.addCommonTableExpression(CoreSchema.getInstance().getSqlDialect(), new Object(), "cte", SQLFragment.unsafe("SELECT ?", 1));
+            withCte.addCommonTableExpressionRef(CoreSchema.getInstance().getSqlDialect(), new Object(), "cte", SQLFragment.unsafe("SELECT ?", 1));
             assertThrows(IllegalStateException.class, withCte::getText);
         }
     }

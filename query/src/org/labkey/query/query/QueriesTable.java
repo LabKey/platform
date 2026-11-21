@@ -73,14 +73,14 @@ public class QueriesTable extends FilteredTable<QueryUserSchema>
 
         var flagsCol = getRealTable().getColumn("Flags");
         var hiddenCol = new ExprColumn(this, "Hidden",
-                new SQLFragment("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + QueryManager.FLAG_HIDDEN + ") != 0")
+                SQLFragment.unsafe("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + QueryManager.FLAG_HIDDEN + ") != 0")
                         .unsafeAppend(" THEN ").appendValue(true, getSqlDialect())
                         .unsafeAppend(" ELSE ").appendValue(false, getSqlDialect()).unsafeAppend(" END)"),
                 JdbcType.BOOLEAN, flagsCol);
         addColumn(hiddenCol);
 
         var inheritableCol = new ExprColumn(this, "Inheritable",
-                new SQLFragment("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + QueryManager.FLAG_INHERITABLE + ") != 0")
+                SQLFragment.unsafe("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + QueryManager.FLAG_INHERITABLE + ") != 0")
                         .unsafeAppend(" THEN ").appendValue(true, getSqlDialect())
                         .unsafeAppend(" ELSE ").appendValue(false, getSqlDialect()).unsafeAppend(" END)"),
                 JdbcType.BOOLEAN, flagsCol);

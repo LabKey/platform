@@ -137,7 +137,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                     try
                     {
                         // Reports an already-exited backend by returning false, not by throwing
-                        boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
+                        boolean signalled = executor.executeWithResults(SQLFragment.unsafe(terminate ? "SELECT pg_terminate_backend(?)" : "SELECT pg_cancel_backend(?)", spid),(rs, c) -> rs.next() && rs.getBoolean(1));
 
                         if (!signalled)
                         {
@@ -363,11 +363,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment concatenate(SQLFragment... args)
     {
         SQLFragment ret = new SQLFragment();
-        String op = "";
+        SQLFragment.SqlSeparator op = SQLFragment.sep("", " || ");
         for (SQLFragment arg : args)
         {
-            ret.append(op).append(arg);
-            op = " || ";
+            ret.append(op.next()).append(arg);
         }
         return ret;
     }
@@ -848,12 +847,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         if (assignResult)
             sb.unsafeAppend("? = ");
         sb.unsafeAppend("CALL ").append(qualifiedProcName).unsafeAppend("(");
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
         for (int i = 0; i < paramCount; i++)
         {
-            sb.append(comma);
+            sb.append(comma.next());
             sb.unsafeAppend("?");
-            comma = ",";
         }
         sb.unsafeAppend(")}");
         return sb;

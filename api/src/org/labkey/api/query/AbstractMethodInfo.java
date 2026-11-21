@@ -54,7 +54,7 @@ abstract public class AbstractMethodInfo implements MethodInfo
     @Override
     public MutableColumnInfo createColumnInfo(TableInfo parentTable, final ColumnInfo[] arguments, String alias)
     {
-        return new ExprColumn(parentTable, alias, new SQLFragment("{{" + this.getClass().getSimpleName() + "}}"), getSqlType(arguments))
+        return new ExprColumn(parentTable, alias, SQLFragment.unsafe("{{").appendIdentifier(this.getClass().getSimpleName()).unsafeAppend("}}"), getSqlType(arguments))
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)

@@ -106,10 +106,10 @@ public class DisplayFormatAnalyzer
             .stream(QueryCandidate.class)
             .forEach(candidate -> _queryDefXmlCandidatesMap.put(candidate.container(), candidate));
 
-        SQLFragment sql = new SQLFragment(
-                "SELECT dd.Container, DomainURI, dd.Name AS TableName, pd.Name AS ColumnName, RangeURI, Format FROM " + OntologyManager.getTinfoDomainDescriptor() + " dd\n" +
-                "\tINNER JOIN " + OntologyManager.getTinfoPropertyDomain() + " pdm ON dd.DomainId = pdm.DomainId\n" +
-                "\tINNER JOIN " + OntologyManager.getTinfoPropertyDescriptor() + " pd ON pdm.PropertyId = pd.PropertyId\n" +
+        SQLFragment sql = SQLFragment.unsafe("SELECT dd.Container, DomainURI, dd.Name AS TableName, pd.Name AS ColumnName, RangeURI, Format FROM ")
+            .append(OntologyManager.getTinfoDomainDescriptor()).unsafeAppend(" dd\n" +
+                "\tINNER JOIN ").append(OntologyManager.getTinfoPropertyDomain()).unsafeAppend(" pdm ON dd.DomainId = pdm.DomainId\n" +
+                "\tINNER JOIN ").append(OntologyManager.getTinfoPropertyDescriptor()).unsafeAppend(" pd ON pdm.PropertyId = pd.PropertyId\n" +
                 "\tWHERE Format IS NOT NULL AND RangeURI IN (?, ?, ?)")
             .addAll(DateDisplayFormatType.getTypeUris());
         new SqlSelector(CoreSchema.getInstance().getSchema(), sql)

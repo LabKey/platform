@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
@@ -427,7 +428,7 @@ public class LineagePerfTest extends Assert
         final ExpLineageOptions opt = new ExpLineageOptions();
         final ViewBackgroundInfo info = new ViewBackgroundInfo(_container, _user, null);
 
-        Long maxMaterialId = new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(rowId) FROM exp.material").getObject(Long.class);
+        Long maxMaterialId = new SqlSelector(ExperimentService.get().getSchema(), SQLFragment.unsafe("SELECT MAX(rowId) FROM exp.material")).getObject(Long.class);
 
         for (int i = 0; i < 10; i++)
         {

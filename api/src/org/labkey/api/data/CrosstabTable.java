@@ -22,6 +22,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -207,12 +208,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     {
         //add the instance count/sort pattern columns
         var instanceCountCol = addColumn(new ExprColumn(this, COL_INSTANCE_COUNT,
-                new SQLFragment(COL_INSTANCE_COUNT), JdbcType.INTEGER));
+                SQLFragment.unsafe(COL_INSTANCE_COUNT), JdbcType.INTEGER));
         instanceCountCol.setLabel(getSettings().getInstanceCountCaption());
         instanceCountCol.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
 
         var sortPatternCol = addColumn(new ExprColumn(this, COL_SORT_PATTERN,
-                new SQLFragment(COL_SORT_PATTERN), JdbcType.INTEGER));
+                SQLFragment.unsafe(COL_SORT_PATTERN), JdbcType.INTEGER));
         sortPatternCol.setHidden(true);
         sortPatternCol.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
     }
@@ -223,16 +224,14 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
         SQLFragment instanceCountExpr = SQLFragment.unsafe("(");
         SQLFragment sortPatternExpr = SQLFragment.unsafe("(");
-        String plus = "";
+        SQLFragment.SqlSeparator plus = SQLFragment.sep("", " + ");
 
-        String sep = "";
+        SQLFragment.SqlSeparator sep = SQLFragment.sep("", ", ");
         for(CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
-            sql.append(sep);
+            sql.append(sep.next());
             sql.appendDottedIdentifiers(PIVOT_ALIAS,rowDim.getSourceColumn().getAlias());
-            sep = ", ";
         }
-        sep = ",\n";
 
         for(CrosstabMember member : getColMembers())
         {
@@ -240,7 +239,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
                 continue;
 
             //append to the instance count and sort pattern expressions
-            instanceCountExpr.append(plus);
+            instanceCountExpr.append(plus.next());
             instanceCountExpr.unsafeAppend("MAX(");
             instanceCountExpr.appendIdentifier(PIVOT_ALIAS);
             instanceCountExpr.unsafeAppend(".");
@@ -254,12 +253,10 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             sortPatternExpr.appendIdentifier(getMemberSortPatternAlias(member));
             sortPatternExpr.unsafeAppend(")");
 
-            plus = " + ";
-
             for(CrosstabMeasure measure : getSettings().getMeasures())
             {
                 //wrap the pivoted aggregate value in a max since we'll be grouping by the row dimensions
-                sql.append(sep);
+                sql.unsafeAppend(",\n");
                 sql.unsafeAppend("MAX(");
                 sql.appendIdentifier(PIVOT_ALIAS);
                 sql.unsafeAppend(".");
@@ -277,7 +274,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             for(CrosstabMeasure measure : getSettings().getMeasures())
             {
                 //wrap the pivoted aggregate value in a max since we'll be grouping by the row dimensions
-                sql.append(sep);
+                sql.unsafeAppend(",\n");
                 sql.unsafeAppend("MAX(");
                 sql.appendIdentifier(PIVOT_ALIAS);
                 sql.unsafeAppend(".");
@@ -291,12 +288,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sortPatternExpr.unsafeAppend(")");
 
         //add the instance count and sort expressions to the select list
-        sql.append(sep);
+        sql.unsafeAppend(",\n");
         sql.append(instanceCountExpr);
         sql.unsafeAppend(" AS ");
         sql.appendIdentifier(COL_INSTANCE_COUNT);
 
-        sql.append(sep);
+        sql.unsafeAppend(",\n");
         sql.append(sortPatternExpr);
         sql.unsafeAppend(" AS ");
         sql.appendIdentifier(COL_SORT_PATTERN);
@@ -311,13 +308,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
         //finally group by the row dimensions
         sql.unsafeAppend("\nGROUP BY ");
-        sep = "";
+        sep = SQLFragment.sep("", ", ");
         for (CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
-            sql.append(sep)
+            sql.append(sep.next())
                 .appendIdentifier(PIVOT_ALIAS).unsafeAppend(".")
                 .appendIdentifier(rowDim.getSourceColumn().getAlias());
-            sep = ", ";
         }
 
     } //addCrosstabQuery()
@@ -327,13 +323,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.unsafeAppend("SELECT ");
 
         //row dimensions
-        String sep = "";
+        SQLFragment.SqlSeparator sep = SQLFragment.sep("", ", ");
         for(CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
-            sql.append(sep)
+            sql.append(sep.next())
                 .appendIdentifier(AGG_FILTERED_ALIAS).unsafeAppend(".")
                 .appendIdentifier(rowDim.getSourceColumn().getAlias());
-            sep = ", ";
         }
 
         //instance count and sort pattern
@@ -343,17 +338,17 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         {
             //instance count and sort pattern
             sql.unsafeAppend(",\n");
-            addMemberCase(sql, member, AGG_FILTERED_ALIAS, "1", "0", getMemberInstanceCountAlias(member));
+            addMemberCase(sql, member, AGG_FILTERED_ALIAS, SQLFragment.unsafe("1"), SQLFragment.unsafe("0"), getMemberInstanceCountAlias(member));
             sql.unsafeAppend(",\n");
             addMemberCase(sql, member, AGG_FILTERED_ALIAS,
-                    (getColMembers().size() - memberIndex - 1) > 31 ? "0" : String.valueOf(1 << (getColMembers().size() - memberIndex - 1)),
-                    "0", getMemberSortPatternAlias(member));
+                    (getColMembers().size() - memberIndex - 1) > 31 ? SQLFragment.unsafe("0") : new SQLFragment().appendValue(1 << (getColMembers().size() - memberIndex - 1)),
+                    SQLFragment.unsafe("0"), getMemberSortPatternAlias(member));
 
             for(CrosstabMeasure measure : getSettings().getMeasures())
             {
                 sql.unsafeAppend(",\n");
-                addMemberCase(sql, member, AGG_FILTERED_ALIAS, AGG_FILTERED_ALIAS + "." + AggregateColumnInfo.getColumnName(null, measure),
-                        "NULL", AggregateColumnInfo.getColumnName(member, measure));
+                addMemberCase(sql, member, AGG_FILTERED_ALIAS, new SQLFragment().appendDottedIdentifiers(AGG_FILTERED_ALIAS, AggregateColumnInfo.getColumnName(null, measure)),
+                        SQLFragment.unsafe("NULL"), AggregateColumnInfo.getColumnName(member, measure));
            } //for each measure
 
             ++memberIndex;
@@ -415,15 +410,21 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
                     + member.getValueSQLAlias(getSqlDialect()) + COL_SORT_PATTERN;
     }
 
+    /** @deprecated Use {@link #addMemberCase(SQLFragment, CrosstabMember, String, SQLFragment, SQLFragment, String)}. */
+    @Deprecated
     protected void addMemberCase(SQLFragment sql, CrosstabMember member, String queryAlias, String ifSql, String elseSql, String alias)
+    {
+        addMemberCase(sql, member, queryAlias, new SQLFragment(ifSql), new SQLFragment(elseSql), alias);
+    }
+
+    protected void addMemberCase(SQLFragment sql, CrosstabMember member, String queryAlias, SQLFragment ifSql, SQLFragment elseSql, String alias)
     {
         CrosstabDimension colDimension = getSettings().getColumnAxis().getDimensions().getFirst();
 
         sql.unsafeAppend("(CASE WHEN ");
         sql.appendDottedIdentifiers(queryAlias, colDimension.getSourceColumn().getAlias());
         sql.unsafeAppend("=");
-        String value = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
-        sql.append(value);
+        sql.append(getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue()));
         sql.unsafeAppend(" THEN ");
         sql.append(ifSql);
         sql.unsafeAppend(" ELSE ");
@@ -454,15 +455,14 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         //in a cross-tab showing peptides down the left and runs across the top,
         //a filter of NumFeatures > 1 should display all features where at least
         //one run had more than one feature for the given peptide
-        String sep = "";
+        SQLFragment.SqlSeparator sep = SQLFragment.sep("", ",");
         sql.unsafeAppend("\nINNER JOIN (SELECT ");
         for(CrosstabDimension dim : getSettings().getRowAxis().getDimensions())
         {
-            sql.append(sep);
+            sql.append(sep.next());
             sql.appendIdentifier(AGG_OR_ALIAS);
             sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
-            sep = ",";
         }
 
         //add an aggregation inner-select
@@ -483,10 +483,10 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.unsafeAppend(" ON (");
 
         //joined on the row dimensions
-        sep = "";
+        sep = SQLFragment.sep("", " AND ");
         for(CrosstabDimension dim : getSettings().getRowAxis().getDimensions())
         {
-            sql.append(sep);
+            sql.append(sep.next());
             sql.appendIdentifier(ROWMEMS_ALIAS);
             sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
@@ -494,7 +494,6 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             sql.appendIdentifier(joinAlias);
             sql.unsafeAppend(".");
             sql.appendIdentifier(dim.getSourceColumn().getAlias());
-            sep = " AND ";
         }
         
         //end the ON clause
@@ -536,16 +535,14 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      * @param memberValue The member value
      * @return A string representation of the member value suitable for appending into a SQL string as a literal value.
      */
-    private String getSQLValue(JdbcType jdbcType, Object memberValue)
+    private SQLFragment getSQLValue(JdbcType jdbcType, Object memberValue)
     {
-        //CONSIDER: there *must* be something in query or utils that
-        //already does this. Maybe use param substitution instead?
         if (jdbcType.isNumeric())
-            return memberValue.toString();
+            return new SQLFragment().appendValue(memberValue instanceof Number n ? n : new BigDecimal(memberValue.toString()));
         else if (jdbcType.isText())
-            return "'" + memberValue.toString().replace("'", "''") + "'";
+            return new SQLFragment().appendValue(memberValue.toString(), getSqlDialect());
         else if (jdbcType == JdbcType.BOOLEAN)
-            return "CAST('" + Boolean.valueOf(memberValue.toString()) +"' AS " + getSqlDialect().getBooleanDataType() + ")";
+            return new SQLFragment().appendValue(Boolean.valueOf(memberValue.toString()), getSqlDialect());
 
         //if you get this, add support for the type you want.
         throw new IllegalArgumentException("Crosstab table info supports numeric and character types for the column dimension.");

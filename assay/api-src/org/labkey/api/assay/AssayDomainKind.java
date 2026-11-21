@@ -144,12 +144,11 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
         ExpProtocol protocol = findProtocol(domain);
         if (protocol != null)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append("SELECT o.ObjectId FROM " + ExperimentService.get().getTinfoExperimentRun() + " r, exp.object o WHERE r.LSID = o.ObjectURI AND r.ProtocolLSID = ?");
-            sql.add(protocol.getLSID());
+            SQLFragment sql = SQLFragment.unsafe("SELECT o.ObjectId FROM ").append(ExperimentService.get().getTinfoExperimentRun())
+                    .unsafeAppend(" r, exp.object o WHERE r.LSID = o.ObjectURI AND r.ProtocolLSID = ?", protocol.getLSID());
             return sql;
         }
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     protected @Nullable ExpProtocol findProtocol(Domain domain)

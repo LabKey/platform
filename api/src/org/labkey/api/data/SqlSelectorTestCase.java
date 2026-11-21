@@ -37,18 +37,18 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
     @Test
     public void testSqlSelector() throws SQLException
     {
-        SqlSelector selector = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId, Body FROM comm.Announcements");
+        SqlSelector selector = new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements"));
         test(selector, TestClass.class);
 
         // Test zero rows case
-        try (Stream<Integer> stream = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId FROM comm.Announcements WHERE 1 = 0").uncachedStream(Integer.class))
+        try (Stream<Integer> stream = new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT RowId FROM comm.Announcements WHERE 1 = 0")).uncachedStream(Integer.class))
         {
             MutableInt count = new MutableInt(0);
             stream.forEach(id -> count.increment());
             assertEquals(0, count.intValue());
         }
 
-        Map<Integer, Integer> identityMap = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId FROM comm.Announcements").getValueMap();
+        Map<Integer, Integer> identityMap = new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT RowId FROM comm.Announcements")).getValueMap();
         assertTrue("Expected an identity map!", identityMap.entrySet().stream().allMatch(entry -> entry.getKey().equals(entry.getValue())));
 
         verifyExecutionPlans(selector);
@@ -205,26 +205,26 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         {
             // Default (no explicit setJdbcCaching() call) now auto-disables JDBC caching when it's safe: a separate,
             // uncached Connection outside a transaction.
-            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
+            try (Connection conn2 = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).getConnection())
             {
                 assertNotEquals(conn, conn2);
                 assertFalse(conn2.getAutoCommit());
             }
 
             // Explicitly requesting caching shares the connection
-            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(true).getConnection())
+            try (Connection conn2 = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).setJdbcCaching(true).getConnection())
             {
                 assertEquals(conn, conn2);
             }
 
             // Set and reset should still share
-            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false).setJdbcCaching(true).getConnection())
+            try (Connection conn2 = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).setJdbcCaching(false).setJdbcCaching(true).getConnection())
             {
                 assertEquals(conn, conn2);
             }
 
             // Here we expect a different Connection object
-            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false).getConnection())
+            try (Connection conn2 = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).setJdbcCaching(false).getConnection())
             {
                 assertNotEquals(conn, conn2);
                 assertFalse(conn2.getAutoCommit());
@@ -235,7 +235,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         // ResultSet within the call) borrows the thread's shared connection rather than a dedicated one, so nested
         // queries reuse it and connection-local state stays visible. The outermost borrower puts it into no-caching
         // mode and restores it on release.
-        Connection borrowed = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true);
+        Connection borrowed = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).getConnection(true);
         try
         {
             // A plain thread-connection acquisition returns the very same object (it was borrowed, not dedicated)
@@ -245,7 +245,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
             }
 
             // A nested self-contained read reuses the same connection rather than grabbing another one
-            try (Connection nested = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true))
+            try (Connection nested = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).getConnection(true))
             {
                 assertEquals(borrowed, nested);
             }
@@ -268,7 +268,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         // relying on reading its own uncommitted writes, so we fall back to the shared, transactional Connection.
         try (DbScope.Transaction tx = scope.ensureTransaction())
         {
-            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
+            try (Connection conn2 = new SqlSelector(scope, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).getConnection())
             {
                 assertEquals(scope.getConnection(), conn2);
             }
@@ -343,7 +343,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         }
 
         // Dedicated uncached connection
-        try (Connection conn = new SqlSelector(scope, STREAMING_SQL).getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(STREAMING_SQL))
+        try (Connection conn = new SqlSelector(scope, SQLFragment.unsafe(STREAMING_SQL)).getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(STREAMING_SQL))
         {
             assertTrue(rs.next());
             assertEquals("Uncached read should stream from an open cursor", 1, countOpenCursors(conn));
@@ -357,9 +357,9 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         // Shared thread connection borrowed by forEach(); the nested query reuses it, so it sees the outer cursor
         MutableInt visited = new MutableInt(0);
         MutableInt cursorsDuringIteration = new MutableInt(-1);
-        new SqlSelector(scope, STREAMING_SQL).forEach(Integer.class, g -> {
+        new SqlSelector(scope, SQLFragment.unsafe(STREAMING_SQL)).forEach(Integer.class, g -> {
             if (visited.getAndIncrement() == 0)
-                cursorsDuringIteration.setValue(new SqlSelector(scope, OPEN_CURSOR_SQL).getObject(Integer.class));
+                cursorsDuringIteration.setValue(new SqlSelector(scope, SQLFragment.unsafe(OPEN_CURSOR_SQL)).getObject(Integer.class));
         });
         assertEquals(5000, visited.intValue());
         assertEquals("forEach() should stream from an open cursor", 1, cursorsDuringIteration.intValue());
@@ -381,7 +381,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         DbScope scope = CoreSchema.getInstance().getScope();
         try (Connection conn = scope.getConnection())
         {
-            new SqlSelector(scope, conn, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(true);
+            new SqlSelector(scope, conn, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).setJdbcCaching(true);
         }
     }
 
@@ -392,7 +392,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         DbScope scope = CoreSchema.getInstance().getScope();
         try (Connection conn = scope.getConnection())
         {
-            new SqlSelector(scope, conn, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false);
+            new SqlSelector(scope, conn, SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements")).setJdbcCaching(false);
         }
     }
 }

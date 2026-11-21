@@ -59,7 +59,7 @@ public class ConcentrationUnitsTable extends EnumTableInfo<ConcentrationUnitsTab
         setPublicName(NAME);
         setTitleColumn("Value");
 
-        ExprColumn labelColumn = new ExprColumn(this, "Label", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Label"), JdbcType.VARCHAR);
+        ExprColumn labelColumn = new ExprColumn(this, "Label", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".Label"), JdbcType.VARCHAR);
         addColumn(labelColumn);
     }
 
@@ -68,12 +68,11 @@ public class ConcentrationUnitsTable extends EnumTableInfo<ConcentrationUnitsTab
     {
         checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment();
-        String separator = "";
+        SQLFragment.SqlSeparator separator = SQLFragment.sep("", " UNION ");
         EnumSet<Units> enumSet = EnumSet.allOf(_enum);
         for (Units e : enumSet)
         {
-            sql.append(separator);
-            separator = " UNION ";
+            sql.append(separator.next());
             sql.unsafeAppend("SELECT ? AS Value, ? AS RowId, ? AS Label, ? AS Ordinal");
             sql.add(e.getLabel());
             sql.add(_rowIdGetter.getRowId(e));

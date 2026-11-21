@@ -153,7 +153,7 @@ public class Sort
             SQLFragment sql = new SQLFragment();
             sql.appendIdentifier(alias);
             sql.unsafeAppend(" ");
-            sql.append(_dir.getSqlDir());
+            sql.unsafeAppend(_dir == SortDirection.ASC ? "ASC" : "DESC");
             return sql;
         }
 
@@ -504,7 +504,7 @@ public class Sort
                 if (null != dialect)
                     id = dialect.makeDatabaseIdentifier(fieldKey.getName());
                 else
-                    id = SqlDialect.makeDatabaseIdentifier(fieldKey.getName(), new SQLFragment(LabKeySql.quoteIdentifier(fieldKey.getName())));
+                    id = SqlDialect.makeDatabaseIdentifier(fieldKey.getName(), new SQLFragment().appendIdentifier(LabKeySql.quoteIdentifier(fieldKey.getName())));
                 appendColumnToSort(sf, dialect, id, distinctKeys, sql);
             }
             else

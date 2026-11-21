@@ -142,12 +142,11 @@ public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
     private List<V> getValidatedList(List<V> proposedValues)
     {
         SQLFragment sqlf = SQLFragment.unsafe("WITH _values_ AS (\nSELECT * FROM (VALUES \n");
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", "\n,");
         for (V v : proposedValues)
         {
-            sqlf.append(comma).unsafeAppend("(?)");
+            sqlf.append(comma.next()).unsafeAppend("(?)");
             sqlf.add(v);
-            comma = "\n,";
         }
         sqlf.unsafeAppend("\n) AS _x (value))\n");
 
@@ -228,7 +227,7 @@ public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
         {
             // get set<> of current container rowids
             var setExisting = new TreeSet<Integer>();
-            new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT rowid from core.containers").fillSet(setExisting);
+            new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT rowid from core.containers")).fillSet(setExisting);
             valueGenerator.set(setExisting.first());
 
             // the generate unique dataiterator and make sure there are no collisions

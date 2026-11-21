@@ -160,12 +160,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public List<ExpExperimentImpl> getExperiments()
     {
-        final String sql= " SELECT E.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
-                        + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList() + " RL ON (E.RowId = RL.ExperimentId) "
-                        + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " ER ON (ER.RowId = RL.ExperimentRunId) "
-                        + " WHERE ER.LSID = ? AND E.Hidden = ?";
+        final SQLFragment sql = SQLFragment.unsafe(" SELECT E.* FROM ").append(ExperimentServiceImpl.get().getTinfoExperiment()).unsafeAppend(" E ")
+                        .unsafeAppend(" INNER JOIN ").append(ExperimentServiceImpl.get().getTinfoRunList()).unsafeAppend(" RL ON (E.RowId = RL.ExperimentId) ")
+                        .unsafeAppend(" INNER JOIN ").append(ExperimentServiceImpl.get().getTinfoExperimentRun()).unsafeAppend(" ER ON (ER.RowId = RL.ExperimentRunId) ")
+                        .unsafeAppend(" WHERE ER.LSID = ? AND E.Hidden = ?", _object.getLSID(), Boolean.FALSE);
 
-        return ExpExperimentImpl.fromExperiments(new SqlSelector(getExpSchema(), sql, _object.getLSID(), Boolean.FALSE).getArray(Experiment.class));
+        return ExpExperimentImpl.fromExperiments(new SqlSelector(getExpSchema(), sql).getArray(Experiment.class));
     }
 
     @Override
@@ -651,7 +651,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     private void deleteRunProtocolApps()
     {
-        new SqlExecutor(getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = ?", getRowId());
+        new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("DELETE FROM exp.ProtocolApplication WHERE RunId = ?", getRowId()));
     }
 
     private synchronized void ensureFullyPopulated()

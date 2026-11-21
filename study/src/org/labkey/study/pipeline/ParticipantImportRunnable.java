@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableInfo;
@@ -121,27 +122,27 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
             SqlExecutor executor = new SqlExecutor(schema.getSchema());
 
-            executor.execute("INSERT INTO " + schema.getTableInfoParticipant() + " (ParticipantId)\n" +
-                    "SELECT " + subjectIdCol + " FROM " + tinfoTemp + " WHERE " + subjectIdCol + " NOT IN (SELECT ParticipantId FROM " + schema.getTableInfoParticipant() + ")");
+            executor.execute(SQLFragment.unsafe("INSERT INTO ").append(schema.getTableInfoParticipant()).unsafeAppend(" (ParticipantId)\n" +
+                    "SELECT ").appendIdentifier(subjectIdCol).unsafeAppend(" FROM ").append(tinfoTemp).unsafeAppend(" WHERE ").appendIdentifier(subjectIdCol).unsafeAppend(" NOT IN (SELECT ParticipantId FROM ").append(schema.getTableInfoParticipant()).unsafeAppend(")"));
 
             if (columnMap.containsKey("EnrollmentSiteId"))
             {
-                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=" + site.getSelectName() + ".RowId\n" +
-                        "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".EnrollmentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectIdentifier() + "\n" +
-                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp + "." + subjectIdCol);
+                executor.execute(SQLFragment.unsafe("UPDATE ").append(schema.getTableInfoParticipant()).unsafeAppend(" SET EnrollmentSiteId=").append(site).unsafeAppend(".RowId\n" +
+                        "FROM ").append(tinfoTemp).unsafeAppend(" JOIN ").append(site).unsafeAppend(" ON ").append(tinfoTemp).unsafeAppend(".EnrollmentSiteId=").append(site).unsafeAppend(".").appendIdentifier(siteLookup.getSelectIdentifier()).unsafeAppend("\n" +
+                        "WHERE ").append(schema.getTableInfoParticipant()).unsafeAppend(".ParticipantId = ").append(tinfoTemp).unsafeAppend(".").appendIdentifier(subjectIdCol));
             }
             if (columnMap.containsKey("CurrentSiteId"))
             {
-                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=" + site.getSelectName() + ".RowId\n" +
-                        "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".CurrentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectIdentifier() + "\n" +
-                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp + "." + subjectIdCol);
+                executor.execute(SQLFragment.unsafe("UPDATE ").append(schema.getTableInfoParticipant()).unsafeAppend(" SET CurrentSiteId=").append(site).unsafeAppend(".RowId\n" +
+                        "FROM ").append(tinfoTemp).unsafeAppend(" JOIN ").append(site).unsafeAppend(" ON ").append(tinfoTemp).unsafeAppend(".CurrentSiteId=").append(site).unsafeAppend(".").appendIdentifier(siteLookup.getSelectIdentifier()).unsafeAppend("\n" +
+                        "WHERE ").append(schema.getTableInfoParticipant()).unsafeAppend(".ParticipantId = ").append(tinfoTemp).unsafeAppend(".").appendIdentifier(subjectIdCol));
             }
 
             if (columnMap.containsKey("StartDate"))
             {
-                executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.toString() + ".StartDate\n" +
-                        "FROM " + tinfoTemp + " \n" +
-                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp + "." + subjectIdCol);
+                executor.execute(SQLFragment.unsafe("UPDATE ").append(schema.getTableInfoParticipant()).unsafeAppend(" SET StartDate=").append(tinfoTemp).unsafeAppend(".StartDate\n" +
+                        "FROM ").append(tinfoTemp).unsafeAppend(" \n" +
+                        "WHERE ").append(schema.getTableInfoParticipant()).unsafeAppend(".ParticipantId = ").append(tinfoTemp).unsafeAppend(".").appendIdentifier(subjectIdCol));
             }
             tinfoTemp.delete();
         }

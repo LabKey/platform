@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.security.User;
 
@@ -83,7 +84,7 @@ public class QueryCounter implements DatabaseQueryListener, AutoCloseable
 
     public static class TestCase extends Assert
     {
-        private static SqlSelector selector(String sql)
+        private static SqlSelector selector(SQLFragment sql)
         {
             return new SqlSelector(CoreSchema.getInstance().getSchema(), sql);
         }
@@ -91,12 +92,12 @@ public class QueryCounter implements DatabaseQueryListener, AutoCloseable
         @Test
         public void testCountsOwnThreadOnly() throws InterruptedException
         {
-            SqlSelector tagged = selector("SELECT 1 AS QueryCounterTest");
+            SqlSelector tagged = selector(SQLFragment.unsafe("SELECT 1 AS QueryCounterTest"));
 
             try (QueryCounter all = new QueryCounter(); QueryCounter filtered = new QueryCounter("querycountertest"))
             {
                 tagged.getObject(Integer.class);
-                selector("SELECT 2").getObject(Integer.class);
+                selector(SQLFragment.unsafe("SELECT 2")).getObject(Integer.class);
 
                 Thread other = new Thread(() -> tagged.getObject(Integer.class));
                 other.start();
@@ -112,7 +113,7 @@ public class QueryCounter implements DatabaseQueryListener, AutoCloseable
         {
             QueryCounter counter = new QueryCounter("QueryCounterTest");
             counter.close();
-            selector("SELECT 1 AS QueryCounterTest").getObject(Integer.class);
+            selector(SQLFragment.unsafe("SELECT 1 AS QueryCounterTest")).getObject(Integer.class);
             assertEquals(0, counter.getCount());
         }
     }

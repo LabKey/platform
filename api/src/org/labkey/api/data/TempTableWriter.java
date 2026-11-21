@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * User: Matthew
@@ -92,13 +93,12 @@ public class TempTableWriter
         //
         SQLFragment sql = new SQLFragment();
         sql.unsafeAppend("CREATE TABLE ").append(tempTableName).unsafeAppend(" (");
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
 
         for (int i = 0; i < activeColumns.size(); i++)
         {
             ColumnInfo col = activeColumns.get(i);
-            sql.append(comma);
-            comma = ", ";
+            sql.append(comma.next());
 
             if (col.getSqlTypeName().endsWith("VARCHAR")) // varchar or nvarchar
             {
@@ -115,11 +115,11 @@ public class TempTableWriter
                 if (length == -1)
                     length = 100;
 
-                sql.appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" ").append(col.getSqlTypeName()).unsafeAppend("(").appendValue(length).unsafeAppend(")");
+                sql.appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" ").append(Objects.requireNonNull(tinfoTempTable.getSqlDialect().getSqlTypeNameAsSql(col.getJdbcType()))).unsafeAppend("(").appendValue(length).unsafeAppend(")");
             }
             else
             {
-                sql.appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" ").append(col.getSqlTypeName());
+                sql.appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" ").append(Objects.requireNonNull(tinfoTempTable.getSqlDialect().getSqlTypeNameAsSql(col.getJdbcType())));
             }
         }
 
@@ -139,13 +139,12 @@ public class TempTableWriter
         SQLFragment sqlValues = new SQLFragment();
         sqlInsert.unsafeAppend("INSERT INTO ").append(tempTableName).unsafeAppend(" (");
         sqlValues.unsafeAppend(" VALUES (");
-        comma = "";
+        SQLFragment.SqlSeparator insertComma = SQLFragment.sep("", ",");
 
         for (ColumnInfo col : activeColumns)
         {
-            sqlInsert.append(comma).appendIdentifier(col.getSelectIdentifier());
-            sqlValues.append(comma).unsafeAppend("?");
-            comma = ",";
+            sqlInsert.append(insertComma.next()).appendIdentifier(col.getSelectIdentifier());
+            sqlValues.append(insertComma).unsafeAppend("?");
         }
 
         sqlInsert.unsafeAppend(") ");
@@ -158,7 +157,7 @@ public class TempTableWriter
             paramList.add(m.values());
 
         assert sqlInsert.getParams().isEmpty();
-        Table.batchExecute(schema, sqlInsert.getSQL(), paramList);
+        Table.batchExecute(schema, sqlInsert, paramList);
 
         // Update statistics on the new table -- without this, query planner might pick a terrible plan
         schema.getSqlDialect().updateStatistics(tinfoTempTable);

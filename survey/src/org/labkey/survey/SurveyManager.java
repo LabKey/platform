@@ -344,9 +344,9 @@ public class SurveyManager
     public SurveyDesign[] getSurveyDesigns(Container container, ContainerFilter filter)
     {
         DbSchema schema = SurveySchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(SurveySchema.getInstance().getSurveyDesignsTable(), "sd");
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(SurveySchema.getInstance().getSurveyDesignsTable(), "sd");
         sql.unsafeAppend(" WHERE ");
-        sql.append(filter.getSQLFragment(schema, new SQLFragment("sd.container")));
+        sql.append(filter.getSQLFragment(schema, SQLFragment.unsafe("sd.container")));
         return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
     }
 
@@ -354,7 +354,7 @@ public class SurveyManager
     {
         TableInfo table = SurveySchema.getInstance().getSurveyDesignsTable();
         DbSchema schema = SurveySchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "sd");
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(table, "sd");
         sql.unsafeAppend(" ").append(filter.getSQLFragment(table.getSqlDialect()));
 
         return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
@@ -398,7 +398,7 @@ public class SurveyManager
 
         if (surveys.length > 0)
         {
-            SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
+            SQLFragment deleteSurveysSql = SQLFragment.unsafe("DELETE FROM ");
             deleteSurveysSql.append(s.getSurveysTable()).unsafeAppend(" WHERE Container = ?").add(c);
             executor.execute(deleteSurveysSql);
 
@@ -431,7 +431,7 @@ public class SurveyManager
                 for (Survey survey : getSurveys(c, user, surveyDesignId))
                     deleteSurvey(c, user, survey.getRowId());
             }
-            SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
+            SQLFragment deleteSurveyDesignsSql = SQLFragment.unsafe("DELETE FROM ");
             deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).unsafeAppend(" WHERE RowId = ? AND Container = ?").add(surveyDesignId).add(c);
             executor.execute(deleteSurveyDesignsSql);
 

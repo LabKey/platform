@@ -621,10 +621,10 @@ public abstract class VisitManager
         }
 
         // For participants without a demographic StartDate, just set to study start date.
-        String sqlUpdateStartDates = "UPDATE " + tableParticipant + " SET StartDate = ? WHERE Container = ? AND StartDate IS NULL";
+        SQLFragment sqlUpdateStartDates = SQLFragment.unsafe("UPDATE ").append(tableParticipant).unsafeAppend(" SET StartDate = ? WHERE Container = ? AND StartDate IS NULL");
         Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), JdbcType.TIMESTAMP);
 
-        new SqlExecutor(schema).execute(sqlUpdateStartDates, startDateParam, getStudy().getContainer());
+        new SqlExecutor(schema).execute(sqlUpdateStartDates.addAll(startDateParam, getStudy().getContainer()));
         StudyManager.getInstance().clearParticipantCache(getStudy().getContainer());
     }
 

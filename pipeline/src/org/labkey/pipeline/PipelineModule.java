@@ -231,7 +231,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
             metrics.put("jobCounts", () -> {
                 Map<String, Long> jobCounts = new HashMap<>();
-                SQLFragment jobSQL = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
+                SQLFragment jobSQL = SQLFragment.unsafe("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
                 jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
                 jobSQL.unsafeAppend(" GROUP BY Provider");
 
@@ -242,7 +242,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
             metrics.put("triggerCounts", () -> {
                 Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
-                SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Enabled, ");
+                SQLFragment triggerSQL = SQLFragment.unsafe("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Enabled, ");
                 triggerSQL.unsafeAppend("SUM(CASE WHEN Enabled != ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Disabled, ");
                 triggerSQL.unsafeAppend("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
                 triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");

@@ -73,7 +73,7 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         // Join the provisioned table to the issues table to get the IssueIds associated with the rows that were copied
         SQLClause joinOnEntityId = new SQLClause(
-            new SQLFragment("EntityId IN (SELECT EntityId FROM ")
+            SQLFragment.unsafe("EntityId IN (SELECT EntityId FROM ")
                 .append(targetTable)
                 .unsafeAppend(")")
         );

@@ -66,21 +66,21 @@ public class ListItemType implements AttachmentParentType
             map.forEach((k, v) -> {
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                    selectStatements.add(new SQLFragment("\n    SELECT EntityId, ")
+                    selectStatements.add(SQLFragment.unsafe("\n    SELECT EntityId, ")
                         .append(dialect.concatenate(
-                            new SQLFragment("?", domain.getName()),
-                            new SQLFragment("':'"),
-                            new SQLFragment("CAST(")
+                            SQLFragment.unsafe("?", domain.getName()),
+                            SQLFragment.unsafe("':'"),
+                            SQLFragment.unsafe("CAST(")
                                 .append(dialect.makeDatabaseIdentifier(domain.getPropertyByName(v.getKeyName()).getPropertyDescriptor().getStorageColumnName().toLowerCase()).getSql()))
                                 .unsafeAppend(" AS VARCHAR)")
                         )
-                        .unsafeAppend(" AS Description FROM list.").append(domain.getStorageTableName())
+                        .unsafeAppend(" AS Description FROM list.").appendIdentifier(domain.getStorageTableName())
                     );
             });
         });
 
         return selectStatements.isEmpty() ?
             NO_ROWS : // No lists with attachment columns
-            SQLFragment.join(selectStatements, new SQLFragment("\n    UNION"));
+            SQLFragment.join(selectStatements, SQLFragment.unsafe("\n    UNION"));
     }
 }

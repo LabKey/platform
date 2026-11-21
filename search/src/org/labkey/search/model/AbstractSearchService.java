@@ -1679,7 +1679,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         // TODO: Maintenance task to remove documents for participants that have been deleted
 
-        SQLFragment delete = new SQLFragment(
+        SQLFragment delete = SQLFragment.unsafe(
         """
                 DELETE FROM search.CrawlResources
                 WHERE parent IN (

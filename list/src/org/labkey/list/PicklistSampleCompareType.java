@@ -111,8 +111,8 @@ public class PicklistSampleCompareType extends CompareType
 
             return new SQLFragment()
                     .appendIdentifier(SimpleFilter.getAliasForColumnFilter(null != dialect ? dialect : _listTable.getSqlDialect(), colInfo, _fieldKey))
-                    .append(" IN (SELECT ").appendIdentifier(_sampleIdColumn.getAlias())
-                    .append(" FROM (").append(_picklistSql).append(") picklist)");
+                    .unsafeAppend(" IN (SELECT ").appendIdentifier(_sampleIdColumn.getAlias())
+                    .unsafeAppend(" FROM (").append(_picklistSql).unsafeAppend(") picklist)");
         }
 
         /** LabKey SQL can't embed the provisioned subquery, so fall back to the picklist's current sample ids. */

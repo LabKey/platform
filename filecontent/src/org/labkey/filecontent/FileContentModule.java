@@ -217,8 +217,8 @@ public class FileContentModule extends DefaultModule
         UsageMetricsService.get().registerUsageMetrics(getName(), metrics -> {
             // During system maintenance, FileRootMaintenanceTask populates FileRootSize and FileRootLastCrawled for every container (subject to a timeout)
             TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
-            String select = "SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl, COUNT(*) AS AllFileRoots, COUNT(FileRootLastCrawled) AS FileRootsCrawled FROM ";
-            Supplier<Map<String, Object>> map = Suppliers.memoize(() -> new SqlSelector(containers.getSchema(), select + containers.getSelectName())
+            SQLFragment select = SQLFragment.unsafe("SELECT SUM(FileRootSize) AS TotalSize, MIN(FileRootLastCrawled) EarliestCrawl, COUNT(*) AS AllFileRoots, COUNT(FileRootLastCrawled) AS FileRootsCrawled FROM ").append(containers);
+            Supplier<Map<String, Object>> map = Suppliers.memoize(() -> new SqlSelector(containers.getSchema(), select)
                 .getMap());
             metrics.put("fileRootsTotalSize", () -> map.get().get("TotalSize"), "Sum of all containers' file root sizes in bytes, as of each one's last system maintenance crawl; null if none crawled");
             metrics.put("fileRootsEarliestCrawlTime", () -> map.get().get("EarliestCrawl"), "Oldest last-crawled time across containers' file roots, showing how stale fileRootsTotalSize may be; null if none crawled");
@@ -236,7 +236,7 @@ public class FileContentModule extends DefaultModule
 
             TableInfo mappedDirectories = CoreSchema.getInstance().getMappedDirectories();
             Supplier<Map<String, Object>> fileSets = Suppliers.memoize(() -> new SqlSelector(mappedDirectories.getSchema(),
-                    new SQLFragment("SELECT COUNT(*) AS NamedFileSets, COUNT(DISTINCT Container) AS NamedFileSetContainers FROM ").append(mappedDirectories, "md"))
+                    SQLFragment.unsafe("SELECT COUNT(*) AS NamedFileSets, COUNT(DISTINCT Container) AS NamedFileSetContainers FROM ").append(mappedDirectories, "md"))
                 .getMap());
             metrics.put("namedFileSets", () -> fileSets.get().get("NamedFileSets"), "Named file sets across all containers");
             metrics.put("namedFileSetContainers", () -> fileSets.get().get("NamedFileSetContainers"), "Distinct containers that define at least one named file set");

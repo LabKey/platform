@@ -38,11 +38,10 @@ public class ProjectAndSiteGroupsCache
     private static final BlockingCache<Container, Collection<Integer>> CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxProjects(), CacheManager.DAY, "Project Groups", null);
 
     private static final CacheLoader<Container, Collection<Integer>> GROUP_LIST_LOADER = (c, argument) -> {
-        String containerClause = c.isRoot() ? "IS NULL" : "= ?";
-
-        SQLFragment sql = new SQLFragment(
-            "SELECT UserId FROM " + CORE.getTableInfoPrincipals() + "\n" +
-                "WHERE Type = '" + PrincipalType.GROUP.getTypeChar() + "' AND Container " + containerClause + "\n" +
+        SQLFragment sql = SQLFragment.unsafe(
+            "SELECT UserId FROM ").append(CORE.getTableInfoPrincipals()).unsafeAppend("\n" +
+                "WHERE Type = ").appendValue(String.valueOf(PrincipalType.GROUP.getTypeChar()), CORE.getSqlDialect())
+                .unsafeAppend(" AND Container ").unsafeAppend(c.isRoot() ? "IS NULL" : "= ?").unsafeAppend("\n" +
                 "ORDER BY LOWER(Name)");  // Force case-insensitive order for consistency
 
         if (!c.isRoot())

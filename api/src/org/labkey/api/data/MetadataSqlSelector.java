@@ -30,6 +30,8 @@ public class MetadataSqlSelector extends SqlSelector
         super(scope, sql, QueryLogging.metadataQueryLogging());
     }
 
+    /** @deprecated Use {@link #MetadataSqlSelector(DbScope, SQLFragment)}. */
+    @Deprecated
     public MetadataSqlSelector(DbScope scope, CharSequence sql)
     {
         super(scope, new SQLFragment(sql), QueryLogging.metadataQueryLogging());

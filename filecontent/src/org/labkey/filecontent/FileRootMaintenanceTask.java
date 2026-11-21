@@ -75,11 +75,8 @@ public class FileRootMaintenanceTask implements MaintenanceTask
             MutableBoolean finished = new MutableBoolean(true);
             TableInfo containers = CoreSchema.getInstance().getTableInfoContainers();
 
-            String updateLastCrawledSql = "UPDATE " + containers.getSelectName() + " SET FileRootLastCrawled = ? WHERE EntityId = ?";
-            String updateLastCrawledAndSizeSql = "UPDATE " + containers.getSelectName() + " SET FileRootLastCrawled = ?, FileRootSize = ? WHERE EntityId = ?";
             SqlExecutor executor = new SqlExecutor(containers.getSchema());
-            String orderBy = " ORDER BY FileRootLastCrawled NULLS FIRST";
-            SQLFragment selectSql = new SQLFragment("SELECT RowId, EntityId, FileRootSize FROM " + containers.getSelectName() + orderBy);
+            SQLFragment selectSql = SQLFragment.unsafe("SELECT RowId, EntityId, FileRootSize FROM ").append(containers).unsafeAppend(" ORDER BY FileRootLastCrawled NULLS FIRST");
 
             new SqlSelector(containers.getSchema(), selectSql)
                 .forEach(FileRootRecord.class, record -> {
@@ -95,10 +92,12 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                             // Update FileRootSize only if it changed. Always update LastCrawled, even for invalid file
                             // roots and non-changing sizes.
                             boolean sizeChanged = !Objects.equals(record.fileRootSize(), size);
-                            SQLFragment updateSql = sizeChanged ?
-                                    // Use a TypedValue to avoid a type conversion problem on Postgres when the value is null
-                                    new SQLFragment(updateLastCrawledAndSizeSql, new Date(current), new Parameter.TypedValue(size, JdbcType.BIGINT), record.entityId()) :
-                                    new SQLFragment(updateLastCrawledSql, new Date(current), record.entityId());
+                            SQLFragment updateSql = SQLFragment.unsafe("UPDATE ").append(containers);
+                            if (sizeChanged)
+                                // Use a TypedValue to avoid a type conversion problem on Postgres when the value is null
+                                updateSql.unsafeAppend(" SET FileRootLastCrawled = ?, FileRootSize = ? WHERE EntityId = ?", new Date(current), new Parameter.TypedValue(size, JdbcType.BIGINT), record.entityId());
+                            else
+                                updateSql.unsafeAppend(" SET FileRootLastCrawled = ? WHERE EntityId = ?", new Date(current), record.entityId());
 
                             // core.Containers has no PK, so Table.update() is not an option
                             executor.execute(updateSql);

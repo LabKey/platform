@@ -206,10 +206,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         getMutableColumn("RowId").setShownInUpdateView(false);
 
-        SQLFragment runIdSQL = new SQLFragment();
-        runIdSQL.append(ExprColumn.STR_TABLE_ALIAS);
-        runIdSQL.unsafeAppend(".");
-        runIdSQL.append(RUN_ID_ALIAS);
+        SQLFragment runIdSQL = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + "." + RUN_ID_ALIAS);
         ExprColumn runColumn = new ExprColumn(this, RUN_ID_ALIAS, runIdSQL, JdbcType.INTEGER);
         // TODO ContainerFilter make sure this is still correct
         // Can't rely on normal container filter propagation since assay-backed datasets will have different
@@ -280,7 +277,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         if (folderCol == null)
         {
             // Insert a folder/container column so that we can build up the right URL for links to this row of data 
-            SQLFragment folderSQL = new SQLFragment("(SELECT Container FROM exp.Data d WHERE d.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)");
+            SQLFragment folderSQL = SQLFragment.unsafe("(SELECT Container FROM exp.Data d WHERE d.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId)");
             folderCol = new ExprColumn(this, "Folder", folderSQL, JdbcType.VARCHAR);
             // This can usually be treated as a normal VARCHAR, but remember that it's actually a custom type
             // for places like multi valued columns
@@ -309,14 +306,13 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         if (resultRowLsidExpression != null)
         {
             // Keep in sync with SimpleAssayDataImportHelper.afterObjectImport()
-            sql = new SQLFragment(dialect.concatenate(
-                    "'" + resultRowLsidExpression +
-                            ".Protocol-" + schema.getProtocol().getRowId() + ":'",
-                    "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowId AS VARCHAR)"));
+            sql = dialect.concatenate(
+                    new SQLFragment().appendValue(resultRowLsidExpression + ".Protocol-" + schema.getProtocol().getRowId() + ":", dialect),
+                    SQLFragment.unsafe("CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowId AS VARCHAR)"));
         }
         else
         {
-            sql = new SQLFragment("CAST(NULL AS VARCHAR)");
+            sql = SQLFragment.unsafe("CAST(NULL AS VARCHAR)");
         }
 
         var lsidCol = new ExprColumn(table, "LSID", sql, JdbcType.VARCHAR);
@@ -423,7 +419,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         // There isn't a container column directly on this table so do a special filter
         FieldKey containerColumn = FieldKey.fromParts("Container");
         clearConditions(containerColumn);
-        addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("Container")), containerColumn);
+        addCondition(filter.getSQLFragment(getSchema(), SQLFragment.unsafe("Container")), containerColumn);
     }
 
     @NotNull
@@ -462,7 +458,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             {
                 if (isCreatedModifiedCol(propertyColumn.getName()))
                 {
-                    SQLFragment coalescedCol = new SQLFragment("COALESCE(");
+                    SQLFragment coalescedCol = SQLFragment.unsafe("COALESCE(");
                     coalescedCol.append(propertyColumn.getValueSql("innerResults"));
                     coalescedCol.unsafeAppend(", runData.");
 
@@ -474,9 +470,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     else if (SpecialColumn.ModifiedBy.name().equalsIgnoreCase(runSelectCol))
                         runSelectCol = SpecialColumn.CreatedBy.name();
 
-                    coalescedCol.append(runSelectCol);
+                    coalescedCol.appendIdentifier(runSelectCol);
                     coalescedCol.unsafeAppend(") AS ");
-                    coalescedCol.append(propertyColumn.getName());
+                    coalescedCol.appendIdentifier(propertyColumn.getName());
                     result.append(coalescedCol);
                 }
                 else
@@ -488,7 +484,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
         else
             result.unsafeAppend(" innerResults.*,");
-        result.unsafeAppend(" innerData.RunId AS ").append(RUN_ID_ALIAS).unsafeAppend(", innerData.Container AS Container" );
+        result.unsafeAppend(" innerData.RunId AS " + RUN_ID_ALIAS + ", innerData.Container AS Container");
         result.unsafeAppend(" FROM\n");
         result.append(getFromTable().getFromSQL("innerResults"));
         result.unsafeAppend("\nINNER JOIN ");

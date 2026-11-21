@@ -64,17 +64,20 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     // Retrieve from this container all messages with a body or attachments that were marked as "approved" during the given
     // timespan. Messages are grouped by thread and threads are sorted by earliest post within each thread.
-    private static final String RECENT_ANN_SQL = "SELECT annModel.* FROM\n" +
+    private static SQLFragment getRecentAnnouncementsSql(Container c, Date min, Date max)
+    {
+        return SQLFragment.unsafe("SELECT annModel.* FROM\n" +
             "\t(\n" +
             "\tSELECT Thread, MIN(Approved) AS Earliest FROM\n" +
-            "\t\t(SELECT Approved, CASE WHEN Parent IS NULL THEN EntityId ELSE Parent END AS Thread FROM " + _comm.getTableInfoAnnouncements() + " annModel LEFT OUTER JOIN\n" +
-            "\t\t\t(SELECT DISTINCT Parent AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
+            "\t\t(SELECT Approved, CASE WHEN Parent IS NULL THEN EntityId ELSE Parent END AS Thread FROM ").append(_comm.getTableInfoAnnouncements()).unsafeAppend(" annModel LEFT OUTER JOIN\n" +
+            "\t\t\t(SELECT DISTINCT Parent AS DocParent FROM ").append(_core.getTableInfoDocuments()).unsafeAppend(") doc ON annModel.EntityId = DocParent\n" +
             "\t\t\tWHERE Container = ? AND Approved >= ? AND Approved < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)) x\n" +
             "\tGROUP BY Thread\n" +
-            "\t) X LEFT OUTER JOIN " + _comm.getTableInfoAnnouncements() + " annModel ON Parent = Thread OR EntityId = Thread LEFT OUTER JOIN\n" +
-            "\t\t(SELECT DISTINCT Parent AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
+            "\t) X LEFT OUTER JOIN ", c, min, max).append(_comm.getTableInfoAnnouncements()).unsafeAppend(" annModel ON Parent = Thread OR EntityId = Thread LEFT OUTER JOIN\n" +
+            "\t\t(SELECT DISTINCT Parent AS DocParent FROM ").append(_core.getTableInfoDocuments()).unsafeAppend(") doc ON annModel.EntityId = DocParent\n" +
             "WHERE Container = ? AND Approved >= ? AND Approved < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)\n" +
-            "ORDER BY Earliest, Thread, Approved";
+            "ORDER BY Earliest, Thread, Approved", c, min, max);
+    }
 
     @Override
     public void sendDigestForAllContainers(Date start, Date end) throws Exception
@@ -129,7 +132,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     private static Collection<AnnouncementModel> getRecentAnnouncementsInContainer(Container c, Date min, Date max)
     {
-        try (Stream<AnnouncementModel> announcementStream = new SqlSelector(_comm.getSchema(), RECENT_ANN_SQL, c, min, max, c, min, max).uncachedStream(AnnouncementModel.class))
+        try (Stream<AnnouncementModel> announcementStream = new SqlSelector(_comm.getSchema(), getRecentAnnouncementsSql(c, min, max)).uncachedStream(AnnouncementModel.class))
         {
             return announcementStream
                 .filter(SHOULD_SEND_ANNOUNCEMENT_NOTIFICATION)

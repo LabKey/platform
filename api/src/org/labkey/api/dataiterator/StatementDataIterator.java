@@ -662,15 +662,15 @@ public class StatementDataIterator extends AbstractDataIterator
             try
             {
                 conn = scope.getConnection();
-                new SqlExecutor(tempdb).execute("CREATE TABLE " + tableName + " (X INT, Y INT)");
-                new SqlExecutor(tempdb).execute("INSERT INTO " + tableName + " (X,Y) VALUES (0,0)");
+                new SqlExecutor(tempdb).execute(SQLFragment.unsafe("CREATE TABLE ").appendIdentifier(tableName).unsafeAppend(" (X INT, Y INT)"));
+                new SqlExecutor(tempdb).execute(SQLFragment.unsafe("INSERT INTO ").appendIdentifier(tableName).unsafeAppend(" (X,Y) VALUES (0,0)"));
 
 
-                SQLFragment updateX = new SQLFragment("UPDATE " + tableName + " SET X=X+?");
+                SQLFragment updateX = SQLFragment.unsafe("UPDATE ").appendIdentifier(tableName).unsafeAppend(" SET X=X+?");
                 updateX.add(new Parameter("I", JdbcType.INTEGER));
                 ParameterMapStatement pm1 = new ParameterMapStatement(tempdb.getScope(), conn, updateX, null);
 
-                SQLFragment updateY = new SQLFragment("UPDATE " + tableName + " SET Y=Y+?");
+                SQLFragment updateY = SQLFragment.unsafe("UPDATE ").appendIdentifier(tableName).unsafeAppend(" SET Y=Y+?");
                 updateY.add(new Parameter("I", JdbcType.INTEGER));
                 ParameterMapStatement pm2 = new ParameterMapStatement(tempdb.getScope(), conn, updateY, null);
 
@@ -689,7 +689,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
                 new Pump(sdi,context).run();
 
-                Map<String,Object> result = new SqlSelector(tempdb,"SELECT X, Y FROM " + tableName).getMap();
+                Map<String,Object> result = new SqlSelector(tempdb, SQLFragment.unsafe("SELECT X, Y FROM ").appendIdentifier(tableName)).getMap();
                 assertNotNull(result.get("X"));
                 assertNotNull(result.get("Y"));
                 int x = ((Number)result.get("X")).intValue();
@@ -706,7 +706,7 @@ public class StatementDataIterator extends AbstractDataIterator
             {
                 if (null != conn)
                     scope.releaseConnection(conn);
-                new SqlExecutor(tempdb).execute("DROP TABLE " + tableName);
+                new SqlExecutor(tempdb).execute(SQLFragment.unsafe("DROP TABLE ").appendIdentifier(tableName));
             }
         }
 

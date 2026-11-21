@@ -437,7 +437,7 @@ public class CoreQuerySchema extends UserSchema
         {
             CoreSchema coreSchema = CoreSchema.getInstance();
 
-            SQLFragment groupIdSql = new SQLFragment("GroupId IN (SELECT UserId FROM " + coreSchema.getTableInfoPrincipals() + " WHERE ");
+            SQLFragment groupIdSql = SQLFragment.unsafe("GroupId IN (SELECT UserId FROM ").append(coreSchema.getTableInfoPrincipals()).unsafeAppend(" WHERE ");
             groupIdSql.append(getRootPlusProjectCondition());
             groupIdSql.unsafeAppend(")");
 

@@ -46,6 +46,6 @@ abstract class PostgreSql93Dialect extends PostgreSql92Dialect
     @Override
     public void appendLateralJoin(SQLFragment sql, LookupColumn.JoinType joinType, SQLFragment aliasedSubquery)
     {
-        sql.append(joinType.getSQL()).unsafeAppend(" JOIN LATERAL ").append(aliasedSubquery).unsafeAppend(" ON TRUE");
+        sql.append(joinType.getSqlFragment()).unsafeAppend(" JOIN LATERAL ").append(aliasedSubquery).unsafeAppend(" ON TRUE");
     }
 }

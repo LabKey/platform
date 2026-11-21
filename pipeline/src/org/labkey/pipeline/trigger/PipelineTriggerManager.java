@@ -93,7 +93,7 @@ public class PipelineTriggerManager
      */
     public void purgeTriggeredEntries(PipelineTriggerConfig config)
     {
-        SQLFragment sql = new SQLFragment("DELETE FROM ").append(PipelineSchema.getInstance().getTableInfoTriggeredFiles(), "")
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(PipelineSchema.getInstance().getTableInfoTriggeredFiles(), "")
                 .unsafeAppend(" WHERE TriggerId = ?").add(config.getRowId());
 
         new SqlExecutor(PipelineSchema.getInstance().getSchema().getScope()).execute(sql);

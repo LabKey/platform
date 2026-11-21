@@ -184,11 +184,13 @@ public abstract class ContainerFilter
         {
             // NOTE: we really should know the tableAlias here, but we don't, so caller has to guarantee that the columninfo is unambiguous
             SQLFragment value = columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS);
-            sql = new SQLFragment(value.getSQL().replace(ExprColumn.STR_TABLE_ALIAS+".", ""), value.getParams());
+            sql = new SQLFragment();
+            sql.setSqlUnsafe(value.getSQL().replace(ExprColumn.STR_TABLE_ALIAS+".", ""));
+            sql.addAll(value.getParams());
         }
         else
         {
-            sql = new SQLFragment(containerColumnFieldKey.toString());
+            sql = new SQLFragment().append(containerColumnFieldKey);
         }
         return getSQLFragment(schema, sql);
     }
@@ -273,11 +275,11 @@ public abstract class ContainerFilter
         }
 
         SQLFragment list = new SQLFragment();
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
         boolean verbose = AppProps.getInstance().isDevMode() && ids.size() <= 3;
         for (GUID containerId : ids)
         {
-            list.append(comma);
+            list.append(comma.next());
             list.unsafeAppend("(");
             if (verbose)
             {
@@ -292,7 +294,6 @@ public abstract class ContainerFilter
                 list.appendValue(containerId);
             }
             list.unsafeAppend(")");
-            comma = ", ";
         }
 
         SQLFragment select = new SQLFragment();
@@ -330,7 +331,7 @@ public abstract class ContainerFilter
             SQLFragment result = new SQLFragment(containerColumnSQL);
             String shortName = null != this.getType() ? this.getType().name() : this.getClass().getSimpleName();
             String cteKey = this.getClass().getName()+":"+ container.getId();
-            String token = result.addCommonTableExpression(schema.getSqlDialect(), cteKey, "cte" + shortName + System.identityHashCode(this), select);
+            SQLFragment token = result.addCommonTableExpressionRef(schema.getSqlDialect(), cteKey, "cte" + shortName + System.identityHashCode(this), select);
             result.unsafeAppend(" IN (SELECT EntityId");
             result.unsafeAppend(" FROM ").append(token);
             result.unsafeAppend(")");
@@ -544,7 +545,7 @@ public abstract class ContainerFilter
 
         public final SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
         {
-            return getSQLFragment(schema, new SQLFragment(containerColumnFieldKey.toString()), permission, contextualRoles, true);
+            return getSQLFragment(schema, new SQLFragment().append(containerColumnFieldKey), permission, contextualRoles, true);
         }
 
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles, boolean allowNulls)

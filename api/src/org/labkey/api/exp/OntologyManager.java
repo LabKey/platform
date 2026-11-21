@@ -162,8 +162,9 @@ public class OntologyManager
                 if (null == proj)
                     proj = c;
                 _log.debug("Loading a property descriptor for key {} using project {}", key, proj);
-                String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
-                List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, ContainerManager.getSharedContainer().getId()).getArrayList(PropertyDescriptor.class);
+                SQLFragment sql = SQLFragment.unsafe(" SELECT * FROM ").append(getTinfoPropertyDescriptor())
+                    .unsafeAppend(" WHERE PropertyURI = ? AND Project IN (?,?)", propertyURI, proj, ContainerManager.getSharedContainer().getId());
+                List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class);
                 if (!pdArray.isEmpty())
                 {
                     PropertyDescriptor pd = pdArray.get(0);
@@ -211,10 +212,11 @@ public class OntologyManager
         if (null == proj)
             proj = c;
 
-        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE " + (isName ? "Name" : "DomainURI") + " = ? AND Project IN (?,?) ";
-        List<DomainDescriptor> ddList = new SqlSelector(getExpSchema(), sql, uriOrName,
+        SQLFragment sql = SQLFragment.unsafe(" SELECT * FROM ").append(getTinfoDomainDescriptor()).unsafeAppend(" WHERE ")
+            .unsafeAppend(isName ? "Name" : "DomainURI").unsafeAppend(" = ? AND Project IN (?,?) ", uriOrName,
                 proj,
-                ContainerManager.getSharedContainer().getId()).getArrayList(DomainDescriptor.class);
+                ContainerManager.getSharedContainer().getId());
+        List<DomainDescriptor> ddList = new SqlSelector(getExpSchema(), sql).getArrayList(DomainDescriptor.class);
 
         if (ddList.size() > 1)
         {
@@ -238,10 +240,10 @@ public class OntologyManager
             Container c = ContainerManager.getForId(key.projectId());
             if (null == c)
                 return Collections.emptyList();
-            SQLFragment sql = new SQLFragment("SELECT PropertyURI, Required " +
-                "FROM " + getTinfoPropertyDescriptor() + " PD\n" +
-                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId)\n" +
-                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)\n" +
+            SQLFragment sql = SQLFragment.unsafe("SELECT PropertyURI, Required " +
+                "FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" PD\n" +
+                "   INNER JOIN ").append(getTinfoPropertyDomain()).unsafeAppend(" PDM ON (PD.PropertyId = PDM.PropertyId)\n" +
+                "   INNER JOIN ").append(getTinfoDomainDescriptor()).unsafeAppend(" DD ON (DD.DomainId = PDM.DomainId)\n" +
                 "WHERE DD.DomainURI = ? AND DD.Project IN (?, ?) ORDER BY PDM.SortOrder, PD.PropertyId");
 
             sql.addAll(
@@ -257,10 +259,10 @@ public class OntologyManager
         }
     });
     private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {
-        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(getTinfoDomainDescriptor()).unsafeAppend(" WHERE Container = ?", c);
 
         Map<String, DomainDescriptor> dds = new LinkedHashMap<>();
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql).getArrayList(DomainDescriptor.class))
         {
             dds.putIfAbsent(dd.getDomainURI(), dd);
         }
@@ -1172,15 +1174,15 @@ public class OntologyManager
         // One statement: a CTE referenced twice is materialized, so the caller's SQL (possibly an expensive union) runs
         // once, and the FK from ObjectProperty is checked only after both deletes. The column alias matches by position.
         SQLFragment deleteSql = new SQLFragment();
-        String ids = deleteSql.addCommonTableExpression(dialect, "ids", "ids",
+        SQLFragment ids = deleteSql.addCommonTableExpressionRef(dialect, "ids", "ids",
                 SQLFragment.unsafe("SELECT ObjectId FROM (").append(objectIdSql).unsafeAppend(") x (ObjectId)"));
-        deleteSql.addCommonTableExpression(dialect, "deletedProps", "deletedProps",
+        deleteSql.addCommonTableExpressionRef(dialect, "deletedProps", "deletedProps",
                 SQLFragment.unsafe("DELETE FROM ").append(getTinfoObjectProperty()).unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).unsafeAppend(")"));
-        String deleted = deleteSql.addCommonTableExpression(dialect, "deleted", "deleted",
+        SQLFragment deleted = deleteSql.addCommonTableExpressionRef(dialect, "deleted", "deleted",
                 SQLFragment.unsafe("DELETE FROM ").append(getTinfoObject()).unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(ids).unsafeAppend(") RETURNING ObjectURI, Container"));
         // Keys come from the DELETE itself so they match exactly what was removed. Counting first means a delete past
         // the limit never aggregates its URIs, which could otherwise reach millions.
-        String counted = deleteSql.addCommonTableExpression(dialect, "counted", "counted",
+        SQLFragment counted = deleteSql.addCommonTableExpressionRef(dialect, "counted", "counted",
                 SQLFragment.unsafe("SELECT ObjectURI, Container, COUNT(*) OVER () AS TotalCount FROM ").append(deleted));
         deleteSql.unsafeAppend("SELECT Container, COUNT(*) AS DeletedCount, array_agg(CAST(ObjectURI AS VARCHAR)) FILTER (WHERE TotalCount <= ?) AS URIs").add(MAX_TARGETED_CACHE_REMOVALS)
                 .unsafeAppend("\nFROM ").append(counted).unsafeAppend(" GROUP BY Container");
@@ -1328,14 +1330,14 @@ public class OntologyManager
             // delete based on existing entries in ObjectProperties before we delete the objectProperties
             // which we need to do before we delete the objects.
             // TODO: Doesn't handle the case when PropertyDescriptors are shared across domains
-            String selectObjectsToDelete = "SELECT DISTINCT O.ObjectId " +
-                    " FROM " + getTinfoObject() + " O " +
-                    " INNER JOIN " + getTinfoObjectProperty() + " OP ON(O.ObjectId = OP.ObjectId) " +
-                    " INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (OP.PropertyId = PDM.PropertyId) " +
-                    " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (PDM.DomainId = DD.DomainId) " +
-                    " INNER JOIN " + getTinfoPropertyDescriptor() + " PD ON (PD.PropertyId = PDM.PropertyId) " +
-                    " WHERE DD.DomainId = " + dd.getDomainId() +
-                    " AND PD.Container = DD.Container";
+            SQLFragment selectObjectsToDelete = SQLFragment.unsafe("SELECT DISTINCT O.ObjectId " +
+                    " FROM ").append(getTinfoObject()).unsafeAppend(" O " +
+                    " INNER JOIN ").append(getTinfoObjectProperty()).unsafeAppend(" OP ON(O.ObjectId = OP.ObjectId) " +
+                    " INNER JOIN ").append(getTinfoPropertyDomain()).unsafeAppend(" PDM ON (OP.PropertyId = PDM.PropertyId) " +
+                    " INNER JOIN ").append(getTinfoDomainDescriptor()).unsafeAppend(" DD ON (PDM.DomainId = DD.DomainId) " +
+                    " INNER JOIN ").append(getTinfoPropertyDescriptor()).unsafeAppend(" PD ON (PD.PropertyId = PDM.PropertyId) " +
+                    " WHERE DD.DomainId = ").appendValue(dd.getDomainId()).unsafeAppend(
+                    " AND PD.Container = DD.Container");
             Long[] objIdsToDelete = new SqlSelector(getExpSchema(), selectObjectsToDelete).getArray(Long.class);
 
             SqlDialect dialect = getExpSchema().getSqlDialect();
@@ -1346,9 +1348,9 @@ public class OntologyManager
             {
                 //also need list of owner objects whose subobjects are going to be deleted
                 // Seems cheaper but less correct to delete the subobjects then cleanup any owner objects with no children
-                SQLFragment selectOwnerObjects = new SQLFragment("SELECT O.ObjectId FROM " + getTinfoObject() + " O " +
+                SQLFragment selectOwnerObjects = SQLFragment.unsafe("SELECT O.ObjectId FROM ").append(getTinfoObject()).unsafeAppend(" O " +
                         " WHERE ObjectId IN " +
-                        " (SELECT DISTINCT SUBO.OwnerObjectId FROM " + getTinfoObject() + " SUBO " +
+                        " (SELECT DISTINCT SUBO.OwnerObjectId FROM ").append(getTinfoObject()).unsafeAppend(" SUBO " +
                         " WHERE SUBO.ObjectId")
                         .appendInClause(objIdsToDeleteList, dialect)
                         .unsafeAppend(" )");
@@ -1356,21 +1358,21 @@ public class OntologyManager
                 ownerObjIds = new SqlSelector(getExpSchema(), selectOwnerObjects).getArray(Long.class);
             }
 
-            String deleteTypePropsSql = "DELETE FROM " + getTinfoObjectProperty() +
+            SQLFragment deleteTypePropsSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoObjectProperty()).unsafeAppend(
                     " WHERE PropertyId IN " +
-                    " (SELECT PDM.PropertyId FROM " + getTinfoPropertyDomain() + " PDM " +
-                    " INNER JOIN " + getTinfoPropertyDescriptor() + " PD ON (PDM.PropertyId = PD.PropertyId) " +
-                    " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (PDM.DomainId = DD.DomainId) " +
-                    " WHERE DD.DomainId = " + dd.getDomainId() +
+                    " (SELECT PDM.PropertyId FROM ").append(getTinfoPropertyDomain()).unsafeAppend(" PDM " +
+                    " INNER JOIN ").append(getTinfoPropertyDescriptor()).unsafeAppend(" PD ON (PDM.PropertyId = PD.PropertyId) " +
+                    " INNER JOIN ").append(getTinfoDomainDescriptor()).unsafeAppend(" DD ON (PDM.DomainId = DD.DomainId) " +
+                    " WHERE DD.DomainId = ").appendValue(dd.getDomainId()).unsafeAppend(
                     " AND PD.Container = DD.Container " +
-                    " ) ";
+                    " ) ");
             new SqlExecutor(getExpSchema()).execute(deleteTypePropsSql);
 
             if (objIdsToDelete.length > 0)
             {
                 // now cleanup the object table entries from the list we made, but make sure they don't have
                 // other properties attached to them
-                SQLFragment deleteObjSql = new SQLFragment("DELETE FROM " + getTinfoObject() + " WHERE ObjectId")
+                SQLFragment deleteObjSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoObject()).unsafeAppend(" WHERE ObjectId")
                         .appendInClause(objIdsToDeleteList, dialect)
                         .unsafeAppend(" AND NOT EXISTS (SELECT * FROM ")
                                 .append(getTinfoObjectProperty().getSQLName())
@@ -1382,7 +1384,7 @@ public class OntologyManager
 
                 if (ownerObjIds.length > 0)
                 {
-                    SQLFragment deleteOwnerSql = new SQLFragment("DELETE FROM " + getTinfoObject() + " WHERE ObjectId")
+                    SQLFragment deleteOwnerSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoObject()).unsafeAppend(" WHERE ObjectId")
                             .appendInClause(Arrays.asList(ownerObjIds), dialect)
                             .unsafeAppend(" AND NOT EXISTS (SELECT * FROM ")
                                     .append(getTinfoObject().getSQLName())
@@ -1420,18 +1422,18 @@ public class OntologyManager
         }
         try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            String selectPDsToDelete = "SELECT DISTINCT PDM.PropertyId " +
-                    " FROM " + getTinfoPropertyDomain() + " PDM " +
-                    " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (PDM.DomainId = DD.DomainId) " +
-                    " WHERE DD.DomainId = ? ";
+            SQLFragment selectPDsToDelete = SQLFragment.unsafe("SELECT DISTINCT PDM.PropertyId " +
+                    " FROM ").append(getTinfoPropertyDomain()).unsafeAppend(" PDM " +
+                    " INNER JOIN ").append(getTinfoDomainDescriptor()).unsafeAppend(" DD ON (PDM.DomainId = DD.DomainId) " +
+                    " WHERE DD.DomainId = ? ", dd.getDomainId());
 
-            Integer[] pdIdsToDelete = new SqlSelector(getExpSchema(), selectPDsToDelete, dd.getDomainId()).getArray(Integer.class);
+            Integer[] pdIdsToDelete = new SqlSelector(getExpSchema(), selectPDsToDelete).getArray(Integer.class);
 
-            String deletePDMs = "DELETE FROM " + getTinfoPropertyDomain() +
+            SQLFragment deletePDMs = SQLFragment.unsafe("DELETE FROM ").append(getTinfoPropertyDomain()).unsafeAppend(
                     " WHERE DomainId =  " +
-                    " (SELECT DD.DomainId FROM " + getTinfoDomainDescriptor() + " DD " +
-                    " WHERE DD.DomainId = ? )";
-            new SqlExecutor(getExpSchema()).execute(deletePDMs, dd.getDomainId());
+                    " (SELECT DD.DomainId FROM ").append(getTinfoDomainDescriptor()).unsafeAppend(" DD " +
+                    " WHERE DD.DomainId = ? )", dd.getDomainId());
+            new SqlExecutor(getExpSchema()).execute(deletePDMs);
 
             if (pdIdsToDelete.length > 0)
             {
@@ -1440,7 +1442,7 @@ public class OntologyManager
                     PropertyService.get().deleteValidatorsAndFormats(container, id);
                 }
 
-                SQLFragment deletePDs = new SQLFragment("DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyId")
+                SQLFragment deletePDs = SQLFragment.unsafe("DELETE FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" WHERE PropertyId")
                         .appendInClause(Arrays.asList(pdIdsToDelete), getExpSchema().getSqlDialect())
                         .unsafeAppend(" AND Container = ? ").add(dd.getContainer().getId())
                         .unsafeAppend("AND NOT EXISTS (SELECT * FROM ")
@@ -1459,12 +1461,12 @@ public class OntologyManager
                 new SqlExecutor(getExpSchema()).execute(deletePDs);
             }
 
-            String deleteDD = "DELETE FROM " + getTinfoDomainDescriptor() +
-                    " WHERE DomainId = ? " +
-                    "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
-                    "WHERE PDM.DomainId = " + getTinfoDomainDescriptor() + ".DomainId)";
+            SQLFragment deleteDD = SQLFragment.unsafe("DELETE FROM ").append(getTinfoDomainDescriptor()).unsafeAppend(
+                    " WHERE DomainId = ? ", dd.getDomainId()).unsafeAppend(
+                    "AND NOT EXISTS (SELECT * FROM ").append(getTinfoPropertyDomain()).unsafeAppend(" PDM " +
+                    "WHERE PDM.DomainId = ").append(getTinfoDomainDescriptor()).unsafeAppend(".DomainId)");
 
-            new SqlExecutor(getExpSchema()).execute(deleteDD, dd.getDomainId());
+            new SqlExecutor(getExpSchema()).execute(deleteDD);
             clearCaches();
 
             transaction.commit();
@@ -1652,33 +1654,33 @@ public class OntologyManager
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
             // Owned objects should be in same container, so this should work
-            String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
-            int deleted = executor.execute(deleteObjPropSql, c);
-            String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
+            SQLFragment deleteObjPropSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoObjectProperty()).unsafeAppend(" WHERE  ObjectId IN (SELECT ObjectId FROM ").append(getTinfoObject()).unsafeAppend(" WHERE Container = ?)", c);
+            int deleted = executor.execute(deleteObjPropSql);
+            SQLFragment deleteObjSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoObject()).unsafeAppend(" WHERE Container = ?", c);
             _log.debug("Deleting from exp.object in container {}", c);
-            deleted += executor.execute(deleteObjSql, c);
+            deleted += executor.execute(deleteObjSql);
 
             // delete property validator references on property descriptors
             PropertyService.get().deleteValidatorsAndFormats(c);
 
             // Drop tables directly and allow bulk delete calls below to clean up rows in exp.propertydescriptor,
             // exp.domaindescriptor, etc
-            String selectSQL = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-            Collection<DomainDescriptor> dds = new SqlSelector(getExpSchema(), selectSQL, c).getCollection(DomainDescriptor.class);
+            SQLFragment selectSQL = SQLFragment.unsafe("SELECT * FROM ").append(getTinfoDomainDescriptor()).unsafeAppend(" WHERE Container = ?", c);
+            Collection<DomainDescriptor> dds = new SqlSelector(getExpSchema(), selectSQL).getCollection(DomainDescriptor.class);
             for (DomainDescriptor dd : dds)
             {
                 StorageProvisioner.get().drop(PropertyService.get().getDomain(dd.getDomainId()));
             }
 
-            String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
-            deleted += executor.execute(deletePropDomSqlPD, c);
-            String deletePropDomSqlDD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE DomainId IN (SELECT DomainId FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?)";
-            deleted += executor.execute(deletePropDomSqlDD, c);
-            String deleteDomSql = "DELETE FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-            deleted += executor.execute(deleteDomSql, c);
+            SQLFragment deletePropDomSqlPD = SQLFragment.unsafe("DELETE FROM ").append(getTinfoPropertyDomain()).unsafeAppend(" WHERE PropertyId IN (SELECT PropertyId FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" WHERE Container = ?)", c);
+            deleted += executor.execute(deletePropDomSqlPD);
+            SQLFragment deletePropDomSqlDD = SQLFragment.unsafe("DELETE FROM ").append(getTinfoPropertyDomain()).unsafeAppend(" WHERE DomainId IN (SELECT DomainId FROM ").append(getTinfoDomainDescriptor()).unsafeAppend(" WHERE Container = ?)", c);
+            deleted += executor.execute(deletePropDomSqlDD);
+            SQLFragment deleteDomSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoDomainDescriptor()).unsafeAppend(" WHERE Container = ?", c);
+            deleted += executor.execute(deleteDomSql);
             // now delete the prop descriptors that are referenced in this container only
-            String deletePropSql = "DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?";
-            deleted += executor.execute(deletePropSql, c);
+            SQLFragment deletePropSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" WHERE Container = ?", c);
+            deleted += executor.execute(deletePropSql);
 
             // Earlier container-delete steps uncache what they delete, so the server-wide clear is only needed for rows deleted here
             if (deleted > 0)
@@ -1697,19 +1699,19 @@ public class OntologyManager
 
         // check to see if any Properties defined in this folder are used in other folders.
         // if so we will make a copy of all PDs and DDs to ensure no orphans
-        String sql = " SELECT O.ObjectURI, O.Container, PD.PropertyId, PD.PropertyURI  " +
-                " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                " INNER JOIN " + getTinfoObjectProperty() + " OP ON PD.PropertyId = OP.PropertyId" +
-                " INNER JOIN " + getTinfoObject() + " O ON (O.ObjectId = OP.ObjectId) " +
+        SQLFragment sql = SQLFragment.unsafe(" SELECT O.ObjectURI, O.Container, PD.PropertyId, PD.PropertyURI  " +
+                " FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" PD " +
+                " INNER JOIN ").append(getTinfoObjectProperty()).unsafeAppend(" OP ON PD.PropertyId = OP.PropertyId" +
+                " INNER JOIN ").append(getTinfoObject()).unsafeAppend(" O ON (O.ObjectId = OP.ObjectId) " +
                 " WHERE PD.Container = ? " +
-                " AND O.Container <> PD.Container ";
+                " AND O.Container <> PD.Container ", c);
 
         final Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<>();
         final List<Integer> propIds = new ArrayList<>();
 
         if (_log.isDebugEnabled())
         {
-            try (ResultSet rs = new SqlSelector(getExpSchema(), sql, c).getResultSet())
+            try (ResultSet rs = new SqlSelector(getExpSchema(), sql).getResultSet())
             {
                 ResultSetUtil.logData(rs);
             }
@@ -1719,7 +1721,7 @@ public class OntologyManager
             }
         }
 
-        new SqlSelector(getExpSchema(), sql, c).forEach(rs -> {
+        new SqlSelector(getExpSchema(), sql).forEach(rs -> {
             String objURI = rs.getString(1);
             String objContainer = rs.getString(2);
             Integer propId = rs.getInt(3);
@@ -1748,11 +1750,11 @@ public class OntologyManager
         if (!mObjsUsingMyProps.isEmpty())
         {
             SqlDialect dialect = getExpSchema().getSqlDialect();
-            SQLFragment myPropsSql = new SQLFragment("SELECT PD.PropertyURI, DD.DomainURI " +
-                    " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                    " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
-                    " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
-                    " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) " +
+            SQLFragment myPropsSql = SQLFragment.unsafe("SELECT PD.PropertyURI, DD.DomainURI " +
+                    " FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" PD " +
+                    " LEFT JOIN (").append(getTinfoPropertyDomain()).unsafeAppend(" PDM " +
+                    " INNER JOIN ").append(getTinfoPropertyDomain()).unsafeAppend(" PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
+                    " INNER JOIN ").append(getTinfoDomainDescriptor()).unsafeAppend(" DD ON (DD.DomainId = PDM.DomainId)) " +
                     " ON (PD.PropertyId = PDM2.PropertyId) " +
                     " WHERE PDM.PropertyId")
                     .appendInClause(propIds, dialect)
@@ -1843,7 +1845,7 @@ public class OntologyManager
 
             if (_log.isDebugEnabled())
             {
-                try (ResultSet rs = new SqlSelector(getExpSchema(), "SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE Container='" + c.getId() + "'").getResultSet())
+                try (ResultSet rs = new SqlSelector(getExpSchema(), SQLFragment.unsafe("SELECT * FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" WHERE Container=").appendValue(c)).getResultSet())
                 {
                     ResultSetUtil.logData(rs, _log);
                 }
@@ -1851,30 +1853,32 @@ public class OntologyManager
 
             // update project of any descriptors in folder just moved
             TableInfo pdTable = getTinfoPropertyDescriptor();
-            String sql = "UPDATE " + pdTable + " SET Project = ? WHERE Container = ?";
+            SQLFragment pdUpdate = SQLFragment.unsafe("UPDATE ").append(pdTable).unsafeAppend(" SET Project = ? WHERE Container = ?", newProject, c);
 
             // TODO The IN clause is a temporary work around solution to avoid unique key violation error when moving study folders.
             // Issue 30477: exclude project level properties descriptors (such as Study) that already exist
-            sql += " AND PropertyUri NOT IN (SELECT PropertyUri FROM " + pdTable + " WHERE Project = ? AND PropertyUri IN (SELECT PropertyUri FROM " + pdTable + " WHERE Container = ?))";
+            pdUpdate.unsafeAppend(" AND PropertyUri NOT IN (SELECT PropertyUri FROM ").append(pdTable).unsafeAppend(" WHERE Project = ? AND PropertyUri IN (SELECT PropertyUri FROM ", newProject)
+                .append(pdTable).unsafeAppend(" WHERE Container = ?))", c);
 
-            new SqlExecutor(getExpSchema()).execute(sql, newProject, c, newProject, c);
+            new SqlExecutor(getExpSchema()).execute(pdUpdate);
 
             if (_log.isDebugEnabled())
             {
-                try (ResultSet rs = new SqlSelector(getExpSchema(), "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container='" + c.getId() + "'").getResultSet())
+                try (ResultSet rs = new SqlSelector(getExpSchema(), SQLFragment.unsafe("SELECT * FROM ").append(getTinfoDomainDescriptor()).unsafeAppend(" WHERE Container=").appendValue(c)).getResultSet())
                 {
                     ResultSetUtil.logData(rs, _log);
                 }
             }
 
             TableInfo ddTable = getTinfoDomainDescriptor();
-            sql = "UPDATE " + ddTable + " SET Project = ? WHERE Container = ?";
+            SQLFragment ddUpdate = SQLFragment.unsafe("UPDATE ").append(ddTable).unsafeAppend(" SET Project = ? WHERE Container = ?", newProject, c);
 
             // TODO The IN clause is a temporary work around solution to avoid unique key violation error when moving study folders.
             // Issue 30477: exclude project level domain descriptors (such as Study) that already exist
-            sql += " AND DomainUri NOT IN (SELECT DomainUri FROM " + ddTable + " WHERE Project = ? AND DomainUri IN (SELECT DomainUri FROM " + ddTable + " WHERE Container = ?))";
+            ddUpdate.unsafeAppend(" AND DomainUri NOT IN (SELECT DomainUri FROM ").append(ddTable).unsafeAppend(" WHERE Project = ? AND DomainUri IN (SELECT DomainUri FROM ", newProject)
+                .append(ddTable).unsafeAppend(" WHERE Container = ?))", c);
 
-            new SqlExecutor(getExpSchema()).execute(sql, newProject, c, newProject, c);
+            new SqlExecutor(getExpSchema()).execute(ddUpdate);
 
             if (null == oldProject) // if container was a project & demoted I'm done
             {
@@ -1887,17 +1891,17 @@ public class OntologyManager
             copyDescriptors(c, oldProject);
 
             // if my objects refer to project-scoped properties I need a copy of those properties
-            sql = " SELECT O.ObjectURI, PD.PropertyURI, PD.PropertyId, PD.Container  " +
-                    " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                    " INNER JOIN " + getTinfoObjectProperty() + " OP ON PD.PropertyId = OP.PropertyId" +
-                    " INNER JOIN " + getTinfoObject() + " O ON (O.ObjectId = OP.ObjectId) " +
+            SQLFragment sql = SQLFragment.unsafe(" SELECT O.ObjectURI, PD.PropertyURI, PD.PropertyId, PD.Container  " +
+                    " FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" PD " +
+                    " INNER JOIN ").append(getTinfoObjectProperty()).unsafeAppend(" OP ON PD.PropertyId = OP.PropertyId" +
+                    " INNER JOIN ").append(getTinfoObject()).unsafeAppend(" O ON (O.ObjectId = OP.ObjectId) " +
                     " WHERE O.Container = ? " +
                     " AND O.Container <> PD.Container " +
-                    " AND PD.Project NOT IN (?,?) ";
+                    " AND PD.Project NOT IN (?,?) ", c, ContainerManager.getSharedContainer(), newProject);
 
             if (_log.isDebugEnabled())
             {
-                try (ResultSet rs = new SqlSelector(getExpSchema(), sql, c, ContainerManager.getSharedContainer(), newProject).getResultSet())
+                try (ResultSet rs = new SqlSelector(getExpSchema(), sql).getResultSet())
                 {
                     ResultSetUtil.logData(rs, _log);
                 }
@@ -1907,7 +1911,7 @@ public class OntologyManager
             final Map<String, ObjectProperty> mMyObjsThatRefProjProps = new HashMap<>();
             final List<Integer> propIds = new ArrayList<>();
 
-            new SqlSelector(getExpSchema(), sql, c, ContainerManager.getSharedContainer(), newProject).forEach(rs -> {
+            new SqlSelector(getExpSchema(), sql).forEach(rs -> {
                 String objURI = rs.getString(1);
                 String propURI = rs.getString(2);
                 Integer propId = rs.getInt(3);
@@ -1931,11 +1935,11 @@ public class OntologyManager
             //todo  what about materialsource ?
             if (!mMyObjsThatRefProjProps.isEmpty())
             {
-                SQLFragment refdPropsSql = new SQLFragment("SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
-                        " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                        " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
-                        " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
-                        " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) " +
+                SQLFragment refdPropsSql = SQLFragment.unsafe("SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
+                        " FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" PD " +
+                        " LEFT JOIN (").append(getTinfoPropertyDomain()).unsafeAppend(" PDM " +
+                        " INNER JOIN ").append(getTinfoPropertyDomain()).unsafeAppend(" PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
+                        " INNER JOIN ").append(getTinfoDomainDescriptor()).unsafeAppend(" DD ON (DD.DomainId = PDM.DomainId)) " +
                         " ON (PD.PropertyId = PDM2.PropertyId) " +
                         " WHERE PDM.PropertyId")
                         .appendInClause(propIds, getExpSchema().getSqlDialect());
@@ -2295,8 +2299,8 @@ public class OntologyManager
                 && !pd.getProject().equals(ContainerManager.getSharedContainer()))
             throw new IllegalStateException("ensurePropertyDomain:  property " + pd.getPropertyURI() + " not in same container as domain " + dd.getDomainURI());
 
-        SQLFragment sqlInsert = new SQLFragment("INSERT INTO " + getTinfoPropertyDomain() + " ( PropertyId, DomainId, Required, SortOrder ) " +
-                " SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() +
+        SQLFragment sqlInsert = SQLFragment.unsafe("INSERT INTO ").append(getTinfoPropertyDomain()).unsafeAppend(" ( PropertyId, DomainId, Required, SortOrder ) " +
+                " SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoPropertyDomain()).unsafeAppend(
                 " WHERE PropertyId=? AND DomainId=?)");
         sqlInsert.add(pd.getPropertyId());
         sqlInsert.add(dd.getDomainId());
@@ -2308,7 +2312,7 @@ public class OntologyManager
         // if 0 rows affected, we should do an update to make sure required is correct
         if (count == 0)
         {
-            SQLFragment sqlUpdate = new SQLFragment("UPDATE " + getTinfoPropertyDomain() + " SET Required = ?, SortOrder = ? WHERE PropertyId=? AND DomainId= ?");
+            SQLFragment sqlUpdate = SQLFragment.unsafe("UPDATE ").append(getTinfoPropertyDomain()).unsafeAppend(" SET Required = ?, SortOrder = ? WHERE PropertyId=? AND DomainId= ?");
             sqlUpdate.add(pd.isRequired());
             sqlUpdate.add(sortOrder);
             sqlUpdate.add(pd.getPropertyId());
@@ -2357,25 +2361,25 @@ public class OntologyManager
 
         if (!dates.isEmpty())
         {
-            String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, DateTimeValue, MvIndicator) VALUES (?,?,'d',?, ?)";
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoObjectProperty()).unsafeAppend(" (ObjectId, PropertyId, TypeTag, DateTimeValue, MvIndicator) VALUES (?,?,'d',?, ?)");
             Table.batchExecute(getExpSchema(), sql, dates);
         }
 
         if (!floats.isEmpty())
         {
-            String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, FloatValue, MvIndicator) VALUES (?,?,'f',?, ?)";
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoObjectProperty()).unsafeAppend(" (ObjectId, PropertyId, TypeTag, FloatValue, MvIndicator) VALUES (?,?,'f',?, ?)");
             Table.batchExecute(getExpSchema(), sql, floats);
         }
 
         if (!strings.isEmpty())
         {
-            String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, StringValue, MvIndicator) VALUES (?,?,'s',?, ?)";
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoObjectProperty()).unsafeAppend(" (ObjectId, PropertyId, TypeTag, StringValue, MvIndicator) VALUES (?,?,'s',?, ?)");
             Table.batchExecute(getExpSchema(), sql, strings);
         }
 
         if (!mvIndicators.isEmpty())
         {
-            String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, MvIndicator) VALUES (?,?,?,?)";
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoObjectProperty()).unsafeAppend(" (ObjectId, PropertyId, TypeTag, MvIndicator) VALUES (?,?,?,?)");
             Table.batchExecute(getExpSchema(), sql, mvIndicators);
         }
 
@@ -2448,14 +2452,14 @@ public class OntologyManager
      */
     public static void removePropertyDescriptorFromDomain(DomainProperty domainProp)
     {
-        SQLFragment deletePropDomSql = new SQLFragment("DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId = ? AND DomainId = ?", domainProp.getPropertyId(), domainProp.getDomain().getTypeId());
+        SQLFragment deletePropDomSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoPropertyDomain()).unsafeAppend(" WHERE PropertyId = ? AND DomainId = ?", domainProp.getPropertyId(), domainProp.getDomain().getTypeId());
         SqlExecutor executor = new SqlExecutor(getExpSchema());
         DbScope dbScope = getExpSchema().getScope();
         try (Transaction transaction = dbScope.ensureTransaction())
         {
             executor.execute(deletePropDomSql);
             // Check if there are any other usages
-            SQLFragment otherUsagesSQL = new SQLFragment("SELECT DomainId FROM " + getTinfoPropertyDomain() + " WHERE PropertyId = ?", domainProp.getPropertyId());
+            SQLFragment otherUsagesSQL = SQLFragment.unsafe("SELECT DomainId FROM ").append(getTinfoPropertyDomain()).unsafeAppend(" WHERE PropertyId = ?", domainProp.getPropertyId());
             if (!new SqlSelector(dbScope, otherUsagesSQL).exists())
             {
                 deletePropertyDescriptor(domainProp.getPropertyDescriptor());
@@ -2471,9 +2475,9 @@ public class OntologyManager
     {
         int propId = pd.getPropertyId();
 
-        SQLFragment deleteObjPropSql = new SQLFragment("DELETE FROM " + getTinfoObjectProperty() + " WHERE PropertyId = ?", propId);
-        SQLFragment deletePropDomSql = new SQLFragment("DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId = ?", propId);
-        SQLFragment deletePropSql = new SQLFragment("DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyId = ?", propId);
+        SQLFragment deleteObjPropSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoObjectProperty()).unsafeAppend(" WHERE PropertyId = ?", propId);
+        SQLFragment deletePropDomSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoPropertyDomain()).unsafeAppend(" WHERE PropertyId = ?", propId);
+        SQLFragment deletePropSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoPropertyDescriptor()).unsafeAppend(" WHERE PropertyId = ?", propId);
 
         DbScope dbScope = getExpSchema().getScope();
         SqlExecutor executor = new SqlExecutor(getExpSchema());
@@ -2983,16 +2987,15 @@ public class OntologyManager
         SQLFragment sql = SQLFragment.unsafe("INSERT INTO exp.propertydescriptor\n\t\t(");
         SQLFragment values = SQLFragment.unsafe("\nSELECT\t");
         ColumnInfo c;
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
         Parameter container = null;
         Parameter propertyuri = null;
         for (var p : parametersArray)
         {
             if (null == (c = t.getColumn(p)))
                 continue;
-            sql.append(comma).appendIdentifier(p);
+            sql.append(comma.next()).appendIdentifier(p);
             values.append(comma).unsafeAppend("?");
-            comma = ",";
             Parameter parameter = new Parameter(p, c.getJdbcType());
             values.add(parameter);
             if ("container".equals(p))
@@ -4542,12 +4545,12 @@ public class OntologyManager
     public static HtmlString doProjectColumnCheck(boolean bFix)
     {
         HtmlStringBuilder builder = HtmlStringBuilder.of();
-        String descriptorTable = getTinfoPropertyDescriptor().toString();
+        TableInfo descriptorTable = getTinfoPropertyDescriptor();
         String uriColumn = "PropertyURI";
         String idColumn = "PropertyID";
         doProjectColumnCheck(descriptorTable, uriColumn, idColumn, builder, bFix);
 
-        descriptorTable = getTinfoDomainDescriptor().toString();
+        descriptorTable = getTinfoDomainDescriptor();
         uriColumn = "DomainURI";
         idColumn = "DomainID";
         doProjectColumnCheck(descriptorTable, uriColumn, idColumn, builder, bFix);
@@ -4555,11 +4558,11 @@ public class OntologyManager
         return builder.getHtmlString();
     }
 
-    private static void doProjectColumnCheck(final String descriptorTable, final String uriColumn, final String idColumn, final HtmlStringBuilder msgBuilder, final boolean bFix)
+    private static void doProjectColumnCheck(final TableInfo descriptorTable, final String uriColumn, final String idColumn, final HtmlStringBuilder msgBuilder, final boolean bFix)
     {
         // get all unique combos of Container, project
 
-        String sql = "SELECT Container, Project FROM " + descriptorTable + " GROUP BY Container, Project";
+        SQLFragment sql = SQLFragment.unsafe("SELECT Container, Project FROM ").append(descriptorTable).unsafeAppend(" GROUP BY Container, Project");
 
         new SqlSelector(getExpSchema(), sql).forEach(rs -> {
             String containerId = rs.getString("Container");
@@ -4576,7 +4579,7 @@ public class OntologyManager
                     msgBuilder
                         .unsafeAppend("<br/>&nbsp;&nbsp;&nbsp;")
                         .append("Fixed inconsistent project ids found for ")
-                        .append(descriptorTable).append(" in folder ")
+                        .append(descriptorTable.toString()).append(" in folder ")
                         .append(ContainerManager.getForId(containerId).getPath());
 
                 }
@@ -4584,37 +4587,38 @@ public class OntologyManager
                     msgBuilder
                         .unsafeAppend("<br/>&nbsp;&nbsp;&nbsp;")
                         .append("ERROR: Inconsistent project ids found for ")
-                        .append(descriptorTable).append(" in folder ").append(container.getPath());
+                        .append(descriptorTable.toString()).append(" in folder ").append(container.getPath());
             }
         });
     }
 
-    private static void fixProjectColumn(String descriptorTable, String uriColumn, String idColumn, Container container, String projectId, String newProjId)
+    private static void fixProjectColumn(TableInfo descriptorTable, String uriColumn, String idColumn, Container container, String projectId, String newProjId)
     {
         final SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-        String sql = "UPDATE " + descriptorTable + " SET Project= ? WHERE Project = ? AND Container=? AND " + uriColumn + " NOT IN " +
-                "(SELECT " + uriColumn + " FROM " + descriptorTable + " WHERE Project = ?)";
-        executor.execute(sql, newProjId, projectId, container.getId(), newProjId);
+        SQLFragment update = SQLFragment.unsafe("UPDATE ").append(descriptorTable).unsafeAppend(" SET Project= ? WHERE Project = ? AND Container=? AND ", newProjId, projectId, container.getId())
+                .appendIdentifier(uriColumn).unsafeAppend(" NOT IN " +
+                "(SELECT ").appendIdentifier(uriColumn).unsafeAppend(" FROM ").append(descriptorTable).unsafeAppend(" WHERE Project = ?)", newProjId);
+        executor.execute(update);
 
         // now check to see if there is already an existing descriptor in the target (correct) project.
         // this can happen if a folder containing a descriptor is moved to another project
         // and the OntologyManager's containerMoved handler fails to fire for some reason. (note not in transaction)
         //  If this is the case, the descriptor is redundant and it should be deleted, after we move the objects that depend on it.
 
-        sql = " SELECT prev." + idColumn + " AS PrevIdCol, cur." + idColumn + " AS CurIdCol FROM " + descriptorTable + " prev "
-                + " INNER JOIN " + descriptorTable + " cur ON (prev." + uriColumn + "=  cur." + uriColumn + " ) "
-                + " WHERE cur.Project = ? AND prev.Project= ? AND prev.Container = ? ";
-        final String updsql1 = " UPDATE " + getTinfoObjectProperty() + " SET " + idColumn + " = ? WHERE " + idColumn + " = ? ";
-        final String updsql2 = " UPDATE " + getTinfoPropertyDomain() + " SET " + idColumn + " = ? WHERE " + idColumn + " = ? ";
-        final String delSql = " DELETE FROM " + descriptorTable + " WHERE " + idColumn + " = ? ";
+        SQLFragment sql = SQLFragment.unsafe(" SELECT ").appendDottedIdentifiers("prev", idColumn).unsafeAppend(" AS PrevIdCol, ").appendDottedIdentifiers("cur", idColumn)
+                .unsafeAppend(" AS CurIdCol FROM ").append(descriptorTable).unsafeAppend(" prev ")
+                .unsafeAppend(" INNER JOIN ").append(descriptorTable).unsafeAppend(" cur ON (").appendDottedIdentifiers("prev", uriColumn).unsafeAppend("=  ").appendDottedIdentifiers("cur", uriColumn).unsafeAppend(" ) ")
+                .unsafeAppend(" WHERE cur.Project = ? AND prev.Project= ? AND prev.Container = ? ", newProjId, projectId, container);
 
-        new SqlSelector(getExpSchema(), sql, newProjId, projectId, container).forEach(rs -> {
+        new SqlSelector(getExpSchema(), sql).forEach(rs -> {
             int prevPropId = rs.getInt(1);
             int curPropId = rs.getInt(2);
-            executor.execute(updsql1, curPropId, prevPropId);
-            executor.execute(updsql2, curPropId, prevPropId);
-            executor.execute(delSql, prevPropId);
+            executor.execute(SQLFragment.unsafe(" UPDATE ").append(getTinfoObjectProperty()).unsafeAppend(" SET ").appendIdentifier(idColumn)
+                .unsafeAppend(" = ? WHERE ", curPropId).appendIdentifier(idColumn).unsafeAppend(" = ? ", prevPropId));
+            executor.execute(SQLFragment.unsafe(" UPDATE ").append(getTinfoPropertyDomain()).unsafeAppend(" SET ").appendIdentifier(idColumn)
+                .unsafeAppend(" = ? WHERE ", curPropId).appendIdentifier(idColumn).unsafeAppend(" = ? ", prevPropId));
+            executor.execute(SQLFragment.unsafe(" DELETE FROM ").append(descriptorTable).unsafeAppend(" WHERE ").appendIdentifier(idColumn).unsafeAppend(" = ? ", prevPropId));
         });
     }
 

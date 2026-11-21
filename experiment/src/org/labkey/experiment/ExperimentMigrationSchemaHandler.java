@@ -65,10 +65,10 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public void beforeSchema()
     {
-        new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object");
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE exp.Object DROP CONSTRAINT FK_Object_Object"));
 
         // Need to drop self FK until all rows are populated because replaced runs will be inserted before their replacements
-        new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_ExperimentRun_ReplacedByRunId");
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE exp.ExperimentRun DROP CONSTRAINT FK_ExperimentRun_ReplacedByRunId"));
     }
 
     @Override
@@ -298,8 +298,8 @@ class ExperimentMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     @Override
     public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
-        new SqlExecutor(getSchema()).execute("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)");
-        new SqlExecutor(getSchema()).execute("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_ExperimentRun_ReplacedByRunId FOREIGN KEY (ReplacedByRunId) REFERENCES exp.ExperimentRun (RowId)");
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE exp.Object ADD CONSTRAINT FK_Object_Object FOREIGN KEY (OwnerObjectId) REFERENCES exp.Object (ObjectId)"));
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE exp.ExperimentRun ADD CONSTRAINT FK_ExperimentRun_ReplacedByRunId FOREIGN KEY (ReplacedByRunId) REFERENCES exp.ExperimentRun (RowId)"));
     }
 
     // Delete from exp.Object and associated tables

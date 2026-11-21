@@ -34,9 +34,7 @@ public class ParameterSubstitutionTest extends Assert
             testParameterSubstitution(dialect);
     }
 
-    private void testParameterSubstitution(SqlDialect dialect)
-    {
-        String longString = "MASSAHLVTIKRSGDDGAHFPLSLSSCLFGRSIECDIRIQLPVVSQRHCPIVVQEQEAILYNFSSTNPTQVNGVTIDEPVRLRHGDIITII" +
+    private static final String LONG_STRING = "MASSAHLVTIKRSGDDGAHFPLSLSSCLFGRSIECDIRIQLPVVSQRHCPIVVQEQEAILYNFSSTNPTQVNGVTIDEPVRLRHGDIITII" +
             "DRSFRYEDGNHEDGSKPTEFPGKSLGKEPSRRASRDSFCADPDGEGQDTKASKMTASRRSFVYAKGLSADSPASDGSKNSVSQDSSGHVEQHTGRNIVEPTSGGSLL" +
             "RSPGLQGAVTGNRSLLPTQSLSNSNEKESPFEKLYQSMKEELDVKSQKSCRKSEPQPDRAAEESRETQLLVSGRARAKSSGSTPVTAASSPKVGKIWTERWRGGMVP" +
             "VQTSTETAKMKTPVRHSQQLKDEDSRVTGRRHSVNLDEGGSAQAVHKTVTPGKLATRNQTPVEAGDVGSPADTPEHSSSPQRSIPAKVEAPSAETQNRLSLTQRLVP" +
@@ -65,12 +63,14 @@ public class ParameterSubstitutionTest extends Assert
             "VMKTEEMEAKRENPVTPDQNSRYRKKTNVKQPRPKFDASAENVGIKKNEKTMKTASQETELQNPDDGAKKSTSRGQVSGKRTCLRSRGTTEMPQPCEAEEKTSKPAA" +
             "EILIKPQEEKGVSGESDVRCLRSRKTRVALDSEPKPRVTRGTKKDAKTLKEDEDIVCTKKLRTRS";
 
-        String longLiteralSql = "WHERE (Run IN (88)) AND (position(TrimmedPeptide IN '" + longString + "') > 0 )";
-        testParameterSubstitution(dialect, new SQLFragment(longLiteralSql), longLiteralSql);
-        String longIdentifierSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('FOO')) > 0 )";
-        testParameterSubstitution(dialect, new SQLFragment(longIdentifierSql), longIdentifierSql);
-        String longBothSql = "WHERE (\"" + longString + "\" IN (88)) AND (position(TrimmedPeptide IN ('" + longString + "')) > 0 )";
-        testParameterSubstitution(dialect, new SQLFragment(longBothSql), longBothSql);
+    private void testParameterSubstitution(SqlDialect dialect)
+    {
+        SQLFragment longLiteralSql = SQLFragment.unsafe("WHERE (Run IN (88)) AND (position(TrimmedPeptide IN '" + LONG_STRING + "') > 0 )");
+        testParameterSubstitution(dialect, longLiteralSql, longLiteralSql.getRawSQL());
+        SQLFragment longIdentifierSql = SQLFragment.unsafe("WHERE (\"" + LONG_STRING + "\" IN (88)) AND (position(TrimmedPeptide IN ('FOO')) > 0 )");
+        testParameterSubstitution(dialect, longIdentifierSql, longIdentifierSql.getRawSQL());
+        SQLFragment longBothSql = SQLFragment.unsafe("WHERE (\"" + LONG_STRING + "\" IN (88)) AND (position(TrimmedPeptide IN ('" + LONG_STRING + "')) > 0 )");
+        testParameterSubstitution(dialect, longBothSql, longBothSql.getRawSQL());
 
         testParameterSubstitution(dialect, SQLFragment.unsafe("? ? ?", 937, "this", 1.234), "937 'this' 1.234", "937 N'this' 1.234");
         testParameterSubstitution(dialect, SQLFragment.unsafe("TEST ? TEST ? TEST ?", 937, "this", 1.234), "TEST 937 TEST 'this' TEST 1.234", "TEST 937 TEST N'this' TEST 1.234");
@@ -93,8 +93,13 @@ public class ParameterSubstitutionTest extends Assert
         String lit2 = dialect.getStringHandler().quoteStringLiteral("th?is\\'th?at");
         String lit3 = dialect.getStringHandler().quoteStringLiteral("th'?'is\\?\\th\\'\\'at");
         String prefix = lit1 + " " + lit2 + " " + lit3 + " ";
+        SQLFragment prefixed = new SQLFragment()
+            .appendStringLiteral("th?is'th?at", dialect).unsafeAppend(" ")
+            .appendStringLiteral("th?is\\'th?at", dialect).unsafeAppend(" ")
+            .appendStringLiteral("th'?'is\\?\\th\\'\\'at", dialect).unsafeAppend(" ")
+            .unsafeAppend("? ? ?", 456, "this", 7.8748);
 
-        testParameterSubstitution(dialect, new SQLFragment(prefix + "? ? ?", 456, "this", 7.8748), prefix + "456 'this' 7.8748", prefix + "456 N'this' 7.8748");
+        testParameterSubstitution(dialect, prefixed, prefix + "456 'this' 7.8748", prefix + "456 N'this' 7.8748");
     }
 
     private void testParameterSubstitution(SqlDialect dialect, SQLFragment fragment, String expected)

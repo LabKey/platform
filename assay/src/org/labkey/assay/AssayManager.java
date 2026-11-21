@@ -750,7 +750,7 @@ public class AssayManager implements AssayService
     private void indexAssayRuns(SearchService.TaskIndexingQueue queue, ExpProtocol protocol,
                                  @Nullable Date modifiedSince, long minRowId)
     {
-        SQLFragment filterSQL = new SQLFragment("ER.ProtocolLSID = ? AND ER.RowId > ?")
+        SQLFragment filterSQL = SQLFragment.unsafe("ER.ProtocolLSID = ? AND ER.RowId > ?")
                 .add(protocol.getLSID())
                 .add(minRowId);
         if (modifiedSince != null)

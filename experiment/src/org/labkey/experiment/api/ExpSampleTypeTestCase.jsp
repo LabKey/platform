@@ -1098,7 +1098,7 @@ public void testDetailedAuditLog() throws Exception
 {
     UserSchema auditSchema = AuditLogService.get().createSchema(_user, c);
     TableInfo auditTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
-    Integer RowId = new SqlSelector(auditSchema.getDbSchema(), new SQLFragment("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
+    Integer RowId = new SqlSelector(auditSchema.getDbSchema(), SQLFragment.unsafe("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
             .getObject(Integer.class);
     int auditMaxRowid = null==RowId ? 0 : RowId.intValue();
 

@@ -189,8 +189,8 @@ public class DilutionManager
      */
     public static void clearWellExclusions(SqlDialect dialect, int runId)
     {
-        SQLFragment sql = new SQLFragment("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
-                unsafeAppend(" SET excluded = ").append(dialect.getBooleanFALSE()).unsafeAppend(" WHERE runid = ?");
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
+                unsafeAppend(" SET excluded = ").appendValue(Boolean.FALSE, dialect).unsafeAppend(" WHERE runid = ?");
         sql.addAll(runId);
         new SqlExecutor(getSchema()).execute(sql);
     }
@@ -200,8 +200,8 @@ public class DilutionManager
      */
     public static int setWellExclusions(SqlDialect dialect, Collection<Integer> wellRowIds)
     {
-        SQLFragment update = new SQLFragment("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
-                unsafeAppend(" SET excluded = ").append(dialect.getBooleanTRUE()).unsafeAppend(" WHERE rowid ");
+        SQLFragment update = SQLFragment.unsafe("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
+                unsafeAppend(" SET excluded = ").appendValue(Boolean.TRUE, dialect).unsafeAppend(" WHERE rowid ");
         getSchema().getSqlDialect().appendInClauseSql(update, wellRowIds);
         return new SqlExecutor(getSchema()).execute(update);
     }
@@ -249,27 +249,23 @@ public class DilutionManager
 
     protected SimpleFilter makeNabSpecimenContainerClause(Container container)
     {
-        String str = "RunId IN (SELECT RowId FROM " + ExperimentService.get().getTinfoExperimentRun().getSelectName() + " WHERE Container = '" + container.getEntityId() + "')";
-        return new SimpleFilter(new SimpleFilter.SQLClause(str, new Object[]{}));
+        SQLFragment sql = SQLFragment.unsafe("RunId IN (SELECT RowId FROM ").append(ExperimentService.get().getTinfoExperimentRun())
+                .unsafeAppend(" WHERE Container = ").appendValue(container.getEntityId()).unsafeAppend(")");
+        return new SimpleFilter(new SimpleFilter.SQLClause(sql));
     }
 
     protected SimpleFilter makeCuttoffValueSpecimenClause(SimpleFilter nabSpecimenFilter)
     {
         TableInfo table = getSchema().getTable(NAB_SPECIMEN_TABLE_NAME);
-        String str = "NAbSpecimenId IN (SELECT RowId FROM " + table.getSelectName() + " " +
-                nabSpecimenFilter.getWhereSQL(table) + ")";
+        SQLFragment sql = SQLFragment.unsafe("NAbSpecimenId IN (SELECT RowId FROM ").append(table).unsafeAppend(" ")
+                .append(nabSpecimenFilter.getSQLFragment(table, null)).unsafeAppend(")");
 
-        List<Object> paramVals = nabSpecimenFilter.getWhereParams(table);
-        Object[] params = new Object[paramVals.size()];
-        for (int i = 0; i < paramVals.size(); i += 1)
-            params[i] = paramVals.get(i);
-
-        return new SimpleFilter(new SimpleFilter.SQLClause(str, params));
+        return new SimpleFilter(new SimpleFilter.SQLClause(sql));
     }
 
     public static Set<Double> getCutoffValues(final ExpProtocol protocol)
     {
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT Cutoff FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT Cutoff FROM ");
         sql.append(DilutionManager.getTableInfoCutoffValue(), "cv");
         sql.unsafeAppend(", ");
         sql.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");

@@ -400,7 +400,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                     pkFieldKeys.add(new FieldKey(null,pk.getName()));
             }
             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(foreignKey.getParentTable(), pkFieldKeys);
-            String sep = "";
+            SQLFragment.SqlSeparator sep = SQLFragment.sep("", " AND ");
             for (ColumnInfo pk : _assayDataTable.getPkColumns())
             {
                 ColumnInfo fkCol = cols.get(new FieldKey(fkBase, pk.getFieldKey().getName()));
@@ -409,11 +409,10 @@ public class SpecimenForeignKey extends LookupForeignKey
                 ColumnInfo pkCol = _assayColumns.get(pk.getFieldKey());
                 if (null == fkCol || null == pkCol)
                     throw new IllegalStateException("Could not find column needed for SpecimenForeignKey: " + pk.getName());
-                sql.append(sep);
+                sql.append(sep.next());
                 sql.append(fkCol.getValueSql(parentAlias));
                 sql.unsafeAppend("=");
                 sql.append(pkCol.getValueSql(assaySubqueryAlias));
-                sep = " AND ";
             }
 
             sql.unsafeAppend("\n\tLEFT OUTER JOIN ");
@@ -523,7 +522,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         {
             if (_returnNull)
             {
-                return new SQLFragment("CAST(NULL AS " + getSqlDialect().getSqlTypeName(getJdbcType()) + ")");
+                return SQLFragment.unsafe("CAST(NULL AS ").append(getSqlDialect().getSqlTypeNameAsSql(getJdbcType())).unsafeAppend(")");
             }
             if (_specimenLookup)
             {
@@ -649,7 +648,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                         sql.unsafeAppend(" AND (").appendIdentifier(specimenAlias).unsafeAppend(".SequenceNum = ").appendDottedIdentifiers(targetStudyAlias, _assayVisitIdCol.getAlias()).unsafeAppend(" OR (").appendIdentifier(specimenAlias).unsafeAppend(".Visit IS NULL AND ").appendDottedIdentifiers(targetStudyAlias, _assayVisitIdCol.getAlias()).unsafeAppend(" IS NULL))");
                         if (_assayDateCol != null)
                         {
-                            sql.unsafeAppend(" AND (").appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()).unsafeAppend(" IS NULL OR ").append(dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp")).unsafeAppend(" = ").append(dialect.getDateTimeToDateCast(new SQLFragment().appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()))).unsafeAppend(" OR (").appendIdentifier(specimenAlias).unsafeAppend(".drawtimestamp IS NULL AND ").appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()).unsafeAppend(" IS NULL))");
+                            sql.unsafeAppend(" AND (").appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()).unsafeAppend(" IS NULL OR ").append(dialect.getDateTimeToDateCast(new SQLFragment().appendDottedIdentifiers(specimenAlias, "drawtimestamp"))).unsafeAppend(" = ").append(dialect.getDateTimeToDateCast(new SQLFragment().appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()))).unsafeAppend(" OR (").appendIdentifier(specimenAlias).unsafeAppend(".drawtimestamp IS NULL AND ").appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()).unsafeAppend(" IS NULL))");
                             sql.unsafeAppend(")");
                             sql.unsafeAppend(" OR ");
                         }
@@ -662,7 +661,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                     {
                         // If we're in a relative date or continuous date study, check that the dates match or are both NULL
                         sql.unsafeAppend("((").appendIdentifier(studyAlias).unsafeAppend(".TimepointType = ").appendValue(TimepointType.DATE).unsafeAppend(" OR ").appendIdentifier(studyAlias).unsafeAppend(".TimepointType = ").appendValue(TimepointType.CONTINUOUS).unsafeAppend(" OR ").appendIdentifier(studyAlias).unsafeAppend(".TimepointType IS NULL) AND (")
-                                .append(dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp")).unsafeAppend(" = ")
+                                .append(dialect.getDateTimeToDateCast(new SQLFragment().appendDottedIdentifiers(specimenAlias, "drawtimestamp"))).unsafeAppend(" = ")
                                 .append(dialect.getDateTimeToDateCast(new SQLFragment().appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()))).unsafeAppend(" OR (").appendIdentifier(specimenAlias).unsafeAppend(".drawtimestamp IS NULL AND ").appendDottedIdentifiers(targetStudyAlias, _assayDateCol.getAlias()).unsafeAppend(" IS NULL)))");
                     }
                     sql.unsafeAppend(")");

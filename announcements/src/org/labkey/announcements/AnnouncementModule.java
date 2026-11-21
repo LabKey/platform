@@ -235,8 +235,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             @Override
             public void beforeSchema()
             {
-                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions");
-                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_Parent");
+                new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_PageVersions"));
+                new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE comm.Pages DROP CONSTRAINT FK_Pages_Parent"));
             }
 
             @Override
@@ -252,8 +252,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             @Override
             public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
             {
-                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)");
-                new SqlExecutor(getSchema()).execute("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_Parent FOREIGN KEY (Parent) REFERENCES comm.Pages (RowId)");
+                new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId)"));
+                new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE comm.Pages ADD CONSTRAINT FK_Pages_Parent FOREIGN KEY (Parent) REFERENCES comm.Pages (RowId)"));
             }
 
             @Override
@@ -327,6 +327,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public void indexDeleted()
     {
-        new SqlExecutor(CommSchema.getInstance().getSchema()).execute("UPDATE comm.announcements SET LastIndexed=NULL");
+        new SqlExecutor(CommSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("UPDATE comm.announcements SET LastIndexed=NULL"));
     }
 }

@@ -12082,7 +12082,7 @@ public class AdminController extends SpringActionController
         {
             SQLFragment sql = new SQLFragment();
             DbSchema schema = tInfo.getSchema();
-            String comma = "";
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
             List<String> updating = new ArrayList<>();
 
             for (String fieldName: fieldNames)
@@ -12093,9 +12093,8 @@ public class AdminController extends SpringActionController
                     updating.add(fieldName);
                     if (sql.isEmpty())
                         sql.unsafeAppend("UPDATE ").append(tInfo, "").unsafeAppend(" SET ");
-                    sql.append(comma)
+                    sql.append(comma.next())
                             .unsafeAppend(" ").appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" = {fn timestampadd(SQL_TSI_HOUR, ").appendValue(delta).unsafeAppend(", ").appendIdentifier(col.getSelectIdentifier()).unsafeAppend(")}");
-                    comma = ", ";
                 }
             }
 

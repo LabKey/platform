@@ -376,7 +376,7 @@ public class UserManager
     // Includes users who have logged in during any server session
     public static int getRecentUserCount(Date since)
     {
-        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT COUNT(*) FROM " + CORE.getTableInfoUsersData() + " WHERE LastLogin >= ?", since)).getObject(Integer.class);
+        return new SqlSelector(CORE.getSchema(), SQLFragment.unsafe("SELECT COUNT(*) FROM ").append(CORE.getTableInfoUsersData()).unsafeAppend(" WHERE LastLogin >= ?", since)).getObject(Integer.class);
     }
 
     private static final Comparator<Pair<String, Long>> RECENT_USER_COMPARATOR = Comparator.comparing(Pair<String, Long>::getValue).thenComparing(Pair::getKey);
@@ -807,7 +807,7 @@ public class UserManager
     /** Record that a user logged in */
     public static void updateLogin(User user)
     {
-        SQLFragment sql = new SQLFragment("UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin = ? WHERE UserId = ?", new Date(), user.getUserId());
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoUsersData()).unsafeAppend(" SET LastLogin = ? WHERE UserId = ?", new Date(), user.getUserId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
     }
 
@@ -864,7 +864,7 @@ public class UserManager
             }
 
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-            int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name = ? WHERE UserId = ?", newEmail, userToChange.getUserId());
+            int rows = executor.execute(SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoPrincipals()).unsafeAppend(" SET Name = ? WHERE UserId = ?", newEmail, userToChange.getUserId()));
             if (1 != rows)
                 throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
 
@@ -879,7 +879,7 @@ public class UserManager
 
             if (userToChange.getDisplayName(userToChange).equals(oldEmail))
             {
-                rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName = ? WHERE UserId = ?", newEmail, userToChange.getUserId());
+                rows = executor.execute(SQLFragment.unsafe("UPDATE ").append(CORE.getTableInfoUsersData()).unsafeAppend(" SET DisplayName = ? WHERE UserId = ?", newEmail, userToChange.getUserId()));
                 if (1 != rows)
                     throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
             }
@@ -932,13 +932,13 @@ public class UserManager
             boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(deleteUser);
 
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-            executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
-            executor.execute("DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(CORE.getTableInfoRoleAssignments()).unsafeAppend(" WHERE UserId=?", userId));
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(CORE.getTableInfoMembers()).unsafeAppend(" WHERE UserId=?", userId));
             addToUserHistory(deleteUser, deleteUser.getEmail() + " was deleted from the system");
 
-            executor.execute("DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(CORE.getTableInfoUsersData()).unsafeAppend(" WHERE UserId=?", userId));
             LoginManager.deleteLoginsRow(deleteUser, null);
-            executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(CORE.getTableInfoPrincipals()).unsafeAppend(" WHERE UserId=?", userId));
             ApiKeyManager.get().deleteKeys(new SimpleFilter(FieldKey.fromParts("CreatedBy"), userId));
 
             OntologyManager.deleteOntologyObject(deleteUser.getEntityId(), ContainerManager.getSharedContainer(), true);
