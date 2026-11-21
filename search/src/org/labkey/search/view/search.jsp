@@ -144,7 +144,7 @@
         return new NavTree(text, url);
     }
 
-    String getPageSummary(long totalHits, @NotNull SearchResultTemplate template, int hitsPerPage, int pageNo, int pageCount)
+    HtmlString getPageSummary(long totalHits, @NotNull SearchResultTemplate template, int hitsPerPage, int pageNo, int pageCount)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -161,10 +161,10 @@
                 .append(template.getResultNamePlural());
         }
 
-        return sb.toString();
+        return HtmlString.of(sb.toString());
     }
 
-    String getResultsSummary(long totalHits, @NotNull SearchResultTemplate template)
+    HtmlString getResultsSummary(long totalHits, @NotNull SearchResultTemplate template)
     {
         StringBuilder sb = new StringBuilder("Found ")
             .append(Formats.commaf0.format(totalHits))
@@ -175,7 +175,7 @@
         else
             sb.append(template.getResultNamePlural());
 
-        return sb.toString();
+        return HtmlString.of(sb.toString());
     }
 
     List<NavTree> parseNavTrail(String s)
@@ -450,8 +450,8 @@
                 int pageCount = (int)Math.ceil((double)hits / hitsPerPage);
             %>
             <div class="labkey-search-results-counts">
-                <div class="pull-left"><%=h(getResultsSummary(hits, template))%></div>
-                <div class="pull-right"><%=h(getPageSummary(hits, template, hitsPerPage, pageNo, pageCount))%></div>
+                <div class="pull-left"><%=getResultsSummary(hits, template)%></div>
+                <div class="pull-right"><%=getPageSummary(hits, template, hitsPerPage, pageNo, pageCount)%></div>
             </div>
             <%
                 for (SearchService.SearchHit hit : result.hits)
