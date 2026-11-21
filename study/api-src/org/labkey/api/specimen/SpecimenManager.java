@@ -63,11 +63,16 @@ public class SpecimenManager
         return null != specimenModule && c.getActiveModules().contains(specimenModule);
     }
 
-    // Include specimen queries in the study schema if the specimen module is active or an admin has chosen to expose
-    // them via an optional feature
+    // Include specimen queries in the study schema if the specimen module is active or, when it isn't deployed, an admin
+    // has chosen to expose them via an optional feature
     public boolean areSpecimenTablesViewable(Container c)
     {
-        return isSpecimenModuleActive(c) || OptionalFeatureService.get().isFeatureEnabled(VIEW_SPECIMEN_TABLES_FLAG);
+        Module specimenModule = ModuleLoader.getInstance().getModule("Specimen");
+        if (null != specimenModule)
+            return c.getActiveModules().contains(specimenModule);
+
+        // The flag is registered only when the specimen module is absent, so a value saved before deploying it would otherwise linger with no UI to clear it
+        return OptionalFeatureService.get().isFeatureEnabled(VIEW_SPECIMEN_TABLES_FLAG);
     }
 
     public int getSpecimenCountForVisit(Visit visit)

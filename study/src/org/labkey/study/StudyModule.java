@@ -74,7 +74,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
-import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
@@ -268,7 +267,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
         PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new LocationDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
         PropertyService.get().registerDomainKind(new StudyProductDomainKind());
