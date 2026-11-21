@@ -469,13 +469,6 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
             return json.toString();
         }
 
-        private static void assertExpressionSegment(JSONArray segments, int i, String sql, String jdbcType)
-        {
-            assertEquals("expression", segment(segments, i).getString("type"));
-            assertEquals(sql, segment(segments, i).getString("sql"));
-            assertEquals(jdbcType, segment(segments, i).getString("jdbcType"));
-        }
-
         /** The validator payload is transport between the tool and this action; it must never reach the user as text. */
         private static void assertNoPayloadInProse(JSONArray segments)
         {
@@ -514,113 +507,6 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
         }
 
         @Test
-        public void emptyResponseList()
-        {
-            JSONArray segments = buildSegments(List.of(), LOG);
-            assertEquals(0, segments.length());
-        }
-
-        @Test
-        public void blankMessageProducesNoSegments()
-        {
-            JSONArray segments = buildSegments(List.of(markdownResponse(""), markdownResponse("   ")), LOG);
-            assertEquals(0, segments.length());
-        }
-
-        @Test
-        public void proseOnlyProducesSingleHtmlSegment()
-        {
-            JSONArray segments = buildSegments(List.of(markdownResponse("Hello, here is some advice.")), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("html", segment(segments, 0).getString("type"));
-            assertTrue(segment(segments, 0).getString("html").contains("Hello, here is some advice."));
-        }
-
-        @Test
-        public void expressionFenceProducesExpressionSegment()
-        {
-            String md = "```expression\n" + expressionPayload("SELECT 1", "INTEGER") + "\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("expression", segment(segments, 0).getString("type"));
-            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
-            assertEquals("INTEGER", segment(segments, 0).getString("jdbcType"));
-        }
-
-        @Test
-        public void expressionFenceWithRawSqlBodyFallsBackToSqlOnly()
-        {
-            // Legacy / model-misbehavior fallback: if the body isn't JSON, treat it as raw SQL and omit jdbcType.
-            String md = "```expression\nSELECT 1\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("expression", segment(segments, 0).getString("type"));
-            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
-            assertFalse("jdbcType should be absent when body isn't JSON",
-                    segment(segments, 0).has("jdbcType"));
-        }
-
-        @Test
-        public void sqlFenceProducesSqlSegment()
-        {
-            String md = "```sql\nSELECT 1\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("sql", segment(segments, 0).getString("type"));
-            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
-        }
-
-        @Test
-        public void interleavedProseAndFencesProduceOrderedSegments()
-        {
-            String md = String.join("\n",
-                "Here are two options.",
-                "",
-                "Option A (illustrative):",
-                "```sql",
-                "SELECT a FROM t",
-                "```",
-                "",
-                "Option B (ready to apply):",
-                "```expression",
-                expressionPayload("SELECT b FROM t", "VARCHAR"),
-                "```",
-                "Pick whichever fits."
-            );
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(5, segments.length());
-            assertEquals("html", segment(segments, 0).getString("type"));
-            assertEquals("sql", segment(segments, 1).getString("type"));
-            assertEquals("SELECT a FROM t", segment(segments, 1).getString("sql"));
-            assertEquals("html", segment(segments, 2).getString("type"));
-            assertEquals("expression", segment(segments, 3).getString("type"));
-            assertEquals("SELECT b FROM t", segment(segments, 3).getString("sql"));
-            assertEquals("VARCHAR", segment(segments, 3).getString("jdbcType"));
-            assertEquals("html", segment(segments, 4).getString("type"));
-        }
-
-        @Test
-        public void multipleExpressionFencesEachBecomeOwnSegment()
-        {
-            String md = String.join("\n",
-                "```expression",
-                expressionPayload("SELECT 1", "INTEGER"),
-                "```",
-                "```expression",
-                expressionPayload("SELECT 2", "BIGINT"),
-                "```"
-            );
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(2, segments.length());
-            assertEquals("expression", segment(segments, 0).getString("type"));
-            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
-            assertEquals("INTEGER", segment(segments, 0).getString("jdbcType"));
-            assertEquals("expression", segment(segments, 1).getString("type"));
-            assertEquals("SELECT 2", segment(segments, 1).getString("sql"));
-            assertEquals("BIGINT", segment(segments, 1).getString("jdbcType"));
-        }
-
-        @Test
         public void unterminatedFenceFallsBackToHtml()
         {
             String payload = expressionPayload("SELECT 1", "INTEGER");
@@ -634,182 +520,110 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
             assertFalse("opening fence must be stripped: " + html, html.contains("```"));
         }
 
-        @Test
-        public void unterminatedFenceDoesNotDiscardLaterResponses()
+        /**
+         * One parse case. Each expected entry is a segment type, optionally with content: "html~text" (html contains
+         * text), "sql=SQL", "expression=SQL|JDBCTYPE", "expression=SQL|" (no jdbcType), "expression=SQL" (jdbcType
+         * unchecked). leak, when non-null, is the expected hasLeakedPayload().
+         */
+        private record Case(String name, List<String> responses, Boolean leak, boolean noPayloadInProse, String... expected) {}
+
+        private static String fence(String tag, String body, String closer)
         {
-            // An unterminated fence must cost only its own block — the four-backtick opener below is never
-            // closed (its closer is shorter), and the well-formed block after it still has to parse.
-            var r1 = markdownResponse("````expression\n" + expressionPayload("SELECT 1", "INTEGER") + "\n```");
-            var r2 = markdownResponse("Corrected:\n```expression\n" + expressionPayload("SELECT 2", "BIGINT") + "\n```");
-            JSONArray segments = buildSegments(List.of(r1, r2), LOG);
-            assertEquals(2, segments.length());
-            assertEquals("html", segment(segments, 0).getString("type"));
-            assertExpressionSegment(segments, 1, "SELECT 2", "BIGINT");
+            return tag + "\n" + body + "\n" + closer;
         }
 
         @Test
-        public void unknownFenceLanguageIsTreatedAsProse()
+        public void testBuildSegments()
         {
-            String md = "```python\nprint('hi')\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            // Only sql/expression are split out; other fenced blocks stay in the html segment.
-            assertEquals(1, segments.length());
-            assertEquals("html", segment(segments, 0).getString("type"));
-        }
-
-        @Test
-        public void fenceTagIsCaseInsensitive()
-        {
-            String md = "```EXPRESSION\n" + expressionPayload("SELECT 1", "INTEGER") + "\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("expression", segment(segments, 0).getString("type"));
-            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
-            assertEquals("INTEGER", segment(segments, 0).getString("jdbcType"));
-        }
-
-        @Test
-        public void expressionFenceIsRecognizedAtAnyBacktickLength()
-        {
+            String payload = expressionPayload("Int7 + Int6", "INTEGER");
+            String narrated = "Here is the payload: " + payload;
+            String noExpressionKey = "{\"jdbcType\":\"INTEGER\",\"sql\":\"Int7 + Int6\"}";
+            String multiline = "SELECT a,\n       b\nFROM t";
+            List<Case> cases = new ArrayList<>(List.of(
+                new Case("empty response list", List.of(), null, false),
+                new Case("blank messages", List.of("", "   "), null, false),
+                new Case("prose only", List.of("Hello, here is some advice."), null, false, "html~Hello, here is some advice."),
+                new Case("expression fence", List.of(fence("```expression", expressionPayload("SELECT 1", "INTEGER"), "```")), null, false, "expression=SELECT 1|INTEGER"),
+                // Legacy / model-misbehavior fallback: a non-JSON body is raw SQL with no jdbcType
+                new Case("raw sql expression body", List.of(fence("```expression", "SELECT 1", "```")), null, false, "expression=SELECT 1|"),
+                new Case("sql fence", List.of(fence("```sql", "SELECT 1", "```")), null, false, "sql=SELECT 1"),
+                new Case("interleaved prose and fences", List.of(String.join("\n",
+                    "Here are two options.", "", "Option A (illustrative):", "```sql", "SELECT a FROM t", "```", "",
+                    "Option B (ready to apply):", "```expression", expressionPayload("SELECT b FROM t", "VARCHAR"), "```", "Pick whichever fits.")),
+                    null, false, "html", "sql=SELECT a FROM t", "html", "expression=SELECT b FROM t|VARCHAR", "html"),
+                new Case("multiple expression fences", List.of(fence("```expression", expressionPayload("SELECT 1", "INTEGER"), "```") + "\n" + fence("```expression", expressionPayload("SELECT 2", "BIGINT"), "```")),
+                    null, false, "expression=SELECT 1|INTEGER", "expression=SELECT 2|BIGINT"),
+                // An unterminated fence costs only its own block: the four-backtick opener is never closed by the shorter closer
+                new Case("unterminated fence keeps later responses", List.of(fence("````expression", expressionPayload("SELECT 1", "INTEGER"), "```"), "Corrected:\n" + fence("```expression", expressionPayload("SELECT 2", "BIGINT"), "```")),
+                    null, false, "html", "expression=SELECT 2|BIGINT"),
+                // Only sql/expression are split out; other fenced blocks stay in the html segment
+                new Case("unknown fence language", List.of(fence("```python", "print('hi')", "```")), null, false, "html"),
+                new Case("case-insensitive tag", List.of(fence("```EXPRESSION", expressionPayload("SELECT 1", "INTEGER"), "```")), null, false, "expression=SELECT 1|INTEGER"),
+                new Case("longer closer ends shorter opener", List.of(fence("```expression", payload, "````")), null, false, "expression=Int7 + Int6|INTEGER"),
+                // Per CommonMark the short line is fence content, not a closer, so the block never terminates
+                new Case("shorter closer doesn't end longer opener", List.of(fence("````expression", payload, "```")), null, false, "html"),
+                // No opening fence, so the payload lands in prose and the user gets no Apply affordance
+                new Case("leak: missing fence", List.of("Adding Int7 and Int6.\n\n" + payload + "\n```"), true, false, "html"),
+                // The illustrative sql tag renders the payload as a read-only code block
+                new Case("leak: sql fence", List.of(fence("```sql", payload, "```")), true, false, "sql"),
+                // Narration inside the fence means the body doesn't parse and Apply would write JSON to the field
+                new Case("leak: non-JSON expression body", List.of(fence("```expression", narrated, "```")), true, false, "expression=" + narrated),
+                // Parses, but with nothing to unpack buildSqlSegment falls back to the raw body
+                new Case("leak: no expression key", List.of(fence("```expression", noExpressionKey, "```")), true, false, "expression=" + noExpressionKey),
+                // "jdbcType" is a key on the expression segment itself, not part of the SQL the user sees
+                new Case("well-formed expression", List.of(fence("```expression", payload, "```")), false, false, "expression=Int7 + Int6|INTEGER"),
+                new Case("prose without payload", List.of("Which date field should be used?"), false, false, "html"),
+                // Only the info string's first word is the tag
+                new Case("extra info string token", List.of(fence("```expression json", payload, "```")), null, true, "expression=Int7 + Int6|INTEGER"),
+                // Tool calling can split one assistant turn mid-fence; the scan joins the turns so the block still closes
+                new Case("fence split across responses", List.of("Adding Int7 and Int6.\n\n```expression\n" + payload, "```"), null, true, "html", "expression=Int7 + Int6|INTEGER"),
+                new Case("multiline sql body", List.of(fence("```expression", expressionPayload(multiline, "VARCHAR"), "```")), null, false, "expression=" + multiline + "|VARCHAR"),
+                new Case("responses concatenated in order", List.of("First response prose.", fence("```expression", expressionPayload("SELECT 1", "INTEGER"), "```")),
+                    null, false, "html", "expression=SELECT 1|INTEGER")
+            ));
             for (int n = 3; n <= 6; n++)
             {
                 String delim = "`".repeat(n);
-                String md = delim + "expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n" + delim;
-                JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-                assertEquals("fence length " + n, 1, segments.length());
-                assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
-                assertNoPayloadInProse(segments);
+                cases.add(new Case("fence length " + n, List.of(fence(delim + "expression", payload, delim)), null, true, "expression=Int7 + Int6|INTEGER"));
+            }
+
+            for (Case c : cases)
+            {
+                JSONArray segments = buildSegments(c.responses().stream().map(TestCase::markdownResponse).toList(), LOG);
+                assertEquals(c.name() + ": " + segments, c.expected().length, segments.length());
+                for (int i = 0; i < c.expected().length; i++)
+                    assertSegment(c.name(), segment(segments, i), c.expected()[i]);
+                if (c.leak() != null)
+                    assertEquals(c.name() + ": leak", c.leak(), hasLeakedPayload(segments));
+                if (c.noPayloadInProse())
+                    assertNoPayloadInProse(segments);
             }
         }
 
-        @Test
-        public void longerClosingFenceTerminatesShorterOpener()
+        private static void assertSegment(String name, JSONObject seg, String expected)
         {
-            String md = "```expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n````";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
-        }
-
-        @Test
-        public void shorterClosingFenceDoesNotTerminateLongerOpener()
-        {
-            // Per CommonMark the short line is fence content, not a closer, so the block never terminates.
-            String md = "````expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("html", segment(segments, 0).getString("type"));
-        }
-
-        @Test
-        public void leakedPayloadDetectedWhenFenceIsMissing()
-        {
-            // No opening fence, so the payload lands in prose and the user gets no Apply affordance.
-            String md = "Adding Int7 and Int6.\n\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("html", segment(segments, 0).getString("type"));
-            assertTrue("prose payload should be reported as a leak", hasLeakedPayload(segments));
-        }
-
-        @Test
-        public void leakedPayloadDetectedInSqlFence()
-        {
-            // The model reached for the illustrative `sql` tag, so the payload renders as a read-only code block.
-            String md = "```sql\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("sql", segment(segments, 0).getString("type"));
-            assertTrue("payload in a sql block should be reported as a leak", hasLeakedPayload(segments));
-        }
-
-        @Test
-        public void leakedPayloadDetectedWhenExpressionBodyIsNotJson()
-        {
-            // The model narrated inside the fence, so the body doesn't parse and Apply would write JSON to the field.
-            String body = "Here is the payload: " + expressionPayload("Int7 + Int6", "INTEGER");
-            JSONArray segments = buildSegments(List.of(markdownResponse("```expression\n" + body + "\n```")), LOG);
-            assertEquals(1, segments.length());
-            assertEquals("expression", segment(segments, 0).getString("type"));
-            assertEquals(body, segment(segments, 0).getString("sql"));
-            assertTrue("unparsable payload should be reported as a leak", hasLeakedPayload(segments));
-        }
-
-        @Test
-        public void leakedPayloadDetectedWhenExpressionKeyIsMissing()
-        {
-            // Parses, but nothing to unpack, so buildSqlSegment falls back to the raw body.
-            String body = "{\"jdbcType\":\"INTEGER\",\"sql\":\"Int7 + Int6\"}";
-            JSONArray segments = buildSegments(List.of(markdownResponse("```expression\n" + body + "\n```")), LOG);
-            assertEquals(body, segment(segments, 0).getString("sql"));
-            assertTrue("payload without an expression key should be reported as a leak", hasLeakedPayload(segments));
-        }
-
-        @Test
-        public void wellFormedExpressionSegmentIsNotALeak()
-        {
-            // "jdbcType" is a key on the expression segment itself, not part of the SQL the user sees.
-            String md = "```expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
-            assertFalse("a parsed expression segment is not a leak", hasLeakedPayload(segments));
-        }
-
-        @Test
-        public void proseWithoutPayloadIsNotALeak()
-        {
-            JSONArray segments = buildSegments(List.of(markdownResponse("Which date field should be used?")), LOG);
-            assertEquals("html", segment(segments, 0).getString("type"));
-            assertFalse(hasLeakedPayload(segments));
-        }
-
-        @Test
-        public void expressionFenceWithExtraInfoStringTokenIsRecognized()
-        {
-            // Only the info string's first word is the tag, so "expression json" still resolves to "expression".
-            String md = "```expression json\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
-            assertNoPayloadInProse(segments);
-        }
-
-        @Test
-        public void expressionFenceSplitAcrossResponsesIsRecognized()
-        {
-            // Tool calling can split one assistant turn mid-fence; the scan joins the turns so the block still closes.
-            String payload = expressionPayload("Int7 + Int6", "INTEGER");
-            var r1 = markdownResponse("Adding Int7 and Int6.\n\n```expression\n" + payload);
-            var r2 = markdownResponse("```");
-            JSONArray segments = buildSegments(List.of(r1, r2), LOG);
-            assertEquals(2, segments.length());
-            assertEquals("html", segment(segments, 0).getString("type"));
-            assertExpressionSegment(segments, 1, "Int7 + Int6", "INTEGER");
-            assertNoPayloadInProse(segments);
-        }
-
-        @Test
-        public void preservesMultilineSqlBody()
-        {
-            String multiline = "SELECT a,\n       b\nFROM t";
-            String md = "```expression\n" + expressionPayload(multiline, "VARCHAR") + "\n```";
-            JSONArray segments = buildSegments(List.of(markdownResponse(md)), LOG);
-            assertEquals(1, segments.length());
-            assertEquals(multiline, segment(segments, 0).getString("sql"));
-            assertEquals("VARCHAR", segment(segments, 0).getString("jdbcType"));
-        }
-
-        @Test
-        public void multipleMessageResponsesAreConcatenatedInOrder()
-        {
-            McpService.MessageResponse r1 = markdownResponse("First response prose.");
-            McpService.MessageResponse r2 = markdownResponse("```expression\n" + expressionPayload("SELECT 1", "INTEGER") + "\n```");
-            JSONArray segments = buildSegments(List.of(r1, r2), LOG);
-            assertEquals(2, segments.length());
-            assertEquals("html", segment(segments, 0).getString("type"));
-            assertEquals("expression", segment(segments, 1).getString("type"));
-            assertEquals("SELECT 1", segment(segments, 1).getString("sql"));
-            assertEquals("INTEGER", segment(segments, 1).getString("jdbcType"));
+            String[] html = expected.split("~", 2);
+            if (html.length == 2 && html[0].equals("html"))
+            {
+                assertEquals(name, "html", seg.getString("type"));
+                assertTrue(name + ": " + seg, seg.getString("html").contains(html[1]));
+                return;
+            }
+            String[] typeAndSql = expected.split("=", 2);
+            assertEquals(name, typeAndSql[0], seg.getString("type"));
+            if (typeAndSql.length == 1)
+                return;
+            int bar = typeAndSql[1].lastIndexOf('|');
+            String sql = bar < 0 || typeAndSql[0].equals("sql") ? typeAndSql[1] : typeAndSql[1].substring(0, bar);
+            assertEquals(name, sql, seg.getString("sql"));
+            if (bar >= 0 && typeAndSql[0].equals("expression"))
+            {
+                String jdbcType = typeAndSql[1].substring(bar + 1);
+                if (jdbcType.isEmpty())
+                    assertFalse(name + ": jdbcType should be absent when body isn't JSON", seg.has("jdbcType"));
+                else
+                    assertEquals(name, jdbcType, seg.getString("jdbcType"));
+            }
         }
     }
 }

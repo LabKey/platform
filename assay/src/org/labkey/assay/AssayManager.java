@@ -1126,7 +1126,7 @@ public class AssayManager implements AssayService
             _container = JunitUtil.getTestContainer();
 
             AssayDomainService domainService = new AssayDomainServiceImpl(TestContext.get().getUser(), _container);
-            GWTProtocol template = domainService.getAssayTemplate("General");
+            GWTProtocol template = domainService.getAssayTemplate(TsvAssayProvider.NAME);
             template.setName("ProtocolCacheTestAssay");
             GWTProtocol saved = domainService.saveChanges(template, true);
             _protocol = ExperimentService.get().getExpProtocol(saved.getProtocolId());

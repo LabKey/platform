@@ -315,7 +315,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         public void testBlockingGet()
         {
             final AtomicInteger calls = new AtomicInteger();
-            final BlockingCache<Integer,Integer> bc = new BlockingCache<>(_cache, createLoader(calls, 1000));
+            final BlockingCache<Integer,Integer> bc = new BlockingCache<>(_cache, createLoader(calls, 200));
             final CountDownLatch start = new CountDownLatch(1);
             Runnable r = () -> {
                 Random r1 = new Random();
@@ -348,7 +348,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         public void testTimeout()
         {
             final AtomicInteger calls = new AtomicInteger();
-            final BlockingCache<Integer, Integer> bc = new BlockingCache<>(_cache, createLoader(calls, 5000), 1000);
+            final BlockingCache<Integer, Integer> bc = new BlockingCache<>(_cache, createLoader(calls, 3000), 1000);
 
             final AtomicInteger timeouts = new AtomicInteger();
             final CountDownLatch start = new CountDownLatch(1);

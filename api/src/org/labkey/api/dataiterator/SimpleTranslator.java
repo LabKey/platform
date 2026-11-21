@@ -2272,8 +2272,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public void convertRemapTest() throws Exception
         {
             // fake-o lookup table
-            var core = QueryService.get().getUserSchema(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
-            var lookupTable = new EnumTableInfo<>(LookupValues.class, core, "fake enum", true);
+            var lookupTable = remapLookupTable();
             var fk = new AbstractForeignKey(null, null)
             {
                 @Override

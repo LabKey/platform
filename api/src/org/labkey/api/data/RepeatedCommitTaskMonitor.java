@@ -368,14 +368,6 @@ public class RepeatedCommitTaskMonitor
 
     public static class IntegrationTestCase extends Assert
     {
-        private record ValueTask(int i) implements Runnable
-        {
-            @Override
-            public void run()
-            {
-            }
-        }
-
         private static class NoOpAccumulatingTask extends AccumulatingCommitTask<String, Integer>
         {
             NoOpAccumulatingTask()
@@ -417,44 +409,23 @@ public class RepeatedCommitTaskMonitor
             return tally != null ? tally.transactions() : 0;
         }
 
-        @Test
-        public void warnsAtTheThreshold()
-        {
-            assertEquals(1, warningsFor(true, THRESHOLD, i -> scope().addCommitTask(TestCase.task(i), CommitTaskOption.POSTCOMMIT)));
-        }
+        private record Case(String name, int expectedWarnings, boolean commit, int count, IntConsumer register) {}
 
         @Test
-        public void silentBelowTheThreshold()
+        public void testWarnings()
         {
-            assertEquals(0, warningsFor(true, THRESHOLD - 1, i -> scope().addCommitTask(TestCase.task(i), CommitTaskOption.POSTCOMMIT)));
-        }
-
-        @Test
-        public void silentForDedupedTasks()
-        {
-            assertEquals(0, warningsFor(true, THRESHOLD, i -> scope().addCommitTask(new ValueTask(0), CommitTaskOption.POSTCOMMIT)));
-        }
-
-        @Test
-        public void silentForAccumulatingTask()
-        {
-            assertEquals(0, warningsFor(true, THRESHOLD, i -> new NoOpAccumulatingTask().register(scope(), List.of(i), CommitTaskOption.POSTCOMMIT)));
-        }
-
-        @Test
-        public void warnsForEachQueue()
-        {
-            assertEquals(2, warningsFor(true, THRESHOLD, i -> {
-                scope().addCommitTask(TestCase.task(i), CommitTaskOption.PRECOMMIT);
-                scope().addCommitTask(TestCase.task(i), CommitTaskOption.POSTCOMMIT);
-            }));
-        }
-
-        @Test
-        public void warnsOnlyForTheQueueThatRuns()
-        {
-            assertEquals(0, warningsFor(false, THRESHOLD, i -> scope().addCommitTask(TestCase.task(i), CommitTaskOption.POSTCOMMIT)));
-            assertEquals(1, warningsFor(false, THRESHOLD, i -> scope().addCommitTask(TestCase.task(i), CommitTaskOption.POSTROLLBACK)));
+            IntConsumer postCommit = i -> scope().addCommitTask(TestCase.task(i), CommitTaskOption.POSTCOMMIT);
+            for (Case c : List.of(
+                new Case("at the threshold", 1, true, THRESHOLD, postCommit),
+                new Case("below the threshold", 0, true, THRESHOLD - 1, postCommit),
+                new Case("deduped tasks", 0, true, THRESHOLD, _ -> scope().addCommitTask(new TestCase.KeyedTask(0), CommitTaskOption.POSTCOMMIT)),
+                new Case("accumulating task", 0, true, THRESHOLD, i -> new NoOpAccumulatingTask().register(scope(), List.of(i), CommitTaskOption.POSTCOMMIT)),
+                new Case("each queue", 2, true, THRESHOLD, i -> {
+                    scope().addCommitTask(TestCase.task(i), CommitTaskOption.PRECOMMIT);
+                    postCommit.accept(i);
+                }),
+                new Case("only the queue that runs", 0, false, THRESHOLD, postCommit)))
+                assertEquals(c.name(), c.expectedWarnings(), warningsFor(c.commit(), c.count(), c.register()));
         }
 
         @Test

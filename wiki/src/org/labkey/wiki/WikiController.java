@@ -3026,7 +3026,7 @@ public class WikiController extends SpringActionController
         public void testCopyWikiCannotCreateProjectWithoutSiteAdmin() throws Exception
         {
             User limitedAdmin = createUserInRole(_source, FolderAdminRole.class);
-            String newPath = "/" + getClass().getName().replaceAll("[^A-Za-z0-9]", "_") + "-NewProject";
+            String newPath = "/CopyWikiNewProject-" + GUID.makeGUID();
 
             try
             {

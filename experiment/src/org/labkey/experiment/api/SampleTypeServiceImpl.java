@@ -86,6 +86,7 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleChangeNotify;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -2597,10 +2598,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 projB = ContainerManager.createContainer(root, "SampleScopeB" + suffix, user);
                 Container subA = ContainerManager.createContainer(projA, "sub", user);
 
-                ExpSampleType stLocal = svc.createSampleType(subA, user, "ScopeLocal", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
-                ExpSampleType stProject = svc.createSampleType(projA, user, "ScopeProject", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
-                stShared = svc.createSampleType(shared, user, "ScopeShared" + suffix, null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
-                ExpSampleType stForeign = svc.createSampleType(projB, user, "ScopeForeign", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
+                ExpSampleType stLocal = SampleTypeTestHelper.create(subA, user, "ScopeLocal");
+                ExpSampleType stProject = SampleTypeTestHelper.create(projA, user, "ScopeProject");
+                stShared = SampleTypeTestHelper.create(shared, user, "ScopeShared" + suffix);
+                ExpSampleType stForeign = SampleTypeTestHelper.create(projB, user, "ScopeForeign");
 
                 // In scope from subA (current, project, Shared) -- resolves by rowId and by LSID.
                 assertNotNull("Local sample type should resolve by rowId", svc.getSampleType(subA, stLocal.getRowId(), true));
@@ -2637,10 +2638,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
          */
         private ExpSampleType createTypeStealingContainerToken(Container c, User user, String name) throws Exception
         {
-            List<GWTPropertyDescriptor> props = nameProp();
-            props.add(new GWTPropertyDescriptor("AliasStealer", "http://www.w3.org/2001/XMLSchema#string"));
-            props.add(new GWTPropertyDescriptor("LabelStealer", "http://www.w3.org/2001/XMLSchema#string"));
-            ExpSampleType st = get().createSampleType(c, user, name, null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+            ExpSampleType st = SampleTypeTestHelper.create(c, user, name,
+                new GWTPropertyDescriptor("AliasStealer", "http://www.w3.org/2001/XMLSchema#string"),
+                new GWTPropertyDescriptor("LabelStealer", "http://www.w3.org/2001/XMLSchema#string"));
 
             // ExpSampleType hands back a read-only instance; forUpdate gives one that can be saved
             Domain domain = PropertyService.get().getDomain(c, st.getDomain().getTypeURI(), true);
@@ -2661,29 +2661,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 c = ContainerManager.createContainer(ContainerManager.getRoot(), "ContainerToken" + GUID.makeHash(), user);
                 ExpSampleType st = createTypeStealingContainerToken(c, user, "ContainerTokenTheft");
 
-                UserSchema schema = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_NAME);
-                TableInfo table = schema.getTable(st.getName());
-                QueryUpdateService qus = table.getUpdateService();
-
-                Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                row.put("name", "S1");
-                row.put("AliasStealer", "keepAlias");
-                row.put("LabelStealer", "keepLabel");
-
-                BatchValidationException errors = new BatchValidationException();
-                List<Map<String, Object>> inserted = qus.insertRows(user, c, List.of(row), errors, null, null);
-                if (errors.hasErrors())
-                    throw errors;
-                Object rowId = inserted.get(0).get("rowId");
+                TableInfo table = SampleTypeTestHelper.getTable(c, user, st);
+                Object rowId = SampleTypeTestHelper.insert(c, user, st, List.of(CaseInsensitiveHashMap.<Object>of(
+                    "name", "S1", "AliasStealer", "keepAlias", "LabelStealer", "keepLabel"))).get(0).get("rowId");
 
                 // An edit that touches neither field: the update pipeline supplies a Container column of its own here
-                Map<String, Object> update = new CaseInsensitiveHashMap<>();
-                update.put("rowId", rowId);
-                update.put("description", "touched");
-                errors = new BatchValidationException();
-                qus.updateRows(user, c, List.of(update), null, errors, null, null);
-                if (errors.hasErrors())
-                    throw errors;
+                SampleTypeTestHelper.update(c, user, st, List.of(CaseInsensitiveHashMap.<Object>of("rowId", rowId, "description", "touched")));
 
                 Map<String, Object> stored = new TableSelector(table, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null).getMap();
                 assertEquals("A field aliased Container kept its own value", "keepAlias", stored.get("AliasStealer"));
@@ -2728,13 +2711,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (c != null)
                     ContainerManager.deleteAll(c, user);
             }
-        }
-
-        private List<GWTPropertyDescriptor> nameProp()
-        {
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("name", "string"));
-            return props;
         }
     }
 }

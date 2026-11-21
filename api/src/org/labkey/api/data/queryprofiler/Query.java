@@ -295,9 +295,14 @@ public class Query
     {
         private static final String HASH = "0123456789abcdef0123456789abcdef";
 
+        static Query query(String sql, long elapsed)
+        {
+            return new Query(null, sql, null, elapsed, null, false);
+        }
+
         private static String transform(String sql)
         {
-            return new Query(null, sql, null, 0, null, false).getSql();
+            return query(sql, 0).getSql();
         }
 
         @Test
@@ -330,7 +335,7 @@ public class Query
                 "SELECT 1.123456789012345678901234567890123456e10",
                 "SELECT x FROM study.c108d1468_demographics"))
             {
-                Query query = new Query(null, sql, null, 0, null, false);
+                Query query = query(sql, 0);
                 assertEquals(sql, query.getSql());
                 assertTrue(query.isValidSql());
                 assertNull(query.getNormalizationReason());
@@ -346,7 +351,7 @@ public class Query
 
         private static void assertNormalizedName(String expectedName, String sql)
         {
-            Query query = new Query(null, sql, null, 0, null, false);
+            Query query = query(sql, 0);
             query.getSql();
             assertFalse(query.isValidSql());
             String reason = query.getNormalizationReason();

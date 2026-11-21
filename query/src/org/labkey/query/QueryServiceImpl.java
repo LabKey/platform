@@ -3551,7 +3551,7 @@ public class QueryServiceImpl implements QueryService
         public void testInClauseInnerJoin()
         {
             QueryService qs = QueryService.get();
-            TableInfo users = DbSchema.get("core", DbSchemaType.Module).getTable("users");
+            TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
             assertNotNull(users);
             List<ColumnInfo> cols = List.of(users.getColumn("userid"), users.getColumn("displayname"));
 
@@ -3649,15 +3649,7 @@ public class QueryServiceImpl implements QueryService
                     " ti TINYINT DEFAULT NULL," +
                     " s VARCHAR DEFAULT NULL)\n" +
                     "SELECT bint, bit, char, dec, d, i, text, num, real, sint, ts, ti, s FROM core.Users WHERE 0=1";
-            QueryDef qd = new QueryDef();
-            qd.setSchema("core");
-            qd.setName("junit" + GUID.makeHash());
-            qd.setContainer(JunitUtil.getTestContainer().getId());
-            qd.setSql(sql);
-            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(),JunitUtil.getTestContainer(),qd);
-            List<QueryException> errors = new ArrayList<>();
-            TableInfo t = qdef.getTable(errors, false);
-            assertTrue(errors.isEmpty());
+            TableInfo t = coreQueryTable(sql);
             assertEquals(JdbcType.BIGINT, t.getColumn("bint").getJdbcType());
             assertEquals(JdbcType.BOOLEAN, t.getColumn("bit").getJdbcType());
             assertEquals(JdbcType.CHAR, t.getColumn("char").getJdbcType());
@@ -3875,16 +3867,8 @@ public class QueryServiceImpl implements QueryService
                 "  CASE WHEN isnumeric('abc') = 1 THEN 1 ELSE 0 END AS n6 " +
                 "FROM core.Containers";
 
-            QueryDef qd = new QueryDef();
-            qd.setSchema("core");
-            qd.setName("junit" + GUID.makeHash());
-            qd.setContainer(JunitUtil.getTestContainer().getId());
-            qd.setSql(sql);
-            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(), JunitUtil.getTestContainer(), qd);
-            List<QueryException> errors = new ArrayList<>();
-            TableInfo t = qdef.getTable(errors, false);
-            String dialect = t == null ? "?" : t.getSqlDialect().getProductName();
-            assertTrue("Query parse errors on " + dialect + ": " + errors, errors.isEmpty());
+            TableInfo t = coreQueryTable(sql);
+            String dialect = t.getSqlDialect().getProductName();
 
             try (Results results = new TableSelector(t).getResults())
             {
@@ -3900,6 +3884,21 @@ public class QueryServiceImpl implements QueryService
             }
         }
 
+        /** Parses sql as a custom query over the core schema in the junit container, failing on any parse error */
+        private static TableInfo coreQueryTable(String sql)
+        {
+            QueryDef qd = new QueryDef();
+            qd.setSchema("core");
+            qd.setName("junit" + GUID.makeHash());
+            qd.setContainer(JunitUtil.getTestContainer().getId());
+            qd.setSql(sql);
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo t = new CustomQueryDefinitionImpl(TestContext.get().getUser(), JunitUtil.getTestContainer(), qd).getTable(errors, false);
+            assertTrue("Query parse errors on " + CoreSchema.getInstance().getSqlDialect().getProductName() + ": " + errors, errors.isEmpty());
+            assertNotNull(t);
+            return t;
+        }
+
         // 2026 (Jan 1 = Thursday) makes the two rules agree except on Sundays; 2027 (Jan 1 = Friday) puts them one
         // apart every day and starts in the prior ISO year. A mid-year sample in a Mon-Thu year passes either way.
         private static final String[] WEEK_DATES = {
@@ -3911,15 +3910,10 @@ public class QueryServiceImpl implements QueryService
         };
 
         @Test
-        public void testWeekUs() throws SQLException
+        public void testWeeks() throws SQLException
         {
             // Weeks start Sunday and week 1 holds Jan 1, matching SQL Server's DATEPART(week, x) under DATEFIRST 7.
             assertWeeks("weekus", 1, 1, 2, 1, 29);
-        }
-
-        @Test
-        public void testWeekIso() throws SQLException
-        {
             // ISO 8601: weeks start Monday and week 1 holds the year's first Thursday, so 2027-01-01 lands in 2026's week 53.
             assertWeeks("weekiso", 1, 1, 1, 53, 28);
         }
@@ -3932,16 +3926,8 @@ public class QueryServiceImpl implements QueryService
                    .append("(CAST('").append(WEEK_DATES[i]).append(" 00:00:00' AS TIMESTAMP)) AS w").append(i + 1);
             sql.append(" FROM core.Containers");
 
-            QueryDef qd = new QueryDef();
-            qd.setSchema("core");
-            qd.setName("junit" + GUID.makeHash());
-            qd.setContainer(JunitUtil.getTestContainer().getId());
-            qd.setSql(sql.toString());
-            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(), JunitUtil.getTestContainer(), qd);
-            List<QueryException> errors = new ArrayList<>();
-            TableInfo t = qdef.getTable(errors, false);
-            String dialect = t == null ? "?" : t.getSqlDialect().getProductName();
-            assertTrue("Query parse errors on " + dialect + ": " + errors, errors.isEmpty());
+            TableInfo t = coreQueryTable(sql.toString());
+            String dialect = t.getSqlDialect().getProductName();
 
             try (Results results = new TableSelector(t).getResults())
             {

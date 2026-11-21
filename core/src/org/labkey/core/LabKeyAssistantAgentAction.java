@@ -6,9 +6,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -18,13 +15,11 @@ import org.labkey.api.mcp.ChatHistoryService;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.mcp.PromptForm;
-import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.AbortedRequestException;
@@ -201,21 +196,10 @@ public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
                 "\". Call whereAmIWhoAmITalkingTo again if you need its details.]\n\n" + userPrompt;
     }
 
-    public static class TestCase extends Assert
+    public static class TestCase extends AbstractContainerScopingTest
     {
-        private static final String FOLDER_NAME = "LabKeyAssistantTestCase";
-
         private final User _user = TestContext.get().getUser();
         private final Container _junit = JunitUtil.getTestContainer();
-
-        @Before
-        @After
-        public void cleanup()
-        {
-            Container folder = ContainerManager.getForPath(_junit.getPath() + "/" + FOLDER_NAME);
-            if (null != folder)
-                ContainerManager.deleteAll(folder, _user);
-        }
 
         @Test
         public void testPromptUnchangedWithoutMove()
@@ -228,7 +212,7 @@ public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
         @Test
         public void testMoveNamesReadableFolder()
         {
-            Container folder = ContainerManager.createContainer(_junit, FOLDER_NAME, _user);
+            Container folder = createContainer("Readable");
             String composed = composePrompt("Hi", _junit.getId(), folder, _user);
             assertTrue(composed, composed.contains("from the folder \"" + _junit.getPath() + "\" to the folder \"" + folder.getPath() + "\""));
             assertTrue(composed, composed.endsWith("\n\nHi"));
@@ -237,11 +221,7 @@ public class LabKeyAssistantAgentAction extends AbstractAgentAction<PromptForm>
         @Test
         public void testMoveHidesUnreadableFolder()
         {
-            Container folder = ContainerManager.createContainer(_junit, FOLDER_NAME, _user);
-            // A non-empty policy of its own, so the folder doesn't inherit the parent's
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(folder);
-            policy.addRoleAssignment(_user, ReaderRole.class);
-            SecurityPolicyManager.savePolicyForTests(policy, _user);
+            Container folder = createRestrictedContainer("Restricted");
             User other = new User("docassistant-other@example.com", Integer.MAX_VALUE - 2);
             assertFalse(folder.hasPermission(other, ReadPermission.class));
 

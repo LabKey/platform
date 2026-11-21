@@ -159,6 +159,7 @@ import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.SampleChangeNotify;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -10907,16 +10908,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             final User admin = TestContext.get().getUser();
             final Container c = JunitUtil.getTestContainer();
 
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("name", "string"));
-            ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "LineageGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
-
-            UserSchema schema = QueryService.get().getUserSchema(admin, c, SchemaKey.fromParts("Samples"));
-            QueryUpdateService svc = schema.getTable("LineageGuardSamples").getUpdateService();
-            BatchValidationException errors = new BatchValidationException();
-            svc.insertRows(admin, c, List.of(CaseInsensitiveHashMap.of("name", "sample")), errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            ExpSampleType st = SampleTypeTestHelper.create(c, admin, "LineageGuardSamples");
+            SampleTypeTestHelper.insert(c, admin, st, List.of(CaseInsensitiveHashMap.of("name", "sample")));
 
             ExpMaterial sample = st.getSample(c, "sample");
             String lsid = sample.getLSID();
@@ -10960,14 +10953,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             GWTPropertyDescriptor score = new GWTPropertyDescriptor("score", "int");
             score.setMvEnabled(true);
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("name", "string"));
-            props.add(new GWTPropertyDescriptor("color", "string"));
-            props.add(new GWTPropertyDescriptor("count", "int"));
-            props.add(new GWTPropertyDescriptor("collected", "dateTime"));
-            props.add(new GWTPropertyDescriptor("shipped", "boolean"));
-            props.add(score);
-            ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "PropertyGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+            ExpSampleType st = SampleTypeTestHelper.create(c, admin, "PropertyGuardSamples",
+                    new GWTPropertyDescriptor("color", "string"),
+                    new GWTPropertyDescriptor("count", "int"),
+                    new GWTPropertyDescriptor("collected", "dateTime"),
+                    new GWTPropertyDescriptor("shipped", "boolean"),
+                    score);
             DomainProperty color = st.getDomain().getPropertyByName("color");
 
             // Author has Insert but not Update

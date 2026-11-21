@@ -31,7 +31,6 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
@@ -50,6 +49,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 import org.labkey.audit.AuditSchema;
@@ -291,8 +291,6 @@ public class LogManager
      */
     public static class TruncationTestCase extends Assert
     {
-        private static final String PROJECT_NAME = "AuditTruncationTest Project";
-
         private static User _user;
         private static Container _container;
 
@@ -304,8 +302,8 @@ public class LogManager
 
             _user = TestContext.get().getUser();
 
-            deleteTestContainer();
-            _container = ContainerManager.ensureContainer(PROJECT_NAME, _user);
+            JunitUtil.deleteTestContainer();
+            _container = JunitUtil.getTestContainer();
         }
 
         @AfterClass
@@ -314,15 +312,7 @@ public class LogManager
             _container = null;
             _user = null;
 
-            deleteTestContainer();
-        }
-
-        private static void deleteTestContainer()
-        {
-            Container project = ContainerManager.getForPath(PROJECT_NAME);
-
-            if (null != project)
-                ContainerManager.deleteAll(project, TestContext.get().getUser());
+            JunitUtil.deleteTestContainer();
         }
 
         private static SampleTimelineAuditEvent overLongEvent(long sampleId)

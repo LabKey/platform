@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment.api;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -24,20 +23,18 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
-import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceTestUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -49,17 +46,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.audit.AbstractAuditTypeProvider.COLUMN_NAME_ROW_ID;
 import static org.labkey.api.audit.AuditHandler.USER_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
+import static org.labkey.experiment.samples.SampleTimelineAuditProvider.METADATA_COLUMN_NAME;
+import static org.labkey.experiment.samples.SampleTimelineAuditProvider.SAMPLE_NAME_COLUMN_NAME;
+import static org.labkey.experiment.samples.SampleTimelineAuditProvider.SAMPLE_TYPE_ID_COLUMN_NAME;
 
 /**
- * GH Issue 1640: DetailedAuditLogDataIterator flushes audit events every 1,001 rows, and each sample's
- * provided amount must stay with that sample across flushes.
+ * GH Issue 1640: DetailedAuditLogDataIterator flushes audit events every {@link BatchSize.Kind#ROWS} rows, and each
+ * sample's provided amount must stay with that sample across flushes.
  */
 public class SampleProvidedAmountAuditTestCase extends Assert
 {
-    private static final int ROW_COUNT = 2500; // spans three audit batches
+    private static final int BATCH_SIZE = 10;
+    private static final int ROW_COUNT = 25; // spans three audit batches; the merge's update and insert halves each cross a flush
     private static final String PROVIDED_AMOUNT_KEY = USER_PROVIDED_DATA_PREFIX + StoredAmount.label();
 
     private static Container _c;
@@ -91,10 +93,10 @@ public class SampleProvidedAmountAuditTestCase extends Assert
             expected.put("S-" + i, i);
         }
 
-        BatchValidationException errors = new BatchValidationException();
-        getUpdateService(st).insertRows(_user, _c, rows, errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, BATCH_SIZE))
+        {
+            SampleTypeTestHelper.insert(_c, _user, st, rows);
+        }
 
         assertProvidedAmounts(st, expected);
     }
@@ -108,10 +110,7 @@ public class SampleProvidedAmountAuditTestCase extends Assert
         for (int i = 1; i <= existingCount; i++)
             existing.add(sampleRow("S-" + i, i));
 
-        BatchValidationException errors = new BatchValidationException();
-        getUpdateService(st).insertRows(_user, _c, existing, errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
+        SampleTypeTestHelper.insert(_c, _user, st, existing);
 
         // The first half updates existing samples and the second half inserts new ones, all in one merge
         Map<String, Integer> expected = new HashMap<>();
@@ -123,9 +122,10 @@ public class SampleProvidedAmountAuditTestCase extends Assert
             expected.put("S-" + i, amount);
         }
 
-        getUpdateService(st).mergeRows(_user, _c, MapDataIterator.of(rows), errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
+        try (AutoCloseable ignored = BatchSize.override(BatchSize.Kind.ROWS, BATCH_SIZE))
+        {
+            QueryUpdateServiceTestUtil.merge(SampleTypeTestHelper.getTable(_c, _user, st), _user, _c, rows);
+        }
 
         assertProvidedAmounts(st, expected);
     }
@@ -140,11 +140,11 @@ public class SampleProvidedAmountAuditTestCase extends Assert
     {
         AbstractAuditTypeProvider provider = (AbstractAuditTypeProvider) AuditLogService.get().getAuditProvider(SampleTimelineAuditEvent.EVENT_TYPE);
         TableInfo table = provider.createStorageTableInfo();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SampleTypeId"), st.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(SAMPLE_TYPE_ID_COLUMN_NAME), st.getRowId());
 
         Map<String, String> latestMetadata = new HashMap<>();
-        new TableSelector(table, PageFlowUtil.set("RowId", "SampleName", "Metadata"), filter, new Sort("RowId"))
-            .forEach(rs -> latestMetadata.put(rs.getString("SampleName"), rs.getString("Metadata")));
+        new TableSelector(table, PageFlowUtil.set(COLUMN_NAME_ROW_ID, SAMPLE_NAME_COLUMN_NAME, METADATA_COLUMN_NAME), filter, new Sort(COLUMN_NAME_ROW_ID))
+            .forEach(rs -> latestMetadata.put(rs.getString(SAMPLE_NAME_COLUMN_NAME), rs.getString(METADATA_COLUMN_NAME)));
 
         assertEquals("Timeline event count", expected.size(), latestMetadata.size());
         for (Map.Entry<String, Integer> entry : expected.entrySet())
@@ -164,17 +164,7 @@ public class SampleProvidedAmountAuditTestCase extends Assert
 
     private ExpSampleType createSampleType(String name) throws Exception
     {
-        List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+        List<GWTPropertyDescriptor> props = List.of(SampleTypeTestHelper.nameProperty());
         return SampleTypeService.get().createSampleType(_c, _user, name, null, props, Collections.emptyList(), -1, -1, -1, -1, null, null, null, null, null, "mL");
-    }
-
-    private @NotNull QueryUpdateService getUpdateService(ExpSampleType st)
-    {
-        TableInfo table = QueryService.get().getUserSchema(_user, _c, SamplesSchema.SCHEMA_NAME).getTable(st.getName());
-        QueryUpdateService service = table == null ? null : table.getUpdateService();
-        if (service == null)
-            throw new IllegalArgumentException("No QueryUpdateService found for table " + st.getName());
-
-        return service;
     }
 }
