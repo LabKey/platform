@@ -39,7 +39,7 @@
     final String uploadFileDivId = makeId("uploadFileDiv");
     String tsvId = makeId("tsv");
     String errorDivId = makeId("errorDiv");
-    String extraFormFields = "";
+    StringBuilder extraFormFields = new StringBuilder();
 
     if (bean.importMessage != null)
     {
@@ -49,7 +49,7 @@
     if (null != bean.extraFields)
     {
         for (JSONObject o : JsonUtil.toJSONObjectList(bean.extraFields))
-            extraFormFields += o.toString() + ",\n";
+            extraFormFields.append(o.toString()).append(",\n");
     }
 
     if (bean.urlExcelTemplates != null && !bean.urlExcelTemplates.isEmpty())
@@ -110,7 +110,7 @@
         <div class="clearfix"></div>
     </div>
     <div class="panel-body">
-        <div id="<%=unsafe(copyPasteDivId)%>"></div>
+        <div id="<%=h(copyPasteDivId)%>"></div>
     </div>
 </div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>"> (function(){
@@ -494,7 +494,7 @@
             timeout: Ext4.Ajax.timeout,
 
             items: getImportOptions(1).concat([
-                <%=JavaScriptFragment.unsafe(extraFormFields)%>
+                <%=JavaScriptFragment.unsafe(extraFormFields.toString())%>
                 {
                     xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                 },
@@ -569,7 +569,7 @@
             timeout: Ext4.Ajax.timeout,
 
             items: getImportOptions(0).concat([
-                    <%=JavaScriptFragment.unsafe(extraFormFields)%>
+                    <%=JavaScriptFragment.unsafe(extraFormFields.toString())%>
                     {
                         xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                     },

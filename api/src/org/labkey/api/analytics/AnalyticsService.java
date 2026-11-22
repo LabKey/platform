@@ -17,6 +17,7 @@
 package org.labkey.api.analytics;
 
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -35,16 +36,16 @@ public interface AnalyticsService
         ServiceRegistry.get().registerService(AnalyticsService.class, impl);
     }
 
-    static String getTrackingScript()
+    static HtmlString getTrackingScript()
     {
         AnalyticsService svc = get();
         if (svc == null)
         {
-            return "";
+            return HtmlString.EMPTY_STRING;
         }
         return svc.getTrackingScript(HttpView.getRootContext());
     }
 
-    String getTrackingScript(ViewContext viewContext);
+    HtmlString getTrackingScript(ViewContext viewContext);
 //    String getSanitizedUrl(ViewContext viewContext);
 }

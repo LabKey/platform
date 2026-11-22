@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -66,14 +67,14 @@
     <% } %>
     <% if (model.getAllowTrackingScript())
        {
-           String script = AnalyticsService.getTrackingScript();
-           if (StringUtils.isNotEmpty(script))
+           HtmlString script = AnalyticsService.getTrackingScript();
+           if (!HtmlString.isEmpty(script))
            {
                if (null != getContainer() && getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                {
-                    %><!-- see <%= unsafe(new ActionURL("analytics", "begin", ContainerManager.getRoot()).getURIString())%> --><%
+                    %><!-- see <%=h(new ActionURL("analytics", "begin", ContainerManager.getRoot()).getURIString())%> --><%
                }
-               %><%=unsafe(script)%><%
+               %><%=script%><%
            }
        }
 %>

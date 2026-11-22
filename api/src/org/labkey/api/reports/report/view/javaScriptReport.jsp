@@ -24,7 +24,7 @@
 
     String uniqueDivName = "div_" + UniqueID.getServerSessionScopedUID();  // Unique div name to support multiple reports per page
 %>
-<div id="<%=unsafe(uniqueDivName)%>"></div>
+<div id="<%=h(uniqueDivName)%>"></div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function()
     {

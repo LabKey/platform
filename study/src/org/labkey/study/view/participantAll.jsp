@@ -494,7 +494,7 @@
 %>
 <tr class="labkey-header">
     <th nowrap align="left" class="labkey-expandable-row-header">
-        <a id="<%=unsafe(toggleId)%>" title="Click to expand/collapse" href="#"
+        <a id="<%=h(toggleId)%>" title="Click to expand/collapse" href="#"
             data-href="<%=h(new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId())))%>">
             <img src="<%=getWebappURL("_images/" + (expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
             <%=h(dataset.getDisplayString())%>
@@ -744,7 +744,7 @@
 %>
             <tr style="<%=unsafe(expanded ? "" : "display:none")%>">
                 <td colspan="<%=totalSeqKeyCount+1%>">
-                    <a id=<%=unsafe(anchorId)%> class="labkey-text-link labkey-ptid-add" dataset-id="<%=datasetId%>">Add Chart</a>
+                    <a id="<%=h(anchorId)%>" class="labkey-text-link labkey-ptid-add" dataset-id="<%=datasetId%>">Add Chart</a>
                     <% addHandler(anchorId, "click", "LABKEY.ParticipantViewUnhideSelect(this)"); %>
                     <select id="addChartSelect-<%=datasetId%>" style="display: none">
                     <% addHandler("addChartSelect-" + datasetId, "change", "document.getElementById('addButton-" + datasetId + "').style.display = 'inline-block';"); %>
