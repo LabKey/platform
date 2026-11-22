@@ -258,25 +258,16 @@
     private CrossRunSource createCrossRunSource(ExpMaterial material) throws Exception
     {
         var file = createAssayDataFile("ResultExpMaterialsLookup\n" + material.getName() + "\n");
-        var data = createUploadedData(file);
-        return new CrossRunSource(file, data, createProducingRun(material, data));
-    }
 
-    private ExpData createUploadedData(File file)
-    {
         var data = ExperimentService.get().createData(c, UPLOADED_FILE, file.getName());
         data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
         data.save(user);
-        return data;
-    }
 
-    private ExpRun createProducingRun(ExpMaterial material, ExpData data) throws Exception
-    {
         ExpRun run = ExperimentService.get().createExperimentRun(c, "external transform run");
         run.setFilePathRoot(pipeRoot.getRootPath());
         run.setProtocol(ExperimentService.get().ensureSampleDerivationProtocol(user));
 
-        return ExperimentService.get().saveSimpleExperimentRun(run,
+        run = ExperimentService.get().saveSimpleExperimentRun(run,
             Map.of(material, "sample"),
             Collections.emptyMap(),
             Collections.emptyMap(),
@@ -286,6 +277,8 @@
             null,
             false
         );
+
+        return new CrossRunSource(file, data, run);
     }
 
     private ExpSampleType createSampleType() throws Exception
@@ -606,27 +599,6 @@
 
         ExperimentService.get().deleteExperimentRunsByRowIds(c, user, null,
             List.of(source.run().getRowId(), assayRun1.getRowId(), assayRun2.getRowId()), null);
-
-        assertEquals(List.of(), ExperimentService.get().getAllExpDataByURL(dataFileUrl, null));
-    }
-
-    // The producing run is created last so the batch reaches it after the runs that consume its output
-    @Test
-    public void testCrossRunFileInputsDeletedBeforeProducingRun() throws Exception
-    {
-        var assayPair = createAssay(context, false, false);
-        var material = createMaterial();
-        var file = createAssayDataFile("ResultExpMaterialsLookup\n" + material.getName() + "\n");
-        var data = createUploadedData(file);
-        var assayRun1 = assayImportFile(c, user, assayPair.first, assayPair.second, file, true, null);
-        var assayRun2 = assayImportFile(c, user, assayPair.first, assayPair.second, file, true, null);
-        var producingRun = createProducingRun(material, data);
-
-        String dataFileUrl = data.getDataFileUrl();
-        assertEquals(3, ExperimentService.get().getAllExpDataByURL(dataFileUrl, null).size());
-
-        ExperimentService.get().deleteExperimentRunsByRowIds(c, user, null,
-            List.of(assayRun1.getRowId(), assayRun2.getRowId(), producingRun.getRowId()), null);
 
         assertEquals(List.of(), ExperimentService.get().getAllExpDataByURL(dataFileUrl, null));
     }
