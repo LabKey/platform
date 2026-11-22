@@ -37,13 +37,13 @@
         <%
         Collection<QueryService.ParameterDecl> decls = bean.params;
         Map values = bean.values;
-        String COMMA = "";
+        boolean first = true;
         for (QueryService.ParameterDecl p : decls)
         {
             Object value = null==values?null:values.get(p.getName());
             if (null == value)
                 value = p.getDefault();
-            %><%=unsafe(COMMA)%><%
+            if (!first) { %>,<% }
             %>{name:<%=q(p.getName())%><%
             %>,jdbctype:<%=q(p.getJdbcType().name())%><%
             %>,jsontype:<%=q(p.getJdbcType().json)%><%
@@ -51,7 +51,7 @@
             %>,defaultValue:<%=q(ConvertUtils.convert(p.getDefault()))%><%
             %>,value:<%=q(ConvertUtils.convert(value))%><%
             %>}<%
-            COMMA = ",";
+            first = false;
         }
         %>];
 

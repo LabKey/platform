@@ -33,6 +33,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -250,14 +251,14 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
 
     @Override
-    public String getTrackingScript(ViewContext context)
+    public HtmlString getTrackingScript(ViewContext context)
     {
         if (getTrackingStatus().isEmpty())
-            return "";
+            return HtmlString.EMPTY_STRING;
 
         ActionURL url = context.getActionURL();
         if (null == url)
-            return "";
+            return HtmlString.EMPTY_STRING;
 
         String ga4JS = GOOGLE_TAG_MANAGER_URL + "/gtag/js?id=" + getMeasurementId();
         Boolean sendPageView = true;
@@ -276,7 +277,8 @@ public class AnalyticsServiceImpl implements AnalyticsService
                     "SEND_PAGE_VIEW", sendPageView,
                     "SCRIPT_NONCE", HttpView.currentPageConfig().getScriptNonce())));
         }
-        return sb.toString();
+        // Trusted markup: the GA4 template encodes each substitution, and custom scripts come from site admins
+        return HtmlString.unsafe(sb.toString());
     }
 
     public static void populateSettingsWithStartupProps()
