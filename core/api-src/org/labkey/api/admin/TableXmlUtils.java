@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.labkey.api.admin.sitevalidation.SiteValidationResult;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -42,6 +43,9 @@ import java.util.TreeMap;
 public class TableXmlUtils
 {
     private static final Logger _log = LogManager.getLogger(TableXmlUtils.class);
+
+    // schema.xml-only tableDbType for objects whose type differs between databases; no DatabaseTableType counterpart
+    private static final String UNKNOWN_TABLE_TYPE = "UNKNOWN";
 
     // Careful: don't use DbSchema.get(), schema.getTable(), or schema.getTables() -- we don't want schema.xml applied
     // and we don't want to cache these TableInfos (because schema.xml hasn't been applied).
@@ -92,14 +96,28 @@ public class TableXmlUtils
 
             Set<String> dbTableNames = new CaseInsensitiveHashSet(DbSchema.createFromMetaData(schema.getScope(), schema.getName(), DbSchemaType.Bare).getTableNames());
 
-            return Arrays.stream(tablesDocFromXml.getTables().getTableArray())
-                .anyMatch(xmlTable -> "VIEW".equalsIgnoreCase(xmlTable.getTableDbType()) && !dbTableNames.contains(xmlTable.getTableName()));
+            return getXmlTablesMissingFromDb(tablesDocFromXml.getTables().getTableArray(), dbTableNames).stream()
+                .anyMatch(TableXmlUtils::isView);
         }
         catch (Exception e)
         {
             _log.error("Exception loading schema {}", schema.getDisplayName(), e);
             return false;
         }
+    }
+
+    /** XML tables expected in the database but absent from it; UNKNOWN and NOT_IN_DB tables are never expected */
+    private static List<TableType> getXmlTablesMissingFromDb(TableType[] xmlTables, Set<String> dbTableNames)
+    {
+        return Arrays.stream(xmlTables)
+            .filter(xmlTable -> !dbTableNames.contains(xmlTable.getTableName()))
+            .filter(xmlTable -> !UNKNOWN_TABLE_TYPE.equals(xmlTable.getTableDbType()) && !DatabaseTableType.NOT_IN_DB.name().equals(xmlTable.getTableDbType()))
+            .toList();
+    }
+
+    private static boolean isView(TableType xmlTable)
+    {
+        return DatabaseTableType.VIEW.name().equals(xmlTable.getTableDbType());
     }
 
     public static SchemaValidationList compareXmlToMetaData(DbSchema schema, boolean bFull, boolean bCaseSensitive, boolean errorOnXmlMiss)
@@ -134,7 +152,6 @@ public class TableXmlUtils
         TableType[] dbTables;
         TableType[] xmlTables;
         String xmlTableName;
-        String xmlTableType;
         String dbTableName;
         String dbColName;
         String xmlColName;
@@ -169,28 +186,19 @@ public class TableXmlUtils
                 mDbTableOrdinals.put(dbTableName.toLowerCase(), i);
             }
 
+            for (TableType missingTable : getXmlTablesMissingFromDb(xmlTables, new CaseInsensitiveHashSet(mDbTableOrdinals.keySet())))
+            {
+                if (isView(missingTable))
+                    rlOut.setViewProblem(true);
+                rlOut.addError("ERROR: TableName \"").append(missingTable.getTableName()).append("\" type \"").append(missingTable.getTableDbType()).append("\" found in XML but not in database.");
+            }
+
             for (TableType xmlTable : xmlTables)
             {
                 xmlTableName = xmlTable.getTableName();
-                xmlTableType = xmlTable.getTableDbType();
 
                 if (!(mDbTableOrdinals.containsKey(xmlTableName.toLowerCase())))
-                {
-                    if (xmlTableType.equals("UNKNOWN"))
-                    {
-                        continue;
-                    }
-
-                    if (!xmlTableType.equals("NOT_IN_DB"))
-                    {
-                        if ("VIEW".equalsIgnoreCase(xmlTableType))
-                        {
-                            rlOut.setViewProblem(true);
-                        }
-                        rlOut.addError("ERROR: TableName \"").append(xmlTableName).append("\" type \"").append(xmlTableType).append("\" found in XML but not in database.");
-                    }
                     continue;
-                }
 
                 idt = mDbTableOrdinals.get(xmlTableName.toLowerCase());
 
@@ -198,7 +206,7 @@ public class TableXmlUtils
                 compareStringProperty(tt.getTableName(), xmlTable.getTableName(), "TableName", rlOut, bCaseSensitive, schema.getName() + "." + tt.getTableName(), true);
 
                 // Special value "UNKNOWN" means the type is different on different databases, e.g., some of the tables/views/synonyms in the test schema
-                if (!"UNKNOWN".equals(xmlTable.getTableDbType()))
+                if (!UNKNOWN_TABLE_TYPE.equals(xmlTable.getTableDbType()))
                     compareStringProperty(tt.getTableDbType(), xmlTable.getTableDbType(), "TableDbType", rlOut, true, schema.getName() + "." + tt.getTableName(), true);
 
                 if (bFull)
@@ -524,7 +532,7 @@ public class TableXmlUtils
     public static class TestCase extends Assert
     {
         @Test
-        public void testHasMissingViewMatchesFullComparison()
+        public void testHasMissingView()
         {
             List<DbSchema> schemasWithViews = DbSchema.getAllSchemasToTest().stream()
                 .filter(schema -> !getXmlViewNames(schema).isEmpty())
@@ -532,7 +540,7 @@ public class TableXmlUtils
             assertFalse("No schema declares a view", schemasWithViews.isEmpty());
 
             for (DbSchema schema : schemasWithViews)
-                assertEquals(schema.getName(), compareXmlToMetaData(schema, false, false, true).hasViewProblem(), hasMissingView(schema));
+                assertFalse(schema.getName(), hasMissingView(schema));
 
             // Drop a view on a connection whose transaction is never committed
             DbSchema schema = schemasWithViews.getFirst();
@@ -549,7 +557,7 @@ public class TableXmlUtils
         {
             TablesDocument tablesDoc = DbScope.getSchemaXml(schema);
             return null == tablesDoc ? List.of() : Arrays.stream(tablesDoc.getTables().getTableArray())
-                .filter(xmlTable -> "VIEW".equalsIgnoreCase(xmlTable.getTableDbType()))
+                .filter(TableXmlUtils::isView)
                 .map(TableType::getTableName)
                 .toList();
         }
