@@ -34,7 +34,6 @@
     String xlsGUID = "xls_" + guid;
     String iqyGUID = "iqy_" + guid;
     String headerGUID = "header_" + guid;
-    String headerType = "xls_header_type";
     String exportSelectedId = "exportSelected_";
     String exportButtonId = "export_" + guid;
     String signButtonId = "sign_" + guid;
@@ -79,7 +78,7 @@
     <% } %>
     <tr>
         <td colspan="2"><label>Column headers:<%=helpPopup("Column Header Options", HtmlString.unsafe(sb.toString()))%></label>
-            <select id="<%=unsafe(headerGUID)%>" name="<%=unsafe(headerType)%>">
+            <select id="<%=h(headerGUID)%>" name="xls_header_type">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
@@ -108,14 +107,14 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($) {
         LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
-            var xlsExportEl = $("#<%=h(xlsGUID)%>");
-            var xlsxExportEl = $("#<%=h(xlsxGUID)%>");
-            var iqyExportEl = $("#<%=h(iqyGUID)%>");
-            var headerEl = $("#<%=h(headerGUID)%>");
+            var xlsExportEl = $(<%=q("#" + xlsGUID)%>);
+            var xlsxExportEl = $(<%=q("#" + xlsxGUID)%>);
+            var iqyExportEl = $(<%=q("#" + iqyGUID)%>);
+            var headerEl = $(<%=q("#" + headerGUID)%>);
             var includeSignButton = <%=model.isIncludeSignButton()%>;
 
-            var exportSelectedEl = $("#<%=h(exportSelectedId)%>");
-            var exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>");
+            var exportSelectedEl = $(<%=q("#" + exportSelectedId)%>);
+            var exportSelectedLabelEl = $(<%=q("#" + exportSelectedId + "_label")%>);
 
             var doExcelExport = function(isSign) {
                 var exportUrl, exportParams, exportRegionName = <%=q(exportRegionName)%>;
@@ -292,14 +291,14 @@
                 }
             };
 
-            var exportButtonEl = $("#<%=h(exportButtonId)%>");
+            var exportButtonEl = $(<%=q("#" + exportButtonId)%>);
             exportButtonEl.click(function() {
                 doExcelExport(false);
             });
 
             var signButtonEl;
             if (includeSignButton) {
-                signButtonEl = $("#<%=h(signButtonId)%>");
+                signButtonEl = $(<%=q("#" + signButtonId)%>);
                 signButtonEl.click(function() {
                     doExcelExport(true);
                 });

@@ -140,7 +140,7 @@
 
         <div class="auth-item">
             <%= button(bean.buttonText).submit(true).name("set") %>
-            <%=unsafe(bean.cancellable ? button("Cancel").href(bean.form.getReturnUrlHelper() != null ? bean.form.getReturnUrlHelper() : new ActionURL(HomeAction.class, getContainer())).toString() : "")%>
+            <% if (bean.cancellable) { %><%= button("Cancel").href(bean.form.getReturnUrlHelper() != null ? bean.form.getReturnUrlHelper() : new ActionURL(HomeAction.class, getContainer())) %><% } %>
         </div>
     <% }
        else
@@ -149,7 +149,7 @@
             URLHelper homeURL = bean.form.getReturnUrlHelper() != null ? bean.form.getReturnUrlHelper() : new ActionURL(StartAction.class, c);
     %>
             <div class="auth-item">
-                <%= unsafe(button("Home").href(homeURL).toString()) %>
+                <%= button("Home").href(homeURL) %>
             </div>
     <% } %>
     </div>

@@ -26,6 +26,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
@@ -48,6 +50,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServlet;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.beans.Introspector;
@@ -57,12 +60,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -581,13 +586,17 @@ public class PageConfig
      *      var id = makeId("prefix");
      *  or in JAVA:
      *     var id = config.makeId("prefix");
-     * @param prefix non-empty String
-     * @return unique element id
+     * @param prefix letter or underscore, then letters, digits, underscores, or hyphens
+     * @return unique element id, safe to render in HTML attributes, JavaScript strings, and CSS selectors
      */
     public String makeId(String prefix)
     {
+        if (!ID_PREFIX_PATTERN.matcher(prefix).matches())
+            throw new IllegalArgumentException("Invalid element id prefix: " + prefix);
         return prefix + _sid + _uid.incrementAndGet(); // we can concatenate without a separator because _sid is fixed width
     }
+
+    private static final Pattern ID_PREFIX_PATTERN = Pattern.compile("[A-Za-z_][A-Za-z0-9_-]*");
 
     /** @return a version of the supplied name that conforms to Java's local variable naming convention, which ensures
      * it can serve as a valid DOM id attribute value. This does not ensure that the ID is unique across properties.
@@ -796,5 +805,31 @@ public class PageConfig
         );
 
         out.write("})();\n"); // end of anonymous scope
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testMakeId()
+        {
+            PageConfig config = new PageConfig(new MockHttpServletRequest());
+            Set<String> ids = new HashSet<>();
+            for (String prefix : List.of("a", "Z", "_", "toggle_", "formsSubmit", "my-id_2"))
+            {
+                String id = config.makeId(prefix);
+                assertTrue(id, id.startsWith(prefix));
+                assertTrue(id, ID_PREFIX_PATTERN.matcher(id).matches());
+                assertTrue(id, ids.add(id));
+            }
+            assertNotEquals(config.makeId("a"), config.makeId("a"));
+        }
+
+        @Test
+        public void testInvalidPrefix()
+        {
+            PageConfig config = new PageConfig(new MockHttpServletRequest());
+            for (String prefix : List.of("", "1abc", "-abc", "a b", "a.b", "a\"b", "a'b", "a<b", "a>b", "a&b", "a#b", "a\\b", "a\nb"))
+                assertThrows(prefix, IllegalArgumentException.class, () -> config.makeId(prefix));
+        }
     }
 }
