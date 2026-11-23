@@ -520,12 +520,21 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
             assertFalse("opening fence must be stripped: " + html, html.contains("```"));
         }
 
-        /**
-         * One parse case. Each expected entry is a segment type, optionally with content: "html~text" (html contains
-         * text), "sql=SQL", "expression=SQL|JDBCTYPE", "expression=SQL|" (no jdbcType), "expression=SQL" (jdbcType
-         * unchecked). leak, when non-null, is the expected hasLeakedPayload().
-         */
-        private record Case(String name, List<String> responses, Boolean leak, boolean noPayloadInProse, String... expected) {}
+        /** Expected segment: its type, plus whichever content fields the case checks. noJdbcType means the key must be absent. */
+        private record Seg(String type, @Nullable String sql, @Nullable String jdbcType, boolean noJdbcType, @Nullable String htmlContains) {}
+
+        private static Seg html() { return new Seg("html", null, null, false, null); }
+        private static Seg html(String contains) { return new Seg("html", null, null, false, contains); }
+        private static Seg sql() { return new Seg("sql", null, null, false, null); }
+        private static Seg sql(String sql) { return new Seg("sql", sql, null, false, null); }
+        /** jdbcType unchecked */
+        private static Seg expr(String sql) { return new Seg("expression", sql, null, false, null); }
+        private static Seg expr(String sql, String jdbcType) { return new Seg("expression", sql, jdbcType, false, null); }
+        /** A non-JSON body: raw SQL with no jdbcType */
+        private static Seg rawExpr(String sql) { return new Seg("expression", sql, null, true, null); }
+
+        /** One parse case. leak, when non-null, is the expected hasLeakedPayload(). */
+        private record Case(String name, List<String> responses, Boolean leak, boolean noPayloadInProse, Seg... expected) {}
 
         private static String fence(String tag, String body, String closer)
         {
@@ -542,49 +551,49 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
             List<Case> cases = new ArrayList<>(List.of(
                 new Case("empty response list", List.of(), null, false),
                 new Case("blank messages", List.of("", "   "), null, false),
-                new Case("prose only", List.of("Hello, here is some advice."), null, false, "html~Hello, here is some advice."),
-                new Case("expression fence", List.of(fence("```expression", expressionPayload("SELECT 1", "INTEGER"), "```")), null, false, "expression=SELECT 1|INTEGER"),
+                new Case("prose only", List.of("Hello, here is some advice."), null, false, html("Hello, here is some advice.")),
+                new Case("expression fence", List.of(fence("```expression", expressionPayload("SELECT 1", "INTEGER"), "```")), null, false, expr("SELECT 1", "INTEGER")),
                 // Legacy / model-misbehavior fallback: a non-JSON body is raw SQL with no jdbcType
-                new Case("raw sql expression body", List.of(fence("```expression", "SELECT 1", "```")), null, false, "expression=SELECT 1|"),
-                new Case("sql fence", List.of(fence("```sql", "SELECT 1", "```")), null, false, "sql=SELECT 1"),
+                new Case("raw sql expression body", List.of(fence("```expression", "SELECT 1", "```")), null, false, rawExpr("SELECT 1")),
+                new Case("sql fence", List.of(fence("```sql", "SELECT 1", "```")), null, false, sql("SELECT 1")),
                 new Case("interleaved prose and fences", List.of(String.join("\n",
                     "Here are two options.", "", "Option A (illustrative):", "```sql", "SELECT a FROM t", "```", "",
                     "Option B (ready to apply):", "```expression", expressionPayload("SELECT b FROM t", "VARCHAR"), "```", "Pick whichever fits.")),
-                    null, false, "html", "sql=SELECT a FROM t", "html", "expression=SELECT b FROM t|VARCHAR", "html"),
+                    null, false, html(), sql("SELECT a FROM t"), html(), expr("SELECT b FROM t", "VARCHAR"), html()),
                 new Case("multiple expression fences", List.of(fence("```expression", expressionPayload("SELECT 1", "INTEGER"), "```") + "\n" + fence("```expression", expressionPayload("SELECT 2", "BIGINT"), "```")),
-                    null, false, "expression=SELECT 1|INTEGER", "expression=SELECT 2|BIGINT"),
+                    null, false, expr("SELECT 1", "INTEGER"), expr("SELECT 2", "BIGINT")),
                 // An unterminated fence costs only its own block: the four-backtick opener is never closed by the shorter closer
                 new Case("unterminated fence keeps later responses", List.of(fence("````expression", expressionPayload("SELECT 1", "INTEGER"), "```"), "Corrected:\n" + fence("```expression", expressionPayload("SELECT 2", "BIGINT"), "```")),
-                    null, false, "html", "expression=SELECT 2|BIGINT"),
+                    null, false, html(), expr("SELECT 2", "BIGINT")),
                 // Only sql/expression are split out; other fenced blocks stay in the html segment
-                new Case("unknown fence language", List.of(fence("```python", "print('hi')", "```")), null, false, "html"),
-                new Case("case-insensitive tag", List.of(fence("```EXPRESSION", expressionPayload("SELECT 1", "INTEGER"), "```")), null, false, "expression=SELECT 1|INTEGER"),
-                new Case("longer closer ends shorter opener", List.of(fence("```expression", payload, "````")), null, false, "expression=Int7 + Int6|INTEGER"),
+                new Case("unknown fence language", List.of(fence("```python", "print('hi')", "```")), null, false, html()),
+                new Case("case-insensitive tag", List.of(fence("```EXPRESSION", expressionPayload("SELECT 1", "INTEGER"), "```")), null, false, expr("SELECT 1", "INTEGER")),
+                new Case("longer closer ends shorter opener", List.of(fence("```expression", payload, "````")), null, false, expr("Int7 + Int6", "INTEGER")),
                 // Per CommonMark the short line is fence content, not a closer, so the block never terminates
-                new Case("shorter closer doesn't end longer opener", List.of(fence("````expression", payload, "```")), null, false, "html"),
+                new Case("shorter closer doesn't end longer opener", List.of(fence("````expression", payload, "```")), null, false, html()),
                 // No opening fence, so the payload lands in prose and the user gets no Apply affordance
-                new Case("leak: missing fence", List.of("Adding Int7 and Int6.\n\n" + payload + "\n```"), true, false, "html"),
+                new Case("leak: missing fence", List.of("Adding Int7 and Int6.\n\n" + payload + "\n```"), true, false, html()),
                 // The illustrative sql tag renders the payload as a read-only code block
-                new Case("leak: sql fence", List.of(fence("```sql", payload, "```")), true, false, "sql"),
+                new Case("leak: sql fence", List.of(fence("```sql", payload, "```")), true, false, sql()),
                 // Narration inside the fence means the body doesn't parse and Apply would write JSON to the field
-                new Case("leak: non-JSON expression body", List.of(fence("```expression", narrated, "```")), true, false, "expression=" + narrated),
+                new Case("leak: non-JSON expression body", List.of(fence("```expression", narrated, "```")), true, false, expr(narrated)),
                 // Parses, but with nothing to unpack buildSqlSegment falls back to the raw body
-                new Case("leak: no expression key", List.of(fence("```expression", noExpressionKey, "```")), true, false, "expression=" + noExpressionKey),
+                new Case("leak: no expression key", List.of(fence("```expression", noExpressionKey, "```")), true, false, expr(noExpressionKey)),
                 // "jdbcType" is a key on the expression segment itself, not part of the SQL the user sees
-                new Case("well-formed expression", List.of(fence("```expression", payload, "```")), false, false, "expression=Int7 + Int6|INTEGER"),
-                new Case("prose without payload", List.of("Which date field should be used?"), false, false, "html"),
+                new Case("well-formed expression", List.of(fence("```expression", payload, "```")), false, false, expr("Int7 + Int6", "INTEGER")),
+                new Case("prose without payload", List.of("Which date field should be used?"), false, false, html()),
                 // Only the info string's first word is the tag
-                new Case("extra info string token", List.of(fence("```expression json", payload, "```")), null, true, "expression=Int7 + Int6|INTEGER"),
+                new Case("extra info string token", List.of(fence("```expression json", payload, "```")), null, true, expr("Int7 + Int6", "INTEGER")),
                 // Tool calling can split one assistant turn mid-fence; the scan joins the turns so the block still closes
-                new Case("fence split across responses", List.of("Adding Int7 and Int6.\n\n```expression\n" + payload, "```"), null, true, "html", "expression=Int7 + Int6|INTEGER"),
-                new Case("multiline sql body", List.of(fence("```expression", expressionPayload(multiline, "VARCHAR"), "```")), null, false, "expression=" + multiline + "|VARCHAR"),
+                new Case("fence split across responses", List.of("Adding Int7 and Int6.\n\n```expression\n" + payload, "```"), null, true, html(), expr("Int7 + Int6", "INTEGER")),
+                new Case("multiline sql body", List.of(fence("```expression", expressionPayload(multiline, "VARCHAR"), "```")), null, false, expr(multiline, "VARCHAR")),
                 new Case("responses concatenated in order", List.of("First response prose.", fence("```expression", expressionPayload("SELECT 1", "INTEGER"), "```")),
-                    null, false, "html", "expression=SELECT 1|INTEGER")
+                    null, false, html(), expr("SELECT 1", "INTEGER"))
             ));
             for (int n = 3; n <= 6; n++)
             {
                 String delim = "`".repeat(n);
-                cases.add(new Case("fence length " + n, List.of(fence(delim + "expression", payload, delim)), null, true, "expression=Int7 + Int6|INTEGER"));
+                cases.add(new Case("fence length " + n, List.of(fence(delim + "expression", payload, delim)), null, true, expr("Int7 + Int6", "INTEGER")));
             }
 
             for (Case c : cases)
@@ -600,30 +609,17 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends Mutating
             }
         }
 
-        private static void assertSegment(String name, JSONObject seg, String expected)
+        private static void assertSegment(String name, JSONObject seg, Seg expected)
         {
-            String[] html = expected.split("~", 2);
-            if (html.length == 2 && html[0].equals("html"))
-            {
-                assertEquals(name, "html", seg.getString("type"));
-                assertTrue(name + ": " + seg, seg.getString("html").contains(html[1]));
-                return;
-            }
-            String[] typeAndSql = expected.split("=", 2);
-            assertEquals(name, typeAndSql[0], seg.getString("type"));
-            if (typeAndSql.length == 1)
-                return;
-            int bar = typeAndSql[1].lastIndexOf('|');
-            String sql = bar < 0 || typeAndSql[0].equals("sql") ? typeAndSql[1] : typeAndSql[1].substring(0, bar);
-            assertEquals(name, sql, seg.getString("sql"));
-            if (bar >= 0 && typeAndSql[0].equals("expression"))
-            {
-                String jdbcType = typeAndSql[1].substring(bar + 1);
-                if (jdbcType.isEmpty())
-                    assertFalse(name + ": jdbcType should be absent when body isn't JSON", seg.has("jdbcType"));
-                else
-                    assertEquals(name, jdbcType, seg.getString("jdbcType"));
-            }
+            assertEquals(name, expected.type(), seg.getString("type"));
+            if (expected.htmlContains() != null)
+                assertTrue(name + ": " + seg, seg.getString("html").contains(expected.htmlContains()));
+            if (expected.sql() != null)
+                assertEquals(name, expected.sql(), seg.getString("sql"));
+            if (expected.jdbcType() != null)
+                assertEquals(name, expected.jdbcType(), seg.getString("jdbcType"));
+            if (expected.noJdbcType())
+                assertFalse(name + ": jdbcType should be absent when body isn't JSON", seg.has("jdbcType"));
         }
     }
 }

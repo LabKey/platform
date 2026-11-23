@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
+import org.junit.function.ThrowingRunnable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -162,12 +163,6 @@ public class JunitUtil
 
         if (iterations.intValue() != expected)
             throw new IllegalStateException("Did not execute runnable the expected number of times: " + iterations + " vs. " + expected);
-    }
-
-    @FunctionalInterface
-    public interface ThrowingRunnable
-    {
-        void run() throws Exception;
     }
 
     /**

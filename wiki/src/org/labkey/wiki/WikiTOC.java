@@ -366,6 +366,7 @@ public class WikiTOC extends NavTreeMenu
             User user = createUserInRole(_host, ReaderRole.class);
             String html = renderToc(user);
             assertTrue("Expected no-permission message, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(user).toString()));
+            assertFalse("Signed-in user got the guest login prompt, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(User.guest).toString()));
             assertFalse("Target folder's page leaked into the TOC", html.contains(PAGE_TITLE));
 
             grantRole(user, _target, ReaderRole.class);
@@ -375,6 +376,7 @@ public class WikiTOC extends NavTreeMenu
             grantRole(SecurityManager.getGroup(Group.groupGuests), _host, ReaderRole.class);
             html = renderToc(User.guest);
             assertTrue("Expected guest login prompt, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(User.guest).toString()));
+            assertFalse("Guest got the signed-in no-permission message, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(user).toString()));
             assertFalse("Target folder's page leaked into the guest TOC", html.contains(PAGE_TITLE));
         }
 

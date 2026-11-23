@@ -424,7 +424,8 @@ public class RepeatedCommitTaskMonitor
                     scope().addCommitTask(TestCase.task(i), CommitTaskOption.PRECOMMIT);
                     postCommit.accept(i);
                 }),
-                new Case("only the queue that runs", 0, false, THRESHOLD, postCommit)))
+                new Case("only the queue that runs", 0, false, THRESHOLD, postCommit),
+                new Case("rollback queue runs on rollback", 1, false, THRESHOLD, i -> scope().addCommitTask(TestCase.task(i), CommitTaskOption.POSTROLLBACK))))
                 assertEquals(c.name(), c.expectedWarnings(), warningsFor(c.commit(), c.count(), c.register()));
         }
 

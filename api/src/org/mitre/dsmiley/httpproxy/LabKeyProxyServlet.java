@@ -294,7 +294,8 @@ public class LabKeyProxyServlet extends ProxyServlet
                 assertHeader(r, ASSERTED_HEADER, "first");
                 assertHeader(r, ASSERTED_HEADER.toLowerCase(), "second");
             });
-            assertEquals(List.of((ASSERTED_HEADER + "=second").toLowerCase()), forwarded.stream().map(String::toLowerCase).toList());
+            // Header names are case-insensitive; values are not
+            assertEquals(List.of(ASSERTED_HEADER.toLowerCase() + "=second"), forwarded.stream().map(h -> h.substring(0, h.indexOf('=')).toLowerCase() + h.substring(h.indexOf('='))).toList());
         }
     }
 }

@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.labkey.api.util.JunitUtil;
 
 import java.sql.Connection;
@@ -241,7 +242,7 @@ public class ConnectionUsage
             _enabled = _wasEnabled;
         }
 
-        private static Snapshot measureOnNewThread(JunitUtil.ThrowingRunnable block) throws Exception
+        private static Snapshot measureOnNewThread(ThrowingRunnable block) throws Exception
         {
             AtomicReference<Snapshot> result = new AtomicReference<>();
             JunitUtil.runOnNewThread("ConnectionUsage test", () -> {

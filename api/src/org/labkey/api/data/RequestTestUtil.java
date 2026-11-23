@@ -19,6 +19,7 @@ import jakarta.servlet.ServletException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.function.ThrowingRunnable;
 import org.labkey.api.util.JunitUtil;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -30,8 +31,8 @@ import java.util.Set;
 /** Test helpers for driving in-JVM requests through TransactionFilter and observing their database sessions */
 public class RequestTestUtil
 {
-    /** Runs body on a new thread that carries this test's TestContext, rethrowing whatever it throws */
-    public static void runOnRequestThread(JunitUtil.ThrowingRunnable body) throws Exception
+    /** {@link JunitUtil#runOnNewThread} with a fixed thread name; doRequest supplies the request itself */
+    public static void runOnRequestThread(ThrowingRunnable body) throws Exception
     {
         JunitUtil.runOnNewThread("Test request", body);
     }
