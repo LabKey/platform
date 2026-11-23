@@ -669,7 +669,7 @@ public class AnnouncementManager
     // GH Issue 1688, GH Issue 1853: callers check permissions on rowId in c, so the update must not name another row or folder
     public static AnnouncementModel updateAnnouncement(@NotNull Container c, User user, int rowId, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
-        if (!c.getId().equals(update.getContainerId()) || update.getRowId() != rowId)
+        if (!c.getId().equalsIgnoreCase(update.getContainerId()) || update.getRowId() != rowId)
             throw new UnauthorizedException();
         AnnouncementModel current = getAnnouncement(c, rowId);
         if (current == null)
@@ -677,6 +677,10 @@ public class AnnouncementManager
         update = validateModelWithSideEffects(update, c, user, false);
 
         update.beforeUpdate(user, current); // This preserves Created, CreatedBy, EntityId, etc.
+        // An edit must not move the post to another thread or discussion source
+        update.setParent(current.getParent());
+        update.setDiscussionSrcIdentifier(current.getDiscussionSrcIdentifier());
+        update.setDiscussionSrcEntityType(current.getDiscussionSrcEntityType());
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
         notifyDiscussionProviderOfChange(c, user, result, Change.Update);
 

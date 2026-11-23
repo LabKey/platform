@@ -3449,6 +3449,16 @@ public class AnnouncementsController extends SpringActionController
             QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
             assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", victim.getRowId(), "Title", "Overwritten")));
             assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+
+            // Parent is ignored, so the edit can't move the message into another thread
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", own.getRowId(), "Parent", victim.getEntityId(), "Title", "Edited"));
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
+
+            // The folder id is compared case-insensitively
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", own.getRowId(), "Container", _folderA.getId().toUpperCase(), "Title", "Edited again"));
+            assertEquals("Edited again", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
         }
 
         // GH Issue 1853
@@ -3475,6 +3485,15 @@ public class AnnouncementsController extends SpringActionController
                     .addParameter("body", "body");
             assertStatus(HttpServletResponse.SC_FOUND, post(edit, author));
             assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+
+            // Parent is ignored, so the edit can't move the message into another thread
+            ActionURL reparent = edit.clone()
+                    .replaceParameter("title", "Edited again")
+                    .addParameter("parent", victim.getEntityId());
+            assertStatus(HttpServletResponse.SC_FOUND, post(reparent, author));
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited again", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
         }
 
         // GH Issue 1853
