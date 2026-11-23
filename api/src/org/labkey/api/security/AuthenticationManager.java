@@ -1414,7 +1414,7 @@ public class AuthenticationManager
         }
     }
 
-    private static void resetModuleUserLoginDelay(String id)
+    public static void resetModuleUserLoginDelay(String id)
     {
         DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)

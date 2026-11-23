@@ -3,9 +3,8 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import mock from 'mock-fs';
 import { PermissionRoles } from '@labkey/api';
-import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { hookServer, mockFile, mockFiles, RequestOptions, successfulResponse } from '@labkey/test';
 import { caseInsensitive } from '@labkey/components';
 import {
     ATTACHMENT_FIELD_1_NAME,
@@ -96,7 +95,7 @@ afterAll(async () => {
 });
 
 afterEach(() => {
-    mock.restore();
+    mockFiles.restore();
 });
 
 async function createDerivedSources(names: string[], sourceTypeName: string, folderOptions: RequestOptions, parentSourceType: string, parentSources: string[], parentSampleType?: string, sampleParents?: string[], auditBehavior?: string, ) {
@@ -115,7 +114,7 @@ async function createSourceWithAttachments(sourceName: string, folderOptions: Re
         }));
 
         Object.keys(fileData).forEach(fieldName => {
-            request = request.attach(fieldName + "::0", fileData[fieldName]);
+            request = request.attach(fieldName + "::0", ...mockFile(fileData[fieldName]));
         });
 
         return request;
@@ -692,7 +691,7 @@ describe('Move Sources', () => {
         });
 
         it('success, move one from parent with attachment field', async () => {
-            mock({
+            mockFiles({
                 'fileA.txt': 'fileA contents',
             });
             const sourceRowId1 = await createSourceWithAttachments('top2-movetosub1-1', topFolderOptions, {[ATTACHMENT_FIELD_1_NAME]: 'fileA.txt'}, "DETAILED");
@@ -720,7 +719,7 @@ describe('Move Sources', () => {
         });
 
         it('success, move from subfolder with multiple attachment fields', async () => {
-            mock({
+            mockFiles({
                 'fileB.txt': 'fileB contents',
                 'fileC.txt': 'fileC contents',
             });
