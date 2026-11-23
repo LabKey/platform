@@ -398,6 +398,7 @@ public class ListDefinitionImpl implements ListDefinition
             assert getKeyType() != null : "Invalid Key Type for List: " + getName();
         }
 
+        boolean domainSaved = _new;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_saveLock))
         {
             if (ensureKey)
@@ -439,7 +440,9 @@ public class ListDefinitionImpl implements ListDefinition
         _domain = null;
         getDomain();
 
-        ListManager.get().indexList(_def);
+        // A domain save indexes the list via ListDomainKind.invalidate() after the outermost commit
+        if (!domainSaved)
+            ListManager.get().indexList(_def);
     }
 
     private void ensureKey()

@@ -805,12 +805,13 @@ public class DomainPropertyImpl implements DomainProperty
     public void delete(User user)
     {
         DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(getContainer(), getPropertyId());
-        DomainPropertyManager.get().deleteConditionalFormats(getPropertyId());
+        DomainPropertyManager.get().deleteConditionalFormats(_pd);
 
         DomainKind<?> kind = getDomain().getDomainKind();
         if (null != kind)
             kind.deletePropertyDescriptor(getDomain(), user, _pd);
         OntologyManager.removePropertyDescriptorFromDomain(this);
+        OntologyManager.clearPropertyCache();
     }
 
     public void save(User user, DomainDescriptor dd, int sortOrder) throws ChangePropertyDescriptorException
@@ -873,6 +874,8 @@ public class DomainPropertyImpl implements DomainProperty
             // The raw update above bypasses the cache; a changed URI leaves a stale entry under the old key that invalidateDomain() can't find
             if (!_pdOld.getPropertyURI().equals(_pd.getPropertyURI()))
                 OntologyManager.clearPropertyDescriptorCache(_pdOld);
+            // Cached property values embed descriptor metadata (name, type) from any domain
+            OntologyManager.clearPropertyCache();
             OntologyManager.ensurePropertyDomain(_pd, dd, sortOrder);
 
             boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName() && dd.getStorageTableName() != null;

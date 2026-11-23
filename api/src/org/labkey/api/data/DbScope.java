@@ -2923,8 +2923,7 @@ public class DbScope
                             popCurrentTransaction();
                         }
 
-                        CommitTaskOption.POSTCOMMIT.run(this);
-                        CommitTaskOption.LATE_POSTCOMMIT.run(this);
+                        runPostCommitTasks();
                     }
                     catch (SQLException e)
                     {
@@ -2960,8 +2959,7 @@ public class DbScope
 
                 try
                 {
-                    CommitTaskOption.POSTCOMMIT.run(this);
-                    CommitTaskOption.LATE_POSTCOMMIT.run(this);
+                    runPostCommitTasks();
                 }
                 finally
                 {
@@ -2974,6 +2972,38 @@ public class DbScope
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
+            }
+        }
+
+        // Holding the thread connection lets post-commit statements share one borrow instead of taking one apiece
+        private void runPostCommitTasks()
+        {
+            // Only close() throws SQLException here, after the tasks have run
+            try (Connection ignored = holdThreadConnection())
+            {
+                CommitTaskOption.POSTCOMMIT.run(this);
+                CommitTaskOption.LATE_POSTCOMMIT.run(this);
+            }
+            catch (SQLException e)
+            {
+                LOG.warn("Failed to release the connection held for post-commit tasks", e);
+            }
+        }
+
+        private @Nullable Connection holdThreadConnection()
+        {
+            // A banned thread's next borrow throws, which would skip the tasks entirely
+            if (_postCommitQueue.size() + _latePostCommitQueue.size() == 0 || isTransactionActive() || BANNED_THREADS.contains(getEffectiveThread()))
+                return null;
+
+            try
+            {
+                return DbScope.this.getConnection();
+            }
+            catch (SQLException | RuntimeException e)
+            {
+                LOG.debug("Running post-commit tasks without a shared connection", e);
+                return null;
             }
         }
 
@@ -3449,6 +3479,46 @@ public class DbScope
             }
             assertEquals(List.of("post", "late"), order);
             assertFalse(scope.isTransactionActive());
+        }
+
+        @Test
+        public void testPostCommitTasksShareThreadConnection()
+        {
+            DbScope scope = getLabKeyScope();
+            assertFalse("Test thread should not already hold a connection", scope.isThreadConnectionActive());
+
+            for (boolean keepConnection : List.of(false, true))
+            {
+                List<Connection> seen = new ArrayList<>();
+                Runnable task = () -> {
+                    try (Connection conn = scope.getConnection())
+                    {
+                        new SqlSelector(scope, "SELECT 1").getObject(Integer.class);
+                        seen.add(conn);
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                };
+
+                try (Transaction t = scope.ensureTransaction())
+                {
+                    t.addCommitTask(task, CommitTaskOption.POSTCOMMIT);
+                    t.addCommitTask(task, CommitTaskOption.LATE_POSTCOMMIT);
+                    if (keepConnection)
+                    {
+                        t.commitAndKeepConnection();
+                        assertTrue(scope.isTransactionActive());
+                    }
+                    t.commit();
+                }
+
+                String message = "keepConnection=" + keepConnection;
+                assertEquals(message, 2, seen.size());
+                assertSame(message + ": post-commit tasks should share one borrow", seen.get(0), seen.get(1));
+                assertFalse(message + ": the held connection should be released", scope.isThreadConnectionActive());
+            }
         }
 
         @Test

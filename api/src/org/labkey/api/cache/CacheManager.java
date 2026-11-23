@@ -25,6 +25,8 @@ import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Project;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
@@ -35,6 +37,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,7 +49,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class CacheManager
 {
@@ -194,13 +200,44 @@ public class CacheManager
             LOG.error("{} attempted to cache {}, which could be mutated by callers, at key {}", debugName, valueDescription, key);
         }
 
-        // Flag values that hold a Container or User object
-        analyzeValue(value, debugName, null, 1);
+        // Flag values that hold a Container, User, or domain object
+        analyzeValue(value, debugName, null, 1, CLASSES, LOG::error);
     }
 
     private static final int MAX_DEPTH = 4;
 
-    private static void analyzeValue(@Nullable Object value, String cacheName, @Nullable String fieldPath, int depth)
+    // Domains go stale when saved, and domain saves don't clear other caches
+    private static final List<Class<?>> DOMAIN_TYPES = List.of(Domain.class, DomainProperty.class);
+    private static final List<Class<?>> UNSAFE_TYPES = List.of(Container.class, User.class, Project.class, Domain.class, DomainProperty.class);
+
+    /** Returns the unsafe type a field declares, or the domain type it declares as a type argument (e.g., List&lt;DomainProperty&gt;), or null */
+    private static @Nullable Class<?> getUnsafeType(Field field)
+    {
+        boolean exempt = field.isAnnotationPresent(InvalidatedOnDomainSave.class);
+        Class<?> type = field.getType();
+        if (UNSAFE_TYPES.stream().anyMatch(u -> u.isAssignableFrom(type)) && !(exempt && isDomainType(type)))
+            return type;
+
+        // Type arguments are checked for domain types only: Supplier<Container> and the user cache's maps are safe
+        if (!exempt && field.getGenericType() instanceof ParameterizedType pt)
+        {
+            for (Type arg : pt.getActualTypeArguments())
+            {
+                Type raw = arg instanceof ParameterizedType p ? p.getRawType() : arg;
+                if (raw instanceof Class<?> c && isDomainType(c))
+                    return c;
+            }
+        }
+
+        return null;
+    }
+
+    private static boolean isDomainType(Class<?> type)
+    {
+        return DOMAIN_TYPES.stream().anyMatch(u -> u.isAssignableFrom(type));
+    }
+
+    private static void analyzeValue(@Nullable Object value, String cacheName, @Nullable String fieldPath, int depth, Set<Class<?>> analyzed, BiConsumer<String, Object[]> error)
     {
         if (value != null && depth < MAX_DEPTH)
         {
@@ -211,42 +248,46 @@ public class CacheManager
                 m.entrySet().stream()
                     .findFirst()
                     .ifPresent(entry -> {
-                        analyzeValue(entry.getKey(), cacheName, safeAppend(fieldPath, "Map", "_key"), depth + 1);
-                        analyzeValue(entry.getValue(), cacheName, safeAppend(fieldPath, "Map", "_value"), depth + 1);
+                        analyzeValue(entry.getKey(), cacheName, safeAppend(fieldPath, "Map", "_key"), depth + 1, analyzed, error);
+                        analyzeValue(entry.getValue(), cacheName, safeAppend(fieldPath, "Map", "_value"), depth + 1, analyzed, error);
                     });
             }
             else if (value instanceof Collection<?> coll)
             {
                 coll.stream()
                     .findFirst()
-                    .ifPresent(element -> analyzeValue(element, cacheName, safeAppend(fieldPath, coll.getClass().getSimpleName(), "get(0)"), depth + 1));
+                    .ifPresent(element -> analyzeValue(element, cacheName, safeAppend(fieldPath, coll.getClass().getSimpleName(), "get(0)"), depth + 1, analyzed, error));
             }
             else if (clazz.isArray() && Array.getLength(value) > 0)
             {
-                analyzeValue(Array.get(value, 0), cacheName, safeAppend(fieldPath, "Array", "[0]"), depth + 1);
+                analyzeValue(Array.get(value, 0), cacheName, safeAppend(fieldPath, "Array", "[0]"), depth + 1, analyzed, error);
             }
             else if (value instanceof Reference<?> ref)
             {
-                analyzeValue(ref, cacheName, fieldPath, depth + 1);
+                analyzeValue(ref, cacheName, fieldPath, depth + 1, analyzed, error);
             }
-            else if (CLASSES.add(clazz))
+            else if (isDomainType(clazz))
+            {
+                error.accept("Cached value is an unsafe object - {}: {} ({})", new Object[]{cacheName, fieldPath, clazz.getName()});
+            }
+            else if (analyzed.add(clazz))
             {
                 for (Field field : getAllInstanceFields(clazz))
                 {
                     String newFieldPath = safeAppend(fieldPath, clazz.getSimpleName(), field.getName());
-                    Class<?> type = field.getType();
+                    Class<?> unsafeType = getUnsafeType(field);
 
-                    if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
+                    if (unsafeType != null)
                     {
-                        LOG.error("Cached value holds an unsafe object - {}: {} field {} ({})", cacheName, clazz.getName(), newFieldPath, field.getType().getName());
+                        error.accept("Cached value holds an unsafe object - {}: {} field {} ({})", new Object[]{cacheName, clazz.getName(), newFieldPath, unsafeType.getName()});
                     }
-                    else
+                    else if (!field.isAnnotationPresent(InvalidatedOnDomainSave.class))
                     {
                         try
                         {
                             field.setAccessible(true);
                             Object val = field.get(value);
-                            analyzeValue(val, cacheName, newFieldPath, depth + 1);
+                            analyzeValue(val, cacheName, newFieldPath, depth + 1, analyzed, error);
                         }
                         catch (InaccessibleObjectException e)
                         {
@@ -291,6 +332,29 @@ public class CacheManager
 
     public static class TestCase extends Assert
     {
+        private record HoldsDomain(Domain domain) {}
+        private record HoldsProperties(List<DomainProperty> properties) {}
+        private record HoldsInvalidatedDomain(@InvalidatedOnDomainSave("test") Domain domain) {}
+        private record HoldsContainerSupplier(Supplier<Container> container) {}
+        private record HoldsUsers(List<User> users) {}
+
+        @Test
+        public void testDomainHoldersFlagged()
+        {
+            record Case(Object value, boolean flagged) {}
+            for (Case c : List.of(
+                new Case(new HoldsDomain(null), true),
+                new Case(new HoldsProperties(List.of()), true),
+                new Case(new HoldsInvalidatedDomain(null), false),
+                new Case(new HoldsContainerSupplier(null), false),
+                new Case(new HoldsUsers(List.of()), false)))
+            {
+                List<Object[]> errors = new ArrayList<>();
+                analyzeValue(c.value(), "test", null, 1, new HashSet<>(), (_, args) -> errors.add(args));
+                assertEquals(c.value().getClass().getSimpleName(), c.flagged(), !errors.isEmpty());
+            }
+        }
+
         @Test
         public void testContainerKeyRejected()
         {

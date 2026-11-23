@@ -32,6 +32,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.InvalidatedOnDomainSave;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -1946,6 +1947,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
 
+    @InvalidatedOnDomainSave("DatasetDomainKind.invalidate")
     Domain _domain = null;
 
     @Override
