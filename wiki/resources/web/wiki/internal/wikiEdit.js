@@ -307,11 +307,6 @@ const TabNames = Object.freeze({
         return _redirUrl;
     };
 
-    // Mirrors redirect() in @labkey/components: off-origin targets go through core/safeRedirect
-    var redirect = function(url) {
-        window.location.href = LABKEY.ActionURL.isSameOrigin(url) ? url : LABKEY.ActionURL.buildURL('core', 'safeRedirect', null, {returnUrl: url});
-    };
-
     var isDirty = function() {
         var isBodyDirty = tinymce.activeEditor?.isDirty();
         return isBodyDirty || LABKEY.isDirty();
@@ -384,7 +379,7 @@ const TabNames = Object.freeze({
         setBodyClean();
 
         _finished = true;
-        redirect(_cancelUrl ? _cancelUrl : getRedirUrl());
+        LABKEY.ActionURL.redirect(_cancelUrl ? _cancelUrl : getRedirUrl());
     };
 
     var onConvertSuccess = function(response) {
@@ -497,7 +492,7 @@ const TabNames = Object.freeze({
         enableDeleteButton(true);
 
         if (_finished) {
-            redirect(getRedirUrl());
+            LABKEY.ActionURL.redirect(getRedirUrl());
         }
         else {
             loadToc();
