@@ -19,18 +19,27 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
 import org.labkey.api.security.LoginDisabledException;
+import org.labkey.api.security.LoginManager;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.core.util.CountLimiter;
 
 import java.util.concurrent.TimeUnit;
@@ -162,5 +171,41 @@ public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.
             " disabled from login for " + StringUtilsLabKey.pluralize(resetTime, "minute") + ": " +
             "incorrect password entered " + StringUtilsLabKey.pluralize(attemptLimit, "time") + " in " +
             StringUtilsLabKey.pluralize(attemptPeriod, "second") + ".";
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testPasswordChangeLiftsLockout() throws Exception
+        {
+            User admin = TestContext.get().getUser();
+            boolean enabled = AuthenticationManager.isLoginAttemptControlEnabled();
+            int limit = AuthenticationManager.getLoginAttemptLimit();
+            int period = AuthenticationManager.getLoginAttemptPeriod();
+            int resetTime = AuthenticationManager.getLoginAttemptResetTime();
+            User user = SecurityManager.addUser(new ValidEmail("login-lockout-" + GUID.makeHash() + "@localhost.xyz"), null).getUser();
+
+            try
+            {
+                AuthenticationManager.saveLoginAttemptSettings(admin, true, 3, 300, 5);
+                reloadCache();
+                DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(user.getEmail());
+                assertNotNull(provider);
+
+                HttpServletRequest request = ViewServlet.mockRequest("GET", new ActionURL(), null, null, null);
+                for (int i = 0; i < 3; i++)
+                    provider.addUserDelay(request, user.getEmail(), 1);
+                assertThrows(LoginDisabledException.class, () -> provider.getUserDelay(user.getEmail()));
+
+                LoginManager.setPassword(user, LoginManager.createTempPassword());
+                assertEquals("Password change should lift the lockout", 0, provider.getUserDelay(user.getEmail()));
+            }
+            finally
+            {
+                AuthenticationManager.saveLoginAttemptSettings(admin, enabled, limit, period, resetTime);
+                reloadCache();
+                UserManager.deleteUser(user.getUserId());
+            }
+        }
     }
 }

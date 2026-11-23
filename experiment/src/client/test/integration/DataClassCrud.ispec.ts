@@ -12,7 +12,6 @@ import {
     successfulResponse,
     testSeed
 } from '@labkey/test';
-import mock from 'mock-fs';
 import {
     checkDomainName,
     checkDomainNameConflicts,
@@ -82,10 +81,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
     return server.teardown();
-});
-
-afterEach(() => {
-    mock.restore();
 });
 
 

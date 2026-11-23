@@ -96,6 +96,12 @@ public class HtmlStringBuilder implements HasHtmlString, SafeToRender
         return this;
     }
 
+    public HtmlStringBuilder append(HtmlStringBuilder hsb)
+    {
+        _sb.append(hsb._sb);
+        return this;
+    }
+
     public HtmlStringBuilder insert(int offset, HtmlString str)
     {
         _sb.insert(offset, str.toString());

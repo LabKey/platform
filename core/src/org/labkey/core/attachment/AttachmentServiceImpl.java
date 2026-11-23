@@ -77,6 +77,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.AuthFilter;
 import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -117,6 +118,7 @@ import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.AttachmentAuditProvider.AttachmentAuditEvent;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.AuthenticationLogoAttachmentParent;
+import org.labkey.filters.ContentSecurityPolicyFilter.ContentSecurityPolicyType;
 import org.springframework.http.ContentDisposition;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
@@ -142,6 +144,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -161,21 +164,44 @@ public class AttachmentServiceImpl implements AttachmentService
     // back to clearing the whole cache. See invalidateCache().
     private static final int MAX_DEFERRED_CACHE_INVALIDATIONS = 1000;
 
+    private static final List<String> SECURITY_HEADERS = List.of(
+        AuthFilter.X_CONTENT_TYPE_OPTIONS_HEADER_NAME,
+        AuthFilter.REFERRER_POLICY_HEADER_NAME,
+        AuthFilter.STRICT_TRANSPORT_SECURITY_HEADER_NAME,
+        ContentSecurityPolicyType.Enforce.getHeaderName(),
+        ContentSecurityPolicyType.Report.getHeaderName()
+    );
+
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException
     {
-        if (null == filename || filename.isEmpty())
+        if (StringUtils.isBlank(filename))
         {
             throw new NotFoundException();
         }
 
-        boolean canInline = MimeMap.DEFAULT.canInlineFor(filename);
+        String displayName = StringUtils.isBlank(alias) ? filename : alias;
+
+        // Stored names may be extension-less content hashes, so the alias (the user-facing name) decides inlining
+        boolean canInline = MimeMap.DEFAULT.canInlineFor(displayName);
 
         // Default to rendering inline when possible, but let caller force download as an attachment
         boolean asAttachment = !canInline || !inlineIfPossible;
 
+        // Stored types are browser-declared and shared by every name of a deduplicated document, so inline types come from the name
+        String inlineContentType = asAttachment ? null : MimeMap.DEFAULT.getContentTypeFor(displayName);
+
+        // reset() also discards the security headers that filters set earlier in this request
+        Map<String, List<String>> securityHeaders = new LinkedHashMap<>();
+        SECURITY_HEADERS.forEach(name -> {
+            Collection<String> values = response.getHeaders(name);
+            if (!values.isEmpty())
+                securityHeaders.put(name, List.copyOf(values));
+        });
         response.reset();
-        writeDocument(new ResponseWriter(response), parent, filename, alias, asAttachment);
+        securityHeaders.forEach((name, values) -> values.forEach(value -> response.addHeader(name, value)));
+
+        writeDocument(new ResponseWriter(response), parent, filename, displayName, asAttachment, inlineContentType);
 
         User user = null;
         try
@@ -1011,7 +1037,7 @@ public class AttachmentServiceImpl implements AttachmentService
         }
     }
 
-    private void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, @Nullable String alias, boolean asAttachment) throws ServletException, IOException
+    private void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, @Nullable String alias, boolean asAttachment, @Nullable String inlineContentType) throws ServletException, IOException
     {
         checkSecurityPolicy(parent);
         Connection conn = null;
@@ -1056,7 +1082,7 @@ public class AttachmentServiceImpl implements AttachmentService
                     throw new NotFoundException();
                 }
 
-                writer.setContentType(rs.getString("DocumentType"));
+                writer.setContentType(null != inlineContentType ? inlineContentType : rs.getString("DocumentType"));
                 if (asAttachment)
                     writer.setContentDisposition(ContentDisposition.builder("attachment").filename(alias, StandardCharsets.UTF_8).build());
                 else
@@ -1101,7 +1127,7 @@ public class AttachmentServiceImpl implements AttachmentService
     @Override
     public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
     {
-        writeDocument(writer, parent, name, null, asAttachment);
+        writeDocument(writer, parent, name, null, asAttachment, null);
     }
 
     @Override
