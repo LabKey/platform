@@ -59,6 +59,7 @@ public interface AttachmentService
         return ServiceRegistry.get().getService(AttachmentService.class);
     }
 
+    /** @param alias name sent to the browser and used to decide inlining; callers must not pass unvalidated user input */
     void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException;
 
     void download(HttpServletResponse response, AttachmentParent parent, String name, boolean inlineIfPossible) throws ServletException, IOException;
