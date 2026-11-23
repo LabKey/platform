@@ -71,9 +71,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
@@ -402,15 +400,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Allow query based dataset snapshots",
             "Allow unprovisioned, query-based dataset snapshots to be created.",
             false);
-
-        if (SpecimenService.get() == null)
-        {
-            OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SpecimenManager.VIEW_SPECIMEN_TABLES_FLAG,
-                "Show read-only specimen tables in the study schema",
-                "Provides a read-only view of specimen data when the specimen module is not present.",
-                false, false, OptionalFeatureService.FeatureType.Optional
-            ));
-        }
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 

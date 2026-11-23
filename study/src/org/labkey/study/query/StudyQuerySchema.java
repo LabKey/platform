@@ -34,7 +34,6 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -209,7 +208,7 @@ public class StudyQuerySchema extends AbstractStudyQuerySchema implements Visual
         if (!OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Set.of();
         var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
-        if (SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
+        if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
             ret.add(SPECIMENS_SCHEMA_NAME);
         return ret;
     }
@@ -221,7 +220,7 @@ public class StudyQuerySchema extends AbstractStudyQuerySchema implements Visual
             return new DatasetSchema(this);
         if (Strings.CI.equals(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (Strings.CI.equals(SPECIMENS_SCHEMA_NAME, name) && SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
+        if (Strings.CI.equals(SPECIMENS_SCHEMA_NAME, name) && SpecimenManager.get().isSpecimenModuleActive(getContainer()))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
@@ -328,7 +327,7 @@ public class StudyQuerySchema extends AbstractStudyQuerySchema implements Visual
 
     protected void addSpecimenTables(Set<String> names)
     {
-        if (SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
+        if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
         {
             names.add(SPECIMEN_DETAIL_TABLE_NAME);
             names.add(SPECIMEN_SUMMARY_TABLE_NAME);
