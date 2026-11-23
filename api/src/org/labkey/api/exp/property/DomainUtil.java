@@ -789,7 +789,7 @@ public class DomainUtil
         }
 
         // Issue 48810: if not creating from templateInfo, validate reserved field names based on domainKind
-        boolean strictFieldValidation = arguments != null ? (Boolean) arguments.getOrDefault("strictFieldValidation", true) : true;
+        boolean strictFieldValidation = arguments == null || (Boolean) arguments.getOrDefault("strictFieldValidation", true);
         DomainKind<?> validateDomainKind = templateInfo == null && strictFieldValidation ? kind : null;
 
         ValidationException ve = DomainUtil.validateProperties(null, domain, validateDomainKind, null, user);
