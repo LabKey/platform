@@ -69,7 +69,7 @@ public class ExpUnreferencedSampleFilesTableImpl extends FilteredTable<ExpSchema
             {
                 TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
 
-                SQLFragment sampleFileSql = new SQLFragment("SELECT m.Container, if.FilePathShort \n")
+                SQLFragment sampleFileSql = SQLFragment.unsafe("SELECT m.Container, if.FilePathShort \n")
                         .unsafeAppend("FROM (")
                         .append(listQuery)
                         .unsafeAppend(") AS if \n")
@@ -77,7 +77,7 @@ public class ExpUnreferencedSampleFilesTableImpl extends FilteredTable<ExpSchema
                         .append(materialTable, "m")
                         .unsafeAppend(" ON if.SourceKey = m.RowId");
 
-                SQLFragment unreferencedFileSql = new SQLFragment("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
+                SQLFragment unreferencedFileSql = SQLFragment.unsafe("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
                         .append(expDataTable, "ed")
                         .unsafeAppend(" LEFT JOIN (")
                         .append(sampleFileSql)

@@ -137,7 +137,15 @@ public class ClosureQueryHelper
                 WHERE Depth_ > 0 AND (materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)
             """;
 
-    public static SQLFragment selectAndInsertSql(SQLFragment from, @Nullable SQLFragment into, @Nullable String insert)
+    // The SQL text blocks above are split on their /*FROM*/ and /*INTO*/ markers, so the pieces can't be compile-time constants
+    private static SQLFragment trustedSql(String sql)
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(sql);
+        return ret;
+    }
+
+    public static SQLFragment selectAndInsertSql(SQLFragment from, @Nullable SQLFragment into, @Nullable SQLFragment insert)
     {
         String cte = pgAncestorClosureCTE;
         String select = pgAncestorClosureSql;
@@ -149,21 +157,21 @@ public class ClosureQueryHelper
         assert selectIntoParts.length == 2;
 
         SQLFragment sql = new SQLFragment();
-        sql.append(cteParts[0]).unsafeAppend(" ").append(from).unsafeAppend(" ").append(cteParts[1]);
+        sql.append(trustedSql(cteParts[0])).unsafeAppend(" ").append(from).unsafeAppend(" ").append(trustedSql(cteParts[1]));
         if (insert != null)
             sql.append(insert);
-        sql.append(selectIntoParts[0]);
+        sql.append(trustedSql(selectIntoParts[0]));
         if (into != null)
             sql.append(into);
-        sql.append(selectIntoParts[1]);
+        sql.append(trustedSql(selectIntoParts[1]));
         return sql;
     }
 
     public static SQLFragment selectIntoTempTableSql(SQLFragment from, @Nullable SQLFragment tempTable)
     {
-        SQLFragment into = new SQLFragment(" INTO temp.${NAME} ");
+        SQLFragment into = SQLFragment.unsafe(" INTO temp.${NAME} ");
         if (null != tempTable)
-            into = new SQLFragment(" INTO temp.").append(tempTable).unsafeAppend(" ");
+            into = SQLFragment.unsafe(" INTO temp.").append(tempTable).unsafeAppend(" ");
         return selectAndInsertSql(from, into, null);
     }
 
@@ -182,7 +190,7 @@ public class ClosureQueryHelper
 
         TableInfo parentTable = fkRowId.getParentTable();
 
-        var ret = new ExprColumn(parentTable, target.getName(), new SQLFragment("#ERROR#"), JdbcType.INTEGER)
+        var ret = new ExprColumn(parentTable, target.getName(), SQLFragment.unsafe("#ERROR#"), JdbcType.INTEGER)
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)
@@ -275,7 +283,7 @@ public class ClosureQueryHelper
             SQLFragment tableNameSql = new SQLFragment(tempTableName);
             tableNameSql.addTempToken(ref);
             ttt = TempTableTracker.track(tempTableName, ref);
-            SQLFragment from = new SQLFragment("FROM temp.").append(familyTempTable).unsafeAppend(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").unsafeAppend(" ");
+            SQLFragment from = SQLFragment.unsafe("FROM temp.").append(familyTempTable).unsafeAppend(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").unsafeAppend(" ");
             SQLFragment selectInto = selectIntoTempTableSql(from, tableNameSql);
             selectInto.addTempToken(ref);
             int count = new SqlExecutor(getScope()).execute(selectInto);
@@ -368,8 +376,8 @@ public class ClosureQueryHelper
                 for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, false))
                 {
                     logger.debug("   Adding rows from samples in sampleType {}", sampleType.getName());
-                    SQLFragment from = new SQLFragment(" FROM exp.material WHERE materialSourceId = ?").add(sampleType.getRowId());
-                    SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                    SQLFragment from = SQLFragment.unsafe(" FROM exp.material WHERE materialSourceId = ?").add(sampleType.getRowId());
+                    SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(from, null, SQLFragment.unsafe("INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) "));
                     int numRows = new SqlExecutor(schema.getScope()).execute(sql);
                     totalRows += numRows;
                     logger.debug("    Added {} rows for data class {}", numRows, sampleType.getName());
@@ -391,9 +399,9 @@ public class ClosureQueryHelper
                 for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(container, false))
                 {
                     logger.debug("   Adding rows to exp.dataAncestors from data class {}", dataClass.getName());
-                    SQLFragment from = new SQLFragment(" FROM exp.data WHERE classId = ?").add(dataClass.getRowId());
+                    SQLFragment from = SQLFragment.unsafe(" FROM exp.data WHERE classId = ?").add(dataClass.getRowId());
                     SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(from, null,
-                            "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                            SQLFragment.unsafe("INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) "));
                     int numRows = new SqlExecutor(schema.getScope()).execute(sql);
                     totalRows += numRows;
                     logger.debug("    Added {} rows for data class {}", numRows, dataClass.getName());
@@ -448,7 +456,7 @@ public class ClosureQueryHelper
             ttt = TempTableTracker.track(tableNameSql.getSQL(), ref);
 
             // add the seed ids to the temp table
-            SQLFragment selectIntoSql = new SQLFragment("SELECT RowId, ObjectId, ObjectType INTO temp.").append(tableNameSql).unsafeAppend(" FROM (").append(selectSeedsSql).unsafeAppend(") x");
+            SQLFragment selectIntoSql = SQLFragment.unsafe("SELECT RowId, ObjectId, ObjectType INTO temp.").append(tableNameSql).unsafeAppend(" FROM (").append(selectSeedsSql).unsafeAppend(") x");
             int numSeeds = new SqlExecutor(getScope()).execute(selectIntoSql);
             logger.debug("Added {} seed {} rows to temp.{}", numSeeds, isSampleType ? "sample" : "data", familyTableName);
             // if we didn't actually insert any items into the table, there's nothing more to be done
@@ -460,11 +468,11 @@ public class ClosureQueryHelper
             String cte = "WITH RECURSIVE " + pgDescendantClosureCTE;
             String[] cteParts = StringUtils.splitByWholeSeparator(cte, "/*FROM*/");
             SQLFragment descendantsCte = new SQLFragment();
-            descendantsCte.append(cteParts[0]).unsafeAppend("FROM (SELECT * FROM temp.").append(tableNameSql).unsafeAppend(") s ").append(cteParts[1]);
+            descendantsCte.append(trustedSql(cteParts[0])).unsafeAppend("FROM (SELECT * FROM temp.").append(tableNameSql).unsafeAppend(") s ").append(trustedSql(cteParts[1]));
             descendants.append(descendantsCte);
 
             descendants.unsafeAppend("INSERT INTO temp.").append(tableNameSql)
-                    .unsafeAppend(" (RowId, ObjectId, ObjectType) ").append(descendantClosureSelectSql);
+                    .unsafeAppend(" (RowId, ObjectId, ObjectType) ").append(trustedSql(descendantClosureSelectSql));
             int numRows = new SqlExecutor(getScope()).execute(descendants);
             logger.debug("Added {} {} descendant rows for {}", numRows, isSampleType ? "sample" : "data", familyTableName);
 

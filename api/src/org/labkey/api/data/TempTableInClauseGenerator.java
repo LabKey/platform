@@ -142,7 +142,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             sqlCreate.append(tempTableInfo)
                 .unsafeAppend("\n(Id ")
                 .append(tempSchema.getSqlDialect().getSqlTypeNameAsSql(jdbcType))
-                .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
+                .unsafeAppend(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
                 .unsafeAppend(")");
 
             // When the in clause receives more parameters than it is set to handle, a temporary table is created to handle the overflow.

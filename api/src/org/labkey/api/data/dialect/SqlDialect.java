@@ -731,6 +731,13 @@ public abstract class SqlDialect
      */
     public abstract String getCharClassLikeOperator();
 
+    public final SQLFragment getCharClassLikeOperatorAsSql()
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getCharClassLikeOperator());
+        return ret;
+    }
+
     public abstract String getCaseInsensitiveLikeOperator();
 
     public final SQLFragment getCaseInsensitiveLikeOperatorAsSql()
@@ -741,6 +748,13 @@ public abstract class SqlDialect
     }
 
     public abstract String getVarcharLengthFunction();
+
+    public final SQLFragment getVarcharLengthFunctionAsSql()
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getVarcharLengthFunction());
+        return ret;
+    }
 
     public abstract String getStdDevFunction();
     public abstract String getStdDevPopFunction();
@@ -892,6 +906,13 @@ public abstract class SqlDialect
     }
 
     public abstract String getTempTableKeyword();
+
+    public final SQLFragment getTempTableKeywordAsSql()
+    {
+        SQLFragment ret = new SQLFragment();
+        ret.setSqlUnsafe(getTempTableKeyword());
+        return ret;
+    }
 
     public abstract String getTempTablePrefix();
 

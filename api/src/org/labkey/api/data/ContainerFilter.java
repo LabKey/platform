@@ -1326,7 +1326,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             throw new UnsupportedOperationException();
         }

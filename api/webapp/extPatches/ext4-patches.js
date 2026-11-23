@@ -447,16 +447,15 @@ Ext4.override(Ext4.data.Store, {
 });
 
 /**
- * Delayed query/type-ahead tasks and remote load callbacks can fire after onDestroy has nulled the store. Avoid throwing by checking if destroyed.
+ * Delayed query/type-ahead tasks and remote load callbacks can fire after onDestroy has nulled the store.
+ * Cancel the tasks on destroy; a remote load's callback isn't a task, so guard it.
  */
 Ext4.override(Ext4.form.field.ComboBox, {
-    doRawQuery: function() {
-        if (!this.isDestroyed)
-            this.callParent(arguments);
-    },
-    onTypeAhead: function() {
-        if (!this.isDestroyed)
-            this.callParent(arguments);
+    onDestroy: function() {
+        this.doQueryTask.cancel();
+        if (this.typeAheadTask)
+            this.typeAheadTask.cancel();
+        this.callParent(arguments);
     },
     afterQuery: function() {
         if (!this.isDestroyed)

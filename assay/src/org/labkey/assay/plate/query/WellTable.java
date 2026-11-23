@@ -163,8 +163,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .unsafeAppend(" ON P.RowId = WG.PlateId ")
                 .unsafeAppend(" WHERE P.AssayType = ?")
                 .add(TsvPlateLayoutHandler.TYPE)
-                .append(" AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
-                .unsafeAppend(" AND WG.TypeName ").append(forReplicateGroup ? "=" : "!=").unsafeAppend(" ?")
+                .unsafeAppend(" AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
+                .unsafeAppend(" AND WG.TypeName ").unsafeAppend(forReplicateGroup ? "=" : "!=").unsafeAppend(" ?")
                 .add(WellGroup.Type.REPLICATE.name());
 
         // The underlying schema allows for multiple well groups per well, however, as a "well group" column

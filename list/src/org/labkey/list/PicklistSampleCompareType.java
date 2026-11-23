@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.LabKeySQLFragment;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -116,7 +117,7 @@ public class PicklistSampleCompareType extends CompareType
 
         /** LabKey SQL can't embed the provisioned subquery, so fall back to the picklist's current sample ids. */
         @Override
-        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        public LabKeySQLFragment getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             return new SimpleFilter.InClause(_fieldKey, getSampleIds()).getLabKeySQLWhereClause(columnMap);
         }

@@ -11,10 +11,10 @@ import {
     successfulResponse,
     testSeed
 } from '@labkey/test';
-import mock from 'mock-fs';
 import {
     checkDomainName,
     checkDomainNameConflicts,
+    checkImportColumnResolution,
     checkLackDesignerOrReaderPerm,
     createSample,
     deleteSampleType,
@@ -150,10 +150,6 @@ afterAll(async () => {
     return server.teardown();
 });
 
-afterEach(() => {
-    mock.restore();
-});
-
 describe('Sample Type Designer', () => {
     it('Lack designer or Reader permission', async () => {
         await checkLackDesignerOrReaderPerm(server, 'SampleSet', topFolderOptions, readerUserOptions, editorUserOptions, designerOptions);
@@ -166,6 +162,10 @@ describe('Sample Type Designer', () => {
 
         it('Sample type field name and import alias conflict validation', async () => {
             await checkDomainNameConflicts(server, 'SampleSet', topFolderOptions, designerReaderOptions);
+        });
+
+        it('Sample type import column resolution', async () => {
+            await checkImportColumnResolution(server, 'SampleSet', topFolderOptions, adminOptions);
         });
 
         it('Designer can create, update and delete empty design, reader and editors cannot create/update/delete design', async () => {

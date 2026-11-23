@@ -859,7 +859,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                         {
                             for (SimpleFilter.FilterClause clause : keyFilter.getClauses())
                             {
-                                String clauseStr = clause.getLabKeySQLWhereClause(_filterColTypes);
+                                String clauseStr = clause.getLabKeySQLWhereClause(_filterColTypes).getText();
                                 if (_intervals.containsKey(key.toString()))
                                 {
                                     // issue 21852: replace the interval key with the calculation

@@ -17,6 +17,8 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -125,6 +127,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -306,11 +309,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         // Allow String values through if the column is a lookup and the settings allow lookups by alternate key.
                         // The lookup table unique indices or display column value will be used to convert the column to the lookup value.
-                        if (!(settings.getLookupResolutionType().useAlternateKey() && column.clazz == String.class && prop.getLookup() != null))
+                        boolean allowAlternateKey = settings.getLookupResolutionType().useAlternateKey() && prop.getLookup() != null;
+                        if (!(allowAlternateKey && column.clazz == String.class))
                         {
                             // Otherwise, just use the expected PropertyDescriptor's column type
                             column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
                         }
+
+                        // GH Issue 1881: an integer conversion strips leading zeros from sample names like "0587", so keep those values as text
+                        if (allowAlternateKey && column.clazz != String.class && ExperimentService.get().isLookupToSamples(prop))
+                            column.converter = leadingZeroPreservingConverter(ConvertUtils.lookup(column.clazz));
                     }
                     else
                     {
@@ -337,6 +345,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             throw UnexpectedException.wrap(ioe);
         }
+    }
+
+    private static final Pattern LEADING_ZERO_INTEGER = Pattern.compile("[-+]?0\\d+");
+
+    private static Converter leadingZeroPreservingConverter(Converter converter)
+    {
+        return new Converter()
+        {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <T> T convert(Class<T> type, Object value)
+            {
+                if (value instanceof String s)
+                {
+                    String trimmed = s.trim();
+                    if (LEADING_ZERO_INTEGER.matcher(trimmed).matches())
+                        return (T) trimmed;
+                }
+                return converter.convert(type, value);
+            }
+        };
     }
 
     @Override
@@ -603,7 +632,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             // check if we are merging the re-imported data
             if (context != null && context.getReRunId() != null && context.getReImportOption() == MERGE_DATA)
             {
-                DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                DataIteratorBuilder mergedData;
+                try
+                {
+                    mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                }
+                catch (DbScope.RetryPassthroughException e)
+                {
+                    e.rethrow(BatchValidationException.class);
+                    throw e.throwRuntimeException();
+                }
                 fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
             }
 

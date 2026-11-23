@@ -176,7 +176,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     {
                         // UNLOGGED skips WAL when populating and indexing the table.
                         selectInto = SQLFragment.unsafe("SELECT * INTO ")
-                                .append(_mqh._unlogged ? "UNLOGGED " : "")
+                                .unsafeAppend(_mqh._unlogged ? "UNLOGGED " : "")
                                 .appendDottedIdentifiers(temp.getName(), _tableName).unsafeAppend("\nFROM (\n");
                         selectInto.append(selectQuery);
                         selectInto.unsafeAppend("\n) _sql_");

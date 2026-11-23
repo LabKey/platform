@@ -12,10 +12,10 @@ import {
     successfulResponse,
     testSeed
 } from '@labkey/test';
-import mock from 'mock-fs';
 import {
     checkDomainName,
     checkDomainNameConflicts,
+    checkImportColumnResolution,
     checkLackDesignerOrReaderPerm,
     createSource,
     deleteSourceType,
@@ -83,10 +83,6 @@ afterAll(async () => {
     return server.teardown();
 });
 
-afterEach(() => {
-    mock.restore();
-});
-
 
 // TODO: move utils to ExperimentCRUDUtils
 export async function insertDataClassData(
@@ -133,6 +129,10 @@ describe('Data Class Designer', () => {
 
     it('Data class field name and import alias conflict validation', async () => {
         await checkDomainNameConflicts(server, 'DataClass', topFolderOptions, designerReaderOptions);
+    });
+
+    it('Data class import column resolution', async () => {
+        await checkImportColumnResolution(server, 'DataClass', topFolderOptions, adminOptions);
     });
 
     describe('Create/update/delete designs', () => {
