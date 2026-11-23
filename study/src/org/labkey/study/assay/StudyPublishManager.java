@@ -884,12 +884,12 @@ public class StudyPublishManager implements StudyPublishService
                 // Even better would be if the project datasets also tried to avoid collisions with all other datasets in the entire project folder hierarchy
                 var sharedStudy = StudyManager.getInstance().getSharedStudy(study);
                 int id = null != sharedStudy ? 10000 : MIN_ASSAY_ID;
-                Integer mx = new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getId()).getObject(Integer.class);
+                Integer mx = new SqlSelector(schema, SQLFragment.unsafe("SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getId())).getObject(Integer.class);
                 if (null != mx)
                     id = Math.max(id,mx);
                 if (null != sharedStudy)
                 {
-                    mx = new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", sharedStudy.getContainer().getId()).getObject(Integer.class);
+                    mx = new SqlSelector(schema, SQLFragment.unsafe("SELECT MAX(datasetid) FROM study.dataset WHERE container=?", sharedStudy.getContainer().getId())).getObject(Integer.class);
                     if (null != mx)
                        id = Math.max(id, mx);
                 }

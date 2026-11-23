@@ -60,6 +60,7 @@ import org.labkey.query.sql.antlr.SqlBaseLexer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -68,6 +69,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -281,7 +283,9 @@ public abstract class Method
                 String propertyName = "";
                 try
                 {
-                    String param = toSimpleString(new SQLFragment(args.getFirst().getTokenText()));
+                    SQLFragment paramSql = new SQLFragment();
+                    paramSql.setSqlUnsafe(args.getFirst().getTokenText());
+                    String param = toSimpleString(paramSql);
                     int dot = param.lastIndexOf('.');
                     if (dot < 0)
                     {
@@ -370,14 +374,18 @@ public abstract class Method
                     return;
                 }
 
-                String moduleName = toSimpleString(new SQLFragment(args.get(0).getTokenText()));
+                SQLFragment moduleNameSql = new SQLFragment();
+                moduleNameSql.setSqlUnsafe(args.get(0).getTokenText());
+                String moduleName = toSimpleString(moduleNameSql);
                 Module module = ModuleLoader.getInstance().getModule(moduleName);
                 if (null == module)
                 {
                     parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module not found: " + moduleName, null, args.getFirst().getLine(), args.getFirst().getColumn()));
                     return;
                 }
-                String propertyName = toSimpleString(new SQLFragment(args.get(1).getTokenText()));
+                SQLFragment propertyNameSql = new SQLFragment();
+                propertyNameSql.setSqlUnsafe(args.get(1).getTokenText());
+                String propertyName = toSimpleString(propertyNameSql);
                 ModuleProperty mp = module.getModuleProperties().get(propertyName);
                 if (null == mp)
                     parseWarnings.add(new QueryParseWarning(_name.toUpperCase() + "() module property not found: " + propertyName, null, args.get(1).getLine(), args.get(1).getColumn()));
@@ -444,7 +452,7 @@ public abstract class Method
                             argumentsThree[0] = arguments[0];
                             argumentsThree[1] = arguments[1];
                             // 19187: Query error when using substring without 3rd parameter in LabKey SQL
-                            argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE / 2));
+                            argumentsThree[2] = new SQLFragment().appendValue(Integer.MAX_VALUE / 2);
                             arguments = argumentsThree;
                         }
                         return super.getSQL(dialect, arguments);
@@ -538,10 +546,8 @@ public abstract class Method
                     {
                         SQLFragment cte = SQLFragment.unsafe("SELECT 2 as x");
                         SQLFragment ret = new SQLFragment();
-                        String token = ret.addCommonTableExpression(dialect, "__test__two__", "_two", cte);
-                        SQLFragment tokenSql = new SQLFragment();
-                        tokenSql.setSqlUnsafe(token);
-                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
+                        SQLFragment token = ret.addCommonTableExpressionRef(dialect, "__test__two__", "_two", cte);
+                        ret.unsafeAppend("(SELECT x FROM ").append(token).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -559,10 +565,8 @@ public abstract class Method
                     {
                         SQLFragment cte = SQLFragment.unsafe("SELECT 3 as x");
                         SQLFragment ret = new SQLFragment();
-                        String token = ret.addCommonTableExpression(dialect, "__test_three__", "_three", cte);
-                        SQLFragment tokenSql = new SQLFragment();
-                        tokenSql.setSqlUnsafe(token);
-                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
+                        SQLFragment token = ret.addCommonTableExpressionRef(dialect, "__test_three__", "_three", cte);
+                        ret.unsafeAppend("(SELECT x FROM ").append(token).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -581,10 +585,8 @@ public abstract class Method
                         SQLFragment cte = new SQLFragment();
                         cte.unsafeAppend("SELECT (").append(arguments[0]).unsafeAppend(")*(").append(arguments[1]).unsafeAppend(") as x");
                         SQLFragment ret = new SQLFragment();
-                        String token = ret.addCommonTableExpression(dialect, GUID.makeGUID(), "_times", cte);
-                        SQLFragment tokenSql = new SQLFragment();
-                        tokenSql.setSqlUnsafe(token);
-                        ret.unsafeAppend("(SELECT x FROM ").append(tokenSql).unsafeAppend(" y)");
+                        SQLFragment token = ret.addCommonTableExpressionRef(dialect, GUID.makeGUID(), "_times", cte);
+                        ret.unsafeAppend("(SELECT x FROM ").append(token).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -694,7 +696,7 @@ public abstract class Method
             {
                 TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[0]);
                 if (i != null)
-                    arguments[0] = new SQLFragment(i.name());
+                    arguments[0] = i.toSql();
             }
             return super.getSQL(dialect, arguments);
         }
@@ -746,6 +748,21 @@ public abstract class Method
         SQL_TSI_QUARTER,
         SQL_TSI_YEAR;
 
+        SQLFragment toSql()
+        {
+            return switch (this)
+            {
+                case SQL_TSI_FRAC_SECOND -> SQLFragment.unsafe("SQL_TSI_FRAC_SECOND");
+                case SQL_TSI_SECOND -> SQLFragment.unsafe("SQL_TSI_SECOND");
+                case SQL_TSI_MINUTE -> SQLFragment.unsafe("SQL_TSI_MINUTE");
+                case SQL_TSI_HOUR -> SQLFragment.unsafe("SQL_TSI_HOUR");
+                case SQL_TSI_DAY -> SQLFragment.unsafe("SQL_TSI_DAY");
+                case SQL_TSI_WEEK -> SQLFragment.unsafe("SQL_TSI_WEEK");
+                case SQL_TSI_MONTH -> SQLFragment.unsafe("SQL_TSI_MONTH");
+                case SQL_TSI_QUARTER -> SQLFragment.unsafe("SQL_TSI_QUARTER");
+                case SQL_TSI_YEAR -> SQLFragment.unsafe("SQL_TSI_YEAR");
+            };
+        }
 
         static TimestampDiffInterval parse(SQLFragment sqlf)
         {
@@ -1238,7 +1255,9 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
-            return new SQLFragment("CAST(" + (new DecimalFormat("0.000#")).format(AppProps.getInstance().getSchemaVersion()) + " AS NUMERIC(15,4))");
+            return SQLFragment.unsafe("CAST(")
+                    .appendValue(new BigDecimal(new DecimalFormat("0.000#").format(AppProps.getInstance().getSchemaVersion())))
+                    .unsafeAppend(" AS NUMERIC(15,4))");
         }
     }
 
@@ -1317,7 +1336,7 @@ public abstract class Method
             if (null == v)
                 return SQLFragment.unsafe("CAST(NULL AS VARCHAR)");
             else
-                return new SQLFragment("CAST(? AS " + dialect.getSqlTypeName(JdbcType.VARCHAR) + ")", v);
+                return SQLFragment.unsafe("CAST(? AS ", v).append(Objects.requireNonNull(dialect.getSqlTypeNameAsSql(JdbcType.VARCHAR))).unsafeAppend(")");
         }
     }
 
@@ -1352,7 +1371,7 @@ public abstract class Method
                 Container cCompile = getCompileTimeContainer(query);
                 if (null != cCompile)
                     value = mp.getEffectiveValue(cCompile);
-                return new SQLFragment("CAST(? AS " + dialect.getSqlTypeName(JdbcType.VARCHAR) + ")", value);
+                return SQLFragment.unsafe("CAST(? AS ", value).append(Objects.requireNonNull(dialect.getSqlTypeNameAsSql(JdbcType.VARCHAR))).unsafeAppend(")");
             }
 
             return SQLFragment.unsafe("CAST(NULL AS VARCHAR)");
@@ -1418,7 +1437,10 @@ public abstract class Method
                 }
 
                 //see issue 19661.  SQLServer defaults to 30 for VARCHAR, unless a length is explicitly specified, so we CAST using the length of this string
-                return new SQLFragment("CAST(? AS " + dialect.getSqlTypeName(JdbcType.VARCHAR) + (value == null ? "" : "(" + value.toString().length() + ")") + ")", value);
+                SQLFragment ret = SQLFragment.unsafe("CAST(? AS ", value).append(Objects.requireNonNull(dialect.getSqlTypeNameAsSql(JdbcType.VARCHAR)));
+                if (value != null)
+                    ret.unsafeAppend("(").appendValue(value.toString().length()).unsafeAppend(")");
+                return ret.unsafeAppend(")");
             }
 
             // no legal field found
@@ -1468,7 +1490,7 @@ public abstract class Method
                     throw new IllegalStateException("Query environment has not been set");
                 // Role impersonation and LimitedUser have no groups; "IN ()" is a syntax error
                 if (user.getGroups().size() == 0)
-                    return new SQLFragment("(1=0)");
+                    return SQLFragment.unsafe("(1=0)");
                 SQLFragment ret = new SQLFragment();
                 // Inline the IDs: appendInClause() may create a temp table in the LabKey DB, but this SQL can run against an external data source
                 ret.unsafeAppend("(").append(groupArg).unsafeAppend(") IN (");
@@ -2171,13 +2193,19 @@ public abstract class Method
             SqlDialect d = CoreSchema.getInstance().getSqlDialect();
 
             // These are the simple cases that isSimpleString is intended to handle
-            // e.g SQL keywords and oeprators
+            // e.g SQL keywords and operators
             for (var s : List.of("->", "->>", "#>", "#>>", "@>", "<@", "?", "?|", "?&", "||", "-", "#-", SQL_TSI_FRAC_SECOND.name()))
             {
                 assertIsSimpleString(s, new SQLFragment().appendStringLiteral(s, d));
-                assertIsSimpleString(s, new SQLFragment("'" + s + "'"));
-                assertIsSimpleString(s, new SQLFragment("N'" + s + "'"));
-                assertIsSimpleString(s, new SQLFragment("'" + s + "'::VARCHAR"));
+                SQLFragment quoted = new SQLFragment();
+                quoted.setSqlUnsafe("'" + s + "'");
+                assertIsSimpleString(s, quoted);
+                SQLFragment nQuoted = new SQLFragment();
+                nQuoted.setSqlUnsafe("N'" + s + "'");
+                assertIsSimpleString(s, nQuoted);
+                SQLFragment castQuoted = new SQLFragment();
+                castQuoted.setSqlUnsafe("'" + s + "'::VARCHAR");
+                assertIsSimpleString(s, castQuoted);
                 assertIsSimpleString(s, SQLFragment.unsafe("?").add(s));
             }
         }
@@ -2285,12 +2313,12 @@ public abstract class Method
         @Test
         public void testIsDistinctFrom()
         {
-            record Case(String a, String b, boolean distinct) {}
+            record Case(SQLFragment a, SQLFragment b, boolean distinct) {}
             List<Case> cases = List.of(
-                new Case("1", "2", true),
-                new Case("1", "1", false),
-                new Case("NULL", "NULL", false),
-                new Case("1", "NULL", true)
+                new Case(SQLFragment.unsafe("1"), SQLFragment.unsafe("2"), true),
+                new Case(SQLFragment.unsafe("1"), SQLFragment.unsafe("1"), false),
+                new Case(SQLFragment.unsafe("NULL"), SQLFragment.unsafe("NULL"), false),
+                new Case(SQLFragment.unsafe("1"), SQLFragment.unsafe("NULL"), true)
             );
 
             SqlDialect d = scope.getSqlDialect();
@@ -2304,10 +2332,10 @@ public abstract class Method
             }
         }
 
-        private void assertIsDistinctFrom(DbScope scope, SqlDialect d, int token, String a, String b, boolean expected)
+        private void assertIsDistinctFrom(DbScope scope, SqlDialect d, int token, SQLFragment a, SQLFragment b, boolean expected)
         {
-            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
-            SQLFragment T = new SQLFragment(d.getBooleanTRUE()), F = new SQLFragment(d.getBooleanFALSE());
+            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{a, b});
+            SQLFragment T = new SQLFragment().appendValue(true, d), F = new SQLFragment().appendValue(false, d);
             SQLFragment sql = new SQLFragment().SELECT().unsafeAppend("CASE WHEN ").append(expr).unsafeAppend(" THEN ").append(T).unsafeAppend(" ELSE ").append(F).unsafeAppend(" END");
             if (d.isOracle())
                 sql.unsafeAppend(" FROM DUAL");
@@ -2315,9 +2343,9 @@ public abstract class Method
             assertEquals(d.getClass().getSimpleName() + ": " + sql.toDebugString(), expected, result);
         }
 
-        private void assertIsDistinctFromWhere(DbScope scope, SqlDialect d, int token, String a, String b, boolean expected)
+        private void assertIsDistinctFromWhere(DbScope scope, SqlDialect d, int token, SQLFragment a, SQLFragment b, boolean expected)
         {
-            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
+            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{a, b});
             SQLFragment sql = SQLFragment.unsafe("SELECT 1");
             if (d.isOracle())
                 sql.unsafeAppend(" FROM DUAL");

@@ -625,34 +625,34 @@ public class DbSchema
 
             SqlExecutor executor = new SqlExecutor(testScope);
 
-            executor.execute("CREATE SCHEMA testdrop");
-            executor.execute("CREATE SCHEMA testdrop2");
-            executor.execute("CREATE SCHEMA testdrop3");
+            executor.execute(SQLFragment.unsafe("CREATE SCHEMA testdrop"));
+            executor.execute(SQLFragment.unsafe("CREATE SCHEMA testdrop2"));
+            executor.execute(SQLFragment.unsafe("CREATE SCHEMA testdrop3"));
 
-            executor.execute("CREATE TABLE testdrop.T0 (c0 INT NOT NULL PRIMARY KEY)");
-            executor.execute("CREATE TABLE testdrop.T (c1 CHAR(1), fk_c0 INT REFERENCES testdrop.T0(c0))");
-            executor.execute("CREATE INDEX T_c1 ON testdrop.T(c1)");
-            executor.execute("CREATE VIEW testdrop.V AS SELECT c1 FROM testdrop.T");
-            String sqlCreateTempTable = "CREATE " + testSchema.getSqlDialect().getTempTableKeyword() + " TABLE "
-                                        + tempTableName + "(ctemp INT)";
+            executor.execute(SQLFragment.unsafe("CREATE TABLE testdrop.T0 (c0 INT NOT NULL PRIMARY KEY)"));
+            executor.execute(SQLFragment.unsafe("CREATE TABLE testdrop.T (c1 CHAR(1), fk_c0 INT REFERENCES testdrop.T0(c0))"));
+            executor.execute(SQLFragment.unsafe("CREATE INDEX T_c1 ON testdrop.T(c1)"));
+            executor.execute(SQLFragment.unsafe("CREATE VIEW testdrop.V AS SELECT c1 FROM testdrop.T"));
+            SQLFragment sqlCreateTempTable = SQLFragment.unsafe("CREATE ").append(testSchema.getSqlDialect().getTempTableKeywordAsSql()).unsafeAppend(" TABLE ")
+                                        .appendIdentifier(tempTableName).unsafeAppend("(ctemp INT)");
             executor.execute(sqlCreateTempTable);
 
-            executor.execute("CREATE TABLE testdrop2.T0 (c0 INT PRIMARY KEY)");
-            executor.execute("CREATE TABLE testdrop2.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))");
-            executor.execute("CREATE TABLE testdrop3.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))");
-            executor.execute("CREATE INDEX T_c1 ON testdrop2.T(c1)");
+            executor.execute(SQLFragment.unsafe("CREATE TABLE testdrop2.T0 (c0 INT PRIMARY KEY)"));
+            executor.execute(SQLFragment.unsafe("CREATE TABLE testdrop2.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))"));
+            executor.execute(SQLFragment.unsafe("CREATE TABLE testdrop3.T (c1 CHAR(10), fk_c0 INT REFERENCES testdrop2.T0(c0))"));
+            executor.execute(SQLFragment.unsafe("CREATE INDEX T_c1 ON testdrop2.T(c1)"));
 
             testSchema = DbSchema.createFromMetaData(DbScope.getLabKeyScope(), "testdrop", DbSchemaType.Bare);
 
             //these exist; ensure they are dropped by re-creating them
             testSchema.dropIndexIfExists("T", "T_c1");
-            executor.execute("CREATE INDEX T_c1 ON testdrop.T(c1)");
+            executor.execute(SQLFragment.unsafe("CREATE INDEX T_c1 ON testdrop.T(c1)"));
 
             testSchema.dropTableIfExists("v");
-            executor.execute("CREATE VIEW testdrop.V AS SELECT c0 FROM testdrop.T0");
+            executor.execute(SQLFragment.unsafe("CREATE VIEW testdrop.V AS SELECT c0 FROM testdrop.T0"));
 
             testSchema.dropTableIfExists("T");
-            executor.execute("CREATE TABLE testdrop.T (c1 CHAR(1))");
+            executor.execute(SQLFragment.unsafe("CREATE TABLE testdrop.T (c1 CHAR(1))"));
 
             testSchema.dropTableIfExists(tempTableName);
             executor.execute(sqlCreateTempTable);
@@ -781,9 +781,7 @@ public class DbSchema
         listColInfos.add(col);
 
         TempTableInfo tTemplate = new TempTableInfo("cltmp", listColInfos, Collections.singletonList("RowId"));
-        String tempTableName = tTemplate.getTempTableName();
-
-        String createTempTableSql = "CREATE TABLE " + tempTableName +
+        SQLFragment createTempTableSql = SQLFragment.unsafe("CREATE TABLE ").append(tTemplate).unsafeAppend(
             """
 
             (
@@ -794,8 +792,8 @@ public class DbSchema
                 ModuleName VARCHAR(50) NOT NULL,
                 OrphanedContainer VARCHAR(60) NULL
             )
-            
-            """;
+
+            """);
 
         final HtmlStringBuilder sbOut = HtmlStringBuilder.of();
 
@@ -822,8 +820,8 @@ public class DbSchema
             final Container recovered = ContainerManager.ensureContainer(cName, user);
             final Set<Module> modulesOfOrphans = new HashSet<>();
 
-            String selectSql = "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
-                    + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName";
+            SQLFragment selectSql = SQLFragment.unsafe("SELECT TableName, OrphanedContainer, ModuleName FROM ").append(tTemplate)
+                    .unsafeAppend(" WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName");
 
             new SqlSelector(coreSchema, selectSql).forEach(rs -> {
                 modulesOfOrphans.add(ModuleLoader.getInstance().getModule(rs.getString(3)));
@@ -858,8 +856,8 @@ public class DbSchema
         }
         else
         {
-            new SqlSelector(coreSchema, " SELECT * FROM " + tempTableName
-                + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3").forEach(rs -> {
+            new SqlSelector(coreSchema, SQLFragment.unsafe(" SELECT * FROM ").append(tTemplate)
+                .unsafeAppend(" WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3")).forEach(rs -> {
                     sbOut.unsafeAppend("<br/>&nbsp;&nbsp;&nbsp;")
                         .append("ERROR:  ")
                         .append(rs.getString(1))

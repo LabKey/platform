@@ -63,7 +63,7 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 /// merge both SQL text and parameter lists.
 ///
 /// Supports Common Table Expressions (CTEs) through
-/// [#addCommonTableExpression(SqlDialect, Object, String, SQLFragment)], which
+/// [#addCommonTableExpressionRef(SqlDialect, Object, String, SQLFragment)], which
 /// manages deduplication, token substitution, and correct ordering of WITH clauses
 /// across nested and combined fragments.
 ///
@@ -1104,18 +1104,18 @@ public class SQLFragment
         List<?> nonNullValues = values.stream().filter(Objects::nonNull).toList();
         boolean matchNull = nonNullValues.size() < values.size();
 
-        append("(");
+        unsafeAppend("(");
         if (matchNull)
         {
-            append(expr).append(" IS NULL");
+            append(expr).unsafeAppend(" IS NULL");
             if (!nonNullValues.isEmpty())
-                append(" OR ");
+                unsafeAppend(" OR ");
         }
         if (!nonNullValues.isEmpty())
             append(expr).appendInClause(nonNullValues, dialect);
         else if (!matchNull)
-            append("0 = 1");
-        return append(")");
+            unsafeAppend("0 = 1");
+        return unsafeAppend(")");
     }
 
     public SQLFragment appendInClause(@NotNull CharSequence expr, @NotNull Collection<?> values, SqlDialect dialect)
@@ -1129,7 +1129,7 @@ public class SQLFragment
      */
     public SQLFragment appendNotInClause(@NotNull SQLFragment expr, @NotNull Collection<?> values, SqlDialect dialect)
     {
-        return append("NOT ").appendInClause(expr, values, dialect);
+        return unsafeAppend("NOT ").appendInClause(expr, values, dialect);
     }
 
     public SQLFragment appendNotInClause(@NotNull CharSequence expr, @NotNull Collection<?> values, SqlDialect dialect)
@@ -1215,13 +1215,36 @@ public class SQLFragment
      * returning a name here allows us to potentially merge CTE at add time
      *
      * if you don't have a key you can just use sqlf.toString()
+     *
+     * @return a reference to the CTE, to append wherever the CTE is selected from
      */
-    public String addCommonTableExpression(SqlDialect dialect, Object key, String proposedName, SQLFragment sqlf)
+    public SQLFragment addCommonTableExpressionRef(SqlDialect dialect, Object key, String proposedName, SQLFragment sqlf)
     {
-        return addCommonTableExpression(dialect, key, proposedName, sqlf, false);
+        return addCommonTableExpressionRef(dialect, key, proposedName, sqlf, false);
     }
 
+    public SQLFragment addCommonTableExpressionRef(SqlDialect dialect, Object key, String proposedName, SQLFragment sqlf, boolean recursive)
+    {
+        SQLFragment ref = new SQLFragment();
+        ref.setSqlUnsafe(addCte(dialect, key, proposedName, sqlf, recursive));
+        return ref;
+    }
+
+    /** @deprecated Use {@link #addCommonTableExpressionRef(SqlDialect, Object, String, SQLFragment)}. */
+    @Deprecated
+    public String addCommonTableExpression(SqlDialect dialect, Object key, String proposedName, SQLFragment sqlf)
+    {
+        return addCte(dialect, key, proposedName, sqlf, false);
+    }
+
+    /** @deprecated Use {@link #addCommonTableExpressionRef(SqlDialect, Object, String, SQLFragment, boolean)}. */
+    @Deprecated
     public String addCommonTableExpression(SqlDialect dialect, Object key, String proposedName, SQLFragment sqlf, boolean recursive)
+    {
+        return addCte(dialect, key, proposedName, sqlf, recursive);
+    }
+
+    private String addCte(SqlDialect dialect, Object key, String proposedName, SQLFragment sqlf, boolean recursive)
     {
         if (null == commonTableExpressionsMap)
             commonTableExpressionsMap = new LinkedHashMap<>();
@@ -1231,6 +1254,14 @@ public class SQLFragment
         CTE cte = new CTE(dialect, proposedName, sqlf, recursive);
         commonTableExpressionsMap.put(key, cte);
         return cte.token();
+    }
+
+    /** Like {@link #createCommonTableExpressionToken}, but returns the CTE reference as a fragment to append. */
+    public SQLFragment createCommonTableExpressionRef(SqlDialect dialect, Object key, String proposedName)
+    {
+        SQLFragment ref = new SQLFragment();
+        ref.setSqlUnsafe(createCommonTableExpressionToken(dialect, key, proposedName));
+        return ref;
     }
 
     public String createCommonTableExpressionToken(SqlDialect dialect, Object key, String proposedName)
@@ -1452,10 +1483,8 @@ public class SQLFragment
             inserted.insert(0, bad);
             assertTrue(inserted.hasError());
             SQLFragment withCte = new SQLFragment();
-            String token = withCte.addCommonTableExpression(dialect, "bad", "bad", bad);
-            SQLFragment tokenSql = new SQLFragment();
-            tokenSql.setSqlUnsafe(token);
-            withCte.unsafeAppend("SELECT * FROM ").append(tokenSql);
+            SQLFragment token = withCte.addCommonTableExpressionRef(dialect, "bad", "bad", bad);
+            withCte.unsafeAppend("SELECT * FROM ").append(token);
             assertTrue(withCte.hasError());
             assertThrows(IllegalStateException.class, withCte::getSQL);
             assertThrows(IllegalStateException.class, () -> new SqlSelector(CoreSchema.getInstance().getSchema(), bad));
@@ -1478,12 +1507,12 @@ public class SQLFragment
         @Test
         public void cte()
         {
-            SQLFragment a = new SQLFragment("SELECT a FROM b WHERE x=?", 5);
+            SQLFragment a = SQLFragment.unsafe("SELECT a FROM b WHERE x=?", 5);
             assertEquals("SELECT a FROM b WHERE x=?", a.getSQL());
             assertEquals("SELECT a FROM b WHERE x=5", a.toDebugString());
 
-            SQLFragment b = new SQLFragment("SELECT * FROM CTE WHERE y=?","xxyzzy");
-            b.addCommonTableExpression(dialect, new Object(), "CTE", a);
+            SQLFragment b = SQLFragment.unsafe("SELECT * FROM CTE WHERE y=?","xxyzzy");
+            b.addCommonTableExpressionRef(dialect, new Object(), "CTE", a);
             assertEquals("""
                     WITH
                     /*CTE*/
@@ -1524,7 +1553,7 @@ public class SQLFragment
             // combining
 
             SQLFragment sqlf = new SQLFragment();
-            String token = sqlf.addCommonTableExpression(dialect, "KEY_A", "cte1", new SQLFragment("SELECT * FROM a"));
+            SQLFragment token = sqlf.addCommonTableExpressionRef(dialect, "KEY_A", "cte1", SQLFragment.unsafe("SELECT * FROM a"));
             sqlf.unsafeAppend("SELECT * FROM ").append(token).unsafeAppend(" _1");
 
             assertEquals("""
@@ -1535,7 +1564,7 @@ public class SQLFragment
                     sqlf.getSQL());
 
             SQLFragment sqlf2 = new SQLFragment();
-            String token2 = sqlf2.addCommonTableExpression(dialect, "KEY_A", "cte2", new SQLFragment("SELECT * FROM a"));
+            SQLFragment token2 = sqlf2.addCommonTableExpressionRef(dialect, "KEY_A", "cte2", SQLFragment.unsafe("SELECT * FROM a"));
             sqlf2.unsafeAppend("SELECT * FROM ").append(token2).unsafeAppend(" _2");
             assertEquals("""
                     WITH
@@ -1545,7 +1574,7 @@ public class SQLFragment
                     sqlf2.getSQL());
 
             SQLFragment sqlf3 = new SQLFragment();
-            String token3 = sqlf3.addCommonTableExpression(dialect, "KEY_B", "cte3", new SQLFragment("SELECT * FROM b"));
+            SQLFragment token3 = sqlf3.addCommonTableExpressionRef(dialect, "KEY_B", "cte3", SQLFragment.unsafe("SELECT * FROM b"));
             sqlf3.unsafeAppend("SELECT * FROM ").append(token3).unsafeAppend(" _3");
             assertEquals("""
                     WITH
@@ -1579,10 +1608,10 @@ public class SQLFragment
         {
             // one-level cte using cteToken (CTE fragment 'a' does not contain a CTE)
             {
-                SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
+                SQLFragment a = SQLFragment.unsafe("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
                 assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
-                String cteToken = b.addCommonTableExpression(dialect, new Object(), "CTE", a);
+                SQLFragment cteToken = b.addCommonTableExpressionRef(dialect, new Object(), "CTE", a);
                 b.unsafeAppend("SELECT * FROM ").append(cteToken).unsafeAppend(" WHERE p=?").add("parameterTWO");
                 assertEquals("""
                         WITH
@@ -1595,13 +1624,13 @@ public class SQLFragment
 
             // two-level cte using cteTokens (CTE fragment 'b' contains a CTE of fragment a)
             {
-                SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
+                SQLFragment a = SQLFragment.unsafe("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
                 assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(dialect, new Object(), "A_", a);
+                SQLFragment cteTokenA = b.addCommonTableExpressionRef(dialect, new Object(), "A_", a);
                 b.unsafeAppend("SELECT * FROM ").append(cteTokenA).unsafeAppend(" WHERE p=?").add("parameterTWO");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB = c.addCommonTableExpression(dialect, new Object(), "B_", b);
+                SQLFragment cteTokenB = c.addCommonTableExpressionRef(dialect, new Object(), "B_", b);
                 c.unsafeAppend("SELECT * FROM ").append(cteTokenB).unsafeAppend(" WHERE i=?").add(3);
                 assertEquals("""
                         WITH
@@ -1620,14 +1649,14 @@ public class SQLFragment
 
             // Same as previous but top-level query has both a nested and non-nested CTE
             {
-                SQLFragment a = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
-                SQLFragment a2 = new SQLFragment("SELECT 2 as i, 'Atwo' as s, CAST(? AS VARCHAR) as p", "parameterAtwo");
+                SQLFragment a = SQLFragment.unsafe("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
+                SQLFragment a2 = SQLFragment.unsafe("SELECT 2 as i, 'Atwo' as s, CAST(? AS VARCHAR) as p", "parameterAtwo");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(dialect, new Object(), "A_", a);
+                SQLFragment cteTokenA = b.addCommonTableExpressionRef(dialect, new Object(), "A_", a);
                 b.unsafeAppend("SELECT * FROM ").append(cteTokenA).unsafeAppend(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(dialect, new Object(), "B_", b);
-                String cteTokenA2 = c.addCommonTableExpression(dialect, new Object(), "A2_", a2);
+                SQLFragment cteTokenB  = c.addCommonTableExpressionRef(dialect, new Object(), "B_", b);
+                SQLFragment cteTokenA2 = c.addCommonTableExpressionRef(dialect, new Object(), "A2_", a2);
                 c.unsafeAppend("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).unsafeAppend(" B, ").append(cteTokenA2).unsafeAppend(" A WHERE B.i=A.i");
                 assertEquals("""
                         WITH
@@ -1650,13 +1679,13 @@ public class SQLFragment
             // Same as previous but two of the CTEs are the same and should be collapsed (e.g. imagine a container filter implemented with a CTE)
             // TODO, we only collapse CTEs that are siblings
             {
-                SQLFragment cf = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
+                SQLFragment cf = SQLFragment.unsafe("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(dialect, "CTE_KEY_CF", "A_", cf);
+                SQLFragment cteTokenA = b.addCommonTableExpressionRef(dialect, "CTE_KEY_CF", "A_", cf);
                 b.unsafeAppend("SELECT * FROM ").append(cteTokenA).unsafeAppend(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(dialect, new Object(), "B_", b);
-                String cteTokenA2 = c.addCommonTableExpression(dialect, "CTE_KEY_CF", "A2_", cf);
+                SQLFragment cteTokenB  = c.addCommonTableExpressionRef(dialect, new Object(), "B_", b);
+                SQLFragment cteTokenA2 = c.addCommonTableExpressionRef(dialect, "CTE_KEY_CF", "A2_", cf);
                 c.unsafeAppend("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).unsafeAppend(" B, ").append(cteTokenA2).unsafeAppend(" A WHERE B.i=A.i");
                 assertEquals("""
                         WITH
@@ -1833,14 +1862,14 @@ public class SQLFragment
         public void testInsertAndPrependKeepTempTokens()
         {
             Object outer = new Object(), inserted = new Object(), prepended = new Object();
-            SQLFragment sqlf = new SQLFragment("SELECT * FROM t");
+            SQLFragment sqlf = SQLFragment.unsafe("SELECT * FROM t");
             sqlf.addTempToken(outer);
 
-            SQLFragment where = new SQLFragment(" WHERE 1=1");
+            SQLFragment where = SQLFragment.unsafe(" WHERE 1=1");
             where.addTempToken(inserted);
             sqlf.insert(sqlf.getSqlCharSequence().length(), where);
 
-            SQLFragment prefix = new SQLFragment("SELECT 0 UNION ALL ");
+            SQLFragment prefix = SQLFragment.unsafe("SELECT 0 UNION ALL ");
             prefix.addTempToken(prepended);
             sqlf.prepend(prefix);
 
@@ -1970,9 +1999,9 @@ public class SQLFragment
         public void testExpressionParameters()
         {
             DbScope scope = CoreSchema.getInstance().getScope();
-            SQLFragment sql = new SQLFragment("SELECT x FROM (VALUES (1), (2), (3)) v(x) WHERE x > ? AND ", 1)
-                .appendInClause(new SQLFragment("x + ?", 10), List.of(12, 13), scope.getSqlDialect())
-                .append(" AND x < ?").add(3);
+            SQLFragment sql = SQLFragment.unsafe("SELECT x FROM (VALUES (1), (2), (3)) v(x) WHERE x > ? AND ", 1)
+                .appendInClause(SQLFragment.unsafe("x + ?", 10), List.of(12, 13), scope.getSqlDialect())
+                .unsafeAppend(" AND x < ?", 3);
             assertEquals(List.of(2), new SqlSelector(scope, sql).getArrayList(Integer.class));
         }
 
@@ -1981,9 +2010,9 @@ public class SQLFragment
         {
             assumeAssertionsEnabled();
             SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-            assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(new SQLFragment("x NOT"), List.of(1, 2)));
-            assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(new SQLFragment("x not "), List.of()));
-            assertThrows(AssertionError.class, () -> new SQLFragment("x NOT").appendInClause(List.of(1), dialect));
+            assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(SQLFragment.unsafe("x NOT"), List.of(1, 2)));
+            assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(SQLFragment.unsafe("x not "), List.of()));
+            assertThrows(AssertionError.class, () -> SQLFragment.unsafe("x NOT").appendInClause(List.of(1), dialect));
         }
 
         private static void assumeAssertionsEnabled()
@@ -2007,7 +2036,7 @@ public class SQLFragment
         private Set<Integer> select(List<Integer> values, boolean not)
         {
             DbScope scope = CoreSchema.getInstance().getScope();
-            SQLFragment sql = new SQLFragment("SELECT x FROM (VALUES (1), (2), (3), (CAST(NULL AS INTEGER))) v(x) WHERE ");
+            SQLFragment sql = SQLFragment.unsafe("SELECT x FROM (VALUES (1), (2), (3), (CAST(NULL AS INTEGER))) v(x) WHERE ");
             if (not)
                 sql.appendNotInClause("x", values, scope.getSqlDialect());
             else

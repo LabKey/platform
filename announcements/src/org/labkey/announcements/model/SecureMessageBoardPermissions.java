@@ -19,6 +19,7 @@ package org.labkey.announcements.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -84,12 +85,12 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         if (!hasPermission(SecureMessageBoardReadPermission.class))
         {
             filter.addWhereClause(
-            "RowId IN (" +
-                        "SELECT rowid FROM " + CommSchema.getInstance().getTableInfoUserList() + " " +
-                        "JOIN (SELECT latestid, rowid FROM " + CommSchema.getInstance().getTableInfoThreads() + ") t ON messageid=t.latestid " +
+            SQLFragment.unsafe("RowId IN (" +
+                        "SELECT rowid FROM ").append(CommSchema.getInstance().getTableInfoUserList()).unsafeAppend(" " +
+                        "JOIN (SELECT latestid, rowid FROM ").append(CommSchema.getInstance().getTableInfoThreads()).unsafeAppend(") t ON messageid=t.latestid " +
                         "WHERE userid=?" +
                     ")",
-                    new Object[]{_user.getUserId()});
+                    _user.getUserId()));
         }
 
         return filter;

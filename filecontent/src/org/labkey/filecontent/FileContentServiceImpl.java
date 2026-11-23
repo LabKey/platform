@@ -147,7 +147,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         ensureFileDataInAllContainers(admin);
 
         // Delete entries with duplicate datafileurls
-        SQLFragment sql = new SQLFragment("""
+        SQLFragment sql = SQLFragment.unsafe("""
                 DELETE FROM exp.data WHERE RowId IN (SELECT RowId
                                                      FROM exp.data
                                                      WHERE datafileurl IN (SELECT DataFileURL
@@ -1299,7 +1299,8 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     public SQLFragment listSampleFilesQuery(@NotNull User currentUser)
     {
         SQLFragment frag = new SQLFragment();
-        String union = "";
+        SQLFragment.SqlSeparator union = SQLFragment.sep("", "UNION\n");
+        boolean empty = true;
         frag.unsafeAppend("(");
 
         for (FileListener fileListener : _fileListeners)
@@ -1307,13 +1308,13 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             SQLFragment subselect = fileListener.listSampleFilesQuery();
             if (subselect != null && !subselect.isEmpty())
             {
-                frag.append(union);
+                frag.append(union.next());
                 frag.append(subselect);
-                union = "UNION\n";
+                empty = false;
             }
         }
         frag.unsafeAppend(")");
-        return union.isEmpty() ? new SQLFragment() : frag;
+        return empty ? new SQLFragment() : frag;
     }
 
     @Override
@@ -1335,16 +1336,15 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         }
         else
         {
-            String union = "";
+            SQLFragment.SqlSeparator union = SQLFragment.sep("", "UNION\n");
             frag.unsafeAppend("(");
             for (FileListener fileListener : _fileListeners)
             {
                 SQLFragment subselect = fileListener.listFilesQuery();
                 if (subselect != null)
                 {
-                    frag.append(union);
+                    frag.append(union.next());
                     frag.append(subselect);
-                    union = "UNION\n";
                 }
             }
             frag.unsafeAppend(")");

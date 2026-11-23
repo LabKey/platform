@@ -141,7 +141,7 @@ public class FileLinkFileListener implements FileListener
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(SQLFragment.unsafe("?", destPath), new SQLFragment(dialect.getSubstringFunction("StringValue", Integer.toString(srcPath.length() + 1), "5000"))));
+            childPathsSQL.append(dialect.concatenate(SQLFragment.unsafe("?", destPath), dialect.getSubstringFunction(SQLFragment.unsafe("StringValue"), new SQLFragment().appendValue(srcPath.length() + 1), SQLFragment.unsafe("5000"))));
             childPathsSQL.append(standardWhereSQL);
             childPathsSQL.unsafeAppend(" AND ");
             childPathsSQL.append(dialect.getStringIndexOfFunction(SQLFragment.unsafe("?", srcPath), SQLFragment.unsafe("StringValue")));

@@ -22,6 +22,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.logging.LogHelper;
@@ -51,14 +52,12 @@ public class DatabaseAttachmentFile implements AttachmentFile
     private InputStream _is = null;
 
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final String _sqlDocumentTypeAndSize = "SELECT DocumentType, DocumentSize FROM " + core.getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
-    private static final String _sqlDocument = "SELECT Document FROM " + core.getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
 
     public DatabaseAttachmentFile(Attachment attachment) throws IOException
     {
         _attachment = attachment;
 
-        Map<String, Object> map = new SqlSelector(core.getSchema(), _sqlDocumentTypeAndSize, attachment.getParent(), attachment.getName()).getMap();
+        Map<String, Object> map = new SqlSelector(core.getSchema(), SQLFragment.unsafe("SELECT DocumentType, DocumentSize FROM ").append(core.getTableInfoDocuments()).unsafeAppend(" WHERE Parent = ? AND DocumentName = ?", attachment.getParent(), attachment.getName())).getMap();
 
         if (null == map)
             throw new FileNotFoundException("Attachment could not be retrieved from database: " + attachment.getName());
@@ -102,7 +101,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
 
         try
         {
-            _rs = new SqlSelector(core.getSchema(), _sqlDocument, _attachment.getParent(), _attachment.getName()).getResultSet(false);
+            _rs = new SqlSelector(core.getSchema(), SQLFragment.unsafe("SELECT Document FROM ").append(core.getTableInfoDocuments()).unsafeAppend(" WHERE Parent = ? AND DocumentName = ?", _attachment.getParent(), _attachment.getName())).getResultSet(false);
 
             if (!_rs.next())
                 throw new FileNotFoundException("Attachment could not be retrieved from database: " + _attachment.getName());

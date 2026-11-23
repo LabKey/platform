@@ -87,7 +87,7 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     @Override

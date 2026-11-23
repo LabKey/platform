@@ -57,6 +57,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
@@ -542,9 +543,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
         TableInfo table = ExperimentServiceImpl.get().getTinfoMaterialInput();
 
-        String sql = "INSERT INTO " + table.getSelectName() +
-                " (MaterialId, TargetApplicationId, Role, ProtocolInputId)" +
-                " VALUES (?, ?, ?, CAST(? AS " + table.getSqlDialect().getSqlCastTypeName(JdbcType.INTEGER) + "))";
+        SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(table)
+                .unsafeAppend(" (MaterialId, TargetApplicationId, Role, ProtocolInputId)" +
+                " VALUES (?, ?, ?, CAST(? AS ").append(Objects.requireNonNull(table.getSqlDialect().getSqlCastTypeNameAsSql(JdbcType.INTEGER))).unsafeAppend("))");
 
         try
         {

@@ -395,20 +395,18 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     private @NotNull NamedObjectList getSelectList(List<String> columnNames)
     {
-        StringBuilder pkColumnSelect = new StringBuilder();
-        String sep = "";
+        String titleColumn = getTitleColumn();
+        SQLFragment sql = SQLFragment.unsafe("SELECT ");
+        SQLFragment.SqlSeparator sep = SQLFragment.sep("", "+','+");
 
         for (String columnName : columnNames)
         {
-            pkColumnSelect.append(sep);
-            pkColumnSelect.append(columnName);
-            sep = "+','+";
+            sql.append(sep.next());
+            sql.appendIdentifier(columnName);
         }
 
-        String titleColumn = getTitleColumn();
-
         final NamedObjectList newList = new NamedObjectList();
-        String sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + _selectName.getSQL() + " ORDER BY " + titleColumn;
+        sql.unsafeAppend(" AS VALUE, ").appendIdentifier(titleColumn).unsafeAppend(" AS TITLE FROM ").append(_selectName).unsafeAppend(" ORDER BY ").appendIdentifier(titleColumn);
 
         new SqlSelector(_parentSchema, sql).forEach(rs -> newList.put(new SimpleNamedObject(rs.getString(1), rs.getString(2))));
 

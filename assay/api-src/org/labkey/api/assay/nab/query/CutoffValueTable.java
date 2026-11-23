@@ -61,7 +61,7 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
         ColumnInfo selectedICOOR = new ExprColumn(this, "ICOORIndicator", getSelectedCurveFitIC(true), JdbcType.VARCHAR);
         OORDisplayColumnFactory.addOORColumns(this, selectedIC, selectedICOOR, selectedIC.getLabel(), false);
 
-        SQLFragment protocolSQL = new SQLFragment("NAbSpecimenID IN (SELECT RowId FROM ");
+        SQLFragment protocolSQL = SQLFragment.unsafe("NAbSpecimenID IN (SELECT RowId FROM ");
         protocolSQL.append(DilutionManager.getTableInfoNAbSpecimen(), "s");
         protocolSQL.unsafeAppend(" WHERE ProtocolId = ?)");
         protocolSQL.add(_userSchema.getProtocol().getRowId());
@@ -70,8 +70,7 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
 
     private SQLFragment getSelectedCurveFitIC(boolean oorIndicator)
     {
-        String suffix = oorIndicator ? "OORIndicator" : "";
-        SQLFragment defaultICSQL = new SQLFragment("CASE (SELECT op.StringValue FROM ");
+        SQLFragment defaultICSQL = SQLFragment.unsafe("CASE (SELECT op.StringValue FROM ");
         defaultICSQL.append(OntologyManager.getTinfoObject(), "o");
         defaultICSQL.unsafeAppend(", ");
         defaultICSQL.append(OntologyManager.getTinfoObjectProperty(), "op");
@@ -83,21 +82,16 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
         defaultICSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");
         defaultICSQL.unsafeAppend(" WHERE op.PropertyId = pd.PropertyId AND pd.Name = ? ");
         defaultICSQL.add(DilutionAssayProvider.CURVE_FIT_METHOD_PROPERTY_NAME);
-        defaultICSQL.unsafeAppend("AND ns.RowId = ");
-        defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS);
-        defaultICSQL.unsafeAppend(".NAbSpecimenID AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = ns.RunId)");
+        defaultICSQL.unsafeAppend("AND ns.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".NAbSpecimenID AND er.LSID = o.ObjectURI AND o.ObjectId = op.ObjectId AND er.RowId = ns.RunId)");
         defaultICSQL.unsafeAppend("\nWHEN 'Polynomial' THEN ");
-        defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        defaultICSQL.unsafeAppend("IC_Poly");
-        defaultICSQL.append(suffix);
+        defaultICSQL.unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".");
+        defaultICSQL.unsafeAppend(oorIndicator ? "IC_PolyOORIndicator" : "IC_Poly");
         defaultICSQL.unsafeAppend("\nWHEN 'Five Parameter' THEN ");
-        defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        defaultICSQL.unsafeAppend("IC_5pl");
-        defaultICSQL.append(suffix);
+        defaultICSQL.unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".");
+        defaultICSQL.unsafeAppend(oorIndicator ? "IC_5plOORIndicator" : "IC_5pl");
         defaultICSQL.unsafeAppend("\nWHEN 'Four Parameter' THEN ");
-        defaultICSQL.append(ExprColumn.STR_TABLE_ALIAS + ".");
-        defaultICSQL.unsafeAppend("IC_4pl");
-        defaultICSQL.append(suffix);
+        defaultICSQL.unsafeAppend(ExprColumn.STR_TABLE_ALIAS + ".");
+        defaultICSQL.unsafeAppend(oorIndicator ? "IC_4plOORIndicator" : "IC_4pl");
         defaultICSQL.unsafeAppend("\nEND\n");
         return defaultICSQL;
     }
@@ -111,12 +105,12 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
         {
         // We need to do our filtering based on the run since we don't have a container column of our own
             clearConditions(CONTAINER_FIELD_KEY);
-            SQLFragment sql = new SQLFragment("NabSpecimenID IN (SELECT ns.RowId FROM ");
+            SQLFragment sql = SQLFragment.unsafe("NabSpecimenID IN (SELECT ns.RowId FROM ");
             sql.append(ExperimentService.get().getTinfoExperimentRun(), "r");
             sql.unsafeAppend(", ");
             sql.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");
             sql.unsafeAppend(" WHERE r.RowId = ns.RunId AND ");
-            sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container")));
+            sql.append(filter.getSQLFragment(getSchema(), SQLFragment.unsafe("Container")));
             sql.unsafeAppend(")");
             addCondition(sql, CONTAINER_FIELD_KEY);
         }

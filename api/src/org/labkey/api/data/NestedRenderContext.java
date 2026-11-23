@@ -124,10 +124,15 @@ public class NestedRenderContext extends RenderContext
             // ASC or DESC. In buildSort we explicitly include the grouping PK in the Sort
             String groupBySQL = sortSQL.replaceAll(" DESC", "").replaceAll(" ASC", "").replaceAll("ORDER BY ", "GROUP BY ");
 
+            SQLFragment sortFrag = new SQLFragment();
+            sortFrag.setSqlUnsafe(sortSQL);
+            SQLFragment groupByFrag = new SQLFragment();
+            groupByFrag.setSqlUnsafe(groupBySQL);
+
             // Add one to the limit so we can tell if there are more groups or not, and should therefore show pagination
             SQLFragment fullSQL = SQLFragment.unsafe(" ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" IN (SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" FROM (");
             fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(SQLFragment.unsafe("SELECT ").appendIdentifier(groupColumn.getAlias()).unsafeAppend(" "),
-                    fromSQL, null, maxRows != Table.ALL_ROWS || offset > 0 ? new SQLFragment(sortSQL) : null, new SQLFragment(groupBySQL), maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
+                    fromSQL, null, maxRows != Table.ALL_ROWS || offset > 0 ? sortFrag : null, groupByFrag, maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
             fullSQL.unsafeAppend(" ) Limited )");
 
             // Apply a filter that restricts the group ids to the right "page" of data

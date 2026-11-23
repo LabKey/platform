@@ -704,9 +704,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             ExperimentServiceImpl.get().deleteDomainObjects(source.getContainer(), source.getLSID());
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
-            executor.execute("UPDATE " + getTinfoDataClass() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
-            executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
-            executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
+            executor.execute(SQLFragment.unsafe("UPDATE ").append(getTinfoDataClass()).unsafeAppend(" SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId()));
+            executor.execute(SQLFragment.unsafe("UPDATE ").append(getTinfoProtocolInput()).unsafeAppend(" SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId()));
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(getTinfoMaterialSource()).unsafeAppend(" WHERE RowId = ?", rowId));
 
             addSampleTypeDeletedAuditEvent(user, c, source, auditUserComment);
 

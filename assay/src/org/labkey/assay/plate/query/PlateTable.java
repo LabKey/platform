@@ -197,9 +197,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         // WellCount
         {
-            SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellCount FROM ")
+            SQLFragment sql = SQLFragment.unsafe("(SELECT COUNT(*) AS wellCount FROM ")
                     .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
-                    .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId)");
+                    .unsafeAppend(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId)");
             ExprColumn totalWellCount = new ExprColumn(this, Column.WellCount.name(), sql, JdbcType.INTEGER);
             totalWellCount.setDescription("The total number of wells for this plate.");
             addColumn(totalWellCount);
@@ -207,9 +207,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         // WellsFilled
         {
-            SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsFilled FROM ")
+            SQLFragment sql = SQLFragment.unsafe("(SELECT COUNT(*) AS wellsFilled FROM ")
                     .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
-                    .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
+                    .unsafeAppend(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
                     .unsafeAppend(" AND sampleId IS NOT NULL)");
             ExprColumn wellsFilled = new ExprColumn(this, Column.WellsFilled.name(), sql, JdbcType.INTEGER);
             wellsFilled.setDescription("The number of wells that have samples for this plate.");
@@ -218,9 +218,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         // WellsEmpty
         {
-            SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsEmpty FROM ")
+            SQLFragment sql = SQLFragment.unsafe("(SELECT COUNT(*) AS wellsEmpty FROM ")
                     .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
-                    .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
+                    .unsafeAppend(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
                     .unsafeAppend(" AND sampleId IS NULL)");
             ExprColumn wellsEmpty = new ExprColumn(this, Column.WellsEmpty.name(), sql, JdbcType.INTEGER);
             wellsEmpty.setDescription("The number of wells that do not have samples for this plate.");

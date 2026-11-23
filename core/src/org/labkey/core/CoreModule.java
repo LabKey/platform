@@ -1330,10 +1330,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             metrics.put("scriptEngines", () -> LabKeyScriptEngineManager.get().getScriptEngineMetrics(),"Configured script engines (R, Python, etc.) keyed by name, with factory and engine class, file extensions, whether each is external and enabled, and the server-side JavaScript language level");
             metrics.put("customLabels", () -> CustomLabelService.get().getCustomLabelMetrics(), "Custom noun labels by label provider: count of relabeled nouns and of projects that override labels");
             UsageMetricGroup roleAssignments = metrics.group("roleAssignments", "Direct assignments of designer roles to users or groups, by role, across all containers");
-            final String roleCountSql = "SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?";
-            roleAssignments.put("assayDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.assay.security.AssayDesignerRole").getObject(Long.class));
-            roleAssignments.put("dataClassDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
-            roleAssignments.put("sampleTypeDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
+            roleAssignments.put("assayDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.assay.security.AssayDesignerRole")).getObject(Long.class));
+            roleAssignments.put("dataClassDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.experiment.security.DataClassDesignerRole")).getObject(Long.class));
+            roleAssignments.put("sampleTypeDesignerCount", () -> new SqlSelector(CoreSchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT COUNT(*) FROM core.RoleAssignments WHERE userid > 0 AND role = ?", "org.labkey.experiment.security.SampleTypeDesignerRole")).getObject(Long.class));
 
             UsageMetricGroup allowListCounts = metrics.group("allowListCounts", "Entries in each site allow list, such as external redirect hosts and file extensions");
             for (AllowListType type : AllowListType.values())
@@ -1744,7 +1743,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public void indexDeleted()
     {
-        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET LastIndexed = NULL");
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("UPDATE core.Documents SET LastIndexed = NULL"));
     }
 
     /**

@@ -38,7 +38,7 @@ public class ResultSetSelectorTestCase extends AbstractSelectorTestCase<ResultSe
         test(core.getTableInfoActiveUsers(), User.class);
         test(core.getTableInfoModules(), ModuleContext.class);
 
-        SqlSelector sqlSelector = new SqlSelector(core.getSchema(), "SELECT RowId, Body FROM comm.Announcements");
+        SqlSelector sqlSelector = new SqlSelector(core.getSchema(), SQLFragment.unsafe("SELECT RowId, Body FROM comm.Announcements"));
         test(core.getSchema().getScope(), sqlSelector.getResultSet(), SqlSelectorTestCase.TestClass.class);
 
         // Test using metadata ResultSet

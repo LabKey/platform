@@ -122,7 +122,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         // Delete root and shared containers that were needed for bootstrapping
         Table.delete(CoreSchema.getInstance().getTableInfoContainers());
         DbScope targetScope = DbScope.getLabKeyScope();
-        new SqlExecutor(targetScope).execute("ALTER SEQUENCE core.containers_rowid_seq RESTART"); // Reset Containers sequence
+        new SqlExecutor(targetScope).execute(SQLFragment.unsafe("ALTER SEQUENCE core.containers_rowid_seq RESTART")); // Reset Containers sequence
 
         // Delete Guests and Users groups that were needed for bootstrapping
         Table.delete(CoreSchema.getInstance().getTableInfoPrincipals());
@@ -131,8 +131,8 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     @Override
     public void beforeSchema()
     {
-        new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers");
-        new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent");
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers"));
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent"));
     }
 
     @Override
@@ -224,8 +224,8 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     @Override
     public void afterSchema(DatabaseMigrationConfiguration configuration, DbSchema sourceSchema, DbSchema targetSchema)
     {
-        new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)");
-        new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)");
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE core.Containers ADD CONSTRAINT FK_Containers_Containers FOREIGN KEY (Parent) REFERENCES core.Containers(EntityId)"));
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("ALTER TABLE core.ViewCategory ADD CONSTRAINT FK_ViewCategory_Parent FOREIGN KEY (Parent) REFERENCES core.ViewCategory(RowId)"));
     }
 
     @Override
@@ -293,7 +293,9 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         if (guid != null)
             throw new ConfigurationException("GroupFilter is applied globally; you cannot specify a GUID");
 
-        _groupFilterCondition = new SQLFragment(groupFilter);
+        SQLFragment sqlf = new SQLFragment();
+        sqlf.setSqlUnsafe(groupFilter);
+        _groupFilterCondition = sqlf;
     }
 
     // Replace the first contained GUID in each value with a lowercase version

@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipelineJob;
@@ -393,8 +394,8 @@ public class PipelineEmailPreferences
                     filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.complete.toString(), CompareType.EQUAL);
                 else
                 {
-                    filter.addWhereClause("Status IN (?, ?)",
-                            new Object[]{PipelineJob.TaskStatus.error.toString(), PipelineJob.TaskStatus.cancelled.toString()});
+                    filter.addWhereClause(SQLFragment.unsafe("Status IN (?, ?)",
+                            PipelineJob.TaskStatus.error.toString(), PipelineJob.TaskStatus.cancelled.toString()));
                 }
 
                 if (!_c.isRoot())

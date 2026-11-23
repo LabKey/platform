@@ -592,7 +592,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 if (dataIdCol != null)
                 {
                     SQLFragment dataTableSql = assayDataTable.getFromSQL("AD", Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate")));
-                    SQLFragment sql = new SQLFragment("SELECT AD.Plate, COUNT(DISTINCT D.RunId) AS RunCount\n")
+                    SQLFragment sql = SQLFragment.unsafe("SELECT AD.Plate, COUNT(DISTINCT D.RunId) AS RunCount\n")
                             .unsafeAppend(" FROM ").append(dataTable, "D\n")
                             .unsafeAppend(" INNER JOIN ").append(runTable, "R").unsafeAppend(" ON D.RunId = R.RowId\n")
                             .unsafeAppend(" INNER JOIN ").append(dataTableSql).unsafeAppend(" ON AD.DataId = D.RowId\n")
@@ -607,13 +607,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return resultMap;
 
         SQLFragment sql = new SQLFragment();
-        String union = null;
+        SQLFragment.SqlSeparator union = SQLFragment.sep("", "UNION\n");
         for (SQLFragment fragment : fragments)
         {
-            if (union == null)
-                union = "UNION\n";
-            else
-                sql.append(union);
+            sql.append(union.next());
             sql.append(fragment);
         }
 
@@ -666,12 +663,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     }
                 }
 
-                SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT AD.DataId FROM ")
+                SQLFragment subSelectSql = SQLFragment.unsafe("SELECT DISTINCT AD.DataId FROM ")
                         .append(assayDataTable.getFromSQL("AD", requiredFields))
                         .unsafeAppend(" WHERE AD.Plate = ?")
                         .add(plate.getRowId());
 
-                SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
+                SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
                         .append(ExperimentService.get().getTinfoData(), "D")
                         .unsafeAppend(" INNER JOIN ")
                         .append(ExperimentService.get().getTinfoExperimentRun(), "R")
@@ -686,17 +683,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return 0;
 
         SQLFragment unionSql = new SQLFragment();
-        String union = null;
+        SQLFragment.SqlSeparator union = SQLFragment.sep("", "UNION\n");
         for (SQLFragment fragment : fragments)
         {
-            if (union == null)
-                union = "UNION\n";
-            else
-                unionSql.append(union);
+            unionSql.append(union.next());
             unionSql.append(fragment);
         }
 
-        SQLFragment sql = new SQLFragment("SELECT SUM(RunCount) AS RunCountSum FROM (").append(unionSql).unsafeAppend(") AS RunCountTable");
+        SQLFragment sql = SQLFragment.unsafe("SELECT SUM(RunCount) AS RunCountSum FROM (").append(unionSql).unsafeAppend(") AS RunCountTable");
 
         return ((BigDecimal) new SqlSelector(ExperimentService.get().getSchema(), sql).getMap().get("RunCountSum")).intValueExact();
     }
@@ -734,7 +728,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .unsafeAppend("INNER JOIN ").append(OntologyManager.getTinfoObject(), "o").unsafeAppend(" ON o.objectUri = r.lsid\n")
                 .unsafeAppend("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").unsafeAppend(" ON op.objectId = o.objectId\n")
                 .unsafeAppend("WHERE ")
-                .append(cf.getSQLFragment(AssayDbSchema.getInstance().getSchema(), new SQLFragment("r.container"))).unsafeAppend("\n")
+                .append(cf.getSQLFragment(AssayDbSchema.getInstance().getSchema(), SQLFragment.unsafe("r.container"))).unsafeAppend("\n")
                 .unsafeAppend("AND op.propertyId ").appendInClause(plateTemplatePropIds, AssayDbSchema.getInstance().getSchema().getSqlDialect()).unsafeAppend("\n")
                 .unsafeAppend("AND op.stringvalue = ?").add(plate.getLSID());
 
@@ -1310,8 +1304,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
 
                 // save well to well group positions
-                String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoWellGroupPositions() +
-                        " (wellId, wellGroupId) VALUES (?, ?)";
+                SQLFragment insertSql = SQLFragment.unsafe("INSERT INTO ").append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions()).unsafeAppend(" (wellId, wellGroupId) VALUES (?, ?)");
                 Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
             }
 
@@ -1504,7 +1497,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
         if (provisionedTable != null)
         {
-            SQLFragment sql2 = new SQLFragment("DELETE FROM ").append(provisionedTable, "")
+            SQLFragment sql2 = SQLFragment.unsafe("DELETE FROM ").append(provisionedTable, "")
                     .unsafeAppend(" WHERE Lsid IN (")
                     .unsafeAppend(" SELECT Lsid FROM ").append(AssayDbSchema.getInstance().getTableInfoWell(), "")
                     .unsafeAppend(" WHERE PlateId = ?)")
@@ -1534,7 +1527,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // delete PlateSetEdge relationships
         {
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
+            SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
                     .unsafeAppend(" WHERE FromPlateSetId ").appendInClause(plateSetIds, sqlDialect)
                     .unsafeAppend(" OR ToPlateSetId ").appendInClause(plateSetIds, sqlDialect)
                     .unsafeAppend(" OR RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
@@ -1543,14 +1536,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // unmark as a primary plate set
         {
-            SQLFragment sql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(schema.getTableInfoPlateSet())
                     .unsafeAppend(" SET PrimaryPlateSetId = NULL WHERE PrimaryPlateSetId ").appendInClause(plateSetIds, sqlDialect);
             new SqlExecutor(schema.getSchema()).execute(sql);
         }
 
         // unmark as a root plate set
         {
-            SQLFragment sql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(schema.getTableInfoPlateSet())
                     .unsafeAppend(" SET RootPlateSetId = NULL WHERE RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
             new SqlExecutor(schema.getSchema()).execute(sql);
         }
@@ -1584,8 +1577,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         assert scope.isTransactionActive();
 
         new SqlExecutor(scope).execute(
-                "DELETE FROM " + schema.getTableInfoWellGroupPositions() +
-                " WHERE wellGroupId = ?", wellGroupId);
+                SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
+                .unsafeAppend(" WHERE wellGroupId = ?", wellGroupId));
     }
 
     private void deleteWellGroupPositions(Plate plate)
@@ -1595,8 +1588,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         assert scope.isTransactionActive();
 
         new SqlExecutor(scope).execute(
-                "DELETE FROM " + schema.getTableInfoWellGroupPositions() +
-                " WHERE wellId IN (SELECT rowId FROM " + schema.getTableInfoWell() + " WHERE plateId=?)", plate.getRowId());
+                SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
+                .unsafeAppend(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell()).unsafeAppend(" WHERE plateId=?)", plate.getRowId()));
     }
 
     public void deleteAllPlateData(Container container)
@@ -1606,7 +1599,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             final AssayDbSchema schema = AssayDbSchema.getInstance();
             // delete plate hits
             {
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoHit())
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoHit())
                         .unsafeAppend(" WHERE wellLsid IN (SELECT lsid FROM ").append(schema.getTableInfoWell())
                         .unsafeAppend(" WHERE container = ?)").add(container);
                 new SqlExecutor(schema.getSchema()).execute(sql);
@@ -1614,7 +1607,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // delete well group positions
             {
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
                         .unsafeAppend(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell())
                         .unsafeAppend(" WHERE container = ?)").add(container);
                 new SqlExecutor(schema.getSchema()).execute(sql);
@@ -1622,7 +1615,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // delete PlateSetProperty mappings
             {
-                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
                         .append(schema.getTableInfoPlateSetProperty(), "")
                         .unsafeAppend(" WHERE PlateSetId IN (SELECT RowId FROM ").append(schema.getTableInfoPlateSet())
                         .unsafeAppend(" WHERE Container = ?)").add(container);
@@ -1633,7 +1626,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
             if (provisionedTable != null)
             {
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(provisionedTable)
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(provisionedTable)
                         .unsafeAppend(" WHERE Lsid IN (")
                         .unsafeAppend(" SELECT Lsid FROM ").append(schema.getTableInfoWell())
                         .unsafeAppend(" WHERE Container = ?)").add(container);
@@ -1647,7 +1640,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             // delete empty plate sets in this container
             {
-                SQLFragment emptyPlateSetsSql = new SQLFragment("SELECT RowId FROM ").append(schema.getTableInfoPlateSet())
+                SQLFragment emptyPlateSetsSql = SQLFragment.unsafe("SELECT RowId FROM ").append(schema.getTableInfoPlateSet())
                         .unsafeAppend(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(schema.getTableInfoPlate()).unsafeAppend(")")
                         .unsafeAppend(" AND Container = ?").add(container);
 
@@ -1658,7 +1651,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     beforePlateSetsDelete(emptyPlateSetIds, container);
                     tx.addCommitTask(() -> clearPlateSetCache(container, emptyPlateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
 
-                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
+                    SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(schema.getTableInfoPlateSet())
                             .unsafeAppend(" WHERE RowId ").appendInClause(emptyPlateSetIds, schema.getSchema().getSqlDialect());
                     new SqlExecutor(schema.getSchema()).execute(sql);
                 }
@@ -2090,7 +2083,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private void clearCache(Collection<Long> plateRowIds)
     {
         var table = AssayDbSchema.getInstance().getTableInfoPlate();
-        SQLFragment sql = new SQLFragment("SELECT rowId, container FROM ").append(table, "")
+        SQLFragment sql = SQLFragment.unsafe("SELECT rowId, container FROM ").append(table, "")
                 .unsafeAppend("WHERE rowId ").appendInClause(plateRowIds, table.getSqlDialect());
         Collection<Map<String, Object>> plateData = new SqlSelector(table.getSchema(), sql).getMapCollection();
 
@@ -2440,7 +2433,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
 
             // validate in use fields
-            SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT PlateSetId) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty(), "PP")
+            SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(DISTINCT PlateSetId) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty(), "PP")
                     .unsafeAppend(" WHERE PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
             int inUsePlateSets = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
             if (inUsePlateSets > 0)
@@ -2567,9 +2560,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 for (Map<String, Object> m : fieldsToAdd)
                     insertedValues.add(Arrays.asList(plateSet.getRowId(), m.get("propertyId"), m.get("propertyURI"), m.get("fieldKey")));
 
-                String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateSetProperty() +
-                        " (plateSetId, propertyId, propertyURI, FieldKey)" +
-                        " VALUES (?, CAST(? AS INT), CAST(? AS VARCHAR), CAST(? AS VARCHAR))";
+                SQLFragment insertSql = SQLFragment.unsafe("INSERT INTO ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty()).unsafeAppend(" (plateSetId, propertyId, propertyURI, FieldKey)" +
+                        " VALUES (?, CAST(? AS INT), CAST(? AS VARCHAR), CAST(? AS VARCHAR))");
                 Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, insertedValues);
 
                 transaction.addCommitTask(new PlateSetPlatesUncacheTask(container, plateSet.getRowId()), DbScope.CommitTaskOption.POSTCOMMIT);
@@ -2589,7 +2581,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private @NotNull List<PlateCustomField> getCustomFields(Container container, @NotNull Domain metadataDomain, long plateId)
     {
         AssayDbSchema schema = AssayDbSchema.getInstance();
-        SQLFragment sql = new SQLFragment("SELECT FieldKey, PropertyURI FROM ").append(schema.getTableInfoPlateSetProperty(), "PP")
+        SQLFragment sql = SQLFragment.unsafe("SELECT FieldKey, PropertyURI FROM ").append(schema.getTableInfoPlateSetProperty(), "PP")
                 .unsafeAppend(" INNER JOIN ").append(schema.getTableInfoPlate(), "PL").unsafeAppend(" ON PL.PlateSet = PP.PlateSetId")
                 .unsafeAppend(" WHERE PL.RowId = ?").add(plateId);
 
@@ -2719,7 +2711,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (!metadataFieldsToRemove.isEmpty())
             {
                 List<String> propertyURIs = metadataFieldsToRemove.stream().map(DomainProperty::getPropertyURI).toList();
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty(), "")
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty(), "")
                         .unsafeAppend(" WHERE PlateSetId = ? ").add(plateSet.getRowId())
                         .unsafeAppend(" AND PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
 
@@ -2729,7 +2721,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (!builtInFieldsToRemove.isEmpty())
             {
                 List<String> fieldKeys = builtInFieldsToRemove.stream().map(field -> field.getFieldKey().getName()).toList();
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty(), "")
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetProperty(), "")
                         .unsafeAppend(" WHERE PlateSetId = ? ").add(plateSet.getRowId())
                         .unsafeAppend(" AND FieldKey ").appendInClause(fieldKeys, AssayDbSchema.getInstance().getSchema().getSqlDialect());
 
@@ -3021,7 +3013,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         if (rootPlateSetId != null || primaryPlateSetId != null)
         {
-            SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet()).unsafeAppend(" SET ");
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet()).unsafeAppend(" SET ");
             if (rootPlateSetId != null)
                 sql = sql.unsafeAppend("RootPlateSetId = ?").add(rootPlateSetId);
             if (primaryPlateSetId != null)
@@ -3082,7 +3074,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             // Ensure user has permission in all containers
             {
-                SQLFragment sql = new SQLFragment("SELECT DISTINCT container FROM ")
+                SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT container FROM ")
                         .append(table, "")
                         .unsafeAppend(" WHERE rowId ")
                         .appendInClause(rowIds, table.getSqlDialect());
@@ -3095,7 +3087,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 }
             }
 
-            SQLFragment sql = new SQLFragment("UPDATE ").append(table)
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(table)
                     .unsafeAppend(" SET archived = ?").add(archive)
                     .unsafeAppend(" WHERE rowId ").appendInClause(rowIds, table.getSqlDialect());
 
@@ -3130,9 +3122,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
-            String sql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateSetEdge() +
-                    " (fromPlateSetId, toPlateSetId, rootPlateSetId) " +
-                    " VALUES (?, ?, ?) ";
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(AssayDbSchema.getInstance().getTableInfoPlateSetEdge()).unsafeAppend(" (fromPlateSetId, toPlateSetId, rootPlateSetId) " +
+                    " VALUES (?, ?, ?) ");
 
             Table.batchExecute(AssayDbSchema.getInstance().getSchema(), sql, params);
             tx.commit();
@@ -3314,10 +3305,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         newHits.add(List.of(parts.first, protocolId, resultId, row.get("Run"), row.get("WellLsid"), parts.second));
                     }
 
-                    SQLFragment insertSql = new SQLFragment("INSERT INTO ").append(hitTable)
+                    SQLFragment insertSql = SQLFragment.unsafe("INSERT INTO ").append(hitTable)
                             .unsafeAppend(" (Container, ProtocolId, ResultId, RunId, WellLsid, PlateSetPath) VALUES (?, ?, ?, ?, ?, ?) ");
 
-                    Table.batchExecute(hitTable.getSchema(), insertSql.getSQL(), newHits);
+                    Table.batchExecute(hitTable.getSchema(), insertSql, newHits);
                 }
             }
             else
@@ -3407,9 +3398,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (replicateDomain != null)
             {
                 DbScope scope = AssayDbSchema.getInstance().getScope();
-                SQLFragment sql = new SQLFragment("DELETE FROM ")
-                        .append(replicateDomain.getDomainKind().getStorageSchemaName()).unsafeAppend(".")
-                        .append(replicateDomain.getStorageTableName()).unsafeAppend(" ")
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
+                        .appendDottedIdentifiers(replicateDomain.getDomainKind().getStorageSchemaName(), replicateDomain.getStorageTableName()).unsafeAppend(" ")
                         .append(filter.getSQLFragment(scope.getSqlDialect()));
 
                 new SqlExecutor(scope).execute(sql);
@@ -3470,7 +3460,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (assayDataTable != null)
             {
                 // Query for the distinct set of plate sets that have data in their results domain for the given assay
-                SQLFragment sql = new SQLFragment("SELECT DISTINCT pt.plateset FROM ")
+                SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT pt.plateset FROM ")
                         .append(assayDataTable, "ad")
                         .unsafeAppend(" JOIN ")
                         .append(plateTable, "pt")
@@ -3501,7 +3491,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // Determines the set of primary plate sets that are being touched from the collection of well rowIds
         // From the set of primary plate sets determine if any sample exists in more than one well within the entire plate set
-        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("WITH PlateSetFilter AS (")
+        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = SQLFragment.unsafe("WITH PlateSetFilter AS (")
                 .unsafeAppend("SELECT DISTINCT PS.RowId FROM ").append(wellTable, "W")
                 .unsafeAppend(" INNER JOIN ").append(plateTable, "P").unsafeAppend(" ON P.RowId = W.PlateId")
                 .unsafeAppend(" INNER JOIN ").append(plateSetTable, "PS").unsafeAppend(" ON PS.RowId = P.PlateSet")
@@ -4895,7 +4885,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             AssayDbSchema schema = AssayDbSchema.getInstance();
 
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT W.SampleId FROM ").append(schema.getTableInfoWell(), "W")
+            SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT W.SampleId FROM ").append(schema.getTableInfoWell(), "W")
                     .unsafeAppend(" INNER JOIN ").append(schema.getTableInfoPlate(), "P").unsafeAppend(" ON P.RowId = W.PlateId")
                     .unsafeAppend(" INNER JOIN ").append(schema.getTableInfoPlateSet(), "PS").unsafeAppend(" ON PS.RowID = P.PlateSet")
                     .unsafeAppend(" WHERE PS.RowId = ?").add(targetPlateSet.getRowId())
@@ -5132,7 +5122,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // Issue 53578: Clear foreign key references in the well table when materials are deleted
         var wellTable = PlateSchema.getWellTable(container, user, ContainerFilter.getUnsafeEverythingFilter());
-        var updateSql = new SQLFragment("UPDATE assay.Well SET SampleId = NULL WHERE SampleId ")
+        var updateSql = SQLFragment.unsafe("UPDATE assay.Well SET SampleId = NULL WHERE SampleId ")
                 .appendInClause(materials.stream().map(ExpObject::getRowId).toList(), wellTable.getSqlDialect());
 
         new SqlExecutor(wellTable.getSchema()).execute(updateSql);

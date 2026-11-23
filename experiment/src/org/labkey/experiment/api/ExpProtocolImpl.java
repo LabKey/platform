@@ -274,10 +274,10 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     @Override
     public List<ExpProtocolImpl> getParentProtocols()
     {
-        String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
-                + " WHERE P.RowId = PA.ParentProtocolID AND PA.ChildProtocolId = ?" ;
+        SQLFragment sql = SQLFragment.unsafe("SELECT P.* FROM ").append(ExperimentServiceImpl.get().getTinfoProtocol()).unsafeAppend(" P, ").append(ExperimentServiceImpl.get().getTinfoProtocolAction()).unsafeAppend(" PA ")
+                .unsafeAppend(" WHERE P.RowId = PA.ParentProtocolID AND PA.ChildProtocolId = ?", getRowId());
 
-        return fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getRowId()).getArrayList(Protocol.class));
+        return fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql).getArrayList(Protocol.class));
     }
 
     @Override
@@ -321,10 +321,10 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     @Override
     public List<ExpProtocolImpl> getChildProtocols()
     {
-        String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
-                + " WHERE P.RowId = PA.ChildProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence" ;
+        SQLFragment sql = SQLFragment.unsafe("SELECT P.* FROM ").append(ExperimentServiceImpl.get().getTinfoProtocol()).unsafeAppend(" P, ").append(ExperimentServiceImpl.get().getTinfoProtocolAction()).unsafeAppend(" PA ")
+                .unsafeAppend(" WHERE P.RowId = PA.ChildProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence", _object.getRowId());
 
-        return fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getRowId()).getArrayList(Protocol.class));
+        return fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql).getArrayList(Protocol.class));
     }
 
     @Override

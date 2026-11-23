@@ -120,7 +120,8 @@ DbSchema getDbSchema(String columns) throws XmlException
                 {
                     // FROM (VALUES (1, 'one'), (2, 'two'), (3, 'three')) AS t (num,letter)
                     Timestamp now = new Timestamp(new Date().getTime()), epoch = new Timestamp(0);
-                    return new SQLFragment("(VALUES (0, 2, 3, 'x', 'y', 'z', {ts '" + epoch + "'}, {ts '" + now + "'})) AS " + alias + " (zero_, two_, three_, x_, y_, z_, epoch_, now_)");
+                    return SQLFragment.unsafe("(VALUES (0, 2, 3, 'x', 'y', 'z', ").appendValue(epoch).unsafeAppend(", ").appendValue(now)
+                            .unsafeAppend(")) AS ").appendIdentifier(alias).unsafeAppend(" (zero_, two_, three_, x_, y_, z_, epoch_, now_)");
                 }
             };
             return ti;

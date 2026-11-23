@@ -26,6 +26,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -55,7 +56,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<>();
         DataRegion dr = createDataRegionForInsert(OntologyManager.getTinfoObject(), "ObjectURI", runDataDomain.getProperties(), colNameToPdname);
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause("0 = 1", new Object[]{});
+        filter.addWhereClause(SQLFragment.unsafe("0 = 1"));
 
         // CONSIDER: Export template using FieldKey instead
         // reset all captions to the property descriptor names, since names are expected by the importer

@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.property.PropertyService;
@@ -130,8 +131,8 @@ public class SurveyModule extends DefaultModule
         if (null != svc)
         {
             svc.registerUsageMetrics(NAME, metrics -> {
-                metrics.put("surveyDesigns", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class), "Survey designs across all containers");
-                metrics.put("surveys", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class), "Survey responses across all containers, submitted or in progress");
+                metrics.put("surveyDesigns", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), SQLFragment.unsafe("SELECT COUNT(*) FROM survey.SurveyDesigns")).getObject(Long.class), "Survey designs across all containers");
+                metrics.put("surveys", () -> new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), SQLFragment.unsafe("SELECT COUNT(*) FROM survey.Surveys")).getObject(Long.class), "Survey responses across all containers, submitted or in progress");
                 return metrics;
             });
         }

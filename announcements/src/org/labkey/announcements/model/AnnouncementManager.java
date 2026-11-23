@@ -542,7 +542,7 @@ public class AnnouncementManager
     private static boolean updateApproved(Container c, AnnouncementModel ann, Date date)
     {
         TableInfo ti = CommSchema.getInstance().getTableInfoAnnouncements();
-        return new SqlExecutor(ti.getSchema()).execute("UPDATE " + ti.getSelectName() + " SET Approved = ? WHERE Container = ? AND RowId = ? AND Approved IS NULL", date, c, ann.getRowId()) > 0;
+        return new SqlExecutor(ti.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(ti).unsafeAppend(" SET Approved = ? WHERE Container = ? AND RowId = ? AND Approved IS NULL", date, c, ann.getRowId())) > 0;
     }
 
     // Render and send all the email notifications on a background thread, #13143
@@ -1016,8 +1016,8 @@ public class AnnouncementManager
     public static void setLastIndexed(String entityId, long ms)
     {
         new SqlExecutor(_comm.getSchema()).execute(
-                "UPDATE comm.Announcements SET LastIndexed=? WHERE EntityId=?",
-                new Timestamp(ms), entityId);
+                SQLFragment.unsafe("UPDATE comm.Announcements SET LastIndexed=? WHERE EntityId=?",
+                new Timestamp(ms), entityId));
     }
 
 
@@ -1067,10 +1067,10 @@ public class AnnouncementManager
     {
         private void purgeAnnouncements(Container c, boolean verifyEmpty)
         {
-            String deleteDocuments = "DELETE FROM " + _core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?)";
-            int docs = new SqlExecutor(_comm.getSchema()).execute(deleteDocuments, c, c);
-            String deleteAnnouncements = "DELETE FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?";
-            int pages = new SqlExecutor(_comm.getSchema()).execute(deleteAnnouncements, c);
+            SQLFragment deleteDocuments = SQLFragment.unsafe("DELETE FROM ").append(_core.getTableInfoDocuments()).unsafeAppend(" WHERE Container = ? AND Parent IN (SELECT EntityId FROM ", c).append(_comm.getTableInfoAnnouncements()).unsafeAppend(" WHERE Container = ?)", c);
+            int docs = new SqlExecutor(_comm.getSchema()).execute(deleteDocuments);
+            SQLFragment deleteAnnouncements = SQLFragment.unsafe("DELETE FROM ").append(_comm.getTableInfoAnnouncements()).unsafeAppend(" WHERE Container = ?", c);
+            int pages = new SqlExecutor(_comm.getSchema()).execute(deleteAnnouncements);
 
             if (verifyEmpty)
             {

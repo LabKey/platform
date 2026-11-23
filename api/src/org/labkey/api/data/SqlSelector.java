@@ -40,7 +40,8 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
         this(scope, conn, sql, new QueryLogging());
     }
 
-    // Execute select SQL against a scope and a specific Connection
+    /** @deprecated Use {@link #SqlSelector(DbScope, Connection, SQLFragment)}. */
+    @Deprecated
     public SqlSelector(DbScope scope, @Nullable Connection conn, CharSequence sql)
     {
         this(scope, conn, new SQLFragment(sql));
@@ -57,7 +58,8 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
         this(scope, null, sql);
     }
 
-    // Execute select SQL against a scope
+    /** @deprecated Use {@link #SqlSelector(DbScope, SQLFragment)}. */
+    @Deprecated
     public SqlSelector(DbScope scope, CharSequence sql)
     {
         this(scope, null, sql);
@@ -78,19 +80,22 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
             throw new NullPointerException();
     }
 
-    // Execute select SQL against a schema; simple query with no parameters
+    /** @deprecated Use {@link #SqlSelector(DbSchema, SQLFragment)}. */
+    @Deprecated
     public SqlSelector(DbSchema schema, CharSequence sql)
     {
         this(schema.getScope(), sql);
     }
 
-    // Execute select SQL against a schema
+    /** @deprecated Use {@link #SqlSelector(DbSchema, SQLFragment)}. */
+    @Deprecated
     public SqlSelector(DbSchema schema, CharSequence sql, Object... params)
     {
         this(schema.getScope(), new SQLFragment(sql, params));
     }
 
-    // Execute select SQL against a schema
+    /** @deprecated Use {@link #SqlSelector(DbSchema, SQLFragment)}. */
+    @Deprecated
     public SqlSelector(DbSchema schema, CharSequence sql, List<Object> params)
     {
         this(schema.getScope(), new SQLFragment(sql, params));

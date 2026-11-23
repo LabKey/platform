@@ -2051,21 +2051,15 @@ public class StudyManager
 
     private boolean isCohortInUse(CohortImpl cohort, Container c, TableInfo table, String... columnNames)
     {
-        List<Object> params = new ArrayList<>();
-        params.add(c.getId());
-
-        StringBuilder cols = new StringBuilder("(");
-        String or = "";
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(table).unsafeAppend(" WHERE Container = ? AND (", c.getId());
+        SQLFragment.SqlSeparator or = SQLFragment.sep("", " OR ");
         for (String columnName : columnNames)
         {
-            cols.append(or).append(columnName).append(" = ?");
-            params.add(cohort.getRowId());
-            or = " OR ";
+            sql.append(or.next()).appendIdentifier(columnName).unsafeAppend(" = ?", cohort.getRowId());
         }
-        cols.append(")");
+        sql.unsafeAppend(")");
 
-        return new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT * FROM " +
-                table + " WHERE Container = ? AND " + cols, params).exists();
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).exists();
     }
 
     public boolean isCohortInUse(CohortImpl cohort)
@@ -2405,8 +2399,8 @@ public class StudyManager
         TableInfo tableVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
         final HashMap<VisitMapKey,Boolean> map = new HashMap<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT DatasetId, VisitRowId, Required FROM " + tableVisitMap + " WHERE Container = ?",
-                study.getContainer()).forEach(rs -> map.put(new VisitMapKey(rs.getInt(1), rs.getInt(2)), rs.getBoolean(3)));
+        new SqlSelector(StudySchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT DatasetId, VisitRowId, Required FROM ").append(tableVisitMap).unsafeAppend(" WHERE Container = ?",
+                study.getContainer())).forEach(rs -> map.put(new VisitMapKey(rs.getInt(1), rs.getInt(2)), rs.getBoolean(3)));
 
         return map;
     }
@@ -2430,8 +2424,8 @@ public class StudyManager
 
         final List<VisitDataset> visitDatasets = new ArrayList<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_VISIT,
-            visit.getContainer(), visit.getRowId()).forEach(rs -> {
+        new SqlSelector(StudySchema.getInstance().getSchema(), SQLFragment.unsafe(VISITMAP_JOIN_BY_VISIT,
+            visit.getContainer(), visit.getRowId())).forEach(rs -> {
                 int datasetId = rs.getInt("DataSetId");
                 boolean isRequired = rs.getBoolean("Required");
                 visitDatasets.add(new VisitDataset(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
@@ -2445,8 +2439,8 @@ public class StudyManager
     {
         final List<VisitDataset> visitDatasets = new ArrayList<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_DATASET,
-                dataset.getContainer(), dataset.getDatasetId()).forEach(rs -> {
+        new SqlSelector(StudySchema.getInstance().getSchema(), SQLFragment.unsafe(VISITMAP_JOIN_BY_DATASET,
+                dataset.getContainer(), dataset.getDatasetId())).forEach(rs -> {
                     int visitRowId = rs.getInt("VisitRowId");
                     boolean isRequired = rs.getBoolean("Required");
                     visitDatasets.add(new VisitDataset(dataset.getContainer(), dataset.getDatasetId(), visitRowId, isRequired));
@@ -2548,13 +2542,13 @@ public class StudyManager
             {
                 throw new RuntimeException(e);
             }
-            new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + SCHEMA.getTableInfoVisitMap() + "\n" +
-                    "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
+            new SqlExecutor(StudySchema.getInstance().getSchema()).execute(SQLFragment.unsafe("DELETE FROM ").append(SCHEMA.getTableInfoVisitMap()).unsafeAppend("\n" +
+                    "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId()));
 
             // UNDONE: This is broken
             // _datasetHelper.delete(ds);
-            new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + StudySchema.getInstance().getTableInfoDataset() + "\n" +
-                    "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
+            new SqlExecutor(StudySchema.getInstance().getSchema()).execute(SQLFragment.unsafe("DELETE FROM ").append(StudySchema.getInstance().getTableInfoDataset()).unsafeAppend("\n" +
+                    "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId()));
             _datasetHelper.clearCache(study.getContainer());
 
             SecurityPolicyManager.deletePolicy(ds);

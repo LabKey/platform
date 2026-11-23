@@ -79,6 +79,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
@@ -2078,7 +2079,7 @@ public class AnnouncementsController extends SpringActionController
         if (!displayAll)
         {
             if (settings.hasExpires())
-                filter.addWhereClause("Expires IS NULL OR Expires > ?", new Object[]{new Date(System.currentTimeMillis() - DateUtils.MILLIS_PER_DAY)});
+                filter.addWhereClause(SQLFragment.unsafe("Expires IS NULL OR Expires > ?", new Date(System.currentTimeMillis() - DateUtils.MILLIS_PER_DAY)));
         }
 
         return filter;
@@ -2518,12 +2519,12 @@ public class AnnouncementsController extends SpringActionController
             // Remove or add the thread-level subscription from the database table
             if (bean.isUnsubscribe())
             {
-                new SqlExecutor(CommSchema.getInstance().getSchema()).execute("DELETE FROM comm.userlist WHERE UserId = ? AND MessageId = ?", getUser(), postId);
+                new SqlExecutor(CommSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("DELETE FROM comm.userlist WHERE UserId = ? AND MessageId = ?", getUser(), postId));
             }
             else if (!ann.getMemberListIds().contains(getUser().getUserId()))
             {
-                new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) SELECT ? AS UserId, ? AS MessageId WHERE NOT EXISTS (SELECT * FROM comm.userlist WHERE UserId = ? AND MessageId = ?)",
-                        getUser(), postId, getUser(), postId);
+                new SqlExecutor(CommSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("INSERT INTO comm.userlist (UserId, MessageId) SELECT ? AS UserId, ? AS MessageId WHERE NOT EXISTS (SELECT * FROM comm.userlist WHERE UserId = ? AND MessageId = ?)",
+                        getUser(), postId, getUser(), postId));
             }
             return true;
         }
@@ -3155,7 +3156,7 @@ public class AnnouncementsController extends SpringActionController
             User reader = createUserInRole(_folderB, ReaderRole.class);
             AnnouncementModel pending = insertDiscussion(_folderB, null, null);
             TableInfo announcements = CommSchema.getInstance().getTableInfoAnnouncements();
-            new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId = ?", pending.getRowId());
+            new SqlExecutor(announcements.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(announcements).unsafeAppend(" SET Approved = NULL WHERE RowId = ?", pending.getRowId()));
 
             assertStatus(HttpServletResponse.SC_BAD_REQUEST, getThreadResponse(reader, _folderB, pending));
             assertStatus(HttpServletResponse.SC_OK, getThreadResponse(reader, _folderB, _thread));
@@ -3287,7 +3288,7 @@ public class AnnouncementsController extends SpringActionController
 
             Map<String, Object> row = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", _folderB.getId(), "EmailOption", EmailOption.MESSAGES_ALL.getValue()));
             forumSubscriptionService(adminOfB).insertRows(adminOfB, _folderB, List.of(row), new BatchValidationException(), null, null);
-            new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", victim.getUserId(), _thread.getRowId());
+            new SqlExecutor(CommSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", victim.getUserId(), _thread.getRowId()));
 
             // Both query from A across all folders; only B's admin sees B's rows for another user
             assertEquals(Map.of(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME, 0L, AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME, 0L), subscriptionCounts(adminOfA, victim));
@@ -3383,7 +3384,7 @@ public class AnnouncementsController extends SpringActionController
             spam.setTitle("Spam");
             spam.setBody("body");
             spam = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), spam, null, false);
-            new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId IN (?, ?)", pending.getRowId(), spam.getRowId());
+            new SqlExecutor(announcements.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(announcements).unsafeAppend(" SET Approved = NULL WHERE RowId IN (?, ?)", pending.getRowId(), spam.getRowId()));
             AnnouncementManager.markAsSpam(_folderB, spam);
             Set<Integer> mine = Set.of(pending.getRowId(), spam.getRowId());
 
@@ -3531,7 +3532,7 @@ public class AnnouncementsController extends SpringActionController
             Container board = createBoard("NormalUnapproved", Settings.SECURE_OFF);
             AnnouncementModel pending = insertThread(board);
             TableInfo announcements = CommSchema.getInstance().getTableInfoAnnouncements();
-            new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId = ?", pending.getRowId());
+            new SqlExecutor(announcements.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(announcements).unsafeAppend(" SET Approved = NULL WHERE RowId = ?", pending.getRowId()));
             assertStatus(HttpServletResponse.SC_OK, post(new ActionURL(DeleteThreadAction.class, board).addParameter("rowId", pending.getRowId()), getAdmin()));
             assertNull(AnnouncementManager.getAnnouncement(board, pending.getRowId()));
         }

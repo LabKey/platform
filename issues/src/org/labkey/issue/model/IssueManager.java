@@ -467,12 +467,13 @@ public class IssueManager
         {
             TableInfo tableInfo = issueListDef.createTable(user);
             Collection<Object> params = new ArrayList<>();
-            SQLFragment sql = new SQLFragment("SELECT DisplayName, SUM(CASE WHEN Status='open' THEN 1 ELSE 0 END) AS " +
-                    _issuesSchema.getSqlDialect().makeLegalIdentifier("Open") + ", SUM(CASE WHEN Status='resolved' THEN 1 ELSE 0 END) AS " +
-                    _issuesSchema.getSqlDialect().makeLegalIdentifier("Resolved") + "\n" +
-                    "FROM " + tableInfo + " LEFT OUTER JOIN " + CoreSchema.getInstance().getTableInfoUsers() +
-                    " ON AssignedTo = UserId\n" +
-                    "WHERE Status in ('open', 'resolved') AND Container = ? ");
+            SQLFragment sql = SQLFragment.unsafe("SELECT DisplayName, SUM(CASE WHEN Status='open' THEN 1 ELSE 0 END) AS ")
+                    .appendIdentifier(_issuesSchema.getSqlDialect().makeDatabaseIdentifier("Open"))
+                    .unsafeAppend(", SUM(CASE WHEN Status='resolved' THEN 1 ELSE 0 END) AS ")
+                    .appendIdentifier(_issuesSchema.getSqlDialect().makeDatabaseIdentifier("Resolved"))
+                    .unsafeAppend("\nFROM ").append(tableInfo)
+                    .unsafeAppend(" LEFT OUTER JOIN ").append(CoreSchema.getInstance().getTableInfoUsers())
+                    .unsafeAppend(" ON AssignedTo = UserId\nWHERE Status in ('open', 'resolved') AND Container = ? ");
             params.add(c);
             sql.unsafeAppend("GROUP BY DisplayName");
             sql.addAll(params);
@@ -578,8 +579,8 @@ public class IssueManager
 
             emailPreference = new SqlSelector(
                     _issuesSchema.getSchema(),
-                    "SELECT EmailOption FROM " + _issuesSchema.getTableInfoEmailPrefs() + " WHERE Container=? AND UserId=?",
-                    c, userId).getArray(Integer.class);
+                    SQLFragment.unsafe("SELECT EmailOption FROM ").append(_issuesSchema.getTableInfoEmailPrefs()).unsafeAppend(" WHERE Container=? AND UserId=?",
+                    c, userId)).getArray(Integer.class);
 
             if (emailPreference.length == 0)
             {
@@ -780,7 +781,7 @@ public class IssueManager
 
                     if (destIssueDef != null)
                     {
-                        SQLFragment update = new SQLFragment("UPDATE issues.issues SET Container = ?, IssueDefId = ? ", dest, destIssueDef.getRowId());
+                        SQLFragment update = SQLFragment.unsafe("UPDATE issues.issues SET Container = ?, IssueDefId = ? ", dest, destIssueDef.getRowId());
                         update.unsafeAppend("WHERE issueId ");
                         schema.getSqlDialect().appendInClauseSql(update, issueIds);
                         new SqlExecutor(schema).execute(update);
@@ -788,7 +789,7 @@ public class IssueManager
                         // change the container for the provisioned table provided all issues are moving within
                         // the same domain
                         TableInfo table = issueDef.createTable(user);
-                        SQLFragment sql = new SQLFragment("UPDATE ").append(table, "").
+                        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(table, "").
                                 unsafeAppend("SET container = ? WHERE entityId ");
                         sql.add(dest);
                         schema.getSqlDialect().appendInClauseSql(sql, entityIds);
@@ -834,16 +835,16 @@ public class IssueManager
     public static void setUserEmailPreferences(Container c, int userId, int emailPrefs, int currentUser)
     {
         int ret = new SqlExecutor(_issuesSchema.getSchema()).execute(
-                "UPDATE " + _issuesSchema.getTableInfoEmailPrefs() + " SET EmailOption=? WHERE Container=? AND UserId=?",
-                emailPrefs, c, userId);
+                SQLFragment.unsafe("UPDATE ").append(_issuesSchema.getTableInfoEmailPrefs()).unsafeAppend(" SET EmailOption=? WHERE Container=? AND UserId=?",
+                emailPrefs, c, userId));
 
 
         if (ret == 0)
         {
             // record doesn't exist yet...
             new SqlExecutor(_issuesSchema.getSchema()).execute(
-                    "INSERT INTO " + _issuesSchema.getTableInfoEmailPrefs() + " (Container, UserId, EmailOption ) VALUES (?, ?, ?)",
-                    c, userId, emailPrefs);
+                    SQLFragment.unsafe("INSERT INTO ").append(_issuesSchema.getTableInfoEmailPrefs()).unsafeAppend(" (Container, UserId, EmailOption ) VALUES (?, ?, ?)",
+                    c, userId, emailPrefs));
         }
     }
 
@@ -851,7 +852,7 @@ public class IssueManager
     {
         List<ValidEmail> emails = new ArrayList<>();
 
-        SqlSelector ss = new SqlSelector(_issuesSchema.getSchema().getScope(), new SQLFragment("SELECT UserId FROM " + _issuesSchema.getTableInfoEmailPrefs() + " WHERE Container = ? and (EmailOption & ?) = ?", c.getId(), NOTIFY_SUBSCRIBE, NOTIFY_SUBSCRIBE));
+        SqlSelector ss = new SqlSelector(_issuesSchema.getSchema().getScope(), SQLFragment.unsafe("SELECT UserId FROM ").append(_issuesSchema.getTableInfoEmailPrefs()).unsafeAppend(" WHERE Container = ? and (EmailOption & ?) = ?", c.getId(), NOTIFY_SUBSCRIBE, NOTIFY_SUBSCRIBE));
         Integer[] userIds = ss.getArray(Integer.class);
 
         for (Integer userId : userIds)
@@ -919,8 +920,8 @@ public class IssueManager
     public static void setLastIndexed(String containerId, int issueId, long ms)
     {
         new SqlExecutor(_issuesSchema.getSchema()).execute(
-                "UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
-                new Timestamp(ms), containerId, issueId);
+                SQLFragment.unsafe("UPDATE issues.issues SET lastIndexed=? WHERE container=? AND issueId=?",
+                new Timestamp(ms), containerId, issueId));
     }
 
 
@@ -1257,7 +1258,7 @@ public class IssueManager
         List<AttachmentParent> attachmentParents = new ArrayList<>();
 
         // get the list of comments for all issues being deleted (these are the attachment parents)
-        SQLFragment commentsSQL = new SQLFragment("SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
+        SQLFragment commentsSQL = SQLFragment.unsafe("SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
                 unsafeAppend(" WHERE IssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
                 unsafeAppend(" WHERE IssueDefId = ?)");
         commentsSQL.add(issueDef.getRowId());
@@ -1269,27 +1270,27 @@ public class IssueManager
         AttachmentService.get().deleteAttachments(attachmentParents);
 
         // clean up comments
-        SQLFragment deleteCommentsSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
+        SQLFragment deleteCommentsSQL = SQLFragment.unsafe("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
                 unsafeAppend(" WHERE IssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
                 unsafeAppend(" WHERE IssueDefId = ? )");
         deleteCommentsSQL.add(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteCommentsSQL);
 
         // clean up related issues
-        SQLFragment deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "").
+        SQLFragment deleteRelatedSQL = SQLFragment.unsafe("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "").
                 unsafeAppend(" WHERE IssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
                 unsafeAppend(" WHERE IssueDefId = ? )");
         deleteRelatedSQL.addAll(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteRelatedSQL);
 
-        deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "").
+        deleteRelatedSQL = SQLFragment.unsafe("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "").
                 unsafeAppend(" WHERE RelatedIssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
                 unsafeAppend(" WHERE IssueDefId = ? )");
         deleteRelatedSQL.addAll(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteRelatedSQL);
 
         // delete records from the issue table
-        SQLFragment deleteIssuesSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+        SQLFragment deleteIssuesSQL = SQLFragment.unsafe("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
                 unsafeAppend(" WHERE IssueDefId = ?");
         deleteIssuesSQL.add(issueDef.getRowId());
         int count = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteIssuesSQL);
@@ -1298,7 +1299,7 @@ public class IssueManager
             return count;
 
         // delete records from the provisioned table
-        SQLFragment deleteProvisionedSQL = new SQLFragment("DELETE FROM ").append(issueDefTable, "").
+        SQLFragment deleteProvisionedSQL = SQLFragment.unsafe("DELETE FROM ").append(issueDefTable, "").
                 unsafeAppend(" WHERE Container = ?");
         deleteProvisionedSQL.add(c);
         int count2 = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteProvisionedSQL);

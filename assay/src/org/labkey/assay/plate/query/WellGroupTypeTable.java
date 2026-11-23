@@ -36,7 +36,7 @@ public class WellGroupTypeTable extends EnumTableInfo<WellGroup.Type>
         setPublicName(NAME);
         setTitleColumn("Label");
 
-        ExprColumn labelColumn = new ExprColumn(this, "Label", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Label"), JdbcType.VARCHAR);
+        ExprColumn labelColumn = new ExprColumn(this, "Label", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".Label"), JdbcType.VARCHAR);
         addColumn(labelColumn);
     }
 
@@ -45,12 +45,11 @@ public class WellGroupTypeTable extends EnumTableInfo<WellGroup.Type>
     {
         checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment();
-        String separator = "";
+        SQLFragment.SqlSeparator separator = SQLFragment.sep("", " UNION ");
         EnumSet<WellGroup.Type> enumSet = EnumSet.allOf(_enum);
         for (WellGroup.Type e : enumSet)
         {
-            sql.append(separator);
-            separator = " UNION ";
+            sql.append(separator.next());
             sql.unsafeAppend("SELECT ? AS Value, ? AS RowId, ? AS Label, ? AS Ordinal");
             sql.add(_valueGetter.getValue(e));
             sql.add(_rowIdGetter.getRowId(e));

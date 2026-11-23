@@ -482,11 +482,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     public MutableColumnInfo addDataInputColumn(String alias, String role)
     {
         checkLocked();
-        SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
+        SQLFragment sql = SQLFragment.unsafe("(SELECT MIN(exp.datainput.dataid)" +
                 "\nFROM exp.datainput" +
                 "\nINNER JOIN exp.protocolapplication on exp.datainput.targetapplicationid = exp.protocolapplication.rowid" +
-                "\nWHERE exp.protocolapplication.cpastype = '" + ExpProtocol.ApplicationType.ExperimentRun + "'" +
-                "\nAND exp.protocolapplication.runid = " + ExprColumn.STR_TABLE_ALIAS + ".rowid" +
+                "\nWHERE exp.protocolapplication.cpastype = ")
+                .appendValue(ExpProtocol.ApplicationType.ExperimentRun)
+                .unsafeAppend("\nAND exp.protocolapplication.runid = " + ExprColumn.STR_TABLE_ALIAS + ".rowid" +
                 "\nAND ");
         if (role == null)
         {
@@ -526,9 +527,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     public BaseColumnInfo createInputLookupColumn()
     {
-        SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
+        SQLFragment sql = SQLFragment.unsafe("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
-                "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
+                "\nAND exp.ProtocolApplication.CpasType = ")
+                .appendValue(ExpProtocol.ApplicationType.ExperimentRun)
+                .unsafeAppend(")");
         ExprColumn ret = new ExprColumn(this, Column.Input.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of inputs (both materials and data files) that could be used for this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, getContainerFilter()));
@@ -539,9 +542,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     public BaseColumnInfo createOutputLookupColumn()
     {
-        SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
+        SQLFragment sql = SQLFragment.unsafe("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
-                "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
+                "\nAND exp.ProtocolApplication.CpasType = ")
+                .appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
+                .unsafeAppend(")");
         ExprColumn ret = new ExprColumn(this, Column.Output.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of outputs (both materials and data files) that could be produced by this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, getContainerFilter()));
@@ -1262,8 +1267,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         protected int truncateRows(User user, Container c)
         {
             final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-            String sql = "SELECT RowId FROM " + svc.getTinfoExperimentRun() + " WHERE Container = ?";
-            long[] runIds = ArrayUtils.toPrimitive(new SqlSelector(ExperimentServiceImpl.getExpSchema(), sql, c).getArray(Long.class));
+            SQLFragment sql = SQLFragment.unsafe("SELECT RowId FROM ").append(svc.getTinfoExperimentRun()).unsafeAppend(" WHERE Container = ?", c);
+            long[] runIds = ArrayUtils.toPrimitive(new SqlSelector(ExperimentServiceImpl.getExpSchema(), sql).getArray(Long.class));
 
             svc.deleteExperimentRunsByRowIds(c, user, runIds);
             return runIds.length;

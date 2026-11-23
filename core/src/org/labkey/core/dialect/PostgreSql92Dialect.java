@@ -68,6 +68,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -152,7 +153,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         // Skip domains query if connecting to LabKey Server - it has no user-defined types
         if (getServerType().supportsSpecialMetadataQueries())
         {
-            Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains");
+            Selector selector = new SqlSelector(scope, SQLFragment.unsafe("SELECT * FROM information_schema.domains"));
             selector.forEach(rs -> {
                 String schemaName = rs.getString("domain_schema");
                 String domainName = rs.getString("domain_name");
@@ -256,7 +257,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public void prepareNewLabKeyDatabase(DbScope scope)
     {
-        if (new SqlSelector(scope, "SELECT * FROM pg_language WHERE lanname = 'plpgsql'").exists())
+        if (new SqlSelector(scope, SQLFragment.unsafe("SELECT * FROM pg_language WHERE lanname = 'plpgsql'")).exists())
             return;
 
         String dbName = scope.getDatabaseName();
@@ -335,10 +336,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     {
         if (getServerType().supportsSpecialMetadataQueries())
         {
-            Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
+            Selector selector = new SqlSelector(scope, SQLFragment.unsafe("SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'"));
             _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
 
-            String value = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'max_identifier_length'").getObject(String.class);
+            String value = new SqlSelector(scope, SQLFragment.unsafe("SELECT setting FROM pg_settings WHERE name = 'max_identifier_length'")).getObject(String.class);
             try
             {
                 _maxIdentifierByteLength = Integer.valueOf(value);
@@ -446,7 +447,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     {
         if (getServerType().supportsSpecialMetadataQueries())
         {
-            Selector selector = new SqlSelector(scope, "SELECT * FROM pg_catalog.pg_namespace n INNER JOIN pg_catalog.pg_proc p ON pronamespace = n.oid WHERE nspname = 'core' AND proname = 'sort'");
+            Selector selector = new SqlSelector(scope, SQLFragment.unsafe("SELECT * FROM pg_catalog.pg_namespace n INNER JOIN pg_catalog.pg_proc p ON pronamespace = n.oid WHERE nspname = 'core' AND proname = 'sort'"));
             _arraySortFunctionExists.set(selector.exists());
         }
 
@@ -918,21 +919,21 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             }
             else
             {
-                String dbType;
+                SQLFragment dbType;
                 if (column.getJdbcType().isText())
                 {
                     // Using the common default max size to make type change to text
                     dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                        getSqlTypeName(JdbcType.LONGVARCHAR) :
-                        getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
+                        Objects.requireNonNull(getSqlTypeNameAsSql(JdbcType.LONGVARCHAR)) :
+                        Objects.requireNonNull(getSqlTypeNameAsSql(column.getJdbcType())).unsafeAppend("(").appendValue(column.getSize()).unsafeAppend(")");
                 }
                 else if (column.getJdbcType().isDecimal())
                 {
-                    dbType = getSqlTypeName(column.getJdbcType()) + DEFAULT_DECIMAL_SCALE_PRECISION;
+                    dbType = Objects.requireNonNull(getSqlTypeNameAsSql(column.getJdbcType())).unsafeAppend(DEFAULT_DECIMAL_SCALE_PRECISION);
                 }
                 else
                 {
-                    dbType = getSqlTypeName(column.getJdbcType());
+                    dbType = Objects.requireNonNull(getSqlTypeNameAsSql(column.getJdbcType()));
                 }
 
                 SQLFragment clause = new SQLFragment();
@@ -946,11 +947,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             SQLFragment alter = SQLFragment.unsafe("ALTER TABLE ");
             alter.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             alter.unsafeAppend(" ");
-            String sep = "";
+            SQLFragment.SqlSeparator sep = SQLFragment.sep("", ", ");
             for (SQLFragment c : nonDateTimeClauses)
             {
-                alter.append(sep).append(c);
-                sep = ", ";
+                alter.append(sep.next()).append(c);
             }
             statements.add(alter);
         }
@@ -1023,13 +1023,12 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         SQLFragment alter = SQLFragment.unsafe("ALTER TABLE ");
         alter.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
         alter.unsafeAppend(" ");
-        String sep = "";
+        SQLFragment.SqlSeparator sep = SQLFragment.sep("", ", ");
         for (SQLFragment col : columnSpecs)
         {
-            alter.append(sep);
+            alter.append(sep.next());
             alter.unsafeAppend("ADD COLUMN ");
             alter.append(col);
-            sep = ", ";
         }
         statements.add(alter);
         if (null != pkColumn)
@@ -1037,7 +1036,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             SQLFragment addPk = SQLFragment.unsafe("ALTER TABLE ");
             addPk.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             addPk.unsafeAppend(" ADD CONSTRAINT ").appendIdentifier(constraint.getName())
-                .unsafeAppend(" ").append(constraint.getType().toString()).unsafeAppend(" (")
+                .unsafeAppend(" ").append(constraint.getType().getSqlFragment()).unsafeAppend(" (")
                 .appendIdentifier(makePropertyIdentifier(pkColumn)).unsafeAppend(")");
             statements.add(addPk);
         }
@@ -1077,7 +1076,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                     .unsafeAppend(") THEN\nALTER TABLE ");
                 f.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 f.unsafeAppend(" ADD CONSTRAINT ").appendIdentifier(constraint.getName()).unsafeAppend(" ")
-                    .append(constraint.getType().toString()).unsafeAppend(" (")
+                    .append(constraint.getType().getSqlFragment()).unsafeAppend(" (")
                     .append(columns, ",")
                     .unsafeAppend(")").appendEOS().unsafeAppend("\nEND IF)").appendEOS().unsafeAppend("\nEND$$").appendEOS();
                 return f;
@@ -1133,7 +1132,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             SQLFragment addPk = SQLFragment.unsafe("ALTER TABLE ");
             addPk.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             addPk.unsafeAppend(" ADD CONSTRAINT ").appendIdentifier(constraint.getName())
-                .unsafeAppend(" ").append(constraint.getType().toString()).unsafeAppend(" (")
+                .unsafeAppend(" ").append(constraint.getType().getSqlFragment()).unsafeAppend(" (")
                 .appendIdentifier(makePropertyIdentifier(pkColumn)).unsafeAppend(")");
             statements.add(addPk);
         }
@@ -1155,11 +1154,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             f.unsafeAppend("INDEX ").appendIdentifier(newIndexName).unsafeAppend(" ON ");
             f.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
             f.unsafeAppend(" (");
-            String separator = "";
+            SQLFragment.SqlSeparator separator = SQLFragment.sep("", ", ");
             for (String columnName : index.columnNames)
             {
-                f.append(separator).appendIdentifier(makePropertyIdentifier(columnName));
-                separator = ", ";
+                f.append(separator.next()).appendIdentifier(makePropertyIdentifier(columnName));
             }
             f.unsafeAppend(")");
             f.appendEOS();
@@ -1168,7 +1166,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
             if (index.isClustered)
             {
                 SQLFragment c = new SQLFragment();
-                c.append(PropertyStorageSpec.CLUSTER_TYPE.CLUSTER.toString()).unsafeAppend(" ");
+                c.unsafeAppend("CLUSTER ");
                 c.appendIdentifier(change.getSchemaName()).unsafeAppend(".").appendIdentifier(change.getTableName());
                 c.unsafeAppend(" USING ").appendIdentifier(newIndexName);
                 statements.add(c);
@@ -1252,7 +1250,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 
         //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
 
-        new SqlSelector(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", DbSchema.getTemp().getName()).forEach(
+        new SqlSelector(coreSchema, SQLFragment.unsafe("SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", DbSchema.getTemp().getName())).forEach(
             new ForEachBlock<>()
             {
                 private Map<String, String> _types = null;
@@ -1263,7 +1261,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                     if (null == _types)
                     {
                         _types = new HashMap<>();
-                        new SqlSelector(coreSchema, "SELECT CAST(oid AS VARCHAR) as oid, typname, (select nspname from pg_namespace where oid = typnamespace) as nspname FROM pg_type").forEach(type ->
+                        new SqlSelector(coreSchema, SQLFragment.unsafe("SELECT CAST(oid AS VARCHAR) as oid, typname, (select nspname from pg_namespace where oid = typnamespace) as nspname FROM pg_type")).forEach(type ->
                             _types.put(type.getString(1), quoteIdentifier(type.getString(3)) + "." + quoteIdentifier(type.getString(2))));
                     }
 
@@ -1271,11 +1269,10 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                     String[] oids = StringUtils.split(rs.getString(2), ' ');
                     SQLFragment drop = SQLFragment.unsafe("DROP FUNCTION temp.").appendIdentifier(quoteIdentifier(name));
                     drop.unsafeAppend("(");
-                    String comma = "";
+                    SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
                     for (String oid : oids)
                     {
-                        drop.append(comma).append(_types.get(oid));
-                        comma = ",";
+                        drop.append(comma.next()).appendIdentifier(_types.get(oid));
                     }
                     drop.unsafeAppend(")");
 
@@ -1319,12 +1316,11 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     {
         SQLFragment ret = new SQLFragment();
         ret.unsafeAppend("ARRAY[");
-        String separator = "";
+        SQLFragment.SqlSeparator separator = SQLFragment.sep("", ", ");
         for (SQLFragment element : elements)
         {
-            ret.append(separator);
+            ret.append(separator.next());
             ret.append(element);
-            separator = ", ";
         }
         ret.unsafeAppend("]");
         return ret;
@@ -1404,16 +1400,15 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     public SQLFragment array_element_like(SQLFragment a, String... values)
     {
         SQLFragment sql = SQLFragment.unsafe("(");
-        String sep = "";
+        SQLFragment.SqlSeparator sep = SQLFragment.sep("", " AND ");
         for (String value : values)
         {
-            sql.append(sep);
+            sql.append(sep.next());
             sql.unsafeAppend("EXISTS (SELECT 1 FROM unnest(");
             sql.append(a);
             sql.unsafeAppend(") AS _elem WHERE _elem");
             appendCaseInsensitiveLikeClause(sql, value);
             sql.unsafeAppend(")");
-            sep = " AND ";
         }
         sql.unsafeAppend(")");
         return sql;

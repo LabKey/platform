@@ -297,15 +297,26 @@ public class Table
         }
     }
 
-    // Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
+    /** Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
+     * @deprecated use batchExecute(DbSchema, SQLFragment, Iterable&lt;? extends Collection<?>>)
+     */
+    @Deprecated
     public static void batchExecute(DbSchema schema, String sql, Iterable<? extends Collection<?>> paramList) throws SQLException
+    {
+        SQLFragment sqlf = new SQLFragment();
+        sqlf.setSqlUnsafe(sql);
+        batchExecute(schema, sqlf, paramList);
+    }
+
+    // Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
+    public static void batchExecute(DbSchema schema, SQLFragment sql, Iterable<? extends Collection<?>> paramList) throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
         PreparedStatement stmt = null;
 
         try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
-            stmt = conn.prepareStatement(sql);
+            stmt = conn.prepareStatement(sql.getSQL());
             int paramCounter = 0;
             for (Collection<?> params : paramList)
             {
@@ -832,7 +843,7 @@ public class Table
         SQLFragment columnSQL = new SQLFragment();
         SQLFragment valueSQL = new SQLFragment();
         ColumnInfo autoIncColumn = null;
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
 
         //noinspection unchecked
         Map<String, Object> fields = fieldsIn instanceof Map ?
@@ -867,7 +878,7 @@ public class Table
                 throw new RuntimeValidationException("A value is required for field '" + column.getName() + "'", column.getName());
             }
 
-            columnSQL.append(comma);
+            columnSQL.append(comma.next());
             columnSQL.appendIdentifier(column.getSelectIdentifier());
             valueSQL.append(comma);
             if (null == value || value instanceof String s && s.isEmpty())
@@ -891,10 +902,9 @@ public class Table
                 else
                     valueSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
-            comma = ", ";
         }
 
-        if (comma.isEmpty())
+        if (columnSQL.isEmpty())
         {
             // NO COLUMNS TO INSERT
             throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + fieldsIn);
@@ -979,7 +989,7 @@ public class Table
 
         SQLFragment setSQL = new SQLFragment();
         SQLFragment whereSQL = new SQLFragment();
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
 
         // UNDONE -- rowVersion
         List<ColumnInfo> columnPK;
@@ -1015,22 +1025,21 @@ public class Table
             }
         }
 
-        String whereAND = "WHERE ";
+        SQLFragment.SqlSeparator whereAND = SQLFragment.sep("WHERE ", " AND ");
 
         if (null != filter)
         {
             SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
             whereSQL.append(fragment);
-            whereAND = " AND ";
+            whereAND.next();
         }
 
         for (ColumnInfo col : columnPK)
         {
-            whereSQL.append(whereAND);
+            whereSQL.append(whereAND.next());
             whereSQL.appendIdentifier(col.getSelectIdentifier());
             whereSQL.unsafeAppend("=?");
             whereSQL.add(keys.get(col.getName()), col.getJdbcType());
-            whereAND = " AND ";
         }
 
         //noinspection unchecked
@@ -1051,11 +1060,10 @@ public class Table
                 SQLFragment expr = column.getVersionUpdateExpression();
                 if (null != expr)
                 {
-                    setSQL.append(comma);
+                    setSQL.append(comma.next());
                     setSQL.appendIdentifier(column.getSelectIdentifier());
                     setSQL.unsafeAppend("=");
                     setSQL.append(expr);
-                    comma = ", ";
                     hasFieldsToSet = true;
                     continue;
                 }
@@ -1066,16 +1074,15 @@ public class Table
                 // CONSIDER column.isImportHash()
                 if (DataIntegrationService.Columns.TransformImportHash.getColumnName().equals(column.getName()))
                 {
-                    setSQL.append(comma);
+                    setSQL.append(comma.next());
                     setSQL.appendIdentifier(column.getSelectIdentifier());
                     setSQL.unsafeAppend("=NULL");
-                    comma = ", ";
                 }
                 continue;
             }
 
             Object value = fields.get(column.getName());
-            setSQL.append(comma);
+            setSQL.append(comma.next());
             setSQL.appendIdentifier(column.getSelectIdentifier());
             setSQL.unsafeAppend("=");
 
@@ -1101,7 +1108,6 @@ public class Table
                     setSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
 
-            comma = ", ";
             hasFieldsToSet = true;
         }
 
@@ -1231,7 +1237,7 @@ public class Table
         assert assertInDb(table);
         SqlExecutor sqlExecutor = new SqlExecutor(table.getSchema());
 
-        return sqlExecutor.execute("DELETE FROM " + table.getSelectName());
+        return sqlExecutor.execute(SQLFragment.unsafe("DELETE FROM ").append(table));
     }
 
     public static int delete(TableInfo table, Filter filter)
@@ -1294,7 +1300,7 @@ public class Table
     {
         SQLFragment sqlSelect = getSelectSQL(tinfo, null, null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
-        sqlSelectInto.unsafeAppend("SELECT * INTO ").append(tableName).unsafeAppend(" FROM (");
+        sqlSelectInto.unsafeAppend("SELECT * INTO ").appendIdentifier(tableName).unsafeAppend(" FROM (");
         sqlSelectInto.append(sqlSelect);
         sqlSelectInto.unsafeAppend(") _from_");
 
@@ -1551,7 +1557,7 @@ public class Table
 
             aggregateMap = new TableSelector(tinfo, Collections.emptyList(), null, null).getAggregates(aggregates);
 
-            String sql =
+            SQLFragment sql = SQLFragment.unsafe(
                 """
                 SELECT CAST(COUNT(*) AS BIGINT) AS CountStar,
                 CAST(COUNT(C.RowId) AS BIGINT) AS CountRowId,
@@ -1569,7 +1575,7 @@ public class Table
                 MIN(C.Name) AS MinName
                 FROM core.Containers C
                 LEFT OUTER JOIN core.Containers P ON C.parent = P.entityid
-                """;
+                """);
             Map<String, Object> expected = new SqlSelector(tinfo.getSchema(), sql).getMap();
 
             verifyAggregates(expected, aggregateMap);
@@ -1728,18 +1734,18 @@ public class Table
 
         SQLFragment sqlfWhere = new SQLFragment();
         sqlfWhere.unsafeAppend("\nWHERE " );
-        String and = "";
+        SQLFragment.SqlSeparator and = SQLFragment.sep("", " AND ");
         for (int i=0 ; i<columnPK.size() ; i++)
         {
             ColumnInfo pk = columnPK.get(i);
             Parameter p = paramPK.get(i);
-            sqlfWhere.append(and); and = " AND ";
+            sqlfWhere.append(and.next());
             sqlfWhere.appendIdentifier(pk.getSelectIdentifier()).unsafeAppend("=?");
             sqlfWhere.add(p);
         }
         if (null != table.getColumn("container"))
         {
-            sqlfWhere.append(and);
+            sqlfWhere.append(and.next());
             sqlfWhere.unsafeAppend("container=?");
             sqlfWhere.add(paramContainer);
         }
@@ -1899,7 +1905,7 @@ public class Table
 
             assertFalse(dic.getErrors().hasErrors());
 
-            new SqlExecutor(testTable.getSchema()).execute("DELETE FROM test.testtable WHERE EntityId = '" + extract.guid + "'");
+            new SqlExecutor(testTable.getSchema()).execute(SQLFragment.unsafe("DELETE FROM test.testtable WHERE EntityId = ").appendValue(extract.guid, testTable.getSqlDialect()));
         }
     }
 

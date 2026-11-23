@@ -26,7 +26,7 @@ public class GroupCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final BlockingCache<Integer, Group> CACHE = CacheManager.getBlockingCache(Integer.class, 20000, CacheManager.DAY, "Groups", (groupId, argument) -> {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + CORE.getTableInfoPrincipals() + " WHERE Type <> 'u' AND UserId = ?", groupId);
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(CORE.getTableInfoPrincipals()).unsafeAppend(" WHERE Type <> 'u' AND UserId = ?", groupId);
         SqlSelector selector = new SqlSelector(CORE.getSchema(), sql);
 
         return selector.getObject(Group.class);

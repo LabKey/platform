@@ -342,7 +342,7 @@ public class AssayModule extends SpringModule
             public FilterClause getContainerClause(TableInfo sourceTable, Set<GUID> containers)
             {
                 return new SQLClause(
-                    new SQLFragment("LSID IN (SELECT LSID FROM assay.Well WHERE Container")
+                    SQLFragment.unsafe("LSID IN (SELECT LSID FROM assay.Well WHERE Container")
                         .appendInClause(AssaySkipContainers.getFilteredContainers(containers), sourceTable.getSqlDialect())
                         .unsafeAppend(")")
                 );

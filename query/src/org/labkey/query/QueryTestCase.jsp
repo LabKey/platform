@@ -1593,7 +1593,7 @@ d,seven,twelve,day,month,date,duration,guid
             @Override
             public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, boolean allowNulls)
             {
-                return new SQLFragment(" ~~CONTAINERFILTER~~ ");
+                return SQLFragment.unsafe(" ~~CONTAINERFILTER~~ ");
             }
 
             @NotNull
@@ -2055,9 +2055,9 @@ d,seven,twelve,day,month,date,duration,guid
         if (!dialect.supportsArrays())
             return;
 
-        var elNull = new SQLFragment("NULL");
-        var elA = new SQLFragment("'A'");
-        var elB = new SQLFragment("'B'");
+        var elNull = SQLFragment.unsafe("NULL");
+        var elA = SQLFragment.unsafe("'A'");
+        var elB = SQLFragment.unsafe("'B'");
 
         assertTrue(  booleanSelect(dialect.element_in_array( elA,    array("'A'", "'B'")  )));
         assertTrue(  booleanSelect(dialect.element_in_array( elA,    array("'A'", "NULL") )));

@@ -133,13 +133,13 @@ public class PipelineStatusManager
         if (rowIds.length == 0)
             return Collections.emptyList();
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(_schema.getTableInfoStatusFiles()).unsafeAppend(" WHERE RowId ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(_schema.getTableInfoStatusFiles()).unsafeAppend(" WHERE RowId ");
         _schema.getSqlDialect().appendInClauseSql(sql, Arrays.stream(rowIds).boxed().collect(Collectors.toList()));
 
         if (!c.isRoot())
         {
             sql.unsafeAppend(" AND ");
-            sql.append(ContainerFilter.current(c, user).getSQLFragment(_schema.getSchema(), new SQLFragment("Container")));
+            sql.append(ContainerFilter.current(c, user).getSQLFragment(_schema.getSchema(), SQLFragment.unsafe("Container")));
         }
 
         return new SqlSelector(_schema.getSchema(), sql).getArrayList(PipelineStatusFileImpl.class);
@@ -538,10 +538,10 @@ public class PipelineStatusManager
         try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
-            String sql = "UPDATE " + _schema.getTableInfoStatusFiles() +
-                    " SET JobStore = ?" +
-                    " WHERE RowId = ?";
-            new SqlExecutor(_schema.getSchema()).execute(sql, xml, sfExist.getRowId());
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(_schema.getTableInfoStatusFiles())
+                    .unsafeAppend(" SET JobStore = ?" +
+                    " WHERE RowId = ?", xml, sfExist.getRowId());
+            new SqlExecutor(_schema.getSchema()).execute(sql);
             transaction.commit();
         }
     }
@@ -570,10 +570,10 @@ public class PipelineStatusManager
         try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
-            String sql = "UPDATE " + _schema.getTableInfoStatusFiles() +
-                    " SET JobStore = NULL" +
-                    " WHERE RowId = ?";
-            new SqlExecutor(_schema.getSchema()).execute(sql, sfExist.getRowId());
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(_schema.getTableInfoStatusFiles())
+                    .unsafeAppend(" SET JobStore = NULL" +
+                    " WHERE RowId = ?", sfExist.getRowId());
+            new SqlExecutor(_schema.getSchema()).execute(sql);
             transaction.commit();
         }
 
@@ -601,8 +601,8 @@ public class PipelineStatusManager
     */
     public static int getIncompleteStatusFileCount(String parentId, Container container)
     {
-        return new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() + " WHERE Container = ? AND JobParent = ? AND Status <> ?",
-                container, parentId, PipelineJob.TaskStatus.complete.toString()).getObject(Integer.class);
+        return new SqlSelector(_schema.getSchema(), SQLFragment.unsafe("SELECT COUNT(*) FROM ").append(_schema.getTableInfoStatusFiles()).unsafeAppend(" WHERE Container = ? AND JobParent = ? AND Status <> ?",
+                container, parentId, PipelineJob.TaskStatus.complete.toString())).getObject(Integer.class);
     }
 
     public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)
@@ -832,7 +832,7 @@ public class PipelineStatusManager
             if (!container.isRoot())
             {
                 // Use a ContainerFilter to generate the SQL so that we include workbooks - see issue 22236
-                SQLFragment containerSQL = ContainerFilter.current(container, user).getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"));
+                SQLFragment containerSQL = ContainerFilter.current(container, user).getSQLFragment(PipelineSchema.getInstance().getSchema(), SQLFragment.unsafe("Container"));
                 sql.unsafeAppend(" AND ");
                 sql.append(containerSQL);
                 expSql.unsafeAppend(" AND ");

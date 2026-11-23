@@ -40,6 +40,7 @@
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.data.SqlSelector" %>
@@ -578,7 +579,7 @@
 
     private Map<String, Object> getRealResult(DbSchema schema, String assayResultRealTable, long resultRowId)
     {
-        Map<String, Object>[] results = new SqlSelector(schema, "SELECT * FROM assayresult." + assayResultRealTable + " WHERE rowid = '" + resultRowId + "'").getMapArray();
+        Map<String, Object>[] results = new SqlSelector(schema, SQLFragment.unsafe("SELECT * FROM ").appendDottedIdentifiers("assayresult", assayResultRealTable).unsafeAppend(" WHERE rowid = ").appendValue(resultRowId)).getMapArray();
         return results[0];
     }
 

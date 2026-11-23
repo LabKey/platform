@@ -119,7 +119,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         folderTypeColumn.setReadOnly(true);
         addColumn(folderTypeColumn);
 
-        SQLFragment folderDisplaySQL = new SQLFragment("COALESCE("+ ExprColumn.STR_TABLE_ALIAS +".title, "+ ExprColumn.STR_TABLE_ALIAS +".name)");
+        SQLFragment folderDisplaySQL = SQLFragment.unsafe("COALESCE("+ ExprColumn.STR_TABLE_ALIAS +".title, "+ ExprColumn.STR_TABLE_ALIAS +".name)");
         ExprColumn folderDisplayColumn = new ExprColumn(this, "DisplayName", folderDisplaySQL, JdbcType.VARCHAR);
         addColumn(folderDisplayColumn);
         folderDisplayColumn.setURL(detailsURL);
@@ -156,15 +156,15 @@ public class ContainerTable extends FilteredTable<UserSchema>
         containerTypeColumn.setReadOnly(true);
         addColumn(containerTypeColumn);
 
-        SQLFragment containerWorkbookSQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN " + dialect.getBooleanTRUE() +
-                " ELSE " + dialect.getBooleanFALSE() + " END");
+        SQLFragment containerWorkbookSQL = SQLFragment.unsafe("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS +".Type = 'workbook' THEN ").appendValue(true, dialect)
+                .unsafeAppend(" ELSE ").appendValue(false, dialect).unsafeAppend(" END");
         ExprColumn containerWorkbookColumn = new ExprColumn(this, "Workbook", containerWorkbookSQL, JdbcType.BOOLEAN);
         containerWorkbookColumn.setReadOnly(true);
         addColumn(containerWorkbookColumn);
 
-        SQLFragment containerDisplaySQL = new SQLFragment("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS + ".Type = 'workbook' " +
-            "THEN " + getSqlDialect().concatenate("CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowid as varchar)", "'. '", ExprColumn.STR_TABLE_ALIAS + ".title") +
-            " ELSE " + ExprColumn.STR_TABLE_ALIAS + ".name END");
+        SQLFragment containerDisplaySQL = SQLFragment.unsafe("CASE WHEN "+ ExprColumn.STR_TABLE_ALIAS + ".Type = 'workbook' THEN ")
+            .append(getSqlDialect().concatenate(SQLFragment.unsafe("CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowid as varchar)"), SQLFragment.unsafe("'. '"), SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".title")))
+            .unsafeAppend(" ELSE " + ExprColumn.STR_TABLE_ALIAS + ".name END");
         ExprColumn containerDisplayColumn = new ExprColumn(this, "IdPrefixedName", containerDisplaySQL, JdbcType.VARCHAR);
         containerDisplayColumn.setURL(detailsURL);
         containerDisplayColumn.setReadOnly(true);

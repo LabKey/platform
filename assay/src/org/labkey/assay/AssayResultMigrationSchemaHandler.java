@@ -60,11 +60,11 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         if (skipTable(sourceTable))
         {
-            sql = new SQLFragment("1 = 0");
+            sql = SQLFragment.unsafe("1 = 0");
         }
         else
         {
-            sql = new SQLFragment("DataId IN (SELECT RowId FROM exp.Data WHERE Container")
+            sql = SQLFragment.unsafe("DataId IN (SELECT RowId FROM exp.Data WHERE Container")
                 .appendInClause(AssaySkipContainers.getFilteredContainers(containers), sourceTable.getSqlDialect())
                 .unsafeAppend(")");
         }
@@ -85,7 +85,7 @@ class AssayResultMigrationSchemaHandler extends DefaultMigrationSchemaHandler
     {
         if (!skipTable(sourceTable))
         {
-            SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data WHERE RowId IN (SELECT DataId FROM ")
+            SQLFragment objectIdSql = SQLFragment.unsafe("SELECT ObjectId FROM exp.Data WHERE RowId IN (SELECT DataId FROM ")
                 .append(sourceTable.getSQLName())
                 .unsafeAppend(" ")
                 .append(notCopiedFilter.getSQLFragment(sourceTable.getSqlDialect()))

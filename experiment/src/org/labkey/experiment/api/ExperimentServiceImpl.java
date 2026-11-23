@@ -1177,13 +1177,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // Clear the last indexed value on all tables that back a search document
         for (TableInfo indexedTable : List.of(getTinfoSampleType(), getTinfoDataClass()))
         {
-            new SqlExecutor(getExpSchema()).execute("UPDATE " + indexedTable +
-                    " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+            new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("UPDATE ").append(indexedTable).unsafeAppend(
+                    " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL"));
         }
 
         for (TableInfo indexedTable : List.of(getTinfoMaterialIndexed(), getTinfoDataIndexed()))
         {
-            new SqlExecutor(getExpSchema()).execute("TRUNCATE TABLE " + indexedTable);
+            new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("TRUNCATE TABLE ").append(indexedTable));
         }
     }
 
@@ -1373,8 +1373,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private void setLastIndexed(TableInfo table, long rowId, long ms)
     {
-        new SqlExecutor(getSchema()).execute("UPDATE " + table + " SET LastIndexed = ? WHERE RowId = ?",
-                new Timestamp(ms), rowId);
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(table).unsafeAppend(" SET LastIndexed = ? WHERE RowId = ?",
+                new Timestamp(ms), rowId));
     }
 
     public void indexDataClass(ExpDataClassImpl dataClass, SearchService.TaskIndexingQueue queue)
@@ -2870,7 +2870,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     /* return <ParentsQuery,ChildrenQuery> */
-    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, ExpLineageOptions options)
+    private Pair<SQLFragment,SQLFragment> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         String jspPath = options.isForLookup() ? "/org/labkey/experiment/api/ExperimentRunGraphForLookup2.jsp" : "/org/labkey/experiment/api/ExperimentRunGraph2.jsp";
 
@@ -2911,24 +2911,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         String edgesToken = null;
 
-        String parentsToken = null;
+        SQLFragment parentsToken = null;
         if (options.isParents())
         {
             String parentsInnerSelect = map.get("$PARENTS_INNER$");
             SQLFragment parentsInnerSelectFrag = new SQLFragment();
             parentsInnerSelectFrag.setSqlUnsafe(parentsInnerSelect);
             parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
-            String parentsInnerToken = ret.addCommonTableExpression(dialect, parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, true);
+            SQLFragment parentsInnerToken = ret.addCommonTableExpressionRef(dialect, parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, true);
 
             String parentsSelect = map.get("$PARENTS$");
-            parentsSelect = Strings.CS.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
+            parentsSelect = Strings.CS.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken.getRawSQL());
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
             SQLFragment parentsSelectFrag = new SQLFragment();
             parentsSelectFrag.setSqlUnsafe(parentsSelect);
-            parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", parentsSelectFrag, true);
+            parentsToken = ret.addCommonTableExpressionRef(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", parentsSelectFrag, true);
         }
 
-        String childrenToken = null;
+        SQLFragment childrenToken = null;
         if (options.isChildren())
         {
             String childrenInnerSelect = map.get("$CHILDREN_INNER$");
@@ -2936,14 +2936,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SQLFragment childrenInnerSelectFrag = new SQLFragment();
             childrenInnerSelectFrag.setSqlUnsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
-            String childrenInnerToken = ret.addCommonTableExpression(dialect, childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, true);
+            SQLFragment childrenInnerToken = ret.addCommonTableExpressionRef(dialect, childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, true);
 
             String childrenSelect = map.get("$CHILDREN$");
-            childrenSelect = Strings.CS.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
+            childrenSelect = Strings.CS.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken.getRawSQL());
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
             SQLFragment childrenSelectFrag = new SQLFragment();
             childrenSelectFrag.setSqlUnsafe(childrenSelect);
-            childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", childrenSelectFrag, true);
+            childrenToken = ret.addCommonTableExpressionRef(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", childrenSelectFrag, true);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -2971,7 +2971,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public @NotNull SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
-        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options);
+        Pair<SQLFragment,SQLFragment> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options);
         boolean up = options.isParents();
         boolean down = options.isChildren();
 
@@ -2979,8 +2979,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             if (up)
             {
-                SQLFragment parentsCte = new SQLFragment();
-                parentsCte.setSqlUnsafe(tokens.first);
+                SQLFragment parentsCte = tokens.first;
                 SQLFragment parents = new SQLFragment();
                 if (options.isOnlySelectObjectId())
                 {
@@ -3054,8 +3053,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (down)
             {
-                SQLFragment childrenCte = new SQLFragment();
-                childrenCte.setSqlUnsafe(tokens.second);
+                SQLFragment childrenCte = tokens.second;
                 SQLFragment children = new SQLFragment();
 
                 if (options.isOnlySelectObjectId())
@@ -3130,7 +3128,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private void removeEdgesForRun(long runId)
     {
         TableInfo edge = getTinfoEdge();
-        int count = new SqlExecutor(edge.getSchema().getScope()).execute("DELETE FROM " + edge + " WHERE runId=?", runId);
+        int count = new SqlExecutor(edge.getSchema().getScope()).execute(SQLFragment.unsafe("DELETE FROM ").append(edge).unsafeAppend(" WHERE runId=?", runId));
         LOG.debug("Removed edges for run {}; count = {}", runId, count);
     }
 
@@ -3348,9 +3346,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         try
         {
             TableInfo edge = getTinfoEdge();
-            String edgeSql = "INSERT INTO " + edge +
-                    " (fromObjectId, toObjectId, runId)\n"+
-                    "VALUES (?, ?, ?)";
+            SQLFragment edgeSql = SQLFragment.unsafe("INSERT INTO ").append(edge).unsafeAppend(" (fromObjectId, toObjectId, runId)\n"+
+                    "VALUES (?, ?, ?)");
             Table.batchExecute(getExpSchema(), edgeSql, params);
         }
         catch (SQLException e)
@@ -4196,7 +4193,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // AssayRunMaterial, AssayRunTSVData, GeneralAssayProtocol, LuminexAssayProtocol
         // Recipe
         // AssayDomain-SampleWellGroup
-        Set<String> types = new HashSet<>(new SqlSelector(getExpSchema(), findTypeSql, lsid.toString()).getArrayList(String.class));
+        Set<String> types = new HashSet<>(new SqlSelector(getExpSchema(), SQLFragment.unsafe(findTypeSql, lsid.toString())).getArrayList(String.class));
         if (types.size() == 1)
         {
             return LsidType.get(types.iterator().next());
@@ -4321,8 +4318,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<Material> getRunInputMaterial(String runLSID)
     {
-        final String sql = "SELECT * FROM " + getTinfoExperimentRunMaterialInputs() + " WHERE RunLSID = ?";
-        Map<String, Object>[] maps = new SqlSelector(getExpSchema(), new SQLFragment(sql, runLSID)).getMapArray();
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ").append(getTinfoExperimentRunMaterialInputs()).unsafeAppend(" WHERE RunLSID = ?", runLSID);
+        Map<String, Object>[] maps = new SqlSelector(getExpSchema(), sql).getMapArray();
         Map<String, List<Material>> material = getRunInputMaterial(maps);
         List<Material> result = material.get(runLSID);
         if (result == null)
@@ -5278,7 +5275,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             OntologyManager.deleteOntologyObjectsByObjectIdSql(getSchema(), objectIdSql);
 
             // Get rid of our temp table
-            executor.execute("DROP TABLE " + objectTempTableName);
+            executor.execute(SQLFragment.unsafe("DROP TABLE ").appendIdentifier(objectTempTableName));
 
             // recalculate rollup
             if (!truncateContainer)
@@ -5761,15 +5758,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return;
         LOG.info("Beginning delete of expObj in container {}", c);
 
-        String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ?";
-        int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
+        SQLFragment sql = SQLFragment.unsafe("SELECT RowId FROM ").append(getTinfoExperimentRun()).unsafeAppend(" WHERE Container = ?", c);
+        int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
 
         List<ExpExperimentImpl> exps = getExperiments(c, false, true, true);
         List<ExpSampleTypeImpl> sampleTypes = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, false);
         List<ExpDataClassImpl> dataClasses = getDataClasses(c, false);
 
-        sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
-        long[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Long.class));
+        sql = SQLFragment.unsafe("SELECT RowId FROM ").append(getTinfoProtocol()).unsafeAppend(" WHERE Container = ?", c);
+        long[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Long.class));
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -5832,8 +5829,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             deleteMaterialBySqlFilter(user, c, SQLFragment.unsafe("Container = ?", c), true, true, null, true, true, null);
 
             // same drill for data objects
-            sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
-            Collection<Long> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Long.class);
+            sql = SQLFragment.unsafe("SELECT RowId FROM exp.Data WHERE Container = ?", c);
+            Collection<Long> dataIds = new SqlSelector(getExpSchema(), sql).getCollection(Long.class);
             LOG.debug("Deleting {} dataIds {} ", dataIds.size(), dataIds);
             deleteDataByRowIds(user, c, dataIds, null);
 
@@ -6430,8 +6427,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             deleteDomainObjects(dcContainer, dataClass.getLSID());
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
-            executor.execute("UPDATE " + getTinfoProtocolInput() + " SET dataClassId = NULL WHERE dataClassId = ?", rowId);
-            executor.execute("DELETE FROM " + getTinfoDataClass() + " WHERE RowId = ?", rowId);
+            executor.execute(SQLFragment.unsafe("UPDATE ").append(getTinfoProtocolInput()).unsafeAppend(" SET dataClassId = NULL WHERE dataClassId = ?", rowId));
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(getTinfoDataClass()).unsafeAppend(" WHERE RowId = ?", rowId));
 
             removeDataTypeExclusion(Collections.singleton(rowId), DataTypeForExclusion.DataClass);
 
@@ -6545,23 +6542,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         // get the set of starting materials, which do not belong to the run
-        String materialSQL = "SELECT M.* "
-                + " FROM " + getTinfoMaterial().getSelectName() + " M "
-                + " INNER JOIN " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
-                + " ON (M.RowId = MI.MaterialId) "
-                + " WHERE MI.TargetApplicationId IN "
-                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                + "  ORDER BY RowId";
-        String materialInputSQL = "SELECT MI.* "
-                + " FROM " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
-                + " WHERE MI.TargetApplicationId IN "
-                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                + "  ORDER BY MI.MaterialId";
+        SQLFragment materialSQL = SQLFragment.unsafe("SELECT M.* ")
+                .unsafeAppend(" FROM ").append(getTinfoMaterial()).unsafeAppend(" M ")
+                .unsafeAppend(" INNER JOIN ").append(getExpSchema().getTable("MaterialInput")).unsafeAppend(" MI ")
+                .unsafeAppend(" ON (M.RowId = MI.MaterialId) ")
+                .unsafeAppend(" WHERE MI.TargetApplicationId IN ")
+                .unsafeAppend(" (SELECT PA.RowId FROM ").append(getTinfoProtocolApplication()).unsafeAppend(" PA ")
+                .unsafeAppend(" WHERE PA.RunId = ? AND PA.CpasType= ", runId).appendValue(ExpProtocol.ApplicationType.ExperimentRun).unsafeAppend(")")
+                .unsafeAppend("  ORDER BY RowId");
+        SQLFragment materialInputSQL = SQLFragment.unsafe("SELECT MI.* ")
+                .unsafeAppend(" FROM ").append(getExpSchema().getTable("MaterialInput")).unsafeAppend(" MI ")
+                .unsafeAppend(" WHERE MI.TargetApplicationId IN ")
+                .unsafeAppend(" (SELECT PA.RowId FROM ").append(getTinfoProtocolApplication()).unsafeAppend(" PA ")
+                .unsafeAppend(" WHERE PA.RunId = ? AND PA.CpasType= ", runId).appendValue(ExpProtocol.ApplicationType.ExperimentRun).unsafeAppend(")")
+                .unsafeAppend("  ORDER BY MI.MaterialId");
 
-        materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), materialSQL, runId).getArrayList(Material.class));
-        List<MaterialInput> materialInputs = new SqlSelector(getExpSchema(), materialInputSQL, runId).getArrayList(MaterialInput.class);
+        materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), materialSQL).getArrayList(Material.class));
+        List<MaterialInput> materialInputs = new SqlSelector(getExpSchema(), materialInputSQL).getArrayList(MaterialInput.class);
         assert materials.size() == materialInputs.size();
         final Map<Long, ExpMaterialImpl> startingMaterialMap = new LongHashMap<>(materials.size());
         int index = 0;
@@ -6575,23 +6572,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         // and starting data
-        String dataSQL = "SELECT D.*"
-                + " FROM " + getTinfoData().getSelectName() + " D "
-                + " INNER JOIN " + getTinfoDataInput().getSelectName() + " DI "
-                + " ON (D.RowId = DI.DataId) "
-                + " WHERE DI.TargetApplicationId IN "
-                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                + "  ORDER BY RowId ";
-        String dataInputSQL = "SELECT DI.*"
-                + " FROM " + getTinfoDataInput().getSelectName() + " DI "
-                + " WHERE DI.TargetApplicationId IN "
-                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
-                + "  ORDER BY DataId";
+        SQLFragment dataSQL = SQLFragment.unsafe("SELECT D.*")
+                .unsafeAppend(" FROM ").append(getTinfoData()).unsafeAppend(" D ")
+                .unsafeAppend(" INNER JOIN ").append(getTinfoDataInput()).unsafeAppend(" DI ")
+                .unsafeAppend(" ON (D.RowId = DI.DataId) ")
+                .unsafeAppend(" WHERE DI.TargetApplicationId IN ")
+                .unsafeAppend(" (SELECT PA.RowId FROM ").append(getTinfoProtocolApplication()).unsafeAppend(" PA ")
+                .unsafeAppend(" WHERE PA.RunId = ? AND PA.CpasType= ", runId).appendValue(ExpProtocol.ApplicationType.ExperimentRun).unsafeAppend(")")
+                .unsafeAppend("  ORDER BY RowId ");
+        SQLFragment dataInputSQL = SQLFragment.unsafe("SELECT DI.*")
+                .unsafeAppend(" FROM ").append(getTinfoDataInput()).unsafeAppend(" DI ")
+                .unsafeAppend(" WHERE DI.TargetApplicationId IN ")
+                .unsafeAppend(" (SELECT PA.RowId FROM ").append(getTinfoProtocolApplication()).unsafeAppend(" PA ")
+                .unsafeAppend(" WHERE PA.RunId = ? AND PA.CpasType= ", runId).appendValue(ExpProtocol.ApplicationType.ExperimentRun).unsafeAppend(")")
+                .unsafeAppend("  ORDER BY DataId");
 
-        datas = ExpDataImpl.fromDatas(new SqlSelector(getExpSchema(), dataSQL, runId).getArrayList(Data.class));
-        DataInput[] dataInputs = new SqlSelector(getExpSchema(), dataInputSQL, runId).getArray(DataInput.class);
+        datas = ExpDataImpl.fromDatas(new SqlSelector(getExpSchema(), dataSQL).getArrayList(Data.class));
+        DataInput[] dataInputs = new SqlSelector(getExpSchema(), dataInputSQL).getArray(DataInput.class);
         final Map<Long, ExpDataImpl> startingDataMap = new LongHashMap<>(datas.size());
         index = 0;
 
@@ -6604,14 +6601,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         // now hook up material inputs to processes in both directions
-        dataSQL = "SELECT TargetApplicationId, MaterialId"
-                + " FROM " + getTinfoMaterialInput().getSelectName()
-                + " WHERE TargetApplicationId IN"
-                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA"
-                + " WHERE PA.RunId = ?)"
-                + " ORDER BY TargetApplicationId, MaterialId";
+        dataSQL = SQLFragment.unsafe("SELECT TargetApplicationId, MaterialId")
+                .unsafeAppend(" FROM ").append(getTinfoMaterialInput())
+                .unsafeAppend(" WHERE TargetApplicationId IN")
+                .unsafeAppend(" (SELECT PA.RowId FROM ").append(getTinfoProtocolApplication()).unsafeAppend(" PA")
+                .unsafeAppend(" WHERE PA.RunId = ?)", runId)
+                .unsafeAppend(" ORDER BY TargetApplicationId, MaterialId");
 
-        new SqlSelector(getExpSchema(), dataSQL, runId).forEach(materialInputRS -> {
+        new SqlSelector(getExpSchema(), dataSQL).forEach(materialInputRS -> {
             Long appId = materialInputRS.getLong("TargetApplicationId");
             long matId = materialInputRS.getLong("MaterialId");
             ExpProtocolApplicationImpl pa = protStepMap.get(appId);
@@ -6639,14 +6636,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         });
 
         // now hook up data inputs in both directions
-        dataSQL = "SELECT TargetApplicationId, DataId"
-                + " FROM " + getTinfoDataInput().getSelectName()
-                + " WHERE TargetApplicationId IN"
-                + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA"
-                + " WHERE PA.RunId = ?)"
-                + " ORDER BY TargetApplicationId, DataId";
+        dataSQL = SQLFragment.unsafe("SELECT TargetApplicationId, DataId")
+                .unsafeAppend(" FROM ").append(getTinfoDataInput())
+                .unsafeAppend(" WHERE TargetApplicationId IN")
+                .unsafeAppend(" (SELECT PA.RowId FROM ").append(getTinfoProtocolApplication()).unsafeAppend(" PA")
+                .unsafeAppend(" WHERE PA.RunId = ?)", runId)
+                .unsafeAppend(" ORDER BY TargetApplicationId, DataId");
 
-        new SqlSelector(getExpSchema(), dataSQL, runId).forEach(dataInputRS -> {
+        new SqlSelector(getExpSchema(), dataSQL).forEach(dataInputRS -> {
             Long appId = dataInputRS.getLong("TargetApplicationId");
             Long datId = dataInputRS.getLong("DataId");
             ExpProtocolApplicationImpl pa = protStepMap.get(appId);
@@ -6757,9 +6754,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<DataInput> getDataOutputsForApplication(long applicationId)
     {
-        return new SqlSelector(getExpSchema(), "SELECT di.* FROM exp.DataInput di\n" +
+        return new SqlSelector(getExpSchema(), SQLFragment.unsafe("SELECT di.* FROM exp.DataInput di\n" +
                 "INNER JOIN exp.Data d ON d.rowId = di.dataId\n" +
-                "WHERE d.sourceApplicationId = ?", applicationId).getArrayList(DataInput.class);
+                "WHERE d.sourceApplicationId = ?", applicationId)).getArrayList(DataInput.class);
     }
 
     public List<Material> getOutputMaterialForApplication(long applicationId)
@@ -6769,9 +6766,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<MaterialInput> getMaterialOutputsForApplication(long applicationId)
     {
-        return new SqlSelector(getExpSchema(), "SELECT mi.* FROM exp.MaterialInput mi\n" +
+        return new SqlSelector(getExpSchema(), SQLFragment.unsafe("SELECT mi.* FROM exp.MaterialInput mi\n" +
                 "INNER JOIN exp.Material m ON m.rowId = mi.materialId\n" +
-                "WHERE m.sourceApplicationId = ?", applicationId).getArrayList(MaterialInput.class);
+                "WHERE m.sourceApplicationId = ?", applicationId)).getArrayList(MaterialInput.class);
     }
 
     @Override
@@ -6782,10 +6779,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<Data> getDataInputReferencesForApplication(long rowId)
     {
-        String outputSQL = "SELECT exp.Data.* from exp.Data, exp.DataInput " +
+        SQLFragment outputSQL = SQLFragment.unsafe("SELECT exp.Data.* from exp.Data, exp.DataInput " +
                 "WHERE exp.Data.RowId = exp.DataInput.DataId " +
-                "AND exp.DataInput.TargetApplicationId = ?";
-        return new SqlSelector(getExpSchema(), outputSQL, rowId).getArrayList(Data.class);
+                "AND exp.DataInput.TargetApplicationId = ?", rowId);
+        return new SqlSelector(getExpSchema(), outputSQL).getArrayList(Data.class);
     }
 
     public List<DataInput> getDataInputsForApplication(long applicationId)
@@ -6796,10 +6793,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<Material> getMaterialInputReferencesForApplication(long rowId)
     {
-        String outputSQL = "SELECT exp.Material.* from exp.Material, exp.MaterialInput " +
+        SQLFragment outputSQL = SQLFragment.unsafe("SELECT exp.Material.* from exp.Material, exp.MaterialInput " +
                 "WHERE exp.Material.RowId = exp.MaterialInput.MaterialId " +
-                "AND exp.MaterialInput.TargetApplicationId = ?";
-        return new SqlSelector(getExpSchema(), outputSQL, rowId).getArrayList(Material.class);
+                "AND exp.MaterialInput.TargetApplicationId = ?", rowId);
+        return new SqlSelector(getExpSchema(), outputSQL).getArrayList(Material.class);
     }
 
     public List<MaterialInput> getMaterialInputsForApplication(long applicationId)
@@ -6817,12 +6814,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public ProtocolActionStepDetail getProtocolActionStepDetail(String parentProtocolLSID, Integer actionSequence)
     {
-        String cmdSql = "SELECT * FROM exp.ProtocolActionStepDetailsView "
+        SQLFragment cmdSql = SQLFragment.unsafe("SELECT * FROM exp.ProtocolActionStepDetailsView "
                 + " WHERE ParentProtocolLSID = ? "
                 + " AND Sequence = ? "
-                + " ORDER BY Sequence";
+                + " ORDER BY Sequence", parentProtocolLSID, actionSequence);
 
-        ProtocolActionStepDetail[] details = new SqlSelector(getExpSchema(), cmdSql, parentProtocolLSID, actionSequence).getArray(ProtocolActionStepDetail.class);
+        ProtocolActionStepDetail[] details = new SqlSelector(getExpSchema(), cmdSql).getArray(ProtocolActionStepDetail.class);
         if (details.length == 0)
         {
             return null;
@@ -6881,7 +6878,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Collection<ProtocolParameter> protocolParams = protocol.retrieveProtocolParameters().values();
             if (!newProtocol)
             {
-                new SqlExecutor(getExpSchema()).execute("DELETE FROM exp.ProtocolParameter WHERE ProtocolId = ?", protocol.getRowId());
+                new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("DELETE FROM exp.ProtocolParameter WHERE ProtocolId = ?", protocol.getRowId()));
             }
             for (ProtocolParameter param : protocolParams)
             {
@@ -7595,14 +7592,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             List<List<?>> expObjectParams = params.stream().map(
                     runParams -> List.of(/* LSID */ runParams.getFirst(), c.getId())
             ).collect(toList());
-            String expObjectSql = "INSERT INTO " + OntologyManager.getTinfoObject() +
-                    " (ObjectUri, Container) VALUES (?, ?)";
+            SQLFragment expObjectSql = SQLFragment.unsafe("INSERT INTO ").append(OntologyManager.getTinfoObject()).unsafeAppend(" (ObjectUri, Container) VALUES (?, ?)");
             Table.batchExecute(getExpSchema(), expObjectSql, expObjectParams);
 
-            String sql = "INSERT INTO " + getTinfoExperimentRun().toString() +
-                    " (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
-                    "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '" +
-                    c.getId() + "')";
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoExperimentRun())
+                    .unsafeAppend(" (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
+                    "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, ")
+                    .appendValue(c.getEntityId()).unsafeAppend(")");
 
             Table.batchExecute(getExpSchema(), sql, params);
 
@@ -7859,9 +7855,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             if (!params.isEmpty())
             {
-                String sql = "INSERT INTO " + getTinfoMaterialInput().toString() +
-                        " (MaterialId, TargetApplicationId, Role)" +
-                        " VALUES (?,?,?)";
+                SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoMaterialInput()).unsafeAppend(" (MaterialId, TargetApplicationId, Role)" +
+                        " VALUES (?,?,?)");
                 Table.batchExecute(getExpSchema(), sql, params);
             }
         }
@@ -7870,9 +7865,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             if (!params.isEmpty())
             {
-                String sql = "INSERT INTO " + getTinfoProtocolApplication().toString() +
-                        " (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid, EntityId)" +
-                        " VALUES (?,?,?,?,?,?,?,?)";
+                SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoProtocolApplication()).unsafeAppend(" (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid, EntityId)" +
+                        " VALUES (?,?,?,?,?,?,?,?)");
                 Table.batchExecute(getExpSchema(), sql, params);
             }
         }
@@ -7881,9 +7875,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             if (!params.isEmpty())
             {
-                String sql = "INSERT INTO " + getTinfoDataInput().toString() +
-                        " (Role, DataId, TargetApplicationId)" +
-                        " VALUES (?,?,?)";
+                SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoDataInput()).unsafeAppend(" (Role, DataId, TargetApplicationId)" +
+                        " VALUES (?,?,?)");
                 Table.batchExecute(getExpSchema(), sql, params);
             }
         }
@@ -9620,9 +9613,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
-            String sql = "INSERT INTO " + getTinfoEdge().toString() +
-                    " (fromObjectId, toObjectId, sourceId, sourceKey) " +
-                    " VALUES (?, ?, ?, ?) ";
+            SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(getTinfoEdge()).unsafeAppend(" (fromObjectId, toObjectId, sourceId, sourceKey) " +
+                    " VALUES (?, ?, ?, ?) ");
 
             Table.batchExecute(getExpSchema(), sql, params);
             tx.commit();
@@ -9654,7 +9646,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (options.sourceIds != null)
         {
             if (options.sourceIds.isEmpty())
-                filter.addWhereClause("0 = 1", new Object[]{});
+                filter.addWhereClause(SQLFragment.unsafe("0 = 1"));
             else
                 filter.addCondition(FieldKey.fromParts("sourceId"), options.sourceIds, CompareType.IN);
         }
@@ -11248,9 +11240,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String name = "edges" + GUID.makeHash();
             tableName = tempSchema.getName() + "." + name;
             tt = TempTableTracker.track(name,this);
-            new SqlExecutor(getExpSchema()).execute("SELECT * INTO " + tableName + " FROM exp.edge WHERE 0=1");
+            new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("SELECT * INTO ").appendIdentifier(tableName).unsafeAppend(" FROM exp.edge WHERE 0=1"));
             for (var e : edges)
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("INSERT INTO ").append(tableName).unsafeAppend(" (fromObjectId, toObjectId, runid) VALUES (?,?,?)").addAll(e.from, e.to, RUN));
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("INSERT INTO ").appendIdentifier(tableName).unsafeAppend(" (fromObjectId, toObjectId, runid) VALUES (?,?,?)").addAll(e.from, e.to, RUN));
         }
 
         @After
@@ -11302,7 +11294,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             try
             {
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("INSERT INTO ").append(tableName).unsafeAppend(" (fromObjectId, toObjectId, runid) VALUES (?,?,?)").addAll(AZ, QQ, RUN));
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("INSERT INTO ").appendIdentifier(tableName).unsafeAppend(" (fromObjectId, toObjectId, runid) VALUES (?,?,?)").addAll(AZ, QQ, RUN));
 
                 {
                     var results = getParents(A2);
@@ -11326,7 +11318,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
             finally
             {
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("DELETE FROM ").append(tableName).unsafeAppend(" WHERE fromObjectId=? AND toObjectId=?").addAll(AZ, QQ));
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("DELETE FROM ").appendIdentifier(tableName).unsafeAppend(" WHERE fromObjectId=? AND toObjectId=?").addAll(AZ, QQ));
             }
         }
     }

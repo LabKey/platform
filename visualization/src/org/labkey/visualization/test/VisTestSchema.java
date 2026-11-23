@@ -31,7 +31,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
@@ -83,7 +82,7 @@ public class VisTestSchema extends UserSchema implements VisualizationSchema
 
     class TestTableInfo extends AbstractTableInfo
     {
-        final String sql;
+        final SQLFragment sql;
         final String[] keys;
 
         TestTableInfo(String name, BaseColumnInfo[] columns, String[] keys, Object[][] data)
@@ -96,30 +95,28 @@ public class VisTestSchema extends UserSchema implements VisualizationSchema
                 this.addColumn(c);
             }
             SqlDialect d = getDbSchema().getSqlDialect();
-            String union = "";
-            StringBuilder sql = new StringBuilder();
+            SQLFragment.SqlSeparator union = SQLFragment.sep("", "\nUNION\n");
+            SQLFragment sql = new SQLFragment();
             for (Object[] row : data)
             {
-                sql.append(union);
-                union = "\nUNION\n";
-                sql.append("SELECT ");
-                String comma = "";
+                sql.append(union.next());
+                sql.unsafeAppend("SELECT ");
+                SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
                 for (int i = 0; i < columns.length; i++)
                 {
                     ColumnInfo c = columns[i];
                     JdbcType t = c.getJdbcType();
                     Object v = t.convert(row[i]);
-                    sql.append(comma);
-                    comma = ", ";
+                    sql.append(comma.next());
                     if (null == v)
-                        sql.append("CAST(NULL AS ").append(d.getSqlTypeName(t)).append(t.isText() ? "(100)" : "").append(")");
+                        sql.unsafeAppend("CAST(NULL AS ").append(d.getSqlTypeNameAsSql(t)).unsafeAppend(t.isText() ? "(100)" : "").unsafeAppend(")");
                     else
-                        sql.append(toSqlLiteral(t, v));
-                    sql.append(" AS \"").append(c.getName().toLowerCase()).append("\"");
+                        sql.append(toSqlLiteral(t, v, d));
+                    sql.unsafeAppend(" AS ").appendIdentifier(d.quoteIdentifier(c.getName().toLowerCase()));
                 }
             }
-            sql.append("\n");
-            this.sql = sql.toString();
+            sql.unsafeAppend("\n");
+            this.sql = sql;
         }
 
 
@@ -140,7 +137,7 @@ public class VisTestSchema extends UserSchema implements VisualizationSchema
         {
             SQLFragment cte = new SQLFragment(this.sql);
             SQLFragment ret = new SQLFragment();
-            String token = ret.addCommonTableExpression(getSqlDialect(), this.getName(), this.getName(), cte);
+            SQLFragment token = ret.addCommonTableExpressionRef(getSqlDialect(), this.getName(), this.getName(), cte);
             ret.append(token).unsafeAppend(" ").appendIdentifier(alias);
             return ret;
         }
@@ -323,29 +320,19 @@ public class VisTestSchema extends UserSchema implements VisualizationSchema
         return new TestTableInfo(assayName, cols, keys, data.toArray(new Object[data.size()][]));
     }
 
-    static String toSqlLiteral(JdbcType type, Object value)
+    static SQLFragment toSqlLiteral(JdbcType type, Object value, SqlDialect dialect)
     {
         value = type.convert(value);
 
-        if (value instanceof String)
-            return string_quote((String)value);
-
-        if (value instanceof Date)
+        return switch (value)
         {
-            if (type == JdbcType.DATE)
-                return "{d '" + DateUtil.toISO((Date) value).substring(0, 10) + "'}";
-            else
-                return "{ts '" + DateUtil.toISO((Date)value) + "'}";
-        }
-
-        return String.valueOf(value);
-    }
-
-    static private String string_quote(String s)
-    {
-        if (s.contains("'"))
-            s = s.replace("'","''");
-        return "'" + s + "'";
+            case String s -> new SQLFragment().appendStringLiteral(s, dialect);
+            case Date date when type == JdbcType.DATE -> new SQLFragment().appendValue(new java.sql.Date(date.getTime()));
+            case Date date -> new SQLFragment().appendValue(new java.sql.Timestamp(date.getTime()));
+            case Boolean b -> new SQLFragment().appendValue(b, dialect);
+            case Number n -> new SQLFragment().appendValue(n);
+            default -> SQLFragment.unsafe("?", value);
+        };
     }
 
 

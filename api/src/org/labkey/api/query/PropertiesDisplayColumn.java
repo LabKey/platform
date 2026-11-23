@@ -321,7 +321,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
 
             this.propCols = new HashMap<>();
 
-            this.sqlf = new SQLFragment("SELECT CAST(? AS " + d.getSqlCastTypeName(JdbcType.VARCHAR)+ ") AS objectUri");
+            this.sqlf = SQLFragment.unsafe("SELECT CAST(? AS ").append(d.getSqlCastTypeNameAsSql(JdbcType.VARCHAR)).unsafeAppend(") AS objectUri");
             this.sqlf.addAll(parameters);
 
             var objectUriCol = new BaseColumnInfo("objectUri", this, JdbcType.INTEGER);

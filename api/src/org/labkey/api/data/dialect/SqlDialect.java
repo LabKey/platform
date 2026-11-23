@@ -627,12 +627,13 @@ public abstract class SqlDialect
         String prefix = wildcardPrefix != null ? wildcardPrefix : "";
         String suffix = wildcardSuffix != null ? wildcardSuffix : "";
         String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
-        String escapeToken = " ESCAPE '" + escapeChar + "'";
+        if ('!' != escapeChar)
+            throw new IllegalArgumentException("Unsupported LIKE escape character: " + escapeChar);
         sql.unsafeAppend(" ")
             .append(getCaseInsensitiveLikeOperatorAsSql())
             .unsafeAppend(" ")
             .appendValue(prefixLike)
-            .append(escapeToken);
+            .unsafeAppend(" ESCAPE '!'");
         return sql;
     }
 
@@ -930,7 +931,11 @@ public abstract class SqlDialect
 
     public abstract String getCreateSchemaSql(String schemaName);
 
-    /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
+    /**
+     * @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE
+     * @deprecated Use {@link #getDateDiff(int, SQLFragment, SQLFragment)}.
+     */
+    @Deprecated
     public abstract String getDateDiff(int part, String value1, String value2);
 
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
@@ -1473,13 +1478,15 @@ public abstract class SqlDialect
 
     protected SQLFragment getIdentifierTestSql(String candidate)
     {
-        String keyword = getTempTableKeyword();
-        String name = getTempTablePrefix() + candidate;
-
         // Candidates must stay unquoted, and appendIdentifier() rejects some of them (e.g., end-exec)
+        SQLFragment id = new SQLFragment();
+        id.setSqlUnsafe(candidate);
+        SQLFragment name = new SQLFragment();
+        name.setSqlUnsafe(getTempTablePrefix() + candidate);
+
         return new SQLFragment()
-            .unsafeAppend("SELECT ").append(candidate).unsafeAppend(" FROM (SELECT 1 AS ").append(candidate).unsafeAppend(") x ORDER BY ").append(candidate).appendEOS()
-            .unsafeAppend("CREATE ").append(keyword).unsafeAppend(" TABLE ").append(name).unsafeAppend(" (").append(candidate).unsafeAppend(" VARCHAR(50))").appendEOS()
+            .unsafeAppend("SELECT ").append(id).unsafeAppend(" FROM (SELECT 1 AS ").append(id).unsafeAppend(") x ORDER BY ").append(id).appendEOS()
+            .unsafeAppend("CREATE ").append(getTempTableKeywordAsSql()).unsafeAppend(" TABLE ").append(name).unsafeAppend(" (").append(id).unsafeAppend(" VARCHAR(50))").appendEOS()
             .unsafeAppend("DROP TABLE ").append(name).appendEOS();
     }
 
@@ -1781,7 +1788,7 @@ public abstract class SqlDialect
      */
     public void dropSchema(DbScope scope, String schemaName)
     {
-        new SqlExecutor(scope).execute("DROP SCHEMA IF EXISTS " + quoteIdentifier(schemaName)+ " CASCADE");
+        new SqlExecutor(scope).execute(SQLFragment.unsafe("DROP SCHEMA IF EXISTS ").appendIdentifier(quoteIdentifier(schemaName)).unsafeAppend(" CASCADE"));
     }
 
     /**
@@ -2313,7 +2320,7 @@ public abstract class SqlDialect
     {
         // Compare LocalDateTime to capture any difference in server and database times (skew or timezone).
         LocalDateTime serverTime = LocalDateTime.now();
-        LocalDateTime databaseTime = new SqlSelector(scope, "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
+        LocalDateTime databaseTime = new SqlSelector(scope, SQLFragment.unsafe("SELECT CURRENT_TIMESTAMP")).getObject(LocalDateTime.class);
 
         return new ServerDatabaseTimeDifference(serverTime, databaseTime);
     }
@@ -2516,13 +2523,12 @@ public abstract class SqlDialect
 
     public SQLFragment formatFunction(SQLFragment target, String fn, SQLFragment... arguments)
     {
-        target.append(fn);
+        target.appendIdentifier(fn);
         target.unsafeAppend("(");
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
         for (SQLFragment argument : arguments)
         {
-            target.append(comma);
-            comma = ",";
+            target.append(comma.next());
             target.append(argument);
         }
         target.unsafeAppend(")");

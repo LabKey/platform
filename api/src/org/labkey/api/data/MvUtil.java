@@ -117,8 +117,8 @@ public class MvUtil
     private static void deleteMvIndicators(@NotNull Container c)
     {
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
-        String sql = "DELETE FROM " + mvTable + " WHERE container = ?";
-        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql, c);
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(mvTable).unsafeAppend(" WHERE container = ?", c);
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
         clearCache(c);
     }
 

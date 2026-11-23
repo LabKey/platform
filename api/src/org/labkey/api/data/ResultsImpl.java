@@ -78,7 +78,7 @@ public class ResultsImpl implements Results, DataIterator
             {
                 String label = rsmd.getColumnLabel(i);
                 var col = new BaseColumnInfo(rsmd, i);
-                col.setAlias(SqlDialect.makeDatabaseIdentifier(label,new SQLFragment(label)));
+                col.setAlias(SqlDialect.makeDatabaseIdentifier(label,new SQLFragment().appendIdentifier(label)));
                 _fieldMap.put(col.getFieldKey(), col);
                 _fieldIndexMap.put(col.getFieldKey(), i);
                 _columnInfoList.add(col);

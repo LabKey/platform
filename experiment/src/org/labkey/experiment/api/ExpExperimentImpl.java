@@ -105,12 +105,12 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public List<ExpRunImpl> getRuns()
     {
-        String sql = "SELECT ER.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
-                + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList()  + " RL ON (E.RowId = RL.ExperimentId) "
-                + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun()  + " ER ON (ER.RowId = RL.ExperimentRunId) "
-                + " WHERE E.LSID = ? ORDER BY ER.RowId" ;
+        SQLFragment sql = SQLFragment.unsafe("SELECT ER.* FROM ").append(ExperimentServiceImpl.get().getTinfoExperiment()).unsafeAppend(" E ")
+                .unsafeAppend(" INNER JOIN ").append(ExperimentServiceImpl.get().getTinfoRunList()).unsafeAppend(" RL ON (E.RowId = RL.ExperimentId) ")
+                .unsafeAppend(" INNER JOIN ").append(ExperimentServiceImpl.get().getTinfoExperimentRun()).unsafeAppend(" ER ON (ER.RowId = RL.ExperimentRunId) ")
+                .unsafeAppend(" WHERE E.LSID = ? ORDER BY ER.RowId", getLSID());
 
-        return ExpRunImpl.fromRuns(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getLSID()).getArrayList(ExperimentRun.class));
+        return ExpRunImpl.fromRuns(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
     @Override
@@ -156,8 +156,8 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public List<ExpProtocolImpl> getAllProtocols()
     {
-        String sql = "SELECT p.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " p, " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " r WHERE p.LSID = r.ProtocolLSID AND r.RowId IN (SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = ?)";
-        return ExpProtocolImpl.fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql, getRowId()).getArrayList(Protocol.class));
+        SQLFragment sql = SQLFragment.unsafe("SELECT p.* FROM ").append(ExperimentServiceImpl.get().getTinfoProtocol()).unsafeAppend(" p, ").append(ExperimentServiceImpl.get().getTinfoExperimentRun()).unsafeAppend(" r WHERE p.LSID = r.ProtocolLSID AND r.RowId IN (SELECT ExperimentRunId FROM ").append(ExperimentServiceImpl.get().getTinfoRunList()).unsafeAppend(" WHERE ExperimentId = ?)", getRowId());
+        return ExpProtocolImpl.fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql).getArrayList(Protocol.class));
     }
 
     @Override
@@ -212,12 +212,14 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
             Long batchId = _object.getBatchProtocolId() != null ? getRowId() : null;
 
-            String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId, Created" + (user == null ? " " : ", CreatedBy ") + ") VALUES ( ?, ?, ?" + (user == null ? " " : ", ? ") + ")";
             for (ExpRun run : newRuns)
             {
                 if (!existingRunIds.contains(run.getRowId()))
                 {
-                    SQLFragment fragment = new SQLFragment(sql, getRowId(), run.getRowId(), new Date());
+                    SQLFragment fragment = SQLFragment.unsafe("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoRunList())
+                            .unsafeAppend(" ( ExperimentId, ExperimentRunId, Created").unsafeAppend(user == null ? " " : ", CreatedBy ")
+                            .unsafeAppend(") VALUES ( ?, ?, ?").unsafeAppend(user == null ? " " : ", ? ").unsafeAppend(")")
+                            .addAll(getRowId(), run.getRowId(), new Date());
                     if (user != null)
                     {
                         fragment.add(user.getUserId());

@@ -738,7 +738,7 @@ public class QueryPivot extends AbstractQueryRelation
             if (null == _c)
                 return NullColumnInfo.nullValue(getSqlDialect().getSqlTypeName(getJdbcType()));
             else
-                return new SQLFragment(getTable().getAlias() + "." + _alias);
+                return new SQLFragment().appendDottedIdentifiers(getTable().getAlias(), _alias);
         }
     }
 

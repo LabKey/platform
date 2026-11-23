@@ -495,8 +495,8 @@ public class WikiManager implements WikiService
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = NULL WHERE Container = ?", c.getId());
-            new SqlExecutor(comm.getSchema()).execute("DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", c.getId());
+            new SqlExecutor(comm.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(comm.getTableInfoPages()).unsafeAppend(" SET PageVersionId = NULL WHERE Container = ?", c.getId()));
+            new SqlExecutor(comm.getSchema()).execute(SQLFragment.unsafe("DELETE FROM ").append(comm.getTableInfoPageVersions()).unsafeAppend(" WHERE PageEntityId IN (SELECT EntityId FROM ").append(comm.getTableInfoPages()).unsafeAppend(" WHERE Container = ?)", c.getId()));
             deleteAliases(c, null);
 
             // Clear all wiki webpart properties that refer to this container. This includes wiki and wiki TOC
@@ -706,13 +706,13 @@ public class WikiManager implements WikiService
     private void touch(Wiki wiki)
     {
         // CONSIDER: Table.touch()?
-        new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET LastIndexed = NULL, Modified=? WHERE Container = ? AND Name = ?", new Date(), wiki.getContainerId(), wiki.getName());
+        new SqlExecutor(comm.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(comm.getTableInfoPages()).unsafeAppend(" SET LastIndexed = NULL, Modified=? WHERE Container = ? AND Name = ?", new Date(), wiki.getContainerId(), wiki.getName()));
     }
 
 
     public void setLastIndexed(Container c, String name, long ms)
     {
-        new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET LastIndexed = ? WHERE Container = ? AND Name = ?", new Timestamp(ms), c, name);
+        new SqlExecutor(comm.getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(comm.getTableInfoPages()).unsafeAppend(" SET LastIndexed = ? WHERE Container = ? AND Name = ?", new Timestamp(ms), c, name));
     }
 
 
@@ -1206,17 +1206,17 @@ public class WikiManager implements WikiService
             SqlExecutor executor = new SqlExecutor(_m.comm.getSchema());
 
             // TODO this belongs in attachment service!
-            String deleteDocuments = "DELETE FROM " + _m.core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
-            int docs = executor.execute(deleteDocuments, c, c);
+            SQLFragment deleteDocuments = SQLFragment.unsafe("DELETE FROM ").append(_m.core.getTableInfoDocuments()).unsafeAppend(" WHERE Container = ? AND Parent IN (SELECT EntityId FROM ", c).append(_m.comm.getTableInfoPages()).unsafeAppend(" WHERE Container = ?)", c);
+            int docs = executor.execute(deleteDocuments);
 
-            String updatePages = "UPDATE " + _m.comm.getTableInfoPages() + " SET PageVersionId = null WHERE Container = ?";
-            executor.execute(updatePages, c);
+            SQLFragment updatePages = SQLFragment.unsafe("UPDATE ").append(_m.comm.getTableInfoPages()).unsafeAppend(" SET PageVersionId = null WHERE Container = ?", c);
+            executor.execute(updatePages);
 
-            String deletePageVersions = "DELETE FROM " + _m.comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
-            int pageVersions = executor.execute(deletePageVersions, c);
+            SQLFragment deletePageVersions = SQLFragment.unsafe("DELETE FROM ").append(_m.comm.getTableInfoPageVersions()).unsafeAppend(" WHERE PageEntityId IN (SELECT EntityId FROM ").append(_m.comm.getTableInfoPages()).unsafeAppend(" WHERE Container = ?)", c);
+            int pageVersions = executor.execute(deletePageVersions);
 
-            String deletePages = "DELETE FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?";
-            int pages = executor.execute(deletePages, c);
+            SQLFragment deletePages = SQLFragment.unsafe("DELETE FROM ").append(_m.comm.getTableInfoPages()).unsafeAppend(" WHERE Container = ?", c);
+            int pages = executor.execute(deletePages);
 
             if (verifyEmpty)
             {

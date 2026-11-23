@@ -130,10 +130,10 @@
     final Map<Double, Date> ptidVisitDates = new TreeMap<>();
 
     new SqlSelector(dbSchema,
-            "SELECT VisitRowId, ParticipantId, SequenceNum, VisitDate\n" +
-                    "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + "\n" +
+            SQLFragment.unsafe("SELECT VisitRowId, ParticipantId, SequenceNum, VisitDate\n" +
+                    "FROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit()).unsafeAppend("\n" +
                     "WHERE Container = ? AND ParticipantId = ?",
-            study.getContainer(), bean.getParticipantId()).forEach(rs -> {
+            study.getContainer(), bean.getParticipantId())).forEach(rs -> {
                 int visitRowId = rs.getInt(1);
                 String ptid = rs.getString(2);
                 double sequenceNum = rs.getDouble(3);

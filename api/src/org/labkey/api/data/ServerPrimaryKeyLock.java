@@ -20,6 +20,7 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by matthew on 2/22/16.
@@ -39,17 +40,16 @@ public class ServerPrimaryKeyLock extends DbScope.ServerLock
         if (pkColumns.size() != pkValues.length)
             throw new IllegalStateException();
 
-        forUpdate = new SQLFragment("SELECT * FROM " + t.getSelectName());
+        forUpdate = SQLFragment.unsafe("SELECT * FROM ").append(Objects.requireNonNull(t.getSQLName()));
         scope = t.getSchema().getScope();
         this.failIfRowNotFound = failIfRowNotFound;
 
         forUpdate.unsafeAppend("\nWHERE ");
-        String and = " ";
+        SQLFragment.SqlSeparator and = SQLFragment.sep(" ", " AND ");
         for (ColumnInfo pkColumn : pkColumns)
         {
-            forUpdate.append(and);
+            forUpdate.append(and.next());
             forUpdate.appendIdentifier(pkColumn.getSelectIdentifier()).unsafeAppend("=?").add(pkValues[forUpdate.getParamsArray().length]);
-            and = " AND ";
         }
         forUpdate.unsafeAppend("\nFOR UPDATE");
     }

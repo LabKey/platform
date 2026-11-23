@@ -290,7 +290,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         private Pair<SQLFragment, Map<Integer, String>> getSelectExistingSql(int rows) throws BatchValidationException
         {
             SQLFragment sqlf = SQLFragment.unsafe("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
-            String comma = "";
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", "\n,");
             Map<Integer, String> rowNumContainers = new IntHashMap<>();
             String container;
             do
@@ -304,8 +304,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                         container = (String) containerObj;
                 }
 
-                sqlf.append(comma).unsafeAppend("(").appendValue(lastPrefetchRowNumber);
-                comma = "\n,";
+                sqlf.append(comma.next()).unsafeAppend("(").appendValue(lastPrefetchRowNumber);
                 List<String> pkKeys = new ArrayList<>();
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
@@ -338,12 +337,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             sqlf.unsafeAppend("_key_columns_ INNER JOIN ");
             sqlf.append(target.getFromSQL("_target_ "));
             sqlf.unsafeAppend(" ON ");
-            String and = "";
+            SQLFragment.SqlSeparator and = SQLFragment.sep("", " AND ");
             for (int p = 0; p < pkColumns.size(); p++)
             {
-                sqlf.append(and);
+                sqlf.append(and.next());
                 sqlf.unsafeAppend("(_key_columns_.key").appendValue(p).unsafeAppend("=(").append(pkColumns.get(p).getValueSql("_target_")).unsafeAppend("))");
-                and = " AND ";
             }
             return new Pair<>(sqlf, rowNumContainers);
         }

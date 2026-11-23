@@ -140,9 +140,9 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         return (ModulesTableInfo) super.init();
     }
 
-    private void appendStringLiteral(DialectStringHandler h, SQLFragment sql, String sep, String s)
+    private void appendStringLiteral(DialectStringHandler h, SQLFragment sql, SQLFragment.SqlSeparator sep, String s)
     {
-        sql.append(sep);
+        sql.append(sep.next());
         s = StringUtils.trimToNull(s);
         if (null == s)
             sql.unsafeAppend("NULL");
@@ -150,9 +150,9 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             sql.appendStringLiteral(s, getSqlDialect());
     }
 
-    private void appendBooleanLiteral(SQLFragment sql, String sep, boolean b)
+    private void appendBooleanLiteral(SQLFragment sql, SQLFragment.SqlSeparator sep, boolean b)
     {
-        sql.append(sep);
+        sql.append(sep.next());
 
         sql.appendValue(b, getSqlDialect());
     }
@@ -169,28 +169,28 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         SQLFragment cte = new SQLFragment();
         cte.unsafeAppend("SELECT * FROM (\n");
         cte.unsafeAppend("VALUES ");
-        String sep = "";
+        SQLFragment.SqlSeparator rowSep = SQLFragment.sep("", ",\n");
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            cte.append(sep);
-            sep = ",\n";
-            appendStringLiteral(h, cte,"(",module.getName());
-            appendStringLiteral(h, cte,",",module.getReleaseVersion());
-            appendStringLiteral(h, cte,",",module.getLabel());
-            appendStringLiteral(h, cte,",",module.getDescription());
-            appendStringLiteral(h, cte,",",module.getUrl());
-            appendStringLiteral(h, cte,",",module.getAuthor());
-            appendStringLiteral(h, cte,",",module.getMaintainer());
-            appendBooleanLiteral(cte, ",", module.shouldManageVersion());
-            appendStringLiteral(h, cte,",",module.getOrganization());
-            appendStringLiteral(h, cte,",",module.getOrganizationUrl());
-            appendStringLiteral(h, cte,",",module.getLicense());
-            appendStringLiteral(h, cte,",",module.getLicenseUrl());
-            appendStringLiteral(h, cte,",",module.getVcsRevision());
-            appendStringLiteral(h, cte,",",module.getVcsUrl());
-            appendStringLiteral(h, cte,",",module.getSourcePath());
-            appendStringLiteral(h, cte,",",StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
+            cte.append(rowSep.next());
+            SQLFragment.SqlSeparator colSep = SQLFragment.sep("(", ",");
+            appendStringLiteral(h, cte, colSep, module.getName());
+            appendStringLiteral(h, cte, colSep, module.getReleaseVersion());
+            appendStringLiteral(h, cte, colSep, module.getLabel());
+            appendStringLiteral(h, cte, colSep, module.getDescription());
+            appendStringLiteral(h, cte, colSep, module.getUrl());
+            appendStringLiteral(h, cte, colSep, module.getAuthor());
+            appendStringLiteral(h, cte, colSep, module.getMaintainer());
+            appendBooleanLiteral(cte, colSep, module.shouldManageVersion());
+            appendStringLiteral(h, cte, colSep, module.getOrganization());
+            appendStringLiteral(h, cte, colSep, module.getOrganizationUrl());
+            appendStringLiteral(h, cte, colSep, module.getLicense());
+            appendStringLiteral(h, cte, colSep, module.getLicenseUrl());
+            appendStringLiteral(h, cte, colSep, module.getVcsRevision());
+            appendStringLiteral(h, cte, colSep, module.getVcsUrl());
+            appendStringLiteral(h, cte, colSep, module.getSourcePath());
+            appendStringLiteral(h, cte, colSep, StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
             cte.unsafeAppend(")");
         }
         cte.unsafeAppend(") AS T (");
@@ -210,7 +210,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.unsafeAppend(")\n");
 
         String tableName = getSqlDialect().truncate(alias + "$m", 0);
-        String token = ret.addCommonTableExpression(getSqlDialect(), "modulestableconstants", tableName, cte);
+        SQLFragment token = ret.addCommonTableExpressionRef(getSqlDialect(), "modulestableconstants", tableName, cte);
 
         // join with core.modules
         ret.unsafeAppend("(SELECT m.name, m.schemaversion, m.classname, m.schemas");
