@@ -133,6 +133,8 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     {
         new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers");
         new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent");
+        // core.Documents gets populated after all schemas are copied; see afterMigration()
+        new SqlExecutor(getSchema()).execute("ALTER TABLE core.AttachmentPointer DROP CONSTRAINT FK_AttachmentPointer_AttachmentId");
     }
 
     @Override
@@ -275,6 +277,7 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     {
         // Now that all schemas have copied their attachments into core.Documents, update that table's sequence
         DatabaseMigrationService.get().updateSequences(configuration.getSourceScope().getSchema("core", DbSchemaType.Migration).getTable("Documents"), CoreSchema.getInstance().getTableInfoDocuments());
+        new SqlExecutor(getSchema()).execute("ALTER TABLE core.AttachmentPointer ADD CONSTRAINT FK_AttachmentPointer_AttachmentId FOREIGN KEY (AttachmentId) REFERENCES core.Documents (RowId)");
     }
 
     // MigrationFilter implementation below
