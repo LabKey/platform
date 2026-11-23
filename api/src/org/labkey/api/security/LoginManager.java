@@ -101,6 +101,8 @@ public class LoginManager
         int rows = new SqlExecutor(CORE.getSchema()).execute(sql);
         if (1 != rows)
             throw new SecurityManager.UserManagementException(user.getEmail(), "Password update statement affected " + rows + " rows.");
+
+        UserManager.firePasswordChanged(user);
     }
 
     private static List<String> getCryptHistory(User user)
@@ -293,8 +295,12 @@ public class LoginManager
         {
             new SqlExecutor(CORE.getScope()).execute(SQLFragment.unsafe("DELETE FROM ").append(CORE.getTableInfoLogins()).unsafeAppend(" WHERE UserId = ?", userToChange.getUserId()));
 
+            // User deletion passes no admin and must not look like a credential change
             if (adminUser != null)
+            {
                 UserManager.addToUserHistory(userToChange, adminUser.getEmail() + " deleted the password.");
+                UserManager.firePasswordChanged(userToChange);
+            }
         }
     }
 }
