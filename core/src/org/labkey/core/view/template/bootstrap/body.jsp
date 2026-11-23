@@ -18,6 +18,8 @@
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerType" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
@@ -27,26 +29,25 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Nullable
-    private String renderTrail(List<NavTree> trees)
+    private HtmlString renderTrail(List<NavTree> trees)
     {
         // NOTE: If this generated DOM is changed make concurrent change to LABKEY.NavTrail.setTrail
         if (trees == null || trees.isEmpty())
             return null;
 
-        String trail = "<ol class=\"breadcrumb\">";
+        HtmlStringBuilder trail = HtmlStringBuilder.of().unsafeAppend("<ol class=\"breadcrumb\">");
 
         for (NavTree child : trees)
         {
-            trail += "<li>";
+            trail.startTag("li");
             if (child.getHref() != null)
-                trail += "<a href=\"" + h(child.getHref()) + "\">" + h(child.getText()) + "</a>";
+                trail.append(simpleLink(child.getText(), child.getHref()));
             else
-                trail += h(child.getText());
-            trail += "</li>";
+                trail.append(child.getText());
+            trail.endTag("li");
         }
 
-        trail += "</ol>";
-        return trail;
+        return trail.endTag("ol").getHtmlString();
     }
 %>
 <%
@@ -65,7 +66,7 @@
             <%=pageConfig.renderSiteMessages(getViewContext())%>
             <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
                {
-                   String trail = renderTrail(pageConfig.getAppBar().getNavTrail());
+                   HtmlString trail = renderTrail(pageConfig.getAppBar().getNavTrail());
                    String pageTitle = pageConfig.getAppBar().getPageTitle();
 
                    if (pageTitle == null)
@@ -96,7 +97,7 @@
     <div class="row">
         <div class="col-md-12 lk-body-title">
             <% /* NOTE: If this generated DOM is changed make concurrent change to LABKEY.NavTrail.setTrail */ %>
-            <% if (trail != null) { %><%= unsafe(trail) %><% } %>
+            <% if (trail != null) { %><%= trail %><% } %>
             <% if (pageTitle != null) { %>
                 <h3 style="display: inline-block;">
                     <%= h(pageTitle) %>

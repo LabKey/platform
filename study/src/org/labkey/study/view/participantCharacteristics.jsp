@@ -100,7 +100,7 @@
     %>
     <tr class="labkey-header">
         <th nowrap colspan="<%=2%>" align="left" class="labkey-expandable-row-header">
-            <a id="<%=unsafe(expandId)%>" title="Click to expand/collapse" href="#"
+            <a id="<%=h(expandId)%>" title="Click to expand/collapse" href="#"
                data-href="<%=h(new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId())))%>">
                 <img src="<%=getWebappURL("_images/" + unsafe(expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
                 <%=h(dataset.getDisplayString())%>

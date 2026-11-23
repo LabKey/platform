@@ -576,28 +576,36 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     // Clean up DataInput and MaterialInput exp.object and properties
     private void deleteInputObjects(ExperimentServiceImpl svc, SqlDialect dialect)
     {
-        SQLFragment materialSQL = new SQLFragment("SELECT " +
-                dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
-                        "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)", getRowId());
+        SQLFragment materialSQL = new SQLFragment().unsafeAppend("SELECT ")
+                .append(dialect.concatenate(new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
+                        SQLFragment.unsafe("CAST(dataId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
+                .unsafeAppend(" FROM ")
+                .append(svc.getTinfoDataInput().getSQLName())
+                .unsafeAppend(" WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").addAll(getRowId());
 
-        SQLFragment materialInputSQL = new SQLFragment("SELECT " +
-                dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
-                        "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)", + getRowId());
+        SQLFragment materialInputSQL = new SQLFragment().unsafeAppend("SELECT ")
+                .append(dialect.concatenate(new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
+                        SQLFragment.unsafe("CAST(materialId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
+                .unsafeAppend(" FROM ")
+                .append(svc.getTinfoMaterialInput().getSQLName())
+                .unsafeAppend(" WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").addAll(+ getRowId());
 
-        SQLFragment dataSQL = new SQLFragment("SELECT " +
-                dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
-                        "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                " FROM " + svc.getTinfoDataInput() + " WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = ?)", getRowId());
+        SQLFragment dataSQL = new SQLFragment().unsafeAppend("SELECT ")
+                .append(dialect.concatenate(new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
+                        SQLFragment.unsafe("CAST(dataId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
+                .unsafeAppend(" FROM ")
+                .append(svc.getTinfoDataInput().getSQLName())
+                .unsafeAppend(" WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = ?)").addAll(getRowId());
 
-        SQLFragment dataInputSQL = new SQLFragment("SELECT " +
-                dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
-                        "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                " FROM " + svc.getTinfoMaterialInput() + " WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = ?)", getRowId());
+        SQLFragment dataInputSQL = new SQLFragment().unsafeAppend("SELECT ")
+                .append(dialect.concatenate(new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
+                        SQLFragment.unsafe("CAST(materialId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
+                .unsafeAppend(" FROM ")
+                .append(svc.getTinfoMaterialInput().getSQLName())
+                .unsafeAppend(" WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = ?)").addAll(getRowId());
 
         // Build a single UNION to help reduce DB round trips
-        SQLFragment unionSQL = new SQLFragment("(")
+        SQLFragment unionSQL = SQLFragment.unsafe("(")
                 .append(materialSQL)
                 .unsafeAppend("\n UNION \n")
                     .append(materialInputSQL)

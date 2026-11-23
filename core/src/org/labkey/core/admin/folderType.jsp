@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
@@ -31,6 +32,7 @@
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Objects" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.module.CustomFolderType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -75,19 +77,17 @@ var defaultModules = {};  <% // This is used... Java code below generates JavaSc
     {
         if (!ft.isWorkbookType())
         {
-            String arraySep = "";
+            // FIX: 4612: active module might not be present in the build
+            JSONArray activeModuleNames = new JSONArray(ft.getActiveModules().stream().filter(Objects::nonNull).map(Module::getName).toList());
 %>
-            requiredModules["<%=h(ft.getName())%>"] =  [<%
-            for (Module m : ft.getActiveModules())
-            {
-                if (null != m) //FIX: 4612: active module might not be present in the build
-                {
-                    out.print(unsafe(arraySep + "\"" + h(m.getName()) + "\""));
-                    arraySep = ",";
-                }
-            } %>];<%
+            requiredModules[<%=q(ft.getName())%>] = <%=json(activeModuleNames, 0)%>;
+<%
             if (null != ft.getDefaultModule())
-                out.print(unsafe("defaultModules[\"" + h(ft.getName()) + "\"] = \"" + h(ft.getDefaultModule().getName()) + "\";\n"));
+            {
+%>
+            defaultModules[<%=q(ft.getName())%>] = <%=q(ft.getDefaultModule().getName())%>;
+<%
+            }
         }
     }
 %>

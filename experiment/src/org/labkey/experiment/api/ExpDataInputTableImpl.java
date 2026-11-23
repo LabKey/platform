@@ -61,12 +61,11 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
             case LSID:
             {
                 final SqlDialect dialect = getSqlDialect();
-                SQLFragment sql = new SQLFragment("" +
-                        dialect.concatenate(
-                                "'" + DataInput.lsidPrefix() + "'",
-                                "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".dataId AS VARCHAR)",
-                                "'.'",
-                                "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".targetApplicationId AS VARCHAR)"));
+                SQLFragment sql = dialect.concatenate(
+                        new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
+                        SQLFragment.unsafe("CAST(").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, "dataId").unsafeAppend(" AS VARCHAR)"),
+                        SQLFragment.unsafe("'.'"),
+                        SQLFragment.unsafe("CAST(").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, "targetApplicationId").unsafeAppend(" AS VARCHAR)"));
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
                 col.setHidden(true);

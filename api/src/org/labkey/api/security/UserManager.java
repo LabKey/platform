@@ -147,6 +147,9 @@ public class UserManager
         /** Fires when a user's information has been changed, such as their first name */
         default void userPropertiesUpdated(int userid) {}
 
+        /** Fires after a user's database password is set, changed, rotated by an admin, or deleted by an admin */
+        default void passwordChanged(User user) {}
+
         @Override
         default void propertyChange(PropertyChangeEvent evt) {}
     }
@@ -288,6 +291,21 @@ public class UserManager
             }
         }
         return errors;
+    }
+
+    protected static void firePasswordChanged(User user)
+    {
+        for (UserListener userListener : getListeners())
+        {
+            try
+            {
+                userListener.passwordChanged(user);
+            }
+            catch (Throwable t)
+            {
+                LOG.error("firePasswordChanged", t);
+            }
+        }
     }
 
     public interface UserDetailsButtonProvider
@@ -484,7 +502,7 @@ public class UserManager
     {
         TableInfo uat = getUserAuditSchemaTableInfo();
         SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(");
-        sql.append(distinct ?  "DISTINCT uat.CreatedBy" : "*");
+        sql.unsafeAppend(distinct ?  "DISTINCT uat.CreatedBy" : "*");
         sql.unsafeAppend(") FROM ");
         sql.append(uat, "uat");
         if (excludeSystemUsers)
