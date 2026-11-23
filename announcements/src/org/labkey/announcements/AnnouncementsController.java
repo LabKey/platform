@@ -2987,6 +2987,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Failed to update thread in folder " + getContainer().getPath());
                 errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+                return null;
             }
 
             updatedThread = getThread(getContainer(), updatedThread.getRowId(), updatedThread.getEntityId());
@@ -3459,6 +3460,12 @@ public class AnnouncementsController extends SpringActionController
             // The folder id is compared case-insensitively
             updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", own.getRowId(), "Container", _folderA.getId().toUpperCase(), "Title", "Edited again"));
             assertEquals("Edited again", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+
+            // A null folder id means the current folder
+            Map<String, Object> nullContainer = new HashMap<>(Map.of("RowId", own.getRowId(), "Title", "Edited once more"));
+            nullContainer.put("Container", null);
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), nullContainer);
+            assertEquals("Edited once more", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
         }
 
         // GH Issue 1853
@@ -3521,6 +3528,14 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
             assertEquals("Edited", ownAfter.getTitle());
             assertNull(ownAfter.getParent());
+
+            // A failed update reports its error rather than success
+            ActionURL invalid = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", own.getRowId())
+                    .addParameter("thread.title", "Rejected")
+                    .addParameter("thread.assignedTo", Integer.MAX_VALUE);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(invalid, author));
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
         }
 
         private void updateMessage(QueryUpdateService qus, User user, Map<String, Object> oldKey, Map<String, Object> values) throws Exception

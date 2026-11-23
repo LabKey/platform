@@ -669,6 +669,9 @@ public class AnnouncementManager
     // GH Issue 1688, GH Issue 1853: callers check permissions on rowId in c, so the update must not name another row or folder
     public static AnnouncementModel updateAnnouncement(@NotNull Container c, User user, int rowId, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
+        // Query updates can echo back Container: null, which names no folder rather than another one
+        if (StringUtils.isBlank(update.getContainerId()))
+            update.setContainerId(c.getId());
         if (!c.getId().equalsIgnoreCase(update.getContainerId()) || update.getRowId() != rowId)
             throw new UnauthorizedException();
         AnnouncementModel current = getAnnouncement(c, rowId);
