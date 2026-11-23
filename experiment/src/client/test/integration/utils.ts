@@ -7,6 +7,7 @@ import {
     ExperimentCRUDUtils,
     generateFieldName,
     IntegrationTestServer,
+    mockFile,
     random,
     RequestOptions,
     selectRandomN,
@@ -273,7 +274,7 @@ export async function importRunToServer(
     const { batchProperties, properties, ...props } = importRunOptions;
 
     const fields = {};
-    const attachments = {};
+    const attachments: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(props)) {
         fields[key] = JSON.stringify(value);
@@ -291,7 +292,7 @@ export async function importRunToServer(
                 req = req.field(key, value);
             }
             for (const [key, value] of Object.entries(attachments)) {
-                req = req.attach(key, value);
+                req = req.attach(key, ...mockFile(value));
             }
             return req;
         },
@@ -311,7 +312,7 @@ export async function uploadAssayFile(server: IntegrationTestServer, assayDesign
             skipReselectRows:true,
         }));
 
-        request = request.attach(fieldName + "::0", fileName);
+        request = request.attach(fieldName + "::0", ...mockFile(fileName));
 
         return request;
 
