@@ -21,8 +21,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Exempts a Domain or DomainProperty field from CacheManager's cached-value check. Saving a domain no longer clears
- * other caches, so only use this when the owning cache is evicted on save, typically from DomainKind.invalidate().
+ * Exempts a Domain or DomainProperty field from CacheManager's cached-value check. Domain saves don't clear other
+ * caches, so use this only when the owning cache is evicted on save, typically from DomainKind.invalidate().
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

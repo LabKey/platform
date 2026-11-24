@@ -3220,7 +3220,7 @@ public class OntologyManager
         DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer());
 
         // Property maps aren't cleared here: descriptor updates and deletes clear them, and added properties have no values.
-        // Experiment caches aren't cleared either: they hold row beans, and wrappers fetch their domain per instance.
+        // Experiment caches aren't cleared either: protocols memoize object properties, but those are ad hoc, not domain members.
     }
 
     /** For callers that update exp.PropertyDescriptor rows directly; invalidateDomain() only covers the saved domain's own properties */

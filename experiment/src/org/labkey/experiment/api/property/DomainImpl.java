@@ -702,12 +702,15 @@ public class DomainImpl implements Domain
             // Compile audit info for every property change
             List<PropertyChangeAuditInfo> propertyAuditInfo = new ArrayList<>();
 
+            boolean descriptorsChanged = false;
+
             // Issue 8978: Delete first
             for (DomainPropertyImpl impl : _properties)
             {
                 if (impl._deleted || (impl.isRecreateRequired()))
                 {
                     impl.delete(user);
+                    descriptorsChanged = true;
                     propsDropped.add(impl);
                     propChanged = true;
                     propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, false));
@@ -818,6 +821,7 @@ public class DomainImpl implements Domain
                     String oldValidators = null != pdOld ? PropertyChangeAuditInfo.renderValidators(pdOld) : null;
                     String oldConditionalFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
+                    descriptorsChanged |= !isImplNew && null != pdOld;
 
                     if (impl.isDefaultValueSet())
                     {
@@ -846,6 +850,10 @@ public class DomainImpl implements Domain
                 generateStorageColumnName(domainProperty._pd);
                 domainProperty.save(user, _dd, order);
             }
+
+            // Cached property values embed descriptor metadata (name, type) from any domain
+            if (descriptorsChanged)
+                OntologyManager.clearPropertyCache();
 
             // Loaded domains carry null defaults and setDefaultValues() replaces every stored one, so overlay only those explicitly set or cleared
             if (!defaultValueMap.isEmpty())
@@ -946,8 +954,7 @@ public class DomainImpl implements Domain
                     addAuditEvent(user, extraAuditComment + String.format("The descriptor of domain %s was updated.", _dd.getName()), auditUserComment, getContainer(), oldRecordMap, newRecordMap);
                 }
             };
-            // Audit storage lives in the LabKey scope; holding its connection lets each event's insert share one borrow
-            transaction.addCommitTask(() -> DbScope.getLabKeyScope().runHoldingThreadConnection(afterDomainCommit), DbScope.CommitTaskOption.POSTCOMMIT);
+            transaction.addCommitTask(afterDomainCommit, DbScope.CommitTaskOption.POSTCOMMIT);
 
             Runnable afterDomainCommitOrRollback = () ->
             {

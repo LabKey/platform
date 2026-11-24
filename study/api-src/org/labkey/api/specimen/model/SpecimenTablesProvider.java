@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -99,7 +100,7 @@ public class SpecimenTablesProvider
             // Multiple threads attempting to create the domain and provisioned table may result in a constraint
             // violation or a deadlock. We can't retry on PostgreSQL (SQLException kills the transaction), so use a
             // blocking cache to designate one thread as the creator and force all others to wait.
-            int domainId = DOMAIN_CREATION_CACHE.get(domainURI, null, (key, argument) -> {
+            CacheLoader<String, Integer> creator = (_, _) -> {
                 try (var ignore = SpringActionController.ignoreSqlUpdates())
                 {
                     Domain domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
@@ -129,10 +130,16 @@ public class SpecimenTablesProvider
                 {
                     throw new RuntimeException("Cannot create domain for table. Another process may be creating it or may have deleted it. Please try your action again.", e);
                 }
-            });
+            };
 
             // Fetch fresh: save() doesn't populate provisioned schema and table names, and the cache holds only the id
-            ret = PropertyService.get().getDomain(domainId, forUpdate);
+            ret = PropertyService.get().getDomain(DOMAIN_CREATION_CACHE.get(domainURI, null, creator), forUpdate);
+            if (null == ret)
+            {
+                // The cached id outlives a domain deleted within the hour, so evict it and create again
+                DOMAIN_CREATION_CACHE.remove(domainURI);
+                ret = PropertyService.get().getDomain(DOMAIN_CREATION_CACHE.get(domainURI, null, creator), forUpdate);
+            }
             assert null != ret; // We just created this domain!
         }
         return ret;
