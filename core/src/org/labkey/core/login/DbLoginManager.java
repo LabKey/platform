@@ -39,6 +39,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserManager.SessionHandler;
+import org.labkey.api.security.UserManager.UserListener;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.StartupProperty;
@@ -86,6 +87,53 @@ public class DbLoginManager implements DbLoginService
         return getConfiguration().getExpiration();
     }
 
+    public static class PasswordChangeListener implements UserListener
+    {
+        @Override
+        public void passwordChanged(User user)
+        {
+            invalidateDbLoginSessions(user);
+            // Otherwise a user locked out by failed attempts can't sign in with the password they just reset
+            AuthenticationManager.resetModuleUserLoginDelay(user.getEmail());
+        }
+    }
+
+    // Sessions authenticated with an API key survive, since the key is a separate credential
+    private static void invalidateDbLoginSessions(User user)
+    {
+        UserManager.handleSessionsForUser(user, new SessionHandler()
+        {
+            @Override
+            public boolean handleSession(HttpSession session)
+            {
+                LOG.debug("Checking if session {} used database authentication", session.getId());
+                PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(session);
+
+                if (configuration instanceof DbLoginConfiguration)
+                {
+                    Map<String, Object> map = AuthenticationManager.getAuthenticationProperties(session);
+                    Integer apiKeyRowId = asInteger(map.get(ApiKeyManager.API_KEY_ROW_ID));
+
+                    LOG.debug("Checking if session {} was authenticated via username/password (not an API key)", session.getId());
+                    if (apiKeyRowId == null)
+                    {
+                        LOG.debug("Attempting to invalidate session {}", session.getId());
+                        session.invalidate();
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            @Override
+            public void complete(int count)
+            {
+                LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), user);
+            }
+        });
+    }
+
     @Override
     public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, User affectedUser, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
     {
@@ -103,40 +151,8 @@ public class DbLoginManager implements DbLoginService
 
         try
         {
+            // Fires passwordChanged, which invalidates the user's database-authenticated sessions
             LoginManager.setPassword(affectedUser, password);
-            // Invalidate all sessions belonging to this user that were authenticated via database authentication
-            UserManager.handleSessionsForUser(affectedUser, new SessionHandler()
-            {
-                @Override
-                public boolean handleSession(HttpSession session)
-                {
-                    LOG.debug("Checking if session {} used database authentication", session.getId());
-                    PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(session);
-
-                    if (configuration instanceof DbLoginConfiguration)
-                    {
-                        Map<String, Object> map = AuthenticationManager.getAuthenticationProperties(session);
-                        Integer apiKeyRowId = asInteger(map.get(ApiKeyManager.API_KEY_ROW_ID));
-
-                        // Don't invalidate API key authentications
-                        LOG.debug("Checking if session {} was authenticated via username/password (not an API key)", session.getId());
-                        if (apiKeyRowId == null)
-                        {
-                            LOG.debug("Attempting to invalidate session {}", session.getId());
-                            session.invalidate();
-                            return true;
-                        }
-                    }
-
-                    return false;
-                }
-
-                @Override
-                public void complete(int count)
-                {
-                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser);
-                }
-            });
         }
         catch (SecurityManager.UserManagementException e)
         {

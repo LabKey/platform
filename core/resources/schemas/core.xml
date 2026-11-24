@@ -66,6 +66,25 @@
       <column columnName="LastIndexed"/>
     </columns>
   </table>
+  <table tableName="AttachmentPointer" tableDbType="TABLE">
+    <description>Named references from attachment parents to de-duplicated attachment content</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="Name"/>
+      <column columnName="Parent"/>
+      <column columnName="Created"/>
+      <column columnName="CreatedBy"/>
+      <column columnName="ParentType"/>
+      <column columnName="Container"/>
+      <column columnName="AttachmentId">
+        <fk>
+          <fkDbSchema>core</fkDbSchema>
+          <fkTable>Documents</fkTable>
+          <fkColumnName>RowId</fkColumnName>
+        </fk>
+      </column>
+    </columns>
+  </table>
   <table tableName="Logins" tableDbType="TABLE">
     <columns>
       <column columnName="UserId"/>

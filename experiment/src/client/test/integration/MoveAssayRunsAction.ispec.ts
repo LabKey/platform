@@ -3,9 +3,8 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import mock from 'mock-fs';
 import { PermissionRoles } from '@labkey/api';
-import { hookServer, RequestOptions } from '@labkey/test';
+import { hookServer, mockFiles, RequestOptions } from '@labkey/test';
 import {
     AssayDesignFieldOptions,
     createAssayDesign,
@@ -93,7 +92,7 @@ afterAll(async () => {
 });
 
 afterEach(() => {
-    mock.restore();
+    mockFiles.restore();
 });
 
 describe('Move Assay Runs', () => {
@@ -479,7 +478,7 @@ describe('Move Assay Runs', () => {
     it('success, move run with run file field', async () => {
         // Arrange
         const { runId } = await importRun(server, assayWithRunFileId, 'top-movetosub1-8', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
-        mock({
+        mockFiles({
             'runFileA.txt': 'fileA contents',
         });
         await uploadAssayFile(server, 'assayWithRunFile', runId, true, 'RunFileField', 'runFileA.txt', topFolderOptions, editorUserOptions)
@@ -523,7 +522,7 @@ describe('Move Assay Runs', () => {
         const { runId } = await importRun(server, assayWithResultFileId, 'top-movetosub1-9', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
         const assayResults = await getAssayResults(server, 'assayWithResultFile', 'ResultFileField', runId, topFolderOptions);
         const resultRowId = caseInsensitive(assayResults[0], 'rowid');
-        mock({
+        mockFiles({
             'resultFileA.txt': 'fileA contents',
         });
         await uploadAssayFile(server, 'assayWithResultFile', resultRowId, false, 'ResultFileField', 'resultFileA.txt', topFolderOptions, editorUserOptions)
