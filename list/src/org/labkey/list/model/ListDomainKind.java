@@ -82,6 +82,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -454,7 +455,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
             QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, name, null, domain.getCalculatedFields(), false, user, container);
 
-            DefaultValueService.get().setDefaultValues(container, defaultValues);
+            // A new domain has no stored defaults, so an all-null map would only rewrite an empty defaults object
+            if (defaultValues.values().stream().anyMatch(Objects::nonNull))
+                DefaultValueService.get().setDefaultValues(container, defaultValues);
 
             tx.commit();
         }

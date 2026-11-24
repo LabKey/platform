@@ -819,9 +819,11 @@ public class DomainImpl implements Domain
                     String oldConditionalFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
 
-                    String defaultValue = impl.getDefaultValue();
-                    if (null != defaultValue)
-                        defaultValueMap.put(impl, impl.getPropertyType().convert(defaultValue));
+                    if (impl.isDefaultValueSet())
+                    {
+                        String defaultValue = impl.getDefaultValue();
+                        defaultValueMap.put(impl, null != defaultValue ? impl.getPropertyType().convert(defaultValue) : null);
+                    }
 
                     if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
@@ -845,14 +847,20 @@ public class DomainImpl implements Domain
                 domainProperty.save(user, _dd, order);
             }
 
-            // Loaded domains carry null defaults and setDefaultValues() replaces every stored one, so overlay only those set
+            // Loaded domains carry null defaults and setDefaultValues() replaces every stored one, so overlay only those explicitly set or cleared
             if (!defaultValueMap.isEmpty())
             {
                 try
                 {
-                    Map<DomainProperty, Object> defaults = isDomainNew ? new HashMap<>() : new HashMap<>(DefaultValueService.get().getDefaultValues(getContainer(), this));
+                    Map<DomainProperty, Object> stored = isDomainNew ? Map.of() : DefaultValueService.get().getDefaultValues(getContainer(), this);
+                    Map<DomainProperty, Object> defaults = new HashMap<>(stored);
                     defaults.putAll(defaultValueMap);
-                    DefaultValueService.get().setDefaultValues(getContainer(), defaults);
+
+                    // Bean copies set null defaults on every new property, so skip the rewrite when nothing would change
+                    Map<DomainProperty, Object> nonNull = new HashMap<>(defaults);
+                    nonNull.values().removeIf(Objects::isNull);
+                    if (!nonNull.equals(stored))
+                        DefaultValueService.get().setDefaultValues(getContainer(), defaults);
                 }
                 catch (ExperimentException e)
                 {
@@ -938,7 +946,8 @@ public class DomainImpl implements Domain
                     addAuditEvent(user, extraAuditComment + String.format("The descriptor of domain %s was updated.", _dd.getName()), auditUserComment, getContainer(), oldRecordMap, newRecordMap);
                 }
             };
-            transaction.addCommitTask(afterDomainCommit, DbScope.CommitTaskOption.POSTCOMMIT);
+            // Audit storage lives in the LabKey scope; holding its connection lets each event's insert share one borrow
+            transaction.addCommitTask(() -> DbScope.getLabKeyScope().runHoldingThreadConnection(afterDomainCommit), DbScope.CommitTaskOption.POSTCOMMIT);
 
             Runnable afterDomainCommitOrRollback = () ->
             {
@@ -1659,6 +1668,11 @@ public class DomainImpl implements Domain
 
             Domain saved = Objects.requireNonNull(PropertyService.get().getDomain(c, domainURI));
             assertEquals("Blue", DefaultValueService.get().getDefaultValues(c, saved).get(saved.getPropertyByName("Color")));
+
+            Domain cleared = Objects.requireNonNull(PropertyService.get().getDomain(c, domainURI, true));
+            cleared.getPropertyByName("Color").setDefaultValue(null);
+            cleared.save(user);
+            assertNull(DefaultValueService.get().getDefaultValues(c, cleared).get(cleared.getPropertyByName("Color")));
         }
 
         // Adding a list must leave cached property values and formats warm; renaming a property must refresh the values

@@ -1293,6 +1293,58 @@ public class DbScope
     }
 
     /**
+     * Runs the task with this thread's connection pinned, so its statements share one borrow instead of taking one apiece.
+     * The task must not begin a transaction or stream a large result: either would hold a second connection or defeat
+     * the outermost borrower's JDBC caching setup.
+     */
+    public void runHoldingThreadConnection(Runnable task)
+    {
+        Connection held = holdThreadConnection();
+        try
+        {
+            task.run();
+        }
+        finally
+        {
+            releaseHeldConnection(held);
+        }
+    }
+
+    /** Null when nothing was pinned */
+    private @Nullable Connection holdThreadConnection()
+    {
+        // A banned thread's next borrow throws, which would skip the caller's work entirely
+        if (isTransactionActive() || BANNED_THREADS.contains(getEffectiveThread()))
+            return null;
+
+        try
+        {
+            return getConnection();
+        }
+        catch (SQLException | RuntimeException e)
+        {
+            LOG.debug("Proceeding without a held thread connection", e);
+            return null;
+        }
+    }
+
+    /** Logs rather than throws, since callers often run after their transaction has committed */
+    private void releaseHeldConnection(@Nullable Connection conn)
+    {
+        if (null == conn)
+            return;
+
+        try
+        {
+            conn.close();
+        }
+        catch (SQLException | RuntimeException e)
+        {
+            LOG.warn("Failed to release a held thread connection", e);
+        }
+    }
+
+    /**
      * Get a fresh connection directly from the pool... not part of the current transaction, not shared with the thread, etc.
      */
     @JsonIgnore
@@ -2923,7 +2975,8 @@ public class DbScope
                             popCurrentTransaction();
                         }
 
-                        runPostCommitTasks();
+                        CommitTaskOption.POSTCOMMIT.run(this);
+                        CommitTaskOption.LATE_POSTCOMMIT.run(this);
                     }
                     catch (SQLException e)
                     {
@@ -2959,7 +3012,8 @@ public class DbScope
 
                 try
                 {
-                    runPostCommitTasks();
+                    CommitTaskOption.POSTCOMMIT.run(this);
+                    CommitTaskOption.LATE_POSTCOMMIT.run(this);
                 }
                 finally
                 {
@@ -2975,36 +3029,9 @@ public class DbScope
             }
         }
 
-        // Holding the thread connection lets post-commit statements share one borrow instead of taking one apiece
-        private void runPostCommitTasks()
+        DbScope getScope()
         {
-            // Only close() throws SQLException here, after the tasks have run
-            try (Connection ignored = holdThreadConnection())
-            {
-                CommitTaskOption.POSTCOMMIT.run(this);
-                CommitTaskOption.LATE_POSTCOMMIT.run(this);
-            }
-            catch (SQLException e)
-            {
-                LOG.warn("Failed to release the connection held for post-commit tasks", e);
-            }
-        }
-
-        private @Nullable Connection holdThreadConnection()
-        {
-            // A banned thread's next borrow throws, which would skip the tasks entirely
-            if (_postCommitQueue.size() + _latePostCommitQueue.size() == 0 || isTransactionActive() || BANNED_THREADS.contains(getEffectiveThread()))
-                return null;
-
-            try
-            {
-                return DbScope.this.getConnection();
-            }
-            catch (SQLException | RuntimeException e)
-            {
-                LOG.debug("Running post-commit tasks without a shared connection", e);
-                return null;
-            }
+            return DbScope.this;
         }
 
         public void setLockTimeout(int timeout, TimeUnit units)
@@ -3481,8 +3508,9 @@ public class DbScope
             assertFalse(scope.isTransactionActive());
         }
 
+        // Replayed cache reloads share one borrow; other post-commit tasks run without a held connection, so they can open transactions safely
         @Test
-        public void testPostCommitTasksShareThreadConnection()
+        public void testCacheReplaySharesThreadConnection()
         {
             DbScope scope = getLabKeyScope();
             assertFalse("Test thread should not already hold a connection", scope.isThreadConnectionActive());
@@ -3490,7 +3518,8 @@ public class DbScope
             for (boolean keepConnection : List.of(false, true))
             {
                 List<Connection> seen = new ArrayList<>();
-                Runnable task = () -> {
+                List<Boolean> plainTaskHeld = new ArrayList<>();
+                Runnable reload = () -> {
                     try (Connection conn = scope.getConnection())
                     {
                         new SqlSelector(scope, "SELECT 1").getObject(Integer.class);
@@ -3504,8 +3533,10 @@ public class DbScope
 
                 try (Transaction t = scope.ensureTransaction())
                 {
-                    t.addCommitTask(task, CommitTaskOption.POSTCOMMIT);
-                    t.addCommitTask(task, CommitTaskOption.LATE_POSTCOMMIT);
+                    CacheReplayCommitTask replay = CacheReplayCommitTask.get(t);
+                    replay.reload("cache", "a", 10, reload);
+                    replay.reload("cache", "b", 10, reload);
+                    t.addCommitTask(() -> plainTaskHeld.add(scope.isThreadConnectionActive()), CommitTaskOption.POSTCOMMIT);
                     if (keepConnection)
                     {
                         t.commitAndKeepConnection();
@@ -3516,7 +3547,8 @@ public class DbScope
 
                 String message = "keepConnection=" + keepConnection;
                 assertEquals(message, 2, seen.size());
-                assertSame(message + ": post-commit tasks should share one borrow", seen.get(0), seen.get(1));
+                assertSame(message + ": replayed reloads should share one borrow", seen.get(0), seen.get(1));
+                assertEquals(message, List.of(false), plainTaskHeld);
                 assertFalse(message + ": the held connection should be released", scope.isThreadConnectionActive());
             }
         }

@@ -42,11 +42,18 @@ public final class CacheReplayCommitTask implements Runnable
     // Insertion order is replay order; a duplicate keeps the first one's position
     private final Map<Op, Runnable> _operations = new LinkedHashMap<>();
     private final Map<Object, Integer> _reloadCounts = new HashMap<>();
+    private final @Nullable DbScope _scope;
+
+    private CacheReplayCommitTask(@Nullable DbScope scope)
+    {
+        _scope = scope;
+    }
 
     /** The replay task already queued in the transaction, or a newly queued one */
     static CacheReplayCommitTask get(Transaction transaction)
     {
-        return transaction.addCommitTask(new CacheReplayCommitTask(), DbScope.CommitTaskOption.POSTCOMMIT);
+        DbScope scope = transaction instanceof DbScope.TransactionImpl impl ? impl.getScope() : null;
+        return transaction.addCommitTask(new CacheReplayCommitTask(scope), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     /** Queues the reload unless the cache already has limit reloads queued */
@@ -112,7 +119,14 @@ public final class CacheReplayCommitTask implements Runnable
     {
         // Copy guards against concurrent modification only: when commitAndKeepConnection() runs on a transaction that
         // isn't the innermost, a reload registers operations here that never run, since clearCommitTasks() discards them
-        List.copyOf(_operations.values()).forEach(Runnable::run);
+        List<Runnable> operations = List.copyOf(_operations.values());
+
+        // Reload loaders query the transaction's scope, so they share one held borrow; removals and clears touch only memory
+        Runnable replay = () -> operations.forEach(Runnable::run);
+        if (null != _scope && _operations.keySet().stream().anyMatch(op -> op.kind() == Kind.RELOAD))
+            _scope.runHoldingThreadConnection(replay);
+        else
+            replay.run();
     }
 
     @Override
@@ -152,7 +166,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void runsOperationsInFirstRegistrationOrder()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.remove("c1", "a", op("remove a"));
             task.reload("c1", "b", 10, op("reload b"));
             task.clear("c2", op("clear c2"));
@@ -163,7 +177,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void capsReloadsPerCache()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.reload("c1", "a", 2, op("1a"));
             task.reload("c1", "a", 2, op("1a again")); // Duplicate doesn't count against the limit
             task.reload("c1", "b", 2, op("1b"));
@@ -175,7 +189,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void removalDropsEarlierReloadOfTheKey()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.reload("c1", "a", 10, op("reload a"));
             task.reload("c1", "b", 10, op("reload b"));
             task.reload("c2", "a", 10, op("reload c2 a"));
@@ -187,7 +201,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void repeatedRemovalDropsReloadBetweenAndKeepsFirstPosition()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.remove("c1", "a", op("remove a"));
             task.reload("c1", "b", 10, op("reload b"));
             task.reload("c1", "a", 10, op("reload a"));
@@ -198,7 +212,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void operationRegisteredDuringReplayDoesNotRun()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.reload("c1", "a", 10, () -> {
                 _log.add("reload a");
                 task.reload("c1", "b", 10, op("reload b"));
@@ -211,7 +225,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void droppedReloadFreesItsSlot()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.reload("c1", "a", 1, op("reload a"));
             task.remove("c1", "a", op("remove a"));
             task.reload("c1", "b", 1, op("reload b"));
@@ -221,7 +235,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void filterDropsEarlierMatchingReloads()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.reload("c1", "a1", 2, op("reload a1"));
             task.reload("c1", "b1", 2, op("reload b1"));
             task.reload("c2", "a1", 2, op("reload c2 a1"));
@@ -233,7 +247,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void clearReplacesTheCachesOperationsAtItsEarliestInvalidation()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.reload("c1", "a", 1, op("reload a"));
             task.remove("c1", "b", op("remove b"));
             task.removeUsingFilter("c1", (String key) -> false, op("filter"));
@@ -248,7 +262,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void clearNeverRunsAfterAReloadQueuedBehindAnEarlierInvalidation()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.clear("c1", op("clear c1"));
             task.reload("c2", "x", 10, op("reload c2 x"));
             task.clear("c1", op("clear c1 again"));
@@ -261,7 +275,7 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void clearIsAppendedWhenTheCacheHasNoEarlierInvalidation()
         {
-            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            CacheReplayCommitTask task = new CacheReplayCommitTask(null);
             task.reload("c1", "a", 1, op("reload a"));
             task.remove("c2", "b", op("remove c2 b"));
             task.clear("c1", op("clear"));
@@ -271,8 +285,8 @@ public final class CacheReplayCommitTask implements Runnable
         @Test
         public void allInstancesAreEqual()
         {
-            assertEquals(new CacheReplayCommitTask(), new CacheReplayCommitTask());
-            assertEquals(new CacheReplayCommitTask().hashCode(), new CacheReplayCommitTask().hashCode());
+            assertEquals(new CacheReplayCommitTask(null), new CacheReplayCommitTask(null));
+            assertEquals(new CacheReplayCommitTask(null).hashCode(), new CacheReplayCommitTask(null).hashCode());
         }
     }
 }

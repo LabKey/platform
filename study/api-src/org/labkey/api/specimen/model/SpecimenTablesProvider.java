@@ -58,7 +58,7 @@ public class SpecimenTablesProvider
     public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
     public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
 
-    private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingCache(String.class, 1000, CacheManager.HOUR, "Specimen domain creation", null);
+    private static final Cache<String, Integer> DOMAIN_CREATION_CACHE = CacheManager.getBlockingCache(String.class, 1000, CacheManager.HOUR, "Specimen domain creation", null);
 
     private final Container _container;
     private final User _user;
@@ -99,7 +99,7 @@ public class SpecimenTablesProvider
             // Multiple threads attempting to create the domain and provisioned table may result in a constraint
             // violation or a deadlock. We can't retry on PostgreSQL (SQLException kills the transaction), so use a
             // blocking cache to designate one thread as the creator and force all others to wait.
-            ret = DOMAIN_CREATION_CACHE.get(domainURI, null, (key, argument) -> {
+            int domainId = DOMAIN_CREATION_CACHE.get(domainURI, null, (key, argument) -> {
                 try (var ignore = SpringActionController.ignoreSqlUpdates())
                 {
                     Domain domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
@@ -119,9 +119,7 @@ public class SpecimenTablesProvider
 
                     domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, SpecimenTablesProvider.this));
                     domain.save(_user);
-
-                    // Refresh the domain. save() doesn't populate provisioned schema and table names, e.g.
-                    return PropertyService.get().getDomain(_container, domainURI, forUpdate);
+                    return domain.getTypeId();
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
@@ -133,6 +131,8 @@ public class SpecimenTablesProvider
                 }
             });
 
+            // Fetch fresh: save() doesn't populate provisioned schema and table names, and the cache holds only the id
+            ret = PropertyService.get().getDomain(domainId, forUpdate);
             assert null != ret; // We just created this domain!
         }
         return ret;
