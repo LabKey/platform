@@ -3,8 +3,15 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import { hookServer, IntegrationTestServer, RequestOptions, successfulResponse, testSeed } from '@labkey/test';
-import mock from 'mock-fs';
+import {
+    hookServer,
+    IntegrationTestServer,
+    mockFile,
+    mockFiles,
+    RequestOptions,
+    successfulResponse,
+    testSeed,
+} from '@labkey/test';
 
 import {
     AssayDesignFieldOptions,
@@ -103,7 +110,7 @@ afterAll(async () => {
 });
 
 afterEach(() => {
-    mock.restore();
+    mockFiles.restore();
 });
 
 function fileNameWithIncrement(fileName: string, increment: number): string {
@@ -248,7 +255,7 @@ describe('assay-importRun.api', () => {
             const runFilePath = `file://path/${runFileName}`;
             const runFileName2 = 'runFileB.txt';
             const runFilePath2 = `file://path/${runFileName2}`;
-            mock({
+            mockFiles({
                 [batchFilePath]: 'Batch McBatch',
                 [runFilePath]: 'Run McRun',
                 [batchFilePath2]: 'Run McBatch',
@@ -339,7 +346,7 @@ describe('assay-importRun.api', () => {
 
             // Successfully import a run with file properties
             {
-                mock({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
+                mockFiles({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
                 const payload: ImportRunOptions = {
                     assayId: ASSAY_A_ID,
                     batchProperties: { [BATCH_FILE_FIELD_NAME]: batchFilePath },
@@ -359,7 +366,7 @@ describe('assay-importRun.api', () => {
             {
                 const riBatchFilePath = `file://path/reimport/batch/${sameFileName}`;
                 const riRunFilePath = `file://path/reimport/run/${sameFileName}`;
-                mock({
+                mockFiles({
                     [batchFilePath]: 'Batch McBatch',
                     [runFilePath]: 'Run McRun',
                     [riBatchFilePath]: 'Reimport Batch McBatch',
@@ -408,7 +415,7 @@ describe('assay-importRun.api', () => {
 
             // Successfully import a run with file properties
             {
-                mock({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
+                mockFiles({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
                 const payload: ImportRunOptions = {
                     assayId: ASSAY_A_ID,
                     batchProperties: {
@@ -439,7 +446,7 @@ describe('assay-importRun.api', () => {
             const riBatchFilePath = `file://path/reimport/batch/${batchFileName}`;
             const riRunFile2Name = 'reimportRunFileBBRI.txt';
             const riRunFile2Path = `file://path/reimport/run/${riRunFile2Name}`;
-            mock({
+            mockFiles({
                 [riBatchFilePath]: 'Reimport Batch McBatch',
                 [riRunFile2Path]: 'Reimport Run McRun 2',
                 [runFilePath]: 'Run McRun',
@@ -515,7 +522,7 @@ describe('assay-importRun.api', () => {
             const batchFilePath = `file://path/${batchFileName}`;
             const runFileName = 'uploadRunFileA.txt';
             const runFilePath = `file://path/${runFileName}`;
-            mock({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
+            mockFiles({ [batchFilePath]: 'Batch McBatch', [runFilePath]: 'Run McRun' });
             const { editorUserOptions, topFolderOptions } = context;
 
             let batchFile;
@@ -527,7 +534,11 @@ describe('assay-importRun.api', () => {
                     .request(
                         'assay',
                         'assayFileUpload.api',
-                        (agent, url) => agent.post(url).attach('file', batchFilePath).attach('file1', runFilePath),
+                        (agent, url) =>
+                            agent
+                                .post(url)
+                                .attach('file', ...mockFile(batchFilePath))
+                                .attach('file1', ...mockFile(runFilePath)),
                         options(topFolderOptions, editorUserOptions)
                     )
                     .expect(successfulResponse);

@@ -13,12 +13,12 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.75.1"
+    "@labkey/components": "7.76.0"
   },
   "devDependencies": {
-    "@labkey/build": "10.1.4",
-    "@labkey/eslint-config": "1.2.5",
-    "@labkey/test": "1.14.6",
+    "@labkey/build": "10.1.5",
+    "@labkey/eslint-config": "1.2.6",
+    "@labkey/test": "1.14.7",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
@@ -26,7 +26,6 @@
     "jest-cli": "30.5.2",
     "jest-environment-jsdom": "30.5.2",
     "jest-teamcity-reporter": "0.9.0",
-    "mock-fs": "5.5.0",
     "ts-jest": "29.4.15"
   },
   "allowScripts": {

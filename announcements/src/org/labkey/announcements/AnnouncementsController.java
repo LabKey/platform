@@ -118,6 +118,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -1264,15 +1265,9 @@ public class AnnouncementsController extends SpringActionController
             form.setOldValues(oldAnn);
             AnnouncementModel update = form.getBean();
 
-            // Ensure that requested announcement's container matches current container (where perms have been checked)
-            if (!getContainer().getId().equals(update.getContainerId()))
-            {
-                throw new UnauthorizedException();
-            }
-
             try
             {
-                AnnouncementManager.updateAnnouncement(getUser(), update, getAttachmentFileList());
+                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), oldAnn.getRowId(), update, getAttachmentFileList());
             }
             catch (RuntimeValidationException e)
             {
@@ -2984,12 +2979,17 @@ public class AnnouncementsController extends SpringActionController
 
             try
             {
-                AnnouncementManager.updateAnnouncement(getUser(), updatedThread, getAttachmentFileList());
+                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), thread.getRowId(), updatedThread, getAttachmentFileList());
+            }
+            catch (UnauthorizedException | NotFoundException e)
+            {
+                throw e;
             }
             catch (Exception e)
             {
                 errors.reject(ERROR_MSG, "Failed to update thread in folder " + getContainer().getPath());
                 errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+                return null;
             }
 
             updatedThread = getThread(getContainer(), updatedThread.getRowId(), updatedThread.getEntityId());
@@ -3388,6 +3388,150 @@ public class AnnouncementsController extends SpringActionController
             // Admin of A who only reads B can't reach B's moderation queue across folders
             assertEquals(Set.of(), only(queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME), mine));
             assertEquals(Set.of(), only(queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.SPAM_TABLE_NAME), mine));
+        }
+
+        // GH Issue 1688
+        @Test
+        public void testQueryUpdateCannotRetargetMessage() throws Exception
+        {
+            Container secure = getSecureBoard();
+            User member = createUserInRole(secure, ReaderRole.class);
+            User otherReader = createUserInRole(secure, ReaderRole.class);
+            User editorA = createUserInRole(_folderA, EditorRole.class);
+
+            AnnouncementModel victim = insertThreadAs(getAdmin(), secure, member);
+            AnnouncementModel own = insertThreadAs(editorA, _folderA);
+
+            QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
+            Map<String, Object> ownKey = Map.of("RowId", own.getRowId());
+            String memberList = String.valueOf(otherReader.getUserId());
+
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Container", secure.getId(), "Title", "Overwritten", "memberListInput", memberList)));
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Title", "Overwritten", "memberListInput", memberList)));
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Container", secure.getId(), "Title", "Overwritten")));
+
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(secure, victim.getRowId())).getTitle());
+            assertEquals(List.of(member.getUserId()), AnnouncementManager.getPostMemberList(victim.getRowId()));
+
+            // Positive control: an ordinary edit of the caller's own message still works
+            updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Title", "Edited"));
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+        }
+
+        // GH Issue 1853
+        @Test
+        public void testQueryUpdateCannotRetargetWithinFolder() throws Exception
+        {
+            User editorA = createUserInRole(_folderA, EditorRole.class);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(editorA, _folderA);
+
+            QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", victim.getRowId(), "Title", "Overwritten")));
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+
+            // Parent is ignored, so the edit can't move the message into another thread
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", own.getRowId(), "Parent", victim.getEntityId(), "Title", "Edited"));
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
+
+            // The folder id is compared case-insensitively
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", own.getRowId(), "Container", _folderA.getId().toUpperCase(), "Title", "Edited again"));
+            assertEquals("Edited again", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+
+            // A null folder id means the current folder
+            Map<String, Object> nullContainer = new HashMap<>(Map.of("RowId", own.getRowId(), "Title", "Edited once more"));
+            nullContainer.put("Container", null);
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), nullContainer);
+            assertEquals("Edited once more", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+        }
+
+        // GH Issue 1853
+        @Test
+        public void testUpdateFormCannotRetargetMessage() throws Exception
+        {
+            User author = createUserInRole(_folderA, AuthorRole.class);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(author, _folderA);
+
+            ActionURL retarget = new ActionURL(UpdateAction.class, _folderA)
+                    .addParameter("entityId", own.getEntityId())
+                    .addParameter("rowId", victim.getRowId())
+                    .addParameter("title", "Overwritten")
+                    .addParameter("body", "body");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(retarget, author));
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+
+            // Positive control: the author can still edit their own message (302 to the thread)
+            ActionURL edit = new ActionURL(UpdateAction.class, _folderA)
+                    .addParameter("entityId", own.getEntityId())
+                    .addParameter("rowId", own.getRowId())
+                    .addParameter("title", "Edited")
+                    .addParameter("body", "body");
+            assertStatus(HttpServletResponse.SC_FOUND, post(edit, author));
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+
+            // Parent is ignored, so the edit can't move the message into another thread
+            ActionURL reparent = edit.clone()
+                    .replaceParameter("title", "Edited again")
+                    .addParameter("parent", victim.getEntityId());
+            assertStatus(HttpServletResponse.SC_FOUND, post(reparent, author));
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited again", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
+        }
+
+        // GH Issue 1853
+        @Test
+        public void testUpdateThreadApiCannotRetargetMessage() throws Exception
+        {
+            User author = createUserInRole(_folderA, AuthorRole.class);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(author, _folderA);
+
+            ActionURL direct = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", victim.getRowId())
+                    .addParameter("thread.title", "Overwritten");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(direct, author));
+
+            // Identity fields alongside the author's own rowId must not redirect or reparent the write
+            ActionURL retarget = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", own.getRowId())
+                    .addParameter("thread.entityId", victim.getEntityId())
+                    .addParameter("thread.parent", victim.getEntityId())
+                    .addParameter("thread.title", "Edited");
+            assertStatus(HttpServletResponse.SC_OK, post(retarget, author));
+
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
+
+            // A failed update reports its error rather than success
+            ActionURL invalid = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", own.getRowId())
+                    .addParameter("thread.title", "Rejected")
+                    .addParameter("thread.assignedTo", Integer.MAX_VALUE);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(invalid, author));
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+        }
+
+        private void updateMessage(QueryUpdateService qus, User user, Map<String, Object> oldKey, Map<String, Object> values) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            qus.updateRows(user, _folderA, List.of(new HashMap<>(values)), List.of(new HashMap<>(oldKey)), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        private AnnouncementModel insertThreadAs(User creator, Container c, User... members) throws Exception
+        {
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Member list test thread");
+            insert.setBody("body");
+            insert.setMemberListInput(Arrays.stream(members).map(member -> String.valueOf(member.getUserId())).collect(Collectors.joining("\n")));
+            return AnnouncementManager.insertAnnouncement(c, creator, insert, null, false);
         }
 
         // Shared across tests, so reset the settings some tests change

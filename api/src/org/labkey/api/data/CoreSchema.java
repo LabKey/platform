@@ -112,6 +112,11 @@ public class CoreSchema
         return getSchema().getTable("Documents");
     }
 
+    public TableInfo getTableInfoAttachmentPointer()
+    {
+        return getSchema().getTable("AttachmentPointer");
+    }
+
     public TableInfo getTableInfoUsers()
     {
         return getSchema().getTable("Users");
