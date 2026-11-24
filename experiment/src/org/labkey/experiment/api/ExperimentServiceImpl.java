@@ -1192,13 +1192,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         final String materialAlias = "_m_";
         final String materialIndexedAlias = "_mi_";
         // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037)
-        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT ").unsafeAppend(ExpMaterialImpl.getIndexColumnsSelectList(materialAlias)).unsafeAppend(" FROM ").
+        SQLFragment sql = SQLFragment.unsafe("SELECT ").unsafeAppend(ExpMaterialImpl.getIndexColumnsSelectList(materialAlias)).unsafeAppend(" FROM ").
                 append(getTinfoMaterial(), "_m_").
                 unsafeAppend(" LEFT OUTER JOIN ").append(getTinfoMaterialIndexed(), "_mi_").
                 unsafeAppend(" ON ").appendIdentifier(materialAlias).unsafeAppend(".RowId = ").
                 appendIdentifier(materialIndexedAlias).unsafeAppend(".MaterialId").
                 // The planner doesn't carry RowId > ? across the outer join, so without its own bound the join reads materialindexed from the start every batch
-                unsafeAppend(" AND ").unsafeAppend(materialIndexedAlias).unsafeAppend(".MaterialId > ?").add(minRowId).
+                unsafeAppend(" AND ").appendIdentifier(materialIndexedAlias).unsafeAppend(".MaterialId > ?").add(minRowId).
                 unsafeAppend(" WHERE Container = ? AND LSID NOT LIKE '%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
         sql.add(container.getId());
         sql.add(minRowId);
