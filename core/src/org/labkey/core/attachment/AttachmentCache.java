@@ -22,20 +22,14 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /*
  * User: adam
@@ -44,17 +38,9 @@ import java.util.Set;
  */
 public class AttachmentCache
 {
-    private static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
-
     private static final CacheLoader<String, Map<String, Attachment>> LOADER = (key, attachmentParent) ->
     {
-        AttachmentParent parent = (AttachmentParent)attachmentParent;
-
-        Collection<Attachment> attachments = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
-                ATTACHMENT_COLUMNS,
-                new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId()),
-                new Sort("+RowId")).getCollection(Attachment.class);
-
+        Collection<Attachment> attachments = AttachmentServiceImpl.selectAttachments((AttachmentParent)attachmentParent, null);
         Map<String, Attachment> map = new LinkedHashMap<>(attachments.size());
 
         for (Attachment attachment : attachments)

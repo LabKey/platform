@@ -50,10 +50,10 @@ public interface AttachmentParentType
 
     /**
      * Append to the where clause of a query that wants to select attachments of the implementing type from the
-     * core.Documents table
+     * core.AttachmentPointers table
      * @param sql Implementers MUST append a valid where clause to this SQLFragment
-     * @param parentColumn Column identifier for use in where clause. Usually represents 'core.Documents.Parent'
-     * @param documentNameColumn Column identifier for use in where clause. Usually represents 'core.Documents.DocumentName'
+     * @param parentColumn Column identifier for use in where clause. Usually represents 'core.AttachmentPointers.Parent'
+     * @param documentNameColumn Column identifier for use in where clause. Usually represents 'core.AttachmentPointers.Name'
      */
     default void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
@@ -63,7 +63,7 @@ public interface AttachmentParentType
 
     /**
      * Return a SQLFragment that selects just the EntityId of rows that might be attachment parents from the table(s)
-     * that provide attachments of this type, without involving the core.Documents table.
+     * that provide attachments of this type, without involving the core.AttachmentPointers table.
      */
     default @NotNull SQLFragment getSelectParentEntityIdsSql()
     {
@@ -76,7 +76,7 @@ public interface AttachmentParentType
     /**
      * Return a SQLFragment that selects the EntityId and an appropriate Description of all rows that might be
      * attachment parents from the table(s) that provide attachment parents of this type, without involving the
-     * core.Documents table. For example, {@code SELECT EntityId, Title AS Description FROM comm.Announcements}.
+     * core.AttachmentPointers table. For example, {@code SELECT EntityId, Title AS Description FROM comm.Announcements}.
      * If the method determines that no parents exist, then return a valid query that selects no rows, for example,
      * {@code NO_ROWS}.
      */

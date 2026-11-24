@@ -3552,7 +3552,7 @@ public class AdminController extends SpringActionController
             // Give Troubleshooters (and ImpersonatingTroubleshooters) read permissions in all containers so they can
             // see attachment counts by parent type plus details. I don't love poking an elevated user into the
             // ViewContext, but this is the only way I could get DataRegion to see read permission on tables that are
-            // wrapped by a query (e.g., core.Documents used by DocumentsGroupedByParentType.sql).
+            // wrapped by a query (e.g., core.Attachments used by AttachmentsGroupedByParentType.sql).
             context.setUser(ElevatedUser.getElevatedUser(context.getUser(), ReaderRole.class));
             super.setViewContext(context);
         }
@@ -3571,31 +3571,31 @@ public class AdminController extends SpringActionController
         @SuppressWarnings("unused") // Invoked via reflection
         public AttachmentsAction()
         {
-            super("DocumentsGroupedByParentTypeAdmin");
+            super("AttachmentsGroupedByParentTypeAdmin");
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            addAdminNavTrail(root, "Documents Grouped by Parent Type", getClass());
+            addAdminNavTrail(root, "Attachments Grouped by Parent Type", getClass());
         }
     }
 
-    @SuppressWarnings("unused") // Linked from core.DocumentsGroupedByParentTypeAdmin
+    @SuppressWarnings("unused") // Linked from core.AttachmentsGroupedByParentTypeAdmin
     @RequiresPermission(TroubleshooterPermission.class)
     public class AttachmentsForTypeAction extends AbstractAttachmentQueryAction
     {
         @SuppressWarnings("unused") // Invoked via reflection
         public AttachmentsForTypeAction()
         {
-            super("Documents");
+            super("Attachments");
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             String parentType = getViewContext().getActionURL().getParameter("core.ParentType~eq");
-            addAdminNavTrail(root, parentType != null ? "Documents Belonging to Parent Type \"" + parentType + "\"" : "Documents", getClass());
+            addAdminNavTrail(root, parentType != null ? "Attachments Belonging to Parent Type \"" + parentType + "\"" : "Attachments", getClass());
         }
     }
 

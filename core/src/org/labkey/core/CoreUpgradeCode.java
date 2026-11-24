@@ -127,12 +127,12 @@ public class CoreUpgradeCode implements UpgradeCode
                     LOG.info("Populating attachment parent type for {}", type.getUniqueName());
 
                     SQLFragment updateSql = SQLFragment.unsafe("UPDATE ")
-                        .append(CoreSchema.getInstance().getTableInfoDocuments())
+                        .append(CoreSchema.getInstance().getTableInfoAttachmentPointers())
                         .unsafeAppend(" SET ParentType = ?")
                         .add(type.getUniqueName())
                         .unsafeAppend(" WHERE ");
                     // TODO: This is the only caller of addWhereSql(), which can be removed when this upgrade code is deleted.
-                    type.addWhereSql(updateSql, "Parent", "DocumentName");
+                    type.addWhereSql(updateSql, "Parent", "Name");
 
                     new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(updateSql);
                 }

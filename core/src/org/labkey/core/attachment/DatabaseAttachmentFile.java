@@ -51,21 +51,21 @@ public class DatabaseAttachmentFile implements AttachmentFile
     private InputStream _is = null;
 
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final String _sqlDocumentTypeAndSize = "SELECT DocumentType, DocumentSize FROM " + core.getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
-    private static final String _sqlDocument = "SELECT Document FROM " + core.getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
+    private static final String _sqlDocumentTypeAndSize = "SELECT a.Type, a.Size FROM " + core.getTableInfoAttachmentPointers() + " ap INNER JOIN " + core.getTableInfoAttachments() + " a ON a.RowId = ap.AttachmentId WHERE ap.Container = ? AND ap.Parent = ? AND ap.Name = ?";
+    private static final String _sqlDocument = "SELECT a.Document FROM " + core.getTableInfoAttachmentPointers() + " ap INNER JOIN " + core.getTableInfoAttachments() + " a ON a.RowId = ap.AttachmentId WHERE ap.Container = ? AND ap.Parent = ? AND ap.Name = ?";
 
     public DatabaseAttachmentFile(Attachment attachment) throws IOException
     {
         _attachment = attachment;
 
-        Map<String, Object> map = new SqlSelector(core.getSchema(), _sqlDocumentTypeAndSize, attachment.getParent(), attachment.getName()).getMap();
+        Map<String, Object> map = new SqlSelector(core.getSchema(), _sqlDocumentTypeAndSize, attachment.getContainer(), attachment.getParent(), attachment.getName()).getMap();
 
         if (null == map)
             throw new FileNotFoundException("Attachment could not be retrieved from database: " + attachment.getName());
 
-        _contentType = (String) map.get("DocumentType");
+        _contentType = (String) map.get("Type");
 
-        int size = asInteger(map.get("DocumentSize"));
+        int size = asInteger(map.get("Size"));
         _fileSize = (size > 0 ? size : 0);
     }
 
@@ -88,6 +88,12 @@ public class DatabaseAttachmentFile implements AttachmentFile
     }
 
     @Override
+    public boolean isReopenable()
+    {
+        return true;
+    }
+
+    @Override
     public String getFilename()
     {
         return _attachment.getName();
@@ -102,7 +108,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
 
         try
         {
-            _rs = new SqlSelector(core.getSchema(), _sqlDocument, _attachment.getParent(), _attachment.getName()).getResultSet(false);
+            _rs = new SqlSelector(core.getSchema(), _sqlDocument, _attachment.getContainer(), _attachment.getParent(), _attachment.getName()).getResultSet(false);
 
             if (!_rs.next())
                 throw new FileNotFoundException("Attachment could not be retrieved from database: " + _attachment.getName());

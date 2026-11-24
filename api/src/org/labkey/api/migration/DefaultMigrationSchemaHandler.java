@@ -259,7 +259,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         // Now that the target tables in this schema have been populated, copy all associated attachments. By default,
         // use this handler's attachment parent types to select from the target tables all EntityIds that might be
         // attachment parents (this avoids re-running potentially expensive queries on the source tables). Use the
-        // set of EntityIds to copy those attachments from the core.Documents table in the source database. Override
+        // set of EntityIds to copy those parents' attachment pointers and attachments from the source database. Override
         // if special behavior is required, for example, AttachmentTypes that use documentNameColumn since that
         // requires querying and re-filtering the source tables instead.
         Collection<AttachmentParentType> ret = new LinkedList<>();
@@ -284,7 +284,7 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         return new TempTableInClauseGenerator(() -> sourceScope.getSchema("temp", DbSchemaType.Bare));
     }
 
-    // Copy all core.Documents rows that match the provided filter clause
+    // Copy the core.AttachmentPointers rows that match the provided filter clause, plus the attachments they reference
     protected final Collection<AttachmentParentType> copyAttachments(DatabaseMigrationConfiguration configuration, FilterClause filterClause, AttachmentParentType... type)
     {
         String additionalMessage = " associated with " + Arrays.stream(type).map(t -> t.getClass().getSimpleName()).collect(Collectors.joining(", "));

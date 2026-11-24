@@ -47,26 +47,17 @@
       </column>
     </columns>
   </table>
-  <table tableName="Documents" tableDbType="TABLE">
+  <table tableName="Attachments" tableDbType="TABLE">
+    <description>Attachment content, shared by every pointer that references it</description>
     <columns>
-      <column columnName="_ts"/>
       <column columnName="RowId"/>
-      <column columnName="CreatedBy"/>
-      <column columnName="Created"/>
-      <column columnName="ModifiedBy"/>
-      <column columnName="Modified"/>
-      <column columnName="Owner"/>
-      <column columnName="Container"/>
-      <column columnName="Parent"/>
-      <column columnName="ParentType"/>
-      <column columnName="DocumentName"/>
-      <column columnName="DocumentSize"/>
-      <column columnName="DocumentType"/>
+      <column columnName="Size"/>
+      <column columnName="Type"/>
       <column columnName="Document"/>
-      <column columnName="LastIndexed"/>
+      <column columnName="Hash"/>
     </columns>
   </table>
-  <table tableName="AttachmentPointer" tableDbType="TABLE">
+  <table tableName="AttachmentPointers" tableDbType="TABLE">
     <description>Named references from attachment parents to de-duplicated attachment content</description>
     <columns>
       <column columnName="RowId"/>
@@ -79,10 +70,11 @@
       <column columnName="AttachmentId">
         <fk>
           <fkDbSchema>core</fkDbSchema>
-          <fkTable>Documents</fkTable>
+          <fkTable>Attachments</fkTable>
           <fkColumnName>RowId</fkColumnName>
         </fk>
       </column>
+      <column columnName="LastIndexed"/>
     </columns>
   </table>
   <table tableName="Logins" tableDbType="TABLE">

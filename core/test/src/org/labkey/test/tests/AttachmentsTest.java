@@ -137,7 +137,7 @@ public class AttachmentsTest extends BaseWebDriverTest
         ShowAdminPage.beginAt(this);
         clickAndWait(Locator.linkWithText("Attachments"));
         DataRegionTable table = DataRegionTable.DataRegion(getDriver()).withName("core").waitFor();
-        assertTextPresent("DocumentsGroupedByParentType");
+        assertTextPresent("AttachmentsGroupedByParentType");
         verifyRow(table, "IssueComment", ISSUE_ATTACHMENTS);
         int wikiCount = verifyRow(table, "Wiki", WIKI_ATTACHMENTS);
         verifyRow(table, "IssueComment", ISSUE_ATTACHMENTS);
@@ -145,7 +145,7 @@ public class AttachmentsTest extends BaseWebDriverTest
         int wikiRowIndex = table.getRowIndex("ParentType", "Wiki");
         clickAndWait(table.link(wikiRowIndex, "Count"));
         table = DataRegionTable.DataRegion(getDriver()).withName("core").waitFor();
-        assertTextPresent("Documents");
+        assertTextPresent("Attachments");
         if (wikiCount > 100)
             table.assertPaginationText(1, 100, wikiCount);
         else
@@ -164,14 +164,14 @@ public class AttachmentsTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testNoDocumentsTableForReaders()
+    public void testNoAttachmentsTableForReaders()
     {
         goToProjectHome();
         goToSchemaBrowser();
-        // Admins should have access to core.Documents
-        viewQueryData("core", "Documents");
+        // Admins should have access to core.Attachments
+        viewQueryData("core", "Attachments");
         // Readers should have no access
         impersonateRole(READER_ROLE);
-        assertTextPresent("The specified query 'Documents' does not exist in schema 'core'");
+        assertTextPresent("The specified query 'Attachments' does not exist in schema 'core'");
     }
 }

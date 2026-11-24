@@ -70,11 +70,26 @@ public interface AttachmentService
 
     void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
 
+    /**
+     * Names each attachment by its content hash plus the file's original extension. A name the parent already has is
+     * reused rather than reported as a duplicate. Not supported for AttachmentDirectory parents.
+     * @return the attachment names, in the order of files
+     */
+    @NotNull List<String> addAttachmentsNamedByHash(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
+
+    /**
+     * Gives the destination the source's attachments under the same names, sharing their content rather than copying it.
+     * Not supported for AttachmentDirectory parents.
+     * @param names the attachments to copy, or null for all of them
+     */
+    void copyAttachments(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @NotNull User user);
+
     void deleteAttachments(AttachmentParent parent);
 
     void deleteAttachments(Collection<AttachmentParent> parents);
 
-    void validateAttachmentSizes(AttachmentParent parent, List<AttachmentFile> files) throws IOException;
+    /** Forgets the parent's attachments but leaves an AttachmentDirectory's files on disk, e.g., when unregistering it */
+    void deleteAttachmentRecords(AttachmentParent parent);
 
     /**
      * Deletes the attachments with the given names from the given AttachmentParent.

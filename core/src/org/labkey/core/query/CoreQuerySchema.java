@@ -106,7 +106,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
     public static final String SHORT_URL_TABLE_NAME = "ShortURL";
-    public static final String DOCUMENTS_TABLE_NAME = "Documents";
+    public static final String ATTACHMENTS_TABLE_NAME = "Attachments";
     public static final String REPORTS_TABLE_NAME = "Reports";
 
     public CoreQuerySchema(User user, Container c)
@@ -144,7 +144,7 @@ public class CoreQuerySchema extends UserSchema
             VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME);
 
         if (getUser().isTroubleshooter())
-            names.add(DOCUMENTS_TABLE_NAME);
+            names.add(ATTACHMENTS_TABLE_NAME);
 
         if (getContainer().hasPermission(getUser(), AdminPermission.class))
             names.add(REPORTS_TABLE_NAME);
@@ -207,8 +207,8 @@ public class CoreQuerySchema extends UserSchema
             return getMVIndicatorTable(cf);
         if (SHORT_URL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
             return new ShortUrlTableInfo(this);
-        if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().isTroubleshooter())
-            return new DocumentsTable(this, cf);
+        if (ATTACHMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().isTroubleshooter())
+            return new AttachmentsTable(this, cf);
         if (REPORTS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
             return new ReportsTable(this, cf);
 

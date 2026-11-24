@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cloud.CloudStoreService;
@@ -781,6 +782,9 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     public void unregisterDirectory(Container c, String name)
     {
         FileSystemAttachmentParent parent = getRegisteredDirectory(c, name);
+        // Otherwise the attachment records outlive the directory row that is their parent
+        if (null != parent)
+            AttachmentService.get().deleteAttachmentRecords(parent);
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("Name"), name);
         Table.delete(CoreSchema.getInstance().getMappedDirectories(), filter);

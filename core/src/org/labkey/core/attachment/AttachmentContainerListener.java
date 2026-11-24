@@ -26,7 +26,7 @@ public class AttachmentContainerListener implements ContainerListener
     @Override
     public void containerDeleted(Container c, User user)
     {
-        ContainerUtil.purgeTable(CoreSchema.getInstance().getTableInfoDocuments(), c, null);
+        ContainerUtil.purgeTable(CoreSchema.getInstance().getTableInfoAttachmentPointers(), c, null);
         AttachmentCache.removeAttachments(c);
     }
 }

@@ -1205,8 +1205,7 @@ public class WikiManager implements WikiService
         {
             SqlExecutor executor = new SqlExecutor(_m.comm.getSchema());
 
-            // TODO this belongs in attachment service!
-            String deleteDocuments = "DELETE FROM " + _m.core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
+            String deleteDocuments = "DELETE FROM " + _m.core.getTableInfoAttachmentPointers() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _m.comm.getTableInfoPages() + " WHERE Container = ?)";
             int docs = executor.execute(deleteDocuments, c, c);
 
             String updatePages = "UPDATE " + _m.comm.getTableInfoPages() + " SET PageVersionId = null WHERE Container = ?";

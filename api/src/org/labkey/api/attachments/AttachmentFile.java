@@ -37,4 +37,10 @@ public interface AttachmentFile extends FileStream
     InputStream openInputStream() throws IOException;
     @Override
     void closeInputStream() throws IOException;
+
+    /** Whether openInputStream() can be called again after closeInputStream(); if not, storing a file buffers it to hash it */
+    default boolean isReopenable()
+    {
+        return false;
+    }
 }
