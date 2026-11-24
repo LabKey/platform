@@ -870,12 +870,6 @@ public abstract class SqlDialect
 
     public abstract String getTempTablePrefix();
 
-    /** For disposable tables whose contents may be lost on a database crash */
-    public String getCreateUnloggedTableCommand()
-    {
-        return "CREATE TABLE";
-    }
-
     public abstract String getGlobalTempTablePrefix();
 
     public abstract boolean isNoDatabaseException(SQLException e);

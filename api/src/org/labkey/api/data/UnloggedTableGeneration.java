@@ -65,8 +65,10 @@ public class UnloggedTableGeneration
      */
     public static String current()
     {
-        if (HeartBeat.currentTimeMillis() - _lastCheck > CHECK_INTERVAL && _checkLock.tryLock())
+        if (HeartBeat.currentTimeMillis() - _lastCheck > CHECK_INTERVAL)
         {
+            // Block rather than skip: a reader returning the old generation mid-check could reuse an emptied table
+            _checkLock.lock();
             try
             {
                 if (HeartBeat.currentTimeMillis() - _lastCheck > CHECK_INTERVAL)

@@ -498,12 +498,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getCreateUnloggedTableCommand()
-    {
-        return "CREATE UNLOGGED TABLE";
-    }
-
-    @Override
     public String getTempTablePrefix()
     {
         return "";
