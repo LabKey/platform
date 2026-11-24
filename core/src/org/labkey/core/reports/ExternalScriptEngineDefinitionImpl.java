@@ -18,7 +18,11 @@ package org.labkey.core.reports;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.BaseViewAction;
@@ -78,6 +82,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private String _fileExchange;               // specific to Rserve at the moment
     private String _pathMap;
     private boolean _external;
+    private EngineKind _kind;
     private boolean _remote;
     private boolean _docker;
     private boolean _pandocEnabled;
@@ -167,8 +172,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             }
         }
         addIfNotNull(json, "external", isExternal());
-        addIfNotNull(json, "remote", isRemote());
-        addIfNotNull(json, "docker", isDocker());
+        addIfNotNull(json, "kind", getKind().name());
         addIfNotNull(json, "pandocEnabled", isPandocEnabled());
         addIfNotNull(json, "fileExchange", getFileExchange());
         addIfNotNull(json, "pathMap", _pathMap);
@@ -230,6 +234,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         }
         if (json.has("external"))
             setExternal(json.getBoolean("external"));
+        if (json.has("kind"))
+            setKind(EngineKind.valueOf(json.getString("kind")));
         if (json.has("remote"))
             setRemote(json.getBoolean("remote"));
         if (json.has("docker"))
@@ -484,9 +490,32 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     }
 
     @Override
+    public EngineKind getKind()
+    {
+        return _kind != null ? _kind : kindFromFlags(_docker, _remote, _type);
+    }
+
+    @Override
+    public void setKind(EngineKind kind)
+    {
+        _kind = kind;
+    }
+
+    // Only R engines ran differently for these flags (the R Docker template sets both, so docker is checked first).
+    // Jupyter always runs on its notebook service.
+    static @NotNull EngineKind kindFromFlags(boolean docker, boolean remote, @Nullable Type type)
+    {
+        if (type == Type.R)
+            return docker ? EngineKind.DOCKER : remote ? EngineKind.RSERVE : EngineKind.LOCAL;
+        if (type == Type.Jupyter)
+            return EngineKind.REMOTE;
+        return EngineKind.LOCAL;
+    }
+
+    @Override
     public boolean isRemote()
     {
-        return _remote;
+        return getKind() != EngineKind.LOCAL;
     }
 
     @Override
@@ -498,7 +527,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     @Override
     public boolean isDocker()
     {
-        return _docker;
+        return getKind() == EngineKind.DOCKER;
     }
 
     @Override
@@ -623,5 +652,66 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 return true;
             return name.equalsIgnoreCase("user");
         };
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testKindFromLegacyFlags()
+        {
+            assertEquals(EngineKind.LOCAL, kindFromFlags(false, false, Type.R));
+            assertEquals(EngineKind.RSERVE, kindFromFlags(false, true, Type.R));
+            assertEquals(EngineKind.DOCKER, kindFromFlags(true, true, Type.R));
+            assertEquals(EngineKind.DOCKER, kindFromFlags(true, false, Type.R));
+            assertEquals(EngineKind.REMOTE, kindFromFlags(false, true, Type.Jupyter));
+            assertEquals(EngineKind.REMOTE, kindFromFlags(false, false, Type.Jupyter));
+            assertEquals(EngineKind.LOCAL, kindFromFlags(true, true, Type.External));
+            assertEquals(EngineKind.LOCAL, kindFromFlags(false, true, Type.Python));
+            assertEquals(EngineKind.LOCAL, kindFromFlags(false, false, null));
+        }
+
+        @Test
+        public void testLegacyConfigurationReadsAsKind() throws IOException
+        {
+            ExternalScriptEngineDefinitionImpl def = new ExternalScriptEngineDefinitionImpl();
+            def.setType(Type.R);
+            def.setConfiguration("{\"docker\":true,\"remote\":true}", false);
+            assertEquals(EngineKind.DOCKER, def.getKind());
+            assertTrue(def.isDocker());
+            assertTrue(def.isRemote());
+        }
+
+        @Test
+        public void testConfigurationWritesKindNotFlags() throws IOException
+        {
+            ExternalScriptEngineDefinitionImpl def = new ExternalScriptEngineDefinitionImpl();
+            def.setType(Type.R);
+            def.setRemote(true);
+            def.updateConfiguration();
+
+            JSONObject json = new JSONObject(def.getConfiguration());
+            assertEquals(EngineKind.RSERVE.name(), json.getString("kind"));
+            assertFalse(json.has("remote"));
+            assertFalse(json.has("docker"));
+
+            ExternalScriptEngineDefinitionImpl copy = new ExternalScriptEngineDefinitionImpl();
+            copy.setType(Type.R);
+            copy.setConfiguration(def.getConfiguration(), false);
+            assertEquals(EngineKind.RSERVE, copy.getKind());
+            assertTrue(copy.isRemote());
+            assertFalse(copy.isDocker());
+        }
+
+        @Test
+        public void testExplicitKindWinsOverFlags()
+        {
+            ExternalScriptEngineDefinitionImpl def = new ExternalScriptEngineDefinitionImpl();
+            def.setType(Type.R);
+            def.setDocker(true);
+            def.setRemote(true);
+            def.setKind(EngineKind.LOCAL);
+            assertFalse(def.isDocker());
+            assertFalse(def.isRemote());
+        }
     }
 }

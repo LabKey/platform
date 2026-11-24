@@ -18,6 +18,7 @@ package org.labkey.core.reports;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -45,10 +46,11 @@ import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.ExternalScriptEngineDefinition.EngineKind;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.reports.report.r.RScriptEngineFactory;
-import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
+import org.labkey.api.reports.ScriptEngineProvider;
+import org.labkey.api.reports.ScriptEngineProviderRegistry;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.AESConfig;
@@ -63,9 +65,6 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.core.reports.report.python.PythonScriptEngine;
-import org.labkey.core.reports.report.r.RDockerScriptEngineFactory;
-import org.labkey.core.reports.report.r.RserveScriptEngineFactory;
 import org.labkey.core.script.RhinoLanguageVersion;
 import org.labkey.core.script.RhinoScriptEngine;
 
@@ -232,7 +231,8 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         password,
         remote,
         pandocEnabled,
-        docker
+        docker,
+        kind
     }
 
     ScriptEngineFactory rhino;
@@ -328,42 +328,18 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         ExternalScriptEngineDefinition def = getEngine(container, extension, context);
         if (def != null)
         {
-            if (def.getType().equals(ExternalScriptEngineDefinition.Type.R))
-            {
-                if (def.isDocker())
-                    return new RDockerScriptEngineFactory(def).getScriptEngine();
-                else if (def.isRemote())
-                {
-                    if (PremiumService.get().isRemoteREnabled())
-                        return new RserveScriptEngineFactory(def).getScriptEngine();
-                    else
-                    {
-                        RemoteRNotEnabledException ex = new RemoteRNotEnabledException(def);
-                        LOG.error(ex.getMessage());
-                        throw ex;
-                    }
-                }
-                else
-                    return new RScriptEngineFactory(def).getScriptEngine();
-            }
-            else if (def.getType().equals(ExternalScriptEngineDefinition.Type.Jupyter) && !PremiumService.get().isEnabled())
-            {
-                LOG.error("Jupyter Report engine [{}] requested, but premium module not available/enabled.", def.getName());
-                throw new PremiumFeatureNotEnabledException("Jupyter Reports are not available. Please talk to your account representative for additional information.");
-            }
-            else if (isPythonEngine(def))
-                return new PythonScriptEngine(def);
-            else
-                return new ExternalScriptEngineFactory(def).getScriptEngine();
+            ScriptEngineProvider provider = ScriptEngineProviderRegistry.get().get(def.getType(), def.getKind());
+            if (provider == null)
+                throw new ConfigurationException("No script engine provider for " + def.getType() + " " + def.getKind() + " engine: " + def.getName());
+            provider.ensureAvailable(def);
+            return provider.create(def);
         }
         return null;
     }
 
-    // A Python engine is configured as a generic external engine (there is no dedicated Type.Python), so identify it by
-    // its ".py" file extension. R and Jupyter (.ipynb) are handled by earlier branches, so they won't match here.
-    private static boolean isPythonEngine(ExternalScriptEngineDefinition def)
+    private static boolean hasPythonExtension(@Nullable List<String> extensions)
     {
-        return Arrays.stream(def.getExtensions()).anyMatch("py"::equalsIgnoreCase);
+        return extensions != null && extensions.stream().anyMatch("py"::equalsIgnoreCase);
     }
 
     // Locates any specific engines scoped at either the container or project level for an engine context
@@ -577,6 +553,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     {
         if (def.isExternal())
         {
+            // Admins create Python engines from the External or Perl templates by changing the extension
+            if (def instanceof ExternalScriptEngineDefinitionImpl impl && (impl.getType() == ExternalScriptEngineDefinition.Type.External || impl.getType() == ExternalScriptEngineDefinition.Type.Perl) && impl.getExtensions() != null && hasPythonExtension(Arrays.asList(impl.getExtensions())))
+                impl.setType(ExternalScriptEngineDefinition.Type.Python);
+
             try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
             {
                 tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -652,21 +632,33 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         if (extensionStr != null)
             extensions = Arrays.asList(StringUtils.split(extensionStr, ","));
         String pathMapStr = props.get(Props.pathMap.name());
-        boolean isRemote = Boolean.valueOf(props.get(Props.remote.name()));
         ExternalScriptEngineDefinition.Type type = ExternalScriptEngineDefinition.Type.External;
 
         if (extensions.contains("r"))
             type = ExternalScriptEngineDefinition.Type.R;
+        else if (hasPythonExtension(extensions))
+            type = ExternalScriptEngineDefinition.Type.Python;
         else if (extensions.contains("pl"))
             type = ExternalScriptEngineDefinition.Type.Perl;
 
-        if ((key != null || isFromStartupProps) && name != null && extensionStr != null && (isRemote || (exePath!=null)))
+        String kindStr = props.get(Props.kind.name());
+        EngineKind kind = kindStr != null
+            ? EnumUtils.getEnumIgnoreCase(EngineKind.class, kindStr.trim())
+            : ExternalScriptEngineDefinitionImpl.kindFromFlags(Boolean.parseBoolean(props.get(Props.docker.name())), Boolean.parseBoolean(props.get(Props.remote.name())), type);
+        if (kind == null)
+            throw new IllegalArgumentException("Unknown script engine kind '" + kindStr + "', expected one of " + Arrays.toString(EngineKind.values()));
+
+        if ((key != null || isFromStartupProps) && name != null && extensionStr != null && (kind != EngineKind.LOCAL || exePath != null))
         {
             try
             {
                 ExternalScriptEngineDefinitionImpl def = new ExternalScriptEngineDefinitionImpl();
 
-                BeanUtils.populate(def, props);
+                // BeanUtils 1.x has no enum converter
+                Map<String, String> beanProps = new HashMap<>(props);
+                beanProps.remove(Props.kind.name());
+                BeanUtils.populate(def, beanProps);
+                def.setKind(kind);
                 def.setExternal(true);
                 def.setType(type);
                 def.setEnabled(!BooleanUtils.toBoolean(props.get(Props.disabled.name())));
@@ -876,6 +868,40 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             // restore the Script Engine Definitions to how they were originally
             svc.deleteDefinition(User.getSearchUser(), defList.stream().filter((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME)).findAny().get());
+        }
+
+        @Test
+        public void testStartupKindProperty()
+        {
+            assertEquals(EngineKind.RSERVE, createDefinition(Map.of("name", SCRIPT_ENGINE_NAME, "extensions", "r", "kind", "rserve", "docker", "true"), true).getKind());
+            assertEquals(EngineKind.DOCKER, createDefinition(Map.of("name", SCRIPT_ENGINE_NAME, "extensions", "r", "docker", "true"), true).getKind());
+            assertEquals(EngineKind.LOCAL, createDefinition(Map.of("name", SCRIPT_ENGINE_NAME, "extensions", "r", "exePath", "/usr/bin/R"), true).getKind());
+            assertThrows(IllegalArgumentException.class, () -> createDefinition(Map.of("name", SCRIPT_ENGINE_NAME, "extensions", "r"), true));
+            assertThrows(IllegalArgumentException.class, () -> createDefinition(Map.of("name", SCRIPT_ENGINE_NAME, "extensions", "r", "kind", "bogus"), true));
+        }
+
+        @Test
+        public void testStartupPythonType()
+        {
+            assertEquals(ExternalScriptEngineDefinition.Type.Python, createDefinition(Map.of("name", SCRIPT_ENGINE_NAME, "extensions", "PY", "exePath", "/usr/bin/python3"), true).getType());
+            assertEquals(ExternalScriptEngineDefinition.Type.Python, createDefinition(Map.of("name", SCRIPT_ENGINE_NAME, "extensions", "pl,py", "exePath", "/usr/bin/python3"), true).getType());
+            assertEquals(ExternalScriptEngineDefinition.Type.External, createDefinition(Map.of("name", SCRIPT_ENGINE_NAME, "extensions", "sh", "exePath", "/bin/sh"), true).getType());
+        }
+
+        @Test
+        public void testProvidersCoverLegacyFlags()
+        {
+            for (ExternalScriptEngineDefinition.Type type : ExternalScriptEngineDefinition.Type.values())
+            {
+                for (boolean docker : new boolean[]{false, true})
+                {
+                    for (boolean remote : new boolean[]{false, true})
+                    {
+                        EngineKind kind = ExternalScriptEngineDefinitionImpl.kindFromFlags(docker, remote, type);
+                        assertNotNull("No provider for " + type + " " + kind, ScriptEngineProviderRegistry.get().get(type, kind));
+                    }
+                }
+            }
         }
     }
 }

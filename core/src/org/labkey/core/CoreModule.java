@@ -292,7 +292,9 @@ import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.reader.HTMLDataLoader;
+import org.labkey.core.reports.CoreScriptEngineProviders;
 import org.labkey.core.reports.DocumentConversionServiceImpl;
+import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.script.RhinoService;
 import org.labkey.core.secrets.SecretServiceImpl;
@@ -500,6 +502,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
         VcsService.setInstance(new VcsServiceImpl());
         LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
+        CoreScriptEngineProviders.register();
         DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
         DbLoginService.setInstance(new DbLoginManager());
 
@@ -1584,6 +1587,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
             DeploymentMetrics.TestCase.class,
+            ExternalScriptEngineDefinitionImpl.TestCase.class,
             LabKeyProxyServlet.TestCase.class,
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,

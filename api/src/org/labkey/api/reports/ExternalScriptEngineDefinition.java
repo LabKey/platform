@@ -30,6 +30,16 @@ public interface ExternalScriptEngineDefinition
         Perl,
         External,
         Jupyter,
+        Python,
+    }
+
+    /** Where a definition's engine runs; each definition has exactly one. */
+    enum EngineKind
+    {
+        LOCAL,
+        RSERVE,
+        DOCKER,
+        REMOTE,
     }
 
     Integer getRowId();
@@ -77,9 +87,15 @@ public interface ExternalScriptEngineDefinition
     void setExternal(boolean external);
     boolean isExternal();
 
+    EngineKind getKind();
+    void setKind(EngineKind kind);
+
+    /** Legacy input; an explicit kind wins over it. */
     void setRemote(boolean remote);
+    /** True for every kind but LOCAL; Docker and Jupyter definitions have always set the remote flag too. */
     boolean isRemote();
 
+    /** Legacy input; an explicit kind wins over it. */
     void setDocker(boolean docker);
     boolean isDocker();
 
