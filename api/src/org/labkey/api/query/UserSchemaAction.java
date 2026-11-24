@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -35,6 +36,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -173,8 +175,17 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
             root.addChild(_table.getName(), getSuccessURL(null));
     }
 
+    protected @NotNull QueryUpdateService ensureUpdatable()
+    {
+        QueryUpdateService qus = _table.getUpdateService();
+        if (qus == null)
+            throw new BadRequestException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
+        return qus;
+    }
+
     protected List<Map<String, Object>> doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert)
     {
+        QueryUpdateService qus = ensureUpdatable();
         TableInfo table = form.getTable();
         if (!table.hasPermission(form.getUser(), insert ? InsertPermission.class : UpdatePermission.class))
         {
@@ -199,10 +210,6 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         }
 
         values = form.getTypedColumns();
-
-        QueryUpdateService qus = table.getUpdateService();
-        if (qus == null)
-            throw new IllegalArgumentException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
 
 
         List<Map<String, Object>> rows;

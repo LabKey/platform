@@ -83,8 +83,6 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -298,6 +296,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1193,13 +1192,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Container container = queue.getContainer();
         final String materialAlias = "_m_";
         final String materialIndexedAlias = "_mi_";
-        // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
-        SQLFragment sql = SQLFragment.unsafe("SELECT ").appendIdentifier(materialAlias).unsafeAppend(".* FROM ").
+        // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037)
+        SQLFragment sql = SQLFragment.unsafe("SELECT ").unsafeAppend(ExpMaterialImpl.getIndexColumnsSelectList(materialAlias)).unsafeAppend(" FROM ").
                 append(getTinfoMaterial(), "_m_").
                 unsafeAppend(" LEFT OUTER JOIN ").append(getTinfoMaterialIndexed(), "_mi_").
                 unsafeAppend(" ON ").appendIdentifier(materialAlias).unsafeAppend(".RowId = ").
-                appendIdentifier(materialIndexedAlias).unsafeAppend(".MaterialId WHERE Container = ? AND LSID NOT LIKE '%:" +
-                        StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
+                appendIdentifier(materialIndexedAlias).unsafeAppend(".MaterialId").
+                // The planner doesn't carry RowId > ? across the outer join, so without its own bound the join reads materialindexed from the start every batch
+                unsafeAppend(" AND ").appendIdentifier(materialIndexedAlias).unsafeAppend(".MaterialId > ?").add(minRowId).
+                unsafeAppend(" WHERE Container = ? AND LSID NOT LIKE '%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
         sql.add(container.getId());
         sql.add(minRowId);
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, materialAlias, getTinfoMaterialIndexed(), materialIndexedAlias).toSQLFragment(null, null);
@@ -1213,11 +1214,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
-        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> new ExpMaterialImpl(m).indexWithTableCache(queue, tableCache));
+        List<Material> batch = ExpMaterialImpl.readIndexMaterials(selector);
+        batch.forEach(m -> tracker.advance(m.getRowId()));
 
-        if (tracker.wasFull())
+        try
+        {
+            ExpMaterialImpl.indexBatch(queue, batch, tableCache);
+        }
+        finally
+        {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
+            if (tracker.wasFull())
+                queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
+        }
     }
 
     public void indexData(final @NotNull SearchService.TaskIndexingQueue queue, final Date modifiedSince, long minRowId)
@@ -1308,58 +1317,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         if (null == updates || updates.isEmpty())
             return;
-        DbScope dbscope = getSchema().getScope();
-        try (Connection c = dbscope.getConnection())
+
+        // Latest time per sample, since one upsert can't touch a row twice; RowId order keeps lock order consistent (Issue 51263)
+        TreeMap<Long, Long> latest = new TreeMap<>();
+        updates.forEach(p -> latest.merge(p.first, p.second, Math::max));
+
+        DbScope scope = getSchema().getScope();
+        // Holding the thread's connection lets every chunk reuse it instead of borrowing and validating one per chunk
+        try (Connection ignored = scope.getConnection())
         {
-            Parameter updateMaterialId = new Parameter("materialid", JdbcType.INTEGER);
-            Parameter updateTS = new Parameter("ts", JdbcType.TIMESTAMP);
-            SQLFragment updateSql = new SQLFragment().unsafeAppend("UPDATE ").append(getTinfoMaterialIndexed().getSQLName()).unsafeAppend(" SET LastIndexed = ? WHERE MaterialId = ?");
-            updateSql.add(updateTS);
-            updateSql.add(updateMaterialId);
-
-            Parameter insertTS = new Parameter("ts", JdbcType.TIMESTAMP);
-            Parameter insertRowId = new Parameter("rowid", JdbcType.INTEGER);
-            Parameter insertMaterialId = new Parameter("materialid", JdbcType.INTEGER);
-            SQLFragment insertSql = new SQLFragment().unsafeAppend("INSERT INTO ")
-                    .append(getTinfoMaterialIndexed().getSQLName())
-                    .unsafeAppend(" (MaterialId, LastIndexed) SELECT RowId, ? FROM ")
-                    .append(getTinfoMaterial().getSQLName())
-                    .unsafeAppend(" WHERE RowId = ? AND NOT EXISTS (SELECT MaterialId FROM ")
-                    .append(getTinfoMaterialIndexed().getSQLName())
-                    .unsafeAppend(" WHERE MaterialId = ?)");
-            insertSql.add(insertTS);
-            insertSql.add(insertRowId);
-            insertSql.add(insertMaterialId);
-
-            try (ParameterMapStatement insertPM = new ParameterMapStatement(getSchema().getScope(), c, insertSql, null);
-                 ParameterMapStatement updatePM = new ParameterMapStatement(getSchema().getScope(), c, updateSql, null))
+            ListUtils.partition(new ArrayList<>(latest.keySet()), BatchSize.get(ROWS)).forEach(rowIds ->
             {
-                ListUtils.partition(updates, BatchSize.get(ROWS)).forEach(sublist ->
+                Timestamp[] times = rowIds.stream().map(id -> new Timestamp(latest.get(id))).toArray(Timestamp[]::new);
+                // The join skips samples deleted since they were indexed
+                SQLFragment sql = new SQLFragment()
+                        .unsafeAppend("INSERT INTO ").append(getTinfoMaterialIndexed()).unsafeAppend(" (MaterialId, LastIndexed)")
+                        .unsafeAppend(" SELECT u.id, u.ts FROM unnest(?::BIGINT[], ?::TIMESTAMP[]) AS u(id, ts)").add(rowIds.toArray(new Long[0])).add(times)
+                        .unsafeAppend(" JOIN ").append(getTinfoMaterial(), "m").unsafeAppend(" ON m.RowId = u.id ORDER BY u.id")
+                        .unsafeAppend(" ON CONFLICT (MaterialId) DO UPDATE SET LastIndexed = EXCLUDED.LastIndexed");
+                try
                 {
-                    try
-                    {
-                        for (Pair<Long, Long> p : sublist)
-                        {
-                            insertMaterialId.setValue(p.first);
-                            insertTS.setValue(new Timestamp(p.second));
-                            insertRowId.setValue(p.first);
-                            insertPM.addBatch();
-
-                            updateMaterialId.setValue(p.first);
-                            updateTS.setValue(new Timestamp(p.second));
-                            updatePM.addBatch();
-                        }
-                        insertPM.executeBatch();
-                        updatePM.executeBatch();
-                    }
-                    catch (PessimisticLockingFailureException | DataIntegrityViolationException e)
-                    {
-                        // if we're not in a transaction just keep going...
-                        if (dbscope.isTransactionActive())
-                            throw e;
-                    }
-                });
-            }
+                    new SqlExecutor(scope).execute(sql);
+                }
+                catch (PessimisticLockingFailureException | DataIntegrityViolationException e)
+                {
+                    // if we're not in a transaction just keep going...
+                    if (scope.isTransactionActive())
+                        throw e;
+                }
+            });
         }
         catch (SQLException x)
         {
