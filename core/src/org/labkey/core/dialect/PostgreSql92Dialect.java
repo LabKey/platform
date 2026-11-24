@@ -56,6 +56,7 @@ import org.labkey.api.view.template.Warnings;
 import org.labkey.core.admin.sql.ScriptReorderer;
 import org.springframework.jdbc.BadSqlGrammarException;
 
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -1312,6 +1313,17 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     public boolean supportsArrays()
     {
         return true;
+    }
+
+    @Override
+    public SQLFragment array_unnest(JdbcType elementType, Collection<?> values)
+    {
+        // A typed array lets the JDBC driver pick the element type even when the first element is null
+        Object[] array = values.toArray(n -> (Object[]) Array.newInstance(elementType.getJavaClass(), n));
+        return SQLFragment.unsafe("SELECT unnest(CAST(? AS ")
+            .append(getSqlTypeNameAsSql(elementType))
+            .unsafeAppend("[]))")
+            .add(array);
     }
 
     @Override

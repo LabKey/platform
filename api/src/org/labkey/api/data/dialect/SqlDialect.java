@@ -870,6 +870,12 @@ public abstract class SqlDialect
 
     public abstract String getTempTablePrefix();
 
+    /** For disposable tables whose contents may be lost on a database crash */
+    public String getCreateUnloggedTableCommand()
+    {
+        return "CREATE TABLE";
+    }
+
     public abstract String getGlobalTempTablePrefix();
 
     public abstract boolean isNoDatabaseException(SQLException e);
@@ -2623,6 +2629,13 @@ public abstract class SqlDialect
 
     // array a and array b do not contain the same elements
     public SQLFragment array_not_same_array(SQLFragment a, SQLFragment b)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    // SELECT returning one row per element of the bound array
+    public SQLFragment array_unnest(JdbcType elementType, Collection<?> values)
     {
         assert !supportsArrays();
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

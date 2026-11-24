@@ -18,11 +18,13 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HashHelpers;
 
@@ -43,7 +45,7 @@ import java.util.stream.Stream;
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
     private static final Cache<String, TempTableInfo> _tempTableCache =
-            CacheManager.getCache(String.class, 200, CacheManager.MINUTE * 5, "IN clause temp tables");
+            CacheManager.getCache(String.class, 200, CacheManager.UNLIMITED, CacheManager.MINUTE * 5, "IN clause temp tables");
 
     // Need to set a supplier instead of setting the default temp schema directly because this class is constructed at
     // dialect init time, before schemas can be referenced.
@@ -132,17 +134,24 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         if (null == sortedParameters)
             return null;
 
-        String cacheKey = getCacheKey(jdbcType, sortedParameters);
+        DbSchema tempSchema = _tempSchemaSupplier.get();
+        // UnloggedTableGeneration only detects resets in the LabKey database
+        boolean unlogged = tempSchema.getScope().isLabKeyScope();
+        // Scope by database and schema, so an external temp schema never reuses a LabKey table or vice versa
+        String cacheKey = tempSchema.getScope().getDataSourceName() + "_" + tempSchema.getName() + "_" + getCacheKey(jdbcType, sortedParameters);
+        // A reset empties the table, so a new generation must not hit the old entry
+        if (unlogged)
+            cacheKey += "_" + UnloggedTableGeneration.current();
         TempTableInfo tempTableInfo = _tempTableCache.get(cacheKey);
         if (tempTableInfo == null)
         {
-            DbSchema tempSchema = _tempSchemaSupplier.get();
+            SqlDialect dialect = tempSchema.getSqlDialect();
             tempTableInfo = new TempTableInfo(tempSchema, "InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
-            SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
+            SQLFragment sqlCreate = SQLFragment.unsafe(unlogged ? dialect.getCreateUnloggedTableCommand() + " " : "CREATE TABLE ");
             sqlCreate.append(tempTableInfo)
                 .unsafeAppend("\n(Id ")
-                .append(tempSchema.getSqlDialect().getSqlTypeName(jdbcType))
-                .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
+                .append(dialect.getSqlTypeNameAsSql(jdbcType))
+                .unsafeAppend(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
                 .unsafeAppend(")");
 
             // When the in clause receives more parameters than it is set to handle, a temporary table is created to handle the overflow.
@@ -155,7 +164,17 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             String tableName = tempTableInfo.getSelectName();
             String sql1 = "INSERT INTO " + tableName + " (Id) VALUES (?)";
             String sql100 = "INSERT INTO " + tableName + " (Id) VALUES (?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?)";
-            try
+            if (dialect.supportsArrays())
+            {
+                // One array-bound statement is several times faster than batched single-row INSERTs
+                SQLFragment sqlInsert = SQLFragment.unsafe("INSERT INTO " + tableName + " (Id) ")
+                    .append(dialect.array_unnest(jdbcType, sortedParameters));
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    new SqlExecutor(tempSchema).execute(sqlInsert);
+                }
+            }
+            else try
             {
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
@@ -172,11 +191,12 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 throw new RuntimeSQLException(e);
             }
 
-            String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
+            // UNIQUE tells the planner the ids are distinct, so it skips de-duplicating them in IN (SELECT ...)
+            String indexSql = "CREATE UNIQUE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
             try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
                 new SqlExecutor(tempSchema).execute(indexSql);
-                tempSchema.getSqlDialect().updateStatistics(tempTableInfo); // Immediately analyze the newly populated & indexed table
+                dialect.updateStatistics(tempTableInfo); // Immediately analyze the newly populated & indexed table
             }
 
             TempTableInfo cacheEntry = tempTableInfo;
@@ -288,6 +308,45 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             Assert.assertEquals("Validate second string IN clause", 2, new SqlSelector(_scope, secondSQL).getRowCount());
 
             Assert.assertEquals("Validate SQL matches, indicated cached results", firstSQL, secondSQL);
+        }
+
+        @Test
+        public void testTypesWithNull()
+        {
+            record Case(String values, List<?> params) {}
+            for (Case c : List.of(
+                new Case("SELECT 'a' UNION SELECT 'b' UNION SELECT 'g'", Arrays.asList("d", "a", null, "b", "a")),
+                new Case("SELECT 1 UNION SELECT 2 UNION SELECT 7", Arrays.asList(4, 1, null, 2, 1)),
+                new Case("SELECT CAST(1 AS BIGINT) UNION SELECT 2 UNION SELECT 7", Arrays.asList(4L, 1L, null, 2L, 1L))))
+            {
+                SQLFragment sql = SQLFragment.unsafe("SELECT a FROM (" + c.values() + ") b(a) WHERE a ");
+                SQLFragment inClause = new TempTableInClauseGenerator().appendInClauseSql(sql, c.params());
+                Assert.assertNotNull(c.values(), inClause);
+                Assert.assertEquals(c.values(), 2, new SqlSelector(_scope, inClause).getRowCount());
+            }
+        }
+
+        @Test
+        public void testUnlogged()
+        {
+            Assume.assumeTrue(_scope.getSqlDialect().isPostgreSQL());
+            TempTableInfo tti = new TempTableInClauseGenerator().getTempTableInfo(STRINGS);
+            Assert.assertNotNull(tti);
+            SQLFragment sql = SQLFragment.unsafe("SELECT relpersistence FROM pg_class WHERE oid = CAST(? AS regclass)").add(tti.getSelectName());
+            Assert.assertEquals("u", new SqlSelector(_scope, sql).getObject(String.class));
+        }
+
+        @Test
+        public void testUnloggedReset()
+        {
+            Assume.assumeTrue(_scope.getSqlDialect().isPostgreSQL());
+            SQLFragment sql = SQLFragment.unsafe("SELECT a from (SELECT 'a' AS a UNION SELECT 'b' AS a UNION SELECT 'g' AS a) b WHERE a ");
+            TempTableInfo before = new TempTableInClauseGenerator().getTempTableInfo(STRINGS);
+            Assert.assertNotNull(before);
+            new SqlExecutor(_scope).execute(SQLFragment.unsafe("TRUNCATE ").append(before));
+            UnloggedTableGeneration.simulateResetForTest();
+            SQLFragment after = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sql), STRINGS);
+            Assert.assertEquals("A reset must rebuild the emptied temp table", 2, new SqlSelector(_scope, after).getRowCount());
         }
 
         @Test
