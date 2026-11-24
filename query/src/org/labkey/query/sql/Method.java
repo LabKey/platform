@@ -20,7 +20,6 @@ import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -68,7 +67,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 import static org.labkey.query.sql.Method.TimestampDiffInterval.SQL_TSI_FRAC_SECOND;
@@ -2216,9 +2214,7 @@ public abstract class Method
         @Test
         public void testJsonOperators()
         {
-            JunitUtil.assumePostgres();
             SqlDialect d = CoreSchema.getInstance().getSqlDialect();
-
             record Case(String json, String operator, String operand, String expected) {}
             List<Case> cases = List.of(
                 new Case("{\"a\":1}", "->", "a", "1"),

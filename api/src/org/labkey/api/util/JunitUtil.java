@@ -34,11 +34,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -210,12 +208,6 @@ public class JunitUtil
             if (match.test(t))
                 return true;
         return false;
-    }
-
-    /** Skips the test unless the labkey scope is PostgreSQL */
-    public static void assumePostgres()
-    {
-        Assume.assumeTrue("Requires PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
     }
 
     /** Skips the test unless the JVM runs with -ea, for tests of code that only runs inside an assert */
