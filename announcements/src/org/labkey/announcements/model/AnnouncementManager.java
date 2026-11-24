@@ -85,6 +85,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -665,17 +666,24 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
+    // GH Issue 1688, GH Issue 1853: callers check permissions on rowId in c, so the update must not name another row or folder
+    public static AnnouncementModel updateAnnouncement(@NotNull Container c, User user, int rowId, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
-        Container c = ContainerManager.getForId(update.getContainerId());
-        if (c == null)
-            throw new NotFoundException("No container with id " + update.getContainerId());
-        AnnouncementModel current = getAnnouncement(c, update.getRowId());
+        // Query updates can echo back Container: null, which names no folder rather than another one
+        if (StringUtils.isBlank(update.getContainerId()))
+            update.setContainerId(c.getId());
+        if (!c.getId().equalsIgnoreCase(update.getContainerId()) || update.getRowId() != rowId)
+            throw new UnauthorizedException();
+        AnnouncementModel current = getAnnouncement(c, rowId);
         if (current == null)
-            throw new NotFoundException("No announcement with id " + update.getRowId());
+            throw new NotFoundException("No announcement with id " + rowId);
         update = validateModelWithSideEffects(update, c, user, false);
 
         update.beforeUpdate(user, current); // This preserves Created, CreatedBy, EntityId, etc.
+        // An edit must not move the post to another thread or discussion source
+        update.setParent(current.getParent());
+        update.setDiscussionSrcIdentifier(current.getDiscussionSrcIdentifier());
+        update.setDiscussionSrcEntityType(current.getDiscussionSrcEntityType());
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
         notifyDiscussionProviderOfChange(c, user, result, Change.Update);
 
@@ -1170,7 +1178,7 @@ public class AnnouncementManager
             model.setModifiedBy(reader.getUserId());
             model.setModified(bogusDate);
             Thread.sleep(10); // Quick sleep to ensure Modified > Created, even on a very fast test run
-            AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
+            AnnouncementManager.updateAnnouncement(folder, getAdmin(), model.getRowId(), model, List.of());
 
             // Re-select updated model
             AnnouncementModel updated = AnnouncementManager.getAnnouncement(folder, model.getRowId());
