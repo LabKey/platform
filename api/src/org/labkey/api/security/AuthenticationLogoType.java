@@ -41,11 +41,12 @@ public class AuthenticationLogoType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
         TableInfo table = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
 
         return SQLFragment.unsafe("SELECT EntityId, ")
+            .append(SQLFragment.unsafe("(SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(" WHERE Parent IS NULL) AS Container, "))
             .append(table.getSqlDialect().concatenate("'Configuration #'", "CAST(RowId AS VARCHAR)", "' ('", "description", "')'"))
             .unsafeAppend(" AS Description FROM ")
             .append(table, "acs");

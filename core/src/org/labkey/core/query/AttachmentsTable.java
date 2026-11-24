@@ -50,6 +50,8 @@ public class AttachmentsTable extends FilteredTable<CoreQuerySchema>
         addColumn(new BaseColumnInfo("Type", this, JdbcType.VARCHAR));
         addColumn(new BaseColumnInfo("ParentDescription", this, JdbcType.VARCHAR));
         addColumn(new BaseColumnInfo("Orphaned", this, JdbcType.BOOLEAN));
+        // Lookups filter on the parent's container, so these attachments exist but can't be found through their parent
+        addColumn(new BaseColumnInfo("ContainerMismatch", this, JdbcType.BOOLEAN));
 
         setDefaultVisibleColumns(
             new CsvSet("CreatedBy, Created, Container, Name, Size, Type, ParentType, ParentDescription")
@@ -65,9 +67,9 @@ public class AttachmentsTable extends FilteredTable<CoreQuerySchema>
         SqlDialect dialect = getSqlDialect();
         AliasManager am = new AliasManager(dialect);
         SQLFragment parents = AttachmentService.get().getAttachmentParentTypes().stream()
-            .map(type -> SQLFragment.unsafe("SELECT ? AS ParentType, EntityId, Description FROM (")
+            .map(type -> SQLFragment.unsafe("SELECT ? AS ParentType, EntityId, Container, Description FROM (")
                 .add(type.getUniqueName())
-                .append(type.getSelectEntityIdAndDescriptionSql())
+                .append(type.getSelectEntityIdContainerAndDescriptionSql())
                 .unsafeAppend(") ")
                 .appendIdentifier(am.decideAlias("x")))
             .filter(Objects::nonNull)
@@ -75,7 +77,9 @@ public class AttachmentsTable extends FilteredTable<CoreQuerySchema>
 
         return SQLFragment.unsafe("(SELECT ap.*, a.Size, a.Type, p.Description AS ParentDescription, ")
             .append(dialect.wrapBooleanExpression(SQLFragment.unsafe("EntityId IS NULL")))
-            .unsafeAppend(" AS Orphaned FROM ")
+            .unsafeAppend(" AS Orphaned, ")
+            .append(dialect.wrapBooleanExpression(SQLFragment.unsafe("p.Container IS NOT NULL AND p.Container <> ap.Container")))
+            .unsafeAppend(" AS ContainerMismatch FROM ")
             .append(super.getFromSQL("ap")) // core.AttachmentPointers with container filter applied
             .unsafeAppend(" INNER JOIN ")
             .append(CoreSchema.getInstance().getTableInfoAttachments(), "a")

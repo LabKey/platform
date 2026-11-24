@@ -43,8 +43,10 @@ public class AvatarType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
-        return SQLFragment.unsafe("SELECT EntityId, DisplayName AS Description FROM ").append(CoreSchema.getInstance().getTableInfoUsers(), "users");
+        return SQLFragment.unsafe("SELECT EntityId, ")
+            .append(SQLFragment.unsafe("(SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(" WHERE Parent IS NULL) AS Container, "))
+            .unsafeAppend("DisplayName AS Description FROM ").append(CoreSchema.getInstance().getTableInfoUsers(), "users");
     }
 }

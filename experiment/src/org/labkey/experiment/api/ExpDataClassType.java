@@ -60,7 +60,7 @@ public class ExpDataClassType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
         TableInfo tableInfo = ExperimentService.get().getTinfoDataClass();
         SqlDialect dialect = tableInfo.getSqlDialect();
@@ -103,7 +103,7 @@ public class ExpDataClassType implements AttachmentParentType
                     selectStatements.add(
                         SQLFragment.unsafe("\n    SELECT ")
                             .append(expressionToExtractObjectId)
-                            .unsafeAppend(" AS EntityId, ")
+                            .unsafeAppend(" AS EntityId, Container, ")
                             .append(dialect.concatenate(
                                 SQLFragment.unsafe("?", domain.getName()),
                                 SQLFragment.unsafe("':'"),

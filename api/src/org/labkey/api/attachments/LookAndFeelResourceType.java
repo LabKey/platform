@@ -51,7 +51,7 @@ public class LookAndFeelResourceType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
         return PARENT_CONTAINER_SQL;
     }

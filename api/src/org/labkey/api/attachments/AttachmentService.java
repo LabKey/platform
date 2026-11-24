@@ -157,7 +157,8 @@ public interface AttachmentService
     HttpView<?> getFindAttachmentParentsView();
 
     /**
-     * Logs the first 20 orphaned attachments it detects. Returns the total number of orphaned attachments detected.
+     * Logs the first 20 orphaned attachments it detects, and the first 20 whose container doesn't match their parent's.
+     * Returns the total number of both detected.
      */
     int logOrphanedAttachments();
 

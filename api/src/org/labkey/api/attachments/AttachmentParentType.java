@@ -25,8 +25,8 @@ import org.labkey.api.data.SQLFragment;
  */
 public interface AttachmentParentType
 {
-    SQLFragment NO_ROWS = SQLFragment.unsafe("SELECT NULL AS EntityId, NULL AS Description WHERE 1 = 0");
-    SQLFragment PARENT_CONTAINER_SQL = SQLFragment.unsafe("SELECT EntityId, COALESCE(Name, '<Root>') AS Description FROM ")
+    SQLFragment NO_ROWS = SQLFragment.unsafe("SELECT NULL AS EntityId, NULL AS Container, NULL AS Description WHERE 1 = 0");
+    SQLFragment PARENT_CONTAINER_SQL = SQLFragment.unsafe("SELECT EntityId, EntityId AS Container, COALESCE(Name, '<Root>') AS Description FROM ")
         .append(CoreSchema.getInstance().getTableInfoContainers());
 
     AttachmentParentType UNKNOWN = new AttachmentParentType()
@@ -39,7 +39,7 @@ public interface AttachmentParentType
         }
 
         @Override
-        public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+        public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
         {
             return NO_ROWS;
         }
@@ -67,18 +67,20 @@ public interface AttachmentParentType
      */
     default @NotNull SQLFragment getSelectParentEntityIdsSql()
     {
-        SQLFragment selectSql = getSelectEntityIdAndDescriptionSql();
+        SQLFragment selectSql = getSelectEntityIdContainerAndDescriptionSql();
 
         // The returned SQL is always used inside a subselect, so the alias doesn't have to be unique
         return SQLFragment.unsafe("SELECT EntityId FROM (").append(selectSql).unsafeAppend(") x");
     }
 
     /**
-     * Return a SQLFragment that selects the EntityId and an appropriate Description of all rows that might be
-     * attachment parents from the table(s) that provide attachment parents of this type, without involving the
-     * core.AttachmentPointers table. For example, {@code SELECT EntityId, Title AS Description FROM comm.Announcements}.
+     * Return a SQLFragment that selects the EntityId, Container, and an appropriate Description of all rows that
+     * might be attachment parents from the table(s) that provide attachment parents of this type, without involving
+     * the core.AttachmentPointers table. Container must match what this type's AttachmentParent returns from
+     * getContainerId(), since attachment lookups filter on it. For example,
+     * {@code SELECT EntityId, Container, Title AS Description FROM comm.Announcements}.
      * If the method determines that no parents exist, then return a valid query that selects no rows, for example,
      * {@code NO_ROWS}.
      */
-    @NotNull SQLFragment getSelectEntityIdAndDescriptionSql();
+    @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql();
 }

@@ -40,8 +40,8 @@ public class WikiType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
-        return SQLFragment.unsafe("SELECT EntityId, Name AS Description FROM ").append(CommSchema.getInstance().getTableInfoPages(), "pages");
+        return SQLFragment.unsafe("SELECT EntityId, Container, Name AS Description FROM ").append(CommSchema.getInstance().getTableInfoPages(), "pages");
     }
 }

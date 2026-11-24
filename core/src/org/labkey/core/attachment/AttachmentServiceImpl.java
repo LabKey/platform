@@ -1429,30 +1429,28 @@ public class AttachmentServiceImpl implements AttachmentService
             TableInfo attachments = core.getTable(CoreQuerySchema.ATTACHMENTS_TABLE_NAME, new AllFolders(user));
             if (null != attachments)
             {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
-                List<Orphan> orphans = new TableSelector(attachments, new CsvSet("Name, ParentType"), filter, null).getArrayList(Orphan.class);
-                if (!orphans.isEmpty())
-                {
-                    ret = orphans.size();
-                    LOG.error("Found {}, which likely indicates a problem with a delete method or a container listener.", StringUtilsLabKey.pluralize(ret, "orphaned attachment"));
-
-                    final String message;
-                    if (orphans.size() > MAX_ORPHANS_TO_LOG)
-                    {
-                        orphans = orphans.subList(0, MAX_ORPHANS_TO_LOG);
-                        message = "The first " + MAX_ORPHANS_TO_LOG;
-                    }
-                    else
-                    {
-                        message = "All";
-                    }
-
-                    LOG.error("{} detected orphans are listed below:\n{}", message, orphans.stream().map(Record::toString).collect(Collectors.joining("\n")));
-                }
+                ret += logProblemAttachments(attachments, "Orphaned", "orphaned attachment", "which likely indicates a problem with a delete method or a container listener");
+                ret += logProblemAttachments(attachments, "ContainerMismatch", "attachment whose container doesn't match its parent's",
+                    "which makes them unreachable through their parents; the parent type may report a different container than the one its attachments are stored with");
             }
         }
 
         return ret;
+    }
+
+    private int logProblemAttachments(TableInfo attachments, String flagColumn, String description, String consequence)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(flagColumn), true);
+        List<Orphan> problems = new TableSelector(attachments, new CsvSet("Name, ParentType"), filter, null).getArrayList(Orphan.class);
+
+        if (!problems.isEmpty())
+        {
+            LOG.error("Found {}, {}.", StringUtilsLabKey.pluralize(problems.size(), description), consequence);
+            String message = problems.size() > MAX_ORPHANS_TO_LOG ? "The first " + MAX_ORPHANS_TO_LOG : "All";
+            LOG.error("{} are listed below:\n{}", message, problems.stream().limit(MAX_ORPHANS_TO_LOG).map(Record::toString).collect(Collectors.joining("\n")));
+        }
+
+        return problems.size();
     }
 
     record OrphanedAttachment(String container, String parent, String parentType, String name)
