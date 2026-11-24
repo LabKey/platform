@@ -18,7 +18,6 @@ package org.labkey.test.tests.study;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.util.LogMethod;
@@ -28,9 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
-
-import static org.junit.Assert.fail;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
@@ -39,28 +35,6 @@ public class SCHARPStudyTest extends BaseWebDriverTest
     public static final String PROJECT_NAME="SCHARP Study Test";
 
     private final File _studyDir = TestFileUtils.getSampleData("studies/studyshell");
-
-    protected static class StatusChecker implements Supplier<Boolean>
-    {
-        private final BaseWebDriverTest _test;
-        private final String _waitForMessage;
-        private final Locator _loc = Locator.id("vq-status");
-
-        public StatusChecker(String waitForMessage, BaseWebDriverTest test)
-        {
-            _test = test;
-            _waitForMessage = waitForMessage;
-        }
-
-        @Override
-        public Boolean get()
-        {
-            String curMessage = _test.getText(_loc);
-            if (null == curMessage)
-                fail("Can't get message in locator " + _loc.toString());
-            return (curMessage.startsWith(_waitForMessage));
-        }
-    }
 
     @Test
     public void testSteps() throws IOException
