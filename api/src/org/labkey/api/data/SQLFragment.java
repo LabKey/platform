@@ -584,16 +584,22 @@ public class SQLFragment
     /** Appends one identifier or a dotted sequence of them (e.g. a TableInfo select name) */
     public SQLFragment appendIdentifier(CharSequence charseq)
     {
+        getStringBuilder().append(checkIdentifier(charseq));
+        return this;
+    }
+
+    // Returns the stripped identifier, or "" for null or blank. A CodeQL sql-injection barrier in LabKey/.github's java-models pack depends on this returning the checked value.
+    private static String checkIdentifier(@Nullable CharSequence charseq)
+    {
         if (null == charseq)
-            return this;
+            return "";
         String identifier = charseq.toString().strip();
         // callers pass "" to mean no alias, e.g. getFromSQL("")
         if (identifier.isEmpty())
-            return this;
+            return "";
         if (!isTableAliasPlaceholder(identifier) && countIdentifierParts(identifier) < 1)
             throw new IllegalArgumentException("SQLFragment.appendIdentifier() value is not a well-formed identifier or dotted identifier sequence: " + identifier);
-        getStringBuilder().append(identifier);
-        return this;
+        return identifier;
     }
 
     // ExprColumn replaces STR_TABLE_ALIAS later, and lookups derive aliases from it (e.g. LookupColumn.getTableAlias())
@@ -603,7 +609,7 @@ public class SQLFragment
                 .allMatch(c -> Character.isLetterOrDigit(c) || c == '_' || c == '$');
     }
 
-    // Unlike appendIdentifier(), a blank part is an error since it would leave a dangling dot
+    // Unlike appendIdentifier(), a blank part is an error since it would leave a dangling dot. Also a CodeQL barrier; see checkIdentifier().
     private static String requireIdentifierPart(CharSequence part, boolean first)
     {
         String s = null == part ? "" : part.toString().strip();
