@@ -1803,20 +1803,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     /**
-     * Queue a background build of every sample type's materialized table, smallest first: builds share one runner
-     * thread, so a large type queued early would delay every other type.
-     * @return the LSIDs of every sample type, in queue order
+     * Queue a background build of every sample type's materialized table.
+     * @return the LSIDs of every sample type
      */
     public static List<String> materializeAllAsync()
     {
-        ExperimentService svc = ExperimentService.get();
-        SQLFragment sql = SQLFragment.unsafe("SELECT st.LSID FROM ").append(svc.getTinfoSampleType(), "st")
-            .unsafeAppend(" ORDER BY (SELECT COUNT(*) FROM ").append(svc.getTinfoMaterial(), "m").unsafeAppend(" WHERE m.CpasType = st.LSID)");
-        List<String> lsids = new SqlSelector(svc.getSchema(), sql).getArrayList(String.class);
+        List<String> lsids = new TableSelector(ExperimentService.get().getTinfoSampleType(), Set.of("LSID"), null, null).getArrayList(String.class);
         _log.info("Queueing materialization of {} sample types", lsids.size());
 
         for (String lsid : lsids)
         {
+            if (ContextListener.isShuttingDown())
+                break;
+
             try
             {
                 ExpSampleType st = SampleTypeService.get().getSampleType(lsid);
@@ -1910,6 +1909,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             super(prefix, scope, select, uptodate, supplier, indexes, deferredIndexes, maxTimeToCache, isSelectIntoSql, unlogged, traceLabel);
             this._lsid = lsid;
             this._updateColumns = updateColumns;
+        }
+
+        @Override
+        protected boolean isObsolete()
+        {
+            return _materializedQueries.peek(_lsid) != this;
         }
 
         @Override
@@ -3180,13 +3185,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         @Test
         public void testMaterializeAllAsync() throws Exception
         {
-            ExpSampleType large = createSampleType("IncrUpdWarmLarge");
-            insertRoots(large, "R1", "R2", "R3");
-            ExpSampleType small = createSampleType("IncrUpdWarmSmall");
-            insertRoots(small, "R1");
+            ExpSampleType first = createSampleType("IncrUpdWarmFirst");
+            insertRoots(first, "R1", "R2");
+            ExpSampleType second = createSampleType("IncrUpdWarmSecond");
+            insertRoots(second, "R1");
 
             List<_MaterializedQueryHelper> mqhs = new ArrayList<>();
-            for (ExpSampleType st : List.of(large, small))
+            for (ExpSampleType st : List.of(first, second))
             {
                 _materializedQueries.remove(st.getLSID());
                 _MaterializedQueryHelper mqh = getSamplesTable(st).getOrCreateMQH();
@@ -3195,14 +3200,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
 
             List<String> queued = materializeAllAsync();
-            assertTrue("Smaller sample type should be queued first: " + queued, queued.indexOf(small.getLSID()) < queued.indexOf(large.getLSID()));
+            assertTrue("Both sample types should be queued: " + queued, queued.containsAll(List.of(first.getLSID(), second.getLSID())));
 
             // Every sample type on the server shares the one runner thread, so allow for the others queued ahead
             long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(60);
             while (mqhs.stream().anyMatch(mqh -> null == mqh.tryGetFromSqlIfLoaded(null)) && System.currentTimeMillis() < deadline)
                 Thread.sleep(100);
 
-            for (ExpSampleType st : List.of(large, small))
+            for (ExpSampleType st : List.of(first, second))
             {
                 ExpMaterialTableImpl table = getSamplesTable(st);
                 assertNotNull(st.getName() + " was not materialized in the background", table.getOrCreateMQH().tryGetFromSqlIfLoaded(null));
