@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.QueryLogging;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -32,7 +31,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.suggestions.SuggestionColumn;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -74,15 +72,22 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
             byFieldKey.put(fieldKey, new Aggregates(min, max, distinct));
         }
 
-        Map<String, List<Aggregate.Result>> results = new TableSelector(table, columns, filter, null)
-            .setNamedParameters(parameters)
-            .setQueryTimeout(QUERY_TIMEOUT_SECONDS)
-            .getAggregates(aggregates);
+        TableSelector.PreparedAggregates prepared;
+        // Parallel loads share this table; hold it only while generating SQL so scans run concurrently
+        // noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (table)
+        {
+            prepared = new TableSelector(table, columns, filter, null)
+                .setNamedParameters(parameters)
+                .setQueryTimeout(QUERY_TIMEOUT_SECONDS)
+                .prepareAggregates(aggregates);
+        }
+        Map<FieldKey, List<Aggregate.Result>> results = prepared.execute();
 
         Map<FieldKey, ColumnFact.Stats> stats = new HashMap<>();
         byFieldKey.forEach((fieldKey, aggs) -> {
             // Absent when the aggregate doesn't apply to the column's type; the caller records that as a failure
-            List<Aggregate.Result> columnResults = results.get(fieldKey.toString());
+            List<Aggregate.Result> columnResults = results.get(fieldKey);
             if (columnResults == null)
                 return;
             Object rawMin = getValue(columnResults, aggs.min());
@@ -99,12 +104,18 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
     {
         QueryService service = QueryService.get();
         QueryLogging queryLogging = new QueryLogging();
-        SQLFragment selectSql = service.getSelectBuilder(table)
-            .columns(List.of(column))
-            .filter(filter)
-            .queryLogging(queryLogging)
-            .distinct(true)
-            .buildSqlFragment();
+        SQLFragment selectSql;
+        // Parallel loads share this table
+        // noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (table)
+        {
+            selectSql = service.getSelectBuilder(table)
+                .columns(column)
+                .filter(filter)
+                .queryLogging(queryLogging)
+                .distinct(true)
+                .buildSqlFragment();
+        }
 
         SQLFragment sql = SQLFragment.unsafe("SELECT S.").appendIdentifier(column.getAlias()).unsafeAppend(" AS value FROM (")
             .append(selectSql)
@@ -133,27 +144,29 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
         Map<FieldKey, Set<String>> shapes = new LinkedHashMap<>();
         columns.forEach(column -> shapes.put(column.getFieldKey(), new LinkedHashSet<>()));
 
-        TableSelector selector = new TableSelector(table, columns, filter, getNewestFirstSort(table))
-            .setMaxRows(SHAPE_SAMPLE_SIZE)
-            .setNamedParameters(parameters)
-            .setQueryTimeout(QUERY_TIMEOUT_SECONDS);
-        try (Results results = selector.getResults(false))
+        Sort sort = getNewestFirstSort(table);
+        SqlSelector selector;
+        // Parallel loads share this table; hold it only while generating SQL so scans run concurrently
+        // noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (table)
         {
-            while (results.next())
+            selector = QueryService.get().getSelectBuilder(table)
+                .columns(columns)
+                .filter(filter)
+                .sort(sort)
+                .maxRows(SHAPE_SAMPLE_SIZE)
+                .forceSort(true)
+                .buildSqlSelector(parameters);
+        }
+        selector.setQueryTimeout(QUERY_TIMEOUT_SECONDS).forEach(rs -> {
+            for (ColumnInfo column : columns)
             {
-                for (Map.Entry<FieldKey, Set<String>> entry : shapes.entrySet())
-                {
-                    Object value = results.getObject(entry.getKey());
-                    String text = value == null ? null : value.toString();
-                    if (text != null && !text.isBlank() && text.length() <= MAX_VALUE_LENGTH)
-                        entry.getValue().add(FilterSuggestionRanker.getValueShape(text));
-                }
+                Object value = rs.getObject(column.findColumn(rs));
+                String text = value == null ? null : value.toString();
+                if (text != null && !text.isBlank() && text.length() <= MAX_VALUE_LENGTH)
+                    shapes.get(column.getFieldKey()).add(FilterSuggestionRanker.getValueShape(text));
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        });
 
         Map<FieldKey, ColumnFact.Shapes> result = new HashMap<>();
         shapes.forEach((fieldKey, columnShapes) -> result.put(fieldKey, new ColumnFact.Shapes(List.copyOf(columnShapes))));

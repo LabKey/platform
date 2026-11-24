@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.exception.OutOfRangeException;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -30,13 +31,16 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -66,27 +70,39 @@ import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.api.util.StringUtilsLabKey.append;
 
 public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements ExpMaterial
 {
+    private static final Logger LOG = LogHelper.getLogger(ExpMaterialImpl.class, "Sample search indexing");
+
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Materials/Samples", false);
     public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory("media", "Media Samples", false){
         @Override
@@ -293,15 +309,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @NotNull
     public Collection<String> getAliases()
     {
-        TableInfo mapTi = ExperimentService.get().getTinfoMaterialAliasMap();
-        TableInfo ti = ExperimentService.get().getTinfoAlias();
-        SQLFragment sql = new SQLFragment()
-                .unsafeAppend("SELECT a.name FROM ").append(mapTi, "m")
-                .unsafeAppend(" JOIN ").append(ti, "a")
-                .unsafeAppend(" ON m.alias = a.RowId WHERE m.lsid = ? ");
-        sql.add(getLSID());
-        ArrayList<String> aliases = new SqlSelector(mapTi.getSchema(), sql).getArrayList(String.class);
-        return Collections.unmodifiableList(aliases);
+        return Collections.unmodifiableList(getAliases(List.of(getLSID())).getOrDefault(getLSID(), List.of()));
     }
 
     /** Get the ObjectId of the ExpSampleType that this ExpMaterial belongs to. */
@@ -395,18 +403,52 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return SCHEMA_SAMPLES;
     }
 
+    /** Study specimens and bogus samples created from some plate assays (Issue 46037) aren't indexed as samples */
+    private boolean isIndexable()
+    {
+        return !StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(getCpasType()) && getContainer() != null;
+    }
+
     @Override
     public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo tableInfo)
     {
-        // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
-        // from being indexed as samples
-        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) || ExpMaterial.DEFAULT_CPAS_TYPE.equals(getCpasType()))
-            return null;
+        Map<TableCacheKey, TableInfo> tableCache = new HashMap<>();
+        ExpSampleTypeImpl st = getSampleType();
+        if (tableInfo != null && st != null && getContainer() != null)
+            tableCache.put(new TableCacheKey(getContainer(), st), tableInfo);
 
-        Container container = getContainer();
-        if (container == null)
+        List<WebdavResource> docs = createIndexDocuments(List.of(_object), tableCache);
+        if (docs.isEmpty())
             return null;
+        return docs.getFirst();
+    }
 
+    /** Per (container, sample type) state shared by every sample document in an indexing group */
+    record SampleTypeDocContext(@NotNull Container container, @Nullable ExpSampleTypeImpl sampleType, @Nullable ExpMaterialTableImpl table, @Nullable String navtrail)
+    {
+        static SampleTypeDocContext create(@NotNull Container container, @Nullable ExpSampleTypeImpl st, @Nullable TableInfo tableInfo)
+        {
+            if (st == null)
+                return new SampleTypeDocContext(container, null, null, null);
+
+            if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
+                throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", st.getName(), ExpMaterialTableImpl.class.getName()));
+
+            if (!expMaterialTable.getSampleType().equals(st))
+                throw new IllegalArgumentException(String.format("Sample type table mismatch for %s", st.getName()));
+
+            ActionURL show = new ActionURL(ExperimentController.ShowSampleTypeAction.class, container).addParameter("rowId", st.getRowId());
+            NavTree t = new NavTree("SampleType - " + st.getName(), show);
+            String navtrail = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
+            return new SampleTypeDocContext(container, st, expMaterialTable, navtrail);
+        }
+    }
+
+    /** Assembles the document from values already read, so it runs no queries of its own */
+    private @NotNull WebdavResource createIndexDocument(@NotNull SampleTypeDocContext ctx, @Nullable IndexValues values, @NotNull Collection<String> aliases,
+                                                       @Nullable String runName, @Nullable String protocolName, @Nullable String applicationName)
+    {
+        Container container = ctx.container();
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
         url.setExtraPath(container.getId());
 
@@ -420,7 +462,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         // Add aliases in parentheses in the title
         StringBuilder title = new StringBuilder("Sample - " + getName());
-        Collection<String> aliases = this.getAliases();
         if (!aliases.isEmpty())
         {
             title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
@@ -429,46 +470,37 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample");      // Treat the word "Sample" a low priority keyword
 
         StringBuilder body = new StringBuilder();
 
         // Append the interesting standard properties: "Source Experiment Run", "Source Protocol", and "Source Protocol Application"
         append(body, getDescription());
-        append(body, getRun());
-        append(body, getSourceProtocol());
-        append(body, getSourceApplication());
+        append(body, runName);
+        append(body, protocolName);
+        append(body, applicationName);
 
         // Add all String and Integer custom property descriptions and values to body
         JSONObject jsonData = new JSONObject();
-        ExpSampleType st = getSampleType();
-        if (null != st)
-        {
-            if (tableInfo == null)
-                tableInfo = getSearchTable(container, st);
-
-            if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
-                throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", st.getName(), ExpMaterialTableImpl.class.getName()));
-
-            if (!expMaterialTable.getSampleType().equals(st))
-                throw new IllegalArgumentException(String.format("Sample type table mismatch for %s", st.getName()));
-
-            getCustomIndexValues(props, expMaterialTable, identifiersHi, keyworksHi, jsonData);
-        }
+        Set<String> identifiersMed = new HashSet<>();
+        Set<String> identifiersLo = new HashSet<>();
+        Set<String> keywordsMed = new HashSet<>();
+        Set<String> keywordsLo = new HashSet<>();
+        keywordsLo.add("Sample"); // Treat the word "Sample" a low priority keyword
+        if (values != null)
+            values.addTo(identifiersHi, identifiersMed, identifiersLo, keyworksHi, keywordsMed, keywordsLo, jsonData);
+        putIndexProps(props, identifiersHi, identifiersMed, identifiersLo, keyworksHi, keywordsMed, keywordsLo);
 
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
+        ExpSampleTypeImpl st = ctx.sampleType();
         if (null != st)
         {
             if (st.isMedia())
                 props.put(SearchService.PROPERTY.categories.toString(), mediaSearchCategory.toString());
-            String sampleTypeName = st.getName();
-            ActionURL show = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer()).addParameter("rowId", st.getRowId());
-            NavTree t = new NavTree("SampleType - " + sampleTypeName, show);
-            String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
-            props.put(SearchService.PROPERTY.navtrail.toString(), nav);
+            props.put(SearchService.PROPERTY.navtrail.toString(), ctx.navtrail());
 
             // Add sample type name to body, if it's not already present
+            String sampleTypeName = st.getName();
             if (-1 == body.indexOf(sampleTypeName))
                 append(body, sampleTypeName);
         }
@@ -507,16 +539,286 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         };
     }
 
-    // Get all text and int strings from the material properties for indexing
-    private void getCustomIndexValues(
-            Map<String, Object> props,
-            @NotNull ExpMaterialTableImpl table,
-            Set<String> identifiersHi,
-            Set<String> keywordsHi,
-            JSONObject jsonData
-    )
+    /**
+     * Indexes a batch of samples with a few queries per (container, sample type) group instead of several per sample.
+     * Pass at most {@link SearchService#INDEXING_LIMIT} samples.
+     */
+    static void indexBatch(@NotNull SearchService.TaskIndexingQueue queue, @NotNull List<Material> batch, @NotNull Map<TableCacheKey, TableInfo> tableCache)
     {
-        processIndexValues(props, table, identifiersHi, new HashSet<>(), new HashSet<>(), keywordsHi, new HashSet<>(), new HashSet<>(), jsonData);
+        List<WebdavResource> docs = ExperimentServiceImpl.getExpSchema().getScope().executeWithRetryReadOnly(_ -> createIndexDocuments(batch, tableCache));
+        docs.forEach(queue::addResource);
+    }
+
+    private record GroupKey(String containerId, String cpasType) {}
+
+    /** Omits samples deleted since {@code batch} was read */
+    static @NotNull List<WebdavResource> createIndexDocuments(@NotNull List<Material> batch, @NotNull Map<TableCacheKey, TableInfo> tableCache)
+    {
+        List<ExpMaterialImpl> materials = batch.stream().map(ExpMaterialImpl::new).filter(ExpMaterialImpl::isIndexable).toList();
+        if (materials.isEmpty())
+            return List.of();
+
+        DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
+        // Holding the thread's connection lets every query below reuse it instead of borrowing and validating one per query
+        try (Connection ignored = scope.getConnection())
+        {
+            Map<String, List<String>> aliases = getAliases(materials.stream().map(ExpMaterialImpl::getLSID).toList());
+            Map<Long, String> runNames = getRunNames(materials.stream().map(ExpMaterialImpl::getRunId).filter(Objects::nonNull).collect(Collectors.toSet()));
+            Map<Long, ApplicationNames> apps = getApplicationNames(materials.stream().map(m -> m._object.getSourceApplicationId()).filter(Objects::nonNull).collect(Collectors.toSet()));
+
+            Map<GroupKey, List<ExpMaterialImpl>> groups = materials.stream()
+                    .collect(Collectors.groupingBy(m -> new GroupKey(m.getContainer().getId(), m.getCpasType()), LinkedHashMap::new, Collectors.toList()));
+
+            List<WebdavResource> docs = new ArrayList<>(materials.size());
+            for (List<ExpMaterialImpl> group : groups.values())
+            {
+                try
+                {
+                    createGroupIndexDocuments(group, tableCache, aliases, runNames, apps, docs);
+                }
+                catch (RuntimeException e)
+                {
+                    // Deliberately broad: whatever breaks one sample type's documents must not cost the rest of the batch theirs
+                    throwIfRetryableOrInTransaction(e);
+                    ExpMaterialImpl first = group.getFirst();
+                    String typeName = first.getCpasType();
+                    ExpSampleTypeImpl st = first.getSampleType();
+                    if (st != null)
+                        typeName = st.getName();
+                    LOG.warn("Failed to index {} samples of type {} in {}", group.size(), typeName, first.getContainer().getPath(), e);
+                }
+            }
+            return docs;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    private static void createGroupIndexDocuments(List<ExpMaterialImpl> group, Map<TableCacheKey, TableInfo> tableCache, Map<String, List<String>> aliases,
+                                                  Map<Long, String> runNames, Map<Long, ApplicationNames> apps, List<WebdavResource> docs)
+    {
+        ExpMaterialImpl first = group.getFirst();
+        Container container = first.getContainer();
+        ExpSampleTypeImpl st = first.getSampleType();
+        TableInfo table = st == null ? null : tableCache.computeIfAbsent(new TableCacheKey(container, st), _ -> getSearchTable(SCHEMA_SAMPLES, container, st));
+        SampleTypeDocContext ctx = SampleTypeDocContext.create(container, st, table);
+        Map<Long, IndexValues> values = getGroupIndexValues(ctx, group);
+
+        List<WebdavResource> groupDocs = new ArrayList<>(group.size());
+        int skipped = 0;
+        for (ExpMaterialImpl m : group)
+        {
+            IndexValues v = values.get(m.getRowId());
+            // Deleted, or not yet in the type's cached copy of its rows; left unrecorded, so it's indexed again later
+            if (ctx.table() != null && v == null)
+            {
+                skipped++;
+                continue;
+            }
+
+            String runName = null;
+            if (m.getRunId() != null)
+                runName = runNames.get(m.getRunId());
+            ApplicationNames app = ApplicationNames.NONE;
+            if (m._object.getSourceApplicationId() != null)
+                app = apps.getOrDefault(m._object.getSourceApplicationId(), ApplicationNames.NONE);
+            groupDocs.add(m.createIndexDocument(ctx, v, aliases.getOrDefault(m.getLSID(), List.of()), runName, app.protocolName(), app.applicationName()));
+        }
+        if (skipped > 0)
+            LOG.debug("Skipped {} samples of type {} in {} that its query table didn't return", skipped, ctx.table().getName(), container.getPath());
+        docs.addAll(groupDocs);
+    }
+
+    /**
+     * Values for each sample of the group that the table returns. A sample whose values can't be read gets empty ones
+     * if it still exists.
+     */
+    private static @NotNull Map<Long, IndexValues> getGroupIndexValues(@NotNull SampleTypeDocContext ctx, @NotNull List<ExpMaterialImpl> group)
+    {
+        ExpMaterialTableImpl table = ctx.table();
+        if (table == null)
+            return Map.of();
+
+        Set<Long> unreadable = new HashSet<>();
+        List<Long> rowIds = group.stream().map(ExpMaterialImpl::getRowId).toList();
+        Map<Long, IndexValues> values;
+        try
+        {
+            values = new HashMap<>(getIndexValues(table, rowIds));
+        }
+        catch (SQLException | DataAccessException | RuntimeSQLException | ConversionException e)
+        {
+            // Either an expression that fails on some rows' values, e.g. a calculated field casting text to an integer, or a domain out of sync with its storage table
+            throwIfRetryableOrInTransaction(e);
+            values = readOneAtATime(table, rowIds, unreadable);
+            LOG.warn("Failed to read search values for {} samples of type {} in {} together; {} of them can't be read", rowIds.size(), table.getName(), ctx.container().getPath(), unreadable.size(), e);
+        }
+
+        if (!unreadable.isEmpty())
+        {
+            // Only samples that still exist get a document without values
+            TableInfo materialTi = ExperimentServiceImpl.get().getTinfoMaterial();
+            unreadable.retainAll(new TableSelector(materialTi, Collections.singleton(ExpMaterialTable.Column.RowId.name()),
+                    new SimpleFilter().addInClause(ExpMaterialTable.Column.RowId.fieldKey(), unreadable), null).getCollection(Long.class));
+            for (Long rowId : unreadable)
+                values.put(rowId, new IndexValues());
+        }
+        return values;
+    }
+
+    private static final long NO_ROW_ID = -1;
+
+    /** Retries each sample on its own, so a value that breaks the group query costs only its own sample's values */
+    private static @NotNull Map<Long, IndexValues> readOneAtATime(@NotNull ExpMaterialTableImpl table, @NotNull List<Long> rowIds, @NotNull Set<Long> unreadable)
+    {
+        Map<Long, IndexValues> values = new HashMap<>();
+        // A query that fails without reading a row means the table itself is broken, e.g. out of sync with its storage, so every one-row query would fail too
+        try
+        {
+            getIndexValues(table, List.of(NO_ROW_ID));
+        }
+        catch (SQLException | DataAccessException | RuntimeSQLException | ConversionException e)
+        {
+            throwIfRetryableOrInTransaction(e);
+            unreadable.addAll(rowIds);
+            return values;
+        }
+
+        for (Long rowId : rowIds)
+        {
+            try
+            {
+                values.putAll(getIndexValues(table, List.of(rowId)));
+            }
+            catch (SQLException | DataAccessException | RuntimeSQLException | ConversionException e)
+            {
+                throwIfRetryableOrInTransaction(e);
+                unreadable.add(rowId);
+            }
+        }
+        return values;
+    }
+
+    /** Deadlocks go to {@link DbScope#executeWithRetryReadOnly}'s retry, and inside a transaction a failed statement aborts it, so nothing later could run */
+    private static void throwIfRetryableOrInTransaction(Exception e)
+    {
+        RuntimeException rx;
+        if (e instanceof RuntimeException r)
+            rx = r;
+        else
+            rx = new RuntimeSQLException((SQLException) e);
+
+        boolean retryable = rx instanceof PessimisticLockingFailureException || (rx instanceof RuntimeSQLException sqlx && SqlDialect.isTransactionException(sqlx));
+        if (retryable || ExperimentServiceImpl.getExpSchema().getScope().isTransactionActive())
+            throw rx;
+    }
+
+    private static @NotNull Map<String, List<String>> getAliases(@NotNull Collection<String> lsids)
+    {
+        TableInfo mapTi = ExperimentService.get().getTinfoMaterialAliasMap();
+        SQLFragment sql = new SQLFragment()
+                .unsafeAppend("SELECT m.lsid, a.name FROM ").append(mapTi, "m")
+                .unsafeAppend(" JOIN ").append(ExperimentService.get().getTinfoAlias(), "a")
+                .unsafeAppend(" ON m.alias = a.RowId WHERE ").appendInClause("m.lsid", lsids, mapTi.getSqlDialect());
+        Map<String, List<String>> aliases = new HashMap<>();
+        new SqlSelector(mapTi.getSchema(), sql).forEach(rs -> aliases.computeIfAbsent(rs.getString(1), _ -> new ArrayList<>()).add(rs.getString(2)));
+        return aliases;
+    }
+
+    private static @NotNull Map<Long, String> getRunNames(@NotNull Collection<Long> rowIds)
+    {
+        if (rowIds.isEmpty())
+            return Map.of();
+
+        TableInfo runTi = ExperimentServiceImpl.get().getTinfoExperimentRun();
+        SQLFragment sql = new SQLFragment()
+                .unsafeAppend("SELECT r.RowId, r.Name FROM ").append(runTi, "r")
+                .unsafeAppend(" WHERE ").appendInClause("r.RowId", rowIds, runTi.getSqlDialect());
+        Map<Long, String> names = new HashMap<>();
+        new SqlSelector(runTi.getSchema(), sql).forEach(rs -> names.put(rs.getLong(1), rs.getString(2)));
+        return names;
+    }
+
+    private record ApplicationNames(@Nullable String applicationName, @Nullable String protocolName)
+    {
+        static final ApplicationNames NONE = new ApplicationNames(null, null);
+    }
+
+    private static @NotNull Map<Long, ApplicationNames> getApplicationNames(@NotNull Collection<Long> rowIds)
+    {
+        if (rowIds.isEmpty())
+            return Map.of();
+
+        TableInfo appTi = ExperimentServiceImpl.get().getTinfoProtocolApplication();
+        SQLFragment sql = new SQLFragment()
+                .unsafeAppend("SELECT pa.RowId, pa.Name, p.Name FROM ").append(appTi, "pa")
+                .unsafeAppend(" LEFT JOIN ").append(ExperimentServiceImpl.get().getTinfoProtocol(), "p")
+                .unsafeAppend(" ON p.LSID = pa.ProtocolLSID WHERE ").appendInClause("pa.RowId", rowIds, appTi.getSqlDialect());
+        Map<Long, ApplicationNames> names = new HashMap<>();
+        new SqlSelector(appTi.getSchema(), sql).forEach(rs -> names.put(rs.getLong(1), new ApplicationNames(rs.getString(2), rs.getString(3))));
+        return names;
+    }
+
+    /** The exp.material columns a sample search document reads; ordered, since a TableSelector reads a ResultSet only over an ordered column set */
+    static final LinkedHashSet<String> INDEX_COLUMNS = new LinkedHashSet<>(List.of(
+            ExpMaterialTable.Column.RowId.name(),
+            ExpMaterialTable.Column.LSID.name(),
+            ExpMaterialTable.Column.Name.name(),
+            ExpMaterialTable.Column.CpasType.name(),
+            "Container", // The query table exposes this as Folder
+            ExpMaterialTable.Column.Description.name(),
+            ExpMaterialTable.Column.RunId.name(),
+            ExpMaterialTable.Column.SourceApplicationId.name(),
+            ExpMaterialTable.Column.Created.name(),
+            ExpMaterialTable.Column.CreatedBy.name(),
+            ExpMaterialTable.Column.Modified.name(),
+            ExpMaterialTable.Column.ModifiedBy.name()));
+
+    /** {@link #INDEX_COLUMNS} qualified by {@code alias}, for a select list read by {@link #readIndexMaterials} */
+    static @NotNull String getIndexColumnsSelectList(@NotNull String alias)
+    {
+        return INDEX_COLUMNS.stream().map(c -> alias + "." + c).collect(Collectors.joining(", "));
+    }
+
+    /** Fills only {@link #INDEX_COLUMNS}, by hand, since bean reflection over every column is slow at indexing volumes */
+    static @NotNull List<Material> readIndexMaterials(@NotNull Selector selector)
+    {
+        List<Material> materials = new ArrayList<>();
+        selector.forEach(rs -> {
+            Material m = new Material();
+            m.setRowId(rs.getLong(ExpMaterialTable.Column.RowId.name()));
+            m.setLSID(rs.getString(ExpMaterialTable.Column.LSID.name()));
+            m.setName(rs.getString(ExpMaterialTable.Column.Name.name()));
+            m.setCpasType(rs.getString(ExpMaterialTable.Column.CpasType.name()));
+            m.setContainer(ContainerManager.getForId(rs.getString("Container")));
+            m.setDescription(rs.getString(ExpMaterialTable.Column.Description.name()));
+            m.setRunId(getLong(rs, ExpMaterialTable.Column.RunId.name()));
+            m.setSourceApplicationId(getLong(rs, ExpMaterialTable.Column.SourceApplicationId.name()));
+            m.setCreated(rs.getTimestamp(ExpMaterialTable.Column.Created.name()));
+            m.setCreatedBy(getInteger(rs, ExpMaterialTable.Column.CreatedBy.name()));
+            m.setModified(rs.getTimestamp(ExpMaterialTable.Column.Modified.name()));
+            m.setModifiedBy(getInteger(rs, ExpMaterialTable.Column.ModifiedBy.name()));
+            materials.add(m);
+        });
+        return materials;
+    }
+
+    private static @Nullable Long getLong(ResultSet rs, String column) throws SQLException
+    {
+        long value = rs.getLong(column);
+        if (rs.wasNull())
+            return null;
+        return value;
+    }
+
+    private static @Nullable Integer getInteger(ResultSet rs, String column) throws SQLException
+    {
+        int value = rs.getInt(column);
+        if (rs.wasNull())
+            return null;
+        return value;
     }
 
     static final List<Pair<Long,Long>> updateLastIndexedList = new ArrayList<>();
