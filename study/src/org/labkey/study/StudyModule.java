@@ -34,6 +34,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -72,6 +73,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
@@ -265,6 +267,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
         PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new LocationDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
         PropertyService.get().registerDomainKind(new StudyProductDomainKind());
@@ -438,6 +441,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
                 metrics.put("datasetsLinkedFromAssays", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class), "Datasets linked from assay results; same value as linkedAssayDatasetCount");
                 metrics.put("datasetsLinkedFromSamples", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class), "Datasets linked from sample types; same value as linkedSampleTypeDatasetCount");
+
+                // Counted here, not in the specimen module, to find servers that hold specimen data without deploying that module
+                SQLFragment specimenVials = new SQLFragment("FROM exp.Material WHERE CpasType = ? OR CpasType IN (SELECT LSID FROM exp.MaterialSource WHERE Name = ?)",
+                    StudyService.SPECIMEN_NAMESPACE_PREFIX, SpecimenService.SAMPLE_TYPE_NAME);
+                metrics.put("specimenContainerCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT COUNT(DISTINCT Container) ").append(specimenVials)).getObject(Long.class), "Containers holding imported specimen vials, whether or not the specimen module is deployed");
+                metrics.put("specimenVialCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT COUNT(*) ").append(specimenVials)).getObject(Long.class), "Imported specimen vials across the server, whether or not the specimen module is deployed");
 
                 metrics.put("assayScheduleCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.AssaySpecimen").getObject(Long.class), "Containers with at least one assay schedule entry");
 
@@ -827,7 +836,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             List<String> metricNames = List.of(
                 "studyCount",
                 "datasetCount",
-                "timepointType"
+                "timepointType",
+                "specimenContainerCount",
+                "specimenVialCount"
             );
             assertTrue("Mothership report missing expected metrics",
                     UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.ON, MODULE_NAME)
