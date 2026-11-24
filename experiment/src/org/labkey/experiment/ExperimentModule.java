@@ -92,6 +92,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
@@ -99,6 +100,7 @@ import org.labkey.api.usageMetrics.UsageMetricGroup;
 import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -289,6 +291,13 @@ public class ExperimentModule extends SpringModule
                 "If a column name contains a \"__<unit>\" suffix, this feature allows for testing it as a Quantity display column", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS, "SQL syntax: 'FROM EXPANCESTORS()'",
                 "Support for querying lineage of experiment objects", false, true);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(ExpMaterialTableImpl.MATERIALIZE_AT_STARTUP_FLAG, "Rebuild sample type caches at startup",
+                "Rebuild the cached copy of every sample type in the background after startup and when this is enabled, so the first reads of large sample types after a restart are fast. Adds database load for a few minutes after each restart.",
+                false, false, OptionalFeatureService.FeatureType.Optional));
+        OptionalFeatureService.get().addFeatureListener(ExpMaterialTableImpl.MATERIALIZE_AT_STARTUP_FLAG, (_, enabled) -> {
+            if (enabled)
+                JobRunner.getDefault().execute(ExpMaterialTableImpl::materializeAllAsync);
+        });
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
@@ -511,6 +520,13 @@ public class ExperimentModule extends SpringModule
                 return searchJsonMap;
             }
         });
+    }
+
+    @Override
+    public void startBackgroundThreads()
+    {
+        if (OptionalFeatureService.get().isFeatureEnabled(ExpMaterialTableImpl.MATERIALIZE_AT_STARTUP_FLAG))
+            JobRunner.getDefault().execute(ExpMaterialTableImpl::materializeAllAsync);
     }
 
     @Override
