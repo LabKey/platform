@@ -22,8 +22,10 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.ZipUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
@@ -36,7 +38,7 @@ public class SCHARPStudyTest extends BaseWebDriverTest
 {
     public static final String PROJECT_NAME="SCHARP Study Test";
 
-    private final File _studyZipFile = TestFileUtils.getSampleData("studies/studyshell.zip");
+    private final File _studyDir = TestFileUtils.getSampleData("studies/studyshell");
 
     protected static class StatusChecker implements Supplier<Boolean>
     {
@@ -61,7 +63,7 @@ public class SCHARPStudyTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testSteps()
+    public void testSteps() throws IOException
     {
         log("creating project...");
         _containerHelper.createProject(PROJECT_NAME, "Study");
@@ -73,13 +75,10 @@ public class SCHARPStudyTest extends BaseWebDriverTest
     }
 
     @LogMethod
-    protected void importStudy()
+    protected void importStudy() throws IOException
     {
-        log("Importing study from " + _studyZipFile + "...");
-        clickButton("Import Study");
-        setFormElement(Locator.name("folderZip"), _studyZipFile);
-        clickButton("Import Study");
-        assertTextNotPresent("This file does not appear to be a valid .zip file");
+        log("Importing study from " + _studyDir + "...");
+        importStudyFromZip(new ZipUtil(_studyDir).tempZip());
 
         waitForPipelineJobsToComplete(1, "Study import", false);
 
