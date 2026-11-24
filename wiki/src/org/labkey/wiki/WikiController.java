@@ -26,15 +26,18 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -111,6 +114,7 @@ import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.view.PermanentRedirectException;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -1944,11 +1948,9 @@ public class WikiController extends SpringActionController
         }
     }
 
-    public static class EditWikiForm
+    public static class EditWikiForm extends ReturnUrlForm
     {
         private String _name;
-        private String _redirect;
-        private String _cancel;
         private String _format;
         private String _defName;
         private boolean _create;
@@ -1968,28 +1970,6 @@ public class WikiController extends SpringActionController
         public void setName(String name)
         {
             _name = name;
-        }
-
-        public String getRedirect()
-        {
-            return _redirect;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setRedirect(String redir)
-        {
-            _redirect = redir;
-        }
-
-        public String getCancel()
-        {
-            return _cancel;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setCancel(String cancel)
-        {
-            _cancel = cancel;
         }
 
         public String getFormat()
@@ -2086,8 +2066,8 @@ public class WikiController extends SpringActionController
                 getContainer(),
                 wiki,
                 curVersion,
-                form.getRedirect(),
-                form.getCancel(),
+                form.getReturnUrlHelper(),
+                form.getCancelActionURL(),
                 form.getFormat(),
                 form.getDefName(),
                 useVisualEditor,
@@ -3117,6 +3097,59 @@ public class WikiController extends SpringActionController
                 .put("body", "<p>" + name + "</p>")
                 .put("rendererType", WikiRendererType.HTML.name())
                 .put("webPartId", webPartId);
+        }
+    }
+
+    // GH Issue 1860 regression test
+    public static class EditWikiFormTestCase extends Assert
+    {
+        private static EditWikiForm bind(Map<String, String> params)
+        {
+            EditWikiForm form = new EditWikiForm();
+            BindException errors = BaseViewAction.defaultBindParameters(form, "form", new MutablePropertyValues(params));
+            assertFalse("Unexpected binding errors: " + errors.getAllErrors(), errors.hasErrors());
+            return form;
+        }
+
+        private static @Nullable String cancelUrl(EditWikiForm form)
+        {
+            return StringUtils.trimToNull(Objects.toString(form.getCancelUrl(), null));
+        }
+
+        private static void assertDropped(String url)
+        {
+            EditWikiForm form = bind(Map.of("returnUrl", url, "cancelUrl", url));
+            assertNull("returnUrl should be dropped: " + url, form.getReturnUrl());
+            assertNull("cancelUrl should be dropped: " + url, cancelUrl(form));
+        }
+
+        @Test
+        public void testUnsafeUrlsDropped()
+        {
+            assertDropped("https://evil.example.com/phish");
+            assertDropped("//evil.example.com/phish");
+            assertDropped("javascript:alert(1)");
+        }
+
+        @Test
+        public void testLocalUrlKept()
+        {
+            String url = "/home/wiki-page.view?name=X";
+            EditWikiForm form = bind(Map.of("returnUrl", url, "cancelUrl", url));
+            assertTrue(Objects.toString(form.getReturnUrl(), "").contains("wiki-page.view"));
+            assertTrue(Objects.toString(cancelUrl(form), "").contains("wiki-page.view"));
+        }
+
+        @Test
+        public void testMissingOrEmptyIsNull()
+        {
+            EditWikiForm missing = bind(Map.of("name", "X"));
+            assertNull(missing.getReturnUrl());
+            assertNull(cancelUrl(missing));
+
+            EditWikiForm empty = bind(Map.of("returnUrl", "", "cancelUrl", ""));
+            assertNull(empty.getReturnUrl());
+            assertNull(cancelUrl(empty));
         }
     }
 
