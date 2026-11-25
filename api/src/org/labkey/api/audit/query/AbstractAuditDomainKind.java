@@ -429,15 +429,19 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
         if (prefix.length() < 12)
             throw new IllegalStateException("Namespace prefix must be unique and longer than this: " + prefix);
 
-        List<String> overlappers = PREFIXES.stream()
-            .filter(p -> p.startsWith(prefix) || prefix.startsWith(p))
-            .map(p -> "\"" + p + "\"")
-            .toList();
+        // Providers initialize concurrently
+        synchronized (PREFIXES)
+        {
+            List<String> overlappers = PREFIXES.stream()
+                .filter(p -> p.startsWith(prefix) || prefix.startsWith(p))
+                .map(p -> "\"" + p + "\"")
+                .toList();
 
-        if (overlappers.isEmpty())
-            PREFIXES.add(prefix);
-        else
-            throw new IllegalStateException("Namespace prefix \"" + prefix + "\" overlaps with " + overlappers);
+            if (overlappers.isEmpty())
+                PREFIXES.add(prefix);
+            else
+                throw new IllegalStateException("Namespace prefix \"" + prefix + "\" overlaps with " + overlappers);
+        }
     }
 
     public static class TestCase extends Assert
