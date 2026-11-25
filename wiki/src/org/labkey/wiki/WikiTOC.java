@@ -133,7 +133,7 @@ public class WikiTOC extends NavTreeMenu
         if (hasInsert)
         {
             ActionURL newPageUrl = new ActionURL(WikiController.EditWikiAction.class, _cToc);
-            newPageUrl.addParameter("cancel", context.getActionURL().getLocalURIString());
+            newPageUrl.addCancelURL(context.getActionURL());
             menu.addChild("New", newPageUrl.getLocalURIString());
         }
         if (hasCopy)

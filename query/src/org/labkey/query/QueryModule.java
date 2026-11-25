@@ -403,6 +403,7 @@ public class QueryModule extends DefaultModule
             ImportRowsTestCase.class,
             QueryController.SaveRowsTestCase.class,
             QueryController.TestCase.class,
+            QueryController.UpdateRowFormTestCase.class,
             QueryServiceImpl.TestCase.class,
             ReportServiceImpl.ScriptAuthorshipTestCase.class,
             ReportsController.ScriptReportAuthorsTestCase.class,

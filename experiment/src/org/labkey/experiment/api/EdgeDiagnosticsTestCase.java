@@ -136,13 +136,13 @@ public class EdgeDiagnosticsTestCase extends Assert
     private static void insertCycleEdges(DbSchema schema, Long idA, Long idB)
     {
         var executor = new SqlExecutor(schema);
-        executor.execute(new SQLFragment("INSERT INTO exp.Edge (FromObjectId, ToObjectId) VALUES (?,?)", idA, idB));
-        executor.execute(new SQLFragment("INSERT INTO exp.Edge (FromObjectId, ToObjectId) VALUES (?,?)", idB, idA));
+        executor.execute(SQLFragment.unsafe("INSERT INTO exp.Edge (FromObjectId, ToObjectId) VALUES (?,?)", idA, idB));
+        executor.execute(SQLFragment.unsafe("INSERT INTO exp.Edge (FromObjectId, ToObjectId) VALUES (?,?)", idB, idA));
     }
 
     private static void deleteCycleEdges(DbSchema schema, Long idA, Long idB)
     {
-        new SqlExecutor(schema).execute(new SQLFragment(
+        new SqlExecutor(schema).execute(SQLFragment.unsafe(
                 "DELETE FROM exp.Edge WHERE (FromObjectId=? AND ToObjectId=?) OR (FromObjectId=? AND ToObjectId=?)",
                 idA, idB, idB, idA));
     }

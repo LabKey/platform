@@ -3025,7 +3025,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (rootPlateSetId != null)
                 sql = sql.unsafeAppend("RootPlateSetId = ?").add(rootPlateSetId);
             if (primaryPlateSetId != null)
-                sql = sql.append(rootPlateSetId != null ? ", " : "").unsafeAppend("PrimaryPlateSetId = ?").add(primaryPlateSetId);
+                sql = sql.unsafeAppend(rootPlateSetId != null ? ", " : "").unsafeAppend("PrimaryPlateSetId = ?").add(primaryPlateSetId);
             sql = sql.unsafeAppend(" WHERE RowId = ?").add(plateSetId);
 
             new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);

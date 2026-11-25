@@ -275,7 +275,8 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
      */
     public static abstract class SecurityEscalationAuditDomainKind extends AbstractAuditDomainKind
     {
-        private static Set<PropertyDescriptor> _fields = null;
+        // Per instance: each subclass's property URIs must come from its own domain URI
+        private Set<PropertyDescriptor> _fields = null;
 
         protected static final String NAMESPACE_PREFIX = "Audit-";
 

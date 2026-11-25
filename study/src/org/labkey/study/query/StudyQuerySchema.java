@@ -34,7 +34,6 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -51,6 +50,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
+import org.labkey.api.study.query.AbstractStudyQuerySchema;
 import org.labkey.api.study.writer.AbstractStudyContext;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.view.ActionURL;
@@ -92,18 +92,12 @@ import static org.labkey.api.specimen.model.SpecimenTablesProvider.DERIVATIVE_TY
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.LOCATION_SPECIMEN_LIST_TABLE_NAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.PRIMARY_TYPE_TABLE_NAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.SIMPLE_SPECIMEN_TABLE_NAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_COMMENTS_TABLE_NAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_DETAIL_TABLE_NAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_EVENT_TABLE_NAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_REQUEST_STATUSES_TABLE_NAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_REQUEST_TABLE_NAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_SUMMARY_TABLE_NAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_VIAL_COUNT_TABLE_NAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME;
-import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIAL_REQUEST_TABLE_NAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIAL_TABLE_NAME;
 
-public class StudyQuerySchema extends UserSchema implements UserSchema.HasContextualRoles, VisualizationSchema
+public class StudyQuerySchema extends AbstractStudyQuerySchema implements VisualizationSchema
 {
     public static final String EXPERIMENTAL_STUDY_SUBSCHEMAS = "StudySubSchemas";
 
@@ -171,7 +165,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
      */
     protected StudyQuerySchema(SchemaKey path, String description, @Nullable StudyImpl study, @NotNull Container c, @NotNull User user, @Nullable Role contextualRole)
     {
-        super(path, description, user, c, StudySchema.getInstance().getSchema(), null);
+        super(path, description, user, c, StudySchema.getInstance().getSchema());
         _study = study;
         if (null != contextualRole && ReaderRole.class != contextualRole.getClass())
             throw new IllegalStateException("Only ReaderRole is currently supported");
@@ -214,7 +208,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (!OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Set.of();
         var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
-        if (SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
+        if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
             ret.add(SPECIMENS_SCHEMA_NAME);
         return ret;
     }
@@ -226,7 +220,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return new DatasetSchema(this);
         if (Strings.CI.equals(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (Strings.CI.equals(SPECIMENS_SCHEMA_NAME, name) && SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
+        if (Strings.CI.equals(SPECIMENS_SCHEMA_NAME, name) && SpecimenManager.get().isSpecimenModuleActive(getContainer()))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
@@ -333,25 +327,18 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
     protected void addSpecimenTables(Set<String> names)
     {
-        if (SpecimenManager.get().areSpecimenTablesViewable(getContainer()))
+        if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
         {
-            names.add(SPECIMEN_EVENT_TABLE_NAME);
             names.add(SPECIMEN_DETAIL_TABLE_NAME);
             names.add(SPECIMEN_SUMMARY_TABLE_NAME);
-            names.add(SPECIMEN_VIAL_COUNT_TABLE_NAME);
             names.add(SIMPLE_SPECIMEN_TABLE_NAME);
-            names.add(SPECIMEN_REQUEST_TABLE_NAME);
-            names.add(SPECIMEN_REQUEST_STATUSES_TABLE_NAME);
-            names.add(VIAL_REQUEST_TABLE_NAME);
             names.add(ADDITIVE_TYPE_TABLE_NAME);
             names.add(DERIVATIVE_TYPE_TABLE_NAME);
             names.add(PRIMARY_TYPE_TABLE_NAME);
-            names.add(SPECIMEN_COMMENTS_TABLE_NAME);
 
-            // specimen report pivots
             SpecimenMigrationService sms = SpecimenMigrationService.get();
             if (sms != null)
-                sms.addSpecimenPivotTableNames(names);
+                sms.addSpecimenTableNames(names);
 
             names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
         }
@@ -543,27 +530,9 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
             return new SpecimenWrapTable(this, cf);
         }
-        if (SPECIMEN_VIAL_COUNT_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new SpecimenVialCountTable(this, cf);
-        }
-        if (SPECIMEN_EVENT_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            if (getContainer().isRoot())
-                return null;
-            return new SpecimenEventTable(this, cf);
-        }
         if ((studyService.getSubjectVisitTableName(getContainer()).equalsIgnoreCase(name) || "ParticipantVisit".equalsIgnoreCase(name)) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
             return new ParticipantVisitTable(this, cf, false);
-        }
-        if (SPECIMEN_REQUEST_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new SpecimenRequestTable(this, cf);
-        }
-        if (SPECIMEN_REQUEST_STATUSES_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new SpecimenRequestStatusTable(this, cf);
         }
         if (VISIT_TABLE_NAME.equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
@@ -607,14 +576,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
             return new PrimaryTypeTable(this, cf);
         }
-        if (SPECIMEN_COMMENTS_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new SpecimenCommentTable(this, cf);
-        }
-        if (VIAL_REQUEST_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new VialRequestTable(this, cf);
-        }
         if (STUDY_SNAPSHOT_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudySnapshotTable(this, cf);
@@ -622,9 +583,9 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         SpecimenMigrationService sms = SpecimenMigrationService.get();
         if (sms != null)
         {
-            TableInfo pivot = sms.getSpecimenPivotTable(this, name, _study, cf);
-            if (pivot != null)
-                return pivot;
+            TableInfo specimenTable = sms.getSpecimenTable(this, name, cf);
+            if (specimenTable != null)
+                return specimenTable;
         }
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -670,8 +631,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (1 == containers.size() && getContainer() == containers.toArray()[0])
             return tableInfo;   // No need to union 1 table
 
-        if (SpecimenTable.class == tableInfo.getClass())
-            return studyService.getSpecimenTableUnion(this, containers, new HashMap<>(), _dontAliasColumns, false);
         if (VialTable.class == tableInfo.getClass())
             return studyService.getVialTableUnion(this, containers);
         if (SpecimenDetailTable.class == tableInfo.getClass())
@@ -820,10 +779,38 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         return super.createView(context, settings, errors);
     }
 
+    @Override
     @Nullable
     public StudyImpl getStudy()
     {
         return _study;
+    }
+
+    @Override
+    public TableInfo createLocationLookupTable(@Nullable ContainerFilter cf)
+    {
+        return new LocationTable(this, cf);
+    }
+
+    @Override
+    public TableInfo createSpecimenTypeLookupTable(String rootTableColumnName, ContainerFilter cf)
+    {
+        BaseStudyTable result = switch (rootTableColumnName)
+        {
+            case "PrimaryTypeId" -> new PrimaryTypeTable(this, cf);
+            case "DerivativeTypeId", "DerivativeTypeId2" -> new DerivativeTypeTable(this, cf);
+            case "AdditiveTypeId" -> new AdditiveTypeTable(this, cf);
+            default -> throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
+        };
+        if (allowSetContainerFilter())
+            result.setContainerFilter(cf);
+        return result;
+    }
+
+    @Override
+    public TableInfo createSpecimenDetailLookupTable(@Nullable ContainerFilter cf)
+    {
+        return new SpecimenDetailTable(this, cf);
     }
 
     public String decideTableName(DatasetDefinition dsd)
@@ -902,12 +889,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         _dontAliasColumns = dontAliasColumns;
     }
 
-
-    /** for tables that support container filter, should they turn on support or not */
-    public boolean allowSetContainerFilter()
-    {
-        return true;
-    }
 
     protected void initSessionParticipantGroup(Study study, User user)
     {

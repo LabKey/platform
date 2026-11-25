@@ -57,10 +57,12 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.UnloggedTableGeneration;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -396,11 +398,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case IsAliquot ->
             {
-                String rootMaterialRowIdField = ExprColumn.STR_TABLE_ALIAS + "." + RootMaterialRowId.name();
-                String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + RowId.name();
-                ExprColumn columnInfo = new ExprColumn(this, IsAliquot.fieldKey(), new SQLFragment(
-                        "(CASE WHEN (" + rootMaterialRowIdField + " = " + rowIdField + ") THEN ").append(getSqlDialect().getBooleanFALSE())
-                        .unsafeAppend(" WHEN ").append(rowIdField).unsafeAppend(" IS NOT NULL THEN ").append(getSqlDialect().getBooleanTRUE()) // Issue 52745
+                ExprColumn columnInfo = new ExprColumn(this, IsAliquot.fieldKey(), new SQLFragment().unsafeAppend("(CASE WHEN (").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, RootMaterialRowId.name()).unsafeAppend(" = ").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, RowId.name()).unsafeAppend(") THEN ").appendValue(false, getSqlDialect())
+                        .unsafeAppend(" WHEN ").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, RowId.name()).unsafeAppend(" IS NOT NULL THEN ").appendValue(true, getSqlDialect()) // Issue 52745
                         .unsafeAppend(" ELSE NULL END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
@@ -546,9 +545,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case SourceProtocolLSID ->
             {
                 // NOTE: This column is incorrectly named "Protocol", but we are keeping it for backwards compatibility to avoid breaking queries in hvtnFlow module
-                ExprColumn columnInfo = new ExprColumn(this, ExpDataTable.Column.Protocol.toString(), new SQLFragment(
-                        "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
-                                " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR);
+                ExprColumn columnInfo = new ExprColumn(this, ExpDataTable.Column.Protocol.toString(), new SQLFragment().unsafeAppend("(SELECT ProtocolLSID FROM ")
+                        .append(ExperimentServiceImpl.get().getTinfoProtocolApplication().getSQLName())
+                        .unsafeAppend(" pa WHERE pa.RowId = ")
+                        .appendIdentifier(ExprColumn.STR_TABLE_ALIAS)
+                        .unsafeAppend(".SourceApplicationId)"), JdbcType.VARCHAR);
                 columnInfo.setSqlTypeName("lsidtype");
                 columnInfo.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(), "LSID"));
                 columnInfo.setLabel("Source Protocol");
@@ -577,9 +578,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case RunApplication ->
             {
-                SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
+                SQLFragment sql = SQLFragment.unsafe("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
-                        .unsafeAppend(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".runId")
+                        .unsafeAppend(" WHERE pa.runId = ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".runId")
                         .unsafeAppend(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
                         .unsafeAppend(")");
 
@@ -804,9 +805,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case LastIndexed ->
             {
-                var sql = new SQLFragment("(SELECT LastIndexed FROM ")
+                var sql = SQLFragment.unsafe("(SELECT LastIndexed FROM ")
                         .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
-                        .unsafeAppend(" WHERE mi.MaterialId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
+                        .unsafeAppend(" WHERE mi.MaterialId = ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
                 var ret = new ExprColumn(this, LastIndexed.name(), sql, JdbcType.TIMESTAMP);
                 ret.setDescription("Date when the material was last full-text search indexed in the system");
                 ret.setHidden(true);
@@ -1006,22 +1007,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         if (plateUserSchema != null && plateUserSchema.getTable("Well") != null)
         {
-            String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + RowId.name();
             SQLFragment existsSubquery = new SQLFragment()
                     .unsafeAppend("SELECT 1 FROM ")
                     .append(plateUserSchema.getTable("Well"), "well")
-                    .unsafeAppend(" WHERE well.sampleid = ").append(rowIdField);
+                    .unsafeAppend(" WHERE well.sampleid = ").appendDottedIdentifiers(ExprColumn.STR_TABLE_ALIAS, RowId.name());
 
             sql = new SQLFragment()
                     .unsafeAppend("CASE WHEN EXISTS (")
                     .append(existsSubquery)
                     .unsafeAppend(") THEN 'Plated' ")
-                    .unsafeAppend("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId").unsafeAppend(" IS NOT NULL THEN 'Not Plated' ")// Issue 52745
+                    .unsafeAppend("WHEN ").appendIdentifier(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId").unsafeAppend(" IS NOT NULL THEN 'Not Plated' ")// Issue 52745
                     .unsafeAppend("ELSE NULL END");
         }
         else
         {
-            sql = new SQLFragment("(SELECT NULL)");
+            sql = SQLFragment.unsafe("(SELECT NULL)");
         }
         var col = new ExprColumn(this, IsPlated.name(), sql, JdbcType.VARCHAR);
         col.setDescription("Whether the sample that has been plated, if plating is supported.");
@@ -1264,7 +1264,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedColumns)
     {
-        SQLFragment sql = new SQLFragment("(");
+        SQLFragment sql = SQLFragment.unsafe("(");
 
         // SELECT FROM
         // NOTE: We want to avoid caching in paths where the table is actively being updated (e.g., loadRows).
@@ -1795,7 +1795,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return null;
         }
 
-        return new SQLFragment("SELECT * FROM ").append(tempRef);
+        return SQLFragment.unsafe("SELECT * FROM ").append(tempRef);
     }
 
     /**
@@ -2005,7 +2005,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (!deleted.isEmpty())
                 {
                     // The default generator binds an array (= ANY), which probes the rowid index; a temp-table IN can seq scan.
-                    SQLFragment targeted = new SQLFragment("DELETE FROM temp.${NAME} WHERE rowid");
+                    SQLFragment targeted = SQLFragment.unsafe("DELETE FROM temp.${NAME} WHERE rowid");
                     d.appendInClauseSqlWithCustomInClauseGenerator(targeted, deleted, null);
                     upsertWithRetry(targeted);
                 }
@@ -2076,7 +2076,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
-            SQLFragment sql = new SQLFragment("WITH wModified AS (\n")
+            SQLFragment sql = SQLFragment.unsafe("WITH wModified AS (\n")
                     .unsafeAppend("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(changedSince)
                     .unsafeAppend(")\n");
 
@@ -2094,12 +2094,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         private void appendSetFromSrc(SQLFragment sql)
         {
-            String comma = "";
+            SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
             for (ColumnInfo col : _updateColumns)
             {
                 DatabaseIdentifier identifier = col.getSelectIdentifier();
-                sql.append(comma).appendIdentifier(identifier).unsafeAppend(" = src.").appendIdentifier(identifier);
-                comma = ", ";
+                sql.append(comma.next()).appendIdentifier(identifier).unsafeAppend(" = src.").appendIdentifier(identifier);
             }
         }
     }
@@ -2179,14 +2178,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
         sql.unsafeAppend("SELECT ");
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ", ");
         for (ColumnInfo materialCol : materialCols)
         {
             // don't need to generate SQL for columns that aren't selected
             if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(materialCol.getFieldKey()))
             {
-                sql.append(comma).unsafeAppend("m.").appendIdentifier(materialCol.getSelectIdentifier());
-                comma = ", ";
+                sql.append(comma.next()).unsafeAppend("m.").appendIdentifier(materialCol.getSelectIdentifier());
                 if (null != outUpdateColumns && !IMMUTABLE_UPDATE_COLUMNS.contains(materialCol.getFieldKey()))
                     outUpdateColumns.add(materialCol);
             }
@@ -2227,8 +2225,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         hasAliquotColumns = true;
                     }
 
-                    sql.append(comma).append(propertyColumn.getValueSql(alias)).unsafeAppend(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
-                    comma = ", ";
+                    sql.append(comma.next()).append(propertyColumn.getValueSql(alias)).unsafeAppend(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
 
                     // provisioned columns are never immutable join keys, so always re-derivable on update
                     if (null != outUpdateColumns)
@@ -2252,13 +2249,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         public SampleTypeAmountDisplayColumn(TableInfo parent, String amountFieldName, String unitFieldName, String label, Set<String> importAliases, Unit typeUnit)
         {
-            super(parent, FieldKey.fromParts(amountFieldName), new SQLFragment(
-                            "(CASE WHEN ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(unitFieldName)
-                            .unsafeAppend(" = ? AND ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(amountFieldName)
-                            .unsafeAppend(" IS NOT NULL THEN CAST(").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(amountFieldName)
+            super(parent, FieldKey.fromParts(amountFieldName), SQLFragment.unsafe(
+                            "(CASE WHEN ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").appendIdentifier(unitFieldName)
+                            .unsafeAppend(" = ? AND ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").appendIdentifier(amountFieldName)
+                            .unsafeAppend(" IS NOT NULL THEN CAST(").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").appendIdentifier(amountFieldName)
                             .unsafeAppend(" / ? AS ")
                             .unsafeAppend("DECIMAL")
-                            .unsafeAppend(") ELSE ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(amountFieldName)
+                            .unsafeAppend(") ELSE ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").appendIdentifier(amountFieldName)
                             .unsafeAppend(" END)")
                             .add(typeUnit.getBase().toString())
                             .add(typeUnit.getValue()),
@@ -2273,9 +2270,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         public SampleTypeUnitDisplayColumn(TableInfo parent, String unitFieldName, Unit typeUnit)
         {
-            super(parent, FieldKey.fromParts(unitFieldName), new SQLFragment(
-                            "(CASE WHEN ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(unitFieldName)
-                            .unsafeAppend(" = ? THEN ? ELSE ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").append(unitFieldName)
+            super(parent, FieldKey.fromParts(unitFieldName), SQLFragment.unsafe(
+                            "(CASE WHEN ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").appendIdentifier(unitFieldName)
+                            .unsafeAppend(" = ? THEN ? ELSE ").unsafeAppend(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").appendIdentifier(unitFieldName)
                             .unsafeAppend(" END)")
                             .add(typeUnit.getBase().toString())
                             .add(typeUnit.toString()),
@@ -2415,6 +2412,36 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /** Test seam: by sample type LSID, a queue that receives the search indexing persistRows queues */
     static final Map<String, SearchService.TaskIndexingQueue> _testIndexingQueues = new ConcurrentHashMap<>();
 
+    /** Test queue that runs indexing work the moment it's queued, as an idle indexer would, and keeps the documents */
+    static class CollectingIndexingQueue implements SearchService.TaskIndexingQueue
+    {
+        private final Container _container;
+        final List<WebdavResource> docs = Collections.synchronizedList(new ArrayList<>());
+
+        CollectingIndexingQueue(Container container)
+        {
+            _container = container;
+        }
+
+        @Override
+        public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
+        {
+            r.accept(this);
+        }
+
+        @Override
+        public void addResource(@NotNull WebdavResource r)
+        {
+            docs.add(r);
+        }
+
+        @Override
+        public Container getContainer()
+        {
+            return _container;
+        }
+    }
+
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
@@ -2428,53 +2455,40 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             final Container container = getContainer();
             final User user = getUserSchema().getUser();
-            ExperimentServiceImpl expService = ExperimentServiceImpl.get();
             SearchService.TaskIndexingQueue queue = Objects.requireNonNullElseGet(_testIndexingQueues.get(_ss.getLSID()),
                 () -> SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified));
 
             DataIteratorBuilder dib = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, container, user, _ss.getImportAliasesIncludingAliquot())
                 .setFileLinkDirectory(SAMPLE_TYPE_FILE_DIRECTORY_NAME)
                 // LATE_POSTCOMMIT so indexing reads the materialized view after this change's POSTCOMMIT refresh signal
-                .setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
-                        // Built once per commit, not per batch, and shared by every batch's indexing
-                        UserSchema searchSchema = QueryService.get().getUserSchema(User.getSearchUser(), container, SamplesSchema.SCHEMA_SAMPLES);
-                        TableInfo searchTable = searchSchema == null ? null : searchSchema.getTable(_ss.getName());
-                        if (searchTable == null)
-                        {
-                            // Expected only when the sample type was deleted after this commit
-                            _log.debug("Skipping search indexing for sample type {}: no search table in {}", _ss.getName(), container.getPath());
-                            return;
-                        }
-
-                        List<String> lsids = searchIndexDataKeys.lsids();
-                        List<Long> orderedRowIds = searchIndexDataKeys.orderedRowIds();
-
-                        // Issue 51263: order by RowId to reduce deadlock
-                        ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                                queue.addRunnable((q) ->
-                                {
-                                    for (ExpMaterialImpl expMaterial : expService.getExpMaterials(sublist))
-                                        expMaterial.index(q, searchTable);
-                                })
-                        );
-
-                        ListUtils.partition(lsids, 100).forEach(sublist ->
-                                queue.addRunnable((q) ->
-                                {
-                                    for (ExpMaterialImpl expMaterial : expService.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(q, searchTable);
-                                })
-                        );
-                    }, DbScope.CommitTaskOption.LATE_POSTCOMMIT)
-                );
+                .setIndexFunction(searchIndexDataKeys ->
+                        propertiesTable.getSchema().getScope().addCommitTask(() ->
+                                queueSearchIndexing(queue, searchIndexDataKeys), DbScope.CommitTaskOption.LATE_POSTCOMMIT));
 
             dib = LoggingDataIterator.wrap(dib);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(dib, container, user, expService.getTinfoMaterialAliasMap(), _ss, true));
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(dib, container, user, ExperimentServiceImpl.get().getTinfoMaterialAliasMap(), _ss, true));
         }
         catch (IOException e)
         {
             throw new UncheckedIOException(e);
         }
+    }
+
+    static void queueSearchIndexing(@NotNull SearchService.TaskIndexingQueue queue, @NotNull ExpDataIterators.SearchIndexDataKeys keys)
+    {
+        queueIndexBatches(queue, RowId, keys.orderedRowIds());
+        queueIndexBatches(queue, LSID, keys.lsids());
+    }
+
+    /** Each batch builds its tables when it runs, since a table built earlier can predate a domain change made while the batch waited */
+    private static void queueIndexBatches(SearchService.TaskIndexingQueue queue, ExpMaterialTable.Column keyColumn, List<?> keys)
+    {
+        ListUtils.partition(keys, SearchService.INDEXING_LIMIT).forEach(sublist -> queue.addRunnable(q -> {
+            // Issue 51263: order by RowId to reduce deadlock
+            List<Material> batch = ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(),
+                    ExpMaterialImpl.INDEX_COLUMNS, new SimpleFilter().addInClause(keyColumn.fieldKey(), sublist), new Sort(RowId.name())));
+            ExpMaterialImpl.indexBatch(q, batch, new HashMap<>());
+        }));
     }
 
     @Override
@@ -2670,7 +2684,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             // Empty the view and the marker as a failover or crash recovery would. The next read must rebuild.
             DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
-            new SqlExecutor(scope).execute(new SQLFragment("TRUNCATE ").append(table.getOrCreateMQH().getFromSql(null)));
+            new SqlExecutor(scope).execute(SQLFragment.unsafe("TRUNCATE ").append(table.getOrCreateMQH().getFromSql(null)));
             UnloggedTableGeneration.simulateResetForTest();
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
@@ -2688,7 +2702,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // Drive the targeted update with a watermark equal to the row's own Modified, simulating same-tick capture.
             updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", "boundary")));
             Timestamp rowModified = new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(),
-                    new SQLFragment("SELECT modified FROM exp.material WHERE rowid = ?").add(root)).getObject(Timestamp.class);
+                    SQLFragment.unsafe("SELECT modified FROM exp.material WHERE rowid = ?").add(root)).getObject(Timestamp.class);
             InvalidationCounters counters = getInvalidateCounters(st.getLSID());
             counters.pendingUpdateSince.set(rowModified);
             counters.update.incrementAndGet();
@@ -2831,27 +2845,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          */
         private WebdavResource indexDocument(ExpSampleType st, String name, Callable<?> change) throws Exception
         {
-            List<WebdavResource> docs = Collections.synchronizedList(new ArrayList<>());
-            _testIndexingQueues.put(st.getLSID(), new SearchService.TaskIndexingQueue()
-            {
-                @Override
-                public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
-                {
-                    r.accept(this);
-                }
-
-                @Override
-                public void addResource(@NotNull WebdavResource r)
-                {
-                    docs.add(r);
-                }
-
-                @Override
-                public Container getContainer()
-                {
-                    return _c;
-                }
-            });
+            CollectingIndexingQueue queue = new CollectingIndexingQueue(_c);
+            _testIndexingQueues.put(st.getLSID(), queue);
 
             try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
             {
@@ -2864,7 +2859,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
 
             String title = "Sample - " + name;
-            return docs.stream()
+            return queue.docs.stream()
                 .filter(doc -> String.valueOf(doc.getProperties().get(SearchService.PROPERTY.title.toString())).startsWith(title))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("persistRows queued no search document for " + name));
@@ -3234,7 +3229,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             _MaterializedQueryHelper mqh = table.getOrCreateMQH();
             assertNotNull("MQH should not be null for a sample type table", mqh);
-            SQLFragment cached = new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
+            SQLFragment cached = SQLFragment.unsafe("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
             SQLFragment fresh = table.getJoinSQL(null).unsafeAppend(" WHERE CpasType = ").appendValue(lsid);
             DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
             assertEquals("Cached rows not found in fresh derivation", 0, countDiff(scope, cached, fresh));
@@ -3243,14 +3238,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         private void setCachedAliquotCount(ExpMaterialTableImpl table, long rowId, int count)
         {
-            SQLFragment sql = new SQLFragment("UPDATE ").append(table.getOrCreateMQH().getFromSql(null))
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(table.getOrCreateMQH().getFromSql(null))
                     .unsafeAppend(" SET aliquotcount = ? WHERE rowid = ?").add(count).add(rowId);
             new SqlExecutor(ExperimentServiceImpl.getExpSchema().getScope()).execute(sql);
         }
 
         private Integer getCachedAliquotCount(ExpMaterialTableImpl table, long rowId)
         {
-            SQLFragment sql = new SQLFragment("SELECT aliquotcount FROM ").append(table.getOrCreateMQH().getFromSql(null))
+            SQLFragment sql = SQLFragment.unsafe("SELECT aliquotcount FROM ").append(table.getOrCreateMQH().getFromSql(null))
                     .unsafeAppend(" WHERE rowid = ?").add(rowId);
             return new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(), sql).getObject(Integer.class);
         }
@@ -3258,13 +3253,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         /** Applies any pending incremental work, then checks the temp table for the row. */
         private boolean isCached(ExpMaterialTableImpl table, long rowId)
         {
-            SQLFragment sql = new SQLFragment("SELECT rowid FROM ").append(table.getOrCreateMQH().getFromSql(null)).append(" WHERE rowid = ?").add(rowId);
+            SQLFragment sql = SQLFragment.unsafe("SELECT rowid FROM ").append(table.getOrCreateMQH().getFromSql(null)).unsafeAppend(" WHERE rowid = ?").add(rowId);
             return new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(), sql).exists();
         }
 
         private int countDiff(DbScope scope, SQLFragment a, SQLFragment b)
         {
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (\n").append(a).unsafeAppend("\nEXCEPT\n").append(b).unsafeAppend("\n) diff_");
+            SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) FROM (\n").append(a).unsafeAppend("\nEXCEPT\n").append(b).unsafeAppend("\n) diff_");
             Integer count = new SqlSelector(scope, sql).getObject(Integer.class);
             return count == null ? 0 : count;
         }

@@ -359,7 +359,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         queue.addRunnable((q) -> {
             // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
-            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+            SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ")
                     .append(getTinfoMaterialSource(), "ms")
                     .unsafeAppend(" WHERE ms.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                     .unsafeAppend(" AND ms.LSID = ?").add(sampleType.getLSID())
@@ -380,11 +380,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue, long minRowId)
     {
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
-        SQLFragment sql = new SQLFragment("SELECT m.* FROM ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT ").unsafeAppend(ExpMaterialImpl.getIndexColumnsSelectList("m")).unsafeAppend(" FROM ")
                 .append(getTinfoMaterial(), "m")
                 .unsafeAppend(" LEFT OUTER JOIN ")
                 .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
-                .unsafeAppend(" ON m.RowId = mi.MaterialId WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
+                // The planner doesn't carry m.RowId > ? across the outer join, so without its own bound the join reads materialindexed from the start every batch
+                .unsafeAppend(" ON m.RowId = mi.MaterialId AND mi.MaterialId > ?").add(minRowId)
+                .unsafeAppend(" WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .unsafeAppend(" AND m.cpasType = ?").add(sampleType.getLSID())
                 .unsafeAppend(" AND m.RowId > ?").add(minRowId)
                 .unsafeAppend(" AND (mi.lastIndexed IS NULL OR mi.lastIndexed < ? OR (m.modified IS NOT NULL AND mi.lastIndexed < m.modified))")
@@ -397,11 +399,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
-        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> new ExpMaterialImpl(m).indexWithTableCache(queue, tableCache));
-
-        if (tracker.wasFull())
-            // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexSampleTypeMaterials(sampleType, q, tracker.getMaxRowId()));
+        List<Material> batch = ExpMaterialImpl.readIndexMaterials(selector);
+        batch.forEach(m -> tracker.advance(m.getRowId()));
+        try
+        {
+            ExpMaterialImpl.indexBatch(queue, batch, tableCache);
+        }
+        finally
+        {
+            if (tracker.wasFull())
+                // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
+                queue.addRunnable((q) -> indexSampleTypeMaterials(sampleType, q, tracker.getMaxRowId()));
+        }
     }
 
 
@@ -431,7 +440,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         sql.unsafeAppend(" m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND pa.RunId = r.RowId AND ");
-        sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container")));
+        sql.append(filter.getSQLFragment(getExpSchema(), SQLFragment.unsafe("r.Container")));
         sql.unsafeAppend(" GROUP BY mi.Role ORDER BY mi.Role");
 
         Map<String, ExpSampleType> result = new LinkedHashMap<>();
@@ -456,7 +465,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void removeAutoLinkedStudy(@NotNull Container studyContainer)
     {
-        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterialSource())
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(getTinfoMaterialSource())
                 .unsafeAppend(" SET autolinkTargetContainer = NULL WHERE autolinkTargetContainer = ?")
                 .add(studyContainer.getId());
         new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
@@ -645,7 +654,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Set<Container> containers = new HashSet<>();
         if (c == null)
         {
-            SQLFragment containerSql = new SQLFragment("SELECT DISTINCT Container FROM ");
+            SQLFragment containerSql = SQLFragment.unsafe("SELECT DISTINCT Container FROM ");
             containerSql.append(getTinfoMaterial(), "m");
             containerSql.unsafeAppend(" WHERE CpasType = ?");
             containerSql.add(source.getLSID());
@@ -659,7 +668,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         int count = 0;
         for (Container toDelete : containers)
         {
-            SQLFragment sqlFilter = new SQLFragment("CpasType = ? AND Container = ?");
+            SQLFragment sqlFilter = SQLFragment.unsafe("CpasType = ? AND Container = ?");
             sqlFilter.add(source.getLSID());
             sqlFilter.add(toDelete);
             count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true, auditUserComment);
@@ -699,6 +708,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
 
             Domain d = source.getDomain();
+
+            // GH Issue 1904: lock the domain, then exp.material, before d.delete() locks the provisioned table, matching domain updates and readers
+            d.getDatabaseLock().lock();
+            if (null != d.getStorageTableName())
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("LOCK TABLE ").append(getTinfoMaterial()).unsafeAppend(" IN ACCESS EXCLUSIVE MODE"));
+
             d.delete(user, auditUserComment);
 
             ExperimentServiceImpl.get().deleteDomainObjects(source.getContainer(), source.getLSID());
@@ -1583,7 +1598,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
                 Parameter count = new Parameter("rollupCount", JdbcType.INTEGER);
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE ").append(materialTable).unsafeAppend(" SET AliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
+                        SQLFragment.unsafe("UPDATE ").append(materialTable).unsafeAppend(" SET AliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
 
                 List<Map.Entry<Long, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
@@ -1618,7 +1633,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
                 Parameter count = new Parameter("AvailableAliquotCount", JdbcType.INTEGER);
                 ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                        new SQLFragment("UPDATE ").append(materialTable).unsafeAppend(" SET AvailableAliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
+                        SQLFragment.unsafe("UPDATE ").append(materialTable).unsafeAppend(" SET AvailableAliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
 
                 List<Map.Entry<Long, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
@@ -1669,11 +1684,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     }
 
                     boolean isCountUnitType = sampleTypeBaseUnit.getKindOfQuantity() == KindOfQuantity.Count;
-                    String aliquotUnitSql = isCountUnitType ? "CASE WHEN MIN(im.units) = MAX(im.units) THEN MIN(im.units) ELSE ? END" : "?";
-
-                    SQLFragment statsSql = new SQLFragment("SELECT im.rootmaterialrowid, SUM(im.storedamount) AS total_volume, \n")
+                    SQLFragment statsSql = SQLFragment.unsafe("SELECT im.rootmaterialrowid, SUM(im.storedamount) AS total_volume, \n")
                             .unsafeAppend("SUM(CASE WHEN im.samplestate ").appendInClause(availableSampleStates, tableInfo.getSqlDialect()).unsafeAppend(" THEN im.storedamount ELSE 0 END) AS avail_volume, \n")
-                            .append(aliquotUnitSql)
+                            .unsafeAppend(isCountUnitType ? "CASE WHEN MIN(im.units) = MAX(im.units) THEN MIN(im.units) ELSE ? END" : "?")
                             .unsafeAppend(" AS common_unit \n").add(baseUnit)
                             .unsafeAppend("FROM exp.material im\n")
                             .unsafeAppend("WHERE im.rootmaterialrowid ")
@@ -1683,7 +1696,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                     SQLFragment quickRollUpSql = null;
 
-                    quickRollUpSql = new SQLFragment("UPDATE exp.material AS m SET \n")
+                    quickRollUpSql = SQLFragment.unsafe("UPDATE exp.material AS m SET \n")
                             .unsafeAppend("aliquotvolume = ROUND(COALESCE(stats.total_volume, 0)::NUMERIC, ?),\n").add(precisionScale)
                             .unsafeAppend("aliquotunit = stats.common_unit,\n")
                             .unsafeAppend("availablealiquotvolume = ROUND(COALESCE(stats.avail_volume, 0)::NUMERIC, ?)\n").add(precisionScale)
@@ -1696,7 +1709,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     new SqlExecutor(tableInfo.getSchema()).execute(quickRollUpSql);
 
                     // Now clear out rollups for samples that have zero aliquots
-                    SQLFragment quickClearRollupSql = new SQLFragment("UPDATE exp.material SET \n")
+                    SQLFragment quickClearRollupSql = SQLFragment.unsafe("UPDATE exp.material SET \n")
                             .unsafeAppend("aliquotvolume = 0, availablealiquotvolume = 0, ")
                             .unsafeAppend("aliquotunit = ?\n").add(baseUnit)
                             .unsafeAppend("WHERE rowid = rootmaterialrowid AND AliquotCount = 0 AND rowid ")
@@ -1717,7 +1730,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     Parameter availableAmount = new Parameter("availableAmount", JdbcType.DOUBLE);
 
                     ParameterMapStatement pm = new ParameterMapStatement(scope, c,
-                            new SQLFragment("UPDATE ").append(materialTable).unsafeAppend(" SET AliquotVolume = ?, AliquotUnit = ? , AvailableAliquotVolume = ? WHERE RowId = ? ").addAll(amount, unit, availableAmount, rowid), null);
+                            SQLFragment.unsafe("UPDATE ").append(materialTable).unsafeAppend(" SET AliquotVolume = ?, AliquotUnit = ? , AvailableAliquotVolume = ? WHERE RowId = ? ").addAll(amount, unit, availableAmount, rowid), null);
 
                     List<Map.Entry<Long, List<AliquotAmountUnitResult>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
 
@@ -1783,7 +1796,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
 
-        SQLFragment sql = new SQLFragment("SELECT rowid FROM ").append(tableInfo, "")
+        SQLFragment sql = SQLFragment.unsafe("SELECT rowid FROM ").append(tableInfo, "")
                 .unsafeAppend(" WHERE cpastype = ").appendValue(sampleTypeLsid)
                 .unsafeAppend(" AND rowid IN (")
                 .unsafeAppend(" SELECT DISTINCT rootmaterialrowid FROM ").append(tableInfo, "")
@@ -1894,7 +1907,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private SQLFragment getParentsOfAliquotsWithAmountsSql()
     {
-        return new SQLFragment(
+        return SQLFragment.unsafe(
     """
         SELECT DISTINCT parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
@@ -1905,7 +1918,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private SQLFragment getParentsOfAliquotsSql()
     {
-        return new SQLFragment(
+        return SQLFragment.unsafe(
     """
         SELECT DISTINCT parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
@@ -1940,7 +1953,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment("SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE ")
                 .unsafeAppend("a.rootMaterialRowId = m.rowId")
                 .unsafeAppend(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid ");
         dialect.appendInClauseSql(sql, sampleIds);
@@ -1967,7 +1980,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SqlDialect dialect = dbSchema.getSqlDialect();
 
         // Correlated so Postgres counts only the requested roots; a grouped join counts every aliquot on the server
-        SQLFragment sql = new SQLFragment(
+        SQLFragment sql = SQLFragment.unsafe(
                 """
                         SELECT m.RowId as SampleId, m.Units,
                         (SELECT COUNT(*) FROM exp.material a
@@ -2000,7 +2013,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         DbSchema exp = getExpSchema();
         SqlDialect dialect = exp.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment("SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate\n")
+        SQLFragment sql = SQLFragment.unsafe("SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate\n")
                 .unsafeAppend("FROM exp.material AS aliquot JOIN exp.material AS parent ON ")
                 .unsafeAppend("parent.rowid = aliquot.rootmaterialrowid")
                 .unsafeAppend(" WHERE ")
@@ -2466,7 +2479,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         ContainerFilter.ContainerFilterWithPermission cf = new ContainerFilter.AllInProject(container, searchUser);
         Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, Set.of());
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) FROM ");
         sql.append(tableInfo);
         sql.unsafeAppend(" WHERE ");
         if (isRootOnly)

@@ -1,0 +1,431 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.experiment.api;
+
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.experiment.ExpDataIterators;
+
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
+import static java.util.Collections.emptyList;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.CpasType;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
+
+public class SampleIndexDocumentTestCase extends Assert
+{
+    private static final String PROJECT_NAME = "_testSampleIndexDocument";
+    private static final String PARENT_TYPE = "IndexParents";
+
+    private static User _user;
+    private static Container _project;
+    private static Container _subfolder;
+
+    @BeforeClass
+    public static void setUp() throws Exception
+    {
+        _user = TestContext.get().getUser();
+        tearDown();
+        _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, _user);
+        _subfolder = ContainerManager.createContainer(_project, "sub", _user);
+        SampleTypeService.get().createSampleType(_project, _user, PARENT_TYPE, null, List.of(new GWTPropertyDescriptor("name", "string")), emptyList(), -1, -1, -1, -1, null, null);
+        insertSamples(_project, PARENT_TYPE, List.of(CaseInsensitiveHashMap.of(Name.name(), "P1"), CaseInsensitiveHashMap.of(Name.name(), "P2")));
+    }
+
+    @After
+    public void drainQueue() throws InterruptedException
+    {
+        // Wait for the indexer to finish working on the data we just added to help avoid deadlocks
+        SearchService.get().drainQueue(SearchService.PRIORITY.crawl, 15, TimeUnit.SECONDS);
+    }
+
+    @AfterClass
+    public static void tearDown()
+    {
+        Container project = ContainerManager.getForPath(PROJECT_NAME);
+        if (project != null)
+            ContainerManager.deleteAll(project, _user);
+    }
+
+    @Test
+    public void testIndexColumnsBuildFullDocuments() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexSamples");
+        long p1 = sample(PARENT_TYPE, "P1").getRowId();
+        insertSamples(_project, st.getName(), List.of(
+                row(Name.name(), "S1", "TextField", "alpha", "NoteField", "first line\nsecond line", "IntField", 41,
+                        "ParentRef", p1, "MaterialInputs/" + PARENT_TYPE, "P1", Alias.name(), "alias-one"),
+                CaseInsensitiveHashMap.of(Name.name(), "S2", "TextField", "beta", "IntField", 42)
+        ));
+        insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of("AliquotedFrom", "S1")));
+        insertSamples(_subfolder, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "S3", "TextField", "gamma")));
+
+        List<Material> materials = getMaterials(st);
+        assertEquals("Samples of " + st.getName(), 4, materials.size());
+
+        // Batch input comes from the indexing callers' column list, so a field it misses shows up as a difference
+        Map<String, Map<String, Object>> batch = normalize(ExpMaterialImpl.createIndexDocuments(getIndexMaterials(st), new HashMap<>()));
+        Map<String, Map<String, Object>> oneAtATime = normalize(materials.stream().map(m -> new ExpMaterialImpl(m).createIndexDocument(null)).filter(Objects::nonNull).toList());
+        assertEquals(oneAtATime, batch);
+
+        ExpMaterial s1 = sample(st.getName(), "S1");
+        Map<String, Object> s1Doc = batch.get(s1.getDocumentId());
+        assertTrue("alias in title", ((String) s1Doc.get(SearchService.PROPERTY.title.toString())).contains("alias-one"));
+        assertNotNull(s1.getRun());
+        assertNotNull(s1.getSourceProtocol());
+        assertTrue("run name in body", ((String) s1Doc.get("body")).contains(s1.getRun().getName()));
+        assertTrue("protocol name in body", ((String) s1Doc.get("body")).contains(s1.getSourceProtocol().getName()));
+        assertTokens(s1Doc, SearchService.PROPERTY.identifiersHi, "S1", "alias-one");
+        assertTokens(s1Doc, SearchService.PROPERTY.keywordsHi, "S1");
+        assertTokens(s1Doc, SearchService.PROPERTY.identifiersMed, "alpha", "41", "P1");
+        assertTokens(s1Doc, SearchService.PROPERTY.keywordsLo, "first", "second", "Sample");
+
+        ExpMaterial s3 = sample(_subfolder, st.getName(), "S3");
+        Map<String, Object> s3Doc = batch.get(s3.getDocumentId());
+        assertNotNull("subfolder sample indexed", s3Doc);
+        assertEquals(_subfolder.getEntityId().toString(), s3Doc.get("container"));
+        assertTokens(s3Doc, SearchService.PROPERTY.identifiersMed, "gamma");
+    }
+
+    @Test
+    public void testDeletedSampleHasNoDocument() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexDeleted");
+        insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "D1"), CaseInsensitiveHashMap.of(Name.name(), "D2")));
+        List<Material> materials = getIndexMaterials(st);
+        ExpMaterial d1 = sample(st.getName(), "D1");
+        sample(st.getName(), "D2").delete(_user);
+
+        Map<String, Map<String, Object>> docs = normalize(ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>()));
+        assertEquals(List.of(d1.getDocumentId()), List.copyOf(docs.keySet()));
+    }
+
+    @Test
+    public void testTypeWithoutSearchColumns() throws Exception
+    {
+        ExpSampleType st = SampleTypeService.get().createSampleType(_project, _user, "IndexNoFields", null, List.of(new GWTPropertyDescriptor("name", "string")), emptyList(), -1, -1, -1, -1, null, null);
+        TableInfo table = QueryService.get().getUserSchema(_user, _project, SamplesSchema.SCHEMA_SAMPLES).getTableOrThrow(st.getName());
+        assertTrue("search columns of " + st.getName(), ((ExpMaterialTableImpl) table).getSearchIndexColumns().isEmpty());
+
+        insertSamples(_project, st.getName(), List.of(row(Name.name(), "N1", Alias.name(), "alias-n1"), CaseInsensitiveHashMap.of(Name.name(), "N2")));
+        List<Material> materials = getIndexMaterials(st);
+        ExpMaterial n1 = sample(st.getName(), "N1");
+        sample(st.getName(), "N2").delete(_user);
+
+        Map<String, Map<String, Object>> docs = normalize(ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>()));
+        assertEquals(List.of(n1.getDocumentId()), List.copyOf(docs.keySet()));
+        Map<String, Object> n1Doc = docs.get(n1.getDocumentId());
+        assertTokens(n1Doc, SearchService.PROPERTY.identifiersHi, "N1", "alias-n1");
+        assertTokens(n1Doc, SearchService.PROPERTY.keywordsHi, "N1");
+        assertTokens(n1Doc, SearchService.PROPERTY.keywordsLo, "Sample");
+    }
+
+    @Test
+    public void testFailedValuesQueryStillIndexes() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexBrokenColumn");
+        insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "B1", "TextField", "alpha"), CaseInsensitiveHashMap.of(Name.name(), "B2", "TextField", "beta")));
+        List<Material> materials = getIndexMaterials(st);
+        // Otherwise the background indexer can still be reading the table when its column is renamed
+        drainQueue();
+
+        // A renamed storage column makes the type's query fail for every row, as a broken lookup would
+        TableInfo storage = ((ExpSampleTypeImpl) st).getTinfo();
+        SQLFragment textField = storage.getColumn("TextField").getSelectIdentifier().getSql();
+        SQLFragment broken = new SQLFragment().appendIdentifier("broken_textfield");
+        renameColumn(storage, st.getLSID(), textField, broken);
+        try
+        {
+            List<WebdavResource> docs = ExpMaterialImpl.createIndexDocuments(materials, new HashMap<>());
+            Map<String, Map<String, Object>> batch = normalize(docs);
+            assertEquals(2, batch.size());
+            assertTokens(batch.get(sample(st.getName(), "B1").getDocumentId()), SearchService.PROPERTY.identifiersHi, "B1");
+            batch.values().forEach(doc -> assertFalse(String.valueOf(doc.get(SearchService.PROPERTY.identifiersMed.toString())).contains("alpha")));
+
+            // Recorded, so a failure that repeats isn't retried on every crawl. The lock keeps the background writer from emptying the list before the check.
+            synchronized (ExpMaterialImpl.updateLastIndexedList)
+            {
+                docs.forEach(doc -> doc.setLastIndexed(System.currentTimeMillis(), System.currentTimeMillis()));
+                List<Long> pending = ExpMaterialImpl.updateLastIndexedList.stream().map(Pair::getKey).toList();
+                assertTrue(pending.containsAll(materials.stream().map(Material::getRowId).toList()));
+            }
+        }
+        finally
+        {
+            renameColumn(storage, st.getLSID(), broken, textField);
+        }
+    }
+
+    private static void renameColumn(TableInfo storage, String lsid, SQLFragment from, SQLFragment to)
+    {
+        SQLFragment table = storage.getSQLName();
+        assertNotNull(table);
+        new SqlExecutor(storage.getSchema()).execute(new SQLFragment().unsafeAppend("ALTER TABLE ").append(table)
+                .unsafeAppend(" RENAME COLUMN ").append(from).unsafeAppend(" TO ").append(to));
+        // Otherwise the table can keep reading its cached copy of the rows, which still has the column
+        ExpMaterialTableImpl.removeMaterializedView(lsid);
+    }
+
+    @Test
+    public void testChangeFromAnotherFolderKeepsValues() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexCrossFolder");
+        insertSamples(_subfolder, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "X1", "TextField", "delta")));
+        ExpMaterial x1 = sample(_subfolder, st.getName(), "X1");
+
+        ExpMaterialTableImpl.CollectingIndexingQueue queue = new ExpMaterialTableImpl.CollectingIndexingQueue(_project);
+        ExpMaterialTableImpl.queueSearchIndexing(queue, new ExpDataIterators.SearchIndexDataKeys(List.of(x1.getRowId()), List.of()));
+
+        Map<String, Object> doc = normalize(queue.docs).get(x1.getDocumentId());
+        assertNotNull("X1 indexed", doc);
+        assertEquals(_subfolder.getEntityId().toString(), doc.get("container"));
+        assertTokens(doc, SearchService.PROPERTY.identifiersMed, "delta");
+    }
+
+    @Test
+    public void testDomainChangeWhileBatchQueued() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexStaleTable");
+        insertSamples(_project, st.getName(), List.of(row(Name.name(), "T1", "TextField", "alpha", "IntField", 41), row(Name.name(), "T2", "TextField", "beta")));
+        List<Long> rowIds = List.of(sample(st.getName(), "T1").getRowId(), sample(st.getName(), "T2").getRowId());
+        drainQueue();
+
+        // A commit's batches wait in the indexer's queue
+        List<Consumer<SearchService.TaskIndexingQueue>> held = new ArrayList<>();
+        ExpMaterialTableImpl.CollectingIndexingQueue holding = new ExpMaterialTableImpl.CollectingIndexingQueue(_project)
+        {
+            @Override
+            public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
+            {
+                held.add(r);
+            }
+        };
+        ExpMaterialTableImpl.queueSearchIndexing(holding, new ExpDataIterators.SearchIndexDataKeys(rowIds, List.of()));
+
+        // Meanwhile a field is removed, which queues a pass over the type
+        GWTDomain<GWTPropertyDescriptor> original = DomainUtil.getDomainDescriptor(_user, st.getDomain());
+        GWTDomain<GWTPropertyDescriptor> update = DomainUtil.getDomainDescriptor(_user, st.getDomain());
+        update.setFields(update.getFields(true).stream().filter(f -> !f.getName().equalsIgnoreCase("IntField")).toList());
+        ValidationException errors = SampleTypeService.get().updateSampleType(original, update, null, _project, _user, false, null);
+        assertFalse(errors.getMessage(), errors.hasErrors());
+        ExpSampleType changed = SampleTypeService.get().getSampleType(_project, st.getRowId());
+
+        // The queue runs the held batches before that pass, so let the pass finish, then put the samples back as they were before it.
+        // A write of the pass's still pending goes out with the held batch's below, whose later time wins.
+        drainQueue();
+        new SqlExecutor(ExperimentServiceImpl.getExpSchema()).execute(new SQLFragment().unsafeAppend("DELETE FROM exp.materialindexed WHERE MaterialId IN (?, ?)").addAll(rowIds));
+
+        ExpMaterialTableImpl.CollectingIndexingQueue queued = new ExpMaterialTableImpl.CollectingIndexingQueue(_project);
+        held.forEach(r -> r.accept(queued));
+        // Writes whatever the documents record now, rather than waiting for the background writer
+        long recordedAt = System.currentTimeMillis();
+        List<Pair<Long, Long>> pending;
+        synchronized (ExpMaterialImpl.updateLastIndexedList)
+        {
+            queued.docs.forEach(doc -> doc.setLastIndexed(recordedAt, recordedAt));
+            pending = List.copyOf(ExpMaterialImpl.updateLastIndexedList);
+            ExpMaterialImpl.updateLastIndexedList.clear();
+        }
+        ExperimentServiceImpl.get().setMaterialLastIndexed(pending);
+
+        ExpMaterialTableImpl.CollectingIndexingQueue pass = new ExpMaterialTableImpl.CollectingIndexingQueue(_project);
+        SampleTypeService.get().indexSampleType(changed, pass);
+
+        String id = sample(st.getName(), "T1").getDocumentId();
+        Map<String, Object> queuedDoc = normalize(queued.docs).get(id);
+        Map<String, Object> passDoc = normalize(pass.docs).get(id);
+        Map<String, Object> last = Objects.requireNonNullElse(passDoc, queuedDoc);
+        assertNotNull("T1 indexed", last);
+        String outcome = "the held batch indexed " + (queuedDoc == null ? null : queuedDoc.get(SearchService.PROPERTY.identifiersMed.toString()))
+                + " and the type pass " + (passDoc == null ? "skipped T1" : "reindexed T1");
+        Object tokens = last.get(SearchService.PROPERTY.identifiersMed.toString());
+        assertTrue("T1's last document lost its TextField value: " + outcome, String.valueOf(tokens).contains("alpha"));
+        assertFalse("T1's last document kept the removed field's value: " + outcome, String.valueOf(tokens).contains("41"));
+    }
+
+    @Test
+    public void testSetMaterialLastIndexed() throws Exception
+    {
+        ExpSampleType st = createSampleType("IndexLastIndexed");
+        DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
+        // Never committed, so neither the samples nor these writes reach the background indexer
+        try (DbScope.Transaction ignored = scope.ensureTransaction())
+        {
+            insertSamples(_project, st.getName(), List.of(CaseInsensitiveHashMap.of(Name.name(), "L1"), CaseInsensitiveHashMap.of(Name.name(), "L2")));
+            long l1 = sample(st.getName(), "L1").getRowId();
+            long l2 = sample(st.getName(), "L2").getRowId();
+            long t = 1_800_000_000_123L;
+
+            // First write inserts; a repeated RowId keeps its latest time; a RowId with no sample is skipped
+            ExperimentServiceImpl.get().setMaterialLastIndexed(List.of(new Pair<>(l2, t), new Pair<>(l1, t + 5), new Pair<>(l1, t), new Pair<>(-1L, t)));
+            assertEquals(t + 5, lastIndexed(l1));
+            assertEquals(t, lastIndexed(l2));
+            assertNull(new SqlSelector(scope, new SQLFragment().unsafeAppend("SELECT LastIndexed FROM exp.materialindexed WHERE MaterialId = -1")).getObject(Date.class));
+
+            // Second write updates
+            ExperimentServiceImpl.get().setMaterialLastIndexed(List.of(new Pair<>(l1, t + 10)));
+            assertEquals(t + 10, lastIndexed(l1));
+            assertEquals(t, lastIndexed(l2));
+        }
+    }
+
+    private static long lastIndexed(long rowId)
+    {
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT LastIndexed FROM exp.materialindexed WHERE MaterialId = ?").add(rowId);
+        Date d = new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(), sql).getObject(Date.class);
+        assertNotNull("lastIndexed for " + rowId, d);
+        return d.getTime();
+    }
+
+    private static ExpSampleType createSampleType(String name) throws Exception
+    {
+        GWTPropertyDescriptor parentRef = new GWTPropertyDescriptor("ParentRef", PropertyType.INTEGER.getTypeUri());
+        parentRef.setLookupSchema(SamplesSchema.SCHEMA_NAME);
+        parentRef.setLookupQuery(PARENT_TYPE);
+        List<GWTPropertyDescriptor> props = List.of(
+                new GWTPropertyDescriptor("name", "string"),
+                new GWTPropertyDescriptor("TextField", PropertyType.STRING.getTypeUri()),
+                new GWTPropertyDescriptor("NoteField", PropertyType.MULTI_LINE.getTypeUri()),
+                new GWTPropertyDescriptor("IntField", PropertyType.INTEGER.getTypeUri()),
+                parentRef);
+        return SampleTypeService.get().createSampleType(_project, _user, name, null, props, emptyList(), -1, -1, -1, -1, null, null);
+    }
+
+    private static void insertSamples(Container c, String sampleType, List<Map<String, Object>> rows) throws Exception
+    {
+        QueryUpdateService qus = QueryService.get().getUserSchema(_user, c, SamplesSchema.SCHEMA_SAMPLES).getTableOrThrow(sampleType).getUpdateService();
+        assertNotNull(qus);
+        BatchValidationException errors = new BatchValidationException();
+        qus.insertRows(_user, c, rows, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+    }
+
+    private static Map<String, Object> row(Object... keysAndValues)
+    {
+        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+        for (int i = 0; i < keysAndValues.length; i += 2)
+            row.put((String) keysAndValues[i], keysAndValues[i + 1]);
+        return row;
+    }
+
+    private static ExpMaterial sample(String sampleType, String name)
+    {
+        return sample(_project, sampleType, name);
+    }
+
+    private static ExpMaterial sample(Container c, String sampleType, String name)
+    {
+        ExpMaterial m = SampleTypeService.get().getSampleType(_project, sampleType).getSample(c, name);
+        assertNotNull(name, m);
+        return m;
+    }
+
+    private static List<Material> getMaterials(ExpSampleType st)
+    {
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), new SimpleFilter(CpasType.fieldKey(), st.getLSID()), new Sort(RowId.name()))
+                .getArrayList(Material.class);
+    }
+
+    private static List<Material> getIndexMaterials(ExpSampleType st)
+    {
+        return ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), ExpMaterialImpl.INDEX_COLUMNS,
+                new SimpleFilter(CpasType.fieldKey(), st.getLSID()), new Sort(RowId.name())));
+    }
+
+    private static void assertTokens(Map<String, Object> doc, SearchService.PROPERTY property, String... expected)
+    {
+        Object tokens = doc.get(property.toString());
+        assertTrue(property + " " + tokens, tokens instanceof List<?> list && list.stream().map(String::valueOf).toList().containsAll(List.of(expected)));
+    }
+
+    /** Document id to a comparable view of the document: set-valued properties become sorted token lists, since set order isn't stable */
+    private static Map<String, Map<String, Object>> normalize(List<WebdavResource> docs) throws Exception
+    {
+        Map<String, Map<String, Object>> result = new TreeMap<>();
+        for (WebdavResource doc : docs)
+        {
+            Map<String, Object> view = new TreeMap<>();
+            for (Map.Entry<String, ?> e : doc.getProperties().entrySet())
+            {
+                Object v = e.getValue();
+                if (v instanceof JSONObject json)
+                    v = json.toMap();
+                else if (v instanceof String s && e.getKey().matches("identifiers(Hi|Med|Lo)|keywords(Hi|Med|Lo)"))
+                    v = Arrays.stream(s.split("\\s+")).filter(t -> !t.isEmpty()).sorted().toList();
+                view.put(e.getKey(), v);
+            }
+            try (InputStream in = Objects.requireNonNull(doc.getInputStream(_user)))
+            {
+                view.put("body", IOUtils.toString(in, StandardCharsets.UTF_8));
+            }
+            view.put("container", doc.getContainerId().toString());
+            view.put("created", doc.getCreated());
+            view.put("createdBy", String.valueOf(doc.getCreatedBy()));
+            view.put("modified", doc.getLastModified());
+            view.put("modifiedBy", String.valueOf(doc.getModifiedBy()));
+            result.put(doc.getDocumentId(), view);
+        }
+        return result;
+    }
+}

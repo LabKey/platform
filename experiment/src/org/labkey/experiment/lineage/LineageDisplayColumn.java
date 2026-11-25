@@ -289,7 +289,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
             super(schema.getDbSchema(), "seed");
             SqlDialect d = schema.getDbSchema().getScope().getSqlDialect();
             this.schema = schema;
-            this.sqlf = new SQLFragment("SELECT CAST( ? AS " + d.getSqlCastTypeName(JdbcType.BIGINT)+ ") AS objectid");
+            this.sqlf = new SQLFragment().unsafeAppend("SELECT CAST( ? AS ").append(d.getSqlCastTypeNameAsSql(JdbcType.BIGINT)).unsafeAppend(") AS objectid");
             this.sqlf.addAll(parameters);
             var objectidCol = new BaseColumnInfo("objectid", this, JdbcType.BIGINT);
             addColumn(objectidCol);

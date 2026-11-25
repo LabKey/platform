@@ -1717,7 +1717,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 }
             }
 
-            JdbcMetaDataSelector keySelector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> dbmd.getImportedKeys(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName()));
+            JdbcMetaDataSelector keySelector = dialect.getImportedKeysSelector(locator);
 
             // load keys in two phases
             // 1) combine multi-column keys

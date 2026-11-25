@@ -15,9 +15,11 @@
  */
 package org.labkey.wiki.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.util.URLHelper;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiManager;
 import org.labkey.wiki.WikiSelectManager;
@@ -35,8 +37,8 @@ public class WikiEditModel
 {
     private final Wiki _wiki;
     private final WikiVersion _wikiVersion;
-    private final String _redir;
-    private final String _cancelRedir;
+    private final URLHelper _redir;
+    private final URLHelper _cancelRedir;
     private final Container _container;
     private final String _format;
     private final String _defName;
@@ -44,8 +46,8 @@ public class WikiEditModel
     private final int _webPartId;
     private final User _user;
 
-    public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, String redir,
-                         String cancelRedir, String format, String defName, boolean useVisualEditor,
+    public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, @Nullable URLHelper redir,
+                         @Nullable URLHelper cancelRedir, String format, String defName, boolean useVisualEditor,
                          int webPartId, User user)
     {
         _container = container;
@@ -65,12 +67,12 @@ public class WikiEditModel
         return _wiki;
     }
 
-    public String getRedir()
+    public @Nullable URLHelper getRedir()
     {
         return _redir;
     }
 
-    public String getCancelRedir()
+    public @Nullable URLHelper getCancelRedir()
     {
         return _cancelRedir;
     }

@@ -64,7 +64,7 @@ public class ExperimentWarningProvider implements WarningProvider
             TableInfo timelineTable = auditLogSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, cf);
             if (timelineTable == null)
                 return;
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) from ").append(timelineTable)
+            SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) from ").append(timelineTable)
                     .unsafeAppend(" WHERE transactionId = ?").add(Long.valueOf(transactionIdStr));
             SqlSelector selector = new SqlSelector(auditLogSchema.getDbSchema().getScope(), sql);
             _actualRecordCount = selector.getObject(Long.class);

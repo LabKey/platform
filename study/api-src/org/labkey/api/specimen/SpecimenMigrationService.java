@@ -25,12 +25,11 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
+import org.labkey.api.study.query.AbstractStudyQuerySchema;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -71,12 +70,15 @@ public interface SpecimenMigrationService
 
     boolean isEnableRequests(Container c);
 
-    void addSpecimenPivotTableNames(Set<String> names);
+    /** Adds the names of the study schema tables that the specimen module provides */
+    void addSpecimenTableNames(Set<String> names);
 
     /**
-     * Returns a specimen pivot TableInfo, if that's what was requested
+     * Returns the requested study schema table if the specimen module provides it, otherwise null
      */
-    @Nullable TableInfo getSpecimenPivotTable(UserSchema schema, String name, Study study, ContainerFilter cf);
+    @Nullable TableInfo getSpecimenTable(AbstractStudyQuerySchema schema, String name, ContainerFilter cf);
+
+    TableInfo createSpecimenCommentTable(AbstractStudyQuerySchema schema, ContainerFilter cf, boolean joinBackToSpecimens);
 
     @Nullable SafeToRender getSpecimenSettingsLink(Container c, User user);
 

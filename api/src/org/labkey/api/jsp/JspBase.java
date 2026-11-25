@@ -16,6 +16,7 @@
 
 package org.labkey.api.jsp;
 
+import com.google.errorprone.annotations.CompileTimeConstant;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -163,20 +164,9 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * @param s Valid, properly encoded HTML
      * @return An HtmlString that wraps the parameter without encoding
      */
-    public HtmlString unsafe(String s)
+    public HtmlString unsafe(@CompileTimeConstant String s)
     {
         return HtmlString.unsafe(s);
-    }
-
-    /**
-     * Convenience method for asserting that a CharSequence contains valid, properly encoded HTML.
-     *
-     * @param cs Valid, properly encoded HTML
-     * @return An HtmlString that wraps the parameter without encoding
-     */
-    public HtmlString unsafe(CharSequence cs)
-    {
-        return HtmlString.unsafe(cs.toString());
     }
 
     /**

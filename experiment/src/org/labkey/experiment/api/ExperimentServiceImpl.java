@@ -83,8 +83,6 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -297,6 +295,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -511,10 +510,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         // Get the Protocol LSIDs out instead of doing a DISTINCT on exp.Protocol.* since SQLServer can't do DISTINCT
         // on ntext fields
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT er.ProtocolLSID FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT er.ProtocolLSID FROM ");
         sql.append(getTinfoExperimentRun(), "er");
         sql.unsafeAppend(" WHERE ");
-        sql.append(containerFilter.getSQLFragment(getSchema(), new SQLFragment("er.Container")));
+        sql.append(containerFilter.getSQLFragment(getSchema(), SQLFragment.unsafe("er.Container")));
 
         // Translate the LSIDs into protocol objects
         List<ExpProtocolImpl> result = new ArrayList<>();
@@ -606,7 +605,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public boolean hasExpRuns(Container container, @NotNull Predicate<ExpRun> filterFn)
     {
-        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+        SQLFragment sql = SQLFragment.unsafe(" SELECT ER.* "
                 + " FROM exp.ExperimentRun ER "
                 + " WHERE ER.Container = ? ");
         sql.add(container.getId());
@@ -620,7 +619,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container, int limit)
     {
-        SQLFragment sql = new SQLFragment("SELECT ER.* FROM exp.ExperimentRun ER WHERE ER.Container = ?");
+        SQLFragment sql = SQLFragment.unsafe("SELECT ER.* FROM exp.ExperimentRun ER WHERE ER.Container = ?");
         sql.add(container.getId());
         if (null != filterSQL && !filterSQL.isEmpty())
             sql.unsafeAppend(" AND ").append(filterSQL);
@@ -640,7 +639,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<? extends ExpExperiment> getExpBatches(@NotNull Container container, @NotNull ExpProtocol batchProtocol,
                                                        @Nullable Date modifiedSince, long minRowId, int limit)
     {
-        SQLFragment sql = new SQLFragment("SELECT E.* FROM ").append(getTinfoExperiment(), "E")
+        SQLFragment sql = SQLFragment.unsafe("SELECT E.* FROM ").append(getTinfoExperiment(), "E")
                 .unsafeAppend(" WHERE E.Container = ?").add(container.getId())
                 .unsafeAppend(" AND E.BatchProtocolId = ?").add(batchProtocol.getRowId())
                 .unsafeAppend(" AND E.RowId > ?").add(minRowId);
@@ -1192,13 +1191,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Container container = queue.getContainer();
         final String materialAlias = "_m_";
         final String materialIndexedAlias = "_mi_";
-        // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
-        SQLFragment sql = new SQLFragment("SELECT ").append(materialAlias).unsafeAppend(".* FROM ").
+        // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037)
+        SQLFragment sql = SQLFragment.unsafe("SELECT ").unsafeAppend(ExpMaterialImpl.getIndexColumnsSelectList(materialAlias)).unsafeAppend(" FROM ").
                 append(getTinfoMaterial(), "_m_").
                 unsafeAppend(" LEFT OUTER JOIN ").append(getTinfoMaterialIndexed(), "_mi_").
-                unsafeAppend(" ON ").append(materialAlias).unsafeAppend(".RowId = ").
-                append(materialIndexedAlias).append(".MaterialId WHERE Container = ? AND LSID NOT LIKE '%:" +
-                        StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
+                unsafeAppend(" ON ").appendIdentifier(materialAlias).unsafeAppend(".RowId = ").
+                appendIdentifier(materialIndexedAlias).unsafeAppend(".MaterialId").
+                // The planner doesn't carry RowId > ? across the outer join, so without its own bound the join reads materialindexed from the start every batch
+                unsafeAppend(" AND ").appendIdentifier(materialIndexedAlias).unsafeAppend(".MaterialId > ?").add(minRowId).
+                unsafeAppend(" WHERE Container = ? AND LSID NOT LIKE '%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
         sql.add(container.getId());
         sql.add(minRowId);
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, materialAlias, getTinfoMaterialIndexed(), materialIndexedAlias).toSQLFragment(null, null);
@@ -1212,11 +1213,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
         Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
-        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> new ExpMaterialImpl(m).indexWithTableCache(queue, tableCache));
+        List<Material> batch = ExpMaterialImpl.readIndexMaterials(selector);
+        batch.forEach(m -> tracker.advance(m.getRowId()));
 
-        if (tracker.wasFull())
+        try
+        {
+            ExpMaterialImpl.indexBatch(queue, batch, tableCache);
+        }
+        finally
+        {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
+            if (tracker.wasFull())
+                queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
+        }
     }
 
     public void indexData(final @NotNull SearchService.TaskIndexingQueue queue, final Date modifiedSince, long minRowId)
@@ -1225,10 +1234,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         final String dataAlias = "_d_";
         final String dataIndexedAlias = "_di_";
 
-        SQLFragment sql = new SQLFragment("SELECT ").append(dataAlias).unsafeAppend(".* FROM ").
+        SQLFragment sql = SQLFragment.unsafe("SELECT ").appendIdentifier(dataAlias).unsafeAppend(".* FROM ").
                 append(getTinfoData(), dataAlias).
                 unsafeAppend(" LEFT OUTER JOIN ").append(getTinfoDataIndexed(), dataIndexedAlias).
-                unsafeAppend(" ON ").append(dataAlias).unsafeAppend(".RowId = ").append(dataIndexedAlias).unsafeAppend(".DataId ").
+                unsafeAppend(" ON ").appendIdentifier(dataAlias).unsafeAppend(".RowId = ").appendIdentifier(dataIndexedAlias).unsafeAppend(".DataId ").
                 unsafeAppend(" WHERE Container = ? AND classId IS NOT NULL AND RowId > ?");
         sql.add(container.getId());
         sql.add(minRowId);
@@ -1253,7 +1262,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoDataClass() + " _x_ WHERE Container = ?").add(container.getId());
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT * FROM ").append(getTinfoDataClass().getSQLName()).unsafeAppend(" _x_ WHERE Container = ?").add(container.getId());
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoDataClass(), modifiedSince, "_x_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.unsafeAppend(" AND ").append(modifiedSQL);
@@ -1262,7 +1271,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private Collection<ExpSampleTypeImpl> getIndexableSampleTypes(@NotNull Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoSampleType() + " _st_ WHERE Container = ?").add(container.getId());
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT * FROM ").append(getTinfoSampleType().getSQLName()).unsafeAppend(" _st_ WHERE Container = ?").add(container.getId());
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoSampleType(), modifiedSince, "_st_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.unsafeAppend(" AND ").append(modifiedSQL);
@@ -1272,9 +1281,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public void setDataLastIndexed(long rowId, long ms)
     {
         Date d = new Date(ms);
-        SQLFragment sql = new SQLFragment("UPDATE " + getTinfoDataIndexed() + " SET LastIndexed = ? WHERE DataId = ?").appendEOS().
-                append("INSERT INTO " + getTinfoDataIndexed() + " (DataId, LastIndexed) SELECT ?, ? WHERE NOT EXISTS (SELECT DataId FROM " +
-                getTinfoDataIndexed() + " WHERE DataId = ?) AND EXISTS (SELECT RowId FROM " + getTinfoData() + " WHERE RowId = ?)");
+        SQLFragment sql = new SQLFragment().unsafeAppend("UPDATE ").append(getTinfoDataIndexed().getSQLName()).unsafeAppend(" SET LastIndexed = ? WHERE DataId = ?").appendEOS().
+                unsafeAppend("INSERT INTO ")
+                        .append(getTinfoDataIndexed().getSQLName())
+                        .unsafeAppend(" (DataId, LastIndexed) SELECT ?, ? WHERE NOT EXISTS (SELECT DataId FROM ")
+                        .append(getTinfoDataIndexed().getSQLName())
+                        .unsafeAppend(" WHERE DataId = ?) AND EXISTS (SELECT RowId FROM ")
+                        .append(getTinfoData().getSQLName())
+                        .unsafeAppend(" WHERE RowId = ?)");
         sql.add(d);
         sql.add(rowId);
         sql.add(rowId);
@@ -1302,54 +1316,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         if (null == updates || updates.isEmpty())
             return;
-        DbScope dbscope = getSchema().getScope();
-        try (Connection c = dbscope.getConnection())
+
+        // Latest time per sample, since one upsert can't touch a row twice; RowId order keeps lock order consistent (Issue 51263)
+        TreeMap<Long, Long> latest = new TreeMap<>();
+        updates.forEach(p -> latest.merge(p.first, p.second, Math::max));
+
+        DbScope scope = getSchema().getScope();
+        // Holding the thread's connection lets every chunk reuse it instead of borrowing and validating one per chunk
+        try (Connection ignored = scope.getConnection())
         {
-            Parameter updateMaterialId = new Parameter("materialid", JdbcType.INTEGER);
-            Parameter updateTS = new Parameter("ts", JdbcType.TIMESTAMP);
-            SQLFragment updateSql = new SQLFragment("UPDATE " + getTinfoMaterialIndexed() + " SET LastIndexed = ? WHERE MaterialId = ?");
-            updateSql.add(updateTS);
-            updateSql.add(updateMaterialId);
-
-            Parameter insertTS = new Parameter("ts", JdbcType.TIMESTAMP);
-            Parameter insertRowId = new Parameter("rowid", JdbcType.INTEGER);
-            Parameter insertMaterialId = new Parameter("materialid", JdbcType.INTEGER);
-            SQLFragment insertSql = new SQLFragment("INSERT INTO " + getTinfoMaterialIndexed() + " (MaterialId, LastIndexed) " +
-                    "SELECT RowId, ? FROM " + getTinfoMaterial() + " WHERE RowId = ? AND " +
-                            " NOT EXISTS (SELECT MaterialId FROM " + getTinfoMaterialIndexed() + " WHERE MaterialId = ?)");
-            insertSql.add(insertTS);
-            insertSql.add(insertRowId);
-            insertSql.add(insertMaterialId);
-
-            try (ParameterMapStatement insertPM = new ParameterMapStatement(getSchema().getScope(), c, insertSql, null);
-                 ParameterMapStatement updatePM = new ParameterMapStatement(getSchema().getScope(), c, updateSql, null))
+            ListUtils.partition(new ArrayList<>(latest.keySet()), BatchSize.get(ROWS)).forEach(rowIds ->
             {
-                ListUtils.partition(updates, BatchSize.get(ROWS)).forEach(sublist ->
+                Timestamp[] times = rowIds.stream().map(id -> new Timestamp(latest.get(id))).toArray(Timestamp[]::new);
+                // The join skips samples deleted since they were indexed
+                SQLFragment sql = new SQLFragment()
+                        .unsafeAppend("INSERT INTO ").append(getTinfoMaterialIndexed()).unsafeAppend(" (MaterialId, LastIndexed)")
+                        .unsafeAppend(" SELECT u.id, u.ts FROM unnest(?::BIGINT[], ?::TIMESTAMP[]) AS u(id, ts)").add(rowIds.toArray(new Long[0])).add(times)
+                        .unsafeAppend(" JOIN ").append(getTinfoMaterial(), "m").unsafeAppend(" ON m.RowId = u.id ORDER BY u.id")
+                        .unsafeAppend(" ON CONFLICT (MaterialId) DO UPDATE SET LastIndexed = EXCLUDED.LastIndexed");
+                try
                 {
-                    try
-                    {
-                        for (Pair<Long, Long> p : sublist)
-                        {
-                            insertMaterialId.setValue(p.first);
-                            insertTS.setValue(new Timestamp(p.second));
-                            insertRowId.setValue(p.first);
-                            insertPM.addBatch();
-
-                            updateMaterialId.setValue(p.first);
-                            updateTS.setValue(new Timestamp(p.second));
-                            updatePM.addBatch();
-                        }
-                        insertPM.executeBatch();
-                        updatePM.executeBatch();
-                    }
-                    catch (PessimisticLockingFailureException | DataIntegrityViolationException e)
-                    {
-                        // if we're not in a transaction just keep going...
-                        if (dbscope.isTransactionActive())
-                            throw e;
-                    }
-                });
-            }
+                    new SqlExecutor(scope).execute(sql);
+                }
+                catch (PessimisticLockingFailureException | DataIntegrityViolationException e)
+                {
+                    // if we're not in a transaction just keep going...
+                    if (scope.isTransactionActive())
+                        throw e;
+                }
+            });
         }
         catch (SQLException x)
         {
@@ -1386,7 +1381,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 return;
 
             // Index the data class if it has never been indexed OR it has changed since it was last indexed
-            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+            SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ")
                     .append(getTinfoDataClass(), "dc")
                     .unsafeAppend(" WHERE dc.LSID = ?").add(dataClass.getLSID())
                     .unsafeAppend(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)")
@@ -2264,7 +2259,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // Try to find an existing run group with the same set of runs.
         // An identical group will have the same total run count, and the same total count when the runs
         // are restricted to just the runs of interest
-        SQLFragment sql = new SQLFragment("SELECT E.* FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT E.* FROM ");
         sql.append(getTinfoExperiment(), "E");
         sql.unsafeAppend(", (SELECT ExperimentId, COUNT(ExperimentRunId) AS C FROM ");
         sql.append(getTinfoRunList(), "RL");
@@ -2387,7 +2382,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private Set<String> getInputRoles(Container ignoredContainer, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
     {
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT role FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT role FROM ");
         sql.append(table, "t");
         sql.unsafeAppend(" WHERE targetapplicationid IN (SELECT pa.rowid FROM ");
         sql.append(getTinfoProtocolApplication(), "pa");
@@ -2411,7 +2406,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.unsafeAppend(" pa.runid IN (SELECT rowid FROM ");
         sql.append(getTinfoExperimentRun(), "er");
         sql.unsafeAppend(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container")));
+        sql.append(filter.getSQLFragment(getSchema(), SQLFragment.unsafe("Container")));
         sql.unsafeAppend("))");
         return new TreeSet<>(new SqlSelector(getSchema(), sql).getCollection(String.class));
     }
@@ -2839,12 +2834,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
         assert !options.isUseObjectIds();
-        String comma = "";
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
         {
-            sqlf.append(comma).unsafeAppend("?").add(lsid);
-            comma = ",";
+            sqlf.append(comma.next()).unsafeAppend("?").add(lsid);
         }
         return generateExperimentTreeSQL(sqlf, options);
     }
@@ -2852,12 +2846,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Long> objectIds, ExpLineageOptions options)
     {
         assert options.isUseObjectIds();
-        String comma = "";
-        SQLFragment sqlf = new SQLFragment("VALUES ");
+        SQLFragment.SqlSeparator comma = SQLFragment.sep("", ",");
+        SQLFragment sqlf = SQLFragment.unsafe("VALUES ");
         for (Long objectId : objectIds)
         {
-            sqlf.append(comma).unsafeAppend("(").appendValue(objectId).unsafeAppend(")");
-            comma = ",";
+            sqlf.append(comma.next()).unsafeAppend("(").appendValue(objectId).unsafeAppend(")");
         }
         return generateExperimentTreeSQL(sqlf, options);
     }
@@ -2972,54 +2965,55 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             if (up)
             {
+                SQLFragment parentsCte = new SQLFragment();
+                parentsCte.setSqlUnsafe(tokens.first);
                 SQLFragment parents = new SQLFragment();
                 if (options.isOnlySelectObjectId())
                 {
-                    parents.unsafeAppend("\nSELECT objectid FROM ").append(tokens.first);
+                    parents.unsafeAppend("\nSELECT objectid FROM ").append(parentsCte);
                 }
                 else if (options.isForLookup())
                 {
                     parents.unsafeAppend("\nSELECT MIN(depth) AS depth, self, objectid, ");
                     parents.unsafeAppend("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, MIN(lsid) AS lsid, MIN(rowid) AS rowid ");
-                    parents.unsafeAppend("\nFROM ").append(tokens.first);
+                    parents.unsafeAppend("\nFROM ").append(parentsCte);
                 }
                 else
                 {
-                    parents.append("\nSELECT * FROM ").append(tokens.first);
+                    parents.unsafeAppend("\nSELECT * FROM ").append(parentsCte);
                 }
 
                 parents.unsafeAppend("\nWHERE depth != 0");
-                String and = "\nAND ";
 
                 if (options.isForLookup())
                 {
-                    parents.append(and).unsafeAppend("objectid <> self");
+                    parents.AND().unsafeAppend("objectid <> self");
                 }
 
                 if (options.getExpTypeValue() != null && !"NULL".equalsIgnoreCase(options.getExpTypeValue()))
                 {
                     if (options.isForLookup())
-                        parents.append(and).unsafeAppend("exptype = ?\n");
+                        parents.AND().unsafeAppend("exptype = ?\n");
                     else
-                        parents.append(and).unsafeAppend("parent_exptype = ?\n");
+                        parents.AND().unsafeAppend("parent_exptype = ?\n");
                     parents.add(options.getExpTypeValue());
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
                 {
                     if (options.isForLookup())
-                        parents.append(and).unsafeAppend("cpastype = ?\n");
+                        parents.AND().unsafeAppend("cpastype = ?\n");
                     else
-                        parents.append(and).unsafeAppend("parent_cpastype = ?\n");
+                        parents.AND().unsafeAppend("parent_cpastype = ?\n");
                     parents.add(options.getCpasType());
                 }
 
                 if (options.getRunProtocolLsid() != null && !"NULL".equalsIgnoreCase(options.getRunProtocolLsid()))
                 {
                     if (options.isForLookup())
-                        parents.append(and).unsafeAppend("cpastype = ?\n");
+                        parents.AND().unsafeAppend("cpastype = ?\n");
                     else
-                        parents.append(and).unsafeAppend("child_protocolLsid IN ('NONE', ?)\n");
+                        parents.AND().unsafeAppend("child_protocolLsid IN ('NONE', ?)\n");
                     parents.add(options.getRunProtocolLsid());
                 }
 
@@ -3029,7 +3023,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     int depth = options.getDepth();
                     if (depth > 0)
                         depth *= -1;
-                    parents.append(and).unsafeAppend("depth >= ").appendValue(depth);
+                    parents.AND().unsafeAppend("depth >= ").appendValue(depth);
                 }
 
                 if (options.isForLookup() && !options.isOnlySelectObjectId())
@@ -3046,61 +3040,62 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (down)
             {
+                SQLFragment childrenCte = new SQLFragment();
+                childrenCte.setSqlUnsafe(tokens.second);
                 SQLFragment children = new SQLFragment();
 
                 if (options.isOnlySelectObjectId())
                 {
-                    children.unsafeAppend("\nSELECT objectid FROM ").append(tokens.second);
+                    children.unsafeAppend("\nSELECT objectid FROM ").append(childrenCte);
                 }
                 else if (options.isForLookup())
                 {
                     children.unsafeAppend("\nSELECT MIN(depth) AS depth, self, objectid, ");
                     children.unsafeAppend("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, MIN(lsid) AS lsid, MIN(rowid) AS rowid ");
-                    children.unsafeAppend("\nFROM ").append(tokens.second);
+                    children.unsafeAppend("\nFROM ").append(childrenCte);
                 }
                 else
                 {
-                    children.append("\nSELECT * FROM ").append(tokens.second);
+                    children.unsafeAppend("\nSELECT * FROM ").append(childrenCte);
                 }
 
                 children.unsafeAppend("\nWHERE depth != 0");
-                String and = "\nAND ";
 
                 if (options.isForLookup())
                 {
-                    children.append(and).unsafeAppend("objectid <> self");
+                    children.AND().unsafeAppend("objectid <> self");
                 }
 
                 if (options.getExpTypeValue() != null && !"NULL".equalsIgnoreCase(options.getExpTypeValue()))
                 {
                     if (options.isForLookup())
-                        children.append(and).unsafeAppend("exptype = ?\n");
+                        children.AND().unsafeAppend("exptype = ?\n");
                     else
-                        children.append(and).unsafeAppend("child_exptype = ?\n");
+                        children.AND().unsafeAppend("child_exptype = ?\n");
                     children.add(options.getExpTypeValue());
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
                 {
                     if (options.isForLookup())
-                        children.append(and).unsafeAppend("cpastype = ?\n");
+                        children.AND().unsafeAppend("cpastype = ?\n");
                     else
-                        children.append(and).unsafeAppend("child_cpastype = ?\n");
+                        children.AND().unsafeAppend("child_cpastype = ?\n");
                     children.add(options.getCpasType());
                 }
 
                 if (options.getRunProtocolLsid() != null && !"NULL".equalsIgnoreCase(options.getRunProtocolLsid()))
                 {
                     if (options.isForLookup())
-                        children.append(and).unsafeAppend("cpastype = ?\n");
+                        children.AND().unsafeAppend("cpastype = ?\n");
                     else
-                        children.append(and).unsafeAppend("parent_protocolLsid IN ('NONE', ?)\n");
+                        children.AND().unsafeAppend("parent_protocolLsid IN ('NONE', ?)\n");
                     children.add(options.getRunProtocolLsid());
                 }
 
                 if (options.getDepth() > 0)
                 {
-                    children.append(and).unsafeAppend("depth <= ").appendValue(options.getDepth());
+                    children.AND().unsafeAppend("depth <= ").appendValue(options.getDepth());
                 }
 
                 if (options.isForLookup() && !options.isOnlySelectObjectId())
@@ -3934,7 +3929,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         run.deleteProtocolApplications(datasToDelete, user);
 
-        SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?").add(run.getRowId()).appendEOS();
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM exp.RunList WHERE ExperimentRunId = ?").add(run.getRowId()).appendEOS();
         sql.unsafeAppend("\nUPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?").add(run.getRowId()).appendEOS();
         sql.unsafeAppend("\nDELETE FROM ").append(getTinfoEdge()).unsafeAppend(" WHERE runId = ?").add(run.getRowId()).appendEOS();
         sql.unsafeAppend("\nDELETE FROM exp.ExperimentRun WHERE RowId = ?").add(run.getRowId()).appendEOS();
@@ -4294,7 +4289,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<ExpProtocolApplicationImpl> getExpProtocolApplicationsByObjectId(Container container, String objectId)
     {
         String likeFilter = "%:" + objectId;
-        final SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        final SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ");
         sql.append(getTinfoProtocolApplication(), "pa");
         sql.unsafeAppend(" WHERE LSID LIKE ? AND RunId IN (SELECT RowId FROM ");
         sql.append(getTinfoExperimentRun(), "er");
@@ -4697,9 +4692,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             SqlDialect dialect = getExpSchema().getSqlDialect();
 
-            SQLFragment parentSql = new SQLFragment("SELECT ParentProtocolId FROM exp.ProtocolAction WHERE ChildProtocolId");
+            SQLFragment parentSql = SQLFragment.unsafe("SELECT ParentProtocolId FROM exp.ProtocolAction WHERE ChildProtocolId");
             parentSql.appendInClause(idsToCheck, dialect);
-            SQLFragment childSql = new SQLFragment("SELECT ChildProtocolId FROM exp.ProtocolAction WHERE ParentProtocolId");
+            SQLFragment childSql = SQLFragment.unsafe("SELECT ChildProtocolId FROM exp.ProtocolAction WHERE ParentProtocolId");
             childSql.appendInClause(idsToCheck, dialect);
 
             Long[] newIds = new SqlSelector(getExpSchema(), parentSql).getArray(Long.class);
@@ -4742,11 +4737,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return Collections.emptyList();
         }
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                .append(getTinfoExperimentRun().getSelectName())
-                .append(" WHERE ProtocolLSID IN (SELECT LSID FROM exp.Protocol WHERE RowId")
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ")
+                .append(getTinfoExperimentRun().getSQLName())
+                .unsafeAppend(" WHERE ProtocolLSID IN (SELECT LSID FROM exp.Protocol WHERE RowId")
                 .appendInClause(allProtocolIds, getExpSchema().getSqlDialect())
-                .append(")");
+                .unsafeAppend(")");
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
@@ -4760,10 +4755,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Long> protocolIds = Arrays.asList(ArrayUtils.toObject(selectedProtocolIds));
         SqlDialect dialect = getExpSchema().getSqlDialect();
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId").appendInClause(protocolIds, dialect);
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM exp.Protocol WHERE RowId").appendInClause(protocolIds, dialect);
         Protocol[] protocols = new SqlSelector(getExpSchema(), sql).getArray(Protocol.class);
 
-        sql = new SQLFragment("SELECT RowId FROM exp.ProtocolAction ");
+        sql = SQLFragment.unsafe("SELECT RowId FROM exp.ProtocolAction ");
         sql.unsafeAppend(" WHERE (ChildProtocolId").appendInClause(protocolIds, dialect);
         sql.unsafeAppend(" OR ParentProtocolId").appendInClause(protocolIds, dialect).unsafeAppend(" )");
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
@@ -4833,12 +4828,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
 
                 List<Integer> actionIdList = Arrays.asList(actionIds);
-                executor.execute(new SQLFragment("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId").appendInClause(actionIdList, dialect)
-                        .append(" OR PredecessorId").appendInClause(actionIdList, dialect));
-                executor.execute(new SQLFragment("DELETE FROM exp.ProtocolAction WHERE RowId").appendInClause(actionIdList, dialect));
+                executor.execute(SQLFragment.unsafe("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId").appendInClause(actionIdList, dialect)
+                        .unsafeAppend(" OR PredecessorId").appendInClause(actionIdList, dialect));
+                executor.execute(SQLFragment.unsafe("DELETE FROM exp.ProtocolAction WHERE RowId").appendInClause(actionIdList, dialect));
             }
 
-            executor.execute(new SQLFragment("DELETE FROM exp.ProtocolParameter WHERE ProtocolId").appendInClause(protocolIds, dialect));
+            executor.execute(SQLFragment.unsafe("DELETE FROM exp.ProtocolParameter WHERE ProtocolId").appendInClause(protocolIds, dialect));
 
             deleteAllProtocolInputs(c, protocolIds);
 
@@ -4851,9 +4846,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
             }
 
-            executor.execute(new SQLFragment("DELETE FROM exp.Protocol WHERE RowId").appendInClause(protocolIds, dialect));
+            executor.execute(SQLFragment.unsafe("DELETE FROM exp.Protocol WHERE RowId").appendInClause(protocolIds, dialect));
 
-            sql = new SQLFragment("SELECT RowId FROM exp.Protocol WHERE RowId NOT IN (SELECT ParentProtocolId FROM exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
+            sql = SQLFragment.unsafe("SELECT RowId FROM exp.Protocol WHERE RowId NOT IN (SELECT ParentProtocolId FROM exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
             sql.add(c.getId());
             long[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Long.class));
             deleteProtocolByRowIds(c, user,null, orphanedProtocolIds);
@@ -4904,8 +4899,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private void deleteAllProtocolInputs(Container c, Collection<Long> protocolIds)
     {
         SqlDialect dialect = getSchema().getSqlDialect();
-        OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId").appendInClause(protocolIds, dialect), c);
-        new SqlExecutor(getSchema()).execute(new SQLFragment("DELETE FROM exp.ProtocolInput WHERE ProtocolId").appendInClause(protocolIds, dialect));
+        OntologyManager.deleteOntologyObjects(getSchema(), SQLFragment.unsafe("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId").appendInClause(protocolIds, dialect), c);
+        new SqlExecutor(getSchema()).execute(SQLFragment.unsafe("DELETE FROM exp.ProtocolInput WHERE ProtocolId").appendInClause(protocolIds, dialect));
     }
 
     private void deleteProtocolInputs(@NotNull Protocol protocol, Collection<? extends ExpProtocolInput> protocolInputsToDelete)
@@ -4918,12 +4913,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return;
 
         var table = getTinfoProtocolInput();
-        SQLFragment ontologyLSIDSql = new SQLFragment("SELECT LSID FROM ").append(getTinfoProtocolInput(), "")
+        SQLFragment ontologyLSIDSql = SQLFragment.unsafe("SELECT LSID FROM ").append(getTinfoProtocolInput(), "")
                 .unsafeAppend(" WHERE ProtocolId = ?").add(protocol.getRowId())
                 .unsafeAppend(" AND RowId ");
         table.getSqlDialect().appendInClauseSql(ontologyLSIDSql, protocolInputRowIds);
 
-        SQLFragment deleteSql = new SQLFragment("DELETE FROM ").append(getTinfoProtocolInput(), "")
+        SQLFragment deleteSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoProtocolInput(), "")
                         .unsafeAppend(" WHERE ProtocolId = ?").add(protocol.getRowId())
                         .unsafeAppend(" AND RowId ");
         table.getSqlDialect().appendInClauseSql(deleteSql, protocolInputRowIds);
@@ -5034,7 +5029,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         boolean truncateContainer
     )
     {
-        SQLFragment rowIdSQL = new SQLFragment("RowId ");
+        SQLFragment rowIdSQL = SQLFragment.unsafe("RowId ");
         rowIdSQL.appendInClause(selectedMaterialIds, getSchema().getSqlDialect());
         return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, truncateContainer, null);
     }
@@ -5088,7 +5083,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean moreBatches = true;
             while (moreBatches)
             {
-                SQLFragment sql = dialect.limitRows(new SQLFragment("SELECT *"), new SQLFragment("FROM exp.Material"), new SQLFragment("WHERE ").append(materialFilterSQL), new SQLFragment("ORDER BY RowId"), null, maxBatch, count);
+                SQLFragment sql = dialect.limitRows(SQLFragment.unsafe("SELECT *"), SQLFragment.unsafe("FROM exp.Material"), SQLFragment.unsafe("WHERE ").append(materialFilterSQL), SQLFragment.unsafe("ORDER BY RowId"), null, maxBatch, count);
                 List<Material> rawMaterials = new SqlSelector(getExpSchema(), sql).getArrayList(Material.class);
 
                 moreBatches = rawMaterials.size() == maxBatch;
@@ -5147,49 +5142,49 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             // generate in clause for the Material LSIDs
-            SQLFragment lsidInFrag = new SQLFragment(" IN (SELECT Lsid FROM ");
+            SQLFragment lsidInFrag = SQLFragment.unsafe(" IN (SELECT Lsid FROM ");
             lsidInFrag.append(getTinfoMaterial(), "m");
             lsidInFrag.unsafeAppend(" WHERE ");
             lsidInFrag.append(materialFilterSQL);
             lsidInFrag.unsafeAppend(")");
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
-            SQLFragment deleteAliasSql = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoMaterialAliasMap())).unsafeAppend(" WHERE LSID ")
+            SQLFragment deleteAliasSql = SQLFragment.unsafe("DELETE FROM ").append(getTinfoMaterialAliasMap().getSQLName()).unsafeAppend(" WHERE LSID ")
                     .append(lsidInFrag);
             executor.execute(deleteAliasSql);
 
             // Stash the ObjectIds that we're going to delete after we delete from exp.material
             final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
             final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectId" + suffix;
-            executor.execute(new SQLFragment("CREATE ")
-                    .append(getSchema().getSqlDialect().getTempTableKeyword())
+            executor.execute(SQLFragment.unsafe("CREATE ")
+                    .append(getSchema().getSqlDialect().getTempTableKeywordAsSql())
                     .unsafeAppend(" TABLE ")
-                    .append(objectTempTableName)
+                    .appendIdentifier(objectTempTableName)
                     .unsafeAppend("(ObjectId BIGINT NOT NULL PRIMARY KEY)"));
 
-            executor.execute(new SQLFragment("INSERT INTO ")
-                    .append(objectTempTableName)
+            executor.execute(SQLFragment.unsafe("INSERT INTO ")
+                    .appendIdentifier(objectTempTableName)
                     .unsafeAppend("(ObjectId) SELECT ObjectId FROM exp.Material WHERE ")
                     .append(materialFilterSQL));
 
             TableInfo edge = getTinfoEdge();
-            executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE fromObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
-            executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE toObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
-            executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE sourceId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(edge).unsafeAppend(" WHERE fromObjectId IN (SELECT ObjectId FROM ").appendIdentifier(objectTempTableName).unsafeAppend(")"));
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(edge).unsafeAppend(" WHERE toObjectId IN (SELECT ObjectId FROM ").appendIdentifier(objectTempTableName).unsafeAppend(")"));
+            executor.execute(SQLFragment.unsafe("DELETE FROM ").append(edge).unsafeAppend(" WHERE sourceId IN (SELECT ObjectId FROM ").appendIdentifier(objectTempTableName).unsafeAppend(")"));
 
-            SQLFragment materialIdSql = new SQLFragment("(SELECT RowId FROM ");
+            SQLFragment materialIdSql = SQLFragment.unsafe("(SELECT RowId FROM ");
             materialIdSql.append(getTinfoMaterial(), "m");
             materialIdSql.unsafeAppend(" WHERE ");
             materialIdSql.append(materialFilterSQL);
             materialIdSql.unsafeAppend(")");
 
             // Delete MaterialInput exp.object and properties
-            SQLFragment inputObjects = new SQLFragment("SELECT ")
+            SQLFragment inputObjects = SQLFragment.unsafe("SELECT ")
                     .append(dialect.concatenate(
                             new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
-                            new SQLFragment("CAST(mi.materialId AS VARCHAR)"),
-                            new SQLFragment("'.'"),
-                            new SQLFragment("CAST(mi.targetApplicationId AS VARCHAR)")))
+                            SQLFragment.unsafe("CAST(mi.materialId AS VARCHAR)"),
+                            SQLFragment.unsafe("'.'"),
+                            SQLFragment.unsafe("CAST(mi.targetApplicationId AS VARCHAR)")))
                     .unsafeAppend(" FROM ").append(getTinfoMaterialInput(), "mi")
                     .unsafeAppend(" WHERE mi.materialId IN ")
                     .append(materialIdSql);
@@ -5198,7 +5193,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // exp.MaterialIndexed handled via a ON DELETE CASCADE foreign key
 
             // delete exp.MaterialInput
-            SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId IN ");
+            SQLFragment materialInputSQL = SQLFragment.unsafe("DELETE FROM exp.MaterialInput WHERE MaterialId IN ");
             materialInputSQL.append(materialIdSql);
             executor.execute(materialInputSQL);
 
@@ -5212,7 +5207,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // NOTE: study specimens don't have a domain for their samples, so no table
                 if (null != dbTinfo)
                 {
-                    SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM ").append(dbTinfo)
+                    SQLFragment sampleTypeSQL = SQLFragment.unsafe("DELETE FROM ").append(dbTinfo)
                         .unsafeAppend(" WHERE RowId IN ").append(materialIdSql);
                     executor.execute(sampleTypeSQL);
                 }
@@ -5220,17 +5215,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             int deletedCount;
             // Take ids from the delete itself so they match exactly what was removed
-            SQLFragment materialSQL = new SQLFragment("WITH deleted AS (DELETE FROM exp.Material WHERE ")
+            SQLFragment materialSQL = SQLFragment.unsafe("WITH deleted AS (DELETE FROM exp.Material WHERE ")
                 .append(materialFilterSQL)
-                .append(" RETURNING RowId, CpasType, RootMaterialRowId)\n")
-                .append("SELECT CpasType, COUNT(*) AS DeletedCount");
+                .unsafeAppend(" RETURNING RowId, CpasType, RootMaterialRowId)\n")
+                .unsafeAppend("SELECT CpasType, COUNT(*) AS DeletedCount");
             if (truncateContainer)
-                materialSQL.append(", CAST(NULL AS BIGINT[]) AS RowIds");
+                materialSQL.unsafeAppend(", CAST(NULL AS BIGINT[]) AS RowIds");
             else
-                materialSQL.append(", CASE WHEN COUNT(*) <= ?").add(ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
-                    .append(" THEN array_agg(CAST(RowId AS BIGINT)) END AS RowIds")
-                    .append(", array_agg(DISTINCT CAST(RootMaterialRowId AS BIGINT)) FILTER (WHERE RowId <> RootMaterialRowId) AS AliquotRoots");
-            materialSQL.append("\nFROM deleted GROUP BY CpasType");
+                materialSQL.unsafeAppend(", CASE WHEN COUNT(*) <= ?").add(ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
+                    .unsafeAppend(" THEN array_agg(CAST(RowId AS BIGINT)) END AS RowIds")
+                    .unsafeAppend(", array_agg(DISTINCT CAST(RootMaterialRowId AS BIGINT)) FILTER (WHERE RowId <> RootMaterialRowId) AS AliquotRoots");
+            materialSQL.unsafeAppend("\nFROM deleted GROUP BY CpasType");
 
             deletedCount = executor.executeWithResults(materialSQL, (rs, _) -> {
                 int total = 0;
@@ -5264,8 +5259,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ProvenanceService.get().deleteProvenanceByLsids(container, user, lsidInFrag, false, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
 
             // delete exp.objects
-            SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM ")
-                    .append(objectTempTableName);
+            SQLFragment objectIdSql = SQLFragment.unsafe("SELECT ObjectId FROM ")
+                    .appendIdentifier(objectTempTableName);
             OntologyManager.deleteOntologyObjectsByObjectIdSql(getSchema(), objectIdSql);
 
             // Get rid of our temp table
@@ -5535,12 +5530,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
          */
         SQLFragment sql = new SQLFragment();
 
-        sql.unsafeAppend("SELECT DISTINCT i.").append(inputsIdFieldName).unsafeAppend("\n");
+        sql.unsafeAppend("SELECT DISTINCT i.").appendIdentifier(inputsIdFieldName).unsafeAppend("\n");
         sql.unsafeAppend("FROM ").append(inputsTInfo, "i").unsafeAppend(", \n\t");
         sql.append(getTinfoProtocolApplication(), "pa").unsafeAppend("\n");
         sql.unsafeAppend("WHERE i.TargetApplicationId = pa.rowId\n\t")
                 .unsafeAppend("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
-                .unsafeAppend("AND i.").append(inputsIdFieldName).unsafeAppend(" ").append(rowIdInFrag).unsafeAppend("\n");
+                .unsafeAppend("AND i.").appendIdentifier(inputsIdFieldName).unsafeAppend(" ").append(rowIdInFrag).unsafeAppend("\n");
 
         ArrayList<Long> parents = new SqlSelector(getExpSchema(), sql).getArrayList(Long.class);
 
@@ -5601,10 +5596,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
 
                 SQLFragment deleteSql = new SQLFragment()
-                    .unsafeAppend("DELETE FROM ").append(String.valueOf(getTinfoDataAliasMap())).unsafeAppend(" WHERE LSID = ?").add(data.getLSID()).appendEOS()
-                    .unsafeAppend("DELETE FROM ").append(String.valueOf(getTinfoEdge())).unsafeAppend(" WHERE fromObjectId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS()
-                    .unsafeAppend("DELETE FROM ").append(String.valueOf(getTinfoEdge())).unsafeAppend(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS()
-                    .unsafeAppend("DELETE FROM ").append(String.valueOf(getTinfoEdge())).unsafeAppend(" WHERE sourceId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS();
+                    .unsafeAppend("DELETE FROM ").append(getTinfoDataAliasMap().getSQLName()).unsafeAppend(" WHERE LSID = ?").add(data.getLSID()).appendEOS()
+                    .unsafeAppend("DELETE FROM ").append(getTinfoEdge().getSQLName()).unsafeAppend(" WHERE fromObjectId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS()
+                    .unsafeAppend("DELETE FROM ").append(getTinfoEdge().getSQLName()).unsafeAppend(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS()
+                    .unsafeAppend("DELETE FROM ").append(getTinfoEdge().getSQLName()).unsafeAppend(" WHERE sourceId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS();
                 new SqlExecutor(getExpSchema()).execute(deleteSql);
 
                 if (data.getClassId() != null)
@@ -5618,19 +5613,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SqlDialect dialect = getExpSchema().getSqlDialect();
 
             // Delete DataInput exp.object and properties
-            SQLFragment inputObjects = new SQLFragment("SELECT ")
+            SQLFragment inputObjects = SQLFragment.unsafe("SELECT ")
                     .append(dialect.concatenate(
                             new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
-                                new SQLFragment("CAST(di.dataId AS VARCHAR)"),
-                                new SQLFragment("'.'"),
-                                new SQLFragment("CAST(di.targetApplicationId AS VARCHAR)")))
+                                SQLFragment.unsafe("CAST(di.dataId AS VARCHAR)"),
+                                SQLFragment.unsafe("'.'"),
+                                SQLFragment.unsafe("CAST(di.targetApplicationId AS VARCHAR)")))
                     .unsafeAppend(" FROM ").append(getTinfoDataInput(), "di").unsafeAppend(" WHERE di.DataId ");
             dialect.appendInClauseSql(inputObjects, selectedDataIds);
             OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-            SQLFragment dataInputSQL = new SQLFragment("DELETE FROM ").append(getTinfoDataInput()).unsafeAppend(" WHERE DataId ");
+            SQLFragment dataInputSQL = SQLFragment.unsafe("DELETE FROM ").append(getTinfoDataInput()).unsafeAppend(" WHERE DataId ");
             dialect.appendInClauseSql(dataInputSQL, selectedDataIds);
             executor.execute(dataInputSQL);
 
@@ -5647,18 +5642,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 if (!rowIds.isEmpty())
                 {
                     TableInfo t = dataClass.getTinfo();
-                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(t).unsafeAppend(" WHERE rowId ");
+                    SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").append(t).unsafeAppend(" WHERE rowId ");
                     dialect.appendInClauseSql(sql, rowIds);
                     executor.execute(sql);
                 }
             }
 
-            SQLFragment dataSQL = new SQLFragment("DELETE FROM ").append(getTinfoData()).unsafeAppend(" WHERE RowId ");
+            SQLFragment dataSQL = SQLFragment.unsafe("DELETE FROM ").append(getTinfoData()).unsafeAppend(" WHERE RowId ");
             dialect.appendInClauseSql(dataSQL, selectedDataIds);
             executor.execute(dataSQL);
 
             // generate in clause for the Material LSIDs
-            SQLFragment lsidInFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").unsafeAppend(" WHERE o.ObjectURI ");
+            SQLFragment lsidInFrag = SQLFragment.unsafe("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").unsafeAppend(" WHERE o.ObjectURI ");
             dialect.appendInClauseSql(lsidInFrag, allLsids);
             OntologyManager.deleteOntologyObjects(getSchema(), lsidInFrag, container);
 
@@ -5712,11 +5707,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-            SQLFragment sql = new SQLFragment("DELETE FROM " + getTinfoRunList()
-                    + " WHERE ExperimentId IN ("
-                    + " SELECT E.RowId FROM " + getTinfoExperiment() + " E "
-                    + " WHERE E.RowId = " + experiment.getRowId()
-                    + " AND E.Container = ? )", experiment.getContainer());
+            SQLFragment sql = new SQLFragment().unsafeAppend("DELETE FROM ")
+                    .append(getTinfoRunList().getSQLName())
+                    .unsafeAppend(" WHERE ExperimentId IN (SELECT E.RowId FROM ")
+                    .append(getTinfoExperiment().getSQLName())
+                    .unsafeAppend(" E WHERE E.RowId = ")
+                    .appendValue(experiment.getRowId())
+                    .unsafeAppend(" AND E.Container = ? )").addAll(experiment.getContainer());
             executor.execute(sql);
 
             OntologyManager.deleteOntologyObjects(experiment.getContainer(), experiment.getLSID());
@@ -5727,9 +5724,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 listener.beforeExperimentDeleted(c, user, experiment);
             }
 
-            sql = new SQLFragment("DELETE FROM " + getTinfoExperiment()
-                    + " WHERE RowId = " + experiment.getRowId()
-                    + " AND Container = ?", experiment.getContainer());
+            sql = new SQLFragment().unsafeAppend("DELETE FROM ")
+                    .append(getTinfoExperiment().getSQLName())
+                    .unsafeAppend(" WHERE RowId = ")
+                    .appendValue(experiment.getRowId())
+                    .unsafeAppend(" AND Container = ?").addAll(experiment.getContainer());
             executor.execute(sql);
 
             for (ExperimentListener listener : _listeners)
@@ -5816,7 +5815,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // now delete starting materials that were not associated with a MaterialSource upload.
             // we get this list now so that it doesn't include all the run-scoped Materials that were
             // deleted already
-            deleteMaterialBySqlFilter(user, c, new SQLFragment("Container = ?", c), true, true, null, true, true, null);
+            deleteMaterialBySqlFilter(user, c, SQLFragment.unsafe("Container = ?", c), true, true, null, true, true, null);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
@@ -5949,7 +5948,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SimpleFilter.InClause in1 = new SimpleFilter.InClause(FieldKey.fromParts("DataID"), ids);
         SimpleFilter.InClause in2 = new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ids);
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM exp.ExperimentRun WHERE\n" +
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM exp.ExperimentRun WHERE\n" +
                             "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN (\n" +
                             "(SELECT di.TargetApplicationId FROM exp.DataInput di ");
         TableInfo dataInput = getExpSchema().getTable("DataInput");
@@ -5973,7 +5972,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private List<Pair<String, String>> getRunsAndRolesUsingInput(ExpRunItem item, TableInfo inputTable, String inputColumn, Supplier<List<ExpRunImpl>> runSupplier)
     {
-        SQLFragment coreSql = new SQLFragment("""
+        SQLFragment coreSql = SQLFragment.unsafe("""
                     SELECT r.LSID, i.Role, r.Created
                     FROM exp.ExperimentRun r
                     INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
@@ -5981,9 +5980,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         coreSql.append(inputTable, "i");
         coreSql.unsafeAppend(" ON i.targetApplicationId = pa.RowId\nWHERE ");
 
-        SQLFragment sql = new SQLFragment("SELECT LSID, Role FROM (");
+        SQLFragment sql = SQLFragment.unsafe("SELECT LSID, Role FROM (");
         sql.append(coreSql);
-        sql.unsafeAppend("i.").append(inputColumn).unsafeAppend(" = ?\n");
+        sql.unsafeAppend("i.").appendIdentifier(inputColumn).unsafeAppend(" = ?\n");
         sql.add(item.getRowId());
         if (item.getSourceApplication() != null)
         {
@@ -6065,7 +6064,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<Long> getDerivationRunIdsForDataClassExport(long dataClassRowId)
     {
-        SQLFragment sql = new SQLFragment("""
+        SQLFragment sql = SQLFragment.unsafe("""
             SELECT DISTINCT er.RowId
             FROM exp.ExperimentRun er
             WHERE er.ProtocolLSID = ?
@@ -6107,7 +6106,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment inClause = getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), sampleTypeLsids);
 
         // Subquery to find runs that use materials from the given sample types and container
-        SQLFragment materialsSubquery = new SQLFragment("""
+        SQLFragment materialsSubquery = SQLFragment.unsafe("""
             SELECT pa.RunId FROM exp.ProtocolApplication pa
             INNER JOIN exp.MaterialInput mi ON mi.TargetApplicationId = pa.RowId
             INNER JOIN exp.Material m ON mi.MaterialId = m.RowId
@@ -6189,7 +6188,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         List<Long> rowIds = dataClasses.stream().map(ExpObject::getRowId).toList();
 
-        SQLFragment sql = new SQLFragment("IN (SELECT RowId FROM ");
+        SQLFragment sql = SQLFragment.unsafe("IN (SELECT RowId FROM ");
         sql.append(getTinfoData(), "d");
         sql.unsafeAppend(" WHERE d.classId ");
         getExpSchema().getSqlDialect().appendInClauseSql(sql, rowIds);
@@ -6199,7 +6198,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private List<ExperimentRun> getRunsForDataList(SQLFragment dataRowIdSQL)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ");
         sql.append(getTinfoExperimentRun(), "er");
         sql.unsafeAppend(" WHERE \n RowId IN (SELECT RowId FROM ");
         sql.append(getTinfoExperimentRun(), "er2");
@@ -6229,7 +6228,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             materialSourceIds.add(source.getLSID());
         }
 
-        SQLFragment materialRowIdSQL = new SQLFragment("IN (SELECT RowId FROM ");
+        SQLFragment materialRowIdSQL = SQLFragment.unsafe("IN (SELECT RowId FROM ");
         materialRowIdSQL.append(getTinfoMaterial(), "m");
         materialRowIdSQL.unsafeAppend(" WHERE CpasType ");
         getExpSchema().getSqlDialect().appendInClauseSql(materialRowIdSQL, materialSourceIds);
@@ -6242,7 +6241,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      */
     private List<ExperimentRun> getRunsForMaterialList(@NotNull SQLFragment materialRowIdSQL)
     {
-        SQLFragment sql = new SQLFragment("(\n");
+        SQLFragment sql = SQLFragment.unsafe("(\n");
         sql.append(getTargetRunIdsFromMaterialIds(materialRowIdSQL));
         sql.unsafeAppend("\n) UNION (\n");
         sql.append(getSourceRunIdsFromMaterialIds(materialRowIdSQL));
@@ -6258,7 +6257,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      */
     private List<ExperimentRun> getRunsForRunIds(SQLFragment runIdsSQL)
     {
-        SQLFragment sql = new SQLFragment("SELECT *\n");
+        SQLFragment sql = SQLFragment.unsafe("SELECT *\n");
         sql.unsafeAppend("FROM ").append(getTinfoExperimentRun(), "er").unsafeAppend("\n");
         sql.unsafeAppend("WHERE RowId IN (\n");
         sql.append(runIdsSQL);
@@ -6311,7 +6310,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.append(inputTable, "i").unsafeAppend("\n");
         sql.unsafeAppend("WHERE i.TargetApplicationId = pa.RowId ")
                 .unsafeAppend("AND pa.cpastype = ?\n").add(ExperimentRun.name())
-                .unsafeAppend("AND i.").append(idColumn).unsafeAppend(" ").append(rowIdSQL);
+                .unsafeAppend("AND i.").appendIdentifier(idColumn).unsafeAppend(" ").append(rowIdSQL);
 
         return sql;
     }
@@ -6439,7 +6438,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            SQLFragment sql = new SQLFragment("DELETE FROM ").
+            SQLFragment sql = SQLFragment.unsafe("DELETE FROM ").
                     append(getTinfoAlias(), "").
                     unsafeAppend(" WHERE RowId NOT IN (SELECT Alias FROM ").
                     append(getTinfoDataAliasMap(), "").unsafeAppend(")").
@@ -6691,13 +6690,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             for (int i = 0; i < dataIds.size(); i += batchSize)
             {
                 List<Long> subset = dataIds.subList(i, Math.min(dataIds.size(), i + batchSize));
-                SQLFragment sql = new SQLFragment("SELECT TargetApplicationId, DataId, PA.RunId ")
-                        .append(" FROM ").append(getTinfoDataInput().getSelectName()).append(" D  ")
-                        .append(" INNER JOIN ").append(getTinfoProtocolApplication().getSelectName()).append(" PA ")
-                        .append(" ON D.TargetApplicationId = PA.RowId ")
-                        .append(" WHERE DataId").appendInClause(subset, getExpSchema().getSqlDialect())
-                        .append(" AND PA.RunId <> ? ").add(runId)
-                        .append(" ORDER BY TargetApplicationId, DataId");
+                SQLFragment sql = SQLFragment.unsafe("SELECT TargetApplicationId, DataId, PA.RunId ")
+                        .unsafeAppend(" FROM ").append(getTinfoDataInput().getSQLName()).unsafeAppend(" D  ")
+                        .unsafeAppend(" INNER JOIN ").append(getTinfoProtocolApplication().getSQLName()).unsafeAppend(" PA ")
+                        .unsafeAppend(" ON D.TargetApplicationId = PA.RowId ")
+                        .unsafeAppend(" WHERE DataId").appendInClause(subset, getExpSchema().getSqlDialect())
+                        .unsafeAppend(" AND PA.RunId <> ? ").add(runId)
+                        .unsafeAppend(" ORDER BY TargetApplicationId, DataId");
 
                 new SqlSelector(getExpSchema(), sql).forEach(dataOutputRS -> {
                     long successorRunId = dataOutputRS.getLong("RunId");
@@ -7566,7 +7565,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo table = getTinfoMaterial();
             SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("Lsid"), parentLSIDS, IN).getSQLFragment(table, "m");
 
-            new SqlSelector(table.getSchema(), new SQLFragment("SELECT Lsid, RootMaterialRowId FROM " + table + " ")
+            new SqlSelector(table.getSchema(), new SQLFragment().unsafeAppend("SELECT Lsid, RootMaterialRowId FROM ").append(table.getSQLName()).unsafeAppend(" ")
                     .append(sqlfilter).unsafeAppend(" AND RootMaterialRowId <> RowId")).forEach(rs ->
                     _aliquotRootCache.put(rs.getString("Lsid"), rs.getLong("RootMaterialRowId")));
         }
@@ -7637,7 +7636,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             TableInfo pa = getTinfoProtocolApplication();
             SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("LSID"), protAppRowMap.keySet(), IN).getSQLFragment(pa, "pa");
-            new SqlSelector(pa.getSchema(), new SQLFragment("SELECT Lsid, RowId FROM " + pa + " ")
+            new SqlSelector(pa.getSchema(), new SQLFragment().unsafeAppend("SELECT Lsid, RowId FROM ").append(pa.getSQLName()).unsafeAppend(" ")
                     .append(sqlfilter)).forEach(rs ->
             {
                 if (protAppRowMap.containsKey(rs.getString("Lsid")))
@@ -7688,7 +7687,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             TableInfo pa = getTinfoProtocolApplication();
             SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("LSID"), protAppRowMap.keySet(), IN).getSQLFragment(pa, "pa");
-            new SqlSelector(pa.getSchema(), new SQLFragment("SELECT Lsid, RowId FROM " + pa + " ")
+            new SqlSelector(pa.getSchema(), new SQLFragment().unsafeAppend("SELECT Lsid, RowId FROM ").append(pa.getSQLName()).unsafeAppend(" ")
                     .append(sqlfilter)).forEach(rs ->
             {
                 if (protAppRowMap.containsKey(rs.getString("Lsid")))
@@ -7773,7 +7772,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                     for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
                     {
-                        SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
+                        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(tableInfo, "").
                                 unsafeAppend(" SET SourceApplicationId = ?, RunId = ?, RootMaterialRowId = ?, AliquotedFromLSID = ? WHERE RowId = ?");
 
                         Long rootMaterialRowId = null;
@@ -7812,7 +7811,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (ExpMaterial outputMaterial : rec._runRecord.getOutputMaterialMap().keySet())
                     {
-                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
+                        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(getTinfoMaterial(), "").
                                 unsafeAppend(" SET SourceApplicationId = ?, RunId = ? WHERE RowId = ?");
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputMaterial.getRowId());
@@ -7831,7 +7830,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (ExpData outputData : rec._runRecord.getOutputDataMap().keySet())
                     {
-                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoData(), "").
+                        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(getTinfoData(), "").
                                 unsafeAppend(" SET SourceApplicationId = ?, RunId = ? WHERE RowId = ?");
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputData.getRowId());
@@ -8504,7 +8503,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public List<ExpProtocolImpl> getExpProtocolsForRunsInContainer(Container container)
     {
-        SQLFragment sql = new SQLFragment("SELECT p.* FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT p.* FROM ");
         sql.append(getTinfoProtocol(), "p");
         sql.unsafeAppend(" WHERE LSID IN (SELECT ProtocolLSID FROM ");
         sql.append(getTinfoExperimentRun(), "er");
@@ -9095,7 +9094,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void removeContainerDataTypeExclusions(String containerId)
     {
-        SQLFragment sql = new SQLFragment("DELETE FROM  ")
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM  ")
                 .append(getTinfoDataTypeExclusion())
                 .unsafeAppend(" WHERE excludedContainer = ? ");
         sql.add(containerId);
@@ -9111,7 +9110,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private void removeDataTypeExclusion(Collection<Long> rowIds, DataTypeForExclusion dataType, @Nullable String excludedContainerId)
     {
-        SQLFragment sql = new SQLFragment("DELETE FROM  ")
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM  ")
                 .append(getTinfoDataTypeExclusion())
                 .unsafeAppend(" WHERE DataTypeRowId ");
         sql.appendInClause(rowIds, getExpSchema().getSqlDialect());
@@ -9133,15 +9132,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @NotNull private List<Map<String, Object>> _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerIdOrPath, @Nullable Long dataTypeRowId)
     {
-        SQLFragment sql = new SQLFragment("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT DataTypeRowId, DataType, ExcludedContainer FROM ")
                 .append(getTinfoDataTypeExclusion())
                 .unsafeAppend(" WHERE ");
-        String and = "";
+        SQLFragment.SqlSeparator and = SQLFragment.sep("", " AND ");
         if (dataType != null)
         {
+            sql.append(and.next());
             sql.unsafeAppend("DataType = ? ");
             sql.add(dataType.name());
-            and = " AND ";
         }
 
         if (!StringUtils.isEmpty(excludedContainerIdOrPath))
@@ -9159,15 +9158,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 excludedContainerId = container.getId();
             }
 
-            sql.append(and);
+            sql.append(and.next());
             sql.unsafeAppend("ExcludedContainer = ? ");
             sql.add(excludedContainerId);
-            and = " AND ";
         }
 
         if (dataTypeRowId != null && dataTypeRowId > 0)
         {
-            sql.append(and);
+            sql.append(and.next());
             sql.unsafeAppend("DataTypeRowId = ? ");
             sql.add(dataTypeRowId);
         }
@@ -9349,7 +9347,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull Set<Long> getDataTypeExcludedColors(DataTypeForExclusion dataType, long dataTypeId)
     {
-        SQLFragment sql = new SQLFragment("SELECT ColorRowId FROM ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT ColorRowId FROM ")
                 .append(getTinfoDataTypeColorExclusion())
                 .unsafeAppend(" WHERE DataTypeRowId = ? AND DataType = ?")
                 .add(dataTypeId).add(dataType.name());
@@ -9406,11 +9404,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
             if (!toRemove.isEmpty())
             {
-                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
                         .append(getTinfoDataTypeColorExclusion())
-                        .unsafeAppend(" WHERE ").append(fixedColumn).unsafeAppend(" = ? AND DataType = ?")
+                        .unsafeAppend(" WHERE ").appendIdentifier(fixedColumn).unsafeAppend(" = ? AND DataType = ?")
                         .add(fixedValue).add(dataType.name())
-                        .unsafeAppend(" AND ").append(varyingColumn).unsafeAppend(" ");
+                        .unsafeAppend(" AND ").appendIdentifier(varyingColumn).unsafeAppend(" ");
                 sql.appendInClause(toRemove, getExpSchema().getSqlDialect());
                 new SqlExecutor(getExpSchema()).execute(sql);
             }
@@ -9443,7 +9441,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId)
     {
-        SQLFragment sql = new SQLFragment("SELECT DataTypeRowId FROM ")
+        SQLFragment sql = SQLFragment.unsafe("SELECT DataTypeRowId FROM ")
                 .append(getTinfoDataTypeColorExclusion())
                 .unsafeAppend(" WHERE ColorRowId = ? AND DataType = ?")
                 .add(colorRowId).add(dataType.name());
@@ -9477,7 +9475,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void removeDataColorExclusionsForColor(long colorRowId)
     {
-        SQLFragment sql = new SQLFragment("DELETE FROM ")
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
                 .append(getTinfoDataTypeColorExclusion())
                 .unsafeAppend(" WHERE ColorRowId = ?").add(colorRowId);
         new SqlExecutor(getExpSchema()).execute(sql);
@@ -9486,7 +9484,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType)
     {
-        SQLFragment sql = new SQLFragment("DELETE FROM ")
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
                 .append(getTinfoDataTypeColorExclusion())
                 .unsafeAppend(" WHERE DataTypeRowId = ? AND DataType = ?")
                 .add(dataTypeId).add(dataType.name());
@@ -9497,12 +9495,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public void removeContainerDataColors(String containerId)
     {
         SqlExecutor executor = new SqlExecutor(getExpSchema());
-        SQLFragment delExclusions = new SQLFragment("DELETE FROM ")
+        SQLFragment delExclusions = SQLFragment.unsafe("DELETE FROM ")
                 .append(getTinfoDataTypeColorExclusion())
                 .unsafeAppend(" WHERE Container = ?").add(containerId);
         executor.execute(delExclusions);
 
-        SQLFragment delColors = new SQLFragment("DELETE FROM ")
+        SQLFragment delColors = SQLFragment.unsafe("DELETE FROM ")
                 .append(getTinfoDataColors())
                 .unsafeAppend(" WHERE Container = ?").add(containerId);
         executor.execute(delColors);
@@ -9534,12 +9532,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         TableInfo tableInfo = getTinfoObjectLegacyNames();
 
-        String objecIdSql = ExpProtocol.DEFAULT_CPAS_TYPE.equals(dataType) ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object";
-
         // find the last ObjectLegacyNames record with matched name and timestamp
-        SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
-                "WHERE Name = ? AND ObjectType = ? AND Created >= ? " +
-                "AND ObjectId IN (SELECT " + objecIdSql + " WHERE Container ");
+        SQLFragment sql = new SQLFragment().unsafeAppend("SELECT ObjectId, Created FROM exp.ObjectLegacyNames "
+                    + "WHERE Name = ? AND ObjectType = ? AND Created >= ? "
+                    + "AND ObjectId IN (SELECT ")
+                .unsafeAppend(ExpProtocol.DEFAULT_CPAS_TYPE.equals(dataType) ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object")
+                .unsafeAppend(" WHERE Container ");
         sql.add(name);
         sql.add(dataType);
         sql.add(effectiveDate);
@@ -9554,7 +9552,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             Long objectId = asLong(legacyNames[0].get("ObjectId"));
             Date nameEndTime = (Date) legacyNames[0].get("Created");
-            SQLFragment previousNameSql = new SQLFragment("SELECT Created FROM exp.ObjectLegacyNames " +
+            SQLFragment previousNameSql = SQLFragment.unsafe("SELECT Created FROM exp.ObjectLegacyNames " +
                     "WHERE ObjectType = ? AND Created < ? " +
                     "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container ");
             previousNameSql.add(dataType);
@@ -9698,7 +9696,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private Map<String, Object> getAuditLevelOverrideMetrics()
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<auditLogging>%'");
+        SQLFragment sql = SQLFragment.unsafe("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<auditLogging>%'");
         Map<String, Object>[] results = new SqlSelector(dbSchema, sql).getMapArray();
         Map<String, Long> counts = new HashMap<>();
         final String auditNone = "<auditlogging>none";
@@ -9726,7 +9724,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private Map<String, Object> getImportTemplatesMetrics()
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<template%'");
+        SQLFragment sql = SQLFragment.unsafe("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<template%'");
         Map<String, Object>[] results = new SqlSelector(dbSchema, sql).getMapArray();
         Map<String, Long> counts = new HashMap<>();
         final String sectionStart = "<importtemplates>";
@@ -9752,12 +9750,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private Pair<Long, Long> getParentAliasMetrics(TableInfo tableInfo, String aliasField)
     {
-        SQLFragment sql = new SQLFragment("SELECT ")
-            .append(aliasField)
+        SQLFragment sql = SQLFragment.unsafe("SELECT ")
+            .appendIdentifier(aliasField)
             .unsafeAppend(" FROM ")
             .append(tableInfo)
             .unsafeAppend(" WHERE ")
-            .append(aliasField)
+            .appendIdentifier(aliasField)
             .unsafeAppend(" IS NOT NULL");
         List<String> aliases = new SqlSelector(getExpSchema(), sql).getArrayList(String.class);
 
@@ -9807,14 +9805,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         for (NameExpressionType nameExpressionType : _nameExpressionTypes)
         {
             Map<String, Object> typeMetrics = new HashMap<>();
-            SQLFragment sql = new SQLFragment("SELECT ")
-                    .append(nameExpressionType.nameExpressionCol)
+            SQLFragment sql = SQLFragment.unsafe("SELECT ")
+                    .appendIdentifier(nameExpressionType.nameExpressionCol)
                     .unsafeAppend(" FROM ")
-                    .append(nameExpressionType.schemaName)
-                    .unsafeAppend(".")
-                    .append(nameExpressionType.queryName)
+                    .appendDottedIdentifiers(nameExpressionType.schemaName, nameExpressionType.queryName)
                     .unsafeAppend(" WHERE ")
-                    .append(nameExpressionType.nameExpressionCol)
+                    .appendIdentifier(nameExpressionType.nameExpressionCol)
                     .unsafeAppend(" IS NOT NULL");
             List<String> nameExpressionStrs = new SqlSelector(getExpSchema(), sql).getArrayList(String.class);
 
@@ -9934,7 +9930,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         TableInfo parentInputTableInfo = isSampleParent ? getTinfoMaterialInput() : getTinfoDataInput();
         String inputFieldName = isSampleParent ? "materialid" : "dataid";
 
-        SQLFragment totalSql = new SQLFragment("SELECT COUNT(cur.rowId) FROM ");
+        SQLFragment totalSql = SQLFragment.unsafe("SELECT COUNT(cur.rowId) FROM ");
         totalSql.append(dataTableInfo, "cur")
             .unsafeAppend("\nWHERE cpastype = ? ")
             .add(childCpasType);
@@ -9949,7 +9945,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (totalCount == 0)
             return false;
 
-        SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT cur.rowId) FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(DISTINCT cur.rowId) FROM ");
         sql.append(dataTableInfo, "cur")
             .unsafeAppend(" LEFT OUTER JOIN ")
             .append(protocolAppTableInfo, "pa")
@@ -9960,7 +9956,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .unsafeAppend("JOIN ")
             .append(parentDataTableInfo, "p")
             .unsafeAppend(" ON p.rowId = ip.")
-            .append(inputFieldName)
+            .appendIdentifier(inputFieldName)
             .unsafeAppend("\nWHERE cur.cpastype = ? ")
             .add(childCpasType)
             .unsafeAppend(" AND p.cpastype = ? ")
@@ -10056,7 +10052,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return 0;
 
         TableInfo objectTable = OntologyManager.getTinfoObject();
-        SQLFragment objectUpdate = new SQLFragment("UPDATE ").append(objectTable).unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+        SQLFragment objectUpdate = SQLFragment.unsafe("UPDATE ").append(objectTable).unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
             .unsafeAppend(" WHERE objectid IN (SELECT objectid FROM ").append(tableInfo).unsafeAppend(" WHERE rowid ");
         objectTable.getSchema().getSqlDialect().appendInClauseSql(objectUpdate, rowIds);
         objectUpdate.unsafeAppend(")");
@@ -10077,7 +10073,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (dataIds == null || dataIds.isEmpty())
             return 0;
 
-        SQLFragment aliasMapUpdate = new SQLFragment("UPDATE ").append(aliasMapTable).unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+        SQLFragment aliasMapUpdate = SQLFragment.unsafe("UPDATE ").append(aliasMapTable).unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                 .unsafeAppend(" WHERE lsid IN (SELECT lsid FROM ").append(getTinfoData()).unsafeAppend(" WHERE rowid ");
         aliasMapTable.getSchema().getSqlDialect().appendInClauseSql(aliasMapUpdate, dataIds);
         aliasMapUpdate.unsafeAppend(")");
@@ -10250,7 +10246,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         TableInfo runsTable = getTinfoExperimentRun();
         List<Long> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
-        SQLFragment materialUpdate = new SQLFragment("UPDATE ").append(runsTable)
+        SQLFragment materialUpdate = SQLFragment.unsafe("UPDATE ").append(runsTable)
                 .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
                 .unsafeAppend(", modified = ").appendValue(new Date())
                 .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
@@ -10445,7 +10441,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         UserSchema samplesUserSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
         List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(container, true);
 
-        String unionAll = "";
+        SQLFragment.SqlSeparator unionAll = SQLFragment.sep("", "\n UNION ALL\n");
         SQLFragment query = new SQLFragment();
 
         for (ExpSampleTypeImpl type : sampleTypes)
@@ -10477,14 +10473,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     if (intIds.isEmpty())
                         continue;
                 }
-                query.append(unionAll);
+                query.append(unionAll.next());
                 query.unsafeAppend("SELECT M.LSID, ")
                         .unsafeAppend("CAST (ST.").appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" AS VARCHAR)")
-                        .unsafeAppend(" AS ").append(UNIQUE_ID_COL_NAME);
+                        .unsafeAppend(" AS ").appendIdentifier(UNIQUE_ID_COL_NAME);
                 query.unsafeAppend(" FROM ").append(provisioned, "ST");
                 query.unsafeAppend(" INNER JOIN ").append(getTinfoMaterial(), "M").unsafeAppend(" ON M.RowId = ST.RowId");
                 query.unsafeAppend(" WHERE ").appendIdentifier(col.getSelectIdentifier()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
-                unionAll = "\n UNION ALL\n";
             }
         }
 
@@ -10695,7 +10690,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (containerIds == null || containerIds.isEmpty())
             selectSql = unionSql;
         else
-            selectSql = new SQLFragment("SELECT * FROM (").append(unionSql).unsafeAppend(") a "/*postgres 15 and older requires subquery alias*/).unsafeAppend(" WHERE Container ").appendInClause(cf.getIds(), CoreSchema.getInstance().getSchema().getSqlDialect());
+            selectSql = SQLFragment.unsafe("SELECT * FROM (").append(unionSql).unsafeAppend(") a "/*postgres 15 and older requires subquery alias*/).unsafeAppend(" WHERE Container ").appendInClause(cf.getIds(), CoreSchema.getInstance().getSchema().getSqlDialect());
         final int MAX_MISSING_COUNT = 1_000;
         final int MAX_ROWS = 100_000;
         int missingCount = 0;
@@ -11207,7 +11202,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<InnerResult> getParents(long seed)
         {
             var maps = getParts(new _ExpLineageOptions(tableName), String.valueOf(seed));
-            String parentsInner = maps.get("$PARENTS_INNER$").replace("$SELF$", "parents");
+            SQLFragment parentsInner = new SQLFragment();
+            parentsInner.setSqlUnsafe(maps.get("$PARENTS_INNER$").replace("$SELF$", "parents"));
             SQLFragment sql = new SQLFragment()
                     .unsafeAppend("WITH RECURSIVE").unsafeAppend(" parents AS (").append(parentsInner).unsafeAppend(")\n")
                     .unsafeAppend("SELECT * FROM parents WHERE self != fromObjectId");
@@ -11217,7 +11213,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<InnerResult> getChildren(long seed)
         {
             var maps = getParts(new _ExpLineageOptions(tableName), String.valueOf(seed));
-            String childrenInner = maps.get("$CHILDREN_INNER$").replace("$SELF$", "children");
+            SQLFragment childrenInner = new SQLFragment();
+            childrenInner.setSqlUnsafe(maps.get("$CHILDREN_INNER$").replace("$SELF$", "children"));
             SQLFragment sql = new SQLFragment()
                     .unsafeAppend("WITH RECURSIVE").unsafeAppend(" children AS (").append(childrenInner).unsafeAppend(")\n")
                     .unsafeAppend("SELECT * FROM children WHERE self != toObjectId");
@@ -11239,8 +11236,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             tt = TempTableTracker.track(name,this);
             new SqlExecutor(getExpSchema()).execute("SELECT * INTO " + tableName + " FROM exp.edge WHERE 0=1");
             for (var e : edges)
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment(
-                        "INSERT INTO " + tableName + " (fromObjectId, toObjectId, runid) VALUES (?,?,?)", e.from, e.to, RUN));
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("INSERT INTO ").append(tableName).unsafeAppend(" (fromObjectId, toObjectId, runid) VALUES (?,?,?)").addAll(e.from, e.to, RUN));
         }
 
         @After
@@ -11292,8 +11288,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             try
             {
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment(
-                        "INSERT INTO " + tableName + " (fromObjectId, toObjectId, runid) VALUES (?,?,?)", AZ, QQ, RUN));
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("INSERT INTO ").append(tableName).unsafeAppend(" (fromObjectId, toObjectId, runid) VALUES (?,?,?)").addAll(AZ, QQ, RUN));
 
                 {
                     var results = getParents(A2);
@@ -11317,8 +11312,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
             finally
             {
-                new SqlExecutor(getExpSchema()).execute(new SQLFragment(
-                        "DELETE FROM " + tableName + " WHERE fromObjectId=? AND toObjectId=?", AZ, QQ));
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment().unsafeAppend("DELETE FROM ").append(tableName).unsafeAppend(" WHERE fromObjectId=? AND toObjectId=?").addAll(AZ, QQ));
             }
         }
     }

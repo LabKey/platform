@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -31,12 +32,12 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.JspView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -215,8 +216,16 @@ public abstract class ExportScriptModel
         if (factory == null)
             throw new NotFoundException("Export script type not found: " + scriptType);
 
-        WebPartView<?> scriptView = new JspView<>("/org/labkey/api/query/createExportScript.jsp", factory.getModel(queryView));
-        scriptView.setFrame(WebPartView.FrameType.NOT_HTML);
+        ExportScriptModel model = factory.getModel(queryView);
+        HttpView<?> scriptView = new HttpView<>()
+        {
+            @Override
+            protected void renderInternal(Object m, HttpServletRequest request, HttpServletResponse response) throws IOException
+            {
+                response.setContentType("text/plain");
+                response.getWriter().write(model.getExportText());
+            }
+        };
 
         QueryService.get().addAuditEvent(queryView, "Exported to script type " + scriptType, null);
         return scriptView;

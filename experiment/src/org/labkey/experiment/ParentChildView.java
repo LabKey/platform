@@ -95,7 +95,7 @@ public class ParentChildView extends VBox
         Set<Object> types = new HashSet<>();
         if (!rowIds.isEmpty())
         {
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT Container, " + typeColumn + " FROM ").append(table, "t").append(" WHERE RowId ");
+            SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT Container, ").appendIdentifier(typeColumn).unsafeAppend(" FROM ").append(table, "t").unsafeAppend(" WHERE RowId ");
             table.getSqlDialect().appendInClauseSql(sql, rowIds);
             new SqlSelector(table.getSchema(), sql).forEach(rs -> {
                 Container c = ContainerManager.getForId(rs.getString(1));

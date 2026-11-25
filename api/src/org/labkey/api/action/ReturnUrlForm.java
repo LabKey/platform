@@ -18,8 +18,6 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -30,13 +28,9 @@ import org.labkey.api.view.ActionURL;
 /**
  * Simple form bean that includes a returnUrl property, typically used to send the user back to the page where they initiated the action.
  * Often subclassed to add usage-specific additional properties.
- * User: adam
- * Date: Nov 22, 2007
  */
 public class ReturnUrlForm
 {
-    public static final Logger LOG = LogManager.getLogger(ReturnUrlForm.class);
-
     private ReturnURLString _returnUrl;
     private ReturnURLString _cancelUrl;
     private ReturnURLString _successUrl;
@@ -53,7 +47,7 @@ public class ReturnUrlForm
 
     /**
      * Should not typically be used, this getter/setter pair is for Spring parameter binding.
-     * Use {@link .getReturnActionURL()} instead.
+     * Use {@link getReturnActionURL()} instead.
      */
     @Nullable
     public String getReturnUrl()
@@ -124,7 +118,7 @@ public class ReturnUrlForm
 
     /**
      * Not typically used, this getter/setter pair is for Spring parameter binding.
-     * Use {@link .getCancelActionURL()} instead.
+     * Use {@link getCancelActionURL()} instead.
      */
     public ReturnURLString getCancelUrl()
     {
@@ -162,7 +156,7 @@ public class ReturnUrlForm
 
     /**
      * Not typically used, this getter/setter pair is for Spring parameter binding.
-     * Use {@link .getSuccessActionURL()} instead.
+     * Use {@link getSuccessActionURL()} instead.
      */
     public ReturnURLString getSuccessUrl()
     {

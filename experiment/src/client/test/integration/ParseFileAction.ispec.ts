@@ -3,9 +3,10 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+// @ts-expect-error fs is not available in a browser environment
+import { readFileSync } from 'fs';
 import { ActionURL, PermissionRoles } from '@labkey/api';
-import { hookServer, RequestOptions } from '@labkey/test';
-import mock from 'mock-fs';
+import { hookServer, mockFile, mockFiles, RequestOptions } from '@labkey/test';
 import supertest from 'supertest';
 
 // @ts-expect-error process is not available in a browser environment
@@ -22,8 +23,7 @@ const SMALL_TSV = 'small.tsv';
 const LONG_TSV = 'long.tsv';
 const XLSX = 'sampleType.xlsx';
 
-// Read eagerly so the real file is captured before mock-fs replaces the file system; relative to the module directory
-const XLSX_CONTENT = mock.load('test/sampledata/sampleType.xlsx', { lazy: false });
+const XLSX_CONTENT = readFileSync('test/sampledata/sampleType.xlsx');
 
 let readerOptions: RequestOptions;
 
@@ -35,11 +35,11 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
-    mock({ [SMALL_TSV]: 'Name\tValue\nA\t1\nB\t2\n' });
+    mockFiles({ [SMALL_TSV]: 'Name\tValue\nA\t1\nB\t2\n' });
 });
 
 afterEach(() => {
-    mock.restore();
+    mockFiles.restore();
 });
 
 afterAll(async () => {
@@ -51,7 +51,7 @@ function parseFile(filePath: string, options: RequestOptions, maxRows?: number) 
         let request = agent.post(url);
         if (maxRows !== undefined)
             request = request.field('maxRows', String(maxRows));
-        return request.attach('file', filePath);
+        return request.attach('file', ...mockFile(filePath));
     }, options);
 }
 
@@ -64,7 +64,7 @@ describe('ParseFileAction', () => {
         await guest
             .post(ActionURL.buildURL('experiment', 'parseFile.api', PROJECT_NAME))
             .set('X-LABKEY-CSRF', whoAmI.body.CSRF)
-            .attach('file', SMALL_TSV)
+            .attach('file', ...mockFile(SMALL_TSV))
             .expect(401);
     });
 
@@ -89,7 +89,8 @@ describe('ParseFileAction', () => {
 
     const chunk = '\t'.repeat(MAX_COLUMNS / 2);
     const tooBig = 'a'.repeat(MAX_FILE_BYTES + 1);
-    const wideLine = 'A' + '\t'.repeat(MAX_COLUMNS) + '\nx\n';
+    // Non-empty last field: TabLoader drops a trailing empty one, which would leave exactly MAX_COLUMNS
+    const wideLine = 'A' + '\tx'.repeat(MAX_COLUMNS) + '\nx\n';
     const quotedWide = '"a\nb"' + chunk + '"c\nd"' + chunk + '"e\nf"' + chunk + '\nx\n';
     const sizeMessage = 'File exceeds the maximum allowed size of 10 MB.';
     const extensionMessage = 'Excel files must have a .xls or .xlsx extension.';
@@ -101,14 +102,14 @@ describe('ParseFileAction', () => {
         ['lines wider than the column cap', 'wide.tsv', wideLine, columnsMessage],
         ['wide records split across quoted newlines', 'quoted.tsv', quotedWide, columnsMessage],
     ])('rejects %s', async (_, name, content, message) => {
-        mock({ [name]: content });
+        mockFiles({ [name]: content });
         const response = await parseFile(name, readerOptions).expect(400);
         expect(response.body.exception).toEqual(message);
     });
 
     it.each([-1, MAX_ROWS * 2])('caps rows at the server maximum when maxRows=%i', async (maxRows) => {
         const rows = Array.from({ length: MAX_ROWS + 5 }, (_, i) => `S${i}\t${i}`);
-        mock({ [LONG_TSV]: 'Name\tValue\n' + rows.join('\n') + '\n' });
+        mockFiles({ [LONG_TSV]: 'Name\tValue\n' + rows.join('\n') + '\n' });
 
         const response = await parseFile(LONG_TSV, readerOptions, maxRows).expect(200);
         const data = response.body.sheets[0].data;
@@ -118,7 +119,7 @@ describe('ParseFileAction', () => {
     });
 
     it('parses an Excel file and honors maxRows', async () => {
-        mock({ [XLSX]: XLSX_CONTENT });
+        mockFiles({ [XLSX]: XLSX_CONTENT });
 
         const response = await parseFile(XLSX, readerOptions, 2).expect(200);
         const data = response.body.sheets[0].data;
@@ -130,7 +131,7 @@ describe('ParseFileAction', () => {
     });
 
     it('parses a whole Excel file without truncation', async () => {
-        mock({ [XLSX]: XLSX_CONTENT });
+        mockFiles({ [XLSX]: XLSX_CONTENT });
 
         const response = await parseFile(XLSX, readerOptions).expect(200);
         expect(response.body.sheets[0].data.length).toEqual(5);
@@ -142,7 +143,7 @@ describe('ParseFileAction', () => {
         const width = 60;
         const header = Array.from({ length: width }, (_, i) => `C${i}`).join('\t');
         const row = Array.from({ length: width }, () => '1').join('\t');
-        mock({ 'cells.tsv': header + '\n' + Array(MAX_ROWS).fill(row).join('\n') + '\n' });
+        mockFiles({ 'cells.tsv': header + '\n' + Array(MAX_ROWS).fill(row).join('\n') + '\n' });
 
         const response = await parseFile('cells.tsv', readerOptions).expect(200);
         // Each row, header included, costs 1 + width cells
@@ -152,7 +153,7 @@ describe('ParseFileAction', () => {
 
     it('keeps values that do not match the inferred type', async () => {
         const rows = Array.from({ length: 6_000 }, (_, i) => (i === 5_500 ? 'abc\t1' : `${i + 10}\t1`));
-        mock({ 'late.tsv': 'A\tB\n' + rows.join('\n') + '\n' });
+        mockFiles({ 'late.tsv': 'A\tB\n' + rows.join('\n') + '\n' });
 
         const response = await parseFile('late.tsv', readerOptions).expect(200);
         const data = response.body.sheets[0].data;
