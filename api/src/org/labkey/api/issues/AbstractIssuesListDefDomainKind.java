@@ -127,6 +127,13 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         return BASE_PROPERTIES;
     }
 
+    // GH Issue 1928: issue history records the old value, so a rename would leave it out of step with the issue
+    @Override
+    public boolean allowTextChoiceValueRenames()
+    {
+        return false;
+    }
+
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {

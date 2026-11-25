@@ -501,6 +501,7 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+            gwtDomain.setAllowTextChoiceValueRenames(kind.allowTextChoiceValueRenames());
             gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
@@ -520,6 +521,7 @@ public class DomainUtil
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+        gwtDomain.setAllowTextChoiceValueRenames(kind.allowTextChoiceValueRenames());
         gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
@@ -987,6 +989,12 @@ public class DomainUtil
                 {
                     // GitHub Issue 923: Renamed text choice option while converting MV to SV text choice results in bad values
                     validationException.addError(new SimpleValidationError("Text choice value updates are not supported for multi-choice field: " + p.getName()));
+                    return validationException;
+                }
+                if (!kind.allowTextChoiceValueRenames())
+                {
+                    // GitHub Issue 1928
+                    validationException.addError(new SimpleValidationError("Renaming in-use text choice values is not supported for this domain type: " + p.getName()));
                     return validationException;
                 }
                 textChoiceValueUpdates.put(p, propTextChoiceValueUpdates);
