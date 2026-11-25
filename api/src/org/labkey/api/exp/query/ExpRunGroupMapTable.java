@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.query.EnumFieldKey;
+
 /**
  * The RunGroupMap table is a junction table used to join Runs and RunGroups.
  * A Run may belong to more than one RunGroup and are unordered in the group.
@@ -23,7 +25,7 @@ package org.labkey.api.exp.query;
  */
 public interface ExpRunGroupMapTable extends ExpTable<ExpRunGroupMapTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         RunGroup,
         Run,

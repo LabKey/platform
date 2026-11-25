@@ -16,11 +16,13 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.query.EnumFieldKey;
+
 public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
 {
     String PROTOCOL_PATTERN_PREFIX = "urn:lsid:%:Protocol.%:";
 
-    enum Column
+    enum Column implements EnumFieldKey
     {
         RowId,
         Name,

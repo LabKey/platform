@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.assay.AbstractAssayProvider" %>
 <%@ page import="org.labkey.api.assay.AssayDataCollector" %>
 <%@ page import="org.labkey.api.assay.AssayDomainService" %>
+<%@ page import="org.labkey.api.assay.AssayFileWriter" %>
 <%@ page import="org.labkey.api.assay.AssayProtocolSchema" %>
 <%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.assay.AssayResultTable" %>
@@ -237,7 +238,12 @@
 
     private File createAssayDataFile(String fileContents) throws IOException
     {
-        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
+        return createAssayDataFile(pipeRoot.getRootPath(), fileContents);
+    }
+
+    private File createAssayDataFile(File dir, String fileContents) throws IOException
+    {
+        var file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", dir);
         Files.writeString(file.toPath(), fileContents, StandardCharsets.UTF_8);
         return file;
     }
@@ -257,7 +263,12 @@
     // A sample derivation run whose output is an assay data file, so importing that file makes it a cross-run input
     private CrossRunSource createCrossRunSource(ExpMaterial material) throws Exception
     {
-        var file = createAssayDataFile("ResultExpMaterialsLookup\n" + material.getName() + "\n");
+        return createCrossRunSource(material, pipeRoot.getRootPath());
+    }
+
+    private CrossRunSource createCrossRunSource(ExpMaterial material, File dir) throws Exception
+    {
+        var file = createAssayDataFile(dir, "ResultExpMaterialsLookup\n" + material.getName() + "\n");
 
         var data = ExperimentService.get().createData(c, UPLOADED_FILE, file.getName());
         data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
@@ -601,6 +612,25 @@
             List.of(source.run().getRowId(), assayRun1.getRowId(), assayRun2.getRowId()), null);
 
         assertEquals(List.of(), ExperimentService.get().getAllExpDataByURL(dataFileUrl, null));
+    }
+
+    // Runs deleted together that share an assaydata file don't count as its other usages, so the file is still archived
+    @Test
+    public void testSharedAssayDataFileArchivedWhenRunsDeletedTogether() throws Exception
+    {
+        var assayPair = createAssay(context, false, false);
+        var uploadDir = AssayFileWriter.ensureUploadDirectory(c).toNioPathForWrite().toFile();
+        var source = createCrossRunSource(createMaterial(), uploadDir);
+        var file = source.file();
+        var assayRun1 = assayImportFile(c, user, assayPair.first, assayPair.second, file, true, null);
+        var assayRun2 = assayImportFile(c, user, assayPair.first, assayPair.second, file, true, null);
+
+        ExperimentService.get().deleteExperimentRunsByRowIds(c, user, null,
+            List.of(source.run().getRowId(), assayRun1.getRowId(), assayRun2.getRowId()), null);
+
+        var archivedDir = AssayFileWriter.ensureSubdirectory(c, AssayFileWriter.ARCHIVED_DIR_NAME).toNioPathForWrite().toFile();
+        assertFalse("Shared file should have been moved out of assaydata", file.exists());
+        assertTrue("Shared file should be in the archived directory", new File(archivedDir, file.getName()).isFile());
     }
 
     private Map<String, Object> getRealResult(DbSchema schema, String assayResultRealTable, long resultRowId)

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.query.EnumFieldKey;
 
 public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
 {
@@ -28,7 +29,7 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
     /** @param protocol if not null, the protocol for which the run group must be a batch. If null, then only include non-batches */
     void setBatchProtocol(@Nullable ExpProtocol protocol);
 
-    enum Column
+    enum Column implements EnumFieldKey
     {
         BatchProtocolId,
         Comments,

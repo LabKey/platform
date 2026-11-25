@@ -438,8 +438,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         if (rowIds == null || rowIds.isEmpty())
             return emptyList();
-        String rowId = ExpRunTable.Column.RowId.name();
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(rowId), rowIds);
+        FieldKey rowId = ExpRunTable.Column.RowId.fieldKey();
+        SimpleFilter filter = new SimpleFilter().addInClause(rowId, rowIds);
         return ExpRunImpl.fromRuns(new TableSelector(getTinfoExperimentRun(), filter, new Sort(rowId)).getArrayList(ExperimentRun.class));
     }
 
@@ -4553,13 +4553,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         AssayService assayService = AssayService.get();
         List<RunDeletion> deletions = new ArrayList<>(runs.size());
         List<Long> runIds = runs.stream().map(ExpRunImpl::getRowId).toList();
+        Set<Long> batchRunIds = new HashSet<>(runIds);
 
         Table.delete(getTinfoAssayQCFlag(), new SimpleFilter(FieldKey.fromParts("RunId"), runIds, CompareType.IN));
 
         // Re-index replaced runs if replacing runs are deleted
         if (assayService != null)
         {
-            Set<Long> batchRunIds = new HashSet<>(runIds);
             SimpleFilter replacedFilter = new SimpleFilter(FieldKey.fromParts("ReplacedByRunId"), runIds, CompareType.IN);
             getExpRuns(replacedFilter).stream()
                 .filter(replaced -> !batchRunIds.contains(replaced.getRowId()))
@@ -4626,7 +4626,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // Archive all data files prior to deleting
             //  ideally this would be transacted as a commit task but we decided against it due to complications
-            run.archiveDataFiles(user);
+            run.archiveDataFiles(user, batchRunIds);
             deletions.add(new RunDeletion(run, protocolImpl, datasToDelete, crossRunInputData));
         }
 

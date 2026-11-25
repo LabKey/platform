@@ -15,13 +15,15 @@
  */
 package org.labkey.api.exp.query;
 
+import org.labkey.api.query.EnumFieldKey;
+
 /**
  * User: jeckels
  * Date: Jan 4, 2010
  */
 public interface ExpDataInputTable extends ExpInputTable<ExpDataInputTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         Data,
         TargetProtocolApplication,

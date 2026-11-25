@@ -566,18 +566,17 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             return;
 
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        final SqlDialect dialect = svc.getSchema().getSqlDialect();
         List<Long> runIds = runs.stream().map(ExpRunImpl::getRowId).toList();
 
         runs.stream()
             .collect(Collectors.groupingBy(ExpRunImpl::getContainer, Collectors.mapping(ExpRunImpl::getRowId, Collectors.toList())))
-            .forEach((c, ids) -> deleteInputObjects(svc, dialect, c, ids));
+            .forEach((c, ids) -> deleteInputObjects(svc, c, ids));
 
-        deleteAppParametersAndInputs(dialect, runIds);
+        deleteAppParametersAndInputs(runIds);
 
         deleteRunMaterials(runIds, user);
 
-        deleteRunProtocolApps(dialect, runIds);
+        deleteRunProtocolApps(runIds);
 
         runs.forEach(ExpRunImpl::clearCache);
     }
@@ -594,22 +593,23 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return getContainer().hasPermission(user, DeletePermission.class);
     }
 
-    private static SQLFragment runIdIn(SqlDialect dialect, List<Long> runIds)
+    private static SQLFragment runIdIn(List<Long> runIds)
     {
-        return new SQLFragment().appendInClause(SQLFragment.unsafe("RunId"), runIds, dialect);
+        return new SQLFragment().appendInClause(SQLFragment.unsafe("RunId"), runIds, getExpSchema().getSqlDialect());
     }
 
-    private static SQLFragment rowIdsInRuns(String table, SqlDialect dialect, List<Long> runIds)
+    private static SQLFragment rowIdsInRuns(String table, List<Long> runIds)
     {
-        return SQLFragment.unsafe("(SELECT RowId FROM " + table + " WHERE ").append(runIdIn(dialect, runIds)).unsafeAppend(")");
+        return SQLFragment.unsafe("(SELECT RowId FROM " + table + " WHERE ").append(runIdIn(runIds)).unsafeAppend(")");
     }
 
     // Clean up DataInput and MaterialInput exp.object and properties
-    private static void deleteInputObjects(ExperimentServiceImpl svc, SqlDialect dialect, Container container, List<Long> runIds)
+    private static void deleteInputObjects(ExperimentServiceImpl svc, Container container, List<Long> runIds)
     {
-        SQLFragment appIds = rowIdsInRuns("exp.ProtocolApplication", dialect, runIds);
-        SQLFragment dataIds = rowIdsInRuns("exp.Data", dialect, runIds);
-        SQLFragment materialIds = rowIdsInRuns("exp.Material", dialect, runIds);
+        SqlDialect dialect = getExpSchema().getSqlDialect();
+        SQLFragment appIds = rowIdsInRuns("exp.ProtocolApplication", runIds);
+        SQLFragment dataIds = rowIdsInRuns("exp.Data", runIds);
+        SQLFragment materialIds = rowIdsInRuns("exp.Material", runIds);
         SQLFragment materialSQL = new SQLFragment().unsafeAppend("SELECT ")
                 .append(dialect.concatenate(new SQLFragment().appendValue(DataInput.lsidPrefix(), dialect),
                         SQLFragment.unsafe("CAST(dataId AS VARCHAR)"), SQLFragment.unsafe("'.'"), SQLFragment.unsafe("CAST(targetApplicationId AS VARCHAR)")))
@@ -658,17 +658,17 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         pvs.deleteRunProvenance(getRowId());
     }
 
-    private static void deleteAppParametersAndInputs(SqlDialect dialect, List<Long> runIds)
+    private static void deleteAppParametersAndInputs(List<Long> runIds)
     {
-        SQLFragment appIds = rowIdsInRuns("exp.ProtocolApplication", dialect, runIds);
-        SQLFragment dataIds = rowIdsInRuns("exp.Data", dialect, runIds);
-        SQLFragment materialIds = rowIdsInRuns("exp.Material", dialect, runIds);
+        SQLFragment appIds = rowIdsInRuns("exp.ProtocolApplication", runIds);
+        SQLFragment dataIds = rowIdsInRuns("exp.Data", runIds);
+        SQLFragment materialIds = rowIdsInRuns("exp.Material", runIds);
         SQLFragment sql = new SQLFragment();
         sql.unsafeAppend("DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN ").append(appIds).appendEOS();
 
         //per Josh: break relation between all datas with this run id and don't delete them
-        sql.unsafeAppend("UPDATE exp.Data SET SourceApplicationId = NULL, RunId = NULL WHERE ").append(runIdIn(dialect, runIds)).appendEOS();
-        sql.unsafeAppend("UPDATE exp.Material SET SourceApplicationId = NULL, RunId = NULL WHERE ").append(runIdIn(dialect, runIds)).appendEOS();
+        sql.unsafeAppend("UPDATE exp.Data SET SourceApplicationId = NULL, RunId = NULL WHERE ").append(runIdIn(runIds)).appendEOS();
+        sql.unsafeAppend("UPDATE exp.Material SET SourceApplicationId = NULL, RunId = NULL WHERE ").append(runIdIn(runIds)).appendEOS();
 
         sql.unsafeAppend("DELETE FROM exp.DataInput WHERE TargetApplicationId IN ").append(appIds).appendEOS();
         sql.unsafeAppend("DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN ").append(appIds).appendEOS();
@@ -687,9 +687,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
     }
 
-    private static void deleteRunProtocolApps(SqlDialect dialect, List<Long> runIds)
+    private static void deleteRunProtocolApps(List<Long> runIds)
     {
-        new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("DELETE FROM exp.ProtocolApplication WHERE ").append(runIdIn(dialect, runIds)));
+        new SqlExecutor(getExpSchema()).execute(SQLFragment.unsafe("DELETE FROM exp.ProtocolApplication WHERE ").append(runIdIn(runIds)));
     }
 
     private synchronized void ensureFullyPopulated()
@@ -979,6 +979,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public void archiveDataFiles(User user)
     {
+        archiveDataFiles(user, Set.of(getRowId()));
+    }
+
+    /** @param deletingRunIds runs being deleted with this one, which don't count as other usages of a file */
+    public void archiveDataFiles(User user, Set<Long> deletingRunIds)
+    {
         try
         {
             PipeRoot pipeRoot = PipelineService.get().getPipelineRootSetting(getContainer());
@@ -991,7 +997,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     // and there aren't any other usages, move it into an archived subdirectory.
                     if (NetworkDrive.exists(file) && file.isFile() &&
                             (inAssayData(file) || isGeneratedByRun(expData)) &&
-                            !hasOtherRunUsing(expData, this))
+                            !hasOtherRunUsing(expData, deletingRunIds))
                     {
                         File archivedDir;
                         try
@@ -1059,7 +1065,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         _object.setCreatedBy(user == null ? 0 : user.getUserId());
     }
 
-    private boolean hasOtherRunUsing(ExpData originalData, ExpRun originalRun)
+    private boolean hasOtherRunUsing(ExpData originalData, Set<Long> ignoredRunIds)
     {
         if (originalData.getDataFileUrl() != null)
         {
@@ -1067,7 +1073,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             {
                 for (ExpRun run : data.getTargetRuns())
                 {
-                    if (!run.equals(originalRun))
+                    if (!ignoredRunIds.contains(run.getRowId()))
                     {
                         return true;
                     }

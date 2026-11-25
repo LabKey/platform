@@ -15,9 +15,11 @@
  */
 package org.labkey.api.exp.query;
 
+import org.labkey.api.query.EnumFieldKey;
+
 public interface ExpMaterialProtocolInputTable extends ExpTable<ExpMaterialProtocolInputTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         RowId,
         Name,
