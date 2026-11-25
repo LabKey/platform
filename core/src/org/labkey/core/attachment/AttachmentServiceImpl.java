@@ -376,7 +376,7 @@ public class AttachmentServiceImpl implements AttachmentService
                 byte[] bytes;
                 try (InputStream in = file.openInputStream())
                 {
-                    bytes = in.readNBytes(maxSize + 1);
+                    bytes = in.readNBytes(maxSize == Integer.MAX_VALUE ? maxSize : maxSize + 1);
                 }
                 AttachmentFile buffered = new ByteArrayAttachmentFile(file.getFilename(), bytes, file.getContentType());
 
@@ -870,7 +870,22 @@ public class AttachmentServiceImpl implements AttachmentService
         if (exists(parent, newName))
             throw new AttachmentService.DuplicateFilenameException(newName);
 
-        copyPointers(parent, parent, List.of(a.getName()), newName, auditUser);
+        int copied;
+        try
+        {
+            copied = copyPointers(parent, parent, List.of(a.getName()), newName, auditUser);
+        }
+        catch (RuntimeSQLException e)
+        {
+            // A concurrent add of the same name won
+            if ("23505".equals(e.getSQLException().getSQLState()))
+                throw new AttachmentService.DuplicateFilenameException(newName);
+            throw e;
+        }
+
+        if (0 == copied)
+            throw new FileNotFoundException(a.getName());
+
         addAuditEvent(auditUser, parent, newName, "The attachment " + newName + " was added");
     }
 
@@ -884,7 +899,7 @@ public class AttachmentServiceImpl implements AttachmentService
     }
 
     /** @param newName the copy's name when copying a single attachment, or null to keep the names */
-    private void copyPointers(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @Nullable String newName, User user)
+    private int copyPointers(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @Nullable String newName, User user)
     {
         if (source instanceof AttachmentDirectory || destination instanceof AttachmentDirectory)
             throw new UnsupportedOperationException("Copying AttachmentDirectory attachments isn't supported");
@@ -899,8 +914,9 @@ public class AttachmentServiceImpl implements AttachmentService
         if (null != names)
             sql.unsafeAppend(" AND ").appendInClause("Name", names, coreTables().getSqlDialect());
 
-        new SqlExecutor(coreTables().getSchema()).execute(sql);
+        int copied = new SqlExecutor(coreTables().getSchema()).execute(sql);
         invalidateCache(destination);
+        return copied;
     }
 
     @Override

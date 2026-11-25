@@ -28,7 +28,7 @@ ALTER SEQUENCE core.Documents_RowId_Seq RENAME TO Attachments_RowId_Seq;
 ALTER TABLE core.Attachments RENAME COLUMN DocumentSize TO Size;
 ALTER TABLE core.Attachments RENAME COLUMN DocumentType TO Type;
 
--- Nullable until background deduplication hashes every database attachment; PostgreSQL allows many NULLs in a unique column
+-- Nullable until deduplication hashes every database attachment; PostgreSQL allows many NULLs in a unique column
 ALTER TABLE core.Attachments ADD Hash VARCHAR(64);
 ALTER TABLE core.Attachments ADD CONSTRAINT UQ_Attachments_Hash UNIQUE (Hash);
 
@@ -55,10 +55,11 @@ BEGIN
     -- ELN global attachments already have pointers and are named by bare hash
     UPDATE core.Attachments SET Hash = DocumentName WHERE Parent = globalParent;
 
+    -- A row with no name can't be looked up, so it gets no pointer and the cleanup task deletes it
     INSERT INTO core.AttachmentPointers (Name, Parent, ParentType, Container, AttachmentId, Created, CreatedBy, LastIndexed)
         SELECT DocumentName, Parent, COALESCE(ParentType, 'Unknown'), Container, RowId, COALESCE(Created, Modified, CURRENT_TIMESTAMP), COALESCE(CreatedBy, ModifiedBy, 0), LastIndexed
         FROM core.Attachments
-        WHERE Parent IS DISTINCT FROM globalParent;
+        WHERE Parent IS DISTINCT FROM globalParent AND DocumentName IS NOT NULL;
 END $$;
 
 -- File-system attachments have no content to hash, so each gets a unique placeholder

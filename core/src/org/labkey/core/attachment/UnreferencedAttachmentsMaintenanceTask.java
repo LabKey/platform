@@ -65,6 +65,9 @@ public class UnreferencedAttachmentsMaintenanceTask implements MaintenanceTask
             }
             catch (RuntimeSQLException e)
             {
+                // Only an FK violation is the expected race; anything else is a real failure
+                if (!"23503".equals(e.getSQLException().getSQLState()))
+                    throw e;
                 log.info("Stopping after a batch lost a race with a new attachment pointer; the next run will retry", e);
                 break;
             }
