@@ -20,8 +20,6 @@ import org.labkey.api.data.TableInfo;
 
 /**
  * Superclass for specimen tables that adds and configures all the common columns.
- * User: jeckels
- * Date: May 8, 2009
  */
 public abstract class AbstractSpecimenTable extends BaseStudyTable
 {

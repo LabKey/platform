@@ -88,6 +88,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.study.model.ParticipantGroup;
+import org.labkey.api.study.query.PtidObfuscatingDisplayColumn;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.query;
+package org.labkey.api.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObject;
@@ -24,11 +24,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
 
-/*
-* User: adam
-* Date: Apr 26, 2011
-* Time: 6:44:28 PM
-*/
 public class PtidObfuscatingDisplayColumn extends DataColumn
 {
     public PtidObfuscatingDisplayColumn(ColumnInfo col)
