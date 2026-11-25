@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
@@ -124,6 +125,12 @@ public class RserveScriptEngine extends RScriptEngine
         return ModusOperandi.Cloud;
     }
 
+    /** Copying files means no shared file system, so pipeline jobs and transform scripts can't see their inputs. */
+    public static boolean requiresCopyFiles(ExternalScriptEngineDefinition def)
+    {
+        return getModusOperandi(def).requiresCopyFiles();
+    }
+
 
     @Override
     protected String getInputFilename(FileLike inputScript)
@@ -153,7 +160,7 @@ public class RserveScriptEngine extends RScriptEngine
         else
         {
             // getRemotePath(workingDir) will return ./ so call makeLocalToRemotePath() directly
-            URI remote = makeLocalToRemotePath(_def, null, workingDir.toURI());
+            URI remote = makeLocalToRemotePath(_def.getPathMap(), null, workingDir.toURI());
             return PathMapper.uriToPath(remote);
         }
     }
@@ -449,7 +456,7 @@ public class RserveScriptEngine extends RScriptEngine
     {
         // get absolute path to make sure the paths are consistent
         localFile = FileUtil.getAbsoluteCaseSensitiveFile(localFile);
-        URI remote = makeLocalToRemotePath(_def, getWorkingDir(getContext()), localFile.toURI());
+        URI remote = makeLocalToRemotePath(_def.getPathMap(), getWorkingDir(getContext()), localFile.toURI());
         return PathMapper.uriToPath(remote);
     }
 
@@ -460,7 +467,7 @@ public class RserveScriptEngine extends RScriptEngine
         try
         {
             URI localURI = PathMapper.pathToUri(local);
-            URI remote = makeLocalToRemotePath(_def, getWorkingDir(getContext()), localURI);
+            URI remote = makeLocalToRemotePath(_def.getPathMap(), getWorkingDir(getContext()), localURI);
             return PathMapper.uriToPath(remote);
         }
         catch (URISyntaxException e)
@@ -487,7 +494,7 @@ public class RserveScriptEngine extends RScriptEngine
 
     // It's confusing to have methods that take URI and return path (or vice versa)
     // Let's stick to methods that take/return the same type (using URI here since pathMap.localToRemote() wants URI)
-    static public URI makeLocalToRemotePath(ExternalScriptEngineDefinition def, FileLike workingDirectory, URI localURI)
+    static public URI makeLocalToRemotePath(@Nullable PathMapper pathMap, FileLike workingDirectory, URI localURI)
     {
         // let's first try to relative relative to the working directory
         // We could do this in the other order.  However, since pathMap.localToRemote() doesn't tell us when it did not do anything,
@@ -508,7 +515,6 @@ public class RserveScriptEngine extends RScriptEngine
             }
         }
 
-        PathMapper pathMap = def.getPathMap();
         if (pathMap != null && !pathMap.getURIPathMap().isEmpty())
         {
             URI remoteURI = pathMap.localToRemote(localURI);
@@ -714,8 +720,7 @@ public class RserveScriptEngine extends RScriptEngine
     {
         if (context == LabKeyScriptEngineManager.EngineContext.pipeline || context == LabKeyScriptEngineManager.EngineContext.transform)
         {
-            ModusOperandi mo = getModusOperandi(getEngineDefinition());
-            return !mo.requiresCopyFiles();
+            return !requiresCopyFiles(getEngineDefinition());
         }
         return true;
     }

@@ -2468,6 +2468,11 @@ public class CoreController extends SpringActionController
             ExternalScriptEngineDefinition savedDef = svc.getEngineDefinition(def.getRowId(), def.getType());
             if (savedDef != null)
             {
+                if (svc instanceof ScriptEngineManagerImpl impl && impl.isProtectedSiteDefault(savedDef))
+                {
+                    errors.reject(ERROR_MSG, "The engine '" + savedDef.getName() + "' is a site default; make another engine the default before deleting it");
+                    return null;
+                }
                 svc.deleteDefinition(getUser(), savedDef);
                 response.put("success", true);
             }

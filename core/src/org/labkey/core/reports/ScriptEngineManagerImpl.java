@@ -52,6 +52,7 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.ScriptEngineProvider;
 import org.labkey.api.reports.ScriptEngineProviderRegistry;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.AESConfig;
@@ -67,6 +68,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.core.reports.report.r.RDockerScriptEngine;
 import org.labkey.core.script.RhinoLanguageVersion;
 import org.labkey.core.script.RhinoScriptEngine;
 import org.springframework.validation.BindException;
@@ -397,20 +399,36 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 .orElse(null);
     }
 
-    static boolean isSiteDefault(@NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context)
+    public static boolean isSiteDefault(@NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context)
     {
         return ENGINE_DEFINITION_CACHE.get(makeCacheKey(ContainerManager.getRoot(), context)).stream()
                 .anyMatch(scoped -> Objects.equals(scoped.getRowId(), def.getRowId()));
     }
 
-    // Until the admin UI has a checkbox per context, one choice sets or clears the site default for every context
+    // As on the admin page, the last engine of a language can be deleted even when it is the site default
+    public boolean isProtectedSiteDefault(@NotNull ExternalScriptEngineDefinition def)
+    {
+        return Arrays.stream(EngineContext.values()).anyMatch(context -> isSiteDefault(def, context))
+                && getEngineDefinitions().stream().anyMatch(other -> other.isExternal() && !Objects.equals(other.getRowId(), def.getRowId()) && isSameLanguage(other, def));
+    }
+
+    public static boolean supportsContext(@NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context)
+    {
+        ScriptEngineProvider provider = ScriptEngineProviderRegistry.get().get(def.getType(), def.getKind());
+        return provider != null && provider.supportsContext(def, context);
+    }
+
+    // Until the admin UI has a checkbox per context, one choice sets the site default for every context the engine supports
     private void setSiteDefault(@NotNull ExternalScriptEngineDefinition def, boolean isDefault)
     {
         Container root = ContainerManager.getRoot();
         for (EngineContext context : EngineContext.values())
         {
             if (isDefault)
-                setEngineScope(root, def, context);
+            {
+                if (supportsContext(def, context))
+                    setEngineScope(root, def, context);
+            }
             else if (isSiteDefault(def, context))
                 removeEngineScope(root, def, context);
         }
@@ -421,6 +439,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     {
         if (def.getRowId() != null)
         {
+            // Mappings that predate the rule stay, so only a new mapping is rejected
+            if (!supportsContext(def, context) && selectScopedEngines(container.getId(), context.name()).stream().noneMatch(scoped -> Objects.equals(scoped.getRowId(), def.getRowId())))
+                throw new IllegalArgumentException("The script engine '" + def.getName() + "' can't run in the " + context + " context");
+
             try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
             {
                 tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1021,6 +1043,14 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                     assertFalse(isSiteDefault(a, context));
                     assertEquals(b.getRowId(), Objects.requireNonNull(mgr.getEngine(c, "sdtest", context)).getRowId());
                 }
+                assertTrue(mgr.isProtectedSiteDefault(b));
+                assertFalse(mgr.isProtectedSiteDefault(a));
+
+                ExternalScriptEngineDefinitionImpl last = testDefinition("Site Default Test Last", ExternalScriptEngineDefinition.Type.External, "sdlast");
+                last.setEnabled(true);
+                last.setDefault(true);
+                defs.add(mgr.saveDefinition(user, last));
+                assertFalse("The only engine of a language can be deleted", mgr.isProtectedSiteDefault(last));
 
                 b.setDefault(false);
                 mgr.saveDefinition(user, b);
@@ -1034,6 +1064,119 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             {
                 defs.forEach(def -> mgr.deleteDefinition(user, def));
             }
+        }
+
+        @Test
+        public void testFolderMappingOverridesSiteDefaultPerContext()
+        {
+            ScriptEngineManagerImpl mgr = (ScriptEngineManagerImpl) LabKeyScriptEngineManager.get();
+            User user = User.getSearchUser();
+            Container c = JunitUtil.getTestContainer();
+            List<ExternalScriptEngineDefinition> defs = new ArrayList<>();
+            try
+            {
+                ExternalScriptEngineDefinitionImpl site = testDefinition("Context Resolution Site", ExternalScriptEngineDefinition.Type.External, "sdtest");
+                site.setEnabled(true);
+                site.setDefault(true);
+                defs.add(mgr.saveDefinition(user, site));
+
+                ExternalScriptEngineDefinitionImpl folder = testDefinition("Context Resolution Folder", ExternalScriptEngineDefinition.Type.External, "sdtest");
+                folder.setEnabled(true);
+                defs.add(mgr.saveDefinition(user, folder));
+
+                mgr.setEngineScope(c, folder, EngineContext.transform);
+                assertEquals(folder.getRowId(), Objects.requireNonNull(mgr.getEngine(c, "sdtest", EngineContext.transform)).getRowId());
+                assertEquals(site.getRowId(), Objects.requireNonNull(mgr.getEngine(c, "sdtest", EngineContext.report)).getRowId());
+                assertEquals(site.getRowId(), Objects.requireNonNull(mgr.getEngine(c, "sdtest", EngineContext.pipeline)).getRowId());
+            }
+            finally
+            {
+                defs.forEach(def -> mgr.deleteDefinition(user, def));
+            }
+        }
+
+        @Test
+        public void testSaveConvertsPythonExtensionToPythonType()
+        {
+            ScriptEngineManagerImpl mgr = (ScriptEngineManagerImpl) LabKeyScriptEngineManager.get();
+            User user = User.getSearchUser();
+            List<ExternalScriptEngineDefinition> defs = new ArrayList<>();
+            try
+            {
+                for (ExternalScriptEngineDefinition.Type type : List.of(ExternalScriptEngineDefinition.Type.External, ExternalScriptEngineDefinition.Type.Perl))
+                {
+                    ExternalScriptEngineDefinitionImpl def = testDefinition("Python Conversion " + type, type, "PY");
+                    def.setEnabled(false);
+                    defs.add(mgr.saveDefinition(user, def));
+                    assertNotNull(type + " with a py extension should save as Python", mgr.getEngineDefinition(def.getRowId(), ExternalScriptEngineDefinition.Type.Python));
+                }
+
+                ExternalScriptEngineDefinitionImpl other = testDefinition("Python Conversion Other", ExternalScriptEngineDefinition.Type.External, "sdtest");
+                other.setEnabled(false);
+                defs.add(mgr.saveDefinition(user, other));
+                assertEquals(ExternalScriptEngineDefinition.Type.External, other.getType());
+            }
+            finally
+            {
+                defs.forEach(def -> mgr.deleteDefinition(user, def));
+            }
+        }
+
+        @Test
+        public void testUnsupportedContextRejected()
+        {
+            ScriptEngineManagerImpl mgr = (ScriptEngineManagerImpl) LabKeyScriptEngineManager.get();
+            User user = User.getSearchUser();
+            Container c = JunitUtil.getTestContainer();
+            List<ExternalScriptEngineDefinition> defs = new ArrayList<>();
+            try
+            {
+                ExternalScriptEngineDefinitionImpl copying = testDefinition("Context Test Rserve", ExternalScriptEngineDefinition.Type.R, "r");
+                copying.setKind(EngineKind.RSERVE);
+                defs.add(mgr.saveDefinition(user, copying));
+
+                assertTrue(supportsContext(copying, EngineContext.report));
+                assertFalse(supportsContext(copying, EngineContext.pipeline));
+                assertFalse(supportsContext(copying, EngineContext.transform));
+
+                mgr.setEngineScope(c, copying, EngineContext.report);
+                for (EngineContext context : List.of(EngineContext.pipeline, EngineContext.transform))
+                {
+                    try
+                    {
+                        mgr.setEngineScope(c, copying, context);
+                        fail("Expected a mapping for an unsupported context to be rejected: " + context);
+                    }
+                    catch (IllegalArgumentException expected)
+                    {
+                    }
+                }
+
+                ExternalScriptEngineDefinitionImpl sharing = testDefinition("Context Test Rserve Share", ExternalScriptEngineDefinition.Type.R, "r");
+                sharing.setKind(EngineKind.RSERVE);
+                sharing.setFileExchange(RserveScriptEngine.ModusOperandi.FileShare.name());
+                defs.add(mgr.saveDefinition(user, sharing));
+                for (EngineContext context : EngineContext.values())
+                {
+                    assertTrue(supportsContext(sharing, context));
+                    mgr.setEngineScope(c, sharing, context);
+                }
+            }
+            finally
+            {
+                for (EngineContext context : EngineContext.values())
+                    defs.forEach(def -> mgr.removeEngineScope(c, def, context));
+                defs.forEach(def -> mgr.deleteDefinition(user, def));
+            }
+        }
+
+        @Test
+        public void testDockerEngineLeavesDefinitionPathMapAlone()
+        {
+            ExternalScriptEngineDefinitionImpl def = testDefinition("Docker Path Map Test", ExternalScriptEngineDefinition.Type.R, "r");
+            def.setKind(EngineKind.DOCKER);
+            new RDockerScriptEngine(def, DockerService.get(), null);
+            assertNull(def.getPathMap());
         }
 
         private static Set<Integer> scopedIds(ScriptEngineManagerImpl mgr, Container c)

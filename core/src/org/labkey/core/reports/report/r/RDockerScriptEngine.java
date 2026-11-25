@@ -52,6 +52,8 @@ public class RDockerScriptEngine extends RScriptEngine
 
     private final String _remoteWorkingDir;
     private final DockerService.DockerImage _dockerImage;
+    // Per engine, since the mapping depends on this engine's working directory and the definition is shared
+    private final PathMapper _pathMapper;
 
     /**
      * If an RStudioService is instance is passed to this constructor, it provides an instance which can both
@@ -64,7 +66,7 @@ public class RDockerScriptEngine extends RScriptEngine
         _dockerImage = dockerImage;
         _remoteWorkingDir = dockerImage == null ? "" : dockerImage.getMount() + "/R_Sandbox";
 
-        def.setPathMapper(new PathMapperImpl(){
+        _pathMapper = new PathMapperImpl(){
 
             void setMapping()
             {
@@ -94,7 +96,7 @@ public class RDockerScriptEngine extends RScriptEngine
                 setMapping();
                 return super.getValidationErrors();
             }
-        });
+        };
     }
 
     @Override
@@ -142,7 +144,7 @@ public class RDockerScriptEngine extends RScriptEngine
     {
         // get absolute path to make sure the paths are consistent
         URI localUri = FileUtil.getAbsoluteCaseSensitiveFile(localFile).toURI();
-        URI remote = RserveScriptEngine.makeLocalToRemotePath(_def, getWorkingDir(getContext()), localUri);
+        URI remote = RserveScriptEngine.makeLocalToRemotePath(_pathMapper, getWorkingDir(getContext()), localUri);
         return PathMapper.uriToPath(remote);
     }
 
@@ -152,7 +154,7 @@ public class RDockerScriptEngine extends RScriptEngine
         try
         {
             URI localUri = PathMapper.pathToUri(local);
-            URI remote = RserveScriptEngine.makeLocalToRemotePath(_def, getWorkingDir(getContext()), localUri);
+            URI remote = RserveScriptEngine.makeLocalToRemotePath(_pathMapper, getWorkingDir(getContext()), localUri);
             return PathMapper.uriToPath(remote);
         }
         catch (URISyntaxException e)

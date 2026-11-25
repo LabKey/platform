@@ -345,6 +345,7 @@ import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
+import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 import org.labkey.core.security.BlockListFilter;
@@ -4830,7 +4831,24 @@ public class AdminController extends SpringActionController
                     errors.reject(ERROR_MSG, "Please select a valid report engine configuration");
                 if (form.getPipelineEngine() == null)
                     errors.reject(ERROR_MSG, "Please select a valid pipeline engine configuration");
+
+                LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
+                rejectUnsupportedContext(mgr, form.getReportEngine(), LabKeyScriptEngineManager.EngineContext.report, errors);
+                rejectUnsupportedContext(mgr, form.getPipelineEngine(), LabKeyScriptEngineManager.EngineContext.pipeline, errors);
+                rejectUnsupportedContext(mgr, form.getPipelineEngine(), LabKeyScriptEngineManager.EngineContext.transform, errors);
             }
+        }
+
+        // Only a changed mapping is checked, so a folder mapped before the rule can still be saved
+        private void rejectUnsupportedContext(LabKeyScriptEngineManager mgr, @Nullable Integer rowId, LabKeyScriptEngineManager.EngineContext context, Errors errors)
+        {
+            ExternalScriptEngineDefinition def = rowId != null ? mgr.getEngineDefinition(rowId, ExternalScriptEngineDefinition.Type.R) : null;
+            if (def == null || ScriptEngineManagerImpl.supportsContext(def, context))
+                return;
+
+            ExternalScriptEngineDefinition current = mgr.getScopedEngine(getContainer(), "r", context, false);
+            if (current == null || !rowId.equals(current.getRowId()))
+                errors.reject(ERROR_MSG, "The engine '" + def.getName() + "' can't run " + (context == LabKeyScriptEngineManager.EngineContext.transform ? "transform scripts" : "pipeline jobs") + " because its file exchange copies files");
         }
 
         @Override

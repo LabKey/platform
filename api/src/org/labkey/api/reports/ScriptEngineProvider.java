@@ -32,6 +32,12 @@ public interface ScriptEngineProvider
 
     @Nullable ScriptEngine create(@NotNull ExternalScriptEngineDefinition def);
 
+    /** Site defaults and folder mappings may only name a context this returns true for. */
+    default boolean supportsContext(@NotNull ExternalScriptEngineDefinition def, @NotNull LabKeyScriptEngineManager.EngineContext context)
+    {
+        return true;
+    }
+
     default void validate(@NotNull ExternalScriptEngineDefinition def, @NotNull Errors errors)
     {
     }

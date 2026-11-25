@@ -88,7 +88,6 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private boolean _pandocEnabled;
     private Boolean _default;
     private boolean _sandboxed;
-    private PathMapper _pathMapper;
     private Integer _dockerImageRowId;
     private String _dockerImageConfig;
     private String _remoteUrl;
@@ -449,9 +448,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     @Override
     public PathMapper getPathMap()
     {
-        if (_pathMapper != null)
-            return _pathMapper;
-        else if (_pathMap != null)
+        if (_pathMap != null)
         {
             JSONObject pathMapJson = new JSONObject(_pathMap);
             return PathMapperImpl.fromJSON(pathMapJson, true);
@@ -462,16 +459,6 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     public void setPathMap(String pathMap)
     {
         _pathMap = pathMap;
-    }
-
-    @Override
-    public void setPathMapper(PathMapper pathMap)
-    {
-        if (pathMap != null)
-        {
-            _pathMapper = pathMap;
-            _pathMap = pathMap.toJSON().toString();
-        }
     }
 
     @Override

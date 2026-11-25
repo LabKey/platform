@@ -28,10 +28,12 @@ import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineDefinition.EngineKind;
 import org.labkey.api.reports.ExternalScriptEngineDefinition.Type;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
+import org.labkey.api.reports.LabKeyScriptEngineManager.EngineContext;
 import org.labkey.api.reports.ScriptEngineProvider;
 import org.labkey.api.reports.ScriptEngineProviderRegistry;
 import org.labkey.api.reports.report.r.RScriptEngineFactory;
 import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -134,6 +136,12 @@ public final class CoreScriptEngineProviders
         public @Nullable ScriptEngine create(@NotNull ExternalScriptEngineDefinition def)
         {
             return new RserveScriptEngineFactory(def).getScriptEngine();
+        }
+
+        @Override
+        public boolean supportsContext(@NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context)
+        {
+            return context == EngineContext.report || !RserveScriptEngine.requiresCopyFiles(def);
         }
 
         @Override

@@ -112,7 +112,6 @@ public interface ExternalScriptEngineDefinition
     void setPort(int port);
     void setUser(String user);
     void setPassword(String password);
-    void setPathMapper(PathMapper pathMap);
 
     String getRemoteUrl();
 }
