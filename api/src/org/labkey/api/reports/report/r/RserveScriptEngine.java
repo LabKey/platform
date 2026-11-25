@@ -712,7 +712,7 @@ public class RserveScriptEngine extends RScriptEngine
     @Override
     public boolean supportsContext(LabKeyScriptEngineManager.EngineContext context)
     {
-        if (context.equals(LabKeyScriptEngineManager.EngineContext.pipeline))
+        if (context == LabKeyScriptEngineManager.EngineContext.pipeline || context == LabKeyScriptEngineManager.EngineContext.transform)
         {
             ModusOperandi mo = getModusOperandi(getEngineDefinition());
             return !mo.requiresCopyFiles();

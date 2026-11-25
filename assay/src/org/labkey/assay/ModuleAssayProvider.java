@@ -685,7 +685,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                     if (r instanceof FileResource fileResource)
                     {
                         String ext = r.getPath().extension();
-                        if (manager.getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline) != null)
+                        if (manager.getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.transform) != null)
                         {
                             // only allow insert execution for module scripts
                             moduleScriptFiles.add(new AnalysisScript(fileResource.getFile(), Set.of(DataTransformService.TransformOperation.INSERT)));

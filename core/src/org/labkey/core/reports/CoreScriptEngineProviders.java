@@ -15,12 +15,15 @@
  */
 package org.labkey.core.reports;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.docker.DockerService;
+import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.premium.PremiumService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineDefinition.EngineKind;
 import org.labkey.api.reports.ExternalScriptEngineDefinition.Type;
@@ -30,14 +33,23 @@ import org.labkey.api.reports.ScriptEngineProviderRegistry;
 import org.labkey.api.reports.report.r.RScriptEngineFactory;
 import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.rstudio.RStudioService;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.reports.report.python.PythonScriptEngine;
 import org.labkey.core.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.core.reports.report.r.RserveScriptEngineFactory;
+import org.springframework.validation.Errors;
 
 import javax.script.ScriptEngine;
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.function.Function;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public final class CoreScriptEngineProviders
 {
@@ -81,6 +93,22 @@ public final class CoreScriptEngineProviders
         {
             return factory.apply(def);
         }
+
+        @Override
+        public void validate(@NotNull ExternalScriptEngineDefinition def, @NotNull Errors errors)
+        {
+            if (StringUtils.isBlank(def.getExePath()))
+            {
+                errors.rejectValue("exePath", ERROR_MSG, "The program location cannot be empty");
+                return;
+            }
+
+            File exe = new File(def.getExePath());
+            if (!exe.exists())
+                errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
+            if (exe.isDirectory())
+                errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe')");
+        }
     }
 
     private static class RserveProvider implements ScriptEngineProvider
@@ -107,6 +135,15 @@ public final class CoreScriptEngineProviders
         {
             return new RserveScriptEngineFactory(def).getScriptEngine();
         }
+
+        @Override
+        public void validate(@NotNull ExternalScriptEngineDefinition def, @NotNull Errors errors)
+        {
+            PathMapper pathMap = def.getPathMap();
+            ValidationException bindErrors = pathMap != null ? pathMap.getValidationErrors() : null;
+            if (bindErrors != null && bindErrors.hasErrors())
+                bindErrors.getErrors().forEach(e -> errors.rejectValue("pathMap", ERROR_MSG, e.getMessage()));
+        }
     }
 
     private static class RDockerProvider implements ScriptEngineProvider
@@ -128,6 +165,19 @@ public final class CoreScriptEngineProviders
         public @Nullable ScriptEngine create(@NotNull ExternalScriptEngineDefinition def)
         {
             return new RDockerScriptEngineFactory(def).getScriptEngine();
+        }
+
+        @Override
+        public void beforeSave(@NotNull ExternalScriptEngineDefinition def, @NotNull User user)
+        {
+            try
+            {
+                ((ExternalScriptEngineDefinitionImpl) def).saveDockerImageConfig(user);
+            }
+            catch (IOException e)
+            {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
@@ -153,6 +203,22 @@ public final class CoreScriptEngineProviders
         public @Nullable ScriptEngine create(@NotNull ExternalScriptEngineDefinition def)
         {
             return new ExternalScriptEngineFactory(def).getScriptEngine();
+        }
+
+        @Override
+        public void validate(@NotNull ExternalScriptEngineDefinition def, @NotNull Errors errors)
+        {
+            if (def.getRemoteUrl() == null)
+                return;
+
+            try
+            {
+                URI.create(def.getRemoteUrl()).toURL();
+            }
+            catch (IllegalArgumentException | MalformedURLException e)
+            {
+                errors.rejectValue("remoteUrl", ERROR_MSG, e.getMessage());
+            }
         }
     }
 }

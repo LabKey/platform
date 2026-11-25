@@ -33,7 +33,8 @@ public interface LabKeyScriptEngineManager
     enum EngineContext
     {
         report,                 // basic report rendering
-        pipeline                // pipeline job or transform script
+        transform,              // assay transform script
+        pipeline                // script pipeline job
     }
 
     static LabKeyScriptEngineManager get()

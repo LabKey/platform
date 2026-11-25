@@ -1274,7 +1274,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 validateScriptLocation(protocol.getContainer(), scriptFile, validationErrors);
 
-                ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
+                ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.transform);
                 if (engine != null)
                 {
                     // check for deprecated tokens in text scripts

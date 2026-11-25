@@ -104,11 +104,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.ScriptEngineProvider;
+import org.labkey.api.reports.ScriptEngineProviderRegistry;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -209,8 +209,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -222,6 +220,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2309,45 +2308,11 @@ public class CoreController extends SpringActionController
 
             if (def.isExternal())
             {
-                //
-                // If the engine is remote then don't validate the exe and command line values
-                //
-                if (!def.isRemote())
-                {
-                    File rexe = new File(def.getExePath());
-                    if (!rexe.exists())
-                        errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
-                    if (rexe.isDirectory())
-                        errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe')");
-                }
+                ScriptEngineProvider provider = def.getType() != null ? ScriptEngineProviderRegistry.get().get(def.getType(), def.getKind()) : null;
+                if (provider != null)
+                    provider.validate(def, errors);
                 else
-                {
-                    // see if we had any bind errors (currently only filled in from the remote path mapper)
-                    if (def.getPathMap() != null )
-                    {
-                        ValidationException validationException = def.getPathMap().getValidationErrors();
-                        if (validationException != null && validationException.hasErrors())
-                        {
-                            List<ValidationError> validationErrors = validationException.getErrors();
-                            for (ValidationError v : validationErrors)
-                            {
-                                errors.rejectValue("pathMap", ERROR_MSG, v.getMessage());
-                            }
-                        }
-                    }
-                }
-
-                if (def.getRemoteUrl() != null)
-                {
-                    try
-                    {
-                        new URL(def.getRemoteUrl());
-                    }
-                    catch (MalformedURLException e)
-                    {
-                        errors.rejectValue("remoteUrl", ERROR_MSG, e.getMessage());
-                    }
-                }
+                    errors.reject(ERROR_MSG, "Unsupported script engine: " + def.getType() + " " + def.getKind());
 
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition(FieldKey.fromParts("name"), def.getName());
@@ -2368,8 +2333,8 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors) throws Exception
         {
             LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            if (def.isDocker())
-                def.saveDockerImageConfig(getUser());
+            if (def.isExternal())
+                Objects.requireNonNull(ScriptEngineProviderRegistry.get().get(def.getType(), def.getKind())).beforeSave(def, getUser());
             svc.saveDefinition(getUser(), def);
 
             // update default R engine
@@ -2406,7 +2371,8 @@ public class CoreController extends SpringActionController
                 if (extension.startsWith("."))
                     extension = extension.substring(1);
 
-                ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(getContainer(), extension, LabKeyScriptEngineManager.EngineContext.pipeline);
+                // called by the assay designer UI
+                ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(getContainer(), extension, LabKeyScriptEngineManager.EngineContext.transform);
                 if (engine != null)
                     return getScriptEngineBaseProperties(engine.getFactory());
                 throw new NotFoundException("Script engine for the extension '" + form.getExetension() + "' has not been registered.");

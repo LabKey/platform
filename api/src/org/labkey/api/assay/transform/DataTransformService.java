@@ -177,7 +177,7 @@ public class DataTransformService
                 if (ext != null)
                 {
                     engine = LabKeyScriptEngineManager.get()
-                            .getEngineByExtension(context.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
+                            .getEngineByExtension(context.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.transform);
                 }
                 if (engine == null)
                 {
@@ -189,7 +189,7 @@ public class DataTransformService
                 // issue : 46838 remote scripting engines don't support transform scripts yet
                 if (engine instanceof ExternalScriptEngine externalScriptEngine)
                 {
-                    if (!externalScriptEngine.supportsContext(LabKeyScriptEngineManager.EngineContext.pipeline))
+                    if (!externalScriptEngine.supportsContext(LabKeyScriptEngineManager.EngineContext.transform))
                         throw new ValidationException("The script engine : " + externalScriptEngine.getEngineDefinition().getName() + " does not support running in a transform script." );
                 }
                 // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage (i.e., TransformSession)

@@ -67,6 +67,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.script.RhinoLanguageVersion;
 import org.labkey.core.script.RhinoScriptEngine;
+import org.springframework.validation.BindException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -902,6 +903,25 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                     }
                 }
             }
+        }
+
+        @Test
+        public void testProviderValidation()
+        {
+            ExternalScriptEngineDefinitionImpl local = new ExternalScriptEngineDefinitionImpl();
+            local.setType(ExternalScriptEngineDefinition.Type.Perl);
+            local.setExePath("/no/such/program");
+            BindException errors = new BindException(local, "form");
+            Objects.requireNonNull(ScriptEngineProviderRegistry.get().get(local.getType(), local.getKind())).validate(local, errors);
+            assertNotNull(errors.getFieldError("exePath"));
+
+            ExternalScriptEngineDefinitionImpl jupyter = new ExternalScriptEngineDefinitionImpl();
+            jupyter.setType(ExternalScriptEngineDefinition.Type.Jupyter);
+            jupyter.setRemoteUrl("not a url");
+            errors = new BindException(jupyter, "form");
+            Objects.requireNonNull(ScriptEngineProviderRegistry.get().get(jupyter.getType(), jupyter.getKind())).validate(jupyter, errors);
+            assertNotNull(errors.getFieldError("remoteUrl"));
+            assertNull(errors.getFieldError("exePath"));
         }
     }
 }

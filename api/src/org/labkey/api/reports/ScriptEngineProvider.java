@@ -17,6 +17,8 @@ package org.labkey.api.reports;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.User;
+import org.springframework.validation.Errors;
 
 import javax.script.ScriptEngine;
 
@@ -29,4 +31,13 @@ public interface ScriptEngineProvider
     void ensureAvailable(@NotNull ExternalScriptEngineDefinition def);
 
     @Nullable ScriptEngine create(@NotNull ExternalScriptEngineDefinition def);
+
+    default void validate(@NotNull ExternalScriptEngineDefinition def, @NotNull Errors errors)
+    {
+    }
+
+    /** Called by the admin save action before the definition is written. */
+    default void beforeSave(@NotNull ExternalScriptEngineDefinition def, @NotNull User user)
+    {
+    }
 }

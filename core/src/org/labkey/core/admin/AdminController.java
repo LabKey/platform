@@ -4854,19 +4854,26 @@ public class AdminController extends SpringActionController
 
                         if (reportEngine != null)
                             mgr.setEngineScope(getContainer(), reportEngine, LabKeyScriptEngineManager.EngineContext.report);
+                        // Until the folder page has its own transform select, its pipeline select sets both
                         if (pipelineEngine != null)
+                        {
                             mgr.setEngineScope(getContainer(), pipelineEngine, LabKeyScriptEngineManager.EngineContext.pipeline);
+                            mgr.setEngineScope(getContainer(), pipelineEngine, LabKeyScriptEngineManager.EngineContext.transform);
+                        }
                     }
                     else
                     {
                         // need to clear the current scope (if any)
                         ExternalScriptEngineDefinition reportEngine = mgr.getScopedEngine(getContainer(), "r", LabKeyScriptEngineManager.EngineContext.report, false);
                         ExternalScriptEngineDefinition pipelineEngine = mgr.getScopedEngine(getContainer(), "r", LabKeyScriptEngineManager.EngineContext.pipeline, false);
+                        ExternalScriptEngineDefinition transformEngine = mgr.getScopedEngine(getContainer(), "r", LabKeyScriptEngineManager.EngineContext.transform, false);
 
                         if (reportEngine != null)
                             mgr.removeEngineScope(getContainer(), reportEngine, LabKeyScriptEngineManager.EngineContext.report);
                         if (pipelineEngine != null)
                             mgr.removeEngineScope(getContainer(), pipelineEngine, LabKeyScriptEngineManager.EngineContext.pipeline);
+                        if (transformEngine != null)
+                            mgr.removeEngineScope(getContainer(), transformEngine, LabKeyScriptEngineManager.EngineContext.transform);
                     }
                     transaction.commit();
                 }
