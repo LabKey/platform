@@ -30,6 +30,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.TestUpgradeCodeCounter;
+import org.labkey.api.files.FileSystemAttachmentType;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationManager;
@@ -42,6 +43,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.List;
 
@@ -98,7 +100,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from core-26.003-26.004.sql
+     * Called from core-26.003-26.004.sql and core-26.015-26.016.sql
      */
     @SuppressWarnings("unused")
     // @DeferredUpgrade ensures that the upgrade code method gets queued in the database so the listener eventually
@@ -122,7 +124,12 @@ public class CoreUpgradeCode implements UpgradeCode
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {
-                for (AttachmentParentType type : AttachmentService.get().getAttachmentParentTypes())
+                // FileSystem matches every container parent, so it runs last and takes only rows the other types left
+                List<AttachmentParentType> types = AttachmentService.get().getAttachmentParentTypes().stream()
+                    .sorted(Comparator.comparing(type -> type == FileSystemAttachmentType.get()))
+                    .toList();
+
+                for (AttachmentParentType type : types)
                 {
                     LOG.info("Populating attachment parent type for {}", type.getUniqueName());
 
@@ -130,9 +137,10 @@ public class CoreUpgradeCode implements UpgradeCode
                         .append(CoreSchema.getInstance().getTableInfoAttachmentPointers())
                         .unsafeAppend(" SET ParentType = ?")
                         .add(type.getUniqueName())
-                        .unsafeAppend(" WHERE ");
+                        .unsafeAppend(" WHERE (ParentType IS NULL OR ParentType = 'Unknown') AND (");
                     // TODO: This is the only caller of addWhereSql(), which can be removed when this upgrade code is deleted.
                     type.addWhereSql(updateSql, "Parent", "Name");
+                    updateSql.unsafeAppend(")");
 
                     new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(updateSql);
                 }

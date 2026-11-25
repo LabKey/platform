@@ -252,11 +252,11 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
             sql.unsafeAppend(" IN (SELECT EntityId FROM core.Containers)");
         }
 
-        sql.unsafeAppend(" AND (DocumentName IN (?, ?) OR ")
+        sql.unsafeAppend(" AND (Name IN (?, ?) OR ")
             .add(AttachmentCache.FAVICON_FILE_NAME)
             .add(AttachmentCache.STYLESHEET_FILE_NAME)
-            .unsafeAppend("DocumentName LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
-            .unsafeAppend("DocumentName LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
+            .unsafeAppend("Name LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
+            .unsafeAppend("Name LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
         ret.addAll(copyAttachments(configuration, new SQLClause(sql), LookAndFeelResourceType.get()));
 
         return ret;

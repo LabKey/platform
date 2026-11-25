@@ -264,7 +264,6 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
         // requires querying and re-filtering the source tables instead.
         Collection<AttachmentParentType> ret = new LinkedList<>();
 
-        // TODO: Select ParentType as well to avoid duplication
         getAttachmentTypes().forEach(type -> {
             SQLFragment sql = type.getSelectParentEntityIdsSql();
             Collection<String> entityIds = new SqlSelector(targetSchema, sql).getCollection(String.class);
@@ -288,7 +287,9 @@ public class DefaultMigrationSchemaHandler implements MigrationSchemaHandler
     protected final Collection<AttachmentParentType> copyAttachments(DatabaseMigrationConfiguration configuration, FilterClause filterClause, AttachmentParentType... type)
     {
         String additionalMessage = " associated with " + Arrays.stream(type).map(t -> t.getClass().getSimpleName()).collect(Collectors.joining(", "));
-        DatabaseMigrationService.get().copyAttachments(configuration, filterClause, additionalMessage);
+        // Types share parents (e.g., containers), so restrict to these types' pointers or overlapping copies collide
+        FilterClause typeClause = new InClause(FieldKey.fromParts("ParentType"), Arrays.stream(type).map(AttachmentParentType::getUniqueName).toList());
+        DatabaseMigrationService.get().copyAttachments(configuration, new AndClause(filterClause, typeClause), additionalMessage);
         return Arrays.asList(type);
     }
 

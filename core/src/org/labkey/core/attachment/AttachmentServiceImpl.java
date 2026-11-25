@@ -404,10 +404,22 @@ public class AttachmentServiceImpl implements AttachmentService
             {
                 String name = entry.getKey();
 
+                try
+                {
+                    insertPointer(parent, name, getOrInsertAttachment(entry.getValue()), user);
+                }
+                catch (RuntimeSQLException e)
+                {
+                    // A concurrent add of the same name won
+                    if ("23505".equals(e.getSQLException().getSQLState()))
+                        throw new AttachmentService.DuplicateFilenameException(name);
+                    throw e;
+                }
+
+                // Write after the pointer insert so a losing concurrent add fails before overwriting the winner's file
                 if (parent instanceof AttachmentDirectory dir)
                     dir.addAttachment(user, entry.getValue().source());
 
-                insertPointer(parent, name, getOrInsertAttachment(entry.getValue()), user);
                 addAuditEvent(user, parent, name, "The attachment " + name + " was added");
             }
 
