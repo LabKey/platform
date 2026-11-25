@@ -41,6 +41,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
 import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.JdbcMetaDataSelector;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
@@ -1590,6 +1591,12 @@ public abstract class SqlDialect
     public final ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
     {
         return getTableResolver().getForeignKeyResolver(scope, schemaName, tableName);
+    }
+
+    /** Selects the locator's table's foreign keys as a {@link DatabaseMetaData#getImportedKeys} result set, ordered by PK table, FK_NAME, KEY_SEQ */
+    public JdbcMetaDataSelector getImportedKeysSelector(JdbcMetaDataLocator locator)
+    {
+        return new JdbcMetaDataSelector(locator, (dbmd, l) -> dbmd.getImportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
     }
 
     // Pass-through by default. Dialects can override if they need special handling.

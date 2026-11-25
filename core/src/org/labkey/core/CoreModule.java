@@ -909,6 +909,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (moduleContext.isNewInstall())
         {
             bootstrap();
+            Encryption.recordCurrentCipherForNewInstall();
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
@@ -1028,7 +1029,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
 
-        checkForMissingDbViews();
+        // Bootstrap scripts just created the views
+        if (!moduleContext.isNewInstall())
+            checkForMissingDbViews();
 
         ((SecretServiceImpl)SecretService.get()).handleStartupProperties();
         ProductConfiguration.handleStartupProperties();
@@ -1369,6 +1372,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
+        UserManager.addUserListener(new DbLoginManager.PasswordChangeListener());
 
         Encryption.checkMigration();
 
@@ -1383,7 +1387,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             .flatMap(p -> p.getSchemas().stream()
                 .filter(schema-> SchemaUpdateType.Before.getScript(p, schema) != null || SchemaUpdateType.After.getScript(p, schema) != null)
             )
-            .filter(schema -> TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasViewProblem())
+            .filter(TableXmlUtils::hasMissingView)
             .findAny()
             .ifPresent(schema ->
             {
@@ -1536,6 +1540,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             HealthCheckTestCase.class,
             LoggerController.TestCase.class,
             LoggingTestCase.class,
+            LoginAttemptDisableLoginProvider.TestCase.class,
             LoginController.TestCase.class,
             MarkdownTestCase.class,
             ModuleInfoTestCase.class,
@@ -1555,6 +1560,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SqlDialect.LabKeyScopeDialectTestCase.class,
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
+            TableXmlUtils.TestCase.class,
             UnknownSchemasTest.class,
             UserController.TestCase.class,
             ReportsTable.TestCase.class

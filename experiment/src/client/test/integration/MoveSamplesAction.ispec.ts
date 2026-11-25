@@ -3,9 +3,8 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import mock from 'mock-fs';
 import { PermissionRoles } from '@labkey/api';
-import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { hookServer, mockFile, mockFiles, RequestOptions, successfulResponse } from '@labkey/test';
 import { caseInsensitive } from '@labkey/components';
 import {
     createDerivedObjects,
@@ -94,7 +93,7 @@ afterAll(async () => {
 });
 
 afterEach(() => {
-    mock.restore();
+    mockFiles.restore();
 });
 
 async function createDerivedSamples(sampleNames: string[], sampleTypeName: string, folderOptions: RequestOptions, parentSampleType: string, parentSamples: string[], sourceParents?: string[], auditBehavior?: string, ) {
@@ -144,7 +143,7 @@ async function createSampleWithFileFields(sampleName: string, folderOptions: Req
         }));
 
         Object.keys(fileData).forEach(fieldName => {
-            request = request.attach(fieldName + "::0", fileData[fieldName]);
+            request = request.attach(fieldName + "::0", ...mockFile(fileData[fieldName]));
         });
 
         return request;
@@ -701,7 +700,7 @@ describe('Move Samples', () => {
         });
 
         it('success, move one sample from parent with file field', async () => {
-            mock({
+            mockFiles({
                 'fileA.txt': 'fileA contents',
             });
             const sampleRowId1 = await createSampleWithFileFields('top2-movetosub1-1', topFolderOptions, {[FILE_FIELD_1_NAME]: 'fileA.txt'}, "DETAILED");
@@ -732,7 +731,7 @@ describe('Move Samples', () => {
         });
 
         it('success, move sample from subfolder with multiple file fields', async () => {
-            mock({
+            mockFiles({
                 'fileB.txt': 'fileB contents',
                 'fileC.txt': 'fileC contents',
             });
@@ -768,7 +767,7 @@ describe('Move Samples', () => {
         });
 
         it('success, move sample from subfolder with overlapping file name', async () => {
-            mock({
+            mockFiles({
                 'fileD.txt': 'fileD contents',
                 'fileE.txt': 'fileE contents',
             });
@@ -806,7 +805,7 @@ describe('Move Samples', () => {
         });
 
         it('success, move to sibling subfolder without files', async () => {
-            mock({
+            mockFiles({
                 'fileF.txt': 'fileF contents',
             });
             const sampleRowId1 = await createSampleWithFileFields('sub12-movetosub2-1', subfolder1Options, {[FILE_FIELD_1_NAME]: 'fileF.txt'}, "DETAILED");

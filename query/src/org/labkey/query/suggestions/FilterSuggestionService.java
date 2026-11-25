@@ -26,9 +26,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -52,6 +57,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+
+import static org.labkey.api.data.DataRegionSelection.MAX_QUERY_SELECTION_SIZE;
 
 /** Backs query-getFilterSuggestions.api: resolves the table, describes its candidate columns, and ranks suggestions. */
 public class FilterSuggestionService
@@ -119,17 +126,9 @@ public class FilterSuggestionService
         if (term.isBlank())
             return new FilterSuggestionsResponse(List.of(), true);
 
-        // Same checks and messages as QueryForm, so this fails like query-getQuery.api
-        UserSchema schema = StringUtils.isBlank(request.schemaName()) ? null : QueryService.get().getUserSchema(user, container, request.schemaName());
-        QueryForm.ensureSchemaNotNull(schema);
-        if (StringUtils.isBlank(request.queryName()))
-            throw new NotFoundException("Query not specified");
-
-        TableInfo table = schema.getTable(request.queryName(), getContainerFilter(request, container, user));
-        if (table == null)
-            throw new NotFoundException("The specified query '" + request.queryName() + "' does not exist in schema '" + request.schemaName() + "'");
-        if (!table.hasPermission(user, ReadPermission.class))
-            throw new UnauthorizedException();
+        Resolved resolved = resolve(user, container, request.schemaName(), request.queryName(), getContainerFilter(request, container, user));
+        UserSchema schema = resolved.schema();
+        TableInfo table = resolved.table();
         SimpleFilter filter = getFilter(request, container, user);
         // A filter on a column whose data may not be read would reveal it through the rows the filter selects
         boolean readsData = filter == null || isReadable(table, filter);
@@ -177,6 +176,82 @@ public class FilterSuggestionService
         TracedOperation.tagActiveSpan("labkey.suggestion.count", suggestions.size());
         TracedOperation.tagActiveSpan("labkey.suggestion.complete", complete);
         return new FilterSuggestionsResponse(suggestions, complete);
+    }
+
+    /** The estimate covers the whole table, so it needs no view, columns, filters or container scope. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record QuerySizeRequest(String schemaName, String queryName) {}
+
+    /** @param largeTable the table behind the query holds more rows than any grid would list values for. A coarse answer rather than the row estimate itself, which spans containers the caller may not read. */
+    public record QuerySizeResponse(boolean largeTable) {}
+
+    /**
+     * Backs query-getQuerySize.api. Deliberate: no estimate answers false, so those grids pay for the distinct
+     * query, while the all-container estimate can report a table that is small in this folder as large.
+     */
+    public static @NotNull QuerySizeResponse getQuerySize(@NotNull User user, @NotNull Container container, @NotNull QuerySizeRequest request)
+    {
+        TableInfo table = resolve(user, container, request.schemaName(), request.queryName(), null).table();
+        Long estimate = getProvisionedRowCount(table);
+        boolean largeTable = estimate != null && estimate > MAX_QUERY_SELECTION_SIZE;
+        TracedOperation.tagActiveSpan("labkey.query", table.getPublicSchemaName() + "." + table.getPublicName());
+        TracedOperation.tagActiveSpan("labkey.suggestion.large_table", largeTable);
+        return new QuerySizeResponse(largeTable);
+    }
+
+    private record Resolved(@NotNull UserSchema schema, @NotNull TableInfo table) {}
+
+    /** Resolves the request's query with the same checks and messages as QueryForm, so this fails like query-getQuery.api */
+    private static Resolved resolve(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable ContainerFilter containerFilter)
+    {
+        UserSchema schema = StringUtils.isBlank(schemaName) ? null : QueryService.get().getUserSchema(user, container, schemaName);
+        QueryForm.ensureSchemaNotNull(schema);
+        if (StringUtils.isBlank(queryName))
+            throw new NotFoundException("Query not specified");
+
+        TableInfo table = schema.getTable(queryName, containerFilter);
+        if (table == null)
+            throw new NotFoundException("The specified query '" + queryName + "' does not exist in schema '" + schemaName + "'");
+        if (!table.hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException();
+        return new Resolved(schema, table);
+    }
+
+    /**
+     * Postgres' own estimate for the table a provisioned domain is stored in, which costs one catalog lookup. It
+     * covers every container the domain spans, because that is the table a value list scans.
+     *
+     * @return null for a query with no provisioned table behind it, before that table has ever been analyzed, or on
+     *         any other database
+     */
+    private static @Nullable Long getProvisionedRowCount(TableInfo table)
+    {
+        Domain domain = table.getDomain();
+        DomainKind<?> kind = domain == null ? null : domain.getDomainKind();
+        String schemaName = kind == null ? null : kind.getStorageSchemaName();
+        String tableName = domain == null ? null : domain.getStorageTableName();
+        if (schemaName == null || tableName == null)
+            return null;
+
+        DbScope scope = kind.getScope();
+        if (scope == null || !scope.getSqlDialect().isPostgreSQL())
+            return null;
+
+        try
+        {
+            // reltuples is a float; cast in SQL because the selector has no getter for Float
+            SQLFragment sql = SQLFragment.unsafe(
+                    "SELECT CAST(reltuples AS BIGINT) FROM pg_class WHERE oid = to_regclass(quote_ident(?) || '.' || quote_ident(?))",
+                    schemaName, tableName);
+            Long estimate = new SqlSelector(scope, sql).getObject(Long.class);
+            // -1 means never analyzed in Postgres 14 and later; older versions report 0, indistinguishable from empty
+            return estimate == null || estimate < 0 ? null : estimate;
+        }
+        catch (RuntimeException e)
+        {
+            LOG.warn("Unable to estimate the row count for {}", table.getName(), e);
+            return null;
+        }
     }
 
     /** The first non-null token from a provider that handles the table; null keeps its facts per user. */

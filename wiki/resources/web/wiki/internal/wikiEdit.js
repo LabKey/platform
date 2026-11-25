@@ -379,7 +379,7 @@ const TabNames = Object.freeze({
         setBodyClean();
 
         _finished = true;
-        window.location = _cancelUrl ? _cancelUrl : getRedirUrl();
+        LABKEY.ActionURL.redirect(_cancelUrl ? _cancelUrl : getRedirUrl());
     };
 
     var onConvertSuccess = function(response) {
@@ -492,7 +492,7 @@ const TabNames = Object.freeze({
         enableDeleteButton(true);
 
         if (_finished) {
-            window.location = getRedirUrl();
+            LABKEY.ActionURL.redirect(getRedirUrl());
         }
         else {
             loadToc();
