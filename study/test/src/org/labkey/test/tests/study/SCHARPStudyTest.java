@@ -18,17 +18,15 @@ package org.labkey.test.tests.study;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.ZipUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
-
-import static org.junit.Assert.fail;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
@@ -36,32 +34,10 @@ public class SCHARPStudyTest extends BaseWebDriverTest
 {
     public static final String PROJECT_NAME="SCHARP Study Test";
 
-    private final File _studyZipFile = TestFileUtils.getSampleData("studies/studyshell.zip");
-
-    protected static class StatusChecker implements Supplier<Boolean>
-    {
-        private final BaseWebDriverTest _test;
-        private final String _waitForMessage;
-        private final Locator _loc = Locator.id("vq-status");
-
-        public StatusChecker(String waitForMessage, BaseWebDriverTest test)
-        {
-            _test = test;
-            _waitForMessage = waitForMessage;
-        }
-
-        @Override
-        public Boolean get()
-        {
-            String curMessage = _test.getText(_loc);
-            if (null == curMessage)
-                fail("Can't get message in locator " + _loc.toString());
-            return (curMessage.startsWith(_waitForMessage));
-        }
-    }
+    private final File _studyDir = TestFileUtils.getSampleData("studies/studyshell");
 
     @Test
-    public void testSteps()
+    public void testSteps() throws IOException
     {
         log("creating project...");
         _containerHelper.createProject(PROJECT_NAME, "Study");
@@ -73,13 +49,10 @@ public class SCHARPStudyTest extends BaseWebDriverTest
     }
 
     @LogMethod
-    protected void importStudy()
+    protected void importStudy() throws IOException
     {
-        log("Importing study from " + _studyZipFile + "...");
-        clickButton("Import Study");
-        setFormElement(Locator.name("folderZip"), _studyZipFile);
-        clickButton("Import Study");
-        assertTextNotPresent("This file does not appear to be a valid .zip file");
+        log("Importing study from " + _studyDir + "...");
+        importStudyFromZip(new ZipUtil(_studyDir).tempZip());
 
         waitForPipelineJobsToComplete(1, "Study import", false);
 

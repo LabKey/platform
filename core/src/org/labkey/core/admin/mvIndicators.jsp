@@ -75,17 +75,9 @@
                 Inherit settings (from
                 <%
                         if (hasLinkPermission)
-                        {
-                            out.print(unsafe("<a href=\"" + inheritURL + "\">"));
-                        }
-
-                        // Always write out what we inherit from
-                        out.print(h(containerLabel));
-
-                        if (hasLinkPermission)
-                        {
-                            out.print(unsafe("</a>"));
-                        }
+                            out.print(simpleLink(containerLabel, inheritURL));
+                        else
+                            out.print(h(containerLabel));
 
                         // Now write out what those settings are
                         out.print(h("): "));
