@@ -32,6 +32,7 @@ import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -1377,52 +1378,71 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
          * delete without a word. Report those rows instead. Delete only -- the shared lookup path keeps its old behavior.
          */
         private void verifyNoCrossFolderDeletes(User user, Container container, List<Map<String, Object>> keys)
-                throws SQLException, BatchValidationException
+                throws BatchValidationException
         {
+            Set<Long> rowIds = new HashSet<>();
+            Set<String> lsids = new HashSet<>();
+            Set<String> names = new HashSet<>();
+            List<Object> keyValues = new ArrayList<>(keys.size());
+            for (Map<String, Object> key : keys)
+            {
+                Map<String, Object> aliased = new CaseInsensitiveHashMap<>(key);
+                aliasColumns(_columnMapping, aliased);
+                Long rowId = (Long) JdbcType.BIGINT.convert(aliased.get(Column.RowId.name()));
+                String lsid = (String) JdbcType.VARCHAR.convert(aliased.get(Column.LSID.name()));
+                String name = (String) JdbcType.VARCHAR.convert(aliased.get(Name.name()));
+                if (null != rowId)
+                    rowIds.add(rowId);
+                else if (null != lsid)
+                    lsids.add(lsid);
+                else if (null != name)
+                    names.add(name);
+                keyValues.add(rowId != null ? rowId : (lsid != null ? lsid : name));
+            }
+
+            // exp.data carries no container filter, so rows the user cannot read are found here and reported rather than dropped
+            Map<Object, Container> containersByKey = new HashMap<>();
+            selectDataContainers(Column.RowId, rowIds, false, containersByKey);
+            selectDataContainers(Column.LSID, lsids, false, containersByKey);
+            selectDataContainers(Column.Name, names, true, containersByKey);
+
             BatchValidationException errors = new BatchValidationException();
             for (int i = 0; i < keys.size(); i++)
             {
-                Map<String, Object> aliased = new CaseInsensitiveHashMap<>(keys.get(i));
-                aliasColumns(_columnMapping, aliased);
-
-                Map<String, Object> row;
-                try
-                {
-                    row = getDataMap(aliased, user, container, true, false);
-                }
-                catch (InvalidKeyException e)
-                {
-                    continue;   // unreadable from here; super.deleteRows skips it as it did before
-                }
-                if (null == row)
+                // absent means no such row anywhere, which super.deleteRows already ignores
+                Container rowContainer = containersByKey.get(keyValues.get(i));
+                if (null == rowContainer || container.allowRowMutationForContainer(rowContainer))
                     continue;
 
-                Object folder = row.get(Column.Folder.name());
-                Container rowContainer = switch (folder)
-                {
-                    case null -> null;
-                    case Container c -> c;
-                    default -> ContainerManager.getForId(folder.toString());
-                };
-
-                String error = null;
-                if (null == rowContainer)
-                    error = "Unable to determine the folder of the data being deleted.";
-                else if (!container.allowRowMutationForContainer(rowContainer))
-                {
-                    // only name a folder the user is allowed to see
-                    String where = rowContainer.hasPermission(user, getReadPermissionClass()) ? rowContainer.getPath() : "another folder";
-                    error = "Data is from a different folder: " + where + ".";
-                }
-
-                if (null != error)
-                {
-                    ValidationException vex = new ValidationException(error);
-                    errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), keys.get(i), i));
-                }
+                // only name a folder the user is allowed to see
+                String where = rowContainer.hasPermission(user, getReadPermissionClass()) ? rowContainer.getPath() : "another folder";
+                ValidationException vex = new ValidationException("Data is from a different folder: " + where + ".");
+                errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), keys.get(i), i));
             }
             if (errors.hasErrors())
                 throw errors;
+        }
+
+        /** exp.data enforces UNIQUE(classId, name), so every key type resolves to at most one row. */
+        private <T> void selectDataContainers(Column keyColumn, Collection<T> values, boolean scopeToDataClass, Map<Object, Container> containersByKey)
+        {
+            if (values.isEmpty())
+                return;
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(keyColumn.name()), values, CompareType.IN);
+            if (scopeToDataClass)
+                filter.addCondition(FieldKey.fromParts("ClassId"), _dataClass.getRowId());
+
+            new TableSelector(ExperimentService.get().getTinfoData(),
+                    CaseInsensitiveHashSet.of(keyColumn.name(), "Container"), filter, null)
+                    .forEachMap(row -> {
+                        Container c = ContainerManager.getForId((String) row.get("Container"));
+                        if (null == c)
+                            return;
+                        // exp.data.RowId comes back as Integer; the keys were converted to Long
+                        Object keyValue = Column.RowId == keyColumn ? JdbcType.BIGINT.convert(row.get(keyColumn.name())) : row.get(keyColumn.name());
+                        containersByKey.put(keyValue, c);
+                    });
         }
 
         @Override

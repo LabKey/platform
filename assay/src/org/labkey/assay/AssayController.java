@@ -1783,6 +1783,7 @@ public class AssayController extends SpringActionController
             Collection<Map<String, Object>> dataRows = new TableSelector(tableInfo, PageFlowUtil.set("rowid", "dataid"), filter, null).getMapCollection();
             List<Long> permittedRowIds = new LongArrayList();
             Set<Container> uniqueContainers = new HashSet<>();
+            Map<Long, Container> containersByRowId = new HashMap<>();
             for (Map<String, Object> dataRow : dataRows)
             {
                 Long rowId = MapUtils.getLong(dataRow,"rowid");
@@ -1790,6 +1791,7 @@ public class AssayController extends SpringActionController
                 if (data == null || data.getRun() == null) continue;
 
                 Container c = data.getRun().getContainer();
+                containersByRowId.put(rowId, c);
                 if (c.hasPermission(getUser(), ReadPermission.class))
                     uniqueContainers.add(c);
                 if (c.hasPermission(getUser(), AssayRunOperations.Edit.getPermissionClass()))
@@ -1804,7 +1806,14 @@ public class AssayController extends SpringActionController
                     "path", (Object) c.getPath(),
                     "permitted", permClass == null || c.hasPermission(getUser(), permClass)
             )).toList());
-            response.put("allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList());
+            // GH Issue 1809: the client partitions the delete by ContainerPath; without it every row is sent to the request folder
+            response.put("allowed", allowedIds.stream().map(id -> {
+                Map<String, Object> rowMap = new HashMap<>();
+                rowMap.put("RowId", id);
+                Container c = containersByRowId.get(id);
+                rowMap.put("ContainerPath", c != null && c.hasPermission(getUser(), ReadPermission.class) ? c.getPath() : getContainer().getPath());
+                return rowMap;
+            }).toList());
             response.put("notAllowed", new HashSet<>());
             response.put("notPermitted", notPermitted);
             return success(response);
