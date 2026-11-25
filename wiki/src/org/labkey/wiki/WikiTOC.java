@@ -25,9 +25,7 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -367,18 +365,18 @@ public class WikiTOC extends NavTreeMenu
         {
             User user = createUserInRole(_host, ReaderRole.class);
             String html = renderToc(user);
-            assertTrue("Expected no-permission message, html was: " + html, html.contains("You do not have permission to see this data."));
+            assertTrue("Expected no-permission message, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(user).toString()));
+            assertFalse("Signed-in user got the guest login prompt, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(User.guest).toString()));
             assertFalse("Target folder's page leaked into the TOC", html.contains(PAGE_TITLE));
 
             grantRole(user, _target, ReaderRole.class);
             html = renderToc(user);
             assertTrue("Reader in the target folder should see its pages, html was: " + html, html.contains(PAGE_TITLE));
 
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_host.getPolicy());
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
-            SecurityPolicyManager.savePolicyForTests(policy, getAdmin());
+            grantRole(SecurityManager.getGroup(Group.groupGuests), _host, ReaderRole.class);
             html = renderToc(User.guest);
-            assertTrue("Expected guest login prompt, html was: " + html, html.contains("Please log in to see this data."));
+            assertTrue("Expected guest login prompt, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(User.guest).toString()));
+            assertFalse("Guest got the signed-in no-permission message, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(user).toString()));
             assertFalse("Target folder's page leaked into the guest TOC", html.contains(PAGE_TITLE));
         }
 

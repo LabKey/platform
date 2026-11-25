@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
+import org.junit.function.ThrowingRunnable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -33,11 +34,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -48,7 +47,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 
@@ -160,6 +161,62 @@ public class JunitUtil
 
         if (iterations.intValue() != expected)
             throw new IllegalStateException("Did not execute runnable the expected number of times: " + iterations + " vs. " + expected);
+    }
+
+    /**
+     * Runs body on a new thread that carries the caller's TestContext, waits up to a minute for it, and rethrows
+     * whatever it threw. Use it for work that must not share the test thread's connection, transaction, or request state.
+     */
+    public static void runOnNewThread(String threadName, ThrowingRunnable body) throws Exception
+    {
+        TestContext context = TestContext.get();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread thread = new Thread(() -> {
+            try
+            {
+                if (context != null)
+                    TestContext.setTestContext(context.getRequest(), context.getUser());
+                body.run();
+            }
+            catch (Throwable t)
+            {
+                failure.set(t);
+            }
+            finally
+            {
+                DbScope.finishedWithThread();
+            }
+        }, threadName);
+
+        thread.start();
+        thread.join(60_000);
+        Assert.assertFalse("Thread '" + threadName + "' didn't exit", thread.isAlive());
+
+        switch (failure.get())
+        {
+            case null -> {}
+            case Error e -> throw e;
+            case Exception e -> throw e;
+            default -> throw new RuntimeException(failure.get());
+        }
+    }
+
+    /** True if t or anything in its cause chain matches */
+    public static boolean hasCause(@Nullable Throwable t, Predicate<Throwable> match)
+    {
+        for (; t != null; t = ExceptionUtil.getCause(t))
+            if (match.test(t))
+                return true;
+        return false;
+    }
+
+    /** Skips the test unless the JVM runs with -ea, for tests of code that only runs inside an assert */
+    public static void assumeAssertionsEnabled()
+    {
+        boolean enabled = false;
+        //noinspection AssertWithSideEffects,ConstantValue
+        assert enabled = true;
+        Assume.assumeTrue("Requires assertions to be enabled (-ea)", enabled);
     }
 
 

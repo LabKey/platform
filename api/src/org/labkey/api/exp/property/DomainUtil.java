@@ -2222,61 +2222,36 @@ public class DomainUtil
             return pd;
         }
 
-        private static GWTDomain<GWTPropertyDescriptor> domain(GWTPropertyDescriptor field)
-        {
-            GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
-            domain.setFields(List.of(field));
-            return domain;
-        }
-
         private static List<String> validate(GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField, DbScope domainScope)
         {
             ValidationException errors = new ValidationException();
-            validateLookupScopes(domain(field), null == origField ? null : domain(origField), domainScope, JunitUtil.getTestContainer(), TestContext.get().getUser(), errors);
+            validateLookupScopes(SystemFieldLabelTestCase.domain(field), null == origField ? null : SystemFieldLabelTestCase.domain(origField), domainScope, JunitUtil.getTestContainer(), TestContext.get().getUser(), errors);
             return errors.getFieldErrors(FIELD_NAME);
         }
 
-        @Test
-        public void sameDataSourceIsAllowed()
-        {
-            assertEquals(List.of(), validate(lookup(0, "core", "Users"), null, DbScope.getLabKeyScope()));
-        }
+        private record Case(String description, GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField, DbScope scope, int expectedErrors) {}
 
         @Test
-        public void newLookupToOtherDataSourceIsRejected()
+        public void testLookupScopes()
         {
+            GWTPropertyDescriptor newUsers = lookup(0, "core", "Users");
+            GWTPropertyDescriptor storedUsers = lookup(PROPERTY_ID, "core", "Users");
+            for (Case c : List.of(
+                new Case("same data source", newUsers, null, DbScope.getLabKeyScope(), 0),
+                // Case-only differences don't count as a change
+                new Case("unchanged lookup", storedUsers, lookup(PROPERTY_ID, "Core", "users"), OTHER_SCOPE, 0),
+                new Case("changed lookup", storedUsers, lookup(PROPERTY_ID, "core", "Containers"), OTHER_SCOPE, 1),
+                new Case("lookup added", storedUsers, lookup(PROPERTY_ID, null, null), OTHER_SCOPE, 1),
+                // New fields arrive with propertyId 0, so they never match an original field and are always validated
+                new Case("new field", newUsers, storedUsers, OTHER_SCOPE, 1),
+                new Case("no query", lookup(0, "core", null), null, OTHER_SCOPE, 0),
+                // Some UIs (e.g. SND's package editor) send "" for fields without a lookup
+                new Case("empty lookup", lookup(0, "", ""), null, OTHER_SCOPE, 0),
+                new Case("unresolvable schema", lookup(0, "noSuchSchema", "Users"), null, OTHER_SCOPE, 0)))
+                assertEquals(c.description(), c.expectedErrors(), validate(c.field(), c.origField(), c.scope()).size());
+
             assertEquals(List.of("Field '" + FIELD_NAME + "' can't look up 'core.Users' because it is in a different data source."),
-                    validate(lookup(0, "core", "Users"), null, OTHER_SCOPE));
-        }
-
-        @Test
-        public void unchangedLookupToOtherDataSourceIsAllowed()
-        {
-            // Case-only differences don't count as a change
-            assertEquals(List.of(), validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, "Core", "users"), OTHER_SCOPE));
-        }
-
-        @Test
-        public void changedLookupToOtherDataSourceIsRejected()
-        {
-            assertEquals(1, validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, "core", "Containers"), OTHER_SCOPE).size());
-            assertEquals(1, validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, null, null), OTHER_SCOPE).size());
-        }
-
-        @Test
-        public void newFieldIsNotMatchedToAnExistingField()
-        {
-            // New fields arrive with propertyId 0, so they never match an original field and are always validated
-            assertEquals(1, validate(lookup(0, "core", "Users"), lookup(PROPERTY_ID, "core", "Users"), OTHER_SCOPE).size());
-        }
-
-        @Test
-        public void incompleteOrUnresolvableLookupIsSkipped()
-        {
-            assertEquals(List.of(), validate(lookup(0, "core", null), null, OTHER_SCOPE));
-            // Some UIs (e.g. SND's package editor) send "" for fields without a lookup
-            assertEquals(List.of(), validate(lookup(0, "", ""), null, OTHER_SCOPE));
-            assertEquals(List.of(), validate(lookup(0, "noSuchSchema", "Users"), null, OTHER_SCOPE));
+                    validate(newUsers, null, OTHER_SCOPE));
         }
     }
 }

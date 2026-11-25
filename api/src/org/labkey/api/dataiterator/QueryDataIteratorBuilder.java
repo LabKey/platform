@@ -203,27 +203,17 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         }
 
         @Test
-        public void bogusQueryName()
+        public void missingQueryName()
         {
-            DataIteratorContext context = new DataIteratorContext();
-            assertNull(run("NoSuchQuery", context));
-            assertTrue(context.getErrors().hasErrors());
-            String message = context.getErrors().getRowErrors().getFirst().getMessage();
-            assertTrue(message, message.contains("NoSuchQuery"));
-        }
-
-        @Test
-        public void quoteCharactersInQueryName()
-        {
-            // the name is quoted as LabKey SQL, so characters other dialects quote with are just part of the name
-            for (String name : List.of("No`Such`Query", "No\"Such\"Query", "No[Such]Query"))
-            {
+            // name -> expected message fragment; the name is quoted as LabKey SQL, so characters other dialects quote with are just part of the name
+            Map<String, String> cases = Map.of("NoSuchQuery", "NoSuchQuery", "No`Such`Query", "not found", "No\"Such\"Query", "not found", "No[Such]Query", "not found");
+            cases.forEach((name, expected) -> {
                 DataIteratorContext context = new DataIteratorContext();
-                assertNull(run(name, context));
-                assertTrue(context.getErrors().hasErrors());
+                assertNull(name, run(name, context));
+                assertTrue(name, context.getErrors().hasErrors());
                 String message = context.getErrors().getRowErrors().getFirst().getMessage();
-                assertTrue(message, message.contains("not found"));
-            }
+                assertTrue(message, message.contains(expected));
+            });
         }
     }
 }

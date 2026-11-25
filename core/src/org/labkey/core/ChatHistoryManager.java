@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -34,11 +33,9 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.mcp.ChatHistoryService;
-import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -221,10 +218,11 @@ public class ChatHistoryManager implements ChatHistoryService
         }
     }
 
-    public static class TestCase extends Assert
+    public static class TestCase extends AbstractContainerScopingTest
     {
         private static final String AGENT = "ChatHistoryManager.TestCase";
-        private static final String FOLDER_NAME = "ChatHistoryManagerTestCase";
+        // Never saved, so it holds no roles anywhere
+        private static final User OTHER = new User("chathistory-other@example.com", Integer.MAX_VALUE - 1);
 
         private final ChatHistoryManager _manager = new ChatHistoryManager();
         private final MockHttpSession _session = new MockHttpSession();
@@ -237,9 +235,6 @@ public class ChatHistoryManager implements ChatHistoryService
         {
             if (!_session.isInvalid())
                 _session.invalidate();
-            Container folder = ContainerManager.getForPath(_container.getPath() + "/" + FOLDER_NAME);
-            if (null != folder)
-                ContainerManager.deleteAll(folder, _user);
         }
 
         @Test
@@ -277,8 +272,7 @@ public class ChatHistoryManager implements ChatHistoryService
             _manager.addChatSnippet(_session, _user, shared, AGENT, _conversationId, Role.user, "Second");
             assertEquals(shared.getId(), _manager.getLastPromptContainerId(_user, _conversationId));
 
-            User other = new User("chathistory-other@example.com", Integer.MAX_VALUE - 1);
-            _manager.addChatSnippet(_session, other, _container, AGENT, _conversationId, Role.user, "Not yours");
+            _manager.addChatSnippet(_session, OTHER, _container, AGENT, _conversationId, Role.user, "Not yours");
             assertEquals("Other users' prompts don't count", shared.getId(), _manager.getLastPromptContainerId(_user, _conversationId));
             assertNull("Other conversations are separate", _manager.getLastPromptContainerId(_user, new GUID()));
         }
@@ -286,8 +280,7 @@ public class ChatHistoryManager implements ChatHistoryService
         @Test
         public void testOtherUsersRowsAreHidden()
         {
-            User other = new User("chathistory-other@example.com", Integer.MAX_VALUE - 1);
-            _manager.addChatSnippet(_session, other, _container, AGENT, _conversationId, Role.user, "Not yours");
+            _manager.addChatSnippet(_session, OTHER, _container, AGENT, _conversationId, Role.user, "Not yours");
             _manager.addChatSnippet(_session, _user, _container, AGENT, _conversationId, Role.user, "Yours");
 
             assertEquals(List.of("Yours"), _manager.getChatHistory(_user, _conversationId).stream().map(ChatSnippet::content).toList());
@@ -296,18 +289,13 @@ public class ChatHistoryManager implements ChatHistoryService
         @Test
         public void testUnreadableRowsAreHidden()
         {
-            Container folder = ContainerManager.createContainer(_container, FOLDER_NAME, _user);
-            // A non-empty policy of its own, so the folder doesn't inherit the parent's
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(folder);
-            policy.addRoleAssignment(_user, ReaderRole.class);
-            SecurityPolicyManager.savePolicyForTests(policy, _user);
-            User other = new User("chathistory-other@example.com", Integer.MAX_VALUE - 1);
-            assertFalse(folder.hasPermission(other, ReadPermission.class));
+            Container folder = createRestrictedContainer("Restricted");
+            assertFalse(folder.hasPermission(OTHER, ReadPermission.class));
 
-            _manager.addChatSnippet(_session, other, folder, AGENT, _conversationId, Role.user, "Secret");
-            _manager.addChatSnippet(_session, other, folder, AGENT, _conversationId, Role.assistant, "[]");
+            _manager.addChatSnippet(_session, OTHER, folder, AGENT, _conversationId, Role.user, "Secret");
+            _manager.addChatSnippet(_session, OTHER, folder, AGENT, _conversationId, Role.assistant, "[]");
 
-            List<ChatSnippet> snippets = _manager.getChatHistory(other, _conversationId);
+            List<ChatSnippet> snippets = _manager.getChatHistory(OTHER, _conversationId);
             assertEquals(List.of(Role.user, Role.assistant), snippets.stream().map(ChatSnippet::role).toList());
             for (ChatSnippet snippet : snippets)
             {

@@ -2550,8 +2550,6 @@ public class SecurityController extends SpringActionController
      */
     public static class GroupMembershipScopingTestCase extends AbstractContainerScopingTest
     {
-        // ProjectAdminRole only applies to projects, so these fixtures are projects rather than /_junit children
-        private static final String PROJECT_NAME = "GroupMembershipScopingProject";
         private static final String SITE_GROUP_NAME = "GroupMembershipScopingSiteGroup";
 
         private Container _project;
@@ -2563,7 +2561,8 @@ public class SecurityController extends SpringActionController
         public void setup() throws Exception
         {
             cleanup();
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, getAdmin());
+            // ProjectAdminRole only applies to projects, so this fixture is a project rather than a /_junit child
+            _project = createProject("Project");
             _siteGroup = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_NAME, getAdmin());
             _siteGroupMember = createUserInRole(_project, ReaderRole.class);
             SecurityManager.addMember(_siteGroup, _siteGroupMember);
@@ -2573,10 +2572,6 @@ public class SecurityController extends SpringActionController
         @After
         public void cleanup()
         {
-            Container project = ContainerManager.getForPath("/" + PROJECT_NAME);
-            if (project != null)
-                ContainerManager.deleteAll(project, getAdmin());
-
             Integer siteGroupId = SecurityManager.getGroupId(null, SITE_GROUP_NAME, false);
             if (siteGroupId != null)
                 SecurityManager.deleteGroup(SecurityManager.getGroup(siteGroupId), getAdmin());

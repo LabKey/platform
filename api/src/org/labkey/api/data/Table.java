@@ -70,6 +70,7 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1917,7 +1918,6 @@ public class Table
         @Test
         public void testBackendTerminated()
         {
-            assertTrue(SqlDialect.isConnectionLostException(backendTerminated()));
             assertEquals(Level.ERROR, getExceptionLogLevel(SELECT, backendTerminated(), Level.WARN));
             assertEquals(Level.ERROR, getExceptionLogLevel(null, backendTerminated(), Level.WARN));
         }
@@ -1944,18 +1944,13 @@ public class Table
         }
 
         @Test
-        public void testShutdown()
+        public void testConnectionLost()
         {
-            assertTrue(SqlDialect.isConnectionLostException(new SQLException("terminating connection due to administrator command", "57P01")));
-            assertTrue(SqlDialect.isConnectionLostException(new SQLException("terminating connection because of crash of another server process", "57P02")));
-        }
-
-        @Test
-        public void testOtherErrors()
-        {
-            assertFalse(SqlDialect.isConnectionLostException(new SQLException("canceling statement due to user request", "57014")));
-            assertFalse(SqlDialect.isConnectionLostException(new SQLException("relation does not exist", "42P01")));
-            assertFalse(SqlDialect.isConnectionLostException(new SQLException("no state")));
+            // Backend killed mid-query, then shutdown and crash of another server process
+            for (String state : List.of("08006", "57P01", "57P02"))
+                assertTrue(state, SqlDialect.isConnectionLostException(new SQLException("lost", state)));
+            for (String state : Arrays.asList("57014", "42P01", null))
+                assertFalse(state, SqlDialect.isConnectionLostException(new SQLException("other", state)));
         }
     }
 }

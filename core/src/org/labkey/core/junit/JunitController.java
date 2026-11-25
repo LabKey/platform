@@ -16,11 +16,8 @@
 
 package org.labkey.core.junit;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -31,15 +28,12 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.NavTrailAction;
-import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.jsp.JspTest;
 import org.labkey.api.security.MethodsAllowed;
-import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
@@ -57,15 +51,11 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.PrintWriter;
-import java.text.DateFormat;
-import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -267,10 +257,6 @@ public class JunitController extends SpringActionController
                     {
                         timeout = testTimeout.value();
                     }
-                    if (testTimeout != null)
-                    {
-                        timeout = testTimeout.value();
-                    }
                     TestWhen.When scope = getScope(clazz);
 
                     // Send back both the class name and the timeout
@@ -400,8 +386,7 @@ public class JunitController extends SpringActionController
         {
             try
             {
-                TestWhen.When w = TestWhen.When.valueOf(when);
-                _scope = w;
+                _scope = TestWhen.When.valueOf(when);
             }
             catch (IllegalArgumentException e)
             {
@@ -434,63 +419,6 @@ public class JunitController extends SpringActionController
             return false;
         }
     }
-
-
-    private static final LinkedList<String> list = new LinkedList<>();
-    private static final Format format = FastDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    @RequiresNoPermission
-    public static class AliveAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            synchronized(AliveAction.class)
-            {
-                HttpServletRequest request = getViewContext().getRequest();
-                HttpServletResponse response = getViewContext().getResponse();
-                TestContext.setTestContext(request, (User) request.getUserPrincipal());
-
-                Class<?> clazz = findTestClass("org.labkey.api.data.DbSchema$TestCase");
-                JunitRunner.RunnerResult result = new JunitRunner.RunnerResult();
-
-                if (null != clazz)
-                    result = JunitRunner.run(clazz);
-
-                int status = HttpServletResponse.SC_OK;
-                if (result.junitResult.getFailureCount() != 0 || 0 == result.junitResult.getRunCount())
-                    status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-
-                String time = format.format(new Date());
-                String statusString = status + ": " + time + "    " + request.getHeader("User-Agent");
-                if (list.size() > 20)
-                    list.removeFirst();
-                list.add(statusString);
-
-                response.reset();
-                response.setStatus(status);
-
-                PrintWriter out = response.getWriter();
-                response.setContentType("text/plain");
-
-                out.println(status == HttpServletResponse.SC_OK ? "OK" : "ERROR");
-                out.println();
-                out.println("history");
-                for (ListIterator<String> it = list.listIterator(list.size()); it.hasPrevious();)
-                    out.println(it.previous());
-
-                response.flushBuffer();
-                return null;
-            }
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
 
     private static class TestResultView extends HttpView<Object>
     {
@@ -604,30 +532,6 @@ public class JunitController extends SpringActionController
                 out.println("</td></tr>");
             }
             out.println("</table>");
-        }
-    }
-
-
-    @RequiresNoPermission
-    public static class EchoFormAction extends PermissionCheckableAction
-    {
-        @Override
-        public ModelAndView handleRequest(HttpServletRequest req, HttpServletResponse res) throws Exception
-        {
-            PrintWriter out = res.getWriter();
-            out.println("<html><head></head><body><form method=GET>");
-            IteratorUtils.asIterator(req.getParameterNames()).forEachRemaining(name -> {
-                out.print("<input name='");
-                out.print(h(name));
-                out.print("' value='");
-                out.print(h(req.getParameter(name)));
-                out.print("'>");
-                out.print(h(name));
-                out.println("<br>");
-            });
-
-            out.println("<input type=submit></body></html>");
-            return null;
         }
     }
 

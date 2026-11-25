@@ -31,6 +31,7 @@ import org.quartz.SchedulerException;
 import org.quartz.TriggerBuilder;
 import org.quartz.core.JobRunShell;
 import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.simpl.RAMJobStore;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -156,8 +157,8 @@ public class QuartzShutdown
 
             Properties props = new Properties();
             props.setProperty(StdSchedulerFactory.PROP_SCHED_INSTANCE_NAME, "QuartzShutdownTest-" + GUID.makeGUID());
-            props.setProperty("org.quartz.threadPool.threadCount", "2");
-            props.setProperty("org.quartz.jobStore.class", "org.quartz.simpl.RAMJobStore");
+            props.setProperty(StdSchedulerFactory.PROP_THREAD_POOL_PREFIX + ".threadCount", "2");
+            props.setProperty(StdSchedulerFactory.PROP_JOB_STORE_CLASS, RAMJobStore.class.getName());
             _scheduler = new StdSchedulerFactory(props).getScheduler();
             _scheduler.start();
         }

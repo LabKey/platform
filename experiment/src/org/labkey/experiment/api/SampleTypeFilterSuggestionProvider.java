@@ -28,14 +28,14 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnloggedTableGeneration;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceTestUtil;
 import org.labkey.api.query.suggestions.FilterSuggestionContext;
+import org.labkey.api.query.suggestions.FilterSuggestionTestContext;
 import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.query.suggestions.SuggestionColumn;
 import org.labkey.api.security.User;
@@ -115,16 +115,11 @@ public class SampleTypeFilterSuggestionProvider implements FilterSuggestionProvi
             Set<String> seen = new HashSet<>();
             assertNewToken(seen, st, "initial");
 
-            BatchValidationException errors = new BatchValidationException();
-            List<Map<String, Object>> inserted = getUpdateService(st).insertRows(_user, _c, List.of(CaseInsensitiveHashMap.of("name", "S-1", "prop", "a")), errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            List<Map<String, Object>> inserted = SampleTypeTestHelper.insert(_c, _user, st, List.of(CaseInsensitiveHashMap.of("name", "S-1", "prop", "a")));
             assertNewToken(seen, st, "insert");
             Object rowId = Objects.requireNonNull(inserted).getFirst().get(ROW_ID);
 
-            getUpdateService(st).updateRows(_user, _c, List.of(CaseInsensitiveHashMap.of(ROW_ID, rowId, "prop", "b")), null, errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            SampleTypeTestHelper.update(_c, _user, st, List.of(CaseInsensitiveHashMap.of(ROW_ID, rowId, "prop", "b")));
             assertNewToken(seen, st, "update");
 
             // Updates without a watermark and schema changes drop the materialized view without bumping the data counters
@@ -133,7 +128,7 @@ public class SampleTypeFilterSuggestionProvider implements FilterSuggestionProvi
             SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.schema);
             assertNewToken(seen, st, "schema change");
 
-            getUpdateService(st).deleteRows(_user, _c, List.of(CaseInsensitiveHashMap.of(ROW_ID, rowId)), null, null);
+            QueryUpdateServiceTestUtil.delete(getSamplesTable(st), _user, _c, List.of(CaseInsensitiveHashMap.of(ROW_ID, rowId)));
             assertNewToken(seen, st, "delete");
 
             // Simulates the cache-clear listener; the replacement counters restart from the clock
@@ -181,48 +176,18 @@ public class SampleTypeFilterSuggestionProvider implements FilterSuggestionProvi
 
         private static ExpSampleType createSampleType(String name, @Nullable String nameExpression, @Nullable String aliquotNameExpression) throws Exception
         {
-            List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"), new GWTPropertyDescriptor("prop", "string"));
+            List<GWTPropertyDescriptor> props = List.of(SampleTypeTestHelper.nameProperty(), new GWTPropertyDescriptor("prop", "string"));
             return SampleTypeService.get().createSampleType(_c, _user, name, null, props, List.of(), -1, -1, -1, -1, nameExpression, aliquotNameExpression, null, null, null, null);
         }
 
         private static TableInfo getSamplesTable(ExpSampleType st)
         {
-            return Objects.requireNonNull(QueryService.get().getUserSchema(_user, _c, SamplesSchema.SCHEMA_NAME).getTable(st.getName()));
-        }
-
-        private static QueryUpdateService getUpdateService(ExpSampleType st)
-        {
-            return Objects.requireNonNull(getSamplesTable(st).getUpdateService());
+            return SampleTypeTestHelper.getTable(_c, _user, st);
         }
 
         private static FilterSuggestionContext context(TableInfo table)
         {
-            return new FilterSuggestionContext()
-            {
-                @Override
-                public @NotNull TableInfo getTable()
-                {
-                    return table;
-                }
-
-                @Override
-                public @NotNull ContainerFilter getContainerFilter()
-                {
-                    return ContainerFilter.current(_c, _user);
-                }
-
-                @Override
-                public @NotNull Container getContainer()
-                {
-                    return _c;
-                }
-
-                @Override
-                public @NotNull User getUser()
-                {
-                    return _user;
-                }
-            };
+            return new FilterSuggestionTestContext(table, ContainerFilter.current(_c, _user), _c, _user);
         }
     }
 }
