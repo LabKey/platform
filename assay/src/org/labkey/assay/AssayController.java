@@ -1811,7 +1811,8 @@ public class AssayController extends SpringActionController
                 Map<String, Object> rowMap = new HashMap<>();
                 rowMap.put("RowId", id);
                 Container c = containersByRowId.get(id);
-                rowMap.put("ContainerPath", c != null && c.hasPermission(getUser(), ReadPermission.class) ? c.getPath() : getContainer().getPath());
+                if (c != null && c.hasPermission(getUser(), ReadPermission.class))
+                    rowMap.put("ContainerPath", c.getPath());
                 return rowMap;
             }).toList());
             response.put("notAllowed", new HashSet<>());

@@ -1411,7 +1411,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 // absent means no such row anywhere, which super.deleteRows already ignores
                 Container rowContainer = containersByKey.get(keyValues.get(i));
-                if (null == rowContainer || container.allowRowMutationForContainer(rowContainer))
+                if (null == rowContainer || container.equals(rowContainer))
                     continue;
 
                 // only name a folder the user is allowed to see
