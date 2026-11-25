@@ -2335,23 +2335,13 @@ public class CoreController extends SpringActionController
             LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             if (def.isExternal())
                 Objects.requireNonNull(ScriptEngineProviderRegistry.get().get(def.getType(), def.getKind())).beforeSave(def, getUser());
-            svc.saveDefinition(getUser(), def);
 
-            // update default R engine
-            if (def.getType() == ExternalScriptEngineDefinition.Type.R && def.isDefault())
-            {
-                List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
-                for (ExternalScriptEngineDefinition rDef : rDefs)
-                {
-                    if ((!rDef.getName().equals(def.getName())) && rDef.isDefault())
-                    {
-                        ExternalScriptEngineDefinitionImpl newDef = (ExternalScriptEngineDefinitionImpl) rDef;
-                        newDef.setDefault(false);
-                        newDef.updateConfiguration(); // update config json
-                        svc.saveDefinition(getUser(), newDef);
-                    }
-                }
-            }
+            // An unchecked Site Default checkbox isn't posted
+            if (def.getDefaultInput() == null)
+                def.setDefault(false);
+
+            // Saving a site default replaces the language's previous default in every context
+            svc.saveDefinition(getUser(), def);
             return new ApiSimpleResponse("success", true);
         }
     }

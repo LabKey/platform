@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
@@ -63,6 +64,7 @@ import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.script.RhinoLanguageVersion;
@@ -81,6 +83,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -107,21 +110,22 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         {
             // strip the engine context off of the end of the containerId
             int colon = key.indexOf(':');
-            String containerId = key.substring(0, colon);
-            String context = key.substring(colon + 1);
-
-            // fetch script engine definitions scoped to the container
-            SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ")
-                .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
-                .unsafeAppend(" WHERE RowId IN (SELECT EngineId FROM ")
-                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .unsafeAppend(" WHERE Container = ? AND EngineContext = ?)")
-                .add(containerId)
-                .add(context);
-
-            return unmodifiableList(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ExternalScriptEngineDefinitionImpl.class));
+            return unmodifiableList(selectScopedEngines(key.substring(0, colon), key.substring(colon + 1)));
         }
     });
+
+    private static List<ExternalScriptEngineDefinition> selectScopedEngines(String containerId, String context)
+    {
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ")
+            .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
+            .unsafeAppend(" WHERE RowId IN (SELECT EngineId FROM ")
+            .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+            .unsafeAppend(" WHERE Container = ? AND EngineContext = ?)")
+            .add(containerId)
+            .add(context);
+
+        return new ArrayList<>(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ExternalScriptEngineDefinitionImpl.class));
+    }
 
     private static final String PASSWORD_FIELD = "password";
 
@@ -380,23 +384,36 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     {
         ExternalScriptEngineDefinition engine = getScopedEngine(container, extension, context, true);
 
+        if (engine == null)
+            engine = getScopedEngine(ContainerManager.getRoot(), extension, context, false);
+
         if (engine != null)
             return engine;
 
-        // return the configured site level default
-        ExternalScriptEngineDefinition defaultEngine = null;
-        for (ExternalScriptEngineDefinition def : getEngineDefinitions())
-        {
-            if (Arrays.asList(def.getExtensions()).contains(extension) && def.isEnabled())
-            {
-                if (def.isDefault())
-                    return def;
-                else if (defaultEngine == null)
-                    defaultEngine = def;
-            }
-        }
+        // no site default for this language and context
+        return getEngineDefinitions().stream()
+                .filter(def -> def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
+                .findFirst()
+                .orElse(null);
+    }
 
-        return defaultEngine;
+    static boolean isSiteDefault(@NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context)
+    {
+        return ENGINE_DEFINITION_CACHE.get(makeCacheKey(ContainerManager.getRoot(), context)).stream()
+                .anyMatch(scoped -> Objects.equals(scoped.getRowId(), def.getRowId()));
+    }
+
+    // Until the admin UI has a checkbox per context, one choice sets or clears the site default for every context
+    private void setSiteDefault(@NotNull ExternalScriptEngineDefinition def, boolean isDefault)
+    {
+        Container root = ContainerManager.getRoot();
+        for (EngineContext context : EngineContext.values())
+        {
+            if (isDefault)
+                setEngineScope(root, def, context);
+            else if (isSiteDefault(def, context))
+                removeEngineScope(root, def, context);
+        }
     }
 
     @Override
@@ -408,35 +425,16 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             {
                 tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-                SQLFragment sql = SQLFragment.unsafe("SELECT EngineId FROM ")
+                deleteScopedRows(container, context, def);
+
+                SQLFragment insert = SQLFragment.unsafe("INSERT INTO ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                        .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
+                        .unsafeAppend(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
+                        .add(def.getRowId())
                         .add(container)
                         .add(context);
 
-                if (!new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
-                {
-                    SQLFragment insert = SQLFragment.unsafe("INSERT INTO ")
-                            .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                            .unsafeAppend(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
-                            .add(def.getRowId())
-                            .add(container)
-                            .add(context);
-
-                    new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(insert);
-                }
-                else
-                {
-                    SQLFragment update = SQLFragment.unsafe("UPDATE ")
-                            .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                            .unsafeAppend(" SET EngineId = ? ")
-                            .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
-                            .add(def.getRowId())
-                            .add(container)
-                            .add(context);
-
-                    new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(update);
-                }
+                new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(insert);
 
                 tx.commit();
             }
@@ -450,16 +448,48 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         {
             tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-            SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
-                    .add(container)
-                    .add(context);
-
-            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
+            deleteScopedRows(container, context, def);
 
             tx.commit();
         }
+    }
+
+    // Deletes the container's mappings for the context in def's language, leaving other languages' mappings in place
+    private static void deleteScopedRows(@NotNull Container container, @NotNull EngineContext context, @NotNull ExternalScriptEngineDefinition def)
+    {
+        List<Integer> engineIds = selectScopedEngines(container.getId(), context.name()).stream()
+                .filter(scoped -> isSameLanguage(scoped, def))
+                .map(ExternalScriptEngineDefinition::getRowId)
+                .toList();
+
+        if (engineIds.isEmpty())
+            return;
+
+        SQLFragment sql = SQLFragment.unsafe("DELETE FROM ")
+                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                .unsafeAppend(" WHERE Container = ? AND EngineContext = ? AND EngineId ")
+                .add(container)
+                .add(context)
+                .appendInClause(engineIds, CoreSchema.getInstance().getSqlDialect());
+
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
+    }
+
+    // External covers many languages, so External definitions are the same language only when they share an extension
+    static boolean isSameLanguage(@NotNull ExternalScriptEngineDefinition a, @NotNull ExternalScriptEngineDefinition b)
+    {
+        if (a.getType() != b.getType())
+            return false;
+        if (a.getType() != ExternalScriptEngineDefinition.Type.External)
+            return true;
+
+        Set<String> extensions = lowerCaseExtensions(a);
+        return lowerCaseExtensions(b).stream().anyMatch(extensions::contains);
+    }
+
+    private static Set<String> lowerCaseExtensions(ExternalScriptEngineDefinition def)
+    {
+        return def.getExtensions() == null ? Set.of() : Arrays.stream(def.getExtensions()).map(String::toLowerCase).collect(Collectors.toSet());
     }
 
     /**
@@ -566,6 +596,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                     Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), def, def.getRowId());
                 else
                     Table.insert(user, CoreSchema.getInstance().getTableInfoReportEngines(), def);
+
+                if (def instanceof ExternalScriptEngineDefinitionImpl impl && impl.getDefaultInput() != null)
+                    setSiteDefault(def, impl.getDefaultInput());
 
                 tx.commit();
             }
@@ -922,6 +955,101 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             Objects.requireNonNull(ScriptEngineProviderRegistry.get().get(jupyter.getType(), jupyter.getKind())).validate(jupyter, errors);
             assertNotNull(errors.getFieldError("remoteUrl"));
             assertNull(errors.getFieldError("exePath"));
+        }
+
+        @Test
+        public void testIsSameLanguage()
+        {
+            assertTrue(isSameLanguage(testDefinition("a", ExternalScriptEngineDefinition.Type.R, "r"), testDefinition("b", ExternalScriptEngineDefinition.Type.R, "R")));
+            assertFalse(isSameLanguage(testDefinition("a", ExternalScriptEngineDefinition.Type.R, "r"), testDefinition("b", ExternalScriptEngineDefinition.Type.Python, "py")));
+            assertTrue(isSameLanguage(testDefinition("a", ExternalScriptEngineDefinition.Type.External, "sh"), testDefinition("b", ExternalScriptEngineDefinition.Type.External, "bash,SH")));
+            assertFalse(isSameLanguage(testDefinition("a", ExternalScriptEngineDefinition.Type.External, "sh"), testDefinition("b", ExternalScriptEngineDefinition.Type.External, "rb")));
+        }
+
+        @Test
+        public void testScopesAreLanguageSpecific()
+        {
+            ScriptEngineManagerImpl mgr = (ScriptEngineManagerImpl) LabKeyScriptEngineManager.get();
+            User user = User.getSearchUser();
+            Container c = JunitUtil.getTestContainer();
+            List<ExternalScriptEngineDefinition> defs = new ArrayList<>();
+            try
+            {
+                ExternalScriptEngineDefinition r1 = mgr.saveDefinition(user, testDefinition("Scope Test R 1", ExternalScriptEngineDefinition.Type.R, "r"));
+                ExternalScriptEngineDefinition r2 = mgr.saveDefinition(user, testDefinition("Scope Test R 2", ExternalScriptEngineDefinition.Type.R, "r"));
+                ExternalScriptEngineDefinition py = mgr.saveDefinition(user, testDefinition("Scope Test Python", ExternalScriptEngineDefinition.Type.Python, "py"));
+                defs.addAll(List.of(r1, r2, py));
+
+                mgr.setEngineScope(c, r1, EngineContext.report);
+                mgr.setEngineScope(c, py, EngineContext.report);
+                assertEquals(Set.of(r1.getRowId(), py.getRowId()), scopedIds(mgr, c));
+
+                mgr.setEngineScope(c, r2, EngineContext.report);
+                assertEquals(Set.of(r2.getRowId(), py.getRowId()), scopedIds(mgr, c));
+
+                mgr.removeEngineScope(c, r2, EngineContext.report);
+                assertEquals(Set.of(py.getRowId()), scopedIds(mgr, c));
+            }
+            finally
+            {
+                defs.forEach(def -> mgr.deleteDefinition(user, def));
+            }
+        }
+
+        @Test
+        public void testSiteDefaultPerContext()
+        {
+            ScriptEngineManagerImpl mgr = (ScriptEngineManagerImpl) LabKeyScriptEngineManager.get();
+            User user = User.getSearchUser();
+            Container c = JunitUtil.getTestContainer();
+            List<ExternalScriptEngineDefinition> defs = new ArrayList<>();
+            try
+            {
+                ExternalScriptEngineDefinitionImpl a = testDefinition("Site Default Test A", ExternalScriptEngineDefinition.Type.External, "sdtest");
+                a.setEnabled(true);
+                a.setDefault(true);
+                defs.add(mgr.saveDefinition(user, a));
+
+                ExternalScriptEngineDefinitionImpl b = testDefinition("Site Default Test B", ExternalScriptEngineDefinition.Type.External, "sdtest");
+                b.setEnabled(true);
+                b.setDefault(true);
+                defs.add(mgr.saveDefinition(user, b));
+
+                for (EngineContext context : EngineContext.values())
+                {
+                    assertTrue(isSiteDefault(b, context));
+                    assertFalse(isSiteDefault(a, context));
+                    assertEquals(b.getRowId(), Objects.requireNonNull(mgr.getEngine(c, "sdtest", context)).getRowId());
+                }
+
+                b.setDefault(false);
+                mgr.saveDefinition(user, b);
+                for (EngineContext context : EngineContext.values())
+                {
+                    assertFalse(isSiteDefault(b, context));
+                    assertNotNull(mgr.getEngine(c, "sdtest", context));
+                }
+            }
+            finally
+            {
+                defs.forEach(def -> mgr.deleteDefinition(user, def));
+            }
+        }
+
+        private static Set<Integer> scopedIds(ScriptEngineManagerImpl mgr, Container c)
+        {
+            return mgr.getScopedEngines(c, EngineContext.report).stream().map(ExternalScriptEngineDefinition::getRowId).collect(Collectors.toSet());
+        }
+
+        private static ExternalScriptEngineDefinitionImpl testDefinition(String name, ExternalScriptEngineDefinition.Type type, String extensions)
+        {
+            ExternalScriptEngineDefinitionImpl def = new ExternalScriptEngineDefinitionImpl();
+            def.setName(name);
+            def.setType(type);
+            def.setExtensions(extensions);
+            def.setExternal(true);
+            def.setExePath(".");
+            return def;
         }
     }
 }

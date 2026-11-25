@@ -52,9 +52,7 @@ public interface ExternalScriptEngineDefinition
     String getExeCommand();
     Type getType();
 
-    /**
-     * Determines the default engine for it's type
-     */
+    /** Whether this is the site default for reports; site defaults are root-container mappings per context. */
     boolean isDefault();
 
     //

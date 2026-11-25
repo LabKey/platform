@@ -86,7 +86,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private boolean _remote;
     private boolean _docker;
     private boolean _pandocEnabled;
-    private boolean _default;
+    private Boolean _default;
     private boolean _sandboxed;
     private PathMapper _pathMapper;
     private Integer _dockerImageRowId;
@@ -176,7 +176,6 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         addIfNotNull(json, "pandocEnabled", isPandocEnabled());
         addIfNotNull(json, "fileExchange", getFileExchange());
         addIfNotNull(json, "pathMap", _pathMap);
-        addIfNotNull(json, "default", isDefault());
         addIfNotNull(json, "sandboxed", isSandboxed());
         addIfNotNull(json, "dockerImageRowId", getDockerImageRowId());
         addIfNotNull(json, "remoteUrl", getRemoteUrl());
@@ -246,8 +245,6 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             setFileExchange(json.getString("fileExchange"));
         if (json.has("pathMap"))
             setPathMap(json.getString("pathMap"));
-        if (json.has("default"))
-            setDefault(json.getBoolean("default"));
         if (json.has("sandboxed"))
             setSandboxed(json.getBoolean("sandboxed"));
         if (json.has("dockerImageRowId"))
@@ -551,12 +548,20 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     @Override
     public boolean isDefault()
     {
-        return _default;
+        if (_default != null)
+            return _default;
+        return getRowId() != null && ScriptEngineManagerImpl.isSiteDefault(this, LabKeyScriptEngineManager.EngineContext.report);
     }
 
     public void setDefault(boolean aDefault)
     {
         _default = aDefault;
+    }
+
+    /** The site default choice bound from a save, or null to leave the site defaults as they are. */
+    public @Nullable Boolean getDefaultInput()
+    {
+        return _default;
     }
 
     @Override
