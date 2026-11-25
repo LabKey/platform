@@ -1427,11 +1427,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             else
                 filter.addCondition(Column.ClassId.fieldKey(), classId)
                         .addCondition(Column.Name.fieldKey(), name);
-            if (!allowCrossContainer)
-                filter.addCondition(Column.Folder.fieldKey(), container.getEntityId());
+            // exp.data has no Folder column, so the folder scoping goes on a copy and the key-only filter probes exp.data below
+            SimpleFilter scopedFilter = allowCrossContainer ? filter
+                    : new SimpleFilter(filter).addCondition(Column.Folder.fieldKey(), container.getEntityId());
 
             TableInfo queryTable = getQueryTable();
-            TableSelector selector = new TableSelector(queryTable, filter, null);
+            TableSelector selector = new TableSelector(queryTable, scopedFilter, null);
 
             Map<String, Object> dataRow = null;
             try (var results = selector.getResults()) {
@@ -1441,13 +1442,22 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
             }
 
-            if (dataRow == null && allowCrossContainer)
+            if (dataRow == null)
             {
-                // data not found from queryTable but exist in exp.data, which happens when users lack of permission to data's container
-                if (new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton(ExpDataTable.Column.RowId.name()), filter, null).exists())
+                // data not found from queryTable but exist in exp.data
+                Map<String, Object> existing = new TableSelector(ExperimentService.get().getTinfoData(),
+                        CaseInsensitiveHashSet.of(ExpDataTable.Column.RowId.name(), "Container"), filter, null).setMaxRows(1).getMap();
+                if (existing != null)
                 {
                     String keyDisplay = name != null ? name : (rowId != null ? "{RowId=" + rowId + "}" : lsid);
-                    throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + keyDisplay + "'.");
+                    // the caller allowed cross-container, so the row is simply unreadable by this user
+                    if (allowCrossContainer)
+                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + keyDisplay + "'.");
+
+                    // GH Issue 1809: cross-folder rows used to be dropped silently; only report ones the user can read
+                    Container rowContainer = ContainerManager.getForId((String) existing.get("Container"));
+                    if (rowContainer != null && rowContainer.hasPermission(user, getReadPermissionClass()))
+                        throw new UnauthorizedException("Data is from a different folder: " + rowContainer.getPath() + ".");
                 }
             }
 

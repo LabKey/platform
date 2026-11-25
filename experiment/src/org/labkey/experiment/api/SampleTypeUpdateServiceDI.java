@@ -790,6 +790,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         List<Long> id = new LinkedList<>();
         Long rowId = getMaterialRowId(oldRowMap);
+        verifyNotCrossFolder(container, oldRowMap);
         id.add(rowId);
         ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType, false, false);
         return oldRowMap;
@@ -820,6 +821,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Long rowId = getMaterialRowId(map);
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
+
+                verifyNotCrossFolder(container, map);
 
                 Long sampleStateId = MapUtils.getLong(map, SampleState.name());
                 if (!SampleStatusService.get().isOperationPermitted(getContainer(), sampleStateId, SampleTypeService.SampleOperations.Delete))
@@ -871,6 +874,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     private @Nullable Long getMaterialRowId(Map<String, Object> row)
     {
         return MapUtils.getLong(row, RowId.name());
+    }
+
+    /** GH Issue 1809: rows resolve across containers, so the row's own folder must be checked before deleting it. */
+    private void verifyNotCrossFolder(Container container, Map<String, Object> row)
+    {
+        Object folder = row.get(Folder.name());
+        Container rowContainer = switch (folder)
+        {
+            case null -> null;
+            case Container c -> c;
+            default -> ContainerManager.getForId(folder.toString());
+        };
+        if (rowContainer != null && !container.allowRowMutationForContainer(rowContainer))
+            throw new UnauthorizedException("Samples being deleted are from a different folder: " + rowContainer.getPath() + ".");
     }
 
     private @Nullable Filter getMaterialFilter(Map<String, Object> keys, boolean useSampleType)

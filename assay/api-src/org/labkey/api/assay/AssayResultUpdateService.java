@@ -339,6 +339,9 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     {
         ExpRun run = getRun(oldRowMap, user, DeletePermission.class);
 
+        if (!container.allowRowMutationForContainer(run.getContainer()))
+            throw new UnauthorizedException("Assay results being deleted are from a different container.");
+
         AssayService.get().onBeforeAssayResultDelete(container, user, run, oldRowMap);
 
         TableInfo datatableInfo = this.getQueryTable();
