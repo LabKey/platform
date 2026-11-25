@@ -1808,7 +1808,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      */
     public static List<String> materializeAllAsync()
     {
-        List<String> lsids = new TableSelector(ExperimentService.get().getTinfoSampleType(), Set.of("LSID"), null, null).getArrayList(String.class);
+        List<String> lsids = new TableSelector(ExperimentService.get().getTinfoSampleType(), Collections.singleton("LSID"), null, null).getArrayList(String.class);
         _log.info("Queueing materialization of {} sample types", lsids.size());
 
         for (String lsid : lsids)
