@@ -96,6 +96,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -790,7 +791,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         List<Long> id = new LinkedList<>();
         Long rowId = getMaterialRowId(oldRowMap);
-        verifyNotCrossFolder(container, oldRowMap);
+        String crossFolderError = crossFolderError(container, oldRowMap);
+        if (crossFolderError != null)
+            throw new RuntimeValidationException(crossFolderError);
         id.add(rowId);
         ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType, false, false);
         return oldRowMap;
@@ -810,11 +813,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         else
         {
             List<Long> ids = new LinkedList<>();
+            BatchValidationException errors = new BatchValidationException();
 
             // Issue 40621
             // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
-            for (Map<String, Object> map : getMaterialMaps(keys))
+            List<Map<String, Object>> materialMaps = getMaterialMaps(keys);
+            for (int i = 0; i < materialMaps.size(); i++)
             {
+                Map<String, Object> map = materialMaps.get(i);
                 if (map == null)
                     throw new QueryUpdateServiceException("No Sample Type Material found for RowID or LSID");
 
@@ -822,7 +828,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
-                verifyNotCrossFolder(container, map);
+                String crossFolderError = crossFolderError(container, map);
+                if (crossFolderError != null)
+                {
+                    ValidationException vex = new ValidationException(crossFolderError);
+                    errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), keys.get(i), i));
+                    continue;
+                }
 
                 Long sampleStateId = MapUtils.getLong(map, SampleState.name());
                 if (!SampleStatusService.get().isOperationPermitted(getContainer(), sampleStateId, SampleTypeService.SampleOperations.Delete))
@@ -834,6 +846,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 ids.add(rowId);
                 result.add(map);
             }
+            if (errors.hasErrors())
+                throw errors;
+
             // TODO check if this handle attachments???
             ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType, false, false);
         }
@@ -876,8 +891,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return MapUtils.getLong(row, RowId.name());
     }
 
-    /** GH Issue 1809: rows resolve across containers, so the row's own folder must be checked before deleting it. */
-    private void verifyNotCrossFolder(Container container, Map<String, Object> row)
+    /**
+     * GH Issue 1809: rows resolve across containers, so the row's own folder must be checked before deleting it.
+     * Returns the error, or null when the row may be deleted from this folder. A folder that cannot be resolved is an
+     * error rather than a pass: this is the check the delete relies on.
+     */
+    private @Nullable String crossFolderError(Container container, Map<String, Object> row)
     {
         Object folder = row.get(Folder.name());
         Container rowContainer = switch (folder)
@@ -886,8 +905,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             case Container c -> c;
             default -> ContainerManager.getForId(folder.toString());
         };
-        if (rowContainer != null && !container.allowRowMutationForContainer(rowContainer))
-            throw new UnauthorizedException("Samples being deleted are from a different folder: " + rowContainer.getPath() + ".");
+        if (rowContainer == null)
+            return "Unable to determine the folder of the sample being deleted.";
+        if (!container.allowRowMutationForContainer(rowContainer))
+            return "Samples being deleted are from a different folder: " + rowContainer.getPath() + ".";
+        return null;
     }
 
     private @Nullable Filter getMaterialFilter(Map<String, Object> keys, boolean useSampleType)

@@ -1365,6 +1365,67 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
+        public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
+                throws QueryUpdateServiceException, SQLException, InvalidKeyException, BatchValidationException
+        {
+            verifyNoCrossFolderDeletes(user, container, keys);
+            return super.deleteRows(user, container, keys, configParameters, extraScriptContext);
+        }
+
+        /**
+         * GH Issue 1809: getRow() is scoped to the request folder, so a row in another folder would be dropped from the
+         * delete without a word. Report those rows instead. Delete only -- the shared lookup path keeps its old behavior.
+         */
+        private void verifyNoCrossFolderDeletes(User user, Container container, List<Map<String, Object>> keys)
+                throws SQLException, BatchValidationException
+        {
+            BatchValidationException errors = new BatchValidationException();
+            for (int i = 0; i < keys.size(); i++)
+            {
+                Map<String, Object> aliased = new CaseInsensitiveHashMap<>(keys.get(i));
+                aliasColumns(_columnMapping, aliased);
+
+                Map<String, Object> row;
+                try
+                {
+                    row = getDataMap(aliased, user, container, true, false);
+                }
+                catch (InvalidKeyException e)
+                {
+                    continue;   // unreadable from here; super.deleteRows skips it as it did before
+                }
+                if (null == row)
+                    continue;
+
+                Object folder = row.get(Column.Folder.name());
+                Container rowContainer = switch (folder)
+                {
+                    case null -> null;
+                    case Container c -> c;
+                    default -> ContainerManager.getForId(folder.toString());
+                };
+
+                String error = null;
+                if (null == rowContainer)
+                    error = "Unable to determine the folder of the data being deleted.";
+                else if (!container.allowRowMutationForContainer(rowContainer))
+                {
+                    // only name a folder the user is allowed to see
+                    String where = rowContainer.hasPermission(user, getReadPermissionClass()) ? rowContainer.getPath() : "another folder";
+                    error = "Data is from a different folder: " + where + ".";
+                }
+
+                if (null != error)
+                {
+                    ValidationException vex = new ValidationException(error);
+                    errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), keys.get(i), i));
+                }
+            }
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        @Override
         public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
                 throws SQLException, InvalidKeyException
         {
@@ -1427,12 +1488,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             else
                 filter.addCondition(Column.ClassId.fieldKey(), classId)
                         .addCondition(Column.Name.fieldKey(), name);
-            // exp.data has no Folder column, so the folder scoping goes on a copy and the key-only filter probes exp.data below
-            SimpleFilter scopedFilter = allowCrossContainer ? filter
-                    : new SimpleFilter(filter).addCondition(Column.Folder.fieldKey(), container.getEntityId());
+            if (!allowCrossContainer)
+                filter.addCondition(Column.Folder.fieldKey(), container.getEntityId());
 
             TableInfo queryTable = getQueryTable();
-            TableSelector selector = new TableSelector(queryTable, scopedFilter, null);
+            TableSelector selector = new TableSelector(queryTable, filter, null);
 
             Map<String, Object> dataRow = null;
             try (var results = selector.getResults()) {
@@ -1442,22 +1502,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
             }
 
-            if (dataRow == null)
+            if (dataRow == null && allowCrossContainer)
             {
-                // data not found from queryTable but exist in exp.data
-                Map<String, Object> existing = new TableSelector(ExperimentService.get().getTinfoData(),
-                        CaseInsensitiveHashSet.of(ExpDataTable.Column.RowId.name(), "Container"), filter, null).setMaxRows(1).getMap();
-                if (existing != null)
+                // data not found from queryTable but exist in exp.data, which happens when users lack of permission to data's container
+                if (new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton(ExpDataTable.Column.RowId.name()), filter, null).exists())
                 {
                     String keyDisplay = name != null ? name : (rowId != null ? "{RowId=" + rowId + "}" : lsid);
-                    // the caller allowed cross-container, so the row is simply unreadable by this user
-                    if (allowCrossContainer)
-                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + keyDisplay + "'.");
-
-                    // GH Issue 1809: cross-folder rows used to be dropped silently; only report ones the user can read
-                    Container rowContainer = ContainerManager.getForId((String) existing.get("Container"));
-                    if (rowContainer != null && rowContainer.hasPermission(user, getReadPermissionClass()))
-                        throw new UnauthorizedException("Data is from a different folder: " + rowContainer.getPath() + ".");
+                    throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + keyDisplay + "'.");
                 }
             }
 
