@@ -191,5 +191,5 @@
 <% } %>
 
 <%= button("Confirm Delete").submit(true) %>
-<%= unsafe(button("Cancel").href(cancelUrl).toString()) %>
+<%= button("Cancel").href(cancelUrl) %>
 </labkey:form>

@@ -30,13 +30,14 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.EnumFieldKey;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.Permission;
 
 import java.util.Map;
 import java.util.Set;
 
-public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
+public interface ExpTable<C extends Enum<C> & EnumFieldKey> extends ContainerFilterable, TableInfo
 {
     Container getContainer();
 

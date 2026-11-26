@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementFullModel;
 import org.labkey.announcements.model.AnnouncementManager;
@@ -81,6 +82,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -116,6 +118,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -1262,15 +1265,9 @@ public class AnnouncementsController extends SpringActionController
             form.setOldValues(oldAnn);
             AnnouncementModel update = form.getBean();
 
-            // Ensure that requested announcement's container matches current container (where perms have been checked)
-            if (!getContainer().getId().equals(update.getContainerId()))
-            {
-                throw new UnauthorizedException();
-            }
-
             try
             {
-                AnnouncementManager.updateAnnouncement(getUser(), update, getAttachmentFileList());
+                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), oldAnn.getRowId(), update, getAttachmentFileList());
             }
             catch (RuntimeValidationException e)
             {
@@ -2982,12 +2979,17 @@ public class AnnouncementsController extends SpringActionController
 
             try
             {
-                AnnouncementManager.updateAnnouncement(getUser(), updatedThread, getAttachmentFileList());
+                AnnouncementManager.updateAnnouncement(getContainer(), getUser(), thread.getRowId(), updatedThread, getAttachmentFileList());
+            }
+            catch (UnauthorizedException | NotFoundException e)
+            {
+                throw e;
             }
             catch (Exception e)
             {
                 errors.reject(ERROR_MSG, "Failed to update thread in folder " + getContainer().getPath());
                 errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+                return null;
             }
 
             updatedThread = getThread(getContainer(), updatedThread.getRowId(), updatedThread.getEntityId());
@@ -3000,6 +3002,24 @@ public class AnnouncementsController extends SpringActionController
 
             return success(updatedThread);
         }
+    }
+
+    private static AnnouncementModel insertTestPost(Container c, User user, String title, @Nullable AnnouncementModel parent, User... members) throws Exception
+    {
+        return insertTestPost(c, user, title, parent, List.of(), members);
+    }
+
+    private static AnnouncementModel insertTestPost(Container c, User user, String title, @Nullable AnnouncementModel parent, List<AttachmentFile> files, User... members) throws Exception
+    {
+        AnnouncementModel post = new AnnouncementModel();
+        post.setTitle(title);
+        post.setBody("body");
+        if (parent != null)
+            post.setParent(parent.getEntityId());
+        // insertAnnouncement rebuilds memberListIds from memberListInput, so set the input, not the ids directly.
+        if (members.length > 0)
+            post.setMemberListInput(Arrays.stream(members).map(member -> String.valueOf(member.getUserId())).collect(Collectors.joining("\n")));
+        return AnnouncementManager.insertAnnouncement(c, user, post, files, false);
     }
 
     public static class ContainerScopingTestCase extends AbstractContainerScopingTest
@@ -3015,10 +3035,7 @@ public class AnnouncementsController extends SpringActionController
             // (cross-container by design), so each test addresses B's thread through a folder-A request.
             _folderA = getSharedContainer("A");
             _folderB = getSharedContainer("B");
-            AnnouncementModel insert = new AnnouncementModel();
-            insert.setTitle("Container scoping test thread");
-            insert.setBody("body");
-            _thread = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), insert, null, false);
+            _thread = insertTestPost(_folderB, getAdmin(), "Container scoping test thread", null);
         }
 
         @Test
@@ -3054,12 +3071,7 @@ public class AnnouncementsController extends SpringActionController
             User member = createUserInRole(secure, ReaderRole.class);
             User nonMember = createUserInRole(secure, ReaderRole.class);
 
-            AnnouncementModel insert = new AnnouncementModel();
-            insert.setTitle("Secure member-list test thread");
-            insert.setBody("body");
-            // insertAnnouncement rebuilds memberListIds from memberListInput, so set the input, not the ids directly.
-            insert.setMemberListInput(String.valueOf(member.getUserId()));
-            AnnouncementModel secureThread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), insert, null, false);
+            AnnouncementModel secureThread = insertTestPost(secure, getAdmin(), "Secure member-list test thread", null, member);
 
             ActionURL url = new ActionURL(SubscribeThreadAction.class, secure)
                     .addParameter("threadId", secureThread.getEntityId());
@@ -3085,23 +3097,9 @@ public class AnnouncementsController extends SpringActionController
             for (User user : List.of(member, nonMember, editor))
                 grantRole(user, _folderA, ReaderRole.class);
 
-            AnnouncementModel memberThread = new AnnouncementModel();
-            memberThread.setTitle("Member thread");
-            memberThread.setBody("body");
-            memberThread.setMemberListInput(String.valueOf(member.getUserId()));
-            memberThread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), memberThread, null, false);
-
-            AnnouncementModel response = new AnnouncementModel();
-            response.setTitle("Member thread response");
-            response.setBody("body");
-            response.setParent(memberThread.getEntityId());
-            response.setMemberListInput(String.valueOf(member.getUserId()));
-            response = AnnouncementManager.insertAnnouncement(secure, getAdmin(), response, null, false);
-
-            AnnouncementModel otherThread = new AnnouncementModel();
-            otherThread.setTitle("Other thread");
-            otherThread.setBody("body");
-            otherThread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), otherThread, null, false);
+            AnnouncementModel memberThread = insertTestPost(secure, getAdmin(), "Member thread", null, member);
+            AnnouncementModel response = insertTestPost(secure, getAdmin(), "Member thread response", memberThread, member);
+            AnnouncementModel otherThread = insertTestPost(secure, getAdmin(), "Other thread", null);
 
             Set<Integer> all = Set.of(memberThread.getRowId(), response.getRowId(), otherThread.getRowId());
             assertEquals(Set.of(), queryRowIds(nonMember, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
@@ -3214,19 +3212,9 @@ public class AnnouncementsController extends SpringActionController
             User editor = createUserInRole(secure, EditorRole.class);
             grantRole(nonMember, _folderA, ReaderRole.class);
 
-            AnnouncementModel thread = new AnnouncementModel();
-            thread.setTitle("Member thread");
-            thread.setBody("body");
-            thread.setMemberListInput(String.valueOf(member.getUserId()));
-            thread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), thread, null, false);
-
+            AnnouncementModel thread = insertTestPost(secure, getAdmin(), "Member thread", null, member);
             // The thread's effective member list lives on its latest post
-            AnnouncementModel response = new AnnouncementModel();
-            response.setTitle("Member thread response");
-            response.setBody("body");
-            response.setParent(thread.getEntityId());
-            response.setMemberListInput(String.valueOf(member.getUserId()));
-            response = AnnouncementManager.insertAnnouncement(secure, getAdmin(), response, null, false);
+            AnnouncementModel response = insertTestPost(secure, getAdmin(), "Member thread response", thread, member);
 
             for (Container from : List.of(secure, _folderA))
             {
@@ -3287,7 +3275,7 @@ public class AnnouncementsController extends SpringActionController
 
             Map<String, Object> row = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", _folderB.getId(), "EmailOption", EmailOption.MESSAGES_ALL.getValue()));
             forumSubscriptionService(adminOfB).insertRows(adminOfB, _folderB, List.of(row), new BatchValidationException(), null, null);
-            new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", victim.getUserId(), _thread.getRowId());
+            Table.insert(null, CommSchema.getInstance().getTableInfoUserList(), new HashMap<>(Map.of("UserId", victim.getUserId(), "MessageId", _thread.getRowId())));
 
             // Both query from A across all folders; only B's admin sees B's rows for another user
             assertEquals(Map.of(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME, 0L, AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME, 0L), subscriptionCounts(adminOfA, victim));
@@ -3300,16 +3288,13 @@ public class AnnouncementsController extends SpringActionController
             forumSubscriptionService(adminOfB).updateRows(adminOfB, _folderB, List.of(update), List.of(key), errors, null, null);
             assertFalse(errors.getMessage(), errors.hasErrors());
             TableInfo emailPrefs = CoreSchema.getInstance().getTableInfoEmailPrefs();
-            assertEquals(Integer.valueOf(mine), new TableSelector(emailPrefs, List.of(emailPrefs.getColumn("EmailOptionId")), new SimpleFilter(FieldKey.fromParts("UserId"), victim.getUserId()).addCondition(FieldKey.fromParts("Type"), "messages"), null).getObject(Integer.class));
+            assertEquals(Integer.valueOf(mine), new TableSelector(emailPrefs, List.of(emailPrefs.getColumn("EmailOptionId")), new SimpleFilter(FieldKey.fromParts("UserId"), victim.getUserId()).addCondition(FieldKey.fromParts("Type"), AnnouncementEmailConfig.TYPE), null).getObject(Integer.class));
 
             Map<String, Object> noSuchUser = new HashMap<>(Map.of("User", Integer.MAX_VALUE, "Folder", _folderB.getId(), "EmailOption", mine));
             assertThrows(QueryUpdateServiceException.class, () -> forumSubscriptionService(adminOfB).insertRows(adminOfB, _folderB, List.of(noSuchUser), new BatchValidationException(), null, null));
 
             // Admin moves the other user's subscription to another thread, then removes it
-            AnnouncementModel otherThread = new AnnouncementModel();
-            otherThread.setTitle("Other thread");
-            otherThread.setBody("body");
-            otherThread = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), otherThread, null, false);
+            AnnouncementModel otherThread = insertTestPost(_folderB, getAdmin(), "Other thread", null);
             QueryUpdateService qus = new AnnouncementSchema(adminOfB, _folderB).getTable(AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME).getUpdateService();
             Map<String, Object> oldKey = new HashMap<>(Map.of("Announcement", _thread.getRowId(), "User", victim.getUserId()));
             Map<String, Object> moved = new HashMap<>(Map.of("Announcement", otherThread.getRowId(), "User", victim.getUserId()));
@@ -3347,7 +3332,7 @@ public class AnnouncementsController extends SpringActionController
 
         private long forumSubscriptionCount(User user)
         {
-            return new TableSelector(CoreSchema.getInstance().getTableInfoEmailPrefs(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()).addCondition(FieldKey.fromParts("Type"), "messages"), null).getRowCount();
+            return new TableSelector(CoreSchema.getInstance().getTableInfoEmailPrefs(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()).addCondition(FieldKey.fromParts("Type"), AnnouncementEmailConfig.TYPE), null).getRowCount();
         }
 
         private void insertSubscription(User user, Container from, AnnouncementModel target) throws Exception
@@ -3375,14 +3360,8 @@ public class AnnouncementsController extends SpringActionController
         public void testModerationTablesRequireAdmin() throws Exception
         {
             TableInfo announcements = CommSchema.getInstance().getTableInfoAnnouncements();
-            AnnouncementModel pending = new AnnouncementModel();
-            pending.setTitle("Pending review");
-            pending.setBody("body");
-            pending = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), pending, null, false);
-            AnnouncementModel spam = new AnnouncementModel();
-            spam.setTitle("Spam");
-            spam.setBody("body");
-            spam = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), spam, null, false);
+            AnnouncementModel pending = insertTestPost(_folderB, getAdmin(), "Pending review", null);
+            AnnouncementModel spam = insertTestPost(_folderB, getAdmin(), "Spam", null);
             new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId IN (?, ?)", pending.getRowId(), spam.getRowId());
             AnnouncementManager.markAsSpam(_folderB, spam);
             Set<Integer> mine = Set.of(pending.getRowId(), spam.getRowId());
@@ -3409,6 +3388,150 @@ public class AnnouncementsController extends SpringActionController
             // Admin of A who only reads B can't reach B's moderation queue across folders
             assertEquals(Set.of(), only(queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME), mine));
             assertEquals(Set.of(), only(queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.SPAM_TABLE_NAME), mine));
+        }
+
+        // GH Issue 1688
+        @Test
+        public void testQueryUpdateCannotRetargetMessage() throws Exception
+        {
+            Container secure = getSecureBoard();
+            User member = createUserInRole(secure, ReaderRole.class);
+            User otherReader = createUserInRole(secure, ReaderRole.class);
+            User editorA = createUserInRole(_folderA, EditorRole.class);
+
+            AnnouncementModel victim = insertThreadAs(getAdmin(), secure, member);
+            AnnouncementModel own = insertThreadAs(editorA, _folderA);
+
+            QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
+            Map<String, Object> ownKey = Map.of("RowId", own.getRowId());
+            String memberList = String.valueOf(otherReader.getUserId());
+
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Container", secure.getId(), "Title", "Overwritten", "memberListInput", memberList)));
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", victim.getRowId(), "Title", "Overwritten", "memberListInput", memberList)));
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Container", secure.getId(), "Title", "Overwritten")));
+
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(secure, victim.getRowId())).getTitle());
+            assertEquals(List.of(member.getUserId()), AnnouncementManager.getPostMemberList(victim.getRowId()));
+
+            // Positive control: an ordinary edit of the caller's own message still works
+            updateMessage(qus, editorA, ownKey, Map.of("RowId", own.getRowId(), "Title", "Edited"));
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+        }
+
+        // GH Issue 1853
+        @Test
+        public void testQueryUpdateCannotRetargetWithinFolder() throws Exception
+        {
+            User editorA = createUserInRole(_folderA, EditorRole.class);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(editorA, _folderA);
+
+            QueryUpdateService qus = Objects.requireNonNull(new AnnouncementSchema(editorA, _folderA).getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME).getUpdateService());
+            assertThrows(UnauthorizedException.class, () -> updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", victim.getRowId(), "Title", "Overwritten")));
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+
+            // Parent is ignored, so the edit can't move the message into another thread
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", own.getRowId(), "Parent", victim.getEntityId(), "Title", "Edited"));
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
+
+            // The folder id is compared case-insensitively
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), Map.of("RowId", own.getRowId(), "Container", _folderA.getId().toUpperCase(), "Title", "Edited again"));
+            assertEquals("Edited again", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+
+            // A null folder id means the current folder
+            Map<String, Object> nullContainer = new HashMap<>(Map.of("RowId", own.getRowId(), "Title", "Edited once more"));
+            nullContainer.put("Container", null);
+            updateMessage(qus, editorA, Map.of("RowId", own.getRowId()), nullContainer);
+            assertEquals("Edited once more", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+        }
+
+        // GH Issue 1853
+        @Test
+        public void testUpdateFormCannotRetargetMessage() throws Exception
+        {
+            User author = createUserInRole(_folderA, AuthorRole.class);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(author, _folderA);
+
+            ActionURL retarget = new ActionURL(UpdateAction.class, _folderA)
+                    .addParameter("entityId", own.getEntityId())
+                    .addParameter("rowId", victim.getRowId())
+                    .addParameter("title", "Overwritten")
+                    .addParameter("body", "body");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(retarget, author));
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+
+            // Positive control: the author can still edit their own message (302 to the thread)
+            ActionURL edit = new ActionURL(UpdateAction.class, _folderA)
+                    .addParameter("entityId", own.getEntityId())
+                    .addParameter("rowId", own.getRowId())
+                    .addParameter("title", "Edited")
+                    .addParameter("body", "body");
+            assertStatus(HttpServletResponse.SC_FOUND, post(edit, author));
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+
+            // Parent is ignored, so the edit can't move the message into another thread
+            ActionURL reparent = edit.clone()
+                    .replaceParameter("title", "Edited again")
+                    .addParameter("parent", victim.getEntityId());
+            assertStatus(HttpServletResponse.SC_FOUND, post(reparent, author));
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited again", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
+        }
+
+        // GH Issue 1853
+        @Test
+        public void testUpdateThreadApiCannotRetargetMessage() throws Exception
+        {
+            User author = createUserInRole(_folderA, AuthorRole.class);
+            AnnouncementModel victim = insertThreadAs(getAdmin(), _folderA);
+            AnnouncementModel own = insertThreadAs(author, _folderA);
+
+            ActionURL direct = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", victim.getRowId())
+                    .addParameter("thread.title", "Overwritten");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(direct, author));
+
+            // Identity fields alongside the author's own rowId must not redirect or reparent the write
+            ActionURL retarget = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", own.getRowId())
+                    .addParameter("thread.entityId", victim.getEntityId())
+                    .addParameter("thread.parent", victim.getEntityId())
+                    .addParameter("thread.title", "Edited");
+            assertStatus(HttpServletResponse.SC_OK, post(retarget, author));
+
+            assertEquals(victim.getTitle(), Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, victim.getRowId())).getTitle());
+            AnnouncementModel ownAfter = Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId()));
+            assertEquals("Edited", ownAfter.getTitle());
+            assertNull(ownAfter.getParent());
+
+            // A failed update reports its error rather than success
+            ActionURL invalid = new ActionURL(UpdateThreadAction.class, _folderA)
+                    .addParameter("thread.rowId", own.getRowId())
+                    .addParameter("thread.title", "Rejected")
+                    .addParameter("thread.assignedTo", Integer.MAX_VALUE);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(invalid, author));
+            assertEquals("Edited", Objects.requireNonNull(AnnouncementManager.getAnnouncement(_folderA, own.getRowId())).getTitle());
+        }
+
+        private void updateMessage(QueryUpdateService qus, User user, Map<String, Object> oldKey, Map<String, Object> values) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            qus.updateRows(user, _folderA, List.of(new HashMap<>(values)), List.of(new HashMap<>(oldKey)), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        private AnnouncementModel insertThreadAs(User creator, Container c, User... members) throws Exception
+        {
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Member list test thread");
+            insert.setBody("body");
+            insert.setMemberListInput(Arrays.stream(members).map(member -> String.valueOf(member.getUserId())).collect(Collectors.joining("\n")));
+            return AnnouncementManager.insertAnnouncement(c, creator, insert, null, false);
         }
 
         // Shared across tests, so reset the settings some tests change
@@ -3454,9 +3577,20 @@ public class AnnouncementsController extends SpringActionController
     // GH Issue 1444
     public static class MemberListTestCase extends AbstractContainerScopingTest
     {
+        // Shared across tests, which reset the settings and assert only on their own threads
+        private Container getBoard(String secure)
+        {
+            return configureBoard(getSharedContainer(secure), secure);
+        }
+
+        /** A board of its own, for a test that changes the container's policy */
         private Container createBoard(String name, String secure)
         {
-            Container c = createContainer(name);
+            return configureBoard(createContainer(name), secure);
+        }
+
+        private static Container configureBoard(Container c, String secure)
+        {
             Settings settings = AnnouncementManager.getMessageBoardSettings(c);
             settings.setSecure(secure);
             settings.setMemberList(true);
@@ -3466,11 +3600,36 @@ public class AnnouncementsController extends SpringActionController
 
         private AnnouncementModel insertThread(Container c, User... members) throws Exception
         {
-            AnnouncementModel insert = new AnnouncementModel();
-            insert.setTitle("Member list test thread");
-            insert.setBody("body");
-            insert.setMemberListInput(Arrays.stream(members).map(member -> String.valueOf(member.getUserId())).collect(Collectors.joining("\n")));
-            return AnnouncementManager.insertAnnouncement(c, getAdmin(), insert, null, false);
+            return insertTestPost(c, getAdmin(), "Member list test thread", null, members);
+        }
+
+        private AnnouncementModel insertResponse(Container c, AnnouncementModel thread, User... members) throws Exception
+        {
+            return insertTestPost(c, getAdmin(), "Response", thread, members);
+        }
+
+        private static ActionURL apiReplyUrl(Container c, AnnouncementModel parent)
+        {
+            return new ActionURL(CreateThreadAction.class, c)
+                .addParameter("reply", true)
+                .addParameter("thread.parent", parent.getEntityId())
+                .addParameter("thread.title", "Reply")
+                .addParameter("thread.body", "reply body");
+        }
+
+        private static ActionURL uiReplyUrl(Container c, AnnouncementModel parent)
+        {
+            return new ActionURL(RespondAction.class, c)
+                .addParameter("parentId", parent.getEntityId())
+                .addParameter("title", "Reply")
+                .addParameter("body", "reply body");
+        }
+
+        private static ActionURL updateUrl(Container c, AnnouncementModel thread)
+        {
+            return new ActionURL(UpdateThreadAction.class, c)
+                .addParameter("thread.rowId", thread.getRowId())
+                .addParameter("thread.body", "updated body");
         }
 
         private List<Integer> currentMemberList(Container c, AnnouncementModel thread)
@@ -3481,20 +3640,13 @@ public class AnnouncementsController extends SpringActionController
         @Test
         public void testSecureReplyRequiresMembership() throws Exception
         {
-            Container secure = createBoard("Secure", Settings.SECURE_WITHOUT_EMAIL);
+            Container secure = getBoard(Settings.SECURE_WITHOUT_EMAIL);
             User member = createUserInRole(secure, MessageBoardContributorRole.class);
             User nonMember = createUserInRole(secure, MessageBoardContributorRole.class);
             AnnouncementModel thread = insertThread(secure, member);
 
-            ActionURL apiReply = new ActionURL(CreateThreadAction.class, secure)
-                .addParameter("reply", true)
-                .addParameter("thread.parent", thread.getEntityId())
-                .addParameter("thread.title", "Reply")
-                .addParameter("thread.body", "reply body");
-            ActionURL uiReply = new ActionURL(RespondAction.class, secure)
-                .addParameter("parentId", thread.getEntityId())
-                .addParameter("title", "Reply")
-                .addParameter("body", "reply body");
+            ActionURL apiReply = apiReplyUrl(secure, thread);
+            ActionURL uiReply = uiReplyUrl(secure, thread);
 
             // A thread the caller can't read is reported as missing
             assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(apiReply, nonMember));
@@ -3567,43 +3719,28 @@ public class AnnouncementsController extends SpringActionController
         @Test
         public void testRemovedMemberCannotReplyViaOldResponse() throws Exception
         {
-            Container secure = createBoard("SecureRemoved", Settings.SECURE_WITHOUT_EMAIL);
+            Container secure = getBoard(Settings.SECURE_WITHOUT_EMAIL);
             User formerMember = createUserInRole(secure, MessageBoardContributorRole.class);
             AnnouncementModel thread = insertThread(secure, formerMember);
 
             // The first response still records formerMember on its member list; the second removes them from the thread
-            AnnouncementModel oldResponse = insertResponse(secure, thread, String.valueOf(formerMember.getUserId()));
-            insertResponse(secure, thread, null);
+            AnnouncementModel oldResponse = insertResponse(secure, thread, formerMember);
+            insertResponse(secure, thread);
             assertEquals(List.of(), currentMemberList(secure, thread));
 
-            ActionURL viaOldResponse = new ActionURL(RespondAction.class, secure)
-                .addParameter("parentId", oldResponse.getEntityId())
-                .addParameter("title", "Reply")
-                .addParameter("body", "reply body");
-            ActionURL viaThread = new ActionURL(RespondAction.class, secure)
-                .addParameter("parentId", thread.getEntityId())
-                .addParameter("title", "Reply")
-                .addParameter("body", "reply body");
-
-            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(viaOldResponse, formerMember));
-            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(viaThread, formerMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(uiReplyUrl(secure, oldResponse), formerMember));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(uiReplyUrl(secure, thread), formerMember));
         }
 
         @Test
         public void testApiReplyToResponseRejected() throws Exception
         {
-            Container secure = createBoard("SecureApiResponse", Settings.SECURE_WITHOUT_EMAIL);
+            Container secure = getBoard(Settings.SECURE_WITHOUT_EMAIL);
             User member = createUserInRole(secure, MessageBoardContributorRole.class);
             AnnouncementModel thread = insertThread(secure, member);
-            AnnouncementModel response = insertResponse(secure, thread, String.valueOf(member.getUserId()));
+            AnnouncementModel response = insertResponse(secure, thread, member);
 
-            ActionURL viaResponse = new ActionURL(CreateThreadAction.class, secure)
-                .addParameter("reply", true)
-                .addParameter("thread.parent", response.getEntityId())
-                .addParameter("thread.title", "Reply")
-                .addParameter("thread.body", "reply body");
-
-            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(viaResponse, member));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(apiReplyUrl(secure, response), member));
             assertEquals(1, AnnouncementManager.getAnnouncement(secure, thread.getEntityId()).getResponses().size());
         }
 
@@ -3616,9 +3753,9 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementModel thread = insertThread(secure, formerMember);
 
             // The first response's member list keeps formerMember; the second swaps them for newMember on the thread
-            AnnouncementModel oldResponse = insertResponse(secure, thread, String.valueOf(formerMember.getUserId()),
-                new ByteArrayAttachmentFile("notes.txt", "notes".getBytes(StandardCharsets.UTF_8), "text/plain"));
-            insertResponse(secure, thread, String.valueOf(newMember.getUserId()));
+            AnnouncementModel oldResponse = insertTestPost(secure, getAdmin(), "Response", thread,
+                List.of(new ByteArrayAttachmentFile("notes.txt", "notes".getBytes(StandardCharsets.UTF_8), "text/plain")), formerMember);
+            insertResponse(secure, thread, newMember);
             assertEquals(List.of(newMember.getUserId()), currentMemberList(secure, thread));
 
             ActionURL download = new ActionURL(DownloadAction.class, secure)
@@ -3629,46 +3766,28 @@ public class AnnouncementsController extends SpringActionController
             assertStatus(HttpServletResponse.SC_OK, get(download, newMember));
         }
 
-        private AnnouncementModel insertResponse(Container c, AnnouncementModel thread, String memberListInput, AttachmentFile... files) throws Exception
-        {
-            AnnouncementModel response = new AnnouncementModel();
-            response.setParent(thread.getEntityId());
-            response.setTitle("Response");
-            response.setBody("response body");
-            response.setMemberListInput(memberListInput);
-            return AnnouncementManager.insertAnnouncement(c, getAdmin(), response, List.of(files), false);
-        }
-
         @Test
         public void testApiUpdateRetainsMemberList() throws Exception
         {
-            Container board = createBoard("Normal", Settings.SECURE_OFF);
+            Container board = getBoard(Settings.SECURE_OFF);
             User member = createUserInRole(board, MessageBoardContributorRole.class);
             AnnouncementModel thread = insertThread(board, member);
 
-            ActionURL update = new ActionURL(UpdateThreadAction.class, board)
-                .addParameter("thread.rowId", thread.getRowId())
-                .addParameter("thread.body", "updated body");
-
-            assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertStatus(HttpServletResponse.SC_OK, post(updateUrl(board, thread), getAdmin()));
             assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
         }
 
         @Test
         public void testApiUpdateRetainsPostMemberList() throws Exception
         {
-            Container board = createBoard("NormalResponded", Settings.SECURE_OFF);
+            Container board = getBoard(Settings.SECURE_OFF);
             User member = createUserInRole(board, MessageBoardContributorRole.class);
             User other = createUserInRole(board, MessageBoardContributorRole.class);
             AnnouncementModel thread = insertThread(board, member, other);
-            insertResponse(board, thread, String.valueOf(member.getUserId()));
-
-            ActionURL update = new ActionURL(UpdateThreadAction.class, board)
-                .addParameter("thread.rowId", thread.getRowId())
-                .addParameter("thread.body", "updated body");
+            insertResponse(board, thread, member);
 
             // Editing the original must keep its own list, not copy the latest response's list onto it
-            assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertStatus(HttpServletResponse.SC_OK, post(updateUrl(board, thread), getAdmin()));
             assertEquals(Set.of(member.getUserId(), other.getUserId()), new HashSet<>(AnnouncementManager.getPostMemberList(thread.getRowId())));
             assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
         }
@@ -3676,26 +3795,17 @@ public class AnnouncementsController extends SpringActionController
         @Test
         public void testApiWritesDropMembersWhoCannotRead() throws Exception
         {
-            Container board = createBoard("NormalInactive", Settings.SECURE_OFF);
+            Container board = getBoard(Settings.SECURE_OFF);
             User member = createUserInRole(board, MessageBoardContributorRole.class);
             User inactive = createUserInRole(board, MessageBoardContributorRole.class);
             AnnouncementModel updated = insertThread(board, member, inactive);
             AnnouncementModel repliedTo = insertThread(board, member, inactive);
             UserManager.setUserActive(getAdmin(), inactive, false);
 
-            ActionURL update = new ActionURL(UpdateThreadAction.class, board)
-                .addParameter("thread.rowId", updated.getRowId())
-                .addParameter("thread.body", "updated body");
-            ActionURL apiReply = new ActionURL(CreateThreadAction.class, board)
-                .addParameter("reply", true)
-                .addParameter("thread.parent", repliedTo.getEntityId())
-                .addParameter("thread.title", "Reply")
-                .addParameter("thread.body", "reply body");
-
             // Without the filter, validation rejects these writes because a listed member can't read the thread
-            assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertStatus(HttpServletResponse.SC_OK, post(updateUrl(board, updated), getAdmin()));
             assertEquals(List.of(member.getUserId()), currentMemberList(board, updated));
-            assertStatus(HttpServletResponse.SC_OK, post(apiReply, member));
+            assertStatus(HttpServletResponse.SC_OK, post(apiReplyUrl(board, repliedTo), member));
             assertEquals(List.of(member.getUserId()), currentMemberList(board, repliedTo));
         }
     }

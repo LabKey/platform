@@ -19,13 +19,14 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
@@ -40,6 +41,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -801,11 +803,12 @@ public class ApiQueryResponse implements ApiResponse
     {
         private static final String FOLDER_NAME = "ApiQueryResponseTest";
 
-        private User _user;
-        private Container _folder;
+        private static User _user;
+        private static Container _folder;
 
-        @Before
-        public void setUp() throws Exception
+        // The tests only read, so one fixture serves the class
+        @BeforeClass
+        public static void setUp()
         {
             _user = TestContext.get().getUser();
             Container testContainer = JunitUtil.getTestContainer();
@@ -817,17 +820,18 @@ public class ApiQueryResponse implements ApiResponse
             ContainerManager.createContainer(_folder, "child2", _user);
         }
 
-        @After
-        public void tearDown() throws Exception
+        @AfterClass
+        public static void tearDown()
         {
             if (null != _folder)
                 ContainerManager.deleteAll(_folder, _user);
         }
 
+        /** Each pair renders the same rows streamed and through the map-based writeRow */
         @Test
         public void testStreamedRowsMatchMap() throws Exception
         {
-            assertRowsMatch(view -> new ApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true, true),
+            assertRowsMatch("ApiQueryResponse", view -> new ApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true, true),
                     view -> new ApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true, true)
                     {
                         @Override
@@ -836,12 +840,7 @@ public class ApiQueryResponse implements ApiResponse
                             writer.writeListEntry(getRow());
                         }
                     });
-        }
-
-        @Test
-        public void testStreamedExtendedRowsMatchMap() throws Exception
-        {
-            assertRowsMatch(view -> configure(new ExtendedApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true)),
+            assertRowsMatch("ExtendedApiQueryResponse", view -> configure(new ExtendedApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true)),
                     view -> configure(new ExtendedApiQueryResponse(view, false, true, "core", "Containers", 0, null, false, true, true)
                     {
                         @Override
@@ -859,19 +858,19 @@ public class ApiQueryResponse implements ApiResponse
             return response;
         }
 
-        private void assertRowsMatch(Function<QueryView, ApiQueryResponse> streamed, Function<QueryView, ApiQueryResponse> mapped) throws Exception
+        private void assertRowsMatch(String name, Function<QueryView, ApiQueryResponse> streamed, Function<QueryView, ApiQueryResponse> mapped) throws Exception
         {
             JSONArray expected = render(mapped);
-            assertEquals("Expected the folder and its two children", 3, expected.length());
-            assertEquals(expected.toList(), render(streamed).toList());
+            assertEquals(name + ": expected the folder and its two children", 3, expected.length());
+            assertEquals(name, expected.toList(), render(streamed).toList());
         }
 
         private JSONArray render(Function<QueryView, ApiQueryResponse> factory) throws Exception
         {
             UserSchema schema = QueryService.get().getUserSchema(_user, _folder, "core");
             MutablePropertyValues mpv = new MutablePropertyValues();
-            mpv.addPropertyValue("query.queryName", "Containers");
-            mpv.addPropertyValue("query" + DataRegion.CONTAINER_FILTER_NAME, "CurrentAndSubfolders");
+            mpv.addPropertyValue("query." + QueryParam.queryName, "Containers");
+            mpv.addPropertyValue("query" + DataRegion.CONTAINER_FILTER_NAME, ContainerFilter.Type.CurrentAndSubfolders.name());
             mpv.addPropertyValue("query.sort", "RowId");
             QuerySettings settings = schema.getSettings(mpv, "query");
 

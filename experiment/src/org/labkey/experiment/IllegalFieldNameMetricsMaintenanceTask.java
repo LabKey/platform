@@ -31,7 +31,8 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SampleTypeDomainKind;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.property.DomainKind;
@@ -44,9 +45,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.TestContext;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -327,7 +329,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
     public static class TestCase extends Assert
     {
         private static final String ST_NAME = "IllegalNameMetricsTest";
-        private static final String KIND = "SampleSet";
+        private static final String KIND = SampleTypeDomainKind.NAME;
 
         @Before
         @After
@@ -352,16 +354,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             long baseDupeAlias = count(metrics, FieldNameRule.duplicateImportAlias.name());
             long baseParentAlias = count(metrics, "parentAliasConflict");
 
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("Name", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("WillBecomeReserved", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("WillAliasContainer", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("DupeAliasOne", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("DupeAliasTwo", PropertyType.STRING.getTypeUri()));
-
-            ExpSampleType st = SampleTypeService.get().createSampleType(c, user, ST_NAME, null, props,
-                    Collections.emptyList(), -1, -1, -1, -1, null);
-            assertNotNull("sample type should be created", st);
+            ExpSampleType st = SampleTypeTestHelper.create(c, user, ST_NAME, strings("WillBecomeReserved", "WillAliasContainer", "DupeAliasOne", "DupeAliasTwo"));
 
             // Make the fields illegal behind the designer's back, which is the state an upgraded server is in: these
             // configurations were legal when saved and validateProperties would reject them now.
@@ -398,18 +391,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             long baseLabelVsName = count(metrics, FieldNameRule.labelVsFieldName.name());
             long baseLabelVsAlias = count(metrics, FieldNameRule.labelVsImportAlias.name());
 
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("Name", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("Shadowed", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("Winner", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("LabelTwinOne", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("LabelTwinTwo", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("AliasOwner", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("LabelStealsAlias", PropertyType.STRING.getTypeUri()));
-
-            ExpSampleType st = SampleTypeService.get().createSampleType(c, user, ST_NAME, null, props,
-                    Collections.emptyList(), -1, -1, -1, -1, null);
-            assertNotNull("sample type should be created", st);
+            ExpSampleType st = SampleTypeTestHelper.create(c, user, ST_NAME, strings("Shadowed", "Winner", "LabelTwinOne", "LabelTwinTwo", "AliasOwner", "LabelStealsAlias"));
 
             DbScope scope = ExperimentService.get().getSchema().getScope();
             SqlExecutor executor = new SqlExecutor(scope);
@@ -445,13 +427,7 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             long baseLabelVsAlias = count(metrics, FieldNameRule.labelVsImportAlias.name());
             long baseDupeLabel = count(metrics, FieldNameRule.duplicateLabel.name());
 
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("Name", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("SelfOwner", PropertyType.STRING.getTypeUri()));
-
-            ExpSampleType st = SampleTypeService.get().createSampleType(c, user, ST_NAME, null, props,
-                    Collections.emptyList(), -1, -1, -1, -1, null);
-            assertNotNull("sample type should be created", st);
+            ExpSampleType st = SampleTypeTestHelper.create(c, user, ST_NAME, strings("SelfOwner"));
 
             // One field owning both its label and the matching alias resolves to that field either way.
             DbScope scope = ExperimentService.get().getSchema().getScope();
@@ -480,19 +456,13 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
             task.run(log);
             long baseParentAlias = count(IllegalFieldNameMetricsProvider.getInstance().getUsageMetrics(), "parentAliasConflict");
 
-            List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("Name", PropertyType.STRING.getTypeUri()));
-            props.add(new GWTPropertyDescriptor("Collision", PropertyType.STRING.getTypeUri()));
-
-            ExpSampleType st = SampleTypeService.get().createSampleType(c, user, ST_NAME, null, props,
-                    Collections.emptyList(), -1, -1, -1, -1, null);
-            assertNotNull("sample type should be created", st);
+            ExpSampleType st = SampleTypeTestHelper.create(c, user, ST_NAME, strings("Collision"));
 
             // A parent alias header that collides with a field name. Saving this through the designer is blocked, so
             // write it directly to reproduce a pre-validation configuration.
             DbScope scope = ExperimentService.get().getSchema().getScope();
-            new SqlExecutor(scope).execute(SQLFragment.unsafe(
-                "UPDATE exp.materialsource SET materialparentimportaliasmap = ? WHERE lsid = ?")
+            new SqlExecutor(scope).execute(SQLFragment.unsafe("UPDATE ").append(ExperimentServiceImpl.get().getTinfoSampleType())
+                .unsafeAppend(" SET materialparentimportaliasmap = ? WHERE lsid = ?")
                 .add("{\"Collision\":\"materialInputs/Whatever\"}").add(st.getLSID()));
 
             task.run(log);
@@ -502,11 +472,16 @@ public class IllegalFieldNameMetricsMaintenanceTask implements MaintenanceTask
 
         private static void update(SqlExecutor executor, int domainId, String fieldName, String column, String value)
         {
-            SQLFragment sql = SQLFragment.unsafe("UPDATE exp.propertydescriptor SET ");
+            SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(OntologyManager.getTinfoPropertyDescriptor()).unsafeAppend(" SET ");
             sql.appendIdentifier(column).unsafeAppend(" = ?").add(value);
-            sql.unsafeAppend(" WHERE name = ? AND propertyid IN (SELECT propertyid FROM exp.propertydomain WHERE domainid = ?)")
-                .add(fieldName).add(domainId);
+            sql.unsafeAppend(" WHERE name = ? AND propertyid IN (SELECT propertyid FROM ").append(OntologyManager.getTinfoPropertyDomain())
+                .unsafeAppend(" WHERE domainid = ?)").add(fieldName).add(domainId);
             assertEquals("expected to rewrite one field", 1, executor.execute(sql));
+        }
+
+        private static GWTPropertyDescriptor[] strings(String... names)
+        {
+            return Arrays.stream(names).map(n -> new GWTPropertyDescriptor(n, PropertyType.STRING.getTypeUri())).toArray(GWTPropertyDescriptor[]::new);
         }
 
         /** Sums a rule's per-kind counts for the sample type kind. */

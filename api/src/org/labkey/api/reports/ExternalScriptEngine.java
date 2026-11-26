@@ -65,6 +65,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.reports.report.r.ParamReplacementSvc.SubstitutionSyntax.INLINE;
 
@@ -765,21 +766,15 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         }
 
         @Test
-        public void testUnreplacedSubstitutionThrows()
+        public void testUnreplacedSubstitutionsThrow()
         {
-            String script = "print(\"${unknownParam}\")";
-            ScriptException e = assertThrows(ScriptException.class, () -> _engine.writeScriptFile(script, _context, List.of("R")));
-            assertTrue("Exception message should name the unreplaced parameter", e.getMessage().contains("unknownParam"));
-        }
-
-        @Test
-        public void testMultipleUnreplacedSubstitutionsAreAllNamed()
-        {
-            String script = "${firstUnknown} and ${" + KNOWN_PARAM + "} and ${secondUnknown}";
-            ScriptException e = assertThrows(ScriptException.class, () -> _engine.writeScriptFile(script, _context, List.of("R")));
-            assertTrue("Exception message should name the first unreplaced parameter", e.getMessage().contains("firstUnknown"));
-            assertTrue("Exception message should name the second unreplaced parameter", e.getMessage().contains("secondUnknown"));
-            assertFalse("Exception message should not include the known, replaced parameter", e.getMessage().contains(KNOWN_PARAM));
+            for (List<String> unknowns : List.of(List.of("missingParam"), List.of("firstUnknown", "secondUnknown")))
+            {
+                String script = unknowns.stream().map(p -> "${" + p + "}").collect(Collectors.joining(" and ${" + KNOWN_PARAM + "} and "));
+                ScriptException e = assertThrows(script, ScriptException.class, () -> _engine.writeScriptFile(script, _context, List.of("R")));
+                unknowns.forEach(p -> assertTrue("Exception message should name " + p, e.getMessage().contains(p)));
+                assertFalse("Exception message should not include the known, replaced parameter", e.getMessage().contains(KNOWN_PARAM));
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.EnumFieldKey;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -27,7 +28,7 @@ import org.labkey.api.query.UserSchema;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataClasses;
 import static org.labkey.api.exp.query.ExpSchema.TableType.SampleSets;
 
-public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTableImpl<C>
+public abstract class ExpProtocolInputTableImpl<C extends Enum<C> & EnumFieldKey> extends ExpTableImpl<C>
 {
     protected ExpProtocolInputTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {

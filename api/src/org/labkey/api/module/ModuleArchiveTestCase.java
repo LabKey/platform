@@ -141,6 +141,60 @@ public class ModuleArchiveTestCase extends Assert
         assertFalse(v2.isModified());
     }
 
+    @Test
+    public void testReextractionRewritesOnlyWhatDiffers() throws IOException
+    {
+        long now = System.currentTimeMillis();
+        ModuleArchive v1 = writeArchive(now - 60_000, Map.of("same.jar", "1", "app.jar", "1", "edited.jar", "1", "sub/old.jar", "1"));
+        File exploded = v1.extractAll();
+        File same = libJar(exploded, "same.jar");
+        File edited = libJar(exploded, "edited.jar");
+        File old = libJar(exploded, "sub/old.jar");
+        File stray = libJar(exploded, "stray.txt");
+        long sameLastModified = same.lastModified();
+        Files.write(edited.toPath(), innerJar("9"));
+        Files.writeString(stray.toPath(), "not from the archive");
+
+        ModuleArchive v2 = writeArchive(now, Map.of("same.jar", "1", "app.jar", "2", "edited.jar", "1"));
+        v2.extractAll();
+
+        assertEquals("Unchanged entry was rewritten", sameLastModified, same.lastModified());
+        assertEquals("2", readVersion(libJar(exploded, "app.jar")));
+        assertEquals("1", readVersion(edited));
+        assertFalse(old.exists());
+        assertFalse(old.getParentFile().exists());
+        assertFalse(stray.exists());
+        assertFalse(v2.isModified());
+    }
+
+    @Test
+    public void testCaseOnlyRenameKeepsFile() throws IOException
+    {
+        long now = System.currentTimeMillis();
+        File exploded = writeArchive(now - 60_000, Map.of("dep.jar", "1", "app.jar", "1")).extractAll();
+
+        ModuleArchive v2 = writeArchive(now, Map.of("Dep.jar", "1", "App.jar", "2"));
+        v2.extractAll();
+
+        assertEquals("1", readVersion(libJar(exploded, "Dep.jar")));
+        assertEquals("2", readVersion(libJar(exploded, "App.jar")));
+        assertFalse(v2.isModified());
+    }
+
+    @Test
+    public void testFileAndDirectorySwapPlaces() throws IOException
+    {
+        long now = System.currentTimeMillis();
+        File exploded = writeArchive(now - 60_000, Map.of("a.jar", "1", "b/c.jar", "1")).extractAll();
+
+        ModuleArchive v2 = writeArchive(now, Map.of("a.jar/d.jar", "2", "b", "2"));
+        v2.extractAll();
+
+        assertEquals("2", readVersion(libJar(exploded, "a.jar/d.jar")));
+        assertEquals("2", readVersion(libJar(exploded, "b")));
+        assertFalse(v2.isModified());
+    }
+
     private static File libJar(File exploded, String name)
     {
         return FileUtil.appendPath(exploded, org.labkey.api.util.Path.parse("lib/" + name));

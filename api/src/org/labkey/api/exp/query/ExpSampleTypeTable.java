@@ -16,11 +16,12 @@
 
 package org.labkey.api.exp.query;
 
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.EnumFieldKey;
+
 
 public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         RowId,
         LSID,
@@ -56,11 +57,6 @@ public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
         Alias,
         Inputs,
         Outputs,
-        Properties;
-
-        public FieldKey fieldKey()
-        {
-            return FieldKey.fromParts(name());
-        }
+        Properties
     }
 }

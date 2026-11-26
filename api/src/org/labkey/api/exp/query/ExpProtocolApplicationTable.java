@@ -18,12 +18,13 @@ package org.labkey.api.exp.query;
 
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.query.EnumFieldKey;
 
 public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplicationTable.Column>
 {
     String PROTOCOL_APPLICATION_PATTERN_PREFIX = "urn:lsid:%:ProtocolApplication.%:";
 
-    enum Column
+    enum Column implements EnumFieldKey
     {
         RowId,
         Name,

@@ -18,6 +18,7 @@ package org.labkey.api.dataiterator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -102,7 +103,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     {
         boolean hasNext = _data.next();
 
-        if (!hasNext || _rowData.size() > 1000)
+        if (!hasNext || _rowData.size() >= BatchSize.get(BatchSize.Kind.ROWS))
         {
             if (!_rowData.isEmpty())
             {

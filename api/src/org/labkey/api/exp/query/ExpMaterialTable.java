@@ -19,13 +19,13 @@ package org.labkey.api.exp.query;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.EnumFieldKey;
 
 import java.util.Set;
 
 public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, UpdateableTableInfo
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         Alias,
         AliquotCount,
@@ -94,11 +94,6 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         {
             _hasUnit = hasUnit;
             _label = label;
-        }
-
-        public FieldKey fieldKey()
-        {
-            return FieldKey.fromParts(name());
         }
 
         public boolean hasUnit()

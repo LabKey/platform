@@ -15,7 +15,8 @@
  */
 package org.labkey.api.exp.query;
 
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.EnumFieldKey;
+
 
 /**
  * User: kevink
@@ -23,7 +24,7 @@ import org.labkey.api.query.FieldKey;
  */
 public interface ExpDataClassTable extends ExpTable<ExpDataClassTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         RowId,
         LSID,
@@ -38,11 +39,6 @@ public interface ExpDataClassTable extends ExpTable<ExpDataClassTable.Column>
         SampleSet,
         Category,
         DataCount,
-        ImportAliases;
-
-        public FieldKey fieldKey()
-        {
-            return FieldKey.fromParts(name());
-        }
+        ImportAliases
     }
 }

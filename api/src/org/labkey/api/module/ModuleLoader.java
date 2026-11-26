@@ -2850,59 +2850,33 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             return expected;
         }
 
-        private Set<String> allModuleNames()
+        private Set<String> allModuleNamesExcept(String... names)
         {
-            return _modules.stream()
+            Set<String> expected = _modules.stream()
                 .map(Module::getName)
                 .collect(Collectors.toCollection(TreeSet::new));
+            List.of(names).forEach(expected::remove);
+            return expected;
         }
 
-        @Test
-        public void testNoIncludeOrExclude()
-        {
-            assertEquals(allModuleNames(), filter(Set.of(), Set.of(), _externalModulesDir));
-        }
+        private record Case(String name, Set<String> include, Set<String> exclude, boolean withExternalDir, Set<String> expected) {}
 
         @Test
-        public void testExcludeOnly()
+        public void testFilterModules()
         {
-            // Without "include" there's no dependency walk, so B stays even though only A needs it
-            Set<String> expected = allModuleNames();
-            expected.remove("A");
-            assertEquals(expected, filter(Set.of(), Set.of("a"), _externalModulesDir));
-        }
-
-        @Test
-        public void testIncludeAddsRequiredAndTransitiveDependencies()
-        {
-            // Lowercase "a" also verifies case-insensitive matching
-            assertEquals(requiredPlus("A", "B", "C"), filter(Set.of("a"), Set.of(), null));
-        }
-
-        @Test
-        public void testIncludeMissingModule()
-        {
-            assertEquals(requiredPlus("A", "B", "C"), filter(Set.of("a", "nonexistent"), Set.of(), null));
-        }
-
-        @Test
-        public void testExcludeDependency()
-        {
-            // Y is reachable only through excluded X
-            assertEquals(requiredPlus("E"), filter(Set.of("e"), Set.of("X"), null));
-        }
-
-        @Test
-        public void testExternalModulesIncluded()
-        {
-            // DeveloperTools matches by location despite its "devtools" directory; ExtTwo brings in its dependency, C
-            assertEquals(requiredPlus("D", "DeveloperTools", "ExtTwo", "C"), filter(Set.of("d"), Set.of(), _externalModulesDir));
-        }
-
-        @Test
-        public void testExternalModuleExcluded()
-        {
-            assertEquals(requiredPlus("D", "ExtTwo", "C"), filter(Set.of("d"), Set.of("developertools"), _externalModulesDir));
+            for (Case c : List.of(
+                new Case("no include or exclude", Set.of(), Set.of(), true, allModuleNamesExcept()),
+                // Without "include" there's no dependency walk, so B stays even though only A needs it
+                new Case("exclude only", Set.of(), Set.of("a"), true, allModuleNamesExcept("A")),
+                // Lowercase "a" also verifies case-insensitive matching
+                new Case("include adds required and transitive dependencies", Set.of("a"), Set.of(), false, requiredPlus("A", "B", "C")),
+                new Case("include missing module", Set.of("a", "nonexistent"), Set.of(), false, requiredPlus("A", "B", "C")),
+                // Y is reachable only through excluded X
+                new Case("exclude dependency", Set.of("e"), Set.of("X"), false, requiredPlus("E")),
+                // DeveloperTools matches by location despite its "devtools" directory; ExtTwo brings in its dependency, C
+                new Case("external modules included", Set.of("d"), Set.of(), true, requiredPlus("D", "DeveloperTools", "ExtTwo", "C")),
+                new Case("external module excluded", Set.of("d"), Set.of("developertools"), true, requiredPlus("D", "ExtTwo", "C"))))
+                assertEquals(c.name(), c.expected(), filter(c.include(), c.exclude(), c.withExternalDir() ? _externalModulesDir : null));
         }
 
         @Test

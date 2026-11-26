@@ -19,9 +19,9 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -148,18 +148,18 @@ public class DatasetLsidImportHelper
 
     public final static class TestCase extends Assert
     {
-        private StudyImpl _visitStudy;
-        private StudyImpl _dateStudy;
+        private static StudyImpl _visitStudy;
+        private static StudyImpl _dateStudy;
 
-        @Before
-        public void initialize()
+        @BeforeClass
+        public static void initialize()
         {
             // create studies
             _visitStudy = createStudy(TimepointType.VISIT, "Visit Study");
             _dateStudy = createStudy(TimepointType.DATE, "Date Study");
         }
 
-        private StudyImpl createStudy(TimepointType timepointType, String name)
+        private static StudyImpl createStudy(TimepointType timepointType, String name)
         {
             TestContext context = TestContext.get();
             Container c = ContainerManager.createContainer(JunitUtil.getTestContainer(), GUID.makeHash(), context.getUser());
@@ -170,10 +170,13 @@ public class DatasetLsidImportHelper
             return StudyManager.getInstance().createTestStudy(context.getUser(), study);
         }
 
-        @After
-        public void tearDown()
+        @AfterClass
+        public static void tearDown()
         {
             JunitUtil.deleteTestContainer();
+            // MemTracker reports studies still referenced after their container is deleted as leaks
+            _visitStudy = null;
+            _dateStudy = null;
         }
 
         @Test

@@ -75,6 +75,7 @@ import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryUpdateServiceTestUtil;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -109,6 +110,7 @@ import org.labkey.list.view.ListItemAttachmentParent;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1312,7 +1314,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         static int auditCount(ListDefinition list, Container c, User user, String comment)
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ListAuditProvider.COLUMN_NAME_LIST_ID), list.getListId());
-            filter.addCondition(FieldKey.fromParts("Comment"), comment);
+            filter.addCondition(FieldKey.fromParts(AbstractAuditTypeProvider.COLUMN_NAME_COMMENT), comment);
 
             return AuditLogService.get().getAuditEvents(c, user, ListManager.LIST_AUDIT_EVENT, filter, null).size();
         }
@@ -1694,10 +1696,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             List<Map<String, Object>> rows = keys.stream().map(key -> (Map<String, Object>) CaseInsensitiveHashMap.of(KEY_NAME, key, VALUE_FIELD, UPDATED)).toList();
             try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
             {
-                BatchValidationException errors = new BatchValidationException();
-                table.getUpdateService().updateRows(_user, _project, rows, null, errors, null, null);
-                if (errors.hasErrors())
-                    throw errors;
+                QueryUpdateServiceTestUtil.update(table, _user, _project, rows);
                 tx.commit();
             }
         }
@@ -1708,115 +1707,64 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         /** The project row comes first, so a check that ran per batch or per row would already have changed it */
-        private void assertRejected(Container folder, Mutation mutation) throws Exception
+        private void assertRejected(String label, Container folder, Mutation mutation) throws Exception
         {
             Object projectKey = insertRow(_project);
             Object otherKey = insertRow(folder);
 
-            try
-            {
-                mutation.apply(List.of(projectKey, otherKey));
-                fail("expected the change to a row in " + folder.getName() + " to be rejected");
-            }
-            catch (UnauthorizedException expected)
-            {
-                // expected
-            }
+            assertThrows(label + " should be rejected", UnauthorizedException.class, () -> mutation.apply(List.of(projectKey, otherKey)));
 
             for (Object key : List.of(projectKey, otherKey))
             {
                 Map<String, Object> row = selectRow(key);
-                assertNotNull("row " + key + " should remain", row);
-                assertNotEquals("row " + key + " should be unchanged", UPDATED, row.get(VALUE_FIELD));
+                assertNotNull(label + ": row " + key + " should remain", row);
+                assertNotEquals(label + ": row " + key + " should be unchanged", UPDATED, row.get(VALUE_FIELD));
             }
         }
 
+        private enum Op { DELETE, TRIGGER_DELETE, UPDATE }
+
+        /** Each operation, against a read-only folder, an editable subfolder, and rows the narrow filter hides */
         @Test
-        public void deleteRejectsRowsInFolderWithoutDeletePermission() throws Exception
+        public void rejectsChangesToRowsOutsideTheProject() throws Exception
         {
-            assertRejected(_readOnlyFolder, keys -> deleteFromProject(WIDE, keys, null));
+            record Case(Op op, Container folder, ContainerFilter.Type cf) {}
+            List<Case> cases = new ArrayList<>();
+            for (Op op : Op.values())
+            {
+                cases.add(new Case(op, _readOnlyFolder, WIDE));
+                cases.add(new Case(op, _editableFolder, WIDE));
+                cases.add(new Case(op, _editableFolder, NARROW));
+            }
+            cases.add(new Case(Op.DELETE, _unreadableFolder, WIDE));
+
+            for (Case c : cases)
+            {
+                String label = c.op() + " " + c.cf() + " in " + c.folder().getName();
+                DeleteCountingTrigger trigger = c.op() == Op.TRIGGER_DELETE ? new DeleteCountingTrigger() : null;
+                assertRejected(label, c.folder(), keys -> {
+                    if (c.op() == Op.UPDATE)
+                        updateFromProject(c.cf(), keys);
+                    else
+                        deleteFromProject(c.cf(), keys, trigger);
+                });
+                if (trigger != null)
+                    assertEquals(label + ": the check should run before any row reaches the trigger", 0, trigger._deletes.get());
+            }
         }
 
-        @Test
-        public void deleteRejectsRowsInSubfolderWithDeletePermission() throws Exception
-        {
-            assertRejected(_editableFolder, keys -> deleteFromProject(WIDE, keys, null));
-        }
-
-        @Test
-        public void deleteRejectsRowsHiddenByContainerFilter() throws Exception
-        {
-            assertRejected(_editableFolder, keys -> deleteFromProject(NARROW, keys, null));
-        }
-
-        @Test
-        public void deleteRejectsRowsInUnreadableFolder() throws Exception
-        {
-            assertRejected(_unreadableFolder, keys -> deleteFromProject(WIDE, keys, null));
-        }
-
+        /** Both delete paths; the per-row path also hands the row to the trigger */
         @Test
         public void deletesRowsInWorkbook() throws Exception
         {
-            Object key = insertRow(_workbook);
-            deleteFromProject(WIDE, List.of(key), null);
-            assertNull("the workbook row should be gone", selectRow(key));
-        }
-
-        @Test
-        public void triggerPathRejectsRowsInFolderWithoutDeletePermission() throws Exception
-        {
-            DeleteCountingTrigger trigger = new DeleteCountingTrigger();
-
-            assertRejected(_readOnlyFolder, keys -> deleteFromProject(WIDE, keys, trigger));
-            assertEquals("the check should run before any row reaches the trigger", 0, trigger._deletes.get());
-        }
-
-        @Test
-        public void triggerPathRejectsRowsInSubfolderWithDeletePermission() throws Exception
-        {
-            DeleteCountingTrigger trigger = new DeleteCountingTrigger();
-
-            assertRejected(_editableFolder, keys -> deleteFromProject(WIDE, keys, trigger));
-            assertEquals("the check should run before any row reaches the trigger", 0, trigger._deletes.get());
-        }
-
-        @Test
-        public void triggerPathRejectsRowsHiddenByContainerFilter() throws Exception
-        {
-            DeleteCountingTrigger trigger = new DeleteCountingTrigger();
-
-            assertRejected(_editableFolder, keys -> deleteFromProject(NARROW, keys, trigger));
-            assertEquals("the check should run before any row reaches the trigger", 0, trigger._deletes.get());
-        }
-
-        @Test
-        public void triggerPathDeletesRowsInWorkbook() throws Exception
-        {
-            DeleteCountingTrigger trigger = new DeleteCountingTrigger();
-            Object key = insertRow(_workbook);
-
-            deleteFromProject(WIDE, List.of(key), trigger);
-            assertNull("the workbook row should be gone", selectRow(key));
-            assertEquals("expected the per-row path to hand the row to the trigger", 1, trigger._deletes.get());
-        }
-
-        @Test
-        public void updateRejectsRowsInFolderWithoutUpdatePermission() throws Exception
-        {
-            assertRejected(_readOnlyFolder, keys -> updateFromProject(WIDE, keys));
-        }
-
-        @Test
-        public void updateRejectsRowsInSubfolderWithUpdatePermission() throws Exception
-        {
-            assertRejected(_editableFolder, keys -> updateFromProject(WIDE, keys));
-        }
-
-        @Test
-        public void updateRejectsRowsHiddenByContainerFilter() throws Exception
-        {
-            assertRejected(_editableFolder, keys -> updateFromProject(NARROW, keys));
+            for (DeleteCountingTrigger trigger : Arrays.asList(null, new DeleteCountingTrigger()))
+            {
+                Object key = insertRow(_workbook);
+                deleteFromProject(WIDE, List.of(key), trigger);
+                assertNull("the workbook row should be gone", selectRow(key));
+                if (trigger != null)
+                    assertEquals("expected the per-row path to hand the row to the trigger", 1, trigger._deletes.get());
+            }
         }
 
         @Test

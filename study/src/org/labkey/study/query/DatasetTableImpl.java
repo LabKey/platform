@@ -54,6 +54,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
@@ -93,6 +94,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.study.model.ParticipantGroup;
+import org.labkey.api.study.query.PtidObfuscatingDisplayColumn;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
@@ -350,6 +352,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable, Me
 
                     if (pd != null)
                     {
+                        // GH Issue 1928: use the property's current validators rather than the storage column's copy
+                        if (!col.isMvIndicatorColumn())
+                            col.setValidators(PropertyService.get().getPropertyValidators(pd));
+
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
                         {
                             col.setDisplayColumnFactory(colInfo -> {

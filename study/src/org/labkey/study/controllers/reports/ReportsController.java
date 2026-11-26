@@ -74,6 +74,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
@@ -106,6 +107,7 @@ import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
+import org.labkey.study.reports.StudyRReport;
 import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1328,19 +1330,20 @@ public class ReportsController extends BaseStudyController
 
     public static class ContainerScopingTestCase extends AbstractContainerScopingTest
     {
+        // Containers are shared across tests, so report names and keys are unique per call
         @Test
         public void testShowReportRequiresReadPermission() throws Exception
         {
             // ShowReportAction resolves a report by global rowId with getReport(container, rowId) -- container-scoped,
             // but with no owner/policy check. Without the fix a plain container Reader could render another user's
             // PRIVATE report by guessing its rowId. The fix adds the per-report canReadReport() check.
-            Container folder = createContainer("A");
+            Container folder = getSharedContainer("A");
 
             // A PRIVATE report: owned by the admin (descriptor owner set), so only the owner / a site admin may read it.
             Report report = ReportService.get().createReportInstance(QueryReport.TYPE);
-            report.getDescriptor().setReportName("scoping-private-report");
+            report.getDescriptor().setReportName("scoping-private-report-" + GUID.makeGUID());
             report.getDescriptor().setOwner(getAdmin().getUserId());
-            int reportId = ReportService.get().saveReportEx(new DefaultContainerUser(folder, getAdmin()), "scoping-report-key", report).getRowId();
+            int reportId = ReportService.get().saveReportEx(new DefaultContainerUser(folder, getAdmin()), "scoping-report-key-" + GUID.makeGUID(), report).getRowId();
 
             ActionURL url = new ActionURL(ShowReportAction.class, folder).addParameter("reportId", String.valueOf(reportId));
 
@@ -1367,18 +1370,19 @@ public class ReportsController extends BaseStudyController
         @Test
         public void testUpdateCannotConvertToScriptReport() throws Exception
         {
-            Container folder = createContainer("A");
+            Container folder = getSharedContainer("A");
 
+            String name = "grid-to-script-report-" + GUID.makeGUID();
             Report gridReport = ReportService.get().createReportInstance(QueryReport.TYPE);
-            gridReport.getDescriptor().setReportName("grid-to-script-report");
+            gridReport.getDescriptor().setReportName(name);
             int rowId = ReportService.get()
-                    .saveReportEx(new DefaultContainerUser(folder, getAdmin()), "grid-to-script-key", gridReport)
+                    .saveReportEx(new DefaultContainerUser(folder, getAdmin()), name, gridReport)
                     .getRowId();
 
             User editor = createUserInRole(folder, EditorRole.class);
             ActionURL url = new ActionURL(SaveReportViewAction.class, folder)
-                    .addParameter("reportType", "Study.rReport")
-                    .addParameter("label", "grid-to-script-report")
+                    .addParameter("reportType", StudyRReport.TYPE)
+                    .addParameter("label", name)
                     .addParameter("shareReport", "true")
                     .addParameter("params", "reportId=db%3A" + rowId + "&script=print%281%29");
             post(url, editor);
@@ -1395,21 +1399,22 @@ public class ReportsController extends BaseStudyController
          */
         private void assertReportNotStolen(Class<? extends Controller> action, String reportType, Class<? extends Role> attackerRole, boolean shareReport) throws Exception
         {
-            Container attackerFolder = createContainer("A");
-            Container victimFolder = createContainer("B");
+            Container attackerFolder = getSharedContainer("A");
+            Container victimFolder = getSharedContainer("B");
 
             // Shared (no descriptor owner), the case the save path treats as editable by any container Editor.
+            String victimKey = "scoping-victim-key-" + GUID.makeGUID();
             Report victimReport = ReportService.get().createReportInstance(QueryReport.TYPE);
-            victimReport.getDescriptor().setReportName("scoping-victim-report");
+            victimReport.getDescriptor().setReportName("scoping-victim-report-" + GUID.makeGUID());
             int victimRowId = ReportService.get()
-                    .saveReportEx(new DefaultContainerUser(victimFolder, getAdmin()), "scoping-victim-key", victimReport)
+                    .saveReportEx(new DefaultContainerUser(victimFolder, getAdmin()), victimKey, victimReport)
                     .getRowId();
 
             User attacker = createUserInRole(attackerFolder, attackerRole);
 
             ActionURL url = new ActionURL(action, attackerFolder)
                     .addParameter("reportType", reportType)
-                    .addParameter("label", "scoping-stolen-report")
+                    .addParameter("label", "scoping-stolen-report-" + GUID.makeGUID())
                     .addParameter("params", "reportId=db%3A" + victimRowId);
             if (shareReport)
                 url.addParameter("shareReport", "true");
@@ -1425,7 +1430,7 @@ public class ReportsController extends BaseStudyController
             assertEquals("The victim's report was re-homed into a folder the caller controls",
                     victimFolder.getId(), row.getContainerId());
             assertEquals("The victim's report was overwritten by a caller with no permission in its folder",
-                    "scoping-victim-key", row.getReportKey());
+                    victimKey, row.getReportKey());
         }
     }
 

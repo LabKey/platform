@@ -57,17 +57,18 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.UnloggedTableGeneration;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
@@ -80,6 +81,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultValidatorKind;
 import org.labkey.api.exp.property.Domain;
@@ -102,7 +104,6 @@ import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -111,6 +112,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceTestUtil;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -2410,6 +2412,36 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /** Test seam: by sample type LSID, a queue that receives the search indexing persistRows queues */
     static final Map<String, SearchService.TaskIndexingQueue> _testIndexingQueues = new ConcurrentHashMap<>();
 
+    /** Test queue that runs indexing work the moment it's queued, as an idle indexer would, and keeps the documents */
+    static class CollectingIndexingQueue implements SearchService.TaskIndexingQueue
+    {
+        private final Container _container;
+        final List<WebdavResource> docs = Collections.synchronizedList(new ArrayList<>());
+
+        CollectingIndexingQueue(Container container)
+        {
+            _container = container;
+        }
+
+        @Override
+        public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
+        {
+            r.accept(this);
+        }
+
+        @Override
+        public void addResource(@NotNull WebdavResource r)
+        {
+            docs.add(r);
+        }
+
+        @Override
+        public Container getContainer()
+        {
+            return _container;
+        }
+    }
+
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
@@ -2423,53 +2455,40 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             final Container container = getContainer();
             final User user = getUserSchema().getUser();
-            ExperimentServiceImpl expService = ExperimentServiceImpl.get();
             SearchService.TaskIndexingQueue queue = Objects.requireNonNullElseGet(_testIndexingQueues.get(_ss.getLSID()),
                 () -> SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified));
 
             DataIteratorBuilder dib = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, container, user, _ss.getImportAliasesIncludingAliquot())
                 .setFileLinkDirectory(SAMPLE_TYPE_FILE_DIRECTORY_NAME)
                 // LATE_POSTCOMMIT so indexing reads the materialized view after this change's POSTCOMMIT refresh signal
-                .setIndexFunction(searchIndexDataKeys -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
-                        // Built once per commit, not per batch, and shared by every batch's indexing
-                        UserSchema searchSchema = QueryService.get().getUserSchema(User.getSearchUser(), container, SamplesSchema.SCHEMA_SAMPLES);
-                        TableInfo searchTable = searchSchema == null ? null : searchSchema.getTable(_ss.getName());
-                        if (searchTable == null)
-                        {
-                            // Expected only when the sample type was deleted after this commit
-                            _log.debug("Skipping search indexing for sample type {}: no search table in {}", _ss.getName(), container.getPath());
-                            return;
-                        }
-
-                        List<String> lsids = searchIndexDataKeys.lsids();
-                        List<Long> orderedRowIds = searchIndexDataKeys.orderedRowIds();
-
-                        // Issue 51263: order by RowId to reduce deadlock
-                        ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
-                                queue.addRunnable((q) ->
-                                {
-                                    for (ExpMaterialImpl expMaterial : expService.getExpMaterials(sublist))
-                                        expMaterial.index(q, searchTable);
-                                })
-                        );
-
-                        ListUtils.partition(lsids, 100).forEach(sublist ->
-                                queue.addRunnable((q) ->
-                                {
-                                    for (ExpMaterialImpl expMaterial : expService.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(q, searchTable);
-                                })
-                        );
-                    }, DbScope.CommitTaskOption.LATE_POSTCOMMIT)
-                );
+                .setIndexFunction(searchIndexDataKeys ->
+                        propertiesTable.getSchema().getScope().addCommitTask(() ->
+                                queueSearchIndexing(queue, searchIndexDataKeys), DbScope.CommitTaskOption.LATE_POSTCOMMIT));
 
             dib = LoggingDataIterator.wrap(dib);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(dib, container, user, expService.getTinfoMaterialAliasMap(), _ss, true));
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(dib, container, user, ExperimentServiceImpl.get().getTinfoMaterialAliasMap(), _ss, true));
         }
         catch (IOException e)
         {
             throw new UncheckedIOException(e);
         }
+    }
+
+    static void queueSearchIndexing(@NotNull SearchService.TaskIndexingQueue queue, @NotNull ExpDataIterators.SearchIndexDataKeys keys)
+    {
+        queueIndexBatches(queue, RowId, keys.orderedRowIds());
+        queueIndexBatches(queue, LSID, keys.lsids());
+    }
+
+    /** Each batch builds its tables when it runs, since a table built earlier can predate a domain change made while the batch waited */
+    private static void queueIndexBatches(SearchService.TaskIndexingQueue queue, ExpMaterialTable.Column keyColumn, List<?> keys)
+    {
+        ListUtils.partition(keys, SearchService.INDEXING_LIMIT).forEach(sublist -> queue.addRunnable(q -> {
+            // Issue 51263: order by RowId to reduce deadlock
+            List<Material> batch = ExpMaterialImpl.readIndexMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(),
+                    ExpMaterialImpl.INDEX_COLUMNS, new SimpleFilter().addInClause(keyColumn.fieldKey(), sublist), new Sort(RowId.name())));
+            ExpMaterialImpl.indexBatch(q, batch, new HashMap<>());
+        }));
     }
 
     @Override
@@ -2683,7 +2702,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // Drive the targeted update with a watermark equal to the row's own Modified, simulating same-tick capture.
             updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", "boundary")));
             Timestamp rowModified = new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(),
-                    SQLFragment.unsafe("SELECT modified FROM exp.material WHERE rowid = ?").add(root)).getObject(Timestamp.class);
+                    SQLFragment.unsafe("SELECT Modified FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial()).unsafeAppend(" WHERE RowId = ?").add(root)).getObject(Timestamp.class);
             InvalidationCounters counters = getInvalidateCounters(st.getLSID());
             counters.pendingUpdateSince.set(rowModified);
             counters.update.incrementAndGet();
@@ -2826,27 +2845,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          */
         private WebdavResource indexDocument(ExpSampleType st, String name, Callable<?> change) throws Exception
         {
-            List<WebdavResource> docs = Collections.synchronizedList(new ArrayList<>());
-            _testIndexingQueues.put(st.getLSID(), new SearchService.TaskIndexingQueue()
-            {
-                @Override
-                public void addRunnable(@NotNull Consumer<SearchService.TaskIndexingQueue> r)
-                {
-                    r.accept(this);
-                }
-
-                @Override
-                public void addResource(@NotNull WebdavResource r)
-                {
-                    docs.add(r);
-                }
-
-                @Override
-                public Container getContainer()
-                {
-                    return _c;
-                }
-            });
+            CollectingIndexingQueue queue = new CollectingIndexingQueue(_c);
+            _testIndexingQueues.put(st.getLSID(), queue);
 
             try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
             {
@@ -2859,7 +2859,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
 
             String title = "Sample - " + name;
-            return docs.stream()
+            return queue.docs.stream()
                 .filter(doc -> String.valueOf(doc.getProperties().get(SearchService.PROPERTY.title.toString())).startsWith(title))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("persistRows queued no search document for " + name));
@@ -3143,7 +3143,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         private ExpSampleType createSampleType(String name, List<GWTIndex> indices) throws Exception
         {
             List<GWTPropertyDescriptor> props = new ArrayList<>();
-            props.add(new GWTPropertyDescriptor("name", "string"));
+            props.add(SampleTypeTestHelper.nameProperty());
             GWTPropertyDescriptor rootProp = new GWTPropertyDescriptor("rootProp", "string");
             rootProp.setDerivationDataScope(ExpSchema.DerivationDataScopeType.ParentOnly.name()); // -> m_sample join
             props.add(rootProp);
@@ -3155,17 +3155,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         private ExpMaterialTableImpl getSamplesTable(ExpSampleType st)
         {
-            return (ExpMaterialTableImpl) QueryService.get().getUserSchema(_user, _c, SamplesSchema.SCHEMA_NAME).getTable(st.getName());
-        }
-
-        private @NotNull QueryUpdateService getUpdateService(ExpSampleType st)
-        {
-            TableInfo table = getSamplesTable(st);
-            QueryUpdateService service = table.getUpdateService();
-            if (service == null)
-                throw new IllegalArgumentException("No QueryUpdateService found for table " + st.getName());
-
-            return service;
+            return (ExpMaterialTableImpl) SampleTypeTestHelper.getTable(_c, _user, st);
         }
 
         private List<Integer> insertRoots(ExpSampleType st, String... names) throws Exception
@@ -3186,11 +3176,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         private List<Integer> insert(ExpSampleType st, List<Map<String, Object>> rows) throws Exception
         {
-            BatchValidationException errors = new BatchValidationException();
-            List<Map<String, Object>> inserted = getUpdateService(st).insertRows(_user, _c, rows, errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
-
+            List<Map<String, Object>> inserted = SampleTypeTestHelper.insert(_c, _user, st, rows);
             if (inserted == null || inserted.isEmpty())
                 return Collections.emptyList();
 
@@ -3202,23 +3188,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         private void updateRows(ExpSampleType st, List<Map<String, Object>> rows) throws Exception
         {
-            BatchValidationException errors = new BatchValidationException();
-            getUpdateService(st).updateRows(_user, _c, rows, null, errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            SampleTypeTestHelper.update(_c, _user, st, rows);
         }
 
         private void deleteRows(ExpSampleType st, List<Map<String, Object>> keys) throws Exception
         {
-            getUpdateService(st).deleteRows(_user, _c, keys, null, null);
+            QueryUpdateServiceTestUtil.delete(getSamplesTable(st), _user, _c, keys);
         }
 
         private void mergeRows(ExpSampleType st, List<Map<String, Object>> rows) throws Exception
         {
-            BatchValidationException errors = new BatchValidationException();
-            getUpdateService(st).mergeRows(_user, _c, MapDataIterator.of(rows), errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            QueryUpdateServiceTestUtil.merge(getSamplesTable(st), _user, _c, rows);
         }
 
         /**

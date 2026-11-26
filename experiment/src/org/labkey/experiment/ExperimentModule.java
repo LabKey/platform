@@ -138,6 +138,7 @@ import org.labkey.experiment.api.ImportAbortResourceTestCase;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.SampleIndexDocumentTestCase;
 import org.labkey.experiment.api.SampleMergeTestCase;
 import org.labkey.experiment.api.SampleProvidedAmountAuditTestCase;
 import org.labkey.experiment.api.SampleTypeFilterSuggestionProvider;
@@ -1145,6 +1146,7 @@ public class ExperimentModule extends SpringModule
             PropertyServiceImpl.TestCase.class,
             SampleMergeTestCase.class,
             SampleProvidedAmountAuditTestCase.class,
+            SampleIndexDocumentTestCase.class,
             SampleTypeFilterSuggestionProvider.TestCase.class,
             SampleTypeServiceImpl.TestCase.class,
             SpecialCharacterMetricsMaintenanceTask.TestCase.class,

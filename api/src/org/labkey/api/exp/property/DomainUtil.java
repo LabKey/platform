@@ -88,6 +88,8 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.ExperimentMetricArea;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -499,6 +501,7 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+            gwtDomain.setAllowTextChoiceValueRenames(kind.allowTextChoiceValueRenames());
             gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
@@ -518,6 +521,7 @@ public class DomainUtil
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+        gwtDomain.setAllowTextChoiceValueRenames(kind.allowTextChoiceValueRenames());
         gwtDomain.setAllowMultiChoiceProperties(allowMultiChoice(kind));
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
@@ -987,6 +991,12 @@ public class DomainUtil
                     validationException.addError(new SimpleValidationError("Text choice value updates are not supported for multi-choice field: " + p.getName()));
                     return validationException;
                 }
+                if (!kind.allowTextChoiceValueRenames())
+                {
+                    // GitHub Issue 1928
+                    validationException.addError(new SimpleValidationError("Renaming in-use text choice values is not supported for this domain type: " + p.getName()));
+                    return validationException;
+                }
                 textChoiceValueUpdates.put(p, propTextChoiceValueUpdates);
             }
 
@@ -1092,6 +1102,8 @@ public class DomainUtil
                     if (!validationException.getErrors().isEmpty())
                         return validationException;
                 }
+                if (!textChoiceValueUpdates.isEmpty())
+                    SimpleMetricsService.get().increment(ExperimentMetricArea.TEXT_CHOICE, "renames");
 
                 // update indices - add missing and drop those that aren't included in domain info
                 if (kind.allowUniqueConstraintProperties() && update.getIndices() != null)
@@ -1488,9 +1500,11 @@ public class DomainUtil
                     int batchSize = BatchSize.get(ROWS);
                     List<Map<String, Object>> batch = new ArrayList<>(batchSize);
                     Iterator<Map<String, Object>> iter = stream.iterator();
+                    long rowCount = 0;
                     while (iter.hasNext())
                     {
                         Map<String, Object> rsRow = iter.next();
+                        rowCount++;
                         var valueRow = new CaseInsensitiveHashMap<>();
                         for (ColumnInfo col : columns)
                             valueRow.put(col.getName(), col.getValue(rsRow));
@@ -1506,6 +1520,7 @@ public class DomainUtil
                         }
                     }
                     transaction.commit();
+                    SimpleMetricsService.get().increment(ExperimentMetricArea.TEXT_CHOICE, getTextChoiceRenameMetric(rowCount));
                 }
                 catch (Exception e)
                 {
@@ -1513,6 +1528,19 @@ public class DomainUtil
                 }
             }
         }
+    }
+
+    private static String getTextChoiceRenameMetric(long rowCount)
+    {
+        if (rowCount == 0)
+            return "rename0";
+        if (rowCount <= 1_000)
+            return "rename1to1000";
+        if (rowCount <= 10_000)
+            return "rename1001to10000";
+        if (rowCount <= 100_000)
+            return "rename10001to100000";
+        return "renameOver100000";
     }
 
     private static void updateTextChoiceValueBatch(Domain domain, User user, TableInfo domainTable, @Nullable ColumnInfo containerCol, Map<String, TableInfo> containerTables,
@@ -2194,61 +2222,36 @@ public class DomainUtil
             return pd;
         }
 
-        private static GWTDomain<GWTPropertyDescriptor> domain(GWTPropertyDescriptor field)
-        {
-            GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
-            domain.setFields(List.of(field));
-            return domain;
-        }
-
         private static List<String> validate(GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField, DbScope domainScope)
         {
             ValidationException errors = new ValidationException();
-            validateLookupScopes(domain(field), null == origField ? null : domain(origField), domainScope, JunitUtil.getTestContainer(), TestContext.get().getUser(), errors);
+            validateLookupScopes(SystemFieldLabelTestCase.domain(field), null == origField ? null : SystemFieldLabelTestCase.domain(origField), domainScope, JunitUtil.getTestContainer(), TestContext.get().getUser(), errors);
             return errors.getFieldErrors(FIELD_NAME);
         }
 
-        @Test
-        public void sameDataSourceIsAllowed()
-        {
-            assertEquals(List.of(), validate(lookup(0, "core", "Users"), null, DbScope.getLabKeyScope()));
-        }
+        private record Case(String description, GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField, DbScope scope, int expectedErrors) {}
 
         @Test
-        public void newLookupToOtherDataSourceIsRejected()
+        public void testLookupScopes()
         {
+            GWTPropertyDescriptor newUsers = lookup(0, "core", "Users");
+            GWTPropertyDescriptor storedUsers = lookup(PROPERTY_ID, "core", "Users");
+            for (Case c : List.of(
+                new Case("same data source", newUsers, null, DbScope.getLabKeyScope(), 0),
+                // Case-only differences don't count as a change
+                new Case("unchanged lookup", storedUsers, lookup(PROPERTY_ID, "Core", "users"), OTHER_SCOPE, 0),
+                new Case("changed lookup", storedUsers, lookup(PROPERTY_ID, "core", "Containers"), OTHER_SCOPE, 1),
+                new Case("lookup added", storedUsers, lookup(PROPERTY_ID, null, null), OTHER_SCOPE, 1),
+                // New fields arrive with propertyId 0, so they never match an original field and are always validated
+                new Case("new field", newUsers, storedUsers, OTHER_SCOPE, 1),
+                new Case("no query", lookup(0, "core", null), null, OTHER_SCOPE, 0),
+                // Some UIs (e.g. SND's package editor) send "" for fields without a lookup
+                new Case("empty lookup", lookup(0, "", ""), null, OTHER_SCOPE, 0),
+                new Case("unresolvable schema", lookup(0, "noSuchSchema", "Users"), null, OTHER_SCOPE, 0)))
+                assertEquals(c.description(), c.expectedErrors(), validate(c.field(), c.origField(), c.scope()).size());
+
             assertEquals(List.of("Field '" + FIELD_NAME + "' can't look up 'core.Users' because it is in a different data source."),
-                    validate(lookup(0, "core", "Users"), null, OTHER_SCOPE));
-        }
-
-        @Test
-        public void unchangedLookupToOtherDataSourceIsAllowed()
-        {
-            // Case-only differences don't count as a change
-            assertEquals(List.of(), validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, "Core", "users"), OTHER_SCOPE));
-        }
-
-        @Test
-        public void changedLookupToOtherDataSourceIsRejected()
-        {
-            assertEquals(1, validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, "core", "Containers"), OTHER_SCOPE).size());
-            assertEquals(1, validate(lookup(PROPERTY_ID, "core", "Users"), lookup(PROPERTY_ID, null, null), OTHER_SCOPE).size());
-        }
-
-        @Test
-        public void newFieldIsNotMatchedToAnExistingField()
-        {
-            // New fields arrive with propertyId 0, so they never match an original field and are always validated
-            assertEquals(1, validate(lookup(0, "core", "Users"), lookup(PROPERTY_ID, "core", "Users"), OTHER_SCOPE).size());
-        }
-
-        @Test
-        public void incompleteOrUnresolvableLookupIsSkipped()
-        {
-            assertEquals(List.of(), validate(lookup(0, "core", null), null, OTHER_SCOPE));
-            // Some UIs (e.g. SND's package editor) send "" for fields without a lookup
-            assertEquals(List.of(), validate(lookup(0, "", ""), null, OTHER_SCOPE));
-            assertEquals(List.of(), validate(lookup(0, "noSuchSchema", "Users"), null, OTHER_SCOPE));
+                    validate(newUsers, null, OTHER_SCOPE));
         }
     }
 }

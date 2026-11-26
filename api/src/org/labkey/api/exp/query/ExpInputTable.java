@@ -17,13 +17,14 @@ package org.labkey.api.exp.query;
 
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.query.EnumFieldKey;
 
 /**
  * Base table type for usages of data or materials in runs 
  * User: jeckels
  * Date: Jan 5, 2010
  */
-public interface ExpInputTable<C extends Enum> extends ExpTable<C>
+public interface ExpInputTable<C extends Enum<C> & EnumFieldKey> extends ExpTable<C>
 {
     void setRun(ExpRun run, ExpProtocol.ApplicationType type);
 }

@@ -18,7 +18,7 @@ package org.labkey.experiment.api;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -51,8 +51,8 @@ public class ExperimentStressTest
 {
     private static final Logger LOG = LogManager.getLogger(ExperimentStressTest.class);
 
-    @Before
-    public void setup()
+    @BeforeClass
+    public static void setup()
     {
         Container junit = ContainerManager.getForPath(JunitUtil.getTestContainerPath());
         if (junit != null)
@@ -216,7 +216,7 @@ public class ExperimentStressTest
 
             try
             {
-                Thread.sleep(randomInt(10) * 200);
+                Thread.sleep(randomInt(10) * 20L);
                 insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert, mode == RunMode.withaliquot);
             }
             catch (Exception e)

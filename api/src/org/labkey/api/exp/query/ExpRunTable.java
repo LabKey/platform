@@ -22,12 +22,13 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.query.EnumFieldKey;
 
 import java.util.Collection;
 
 public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         RowId,
         ProtocolStep,

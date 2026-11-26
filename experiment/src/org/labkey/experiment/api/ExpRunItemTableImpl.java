@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.EnumFieldKey;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -62,7 +63,7 @@ import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
 
-public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C> implements UpdateableTableInfo
+public abstract class ExpRunItemTableImpl<C extends Enum<C> & EnumFieldKey> extends ExpTableImpl<C> implements UpdateableTableInfo
 {
     public static final String ALIAS_CONCEPT_URI = "http://www.labkey.org/exp/xml#alias";
     private final Class<C> _columns;

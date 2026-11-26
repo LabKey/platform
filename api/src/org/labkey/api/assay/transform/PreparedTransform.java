@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.junit.After;
@@ -335,7 +336,7 @@ public class PreparedTransform implements AutoCloseable
 
         private static List<FileSystemAuditProvider.FileSystemAuditEvent> selectEvents(String comment)
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Comment"), comment);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AbstractAuditTypeProvider.COLUMN_NAME_COMMENT), comment);
             return AuditLogService.get().getAuditEvents(JunitUtil.getTestContainer(), TestContext.get().getUser(), FileSystemAuditProvider.EVENT_TYPE, filter, null);
         }
     }

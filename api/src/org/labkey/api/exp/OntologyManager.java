@@ -3382,6 +3382,13 @@ public class OntologyManager
     @TestTimeout(120)
     public static class TestCase extends Assert
     {
+        private static void deletePropertyDescriptorIfExists(String propertyURI, Container c)
+        {
+            PropertyDescriptor pd = getPropertyDescriptor(propertyURI, c);
+            if (pd != null)
+                deletePropertyDescriptor(pd);
+        }
+
         @Test
         public void testSchema()
         {
@@ -3728,9 +3735,7 @@ public class OntologyManager
             finally
             {
                 deleteOntologyObjects(c, parentObjectLsid);
-                PropertyDescriptor pd = getPropertyDescriptor(intProp, c);
-                if (pd != null)
-                    deletePropertyDescriptor(pd);
+                deletePropertyDescriptorIfExists(intProp, c);
             }
         }
 
@@ -3783,9 +3788,7 @@ public class OntologyManager
             {
                 deleteOntologyObjects(c1, lsid1);
                 ContainerManager.delete(c2, user);
-                PropertyDescriptor pd = getPropertyDescriptor(intProp, c1);
-                if (pd != null)
-                    deletePropertyDescriptor(pd);
+                deletePropertyDescriptorIfExists(intProp, c1);
             }
         }
 
@@ -3833,9 +3836,7 @@ public class OntologyManager
             {
                 deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql);
                 ContainerManager.delete(c2, user);
-                PropertyDescriptor pd = getPropertyDescriptor(intProp, c1);
-                if (pd != null)
-                    deletePropertyDescriptor(pd);
+                deletePropertyDescriptorIfExists(intProp, c1);
             }
         }
 
@@ -3891,9 +3892,7 @@ public class OntologyManager
                 deleteOntologyObjectsByObjectIdSql(getExpSchema(), bulkIdSql);
                 ContainerManager.delete(c2, user);
                 ContainerManager.delete(c3, user);
-                PropertyDescriptor pd = getPropertyDescriptor(intProp, c1);
-                if (pd != null)
-                    deletePropertyDescriptor(pd);
+                deletePropertyDescriptorIfExists(intProp, c1);
             }
         }
 

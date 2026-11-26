@@ -34,6 +34,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -71,9 +72,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -405,15 +404,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Allow unprovisioned, query-based dataset snapshots to be created.",
             false);
 
-        if (SpecimenService.get() == null)
-        {
-            OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SpecimenManager.VIEW_SPECIMEN_TABLES_FLAG,
-                "Show read-only specimen tables in the study schema",
-                "Provides a read-only view of specimen data when the specimen module is not present.",
-                false, false, OptionalFeatureService.FeatureType.Optional
-            ));
-        }
-
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
@@ -451,6 +441,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
                 metrics.put("datasetsLinkedFromAssays", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class), "Datasets linked from assay results; same value as linkedAssayDatasetCount");
                 metrics.put("datasetsLinkedFromSamples", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class), "Datasets linked from sample types; same value as linkedSampleTypeDatasetCount");
+
+                // Counted here, not in the specimen module, to find servers that hold specimen data without deploying that module
+                SQLFragment specimenVials = new SQLFragment("FROM exp.Material WHERE CpasType = ? OR CpasType IN (SELECT LSID FROM exp.MaterialSource WHERE Name = ?)",
+                    StudyService.SPECIMEN_NAMESPACE_PREFIX, SpecimenService.SAMPLE_TYPE_NAME);
+                metrics.put("specimenContainerCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT COUNT(DISTINCT Container) ").append(specimenVials)).getObject(Long.class), "Containers holding imported specimen vials, whether or not the specimen module is deployed");
+                metrics.put("specimenVialCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT COUNT(*) ").append(specimenVials)).getObject(Long.class), "Imported specimen vials across the server, whether or not the specimen module is deployed");
 
                 metrics.put("assayScheduleCount", () -> new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT container) FROM study.AssaySpecimen").getObject(Long.class), "Containers with at least one assay schedule entry");
 
@@ -840,7 +836,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             List<String> metricNames = List.of(
                 "studyCount",
                 "datasetCount",
-                "timepointType"
+                "timepointType",
+                "specimenContainerCount",
+                "specimenVialCount"
             );
             assertTrue("Mothership report missing expected metrics",
                     UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.ON, MODULE_NAME)

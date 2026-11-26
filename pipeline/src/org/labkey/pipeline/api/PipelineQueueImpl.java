@@ -305,7 +305,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         @Override
         public void run()
         {
-            long til = System.currentTimeMillis() + 1000;
+            long til = System.currentTimeMillis() + 100;
             double[] a = new double[10000];
             while (til > System.currentTimeMillis())
             {

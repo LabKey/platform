@@ -41,6 +41,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.EnumFieldKey;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertiesDisplayColumn;
@@ -66,7 +67,7 @@ import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-abstract public class ExpTableImpl<C extends Enum>
+abstract public class ExpTableImpl<C extends Enum<C> & EnumFieldKey>
         extends FilteredTable<UserSchema>
         implements ExpTable<C>
 {

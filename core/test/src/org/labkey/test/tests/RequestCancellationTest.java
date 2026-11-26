@@ -21,10 +21,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.query.ExecuteSqlCommand;
 import org.labkey.remoteapi.query.Filter;
 import org.labkey.remoteapi.query.SelectRowsCommand;
-import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestProperties;
 import org.labkey.test.WebTestHelper;
@@ -33,19 +31,20 @@ import org.labkey.test.components.ext4.Window;
 import org.labkey.test.util.ArtifactCollector;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.OptionalFeatureHelper;
-import org.labkey.test.util.core.admin.ServerUsageUtils;
+import org.labkey.test.util.RequestCancellationHelper;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
+import static org.labkey.test.util.RequestCancellationHelper.WS_CLOSE;
+import static org.labkey.test.util.RequestCancellationHelper.WS_MESSAGE;
 
 /**
  * Checks that an abandoned read-only request is canceled on the server end to end: the page tags the request, sends
@@ -59,11 +58,10 @@ public class RequestCancellationTest extends BaseWebDriverTest
     private static final String SLOW_NAMES_SQL = "SELECT a.Name, COUNT(*) AS n FROM core.Modules a, core.Modules b, core.Modules c, core.Modules d, core.Modules e, core.Modules f GROUP BY a.Name";
     private static final String SLOW_STATS = "SlowStats";
     private static final double SLOW_STATS_ROWS = 3e7;
-    private static final int METRICS_TIMEOUT = 180_000;
     private static final int CANCEL_EXIT_TIMEOUT = 30_000;
-    private static final String WS_MESSAGE = "wsMessage";
-    private static final String WS_CLOSE = "wsClose";
     private static final String FEATURE_DISABLE_CANCELLING = "disableCancelAbandonedRequests";
+
+    private final RequestCancellationHelper _cancels = new RequestCancellationHelper(this);
 
     @BeforeClass
     public static void setupProject() throws Exception
@@ -81,22 +79,17 @@ public class RequestCancellationTest extends BaseWebDriverTest
      */
     private String getSlowStatsSql() throws IOException, CommandException
     {
-        SelectRowsResponse response = new ExecuteSqlCommand("core", "SELECT Name FROM core.Modules ORDER BY Name")
-            .execute(createDefaultConnection(), getProjectName());
-        List<String> names = response.getRows().stream().map(row -> (String) row.get("Name")).toList();
+        List<String> names = _cancels.getModuleNames(getProjectName());
         int modules = names.size();
         // Val needs three of them
         int joins = Math.max(3, (int) Math.ceil(Math.log(SLOW_STATS_ROWS) / Math.log(modules)));
         int lastJoinModules = (int) Math.min(modules, Math.ceil(SLOW_STATS_ROWS / Math.pow(modules, joins - 1)));
 
-        String from = IntStream.range(0, joins)
-            .mapToObj(i -> "core.Modules m" + i)
-            .collect(Collectors.joining(", "));
         String lastJoinNames = names.subList(0, lastJoinModules).stream()
             .map(name -> "'" + name.replace("'", "''") + "'")
             .collect(Collectors.joining(", "));
         return "SELECT m0.Name AS A, m1.Name AS B, CAST(LENGTH(m0.Name) * 10000 + LENGTH(m1.Name) * 100 + LENGTH(m2.Name) AS DOUBLE) AS Val" +
-            " FROM " + from + " WHERE m" + (joins - 1) + ".Name IN (" + lastJoinNames + ")";
+            " FROM " + RequestCancellationHelper.crossJoinModules(joins) + " WHERE m" + (joins - 1) + ".Name IN (" + lastJoinNames + ")";
     }
 
     @Before
@@ -104,7 +97,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
     {
         goToProjectHome();
         assertTrue("Cancelling abandoned requests is disabled", isCancellingEnabledOnPage());
-        waitForWebSocket();
+        _cancels.waitForWebSocket();
     }
 
     @Test
@@ -124,34 +117,34 @@ public class RequestCancellationTest extends BaseWebDriverTest
     @Test
     public void testClosingSummaryStatisticsCancelsItsQuery() throws Exception
     {
-        long before = getCancelCount(WS_MESSAGE);
+        long before = _cancels.getCancelCount(WS_MESSAGE);
 
         beginAt(WebTestHelper.buildURL("query", getProjectName(), "executeQuery", Map.of("schemaName", "core", "query.queryName", SLOW_STATS)));
-        waitForWebSocket();
+        _cancels.waitForWebSocket();
         DataRegionTable.DataRegion(getDriver()).withName("query").waitFor().clickColumnMenu("Val", false, "Summary Statistics...");
         sleep(2000); // Let the server start the stats query before the dialog closes
         // SummaryStatisticsDialog waits for the stats, which never arrive
         new Window<>("Summary Statistics", getDriver()).clickButton("Cancel", true);
 
         waitForSlowQueriesToStop();
-        waitForCancelCount(WS_MESSAGE, before + 1);
+        _cancels.waitForCancelCount(WS_MESSAGE, before + 1);
     }
 
     @Test
     public void testClosedTabCancelsItsRequests() throws Exception
     {
-        long before = getCancelCount(WS_CLOSE);
+        long before = _cancels.getCancelCount(WS_CLOSE);
 
         doInNewTab(() -> {
             goToProjectHome();
-            waitForWebSocket();
+            _cancels.waitForWebSocket();
             assertTrue("Request wasn't tagged as cancellable", startSlowRequest("executeSql", Map.of("schemaName", "core", "sql", SLOW_SQL)));
             sleep(2000); // Let the server start the request before the tab closes
             return null;
         });
 
         waitForSlowQueriesToStop();
-        waitForCancelCount(WS_CLOSE, before + 1);
+        _cancels.waitForCancelCount(WS_CLOSE, before + 1);
     }
 
     @Test
@@ -177,7 +170,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
 
     private void abortSlowRequest(String apiFunction, Map<String, Object> config) throws Exception
     {
-        long before = getCancelCount(WS_MESSAGE);
+        long before = _cancels.getCancelCount(WS_MESSAGE);
 
         assertTrue("Request wasn't tagged as cancellable", startSlowRequest(apiFunction, config));
         sleep(2000); // Let the server start the request before the cancel arrives
@@ -186,7 +179,7 @@ public class RequestCancellationTest extends BaseWebDriverTest
         waitForEquals("Wrong request outcome", () -> "aborted",
             () -> executeScript("return window.requestCancelTest.outcome;"), WAIT_FOR_JAVASCRIPT);
         waitForSlowQueriesToStop();
-        waitForCancelCount(WS_MESSAGE, before + 1);
+        _cancels.waitForCancelCount(WS_MESSAGE, before + 1);
     }
 
     /** The cancel count only shows a cancel was sent, not that the query stopped */
@@ -228,12 +221,6 @@ public class RequestCancellationTest extends BaseWebDriverTest
         return (Boolean) executeScript("return LABKEY.experimental.cancelAbandonedRequests === true;");
     }
 
-    private void waitForWebSocket()
-    {
-        // The server ignores any message type but "cancel"
-        waitFor(() -> (Boolean) executeScript("return LABKEY.WebSocket.send({ type: 'ping' });"), "The notification WebSocket didn't open", WAIT_FOR_JAVASCRIPT);
-    }
-
     /**
      * Starts a request through a LABKEY.Query function that is cancellable by default, abortable through
      * window.requestCancelTest.controller
@@ -250,36 +237,6 @@ public class RequestCancellationTest extends BaseWebDriverTest
             }, arguments[1]));
             return LABKEY.Ajax.getCancellableRequests().includes(xhr);
             """, apiFunction, config);
-    }
-
-    /** At least, since the counter is server-wide and other cancels can land meanwhile */
-    private void waitForCancelCount(String metric, long minimum)
-    {
-        waitFor(() -> getCancelCountUnchecked(metric) >= minimum, "Requests canceled (" + metric + ") never reached " + minimum, METRICS_TIMEOUT);
-    }
-
-    private long getCancelCountUnchecked(String metric)
-    {
-        try
-        {
-            return getCancelCount(metric);
-        }
-        catch (IOException | CommandException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /** Server-wide count of requests canceled from one source, e.g. a page's WebSocket message, from Core's usage metrics */
-    @SuppressWarnings("unchecked")
-    private long getCancelCount(String metric) throws IOException, CommandException
-    {
-        // The usage report gathers every module's metrics, which can take over a minute on a large database
-        Connection connection = createDefaultConnection().setTimeout(METRICS_TIMEOUT);
-        Map<String, Object> core = ServerUsageUtils.getModuleMetrics(connection, "Core");
-        Map<String, Object> counts = (Map<String, Object>) core.getOrDefault("simpleMetricCounts", Map.of());
-        Map<String, Object> requestCancel = (Map<String, Object>) counts.getOrDefault("requestCancel", Map.of());
-        return ((Number) requestCancel.getOrDefault(metric, 0)).longValue();
     }
 
     @Override

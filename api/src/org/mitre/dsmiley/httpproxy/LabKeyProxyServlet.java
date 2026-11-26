@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
@@ -248,89 +249,53 @@ public class LabKeyProxyServlet extends ProxyServlet
         private static final String ASSERTED_HEADER = "X-Proxy-Asserted";
 
         /** Every header on the forwarded request, so a stray passthrough under another name fails the test. */
-        private List<String> forwarded(BasicHttpRequest proxyRequest)
+        private List<String> forward(Consumer<MockHttpServletRequest> setup)
         {
+            MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+            setup.accept(servletRequest);
+            BasicHttpRequest proxyRequest = new BasicHttpRequest("GET", "/");
+            new LabKeyProxyServlet().copyRequestHeaders(servletRequest, proxyRequest);
             return Arrays.stream(proxyRequest.getHeaders()).map(h -> h.getName() + "=" + h.getValue()).toList();
         }
 
-        private List<String> forward(@Nullable String clientHeaderName, @Nullable String assertedValue)
+        private static Consumer<MockHttpServletRequest> clientSends(String name, @Nullable String assertedValue)
         {
-            MockHttpServletRequest servletRequest = new MockHttpServletRequest();
-            if (null != clientHeaderName)
-                servletRequest.addHeader(clientHeaderName, "fromClient");
-            if (null != assertedValue)
-                assertHeader(servletRequest, ASSERTED_HEADER, assertedValue);
-
-            BasicHttpRequest proxyRequest = new BasicHttpRequest("GET", "/");
-            new LabKeyProxyServlet().copyRequestHeaders(servletRequest, proxyRequest);
-
-            return forwarded(proxyRequest);
+            return r -> {
+                r.addHeader(name, "fromClient");
+                assertHeader(r, ASSERTED_HEADER, assertedValue);
+            };
         }
 
-        @Test
-        public void testAssertedHeaderReplacesClientCopy()
-        {
-            assertEquals(List.of(ASSERTED_HEADER + "=fromProxy"), forward(ASSERTED_HEADER, "fromProxy"));
-        }
+        private record Case(String name, Consumer<MockHttpServletRequest> setup, List<String> expected) {}
 
         @Test
-        public void testAssertedHeaderReplacesClientCopyRegardlessOfCase()
+        public void testCopyRequestHeaders()
         {
-            assertEquals(List.of(ASSERTED_HEADER + "=fromProxy"), forward(ASSERTED_HEADER.toLowerCase(), "fromProxy"));
-            assertEquals(List.of(ASSERTED_HEADER + "=fromProxy"), forward(ASSERTED_HEADER.toUpperCase(), "fromProxy"));
-        }
-
-        @Test
-        public void testAssertedHeaderForwardedWhenClientSentNone()
-        {
-            assertEquals(List.of(ASSERTED_HEADER + "=fromProxy"), forward(null, "fromProxy"));
-        }
-
-        @Test
-        public void testClientCopyForwardedWhenNothingAsserted()
-        {
-            assertEquals(List.of(ASSERTED_HEADER + "=fromClient"), forward(ASSERTED_HEADER, null));
-        }
-
-        @Test
-        public void testNullAssertedValueStripsClientCopy()
-        {
-            MockHttpServletRequest servletRequest = new MockHttpServletRequest();
-            servletRequest.addHeader(ASSERTED_HEADER, "fromClient");
-            assertHeader(servletRequest, ASSERTED_HEADER, null);
-
-            BasicHttpRequest proxyRequest = new BasicHttpRequest("GET", "/");
-            new LabKeyProxyServlet().copyRequestHeaders(servletRequest, proxyRequest);
-
-            assertEquals(List.of(), forwarded(proxyRequest));
+            List<String> fromProxy = List.of(ASSERTED_HEADER + "=fromProxy");
+            for (Case c : List.of(
+                new Case("asserted replaces client copy", clientSends(ASSERTED_HEADER, "fromProxy"), fromProxy),
+                new Case("asserted replaces lowercase client copy", clientSends(ASSERTED_HEADER.toLowerCase(), "fromProxy"), fromProxy),
+                new Case("asserted replaces uppercase client copy", clientSends(ASSERTED_HEADER.toUpperCase(), "fromProxy"), fromProxy),
+                new Case("asserted forwarded when client sent none", r -> assertHeader(r, ASSERTED_HEADER, "fromProxy"), fromProxy),
+                new Case("client copy forwarded when nothing asserted", r -> r.addHeader(ASSERTED_HEADER, "fromClient"), List.of(ASSERTED_HEADER + "=fromClient")),
+                new Case("null asserted value strips client copy", clientSends(ASSERTED_HEADER, null), List.of()),
+                new Case("other headers untouched", r -> {
+                    r.addHeader("Accept", "text/html");
+                    r.addHeader("Accept", "text/plain");
+                    assertHeader(r, ASSERTED_HEADER, "fromProxy");
+                }, List.of("Accept=text/html", "Accept=text/plain", ASSERTED_HEADER + "=fromProxy"))))
+                assertEquals(c.name(), c.expected(), forward(c.setup()));
         }
 
         @Test
         public void testLaterAssertionWinsRegardlessOfCase()
         {
-            MockHttpServletRequest servletRequest = new MockHttpServletRequest();
-            assertHeader(servletRequest, ASSERTED_HEADER, "first");
-            assertHeader(servletRequest, ASSERTED_HEADER.toLowerCase(), "second");
-
-            BasicHttpRequest proxyRequest = new BasicHttpRequest("GET", "/");
-            new LabKeyProxyServlet().copyRequestHeaders(servletRequest, proxyRequest);
-
-            assertEquals(1, proxyRequest.getHeaders(ASSERTED_HEADER).length);
-            assertEquals("second", proxyRequest.getHeaders(ASSERTED_HEADER)[0].getValue());
-        }
-
-        @Test
-        public void testOtherHeadersUntouched()
-        {
-            MockHttpServletRequest servletRequest = new MockHttpServletRequest();
-            servletRequest.addHeader("Accept", "text/html");
-            servletRequest.addHeader("Accept", "text/plain");
-            assertHeader(servletRequest, ASSERTED_HEADER, "fromProxy");
-
-            BasicHttpRequest proxyRequest = new BasicHttpRequest("GET", "/");
-            new LabKeyProxyServlet().copyRequestHeaders(servletRequest, proxyRequest);
-
-            assertEquals(List.of("Accept=text/html", "Accept=text/plain", ASSERTED_HEADER + "=fromProxy"), forwarded(proxyRequest));
+            List<String> forwarded = forward(r -> {
+                assertHeader(r, ASSERTED_HEADER, "first");
+                assertHeader(r, ASSERTED_HEADER.toLowerCase(), "second");
+            });
+            // Header names are case-insensitive; values are not
+            assertEquals(List.of(ASSERTED_HEADER.toLowerCase() + "=second"), forwarded.stream().map(h -> h.substring(0, h.indexOf('=')).toLowerCase() + h.substring(h.indexOf('='))).toList());
         }
     }
 }

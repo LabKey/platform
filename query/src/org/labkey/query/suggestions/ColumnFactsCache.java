@@ -42,14 +42,18 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SampleTypeTestHelper;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateServiceTestUtil;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.suggestions.FilterSuggestionContext;
+import org.labkey.api.query.suggestions.FilterSuggestionTestContext;
 import org.labkey.api.query.suggestions.SuggestionColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -89,6 +93,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -760,8 +765,7 @@ public class ColumnFactsCache
             _c = JunitUtil.getTestContainer();
             _user = TestContext.get().getUser();
 
-            List<GWTPropertyDescriptor> props = List.of(
-                new GWTPropertyDescriptor("name", PropertyType.STRING.getTypeUri()),
+            ExpSampleType sampleType = SampleTypeTestHelper.create(_c, _user, SAMPLE_TYPE,
                 new GWTPropertyDescriptor("color", PropertyType.STRING.getTypeUri()),
                 new GWTPropertyDescriptor("thawCount", PropertyType.INTEGER.getTypeUri()),
                 new GWTPropertyDescriptor("concentration", PropertyType.DOUBLE.getTypeUri()),
@@ -769,7 +773,6 @@ public class ColumnFactsCache
                 new GWTPropertyDescriptor("subject", PropertyType.STRING.getTypeUri()),
                 calculated("viewer", PropertyType.STRING, "USERNAME()")
             );
-            ExpSampleType sampleType = SampleTypeService.get().createSampleType(_c, _user, SAMPLE_TYPE, null, props, List.of(), -1, -1, -1, -1, null, null, null, null, null, null);
 
             List<String> colors = List.of("red", "green", "blue");
             List<Map<String, Object>> rows = new ArrayList<>();
@@ -784,10 +787,7 @@ public class ColumnFactsCache
                 row.put("subject", String.format("SUBJ-%06d", i));
                 rows.add(row);
             }
-            BatchValidationException errors = new BatchValidationException();
-            Objects.requireNonNull(getTable(sampleType.getName()).getUpdateService()).insertRows(_user, _c, rows, errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            SampleTypeTestHelper.insert(_c, _user, sampleType, rows);
         }
 
         @AfterClass
@@ -821,38 +821,13 @@ public class ColumnFactsCache
 
         private static TableInfo getTable(String name)
         {
-            return Objects.requireNonNull(QueryService.get().getUserSchema(_user, _c, SamplesSchema.SCHEMA_NAME).getTable(name));
+            return QueryUpdateServiceTestUtil.getTable(_user, _c, SamplesSchema.SCHEMA_SAMPLES, name);
         }
 
         private static FilterSuggestionContext context(TableInfo table, User user)
         {
-            return new FilterSuggestionContext()
-            {
-                @Override
-                public @NotNull TableInfo getTable()
-                {
-                    return table;
-                }
-
-                @Override
-                public @NotNull ContainerFilter getContainerFilter()
-                {
-                    // The table's filter for every user, so only the user can differ between contexts
-                    return Objects.requireNonNullElseGet(table.getContainerFilter(), () -> ContainerFilter.current(_c, _user));
-                }
-
-                @Override
-                public @NotNull Container getContainer()
-                {
-                    return _c;
-                }
-
-                @Override
-                public @NotNull User getUser()
-                {
-                    return user;
-                }
-            };
+            // The table's filter for every user, so only the user can differ between contexts
+            return new FilterSuggestionTestContext(table, Objects.requireNonNullElseGet(table.getContainerFilter(), () -> ContainerFilter.current(_c, _user)), _c, user);
         }
 
         private static Map<String, SuggestionColumn> byFieldKey(FilterSuggestionColumns.Described described)
@@ -958,6 +933,42 @@ public class ColumnFactsCache
             ColumnInfo name = Objects.requireNonNull(table.getColumn("Name"));
             Map<FieldKey, ColumnFact.Shapes> shapes = new ColumnFactsLoader().loadShapes(table, List.of(name), Map.of(), null);
             assertEquals(List.of("A-999"), shapes.get(name.getFieldKey()).shapes());
+        }
+
+        @Test
+        public void testParallelLoadsShareQueryTable() throws Throwable
+        {
+            QueryDefinition query = QueryService.get().createQueryDef(_user, _c, SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME), GUID.makeHash());
+            query.setSql("PARAMETERS (MinThaw INTEGER DEFAULT 0) SELECT " + String.join(", ", FIELD_KEYS) + " FROM " + SAMPLE_TYPE + " WHERE thawCount >= MinThaw");
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo table = query.getTable(errors, false);
+            if (!errors.isEmpty())
+                throw errors.getFirst();
+            assertNotNull(table);
+            List<ColumnInfo> columns = FIELD_KEYS.stream().map(fieldKey -> Objects.requireNonNull(table.getColumn(fieldKey), fieldKey)).toList();
+
+            record Load(String name, Supplier<Object> run) {}
+            ColumnFactsLoader loader = new ColumnFactsLoader();
+            Map<String, Object> parameters = Map.of("MinThaw", 0);
+            List<Load> loads = new ArrayList<>();
+            for (ColumnInfo column : columns)
+            {
+                loads.add(new Load("values of " + column.getName(), () -> {
+                    List<String> values = loader.loadValues(table, column, SuggestionColumn.Type.STRING, parameters, null).values();
+                    return values == null ? null : Set.copyOf(values);
+                }));
+                StatsRequest request = new StatsRequest(column, !column.getJdbcType().isText(), true);
+                loads.add(new Load("stats of " + column.getName(), () -> loader.loadStats(table, parameters, null, List.of(request)).get(column.getFieldKey())));
+                loads.add(new Load("shapes of " + column.getName(), () -> loader.loadShapes(table, List.of(column), parameters, null).get(column.getFieldKey())));
+            }
+            List<Object> expected = loads.stream().map(load -> load.run().get()).toList();
+
+            // Generating a query's SQL prunes its shared select list, so unlocked loads read each other's columns
+            AtomicInteger next = new AtomicInteger();
+            JunitUtil.createRaces(() -> {
+                int i = next.getAndIncrement() % loads.size();
+                assertEquals(loads.get(i).name(), expected.get(i), loads.get(i).run().get());
+            }, loads.size(), 50, 60);
         }
 
         @Test
@@ -1097,7 +1108,7 @@ public class ColumnFactsCache
         @Test
         public void testBudget() throws Exception
         {
-            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(2_000));
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(500));
             TableInfo table = getTable(SAMPLE_TYPE);
 
             long start = System.currentTimeMillis();
