@@ -77,13 +77,6 @@ public interface AttachmentService
      */
     @NotNull List<String> addAttachmentsNamedByHash(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
 
-    /**
-     * Gives the destination the source's attachments under the same names, sharing their content rather than copying it.
-     * Not supported for AttachmentDirectory parents.
-     * @param names the attachments to copy, or null for all of them
-     */
-    void copyAttachments(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @NotNull User user);
-
     void deleteAttachments(AttachmentParent parent);
 
     void deleteAttachments(Collection<AttachmentParent> parents);
@@ -105,7 +98,19 @@ public interface AttachmentService
 
     void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException;
 
+    /**
+     * Gives the parent a copy of the attachment under a new name, sharing its content.
+     * Not supported for AttachmentDirectory parents.
+     */
     void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
+
+    /**
+     * Gives the destination the source's attachments under the same names, sharing their content rather than copying it.
+     * Not supported for AttachmentDirectory parents.
+     * @param names the attachments to copy, or null for all of them
+     * @throws DuplicateFilenameException if the destination already has any of those names
+     */
+    void copyAttachments(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @NotNull User user) throws IOException;
 
     int moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
 

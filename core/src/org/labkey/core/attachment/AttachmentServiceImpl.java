@@ -865,32 +865,12 @@ public class AttachmentServiceImpl implements AttachmentService
     @Override
     public void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException
     {
-        checkSecurityPolicy(auditUser, parent);
-
-        if (exists(parent, newName))
-            throw new AttachmentService.DuplicateFilenameException(newName);
-
-        int copied;
-        try
-        {
-            copied = copyPointers(parent, parent, List.of(a.getName()), newName, auditUser);
-        }
-        catch (RuntimeSQLException e)
-        {
-            // A concurrent add of the same name won
-            if ("23505".equals(e.getSQLException().getSQLState()))
-                throw new AttachmentService.DuplicateFilenameException(newName);
-            throw e;
-        }
-
-        if (0 == copied)
+        if (0 == copyPointers(parent, parent, List.of(a.getName()), newName, auditUser))
             throw new FileNotFoundException(a.getName());
-
-        addAuditEvent(auditUser, parent, newName, "The attachment " + newName + " was added");
     }
 
     @Override
-    public void copyAttachments(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @NotNull User user)
+    public void copyAttachments(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @NotNull User user) throws IOException
     {
         if (null != names && names.isEmpty())
             return;
@@ -899,23 +879,53 @@ public class AttachmentServiceImpl implements AttachmentService
     }
 
     /** @param newName the copy's name when copying a single attachment, or null to keep the names */
-    private int copyPointers(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @Nullable String newName, User user)
+    private int copyPointers(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @Nullable String newName, User user) throws IOException
     {
         if (source instanceof AttachmentDirectory || destination instanceof AttachmentDirectory)
             throw new UnsupportedOperationException("Copying AttachmentDirectory attachments isn't supported");
 
+        checkSecurityPolicy(user, destination);
+
         TableInfo pointers = coreTables().getTableInfoAttachmentPointers();
+        SQLFragment sourceWhere = pointerWhere(source);
+        if (null != names)
+            sourceWhere.unsafeAppend(" AND ").appendInClause("Name", names, coreTables().getSqlDialect());
+
+        List<String> sourceNames = new SqlSelector(coreTables().getSchema(), SQLFragment.unsafe("SELECT Name FROM ").append(pointers).append(sourceWhere)).getArrayList(String.class);
+        if (sourceNames.isEmpty())
+            return 0;
+
+        List<String> copyNames = null != newName ? List.of(newName) : sourceNames;
+        Set<String> duplicates = getAttachments(destination, copyNames).keySet();
+        if (!duplicates.isEmpty())
+            throw new AttachmentService.DuplicateFilenameException(duplicates);
+
         SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(pointers)
             .unsafeAppend(" (Name, Parent, ParentType, Container, AttachmentId, Created, CreatedBy) SELECT ")
             .append(null != newName ? SQLFragment.unsafe("?", newName) : SQLFragment.unsafe("Name"))
             .unsafeAppend(", ?, ?, ?, AttachmentId, ?, ? FROM ", destination.getEntityId(), destination.getAttachmentParentType().getUniqueName(), destination.getContainerId(), new Date(), user.getUserId())
-            .append(pointers).append(pointerWhere(source));
+            .append(pointers).append(pointerWhere(source))
+            .unsafeAppend(" AND ").appendInClause("Name", sourceNames, coreTables().getSqlDialect());
 
-        if (null != names)
-            sql.unsafeAppend(" AND ").appendInClause("Name", names, coreTables().getSqlDialect());
+        int copied;
+        try (DbScope.Transaction tx = coreTables().getScope().ensureTransaction())
+        {
+            copied = new SqlExecutor(coreTables().getSchema()).execute(sql);
+            copyNames.forEach(name -> addAuditEvent(user, destination, name, "The attachment " + name + " was added"));
+            tx.commit();
+        }
+        catch (RuntimeSQLException e)
+        {
+            // A concurrent add of the same name won
+            if ("23505".equals(e.getSQLException().getSQLState()))
+                throw new AttachmentService.DuplicateFilenameException(copyNames);
+            throw e;
+        }
+        finally
+        {
+            invalidateCache(destination);
+        }
 
-        int copied = new SqlExecutor(coreTables().getSchema()).execute(sql);
-        invalidateCache(destination);
         return copied;
     }
 
@@ -2454,6 +2464,7 @@ public class AttachmentServiceImpl implements AttachmentService
 
                 svc.copyAttachments(source, destination, List.of("one.txt"), user);
                 assertEquals(getAttachmentIds(source), getAttachmentIds(destination));
+                assertThrows(AttachmentService.DuplicateFilenameException.class, () -> svc.copyAttachments(source, destination, null, user));
 
                 new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(CoreSchema.getInstance().getTableInfoAttachmentPointers())
                     .unsafeAppend(" SET LastIndexed = ?", new Date()).append(pointerWhere(destination)));
