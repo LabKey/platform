@@ -647,7 +647,11 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable, Me
         Integer dateIndex = DatasetDataIteratorBuilder.findColumnInMap(inputMap, getColumn("Date"));
         String keyName = _dsd.getKeyPropertyName();
         Integer keyIndex = keyName == null ? null : DatasetDataIteratorBuilder.findColumnInMap(inputMap, getColumn(keyName));
-        Integer containerIndex = inputMap.get("Container");
+        // Import honors a supplied Container only in this case, so the LSID must too
+        Integer suppliedContainerIndex = inputMap.get("Container");
+        boolean targetMultiple = Boolean.TRUE == context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TargetMultipleContainers);
+        JdbcType containerType = suppliedContainerIndex == null ? null : input.getColumnInfo(suppliedContainerIndex).getJdbcType();
+        Integer containerIndex = study.isDataspaceStudy() && targetMultiple && (JdbcType.GUID == containerType || JdbcType.VARCHAR == containerType) ? suppliedContainerIndex : null;
 
         if (ptidIndex == null)
             return null;

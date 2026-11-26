@@ -2420,7 +2420,7 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging, add the ExistingRecordDataIterator here just before TableInsertDataIterator.
             // This is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder dib = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, _expTable.getExistingRecordSharedKeyColumnNames(), true);
+            DataIteratorBuilder dib = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, _expTable.getExistingRecordSharedKeyColumnNames(), true, false, false);
 
             if (isSample)
             {

@@ -48,6 +48,7 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -87,11 +88,14 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final Set<Object> _pkKeysSeen = new HashSet<>();
 
     final DataIteratorContext _context;
+    /** Leave rows with blank or duplicate keys unmatched instead of reporting them, for a lookup whose caller reports them itself */
+    final boolean _skipInvalidKeys;
 
-    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useMark, DataIteratorContext context, boolean detailed, boolean allColumns)
+    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useMark, DataIteratorContext context, boolean detailed, boolean allColumns, boolean skipInvalidKeys)
     {
         super(in);
         _context = context;
+        _skipInvalidKeys = skipInvalidKeys;
 
         QueryUpdateService.InsertOption option = context.getInsertOption();
 
@@ -222,6 +226,8 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
     protected void checkDuplicateKeys(List<String> pkKeys)
     {
+        if (_skipInvalidKeys)
+            return;
         Object pkKeysObj = pkKeys.size() == 1 ? pkKeys.getFirst() : pkKeys;
         if (_pkKeysSeen.contains(pkKeysObj))
             _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + StringUtils.join(pkKeys, ", ")));
@@ -243,16 +249,14 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
     public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys)
     {
-        return createBuilder(dib, target, keys, null, false);
+        return createBuilder(dib, target, keys, null, false, false, false);
     }
 
-    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useGetRows)
-    {
-        return createBuilder(dib, target, keys, sharedKeys, useGetRows, false);
-    }
-
-    /** @param allColumns fetch every stored column of existing rows, keyed by column name, not just those needed for keys and auditing */
-    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useGetRows, boolean allColumns)
+    /**
+     * @param allColumns fetch every stored column of existing rows, keyed by column name, not just those needed for keys and auditing
+     * @param skipInvalidKeys leave rows with blank or duplicate keys unmatched instead of adding row errors
+     */
+    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useGetRows, boolean allColumns, boolean skipInvalidKeys)
     {
         return context ->
         {
@@ -274,9 +278,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     auditType = target.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
                 boolean detailed = auditType == DETAILED || hasAttachmentProperties || allColumns;
                 if (useGetRows)
-                    return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed, allColumns);
+                    return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed, allColumns, skipInvalidKeys);
                 else
-                    return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed, allColumns);
+                    return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed, allColumns, skipInvalidKeys);
             }
             return di;
         };
@@ -290,18 +294,20 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         /** When set, select these by column name instead of the storage columns, matching the rows updateRows() passes as oldRow */
         final @Nullable List<ColumnInfo> _namedColumns;
 
-        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed, boolean allColumns)
+        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed, boolean allColumns, boolean skipInvalidKeys)
         {
-            super(in, target, keys, sharedKeys, true, context, detailed, allColumns);
+            super(in, target, keys, sharedKeys, true, context, detailed, allColumns, skipInvalidKeys);
             if (c != null)
                 allowedContainers.add(c.getId());
             _namedColumns = allColumns ? target.getColumns().stream().filter(col -> !col.isCalculated() && !col.isUnselectable()).toList() : null;
         }
 
-        private Pair<SQLFragment, Map<Integer, String>> getSelectExistingSql(int rows) throws BatchValidationException
+        /** @return null when no row in the batch has a complete key */
+        private @Nullable Pair<SQLFragment, Map<Integer, String>> getSelectExistingSql(int rows) throws BatchValidationException
         {
             SQLFragment sqlf = SQLFragment.unsafe("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
-            String comma = "";
+            var comma = SQLFragment.sep("", "\n,");
+            boolean anyKey = false;
             Map<Integer, String> rowNumContainers = new IntHashMap<>();
             String container;
             do
@@ -315,30 +321,37 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                         container = (String) containerObj;
                 }
 
-                sqlf.append(comma).unsafeAppend("(").appendValue(lastPrefetchRowNumber);
-                comma = "\n,";
+                SQLFragment tuple = new SQLFragment().unsafeAppend("(").appendValue(lastPrefetchRowNumber);
                 List<String> pkKeys = new ArrayList<>();
+                boolean blankKey = false;
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
-                    sqlf.unsafeAppend(",?");
                     Object pkVal = pkSuppliers.get(p).get();
 
                     // Issue 52922: Rows with blank key in the file are getting ignored in update from file
                     if (pkVal == null)
                     {
-                        _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
-                        continue;
+                        if (!_skipInvalidKeys)
+                            _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
+                        blankKey = true;
+                        break;
                     }
 
-                    sqlf.add(pkVal);
+                    tuple.unsafeAppend(",?").add(pkVal);
                     if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
                         pkKeys.add(pkVal.toString());
                 }
-                sqlf.unsafeAppend(")");
+                if (blankKey)
+                    continue;
+                sqlf.append(comma.next()).append(tuple).unsafeAppend(")");
+                anyKey = true;
                 checkDuplicateKeys(pkKeys);
                 rowNumContainers.put(lastPrefetchRowNumber, container);
             }
             while (--rows > 0 && _delegate.next());
+
+            if (!anyKey)
+                return null;
 
             sqlf.unsafeAppend("\n) AS _values_ (_row_number_");
             for (int p = 0; p < pkColumns.size(); p++)
@@ -357,12 +370,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             sqlf.unsafeAppend("_key_columns_ INNER JOIN ");
             sqlf.append(target.getFromSQL("_target_ "));
             sqlf.unsafeAppend(" ON ");
-            String and = "";
+            var and = SQLFragment.sep("", " AND ");
             for (int p = 0; p < pkColumns.size(); p++)
             {
-                sqlf.append(and);
+                sqlf.append(and.next());
                 sqlf.unsafeAppend("(_key_columns_.key").appendValue(p).unsafeAppend("=(").append(pkColumns.get(p).getValueSql("_target_")).unsafeAppend("))");
-                and = " AND ";
             }
             return new Pair<>(sqlf, rowNumContainers);
         }
@@ -377,14 +389,13 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             // fetch N new rows into the existingRecords map
             Pair<SQLFragment, Map<Integer, String>> selectRowsSql = getSelectExistingSql(50);
 
-            SQLFragment select = selectRowsSql.first;
-            Map<Integer, String> rowNumContainers = selectRowsSql.second;
-            var list = new SqlSelector(target.getSchema(), select, QueryLogging.noValidationNeededQueryLogging()).getArrayList(Map.class);
+            Map<Integer, String> rowNumContainers = selectRowsSql == null ? new IntHashMap<>() : selectRowsSql.second;
+            Collection<Map<String, Object>> list = selectRowsSql == null ? List.of() : new SqlSelector(target.getSchema(), selectRowsSql.first, QueryLogging.noValidationNeededQueryLogging()).getMapCollection();
             existingRecords.clear();
             for (int r=rowNumber ; r<=lastPrefetchRowNumber ;r++)
                 existingRecords.put(r,Map.of());
 
-            for (Map map : list)
+            for (Map<String, Object> map : list)
             {
                 Integer r = asInteger(map.get("_row_number_"));
                 if (_namedColumns != null)
@@ -419,7 +430,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
                 map.remove("_row_number_");
                 map.remove("_row"); // I think CachedResultSet adds "_row"
-                existingRecords.put(r,(Map<String,Object>)map);
+                existingRecords.put(r, map);
                 rowNumContainers.remove(r);
             }
 
@@ -438,9 +449,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         final QueryUpdateService qus;
 
-        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed, boolean allColumns)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed, boolean allColumns, boolean skipInvalidKeys)
         {
-            super(in, target, keys, sharedKeys, true, context, detailed, allColumns);
+            super(in, target, keys, sharedKeys, true, context, detailed, allColumns, skipInvalidKeys);
             qus = target.getUpdateService();
         }
 
@@ -462,29 +473,37 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     lastPrefetchRowNumber = asInteger(_delegate.get(0));
                     Map<String,Object> keyMap = CaseInsensitiveHashMap.of();
                     List<String> pkKeys = new ArrayList<>();
+                    existingRecords.put(lastPrefetchRowNumber, Map.of());
+                    boolean blankKey = false;
                     for (int p=0 ; p<pkColumns.size() ; p++)
                     {
                         Object pkVal = pkSuppliers.get(p).get();
                         // Issue 52922: Rows with blank key in the file are getting ignored in update from file
                         if (pkVal == null)
                         {
-                            _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
-                            return;
+                            if (!_skipInvalidKeys)
+                            {
+                                _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
+                                return;
+                            }
+                            blankKey = true;
+                            break;
                         }
 
                         keyMap.put(pkColumns.get(p).getColumnName(), pkVal);
                         if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
                             pkKeys.add(pkVal.toString());
                     }
+                    if (blankKey)
+                        continue;
 
                     checkDuplicateKeys(pkKeys);
 
                     keysMap.put(lastPrefetchRowNumber, keyMap);
-                    existingRecords.put(lastPrefetchRowNumber, Map.of());
                 }
                 while (--rowsToFetch > 0 && _delegate.next());
 
-                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting, _dataColumnNames);
+                Map<Integer, Map<String, Object>> rowsMap = keysMap.isEmpty() ? Map.of() : qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting, _dataColumnNames);
                 for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())
                 {
                     Map<String, Object> map = rowMap.getValue();
@@ -526,7 +545,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             context.setInsertOption(QueryUpdateService.InsertOption.INSERT);
             DataIterator di = MapDataIterator.of(Set.of("Name"), namesArrayList).getDataIterator(context);
             assertFalse(di.supportsGetExistingRecord());
-            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, null, context, true, false);
+            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, null, context, true, false, false);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
         }

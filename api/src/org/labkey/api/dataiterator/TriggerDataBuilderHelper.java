@@ -190,7 +190,8 @@ public class TriggerDataBuilderHelper
                 return LoggingDataIterator.wrap(new BeforeIterator(di, context, Set.of()));
 
             // Rows routed to update get the whole existing row as oldRow
-            di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, _target instanceof ExpTable, routeMerge).getDataIterator(context);
+            // A routing-only lookup leaves blank and duplicate keys unmatched, so the import reports them as it would without triggers
+            di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, _target instanceof ExpTable, routeMerge, routingOnlyLookup).getDataIterator(context);
             DataIterator before = new BeforeIterator(new CachingDataIterator(di), context, carryForwardColumns);
             if (routingOnlyLookup)
                 before = new HiddenExistingRecordDataIterator(before);

@@ -1111,18 +1111,13 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             map.get("lsid");
         }
 
-        /** GH Issue 1048: MERGE keeps omitted columns, and triggers that route MERGE see existing rows as updates */
-        @Test
-        public void mergeRoutesExistingRowsToUpdateHooks() throws Exception
+        /** A table whose trigger routes MERGE by existing record and records which hook saw each subject */
+        private TableInfo tableWithRoutedTrigger(List<String> events)
         {
-            createDataset();
-            insertS1();
-
             UserSchema schema = QueryService.get().getUserSchema(_user, _container, StudyQuerySchema.SCHEMA_NAME);
             assertNotNull(schema);
             AbstractTableInfo table = (AbstractTableInfo) schema.getTable(DATASET_NAME, null, true, true);
             assertNotNull(table);
-            List<String> events = new ArrayList<>();
             table.addTriggerFactory((_, _, _) -> List.of(new Trigger()
             {
                 @Override
@@ -1164,12 +1159,24 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
                 }
             }));
             table.resetTriggers(_container);
+            return table;
+        }
 
+        /** GH Issue 1048: MERGE keeps omitted columns, and triggers that route MERGE see existing rows as updates */
+        @Test
+        public void mergeRoutesExistingRowsToUpdateHooks() throws Exception
+        {
+            createDataset();
+            insertS1();
+
+            List<String> events = new ArrayList<>();
+            TableInfo table = tableWithRoutedTrigger(events);
             QueryUpdateService qus = table.getUpdateService();
             assertNotNull(qus);
             BatchValidationException errors = new BatchValidationException();
             List<Map<String, Object>> rows = List.of(
-                    Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "1.2345", "Value1", "2.0"),
+                    // Import ignores a supplied Container outside a dataspace study, so routing must too
+                    Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "1.2345", "Value1", "2.0", "Container", _container.getPath()),
                     Map.of(SUBJECT_COLUMN_NAME, "S2", "SequenceNum", "1.2345", "Value1", "2.0"));
             int count = qus.mergeRows(_user, _container, MapDataIterator.of(rows), errors, null, null);
             if (errors.hasErrors())
@@ -1184,6 +1191,51 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             assertNotNull(s1);
             assertEquals(2.0d, s1.get("Value1"));
             assertEquals("MERGE nulled a column it was not given", "x", s1.get("Field1"));
+        }
+
+        /** Merges the rows and returns the row error message, or the exception if MERGE threw */
+        private String mergeOutcome(TableInfo table, List<Map<String, Object>> rows)
+        {
+            QueryUpdateService qus = table.getUpdateService();
+            assertNotNull(qus);
+            BatchValidationException errors = new BatchValidationException();
+            try (DbScope.Transaction _ = table.getSchema().getScope().ensureTransaction())
+            {
+                qus.mergeRows(_user, _container, MapDataIterator.of(rows), errors, null, null);
+            }
+            catch (Exception e)
+            {
+                return "threw " + e;
+            }
+            assertTrue("Expected a row error", errors.hasErrors());
+            return errors.getMessage();
+        }
+
+        record UnkeyableCase(String name, Map<String, Object> row, boolean rowError) {}
+
+        // Rows the routing lookup can't key must reach the import, which handles them the same way with or without triggers
+        @Test
+        public void mergeWithRoutedTriggerReportsUnkeyableRows() throws Exception
+        {
+            createDataset();
+            insertS1();
+
+            UserSchema schema = QueryService.get().getUserSchema(_user, _container, StudyQuerySchema.SCHEMA_NAME);
+            assertNotNull(schema);
+            for (UnkeyableCase c : List.of(
+                    new UnkeyableCase("no subject column", Map.of("SequenceNum", "1.2345", "Value1", "2.0"), true),
+                    new UnkeyableCase("no SequenceNum or Date column", Map.of(SUBJECT_COLUMN_NAME, "S1", "Value1", "2.0"), true),
+                    new UnkeyableCase("blank subject", CaseInsensitiveHashMap.of(SUBJECT_COLUMN_NAME, null, "SequenceNum", "1.2345", "Value1", "2.0"), true),
+                    // Throws without triggers too
+                    new UnkeyableCase("unparseable SequenceNum", Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "not a number", "Value1", "2.0"), false)))
+            {
+                String withoutTrigger = mergeOutcome(schema.getTable(DATASET_NAME), List.of(c.row()));
+                List<String> events = new ArrayList<>();
+                String withTrigger = mergeOutcome(tableWithRoutedTrigger(events), List.of(c.row()));
+                assertEquals(c.name(), withoutTrigger, withTrigger);
+                assertEquals(c.name() + ": " + withoutTrigger, c.rowError(), !withoutTrigger.startsWith("threw "));
+                assertFalse(c.name() + ": an unkeyable row was routed to update: " + events, events.stream().anyMatch(e -> e.startsWith("beforeUpdate")));
+            }
         }
 
         private void insertS1() throws Exception

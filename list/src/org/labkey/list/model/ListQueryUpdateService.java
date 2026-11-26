@@ -2047,5 +2047,58 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             assertEquals("REPLACE nulled a trigger-managed column", "x", getRow(11).get(TEXT_FIELD));
             assertEquals("computed", getRow(12).get(TEXT_FIELD));
         }
+
+        /** Rows writing the int field, one per key; a null key is a row with a blank key */
+        private static List<Map<String, Object>> rowsWithKeys(Integer... keys)
+        {
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (Integer key : keys)
+            {
+                Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                row.put(KEY_NAME, key);
+                row.put(INT_FIELD, 2);
+                rows.add(row);
+            }
+            return rows;
+        }
+
+        /** Merges the rows and returns the row error message, or the exception if MERGE threw */
+        private String mergeOutcome(TableInfo table, List<Map<String, Object>> rows)
+        {
+            BatchValidationException errors = new BatchValidationException();
+            DataIteratorContext context = new DataIteratorContext(errors);
+            context.setInsertOption(InsertOption.MERGE);
+            try (DbScope.Transaction _ = table.getSchema().getScope().ensureTransaction())
+            {
+                updateService(table).loadRows(_user, _container, MapDataIterator.of(rows), context, null);
+            }
+            catch (Exception e)
+            {
+                return "threw " + e;
+            }
+            assertTrue("Expected a row error", errors.hasErrors());
+            // ValidatorIterator leaves an empty error on a later row whose field error it already reported, depending on read-ahead
+            return errors.getRowErrors().stream().filter(ValidationException::hasErrors).map(ValidationException::getMessage).collect(Collectors.joining("\n"));
+        }
+
+        record InvalidKeyCase(String name, List<Map<String, Object>> rows, boolean rowError) {}
+
+        // A routing-only lookup must leave these to the import, which handles them the same way with or without triggers
+        @Test
+        public void mergeWithRoutedTriggerReportsInvalidKeys()
+        {
+            for (InvalidKeyCase c : List.of(
+                    new InvalidKeyCase("one blank key", rowsWithKeys(13, null, 14), true),
+                    new InvalidKeyCase("duplicate keys", rowsWithKeys(15, 15), true),
+                    new InvalidKeyCase("every key blank", rowsWithKeys(null, null), true),
+                    // Throws without triggers too
+                    new InvalidKeyCase("no key column", List.of(CaseInsensitiveHashMap.of(INT_FIELD, 2)), false)))
+            {
+                String withoutTrigger = mergeOutcome(listTable(), c.rows());
+                String withTrigger = mergeOutcome(tableWithTrigger(new RecordingTrigger(true, false)), c.rows());
+                assertEquals(c.name(), withoutTrigger, withTrigger);
+                assertEquals(c.name() + ": " + withoutTrigger, c.rowError(), !withoutTrigger.startsWith("threw "));
+            }
+        }
     }
 }
