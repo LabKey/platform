@@ -191,6 +191,7 @@ import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.CspCommentScanner;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.DomTestCase;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExtUtil;
@@ -588,6 +589,7 @@ public class ApiModule extends CodeOnlyModule
             DbScope.PoolStatisticsTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
+            DebugInfoDumper.TestCase.class,
             DisplayColumn.TestCase.class,
             DomTestCase.class,
             DomainTemplateGroup.TestCase.class,

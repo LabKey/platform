@@ -38,7 +38,7 @@ public enum ExceptionFramework
                 SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(scope.getDataSource());
                 if (SqlDialect.isTransactionException(e))
                 {
-                    DebugInfoDumper.dumpThreads(1);
+                    DebugInfoDumper.dumpThreadsIfIdle();
                 }
                 RuntimeException result = translator.translate(task, null, e);
                 if (result == null)

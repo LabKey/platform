@@ -19,8 +19,11 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TSVWriter;
@@ -68,6 +71,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Monitors the timestamp of the heapDumpRequest and threadDumpRequest files to see if an admin has requested
@@ -325,10 +334,54 @@ public class DebugInfoDumper
     /** Prevent reentrancy when we get SQLException trying to grab locks from Postgres */
     private static final ThreadLocal<Boolean> DUMPING_THREADS = ThreadLocal.withInitial(() -> false);
 
+    private static final ReentrantLock DUMP_LOCK = new ReentrantLock();
+    static final String SKIPPED_DUMP_MESSAGE = "Skipping thread dump; another thread is already writing one";
+
     /**
-     * Writes the thread dump into threads.txt
+     * Writes the thread dump into threads.txt, waiting for any dump already in progress on another thread
      * */
-    public static synchronized void dumpThreads(LoggerWriter logWriter)
+    public static void dumpThreads(LoggerWriter logWriter)
+    {
+        DUMP_LOCK.lock();
+        try
+        {
+            writeThreadDump(logWriter);
+        }
+        finally
+        {
+            DUMP_LOCK.unlock();
+        }
+    }
+
+    /** For automatic dumps on lock timeouts and transaction errors: skips, rather than queues, when another thread is already dumping */
+    public static void dumpThreadsIfIdle(LoggerWriter logWriter)
+    {
+        if (!DUMP_LOCK.tryLock())
+        {
+            logWriter.debug(SKIPPED_DUMP_MESSAGE);
+            return;
+        }
+        try
+        {
+            writeThreadDump(logWriter);
+        }
+        finally
+        {
+            DUMP_LOCK.unlock();
+        }
+    }
+
+    public static void dumpThreadsIfIdle(Logger log)
+    {
+        dumpThreadsIfIdle(new SimpleLoggerWriter(log));
+    }
+
+    public static void dumpThreadsIfIdle()
+    {
+        dumpThreadsIfIdle(LOG);
+    }
+
+    private static void writeThreadDump(LoggerWriter logWriter)
     {
         if (DUMPING_THREADS.get() == true)
         {
@@ -428,31 +481,58 @@ public class DebugInfoDumper
             }
 
             // GitHub Issue 713: Automatically include PG locks and active queries in thread dumps
-            UserSchema schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot(), BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME);
-            // Schema won't exist on SQLServer
-            if (schema != null)
-            {
-                try
-                {
-                    writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
-                }
-                catch (RuntimeException e)
-                {
-                    logWriter.debug("Failed to write Postgres locks table:" + e);
-                }
-                try
-                {
-                    writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
-                }
-                catch (RuntimeException e)
-                {
-                    logWriter.debug("Failed to write Postgres activity table:" + e);
-                }
-            }
+            dumpPostgresState(logWriter);
         }
         finally
         {
             DUMPING_THREADS.set(false);
+        }
+    }
+
+    /** GH Issue 1875: the server may be deadlocked, so never wait on the container cache lock or for a pooled connection */
+    private static void dumpPostgresState(LoggerWriter logWriter)
+    {
+        try
+        {
+            Container root = ContainerManager.getRootIfCached();
+            if (root == null)
+            {
+                logWriter.debug("Skipping Postgres locks and activity: root container is not cached");
+                return;
+            }
+
+            DbScope scope = DbScope.getLabKeyScope();
+            if (!scope.hasAvailableConnection())
+            {
+                logWriter.debug("Skipping Postgres locks and activity: no free pooled connection for " + scope);
+                return;
+            }
+
+            UserSchema schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), root, BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME);
+            // Schema won't exist on SQLServer
+            if (schema == null)
+                return;
+
+            try
+            {
+                writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
+            }
+            catch (RuntimeException e)
+            {
+                logWriter.debug("Failed to write Postgres locks table:" + e);
+            }
+            try
+            {
+                writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
+            }
+            catch (RuntimeException e)
+            {
+                logWriter.debug("Failed to write Postgres activity table:" + e);
+            }
+        }
+        catch (RuntimeException e)
+        {
+            logWriter.debug("Failed to write Postgres locks and activity:" + e);
         }
     }
 
@@ -635,8 +715,72 @@ public class DebugInfoDumper
     /**
      * Writes the current set of thread stacks once to the supplied logger.
      */
-    public static synchronized void dumpThreads(Logger log)
+    public static void dumpThreads(Logger log)
     {
         dumpThreads(new SimpleLoggerWriter(log));
+    }
+
+    public static class TestCase extends Assert
+    {
+        /** Records debug lines; when given a latch, blocks on its first line to hold a dump open */
+        private static class CapturingWriter extends SimpleLoggerWriter
+        {
+            private final List<String> _lines = Collections.synchronizedList(new ArrayList<>());
+            private final CountDownLatch _started = new CountDownLatch(1);
+            private final @Nullable CountDownLatch _release;
+
+            CapturingWriter(@Nullable CountDownLatch release)
+            {
+                super(LOG);
+                _release = release;
+            }
+
+            @Override
+            public void debug(String message)
+            {
+                _lines.add(message);
+                _started.countDown();
+                if (_release != null)
+                {
+                    try
+                    {
+                        _release.await();
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+
+        @Test
+        public void testLockTimeoutDoesNotQueueBehindDump() throws Exception
+        {
+            CountDownLatch release = new CountDownLatch(1);
+            CapturingWriter blocker = new CapturingWriter(release);
+            try (ExecutorService executor = Executors.newFixedThreadPool(2))
+            {
+                try
+                {
+                    Future<?> inProgress = executor.submit(() -> dumpThreads(blocker));
+                    assertTrue("Blocking dump never started", blocker._started.await(30, TimeUnit.SECONDS));
+
+                    CapturingWriter skipped = new CapturingWriter(null);
+                    executor.submit(() -> dumpThreadsIfIdle(skipped)).get(10, TimeUnit.SECONDS);
+                    assertEquals(List.of(SKIPPED_DUMP_MESSAGE), skipped._lines);
+
+                    executor.submit(() -> new DeadlockPreventingException("Test lock timeout")).get(10, TimeUnit.SECONDS);
+
+                    release.countDown();
+                    inProgress.get(60, TimeUnit.SECONDS);
+                }
+                finally
+                {
+                    // Free the blocked dump so close() can wait for it
+                    release.countDown();
+                }
+            }
+        }
     }
 }

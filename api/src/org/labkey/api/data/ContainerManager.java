@@ -1331,6 +1331,12 @@ public class ContainerManager
         }
     }
 
+    /** Never takes the container cache lock or touches the database */
+    public static @Nullable Container getRootIfCached()
+    {
+        return _getFromCachePath(Path.rootPath);
+    }
+
     public static Container getRoot()
     {
         try

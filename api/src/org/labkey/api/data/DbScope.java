@@ -1396,6 +1396,18 @@ public class DbScope
         return delegate;
     }
 
+    /** Best effort and racy: whether a pooled connection can likely be borrowed now without waiting */
+    public boolean hasAvailableConnection()
+    {
+        DataSourcePropertyReader props = getDataSourceProperties();
+        Integer idle = props.getNumIdle();
+        if (idle != null && idle > 0)
+            return true;
+        Integer active = props.getNumActive();
+        Integer max = props.getMaxTotal();
+        return active != null && max != null && (max < 0 || active < max);
+    }
+
     /**
      * Write to the standard log file information about all threads (active or dead) that appear to be holding onto
      * database connections, having started via beginning a transaction.
