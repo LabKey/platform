@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpInputTable;
+import org.labkey.api.query.EnumFieldKey;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -30,7 +31,7 @@ import org.labkey.api.security.permissions.ReadPermission;
  * User: jeckels
  * Date: Jan 5, 2010
  */
-public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> implements ExpInputTable<C>
+public abstract class ExpInputTableImpl<C extends Enum<C> & EnumFieldKey> extends ExpTableImpl<C> implements ExpInputTable<C>
 {
     private ExpRun _run;
     private ExpProtocol.ApplicationType _type;

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.exp.query;
 
+import org.labkey.api.query.EnumFieldKey;
+
 /**
  * Table for material usages in runs
  * User: jeckels
@@ -22,7 +24,7 @@ package org.labkey.api.exp.query;
  */
 public interface ExpMaterialInputTable extends ExpInputTable<ExpMaterialInputTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         Material,
         TargetProtocolApplication,

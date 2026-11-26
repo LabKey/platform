@@ -21,11 +21,11 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.EnumFieldKey;
 
 public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         Alias,
         ContentLink,
@@ -67,12 +67,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         ViewFileLink,
         ViewOrDownload,
         WebDavUrl,
-        WebDavUrlRelative;
-
-        public FieldKey fieldKey()
-        {
-            return FieldKey.fromParts(name());
-        }
+        WebDavUrlRelative
     }
 
     void setExperiment(ExpExperiment experiment);

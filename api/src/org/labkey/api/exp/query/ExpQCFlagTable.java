@@ -18,11 +18,12 @@ package org.labkey.api.exp.query;
 
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.EnumFieldKey;
 
 //Associated with hard table exp.AssayQCFlag
 public interface ExpQCFlagTable extends ExpTable<ExpQCFlagTable.Column>
 {
-    enum Column
+    enum Column implements EnumFieldKey
     {
         RowId,
         Run,
