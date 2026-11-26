@@ -21,12 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.files.FileSystemDirectoryListener;
@@ -34,15 +30,7 @@ import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.websocket.WebSocketTracker;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.vfs.FileLike;
@@ -53,13 +41,17 @@ import javax.management.ObjectName;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -69,13 +61,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -489,51 +477,65 @@ public class DebugInfoDumper
         }
     }
 
-    /** GH Issue 1875: the server may be deadlocked, so never wait on the container cache lock or for a pooled connection */
+    /**
+     * GH Issue 1875: the server may be deadlocked, so use plain JDBC on a dedicated unpooled connection with short
+     * timeouts; borrowing from the pool or going through query/schema caches can wait on the deadlocked threads.
+     */
     private static void dumpPostgresState(LoggerWriter logWriter)
     {
-        try
+        DbScope scope = DbScope.getLabKeyScope();
+        if (!scope.getSqlDialect().isPostgreSQL())
+            return;
+
+        // pgjdbc waits forever to log in by default
+        Properties props = new Properties();
+        props.setProperty("loginTimeout", "5");
+        props.setProperty("socketTimeout", "10");
+        try (Connection conn = scope.getUnpooledConnection(props))
         {
-            Container root = ContainerManager.getRootIfCached();
-            if (root == null)
-            {
-                logWriter.debug("Skipping Postgres locks and activity: root container is not cached");
-                return;
-            }
+            writeQuery(logWriter, conn, "SELECT * FROM pg_locks", "Postgres locks");
+            writeQuery(logWriter, conn, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_SQL, "Postgres activity");
+        }
+        catch (SQLException | RuntimeException e)
+        {
+            logWriter.debug("Failed to write Postgres locks and activity: " + e);
+        }
+    }
 
-            DbScope scope = DbScope.getLabKeyScope();
-            if (!scope.hasAvailableConnection())
+    private static void writeQuery(LoggerWriter logWriter, Connection conn, String sql, String header)
+    {
+        StringBuilder tsv = new StringBuilder();
+        try (Statement stmt = conn.createStatement())
+        {
+            stmt.setQueryTimeout(5);
+            try (ResultSet rs = stmt.executeQuery(sql))
             {
-                logWriter.debug("Skipping Postgres locks and activity: no free pooled connection for " + scope);
-                return;
-            }
-
-            UserSchema schema = QueryService.get().getUserSchema(User.getAdminServiceUser(), root, BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME);
-            // Schema won't exist on SQLServer
-            if (schema == null)
-                return;
-
-            try
-            {
-                writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_LOCKS_TABLE_NAME, "Postgres locks");
-            }
-            catch (RuntimeException e)
-            {
-                logWriter.debug("Failed to write Postgres locks table:" + e);
-            }
-            try
-            {
-                writeTable(logWriter, schema, BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_TABLE_NAME, "Postgres activity");
-            }
-            catch (RuntimeException e)
-            {
-                logWriter.debug("Failed to write Postgres activity table:" + e);
+                ResultSetMetaData md = rs.getMetaData();
+                List<String> values = new ArrayList<>();
+                for (int i = 1; i <= md.getColumnCount(); i++)
+                    values.add(md.getColumnLabel(i));
+                tsv.append(String.join("\t", values)).append('\n');
+                while (rs.next())
+                {
+                    values.clear();
+                    for (int i = 1; i <= md.getColumnCount(); i++)
+                        values.add(Objects.toString(rs.getString(i), "").replaceAll("\\s", " "));
+                    tsv.append(String.join("\t", values)).append('\n');
+                }
             }
         }
-        catch (RuntimeException e)
+        catch (SQLException e)
         {
-            logWriter.debug("Failed to write Postgres locks and activity:" + e);
+            logWriter.debug("Failed to write " + header + ": " + e);
+            return;
         }
+
+        logWriter.debug("Starting dump of " + header);
+        logWriter.debug("*********************************************");
+        logWriter.debug("\n" + tsv);
+        logWriter.debug("*********************************************");
+        logWriter.debug("Completed dump of " + header);
+        logWriter.debug("*********************************************");
     }
 
     /**
@@ -610,35 +612,6 @@ public class DebugInfoDumper
     {
         Object value = getMBeanAttribute(mbs, name, attribute);
         return value instanceof Number number && number.longValue() < 0 ? "unlimited" : String.valueOf(value);
-    }
-
-    private static void writeTable(LoggerWriter logWriter, UserSchema schema, String tableName, String header)
-    {
-        QueryForm form = new QueryForm();
-        try (var _ = ViewContext.pushMockViewContext(schema.getUser(), schema.getContainer(), new ActionURL()))
-        {
-            form.setViewContext(HttpView.currentContext());
-            form.setSchemaName(schema.getName());
-            form.setQueryName(tableName);
-            QueryView view = QueryView.create(form, new NullSafeBindException(new Object(), "form"));
-            logWriter.debug("Starting dump of " + header);
-            logWriter.debug("*********************************************");
-            try (TSVWriter writer = view.getTsvWriter())
-            {
-                StringWriter stringWriter = new StringWriter();
-                PrintWriter printWriter = new PrintWriter(stringWriter);
-                writer.write(printWriter);
-                printWriter.flush();
-                logWriter.debug("\n" + stringWriter);
-            }
-            catch (IOException e)
-            {
-                logWriter.error("Failed to write " + header, e);
-            }
-            logWriter.debug("*********************************************");
-            logWriter.debug("Completed dump of " + header);
-            logWriter.debug("*********************************************");
-        }
     }
 
     static private final Set<String> skipMethods = Set.of("pushThreadDumpContext", "beginTransaction", "ensureTransaction", "execute", "getTroubleshootingStackTrace");
@@ -722,65 +695,35 @@ public class DebugInfoDumper
 
     public static class TestCase extends Assert
     {
-        /** Records debug lines; when given a latch, blocks on its first line to hold a dump open */
-        private static class CapturingWriter extends SimpleLoggerWriter
-        {
-            private final List<String> _lines = Collections.synchronizedList(new ArrayList<>());
-            private final CountDownLatch _started = new CountDownLatch(1);
-            private final @Nullable CountDownLatch _release;
-
-            CapturingWriter(@Nullable CountDownLatch release)
-            {
-                super(LOG);
-                _release = release;
-            }
-
-            @Override
-            public void debug(String message)
-            {
-                _lines.add(message);
-                _started.countDown();
-                if (_release != null)
-                {
-                    try
-                    {
-                        _release.await();
-                    }
-                    catch (InterruptedException e)
-                    {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
-        }
-
         @Test
         public void testLockTimeoutDoesNotQueueBehindDump() throws Exception
         {
-            CountDownLatch release = new CountDownLatch(1);
-            CapturingWriter blocker = new CapturingWriter(release);
-            try (ExecutorService executor = Executors.newFixedThreadPool(2))
+            List<String> lines = Collections.synchronizedList(new ArrayList<>());
+            LoggerWriter capturing = new SimpleLoggerWriter(LOG)
             {
-                try
+                @Override
+                public void debug(String message)
                 {
-                    Future<?> inProgress = executor.submit(() -> dumpThreads(blocker));
-                    assertTrue("Blocking dump never started", blocker._started.await(30, TimeUnit.SECONDS));
-
-                    CapturingWriter skipped = new CapturingWriter(null);
-                    executor.submit(() -> dumpThreadsIfIdle(skipped)).get(10, TimeUnit.SECONDS);
-                    assertEquals(List.of(SKIPPED_DUMP_MESSAGE), skipped._lines);
-
-                    executor.submit(() -> new DeadlockPreventingException("Test lock timeout")).get(10, TimeUnit.SECONDS);
-
-                    release.countDown();
-                    inProgress.get(60, TimeUnit.SECONDS);
+                    lines.add(message);
                 }
-                finally
-                {
-                    // Free the blocked dump so close() can wait for it
-                    release.countDown();
-                }
+            };
+
+            // Holding the lock stands in for a dump in progress; a queued dump would run out runOnNewThread's join timeout
+            DUMP_LOCK.lock();
+            try
+            {
+                JunitUtil.runOnNewThread("DumpWhileDumping", () -> {
+                    dumpThreadsIfIdle(capturing);
+                    // The constructor is what dumps
+                    //noinspection ThrowableNotThrown
+                    new DeadlockPreventingException("Test lock timeout");
+                });
             }
+            finally
+            {
+                DUMP_LOCK.unlock();
+            }
+            assertEquals(List.of(SKIPPED_DUMP_MESSAGE), lines);
         }
     }
 }

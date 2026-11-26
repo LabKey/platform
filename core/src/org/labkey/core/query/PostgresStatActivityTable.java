@@ -124,12 +124,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
     public @NotNull SQLFragment getFromSQL()
     {
         SQLFragment result = new SQLFragment();
-        result.unsafeAppend("""
-                SELECT
-                  *,
-                  CAST(pg_blocking_pids(pid) AS VARCHAR) AS blocked_by,
-                  CASE WHEN (state = 'idle' OR state IS NULL) THEN NULL ELSE GREATEST(EXTRACT(MILLISECONDS FROM AGE(NOW(), query_start)), 0) END AS running_time_ms
-                FROM pg_stat_activity""");
+        result.unsafeAppend(BasePostgreSqlDialect.POSTGRES_STAT_ACTIVITY_SQL);
         return result;
     }
 
