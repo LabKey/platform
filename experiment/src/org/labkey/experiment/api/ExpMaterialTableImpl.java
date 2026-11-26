@@ -1471,7 +1471,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, 8 * CacheManager.DAY, "materialized sample types", null);
+    public static final String MATERIALIZE_AT_STARTUP_FLAG = "materializeSampleTypesAtStartup";
+
+    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, 15 * CacheManager.DAY, "materialized sample types", null);
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
@@ -1801,6 +1803,40 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     /**
+     * Queue a background build of every sample type's materialized table.
+     * @return the LSIDs of every sample type
+     */
+    public static List<String> materializeAllAsync()
+    {
+        List<String> lsids = new TableSelector(ExperimentService.get().getTinfoSampleType(), Collections.singleton("LSID"), null, null).getArrayList(String.class);
+        _log.info("Queueing materialization of {} sample types", lsids.size());
+
+        for (String lsid : lsids)
+        {
+            if (ContextListener.isShuttingDown())
+                break;
+
+            try
+            {
+                ExpSampleType st = SampleTypeService.get().getSampleType(lsid);
+                if (null == st)
+                    continue;
+
+                TableInfo table = new SamplesSchema(User.getAdminServiceUser(), st.getContainer()).getTable(st, null);
+                if (table instanceof ExpMaterialTableImpl materialTable)
+                    materialTable.getOrCreateMQH().materializeAsync();
+            }
+            // Table construction asserts on some malformed domains; one bad sample type mustn't stop the rest
+            catch (Exception | AssertionError e)
+            {
+                _log.warn("Failed to queue materialization of sample type {}", lsid, e);
+            }
+        }
+
+        return lsids;
+    }
+
+    /**
      * Incremental update is dependent upon the web server and database server time being consistent.
      * If they differ, then it can lead to stale materialized results which can lead to data integrity issues.
      */
@@ -1873,6 +1909,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             super(prefix, scope, select, uptodate, supplier, indexes, deferredIndexes, maxTimeToCache, isSelectIntoSql, unlogged, traceLabel);
             this._lsid = lsid;
             this._updateColumns = updateColumns;
+        }
+
+        @Override
+        protected boolean isObsolete()
+        {
+            return _materializedQueries.peek(_lsid) != this;
         }
 
         @Override
@@ -3138,6 +3180,39 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             // All four rows share the root's rootProp, so mirroring the domain's unique index as-is would fail the build.
             assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testMaterializeAllAsync() throws Exception
+        {
+            ExpSampleType first = createSampleType("IncrUpdWarmFirst");
+            insertRoots(first, "R1", "R2");
+            ExpSampleType second = createSampleType("IncrUpdWarmSecond");
+            insertRoots(second, "R1");
+
+            List<_MaterializedQueryHelper> mqhs = new ArrayList<>();
+            for (ExpSampleType st : List.of(first, second))
+            {
+                _materializedQueries.remove(st.getLSID());
+                _MaterializedQueryHelper mqh = getSamplesTable(st).getOrCreateMQH();
+                assertNull(st.getName() + " should start unloaded", mqh.tryGetFromSqlIfLoaded(null));
+                mqhs.add(mqh);
+            }
+
+            List<String> queued = materializeAllAsync();
+            assertTrue("Both sample types should be queued: " + queued, queued.containsAll(List.of(first.getLSID(), second.getLSID())));
+
+            // Every sample type on the server shares the one runner thread, so allow for the others queued ahead
+            long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(60);
+            while (mqhs.stream().anyMatch(mqh -> null == mqh.tryGetFromSqlIfLoaded(null)) && System.currentTimeMillis() < deadline)
+                Thread.sleep(100);
+
+            for (ExpSampleType st : List.of(first, second))
+            {
+                ExpMaterialTableImpl table = getSamplesTable(st);
+                assertNotNull(st.getName() + " was not materialized in the background", table.getOrCreateMQH().tryGetFromSqlIfLoaded(null));
+                assertCacheMatchesFreshDerivation(table, st.getLSID());
+            }
         }
 
         private ExpSampleType createSampleType(String name) throws Exception

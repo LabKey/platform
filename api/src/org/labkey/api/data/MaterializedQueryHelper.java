@@ -493,6 +493,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         _map.clear();
     }
 
+    /** @return true if nothing will read this helper's view any more, so a queued {@link #materializeAsync()} can skip the build */
+    protected boolean isObsolete()
+    {
+        return false;
+    }
+
     /**
      * Submits a background task to build or incrementally update the materialized view.
      * Only one background task runs at a time per MQH instance (guarded by CAS on _backgroundTaskRunning).
@@ -522,7 +528,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
                     ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
 
-                    getFromSql("_bg_");
+                    if (isObsolete())
+                        span.setTag("labkey.skipped_obsolete", true);
+                    else
+                        getFromSql("_bg_");
                 }
                 catch (Throwable t)
                 {

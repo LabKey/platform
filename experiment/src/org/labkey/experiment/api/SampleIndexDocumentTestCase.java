@@ -298,9 +298,11 @@ public class SampleIndexDocumentTestCase extends Assert
         assertNotNull("T1 indexed", last);
         String outcome = "the held batch indexed " + (queuedDoc == null ? null : queuedDoc.get(SearchService.PROPERTY.identifiersMed.toString()))
                 + " and the type pass " + (passDoc == null ? "skipped T1" : "reindexed T1");
-        Object tokens = last.get(SearchService.PROPERTY.identifiersMed.toString());
-        assertTrue("T1's last document lost its TextField value: " + outcome, String.valueOf(tokens).contains("alpha"));
-        assertFalse("T1's last document kept the removed field's value: " + outcome, String.valueOf(tokens).contains("41"));
+        List<String> tokens = last.get(SearchService.PROPERTY.identifiersMed.toString()) instanceof List<?> list
+                ? list.stream().map(String::valueOf).toList() : List.of();
+        assertTrue("T1's last document lost its TextField value: " + outcome, tokens.contains("alpha"));
+        // Whole tokens, since other integer values (e.g. 3041) can contain "41"
+        assertFalse("T1's last document kept the removed field's value: " + outcome, tokens.contains("41"));
     }
 
     @Test

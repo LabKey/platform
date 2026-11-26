@@ -225,6 +225,18 @@ public class BlockingCache<K, V> implements Cache<K, V>
         return get(key, null);
     }
 
+    /** @return the loaded value for this key, or null if absent or still loading; never loads or blocks on a load */
+    public @Nullable V peek(@NotNull K key)
+    {
+        Wrapper<V> w = _cache.get(key);
+        if (null == w)
+            return null;
+        synchronized (w.getLockObject())
+        {
+            return w.getValue();
+        }
+    }
+
     @Override
     public boolean remove(@NotNull K key)
     {
