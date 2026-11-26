@@ -22,6 +22,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.logging.LogHelper;
@@ -35,11 +36,6 @@ import java.util.Map;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
-/**
- * User: adam
- * Date: Fed 22, 2008
- * Time: 8:57:17 PM
- */
 public class DatabaseAttachmentFile implements AttachmentFile
 {
     private static final Logger LOG = LogHelper.getLogger(DatabaseAttachmentFile.class, "Attachment file stored in the DB");
@@ -50,15 +46,11 @@ public class DatabaseAttachmentFile implements AttachmentFile
     private ResultSet _rs = null;
     private InputStream _is = null;
 
-    private static final CoreSchema core = CoreSchema.getInstance();
-    private static final String _sqlDocumentTypeAndSize = "SELECT a.Type, a.Size FROM " + core.getTableInfoAttachmentPointers() + " ap INNER JOIN " + core.getTableInfoAttachments() + " a ON a.RowId = ap.AttachmentId WHERE ap.Container = ? AND ap.Parent = ? AND ap.Name = ?";
-    private static final String _sqlDocument = "SELECT a.Document FROM " + core.getTableInfoAttachmentPointers() + " ap INNER JOIN " + core.getTableInfoAttachments() + " a ON a.RowId = ap.AttachmentId WHERE ap.Container = ? AND ap.Parent = ? AND ap.Name = ?";
-
     public DatabaseAttachmentFile(Attachment attachment) throws IOException
     {
         _attachment = attachment;
 
-        Map<String, Object> map = new SqlSelector(core.getSchema(), _sqlDocumentTypeAndSize, attachment.getContainer(), attachment.getParent(), attachment.getName()).getMap();
+        Map<String, Object> map = new SqlSelector(CoreSchema.getInstance().getSchema(), appendFromWhere(SQLFragment.unsafe("SELECT a.Type, a.Size"))).getMap();
 
         if (null == map)
             throw new FileNotFoundException("Attachment could not be retrieved from database: " + attachment.getName());
@@ -66,7 +58,15 @@ public class DatabaseAttachmentFile implements AttachmentFile
         _contentType = (String) map.get("Type");
 
         int size = asInteger(map.get("Size"));
-        _fileSize = (size > 0 ? size : 0);
+        _fileSize = (Math.max(size, 0));
+    }
+
+    private SQLFragment appendFromWhere(SQLFragment sql)
+    {
+        CoreSchema core = CoreSchema.getInstance();
+        return sql.unsafeAppend(" FROM ").append(core.getTableInfoAttachmentPointers())
+            .unsafeAppend(" ap INNER JOIN ").append(core.getTableInfoAttachments())
+            .unsafeAppend(" a ON a.RowId = ap.AttachmentId WHERE ap.Container = ? AND ap.Parent = ? AND ap.Name = ?", _attachment.getContainer(), _attachment.getParent(), _attachment.getName());
     }
 
     @Override
@@ -108,7 +108,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
 
         try
         {
-            _rs = new SqlSelector(core.getSchema(), _sqlDocument, _attachment.getContainer(), _attachment.getParent(), _attachment.getName()).getResultSet(false);
+            _rs = new SqlSelector(CoreSchema.getInstance().getSchema(), appendFromWhere(SQLFragment.unsafe("SELECT a.Document"))).getResultSet(false);
 
             if (!_rs.next())
                 throw new FileNotFoundException("Attachment could not be retrieved from database: " + _attachment.getName());
