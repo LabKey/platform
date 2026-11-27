@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -99,6 +100,7 @@ public interface Selector
      *         .collect(Collectors.toList());
      * }}</pre>
      */
+    @MustBeClosed
     <T> Stream<T> uncachedStream(Class<T> clazz);
 
     /**
@@ -115,6 +117,7 @@ public interface Selector
      * closed</b>, typically using try-with-resources. This is less convenient than a cached Stream, but useful when
      * large results are possible.
      */
+    @MustBeClosed
     Stream<Map<String, Object>> uncachedMapStream();
 
     /**
@@ -129,6 +132,7 @@ public interface Selector
      * open Connection, so <b>it must be closed</b>, typically using try-with-resources. This is less convenient than a
      * cached Stream, but useful when large results are possible.
      */
+    @MustBeClosed
     Stream<ResultSet> uncachedResultSetStream();
 
     /** Convenience method that avoids "unchecked assignment" warnings */

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -54,5 +55,6 @@ public interface PropertyStore
      * @param category The property set category
      * @return A stream of container objects. This stream MUST BE CLOSED via try-with-resources or in a finally block.
      */
+    @MustBeClosed
     Stream<Container> streamMatchingContainers(User user, String category);
 }

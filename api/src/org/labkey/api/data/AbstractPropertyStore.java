@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import org.apache.commons.collections4.map.UnmodifiableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -251,7 +252,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
         return m;
     }
 
-    @Override
+    @Override @MustBeClosed
     public final Stream<Container> streamMatchingContainers(User user, String category)
     {
         SQLFragment sql = new SQLFragment("SELECT ObjectId FROM " + _prop.getTableInfoPropertySets() + " WHERE UserId = ? AND Category = ?", user, category);

@@ -17,6 +17,7 @@ package org.labkey.api.workflow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.errorprone.annotations.MustBeClosed;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.attachments.AttachmentFile;
@@ -327,14 +328,14 @@ public abstract class Job extends CreatedModified implements Identifiable
     public abstract @NotNull List<? extends ExpMaterial> getSamples();
 
     // Backed by an open ResultSet; callers must close it
-    @JsonIgnore
+    @JsonIgnore @MustBeClosed
     public abstract @NotNull Stream<String> getSampleNames();
 
     @JsonIgnore
     public abstract @NotNull List<? extends ExpData> getSources();
 
     // Backed by an open ResultSet; callers must close it
-    @JsonIgnore
+    @JsonIgnore @MustBeClosed
     public abstract @NotNull Stream<String> getSourceNames();
 
     public void setEntities(List<WorkEntity> entities)
