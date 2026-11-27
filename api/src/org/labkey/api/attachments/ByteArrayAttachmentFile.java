@@ -52,6 +52,12 @@ public class ByteArrayAttachmentFile implements AttachmentFile
     }
 
     @Override
+    public boolean isReopenable()
+    {
+        return true;
+    }
+
+    @Override
     public String getFilename()
     {
         return _fileName;

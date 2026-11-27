@@ -39,8 +39,8 @@ public class ExpRunAttachmentType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
-        return SQLFragment.unsafe("SELECT EntityId, Name AS Description FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "er");
+        return SQLFragment.unsafe("SELECT EntityId, Container, Name AS Description FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "er");
     }
 }

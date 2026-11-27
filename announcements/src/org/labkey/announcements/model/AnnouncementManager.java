@@ -708,7 +708,7 @@ public class AnnouncementManager
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), discussionSrcIds, CompareType.IN);
         TableSelector selector = new TableSelector(_comm.getTableInfoAnnouncements(), Collections.singleton("entityId"), filter, null);
         Map<String, Integer> updateCounts = new HashMap<>();
-        updateCounts.put("attachments", Table.updateContainer(_core.getTableInfoDocuments(), "parent", selector.getArrayList(String.class), targetContainer, user, false));
+        updateCounts.put("attachments", Table.updateContainer(_core.getTableInfoAttachmentPointers(), "parent", selector.getArrayList(String.class), targetContainer, user, false));
         updateCounts.put("announcements", Table.updateContainer(_comm.getTableInfoAnnouncements(), "discussionSrcIdentifier", discussionSrcIds, targetContainer, user, false));
         return updateCounts;
     }
@@ -952,7 +952,7 @@ public class AnnouncementManager
         // Get the attachments... unfortunately, they're attached to individual announcementModels, not to the thread,
         // so we need a different query.
         // find all messages that have attachments
-        sql = SQLFragment.unsafe("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM ").append(_comm.getTableInfoAnnouncements()).unsafeAppend(" a INNER JOIN core.Documents d ON a.entityid = d.parent");
+        sql = SQLFragment.unsafe("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM ").append(_comm.getTableInfoAnnouncements()).unsafeAppend(" a INNER JOIN ").append(CoreSchema.getInstance().getTableInfoAttachmentPointers(), "d").unsafeAppend(" ON a.entityid = d.parent");
         sql.unsafeAppend("\nWHERE a.container = ?", c);
         if (null != threadId)
         {
@@ -960,7 +960,7 @@ public class AnnouncementManager
         }
         else
         {
-            SQLFragment modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoDocuments(), modifiedSince, "d").toSQLFragment(null, null);
+            SQLFragment modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoAttachmentPointers(), modifiedSince, "d").toSQLFragment(null, null);
             if (!modified.isEmpty())
                 sql.unsafeAppend(" AND ").append(modified);
         }
@@ -1075,7 +1075,7 @@ public class AnnouncementManager
     {
         private void purgeAnnouncements(Container c, boolean verifyEmpty)
         {
-            String deleteDocuments = "DELETE FROM " + _core.getTableInfoDocuments() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?)";
+            String deleteDocuments = "DELETE FROM " + _core.getTableInfoAttachmentPointers() + " WHERE Container = ? AND Parent IN (SELECT EntityId FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?)";
             int docs = new SqlExecutor(_comm.getSchema()).execute(deleteDocuments, c, c);
             String deleteAnnouncements = "DELETE FROM " + _comm.getTableInfoAnnouncements() + " WHERE Container = ?";
             int pages = new SqlExecutor(_comm.getSchema()).execute(deleteAnnouncements, c);

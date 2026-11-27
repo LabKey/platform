@@ -41,13 +41,17 @@ public class IssueCommentType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
         TableInfo table = IssuesSchema.getInstance().getTableInfoComments();
 
-        return new SQLFragment("SELECT EntityId, ")
-            .append(table.getSqlDialect().concatenate("'Issue #'", "CAST(IssueId AS VARCHAR)"))
+        // Comments have no Container column; their attachment parent uses the issue's container
+        return SQLFragment.unsafe("SELECT comments.EntityId, issues.Container, ")
+            .unsafeAppend(table.getSqlDialect().concatenate("'Issue #'", "CAST(comments.IssueId AS VARCHAR)"))
             .unsafeAppend(" AS Description FROM ")
-            .append(table, "comments");
+            .append(table, "comments")
+            .unsafeAppend(" INNER JOIN ")
+            .append(IssuesSchema.getInstance().getTableInfoIssues(), "issues")
+            .unsafeAppend(" ON issues.IssueId = comments.IssueId");
     }
 }

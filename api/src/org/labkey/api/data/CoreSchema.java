@@ -107,14 +107,14 @@ public class CoreSchema
         return getSchema().getTable("Logins");
     }
 
-    public TableInfo getTableInfoDocuments()
+    public TableInfo getTableInfoAttachments()
     {
-        return getSchema().getTable("Documents");
+        return getSchema().getTable("Attachments");
     }
 
-    public TableInfo getTableInfoAttachmentPointer()
+    public TableInfo getTableInfoAttachmentPointers()
     {
-        return getSchema().getTable("AttachmentPointer");
+        return getSchema().getTable("AttachmentPointers");
     }
 
     public TableInfo getTableInfoUsers()

@@ -40,8 +40,10 @@ public class FileSystemAttachmentType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
-        return SQLFragment.unsafe("SELECT EntityId, Name AS Description FROM ").append(CoreSchema.getInstance().getMappedDirectories(), "md");
+        // A folder's default file root has no MappedDirectories row; its attachments use the container's EntityId
+        return SQLFragment.unsafe("SELECT EntityId, Container, Name AS Description FROM ").append(CoreSchema.getInstance().getMappedDirectories(), "md")
+            .unsafeAppend(" UNION ").append(PARENT_CONTAINER_SQL);
     }
 }

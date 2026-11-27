@@ -18,6 +18,7 @@ package org.labkey.core.attachment;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -36,6 +37,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
@@ -158,7 +160,6 @@ public class AttachmentServiceImpl implements AttachmentService
     private static final Logger LOG = LogHelper.getLogger(AttachmentServiceImpl.class, "Orphaned attachments");
     private static final String UPLOAD_LOG = ".upload.log";
     private static final Map<String, AttachmentParentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
-    private static final Set<String> ATTACHMENT_COLUMNS = Set.of("Parent", "Container", "DocumentName", "DocumentSize", "DocumentType", "Created", "CreatedBy", "LastIndexed");
 
     // Maximum number of deferred AttachmentCache invalidations one transaction will accumulate before falling
     // back to clearing the whole cache. See invalidateCache().
@@ -279,33 +280,9 @@ public class AttachmentServiceImpl implements AttachmentService
         return null;
     }
 
-    private void validateAttachmentSize(AttachmentFile file) throws IOException
-    {
-        int maxSize = AppProps.getInstance().getMaxBLOBSize();
-        if (file.getSize() > maxSize)
-        {
-            throw new AttachmentService.FileTooLargeException(file, maxSize);
-        }
-    }
 
     @Override
-    public void validateAttachmentSizes(AttachmentParent parent, List<AttachmentFile> files) throws IOException
-    {
-        File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
-
-        // Only validate if we're putting the file in the database
-        if (null == fileLocation)
-        {
-            for (AttachmentFile file : files)
-            {
-                validateAttachmentSize(file);
-            }
-        }
-    }
-
-
-    @Override
-    public synchronized void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException
+    public void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException
     {
         if (null == user)
             throw new IllegalArgumentException("Cannot add attachments for the null user");
@@ -320,44 +297,197 @@ public class AttachmentServiceImpl implements AttachmentService
         }
 
         Set<String> filesToSkip = new TreeSet<>();
-        File fileLocation = parent instanceof AttachmentDirectory dir ? dir.getFileSystemDirectory() : null;
+        boolean inDirectory = parent instanceof AttachmentDirectory;
 
         // Resolve which of these files already exist with a single query instead of a cached read per file.
-        Map<String, Attachment> existingAttachments = null == parent ? Collections.emptyMap() :
-                getAttachments(parent, files.stream().map(AttachmentFile::getFilename).toList());
+        Map<String, Attachment> existingAttachments = getAttachments(parent, files.stream().map(AttachmentFile::getFilename).toList());
+        Map<String, StoredContent> toAdd = new LinkedHashMap<>();
 
         for (AttachmentFile file : files)
         {
             if (existingAttachments.containsKey(file.getFilename()))
-            {
                 filesToSkip.add(file.getFilename());
-                continue;
-            }
-
-            HashMap<String, Object> hm = new HashMap<>();
-            if (null == fileLocation)
-            {
-                validateAttachmentSize(file);
-                hm.put("Document", file);
-            }
             else
-                ((AttachmentDirectory)parent).addAttachment(user, file);
-
-            hm.put("DocumentName", file.getFilename());
-            hm.put("DocumentSize", file.getSize());
-            hm.put("DocumentType", file.getContentType());
-            hm.put("Parent", parent.getEntityId());
-            hm.put("ParentType", parent.getAttachmentParentType().getUniqueName());
-            hm.put("Container", parent.getContainerId());
-            Table.insert(user, coreTables().getTableInfoDocuments(), hm);
-
-            addAuditEvent(user, parent, file.getFilename(), "The attachment " + file.getFilename() + " was added");
+                toAdd.put(file.getFilename(), inDirectory ? StoredContent.placeholder(file) : StoredContent.hash(file));
         }
 
-        invalidateCache(parent);
+        storeAttachments(parent, toAdd, user);
 
         if (!filesToSkip.isEmpty())
             throw new AttachmentService.DuplicateFilenameException(filesToSkip);
+    }
+
+    @Override
+    public @NotNull List<String> addAttachmentsNamedByHash(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException
+    {
+        if (parent instanceof AttachmentDirectory)
+            throw new UnsupportedOperationException("AttachmentDirectory parents can't name attachments by hash");
+
+        List<String> names = new ArrayList<>(files.size());
+        Map<String, StoredContent> contents = new LinkedHashMap<>();
+
+        for (AttachmentFile file : files)
+        {
+            StoredContent content = StoredContent.hash(file);
+            String name = getHashedName(content.hash(), file.getFilename());
+            names.add(name);
+            contents.putIfAbsent(name, content);
+        }
+
+        getAttachments(parent, contents.keySet()).keySet().forEach(contents::remove);
+        storeAttachments(parent, contents, user);
+
+        return names;
+    }
+
+    /** Hash plus the original extension, so downloads get a usable filename */
+    static @NotNull String getHashedName(@NotNull String hash, @NotNull String filename)
+    {
+        String extension = FileUtil.getExtension(filename);
+        return null != extension ? hash + "." + extension : hash;
+    }
+
+    /**
+     * Content ready to store: hashed, and either reopenable or buffered. File-system attachments store no document,
+     * so they get a unique placeholder hash instead.
+     */
+    private record StoredContent(String hash, long size, String contentType, @Nullable AttachmentFile document, AttachmentFile source)
+    {
+        static StoredContent placeholder(AttachmentFile file) throws IOException
+        {
+            return new StoredContent(GUID.makeGUID(), file.getSize(), file.getContentType(), null, file);
+        }
+
+        static StoredContent hash(AttachmentFile file) throws IOException
+        {
+            int maxSize = AppProps.getInstance().getMaxBLOBSize();
+
+            try
+            {
+                if (file.isReopenable())
+                {
+                    if (file.getSize() > maxSize)
+                        throw new AttachmentService.FileTooLargeException(file, maxSize);
+
+                    return new StoredContent(DigestUtils.sha256Hex(file.openInputStream()), file.getSize(), file.getContentType(), file, file);
+                }
+
+                // One extra byte detects an oversized stream without buffering all of it
+                byte[] bytes;
+                try (InputStream in = file.openInputStream())
+                {
+                    bytes = in.readNBytes(maxSize == Integer.MAX_VALUE ? maxSize : maxSize + 1);
+                }
+                AttachmentFile buffered = new ByteArrayAttachmentFile(file.getFilename(), bytes, file.getContentType());
+
+                if (bytes.length > maxSize)
+                    throw new AttachmentService.FileTooLargeException(buffered, maxSize);
+
+                return new StoredContent(DigestUtils.sha256Hex(bytes), bytes.length, file.getContentType(), buffered, file);
+            }
+            finally
+            {
+                file.closeInputStream();
+            }
+        }
+    }
+
+    // Callers hash first, so the transaction never waits on hashing
+    private void storeAttachments(AttachmentParent parent, Map<String, StoredContent> contents, User user) throws IOException
+    {
+        if (contents.isEmpty())
+            return;
+
+        try (DbScope.Transaction tx = coreTables().getScope().ensureTransaction())
+        {
+            for (Map.Entry<String, StoredContent> entry : contents.entrySet())
+            {
+                String name = entry.getKey();
+
+                try
+                {
+                    insertPointer(parent, name, getOrInsertAttachment(entry.getValue()), user);
+                }
+                catch (RuntimeSQLException e)
+                {
+                    // A concurrent add of the same name won
+                    if ("23505".equals(e.getSQLException().getSQLState()))
+                        throw new AttachmentService.DuplicateFilenameException(name);
+                    throw e;
+                }
+
+                // Write after the pointer insert so a losing concurrent add fails before overwriting the winner's file
+                if (parent instanceof AttachmentDirectory dir)
+                    dir.addAttachment(user, entry.getValue().source());
+
+                addAuditEvent(user, parent, name, "The attachment " + name + " was added");
+            }
+
+            tx.commit();
+        }
+
+        invalidateCache(parent);
+    }
+
+    /**
+     * Returns the RowId of the attachment with this content, inserting it if it's new. The key-share lock keeps
+     * UnreferencedAttachmentsMaintenanceTask from deleting the row before this transaction's pointer commits.
+     */
+    private int getOrInsertAttachment(StoredContent content)
+    {
+        TableInfo attachments = coreTables().getTableInfoAttachments();
+        SQLFragment select = SQLFragment.unsafe("SELECT RowId FROM ").append(attachments).unsafeAppend(" WHERE Hash = ? FOR KEY SHARE", content.hash());
+
+        // Retry: a concurrent upload of the same content can win the insert, and the cleanup task can then delete its row before we lock it
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            Integer rowId = new SqlSelector(coreTables().getScope(), select).getObject(Integer.class);
+
+            if (null == rowId)
+            {
+                SQLFragment insert = SQLFragment.unsafe("INSERT INTO ").append(attachments)
+                    .unsafeAppend(" (Size, Type, Document, Hash) VALUES (?, ?, ?, ?) ON CONFLICT (Hash) DO NOTHING RETURNING RowId", content.size(), content.contentType(),
+                        null != content.document() ? content.document() : Parameter.nullParameter(JdbcType.BINARY), content.hash());
+
+                try
+                {
+                    rowId = new SqlSelector(coreTables().getScope(), insert).getObject(Integer.class);
+                }
+                finally
+                {
+                    closeQuietly(content.document());
+                }
+            }
+
+            if (null != rowId)
+                return rowId;
+        }
+
+        throw new IllegalStateException("Couldn't store attachment content with hash " + content.hash());
+    }
+
+    private static void closeQuietly(@Nullable AttachmentFile file)
+    {
+        try
+        {
+            if (null != file)
+                file.closeInputStream();
+        }
+        catch (IOException e)
+        {
+            LOG.debug("Failed to close attachment stream", e);
+        }
+    }
+
+    private void insertPointer(AttachmentParent parent, String name, int attachmentId, User user)
+    {
+        Map<String, Object> pointer = new HashMap<>();
+        pointer.put("Name", name);
+        pointer.put("Parent", parent.getEntityId());
+        pointer.put("ParentType", parent.getAttachmentParentType().getUniqueName());
+        pointer.put("Container", parent.getContainerId());
+        pointer.put("AttachmentId", attachmentId);
+        Table.insert(user, coreTables().getTableInfoAttachmentPointers(), pointer);
     }
 
     @Override
@@ -433,10 +563,57 @@ public class AttachmentServiceImpl implements AttachmentService
 
         checkSecurityPolicy(parent);
 
-        return new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
-                ATTACHMENT_COLUMNS,
-                new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId()),
-                new Sort("+RowId")).getArrayList(Attachment.class);
+        return selectAttachments(parent, null);
+    }
+
+    /**
+     * Every pointer lookup includes the parent's container, so guessing an EntityId can't reach another folder's
+     * attachments.
+     */
+    static @NotNull List<Attachment> selectAttachments(AttachmentParent parent, @Nullable Collection<String> names)
+    {
+        CoreSchema core = CoreSchema.getInstance();
+        SQLFragment sql = SQLFragment.unsafe("SELECT ap.Parent, ap.Container, ap.Name, a.Size AS DocumentSize, ap.Created, ap.CreatedBy, ap.LastIndexed FROM ")
+            .append(core.getTableInfoAttachmentPointers(), "ap")
+            .unsafeAppend(" INNER JOIN ").append(core.getTableInfoAttachments(), "a")
+            .unsafeAppend(" ON a.RowId = ap.AttachmentId WHERE ap.Container = ? AND ap.Parent = ?", parent.getContainerId(), parent.getEntityId());
+
+        if (null != names)
+            sql.unsafeAppend(" AND ").appendInClause("ap.Name", names, core.getSqlDialect());
+
+        sql.unsafeAppend(" ORDER BY ap.RowId");
+
+        return new SqlSelector(core.getScope(), sql).getArrayList(Attachment.class);
+    }
+
+    // The same parent as seen from another container, e.g., to invalidate its cache entry after a move
+    private static AttachmentParent inContainer(AttachmentParent parent, Container container)
+    {
+        return new AttachmentParent()
+        {
+            @Override
+            public String getEntityId()
+            {
+                return parent.getEntityId();
+            }
+
+            @Override
+            public String getContainerId()
+            {
+                return container.getId();
+            }
+
+            @Override
+            public @NotNull AttachmentParentType getAttachmentParentType()
+            {
+                return parent.getAttachmentParentType();
+            }
+        };
+    }
+
+    private static SQLFragment pointerWhere(AttachmentParent parent)
+    {
+        return SQLFragment.unsafe(" WHERE Container = ? AND Parent = ?", parent.getContainerId(), parent.getEntityId());
     }
 
     @Override
@@ -458,6 +635,14 @@ public class AttachmentServiceImpl implements AttachmentService
                 ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
             invalidateCache(parent);
         }
+    }
+
+    @Override
+    public void deleteAttachmentRecords(AttachmentParent parent)
+    {
+        deleteIndexedAttachments(parent, selectAttachments(parent, null));
+        new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(parent));
+        invalidateCache(parent);
     }
 
     /**
@@ -545,15 +730,15 @@ public class AttachmentServiceImpl implements AttachmentService
     @Override
     public void deleteIndexedAttachments(List<String> parentIds)
     {
-        TableSelector ts = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
-                PageFlowUtil.set("Parent", "DocumentName"),
+        TableSelector ts = new TableSelector(coreTables().getTableInfoAttachmentPointers(),
+                PageFlowUtil.set("Parent", "Name"),
                 new SimpleFilter(FieldKey.fromParts("Parent"), parentIds, CompareType.IN), null);
 
         try (ResultSet rs = ts.getResultSet())
         {
             while (rs.next())
             {
-                deleteIndexedAttachment(rs.getString("Parent"), rs.getString("DocumentName"));
+                deleteIndexedAttachment(rs.getString("Parent"), rs.getString("Name"));
             }
         }
         catch (SQLException e)
@@ -566,10 +751,10 @@ public class AttachmentServiceImpl implements AttachmentService
     public void clearLastIndexed(List<String> parentIds)
     {
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("Parent"), parentIds))
-            .addClause(new SimpleFilter.SQLClause("LastIndexed IS NOT NULL", null));
-        SQLFragment sql = SQLFragment.unsafe("UPDATE core.Documents SET LastIndexed = NULL ")
-            .append(filter.getSQLFragment(CoreSchema.getInstance().getSqlDialect()));
-        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
+            .addClause(new SimpleFilter.SQLClause(SQLFragment.unsafe("LastIndexed IS NOT NULL")));
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(coreTables().getTableInfoAttachmentPointers()).unsafeAppend(" SET LastIndexed = NULL ")
+            .append(filter.getSQLFragment(coreTables().getSqlDialect()));
+        new SqlExecutor(coreTables().getSchema()).execute(sql);
     }
 
     private void deleteIndexedAttachment(AttachmentParent parent, String name)
@@ -580,9 +765,8 @@ public class AttachmentServiceImpl implements AttachmentService
     private void deleteIndexedAttachment(String parent, String name)
     {
         SearchService.get().deleteResource(makeDocId(parent, name));
-        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(SQLFragment.unsafe(
-            "UPDATE core.Documents SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL AND Parent = ? AND DocumentName = ?", parent, name)
-        );
+        new SqlExecutor(coreTables().getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(coreTables().getTableInfoAttachmentPointers())
+            .unsafeAppend(" SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL AND Parent = ? AND Name = ?", parent, name));
     }
 
     private void deleteIndexedAttachments(AttachmentParent parent, List<Attachment> atts)
@@ -663,6 +847,8 @@ public class AttachmentServiceImpl implements AttachmentService
         if (exists(parent, newName))
             throw new AttachmentService.DuplicateFilenameException(newName);
 
+        // The search document is keyed by name, so drop the old one; sqlRename() clears LastIndexed to index the new one
+        deleteIndexedAttachment(parent, oldName);
         new SqlExecutor(coreTables().getSchema()).execute(sqlRename(parent, oldName, newName));
 
         // rename the file in the filesystem only if an Attachment directory and the db rename succeeded
@@ -675,14 +861,72 @@ public class AttachmentServiceImpl implements AttachmentService
     }
 
 
-    // Copies an attachment -- same container, same parent, but new name.  
+    // Copies an attachment -- same container, same parent, but new name.
     @Override
     public void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException
     {
-        checkSecurityPolicy(auditUser, parent);
-        a.setName(newName);
-        DatabaseAttachmentFile file = new DatabaseAttachmentFile(a);
-        addAttachments(parent, Collections.singletonList(file), auditUser);
+        if (0 == copyPointers(parent, parent, List.of(a.getName()), newName, auditUser))
+            throw new FileNotFoundException(a.getName());
+    }
+
+    @Override
+    public void copyAttachments(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @NotNull User user) throws IOException
+    {
+        if (null != names && names.isEmpty())
+            return;
+
+        copyPointers(source, destination, names, null, user);
+    }
+
+    /** @param newName the copy's name when copying a single attachment, or null to keep the names */
+    private int copyPointers(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @Nullable String newName, User user) throws IOException
+    {
+        if (source instanceof AttachmentDirectory || destination instanceof AttachmentDirectory)
+            throw new UnsupportedOperationException("Copying AttachmentDirectory attachments isn't supported");
+
+        checkSecurityPolicy(user, destination);
+
+        TableInfo pointers = coreTables().getTableInfoAttachmentPointers();
+        SQLFragment sourceWhere = pointerWhere(source);
+        if (null != names)
+            sourceWhere.unsafeAppend(" AND ").appendInClause("Name", names, coreTables().getSqlDialect());
+
+        List<String> sourceNames = new SqlSelector(coreTables().getSchema(), SQLFragment.unsafe("SELECT Name FROM ").append(pointers).append(sourceWhere)).getArrayList(String.class);
+        if (sourceNames.isEmpty())
+            return 0;
+
+        List<String> copyNames = null != newName ? List.of(newName) : sourceNames;
+        Set<String> duplicates = getAttachments(destination, copyNames).keySet();
+        if (!duplicates.isEmpty())
+            throw new AttachmentService.DuplicateFilenameException(duplicates);
+
+        SQLFragment sql = SQLFragment.unsafe("INSERT INTO ").append(pointers)
+            .unsafeAppend(" (Name, Parent, ParentType, Container, AttachmentId, Created, CreatedBy) SELECT ")
+            .append(null != newName ? SQLFragment.unsafe("?", newName) : SQLFragment.unsafe("Name"))
+            .unsafeAppend(", ?, ?, ?, AttachmentId, ?, ? FROM ", destination.getEntityId(), destination.getAttachmentParentType().getUniqueName(), destination.getContainerId(), new Date(), user.getUserId())
+            .append(pointers).append(pointerWhere(source))
+            .unsafeAppend(" AND ").appendInClause("Name", sourceNames, coreTables().getSqlDialect());
+
+        int copied;
+        try (DbScope.Transaction tx = coreTables().getScope().ensureTransaction())
+        {
+            copied = new SqlExecutor(coreTables().getSchema()).execute(sql);
+            copyNames.forEach(name -> addAuditEvent(user, destination, name, "The attachment " + name + " was added"));
+            tx.commit();
+        }
+        catch (RuntimeSQLException e)
+        {
+            // A concurrent add of the same name won
+            if ("23505".equals(e.getSQLException().getSQLState()))
+                throw new AttachmentService.DuplicateFilenameException(copyNames);
+            throw e;
+        }
+        finally
+        {
+            invalidateCache(destination);
+        }
+
+        return copied;
     }
 
     @Override
@@ -693,11 +937,12 @@ public class AttachmentServiceImpl implements AttachmentService
         for (AttachmentParent parent : parents)
         {
             checkSecurityPolicy(auditUser, parent);
+            // Lookups filter on the parent's container, so list the attachments before the move changes it
+            List<Attachment> atts = getAttachments(parent);
             int rowsChanged = new SqlExecutor(coreTables().getSchema()).execute(sqlMove(parent, newContainer));
             if (rowsChanged > 0)
             {
                 totalRowsChanged += rowsChanged;
-                List<Attachment> atts = getAttachments(parent);
                 String filename;
                 for (Attachment att : atts)
                 {
@@ -717,6 +962,7 @@ public class AttachmentServiceImpl implements AttachmentService
                     addAuditEvent(auditUser, parent, filename, "The attachment " + filename + " was moved");
                 }
                 invalidateCache(parent);
+                invalidateCache(inContainer(parent, newContainer));
             }
         }
 
@@ -820,15 +1066,15 @@ public class AttachmentServiceImpl implements AttachmentService
     public List<Pair<String,String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Parent"), parents, CompareType.IN);
-        var since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
+        var since = new SearchService.LastIndexedClause(coreTables().getTableInfoAttachmentPointers(), modifiedSince, null);
 
         if (!since.isEmpty())
             filter.addClause(since);
 
         final ArrayList<Pair<String,String>> ret = new ArrayList<>();
 
-        new TableSelector(coreTables().getTableInfoDocuments(),
-                    PageFlowUtil.set("Parent", "DocumentName", "LastIndexed"),
+        new TableSelector(coreTables().getTableInfoAttachmentPointers(),
+                    PageFlowUtil.set("Parent", "Name", "LastIndexed"),
                     filter,
                     new Sort("+Created")).forEach(rs -> {
                         String parent = rs.getString(1);
@@ -893,12 +1139,12 @@ public class AttachmentServiceImpl implements AttachmentService
     }
 
     @Override
-    // Joins each row of core.Documents to the table(s) (if any) that contain an EntityId matching the document's parent
+    // Joins each attachment pointer to the table(s) (if any) that contain an EntityId matching the pointer's parent
     public WebPartView<?> getFindAttachmentParentsView()
     {
-        SQLFragment sql = SQLFragment.unsafe("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
+        SQLFragment sql = SQLFragment.unsafe("SELECT RowId, CreatedBy, Created, Container, Name, TableName FROM ").append(coreTables().getTableInfoAttachmentPointers()).unsafeAppend(" LEFT OUTER JOIN (\n");
         addSelectAllEntityIdsSql(sql, null, Sets.newCaseInsensitiveHashSet("Audit"), false);
-        sql.unsafeAppend(") c ON EntityId = Parent\nORDER BY TableName, DocumentName, Container");
+        sql.unsafeAppend(") c ON EntityId = Parent\nORDER BY TableName, Name, Container");
 
         return getResultSetView(sql, "Probable Attachment Parents", null);
     }
@@ -910,7 +1156,7 @@ public class AttachmentServiceImpl implements AttachmentService
     private void addSelectAllEntityIdsSql(SQLFragment sql, @Nullable Set<String> userRequestedSchemas, Set<String> userRequestedSchemasToIgnore, boolean lsidsOnly)
     {
         Set<String> schemasToIgnore = Sets.newCaseInsensitiveHashSet(userRequestedSchemasToIgnore);
-        String documentsSelectName = CoreSchema.getInstance().getTableInfoDocuments().getSelectName();
+        String pointersSelectName = CoreSchema.getInstance().getTableInfoAttachmentPointers().getSelectName();
         String propertySetsSelectName = PropertySchema.getInstance().getTableInfoPropertySets().getSelectName();
 
         // Temp schema causes problems because materialized tables disappear but stay in the cached list. This is probably a bug with
@@ -922,7 +1168,7 @@ public class AttachmentServiceImpl implements AttachmentService
             .map(schemaName->DbSchema.get(schemaName, DbSchemaType.Bare))
             .flatMap(schema->schema.getTableNames().stream().map(schema::getTable))
             .filter(table->table.getTableType() == DatabaseTableType.TABLE) // We just want the underlying tables (no views or virtual tables)
-            .filter(table->!Objects.equals(documentsSelectName, table.getSelectName())) // Don't join to the Documents table!
+            .filter(table->!Objects.equals(pointersSelectName, table.getSelectName())) // Don't join to the AttachmentPointers table!
             .filter(table->!Objects.equals(propertySetsSelectName, table.getSelectName())) // Nor to prop.PropertySets
             .map(SchemaTableInfo::getColumns)
             .flatMap(Collection::stream)
@@ -1004,17 +1250,8 @@ public class AttachmentServiceImpl implements AttachmentService
         }
         else
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId());
-            filter.addCondition(FieldKey.fromParts("DocumentName"), names, CompareType.IN);
-            // Note: we are intentionally skipping the AttachmentCache here. If we hit the cache here while getting
-            // attachments from the global attachment parent we'll load every single attachment into the cache first,
-            // which could be very expensive on servers that have a ton of attachments.
-            List<Attachment> attachmentsList = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
-                    ATTACHMENT_COLUMNS,
-                    filter,
-                    new Sort("+RowId")).getArrayList(Attachment.class);
-
-            for (Attachment attachment : attachmentsList)
+            // Intentionally skips the AttachmentCache, which would load all of a parent's attachments to find a few
+            for (Attachment attachment : selectAttachments(parent, names))
                 attachments.put(attachment.getName(), attachment);
         }
 
@@ -1052,10 +1289,7 @@ public class AttachmentServiceImpl implements AttachmentService
         {
             // we don't want a RowSet, so execute directly (not Table.executeQuery())
             conn = schema.getScope().getConnection();
-            if (null == parent.getEntityId())
-                stmt = Table.prepareStatement(conn, sqlRootDocument(), Collections.singletonList(name), jdbcParameters);
-            else
-                stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getContainerId(), parent.getEntityId(), name), jdbcParameters);
+            stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getContainerId(), parent.getEntityId(), name), jdbcParameters);
 
             rs = stmt.executeQuery();
 
@@ -1144,10 +1378,7 @@ public class AttachmentServiceImpl implements AttachmentService
         {
             // we don't want a RowSet, so execute directly (not Table.executeQuery())
             conn = schema.getScope().getConnection();
-            if (null == parent.getEntityId())
-                stmt = Table.prepareStatement(conn, sqlRootDocument(), Collections.singletonList(name), jdbcParameters);
-            else
-                stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getContainerId(), parent.getEntityId(), name), jdbcParameters);
+            stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getContainerId(), parent.getEntityId(), name), jdbcParameters);
 
             rs = stmt.executeQuery();
 
@@ -1222,7 +1453,7 @@ public class AttachmentServiceImpl implements AttachmentService
 
     private static final int MAX_ORPHANS_TO_LOG = 20;
 
-    private record Orphan(String documentName, String parentType){}
+    private record Orphan(String name, String parentType){}
 
     @Override
     public int logOrphanedAttachments()
@@ -1233,36 +1464,34 @@ public class AttachmentServiceImpl implements AttachmentService
 
         if (core != null)
         {
-            TableInfo documents = core.getTable(CoreQuerySchema.DOCUMENTS_TABLE_NAME, new AllFolders(user));
-            if (null != documents)
+            TableInfo attachments = core.getTable(CoreQuerySchema.ATTACHMENTS_TABLE_NAME, new AllFolders(user));
+            if (null != attachments)
             {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
-                List<Orphan> orphans = new TableSelector(documents, new CsvSet("DocumentName, ParentType"), filter, null).getArrayList(Orphan.class);
-                if (!orphans.isEmpty())
-                {
-                    ret = orphans.size();
-                    LOG.error("Found {}, which likely indicates a problem with a delete method or a container listener.", StringUtilsLabKey.pluralize(ret, "orphaned attachment"));
-
-                    final String message;
-                    if (orphans.size() > MAX_ORPHANS_TO_LOG)
-                    {
-                        orphans = orphans.subList(0, MAX_ORPHANS_TO_LOG);
-                        message = "The first " + MAX_ORPHANS_TO_LOG;
-                    }
-                    else
-                    {
-                        message = "All";
-                    }
-
-                    LOG.error("{} detected orphans are listed below:\n{}", message, orphans.stream().map(Record::toString).collect(Collectors.joining("\n")));
-                }
+                ret += logProblemAttachments(attachments, "Orphaned", "orphaned attachment", "which likely indicates a problem with a delete method or a container listener");
+                ret += logProblemAttachments(attachments, "ContainerMismatch", "attachment whose container doesn't match its parent's",
+                    "which makes them unreachable through their parents; the parent type may report a different container than the one its attachments are stored with");
             }
         }
 
         return ret;
     }
 
-    record OrphanedAttachment(String container, String parent, String parentType, String documentName)
+    private int logProblemAttachments(TableInfo attachments, String flagColumn, String description, String consequence)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(flagColumn), true);
+        List<Orphan> problems = new TableSelector(attachments, new CsvSet("Name, ParentType"), filter, null).getArrayList(Orphan.class);
+
+        if (!problems.isEmpty())
+        {
+            LOG.error("Found {}, {}.", StringUtilsLabKey.pluralize(problems.size(), description), consequence);
+            String message = problems.size() > MAX_ORPHANS_TO_LOG ? "The first " + MAX_ORPHANS_TO_LOG : "All";
+            LOG.error("{} are listed below:\n{}", message, problems.stream().limit(MAX_ORPHANS_TO_LOG).map(Record::toString).collect(Collectors.joining("\n")));
+        }
+
+        return problems.size();
+    }
+
+    record OrphanedAttachment(String container, String parent, String parentType, String name)
     {
         AttachmentParent getAttachmentParent()
         {
@@ -1294,23 +1523,23 @@ public class AttachmentServiceImpl implements AttachmentService
     @Override
     public void deleteOrphanedAttachments()
     {
-        // TroubleShooterRole provides ability to read the Documents table. deleteAttachments() does not check perms.
+        // TroubleShooterRole provides ability to read the Attachments table. deleteAttachments() does not check perms.
         User user = ElevatedUser.getElevatedUser(User.getSearchUser(), TroubleshooterRole.class);
         UserSchema core = DefaultSchema.get(user, ContainerManager.getRoot()).getUserSchema(CoreQuerySchema.NAME);
         if (core != null)
         {
             // Use "unsafe everything" container filter because it's possible that orphaned attachments have a container
             // that no longer exists.
-            TableInfo documents = core.getTable(CoreQuerySchema.DOCUMENTS_TABLE_NAME, ContainerFilter.getUnsafeEverythingFilter());
-            if (null != documents)
+            TableInfo attachments = core.getTable(CoreQuerySchema.ATTACHMENTS_TABLE_NAME, ContainerFilter.getUnsafeEverythingFilter());
+            if (null != attachments)
             {
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Orphaned"), true);
                 MutableInt count = new MutableInt(0);
-                new TableSelector(documents, new CsvSet("Container, Parent, ParentType, DocumentName"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
+                new TableSelector(attachments, new CsvSet("Container, Parent, ParentType, Name"), filter, null).forEach(OrphanedAttachment.class, orphan -> {
                     LOG.info("Deleting orphaned attachment: {}", orphan);
                     try
                     {
-                        deleteAttachment(orphan.getAttachmentParent(), orphan.documentName(), user);
+                        deleteAttachment(orphan.getAttachmentParent(), orphan.name(), user);
                         count.increment();
                     }
                     catch (Exception e)
@@ -1332,35 +1561,31 @@ public class AttachmentServiceImpl implements AttachmentService
 
     private String sqlDocument()
     {
-        return "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Container = ? AND Parent = ? AND DocumentName = ?";
+        return "SELECT a.Type AS DocumentType, a.Size AS DocumentSize, a.Document FROM " + coreTables().getTableInfoAttachmentPointers() + " ap INNER JOIN " +
+            coreTables().getTableInfoAttachments() + " a ON a.RowId = ap.AttachmentId WHERE ap.Container = ? AND ap.Parent = ? AND ap.Name = ?";
     }
 
-    private String sqlRootDocument()
-    {
-        return "SELECT DocumentType, DocumentSize, Document FROM " + coreTables().getTableInfoDocuments() + " WHERE Parent IS NULL AND DocumentName = ?";
-    }
-
+    // Deletes remove only pointers; UnreferencedAttachmentsMaintenanceTask deletes the content no pointer references
     private SQLFragment sqlCascadeDelete(AttachmentParent parent)
     {
-        return new SQLFragment("DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Container = ? AND Parent = ?", parent.getContainerId(), parent.getEntityId());
+        return SQLFragment.unsafe("DELETE FROM ").append(coreTables().getTableInfoAttachmentPointers()).append(pointerWhere(parent));
     }
 
     private SQLFragment sqlDelete(AttachmentParent parent, String name)
     {
-        return new SQLFragment("DELETE FROM " + coreTables().getTableInfoDocuments() + " WHERE Container = ? AND Parent = ? AND DocumentName = ?", parent.getContainerId(), parent.getEntityId(), name);
+        return sqlCascadeDelete(parent).unsafeAppend(" AND Name = ?", name);
     }
 
     private SQLFragment sqlRename(AttachmentParent parent, String oldName, String newName)
     {
-        return new SQLFragment("UPDATE " + coreTables().getTableInfoDocuments() + " SET DocumentName = ? WHERE Container = ? AND Parent = ? AND DocumentName = ?",
-                newName, parent.getContainerId(), parent.getEntityId(), oldName);
+        return SQLFragment.unsafe("UPDATE ").append(coreTables().getTableInfoAttachmentPointers()).unsafeAppend(" SET Name = ?, LastIndexed = NULL", newName)
+            .append(pointerWhere(parent)).unsafeAppend(" AND Name = ?", oldName);
     }
 
     private SQLFragment sqlMove(AttachmentParent parent, Container newContainer)
     {
-        // TODO: consider an inClause
-        return new SQLFragment("UPDATE " + coreTables().getTableInfoDocuments() + " SET Container = ? WHERE Container = ? AND Parent=?",
-                newContainer.getEntityId(), parent.getContainerId(), parent.getEntityId());
+        return SQLFragment.unsafe("UPDATE ").append(coreTables().getTableInfoAttachmentPointers()).unsafeAppend(" SET Container = ?", newContainer.getEntityId())
+            .append(pointerWhere(parent));
     }
 
     private static class ResponseWriter implements DocumentWriter
@@ -1807,9 +2032,8 @@ public class AttachmentServiceImpl implements AttachmentService
         @Override
         public void setLastIndexed(long ms, long modified)
         {
-            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(SQLFragment.unsafe(
-                    "UPDATE core.Documents SET LastIndexed=? WHERE Parent=? and DocumentName=?",
-                    new Date(ms), _parent.getEntityId(), _name));
+            new SqlExecutor(coreTables().getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(coreTables().getTableInfoAttachmentPointers())
+                .unsafeAppend(" SET LastIndexed = ?", new Date(ms)).append(pointerWhere(_parent)).unsafeAppend(" AND Name = ?", _name));
         }
     }
 
@@ -1895,6 +2119,8 @@ public class AttachmentServiceImpl implements AttachmentService
             fileService.unregisterDirectory(folder, "test");
             namedParentTest = fileService.getRegisteredDirectory(folder, "test");
             assertNull(namedParentTest);
+            assertTrue("Unregistering should forget the directory's attachments", getAttachmentIds(namedParent).isEmpty());
+            assertTrue("Unregistering must leave the files on disk", FileUtil.appendName(otherDir, "file.txt").exists());
 
             File relativeDir = FileUtil.appendName(attachDir, "subdir2");
             relativeDir.mkdirs();
@@ -2104,32 +2330,182 @@ public class AttachmentServiceImpl implements AttachmentService
             return names.get();
         }
 
-        private static class TestAttachmentParent implements AttachmentParent
+        private record TestAttachmentParent(String containerId, String entityId) implements AttachmentParent
         {
-            private final String _containerId;
-            private final String _entityId = GUID.makeGUID();
-
             private TestAttachmentParent(Container c)
             {
-                _containerId = c.getId();
+                this(c.getId(), GUID.makeGUID());
             }
 
             @Override
             public String getEntityId()
             {
-                return _entityId;
+                return entityId;
             }
 
             @Override
             public String getContainerId()
             {
-                return _containerId;
+                return containerId;
             }
 
             @Override
             public @NotNull AttachmentParentType getAttachmentParentType()
             {
                 return AttachmentParentType.UNKNOWN;
+            }
+        }
+
+        // Unique per run, so earlier runs and other content never share these attachments
+        private static byte[] uniqueBytes(String label)
+        {
+            return (label + " " + GUID.makeGUID()).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
+        }
+
+        private static List<Integer> getAttachmentIds(AttachmentParent parent)
+        {
+            return new SqlSelector(CoreSchema.getInstance().getScope(), SQLFragment.unsafe("SELECT AttachmentId FROM ")
+                .append(CoreSchema.getInstance().getTableInfoAttachmentPointers()).append(pointerWhere(parent))
+                .unsafeAppend(" ORDER BY Name")).getArrayList(Integer.class);
+        }
+
+        private static boolean attachmentExists(int rowId)
+        {
+            return new TableSelector(CoreSchema.getInstance().getTableInfoAttachments(), new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null).exists();
+        }
+
+        @Test
+        public void testDeduplication() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            AttachmentService svc = AttachmentService.get();
+            Container c = JunitUtil.getTestContainer();
+            AttachmentParent first = new TestAttachmentParent(c);
+            AttachmentParent second = new TestAttachmentParent(c);
+            byte[] bytes = uniqueBytes("dedupe");
+
+            try
+            {
+                svc.addAttachments(first, List.of(new ByteArrayAttachmentFile("a.txt", bytes, "text/plain")), user);
+                // The buffered path must hash identically to the reopenable one
+                svc.addAttachments(second, List.of(new InputStreamAttachmentFile(new java.io.ByteArrayInputStream(bytes), "b.txt", "text/plain")), user);
+
+                int attachmentId = getAttachmentIds(first).getFirst();
+                assertEquals("Identical content should be stored once", List.of(attachmentId), getAttachmentIds(second));
+                assertEquals(DigestUtils.sha256Hex(bytes), new SqlSelector(CoreSchema.getInstance().getScope(), SQLFragment.unsafe("SELECT Hash FROM ")
+                    .append(CoreSchema.getInstance().getTableInfoAttachments()).unsafeAppend(" WHERE RowId = ?", attachmentId)).getObject(String.class));
+
+                try (InputStream is = svc.getInputStream(second, "b.txt"))
+                {
+                    assertArrayEquals(bytes, is.readAllBytes());
+                }
+
+                svc.deleteAttachments(first);
+                assertTrue("Content another pointer references must survive a delete", attachmentExists(attachmentId));
+                assertNotNull(svc.getAttachment(second, "b.txt"));
+
+                svc.deleteAttachments(second);
+                assertTrue("Deletes remove only pointers", attachmentExists(attachmentId));
+
+                int deleted;
+                do
+                {
+                    deleted = UnreferencedAttachmentsMaintenanceTask.deleteBatch();
+                }
+                while (deleted > 0);
+                assertFalse("Cleanup should delete content that no pointer references", attachmentExists(attachmentId));
+            }
+            finally
+            {
+                svc.deleteAttachments(List.of(first, second));
+            }
+        }
+
+        @Test
+        public void testNamedByHash() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            AttachmentService svc = AttachmentService.get();
+            AttachmentParent parent = new TestAttachmentParent(JunitUtil.getTestContainer());
+            byte[] bytes = uniqueBytes("hashed");
+            String expected = DigestUtils.sha256Hex(bytes) + ".png";
+
+            try
+            {
+                List<String> names = svc.addAttachmentsNamedByHash(parent, List.of(new ByteArrayAttachmentFile("image.png", bytes, "image/png"), new ByteArrayAttachmentFile("copy.png", bytes, "image/png")), user);
+                assertEquals("Each file should get its hashed name", List.of(expected, expected), names);
+
+                // Adding the same content again reuses the existing name rather than failing
+                assertEquals(List.of(expected), svc.addAttachmentsNamedByHash(parent, List.of(new ByteArrayAttachmentFile("again.png", bytes, "image/png")), user));
+                assertEquals(List.of(expected), getNames(svc.getAttachments(parent)));
+            }
+            finally
+            {
+                svc.deleteAttachments(parent);
+            }
+        }
+
+        @Test
+        public void testCopyAndRename() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            AttachmentService svc = AttachmentService.get();
+            Container c = JunitUtil.getTestContainer();
+            AttachmentParent source = new TestAttachmentParent(c);
+            AttachmentParent destination = new TestAttachmentParent(c);
+
+            try
+            {
+                svc.addAttachments(source, List.of(new ByteArrayAttachmentFile("one.txt", uniqueBytes("one"), "text/plain"), new ByteArrayAttachmentFile("two.txt", uniqueBytes("two"), "text/plain")), user);
+
+                svc.copyAttachments(source, destination, List.of("two.txt"), user);
+                assertEquals(List.of("two.txt"), getNames(svc.getAttachments(destination)));
+                assertEquals("A copy should share content", getAttachmentIds(source).get(1), getAttachmentIds(destination).getFirst());
+
+                svc.copyAttachments(source, destination, List.of("one.txt"), user);
+                assertEquals(getAttachmentIds(source), getAttachmentIds(destination));
+                assertThrows(AttachmentService.DuplicateFilenameException.class, () -> svc.copyAttachments(source, destination, null, user));
+
+                new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(SQLFragment.unsafe("UPDATE ").append(CoreSchema.getInstance().getTableInfoAttachmentPointers())
+                    .unsafeAppend(" SET LastIndexed = ?", new Date()).append(pointerWhere(destination)));
+                svc.renameAttachment(destination, "one.txt", "renamed.txt", user);
+                assertNull(svc.getAttachment(destination, "one.txt"));
+                Attachment renamed = svc.getAttachment(destination, "renamed.txt");
+                assertNotNull(renamed);
+                assertNull("Rename should clear LastIndexed so the new name gets indexed", renamed.getLastIndexed());
+                assertNotNull("Renaming a copy must not affect the source", svc.getAttachment(source, "one.txt"));
+            }
+            finally
+            {
+                svc.deleteAttachments(List.of(source, destination));
+            }
+        }
+
+        @Test
+        public void testContainerPredicate() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            AttachmentService svc = AttachmentService.get();
+            AttachmentParent parent = new TestAttachmentParent(JunitUtil.getTestContainer());
+            // Same EntityId, claimed by another container
+            AttachmentParent impostor = new TestAttachmentParent(ContainerManager.getRoot().getId(), parent.getEntityId());
+
+            try
+            {
+                svc.addAttachments(parent, List.of(new ByteArrayAttachmentFile("secret.txt", uniqueBytes("secret"), "text/plain")), user);
+
+                assertTrue(svc.getAttachments(impostor).isEmpty());
+                assertNull(svc.getAttachment(impostor, "secret.txt"));
+                assertTrue(svc.getAttachments(impostor, List.of("secret.txt")).isEmpty());
+                assertThrows(FileNotFoundException.class, () -> svc.getInputStream(impostor, "secret.txt"));
+
+                assertEquals(1, svc.moveAttachments(ContainerManager.getRoot(), List.of(parent), user));
+                assertTrue("Moved attachments should leave the old container", svc.getAttachments(parent).isEmpty());
+                assertEquals(List.of("secret.txt"), getNames(svc.getAttachments(impostor)));
+            }
+            finally
+            {
+                svc.deleteAttachments(List.of(parent, impostor));
             }
         }
 

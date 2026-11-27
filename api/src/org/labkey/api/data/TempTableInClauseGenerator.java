@@ -132,11 +132,11 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         if (null == sortedParameters)
             return null;
 
-        String cacheKey = getCacheKey(jdbcType, sortedParameters);
+        DbSchema tempSchema = _tempSchemaSupplier.get();
+        String cacheKey = getCacheKey(tempSchema, jdbcType, sortedParameters);
         TempTableInfo tempTableInfo = _tempTableCache.get(cacheKey);
         if (tempTableInfo == null)
         {
-            DbSchema tempSchema = _tempSchemaSupplier.get();
             tempTableInfo = new TempTableInfo(tempSchema, "InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
             SQLFragment sqlCreate = SQLFragment.unsafe("CREATE TABLE ");
             sqlCreate.append(tempTableInfo)
@@ -255,14 +255,15 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         return params;
     }
 
-    private String getCacheKey(@NotNull JdbcType jdbcType, @NotNull Collection<?> params)
+    // Temp tables exist only in the database that created them, so the key includes the data source
+    private String getCacheKey(@NotNull DbSchema tempSchema, @NotNull JdbcType jdbcType, @NotNull Collection<?> params)
     {
         StringBuilder paramBuilder = new StringBuilder();
         for (Object param : params)
             paramBuilder.append(param);
 
         // Hash the param string to avoid very large cache keys filling up memory
-        return jdbcType.name() + "_" + params.size() + "_" + HashHelpers.hash(paramBuilder.toString());
+        return tempSchema.getScope().getDataSourceName() + "_" + jdbcType.name() + "_" + params.size() + "_" + HashHelpers.hash(paramBuilder.toString());
     }
 
     public static class TestCase

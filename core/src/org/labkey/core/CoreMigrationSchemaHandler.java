@@ -133,8 +133,8 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     {
         new SqlExecutor(getSchema()).execute("ALTER TABLE core.Containers DROP CONSTRAINT FK_Containers_Containers");
         new SqlExecutor(getSchema()).execute("ALTER TABLE core.ViewCategory DROP CONSTRAINT FK_ViewCategory_Parent");
-        // core.Documents gets populated after all schemas are copied; see afterMigration()
-        new SqlExecutor(getSchema()).execute("ALTER TABLE core.AttachmentPointer DROP CONSTRAINT FK_AttachmentPointer_AttachmentId");
+        // Schema handlers copy attachments in the background after their schemas are copied; see afterMigration()
+        new SqlExecutor(getSchema()).execute("ALTER TABLE core.AttachmentPointers DROP CONSTRAINT FK_AttachmentPointers_AttachmentId");
     }
 
     @Override
@@ -144,7 +144,8 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
         tablesToCopy.remove(CoreSchema.getInstance().getTableInfoModules());
         tablesToCopy.remove(CoreSchema.getInstance().getTableInfoSqlScripts());
         tablesToCopy.remove(CoreSchema.getInstance().getTableInfoUpgradeSteps());
-        tablesToCopy.remove(CoreSchema.getInstance().getTableInfoDocuments());
+        tablesToCopy.remove(CoreSchema.getInstance().getTableInfoAttachments());
+        tablesToCopy.remove(CoreSchema.getInstance().getTableInfoAttachmentPointers());
 
         return tablesToCopy;
     }
@@ -251,11 +252,11 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
             sql.unsafeAppend(" IN (SELECT EntityId FROM core.Containers)");
         }
 
-        sql.unsafeAppend(" AND (DocumentName IN (?, ?) OR ")
+        sql.unsafeAppend(" AND (Name IN (?, ?) OR ")
             .add(AttachmentCache.FAVICON_FILE_NAME)
             .add(AttachmentCache.STYLESHEET_FILE_NAME)
-            .unsafeAppend("DocumentName LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
-            .unsafeAppend("DocumentName LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
+            .unsafeAppend("Name LIKE '" + AttachmentCache.LOGO_FILE_NAME_PREFIX + "%' OR ")
+            .unsafeAppend("Name LIKE '" + AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX + "%')");
         ret.addAll(copyAttachments(configuration, new SQLClause(sql), LookAndFeelResourceType.get()));
 
         return ret;
@@ -275,9 +276,11 @@ class CoreMigrationSchemaHandler extends DefaultMigrationSchemaHandler implement
     @Override
     public void afterMigration(DatabaseMigrationConfiguration configuration)
     {
-        // Now that all schemas have copied their attachments into core.Documents, update that table's sequence
-        DatabaseMigrationService.get().updateSequences(configuration.getSourceScope().getSchema("core", DbSchemaType.Migration).getTable("Documents"), CoreSchema.getInstance().getTableInfoDocuments());
-        new SqlExecutor(getSchema()).execute("ALTER TABLE core.AttachmentPointer ADD CONSTRAINT FK_AttachmentPointer_AttachmentId FOREIGN KEY (AttachmentId) REFERENCES core.Documents (RowId)");
+        // Now that every schema's attachments are copied, update the sequences
+        DbSchema sourceCore = configuration.getSourceScope().getSchema("core", DbSchemaType.Migration);
+        DatabaseMigrationService.get().updateSequences(sourceCore.getTable("Attachments"), CoreSchema.getInstance().getTableInfoAttachments());
+        DatabaseMigrationService.get().updateSequences(sourceCore.getTable("AttachmentPointers"), CoreSchema.getInstance().getTableInfoAttachmentPointers());
+        new SqlExecutor(getSchema()).execute("ALTER TABLE core.AttachmentPointers ADD CONSTRAINT FK_AttachmentPointers_AttachmentId FOREIGN KEY (AttachmentId) REFERENCES core.Attachments (RowId)");
     }
 
     // MigrationFilter implementation below

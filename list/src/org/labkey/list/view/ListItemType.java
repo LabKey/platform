@@ -54,7 +54,7 @@ public class ListItemType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
         ListService svc = ListService.get();
         assert null != svc;
@@ -66,7 +66,7 @@ public class ListItemType implements AttachmentParentType
             map.forEach((k, v) -> {
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))
-                    selectStatements.add(new SQLFragment("\n    SELECT EntityId, ")
+                    selectStatements.add(SQLFragment.unsafe("\n    SELECT EntityId, ? AS Container, ", c.getId())
                         .append(dialect.concatenate(
                             new SQLFragment("?", domain.getName()),
                             new SQLFragment("':'"),

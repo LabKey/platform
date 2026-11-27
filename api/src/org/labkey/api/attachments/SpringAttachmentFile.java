@@ -56,6 +56,12 @@ public class SpringAttachmentFile implements AttachmentFile
     }
 
     @Override
+    public boolean isReopenable()
+    {
+        return true;
+    }
+
+    @Override
     public String getFilename()
     {
         return _filename;

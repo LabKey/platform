@@ -40,8 +40,8 @@ public class AnnouncementType implements AttachmentParentType
     }
 
     @Override
-    public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
+    public @NotNull SQLFragment getSelectEntityIdContainerAndDescriptionSql()
     {
-        return SQLFragment.unsafe("SELECT EntityId, Title AS Description FROM ").append(CommSchema.getInstance().getTableInfoAnnouncements(), "ann");
+        return SQLFragment.unsafe("SELECT EntityId, Container, Title AS Description FROM ").append(CommSchema.getInstance().getTableInfoAnnouncements(), "ann");
     }
 }

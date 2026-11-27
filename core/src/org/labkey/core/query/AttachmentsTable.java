@@ -23,7 +23,6 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
@@ -33,27 +32,29 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 
 import java.util.Objects;
 
-public class DocumentsTable extends FilteredTable<CoreQuerySchema>
+/** One row per attachment pointer, with the size and type of the content it references */
+public class AttachmentsTable extends FilteredTable<CoreQuerySchema>
 {
-    public DocumentsTable(@NotNull CoreQuerySchema userSchema, ContainerFilter cf)
+    public AttachmentsTable(@NotNull CoreQuerySchema userSchema, ContainerFilter cf)
     {
-        super(CoreSchema.getInstance().getTableInfoDocuments(), userSchema, cf);
+        super(CoreSchema.getInstance().getTableInfoAttachmentPointers(), userSchema, cf);
         wrapAllColumns(true);
         getMutableColumnOrThrow("RowId").setHidden(true);
-        getMutableColumnOrThrow("ModifiedBy").setHidden(true);
-        getMutableColumnOrThrow("Modified").setHidden(true);
-        MutableColumnInfo owner = getMutableColumnOrThrow("Owner");
-        owner.setFk(new UserIdQueryForeignKey(_userSchema));
+        getMutableColumnOrThrow("AttachmentId").setHidden(true);
+        getMutableColumnOrThrow("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema));
         getMutableColumnOrThrow("Parent").setHidden(true);
-        getMutableColumnOrThrow("DocumentSize").setFormat("#,##0");
-        getMutableColumnOrThrow("Document").setHidden(true);
         getMutableColumnOrThrow("LastIndexed").setHidden(true);
+        BaseColumnInfo size = new BaseColumnInfo("Size", this, JdbcType.INTEGER);
+        size.setFormat("#,##0");
+        addColumn(size);
+        addColumn(new BaseColumnInfo("Type", this, JdbcType.VARCHAR));
         addColumn(new BaseColumnInfo("ParentDescription", this, JdbcType.VARCHAR));
-        BaseColumnInfo orphaned = new BaseColumnInfo("Orphaned", this, JdbcType.BOOLEAN);
-        addColumn(orphaned);
+        addColumn(new BaseColumnInfo("Orphaned", this, JdbcType.BOOLEAN));
+        // Lookups filter on the parent's container, so these attachments exist but can't be found through their parent
+        addColumn(new BaseColumnInfo("ContainerMismatch", this, JdbcType.BOOLEAN));
 
         setDefaultVisibleColumns(
-            new CsvSet("CreatedBy, Created, Container, DocumentName, DocumentSize, DocumentType, ParentType, ParentDescription")
+            new CsvSet("CreatedBy, Created, Container, Name, Size, Type, ParentType, ParentDescription")
                 .stream()
                 .map(FieldKey::fromParts)
                 .toList()
@@ -66,21 +67,25 @@ public class DocumentsTable extends FilteredTable<CoreQuerySchema>
         SqlDialect dialect = getSqlDialect();
         AliasManager am = new AliasManager(dialect);
         SQLFragment parents = AttachmentService.get().getAttachmentParentTypes().stream()
-            .map(type -> SQLFragment.unsafe("SELECT ? AS ParentType, EntityId, Description FROM (")
+            .map(type -> SQLFragment.unsafe("SELECT ? AS ParentType, EntityId, Container, Description FROM (")
                 .add(type.getUniqueName())
-                .append(type.getSelectEntityIdAndDescriptionSql())
+                .append(type.getSelectEntityIdContainerAndDescriptionSql())
                 .unsafeAppend(") ")
                 .appendIdentifier(am.decideAlias("x")))
             .filter(Objects::nonNull)
             .collect(LabKeyCollectors.joining(SQLFragment.unsafe("\nUNION\n")));
 
-        return SQLFragment.unsafe("(SELECT d.*, p.Description AS ParentDescription, ")
+        return SQLFragment.unsafe("(SELECT ap.*, a.Size, a.Type, p.Description AS ParentDescription, ")
             .append(dialect.wrapBooleanExpression(SQLFragment.unsafe("EntityId IS NULL")))
-            .unsafeAppend(" AS Orphaned FROM ")
-            .append(super.getFromSQL("d")) // core.Documents with container filter applied
-            .unsafeAppend(" LEFT JOIN (\n")
+            .unsafeAppend(" AS Orphaned, ")
+            .append(dialect.wrapBooleanExpression(SQLFragment.unsafe("p.Container IS NOT NULL AND p.Container <> ap.Container")))
+            .unsafeAppend(" AS ContainerMismatch FROM ")
+            .append(super.getFromSQL("ap")) // core.AttachmentPointers with container filter applied
+            .unsafeAppend(" INNER JOIN ")
+            .append(CoreSchema.getInstance().getTableInfoAttachments(), "a")
+            .unsafeAppend(" ON a.RowId = ap.AttachmentId LEFT JOIN (\n")
             .append(parents)
-            .unsafeAppend("\n) p ON d.Parent = p.EntityId AND d.ParentType = p.ParentType) ")
+            .unsafeAppend("\n) p ON ap.Parent = p.EntityId AND ap.ParentType = p.ParentType) ")
             .appendIdentifier(alias);
     }
 }

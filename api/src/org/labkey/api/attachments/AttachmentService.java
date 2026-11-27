@@ -70,11 +70,19 @@ public interface AttachmentService
 
     void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
 
+    /**
+     * Names each attachment by its content hash plus the file's original extension. A name the parent already has is
+     * reused rather than reported as a duplicate. Not supported for AttachmentDirectory parents.
+     * @return the attachment names, in the order of files
+     */
+    @NotNull List<String> addAttachmentsNamedByHash(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
+
     void deleteAttachments(AttachmentParent parent);
 
     void deleteAttachments(Collection<AttachmentParent> parents);
 
-    void validateAttachmentSizes(AttachmentParent parent, List<AttachmentFile> files) throws IOException;
+    /** Forgets the parent's attachments but leaves an AttachmentDirectory's files on disk, e.g., when unregistering it */
+    void deleteAttachmentRecords(AttachmentParent parent);
 
     /**
      * Deletes the attachments with the given names from the given AttachmentParent.
@@ -90,7 +98,19 @@ public interface AttachmentService
 
     void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException;
 
+    /**
+     * Gives the parent a copy of the attachment under a new name, sharing its content.
+     * Not supported for AttachmentDirectory parents.
+     */
     void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
+
+    /**
+     * Gives the destination the source's attachments under the same names, sharing their content rather than copying it.
+     * Not supported for AttachmentDirectory parents.
+     * @param names the attachments to copy, or null for all of them
+     * @throws DuplicateFilenameException if the destination already has any of those names
+     */
+    void copyAttachments(AttachmentParent source, AttachmentParent destination, @Nullable Collection<String> names, @NotNull User user) throws IOException;
 
     int moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
 
@@ -142,7 +162,8 @@ public interface AttachmentService
     HttpView<?> getFindAttachmentParentsView();
 
     /**
-     * Logs the first 20 orphaned attachments it detects. Returns the total number of orphaned attachments detected.
+     * Logs the first 20 orphaned attachments it detects, and the first 20 whose container doesn't match their parent's.
+     * Returns the total number of both detected.
      */
     int logOrphanedAttachments();
 
