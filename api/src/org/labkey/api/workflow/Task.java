@@ -281,6 +281,7 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
         map.put("description", getDescription());
         map.put("entityFilter", getEntityFilter());
         map.put("status", getStatus());
+        map.put("assignee", getAssignee());
         if (getStartDate() != null)
             map.put("startDate", getStartDate());
         if (getEndDate() != null)
