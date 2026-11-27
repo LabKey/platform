@@ -38,10 +38,10 @@ public enum PostgreSqlVersion
     POSTGRESQL_16(160, false, true, PostgreSql_16_Dialect::new),
     POSTGRESQL_17(170, false, true, PostgreSql_17_Dialect::new),
     POSTGRESQL_18(180, false, true, PostgreSql_18_Dialect::new),
-    POSTGRESQL_19(190, false, false, PostgreSql_19_Dialect::new),
+    POSTGRESQL_19(190, false, true, PostgreSql_19_Dialect::new),
     POSTGRESQL_FUTURE(Integer.MAX_VALUE, false, false, PostgreSql_19_Dialect::new);
 
-    public static final String RECOMMENDED = PRODUCT_NAME + " 18.x is the recommended version.";
+    public static final String RECOMMENDED = PRODUCT_NAME + " 19.x is the recommended version.";
 
     private final int _version;
     private final boolean _deprecated;
