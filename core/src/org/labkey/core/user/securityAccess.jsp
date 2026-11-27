@@ -170,13 +170,13 @@
 
                                         if (group.isGuests() || group.isUsers())
                                         {
-                                            %><%= unsafe(!first ? ", " : "") %><span data-qtip="<%=unsafe(hoverExplanation)%>"><%=h(displayName)%></span><%
+                                            %><%= unsafe(!first ? ", " : "") %><span data-qtip="<%=h(hoverExplanation)%>"><%=h(displayName)%></span><%
                                         }
                                         else
                                         {
                                             String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
                                             ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
-                                            %><%= unsafe(!first ? ", " : "") %><a href="<%=h(groupURL)%>" data-qtip="<%=unsafe(hoverExplanation)%>"><%=h(displayName)%></a><%
+                                            %><%= unsafe(!first ? ", " : "") %><a href="<%=h(groupURL)%>" data-qtip="<%=h(hoverExplanation)%>"><%=h(displayName)%></a><%
                                         }
                                         first = false;
                                     }

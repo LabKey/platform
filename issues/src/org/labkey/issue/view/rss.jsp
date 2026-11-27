@@ -44,9 +44,9 @@ for (IssueObject issue : bean.issues)
 { %>
     <item>
         <title><%=issue.getIssueId()%>: <%=h(issue.getProperty(IssueObject.Prop.milestone)) %> <%=h(issue.getStatus())%> <%=h(issue.getAssignedToName(user))%> <%=h(issue.getTitle())%></title>
-        <link><%=unsafe(bean.filteredURLString)%><%=issue.getIssueId()%></link>
-        <guid><%=unsafe(bean.filteredURLString)%><%=issue.getIssueId()%></guid>
-        <pubDate><%=unsafe(issue.getCreated().toString())%></pubDate>
+        <link><%=h(bean.detailsURLPrefix)%><%=issue.getIssueId()%></link>
+        <guid><%=h(bean.detailsURLPrefix)%><%=issue.getIssueId()%></guid>
+        <pubDate><%=h(issue.getCreated())%></pubDate>
         <description>
 openedby <%=h(issue.getCreatedByName(user))%>
 priority <%=h(issue.getProperty(IssueObject.Prop.priority))%>

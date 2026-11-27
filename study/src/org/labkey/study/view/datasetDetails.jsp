@@ -91,16 +91,7 @@ if (isDatasetInherited)
 }
 if (!shadowed.isEmpty())
 {
-    StringBuilder sb = new StringBuilder();
-    sb.append(shadowed.size() == 1 ? "A shared dataset is" : "These shared datasets are").append(" shadowed by this local dataset definition:");
-    String comma = " ";
-    for (DatasetDefinition h : shadowed)
-    {
-        sb.append(comma).append(h(h.getName()));
-        comma = ", ";
-    }
-    sb.append(".");
-    %><%=unsafe(sb.toString())%><br><%
+    %><%=unsafe(shadowed.size() == 1 ? "A shared dataset is" : "These shared datasets are")%> shadowed by this local dataset definition: <%=h(shadowed.stream().map(DatasetDefinition::getName).collect(Collectors.joining(", ")))%>.<br><%
 }
 
 List<ButtonBuilder> buttons = new ArrayList<>();

@@ -440,8 +440,7 @@
 
     function confirmReset()
     {
-        // Although not clearly documented, confirm() appears to encode the message
-        if (confirm('Are you sure you want to reset <%=unsafe(clearMessage)%>?'))
+        if (confirm(<%=q("Are you sure you want to reset " + clearMessage + "?")%>))
         {
             _form.setClean();
             LABKEY.Utils.postToAction(<%=q(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))%>);

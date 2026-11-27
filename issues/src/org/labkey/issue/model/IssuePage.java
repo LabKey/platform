@@ -116,7 +116,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
      * A map of additional information to display on the issue's detail page. It will be displayed as a table row,
      * so the map is from the label to display to the cell contents (which can be a list of links or strings).
      */
-    private Map<String, List<Pair<String, ActionURL>>> _additionalDetailInfo;
+    private Map<String, List<Pair<HtmlString, ActionURL>>> _additionalDetailInfo;
 
     public IssuePage(Container c, User user)
     {
@@ -616,12 +616,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             return HtmlString.unsafe(label);
     }
 
-    public void setAdditionalDetailInfo(Map<String, List<Pair<String, ActionURL>>> additionalDetailInfo)
+    public void setAdditionalDetailInfo(Map<String, List<Pair<HtmlString, ActionURL>>> additionalDetailInfo)
     {
         _additionalDetailInfo = additionalDetailInfo;
     }
 
-    public Map<String, List<Pair<String, ActionURL>>> getAdditionalDetailInfo()
+    public Map<String, List<Pair<HtmlString, ActionURL>>> getAdditionalDetailInfo()
     {
         return _additionalDetailInfo;
     }
@@ -697,36 +697,30 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return renderDuplicates(dups);
     }
 
-    public String renderAdditionalDetailInfo()
+    public HtmlString renderAdditionalDetailInfo()
     {
-        if (getAdditionalDetailInfo() != null && !getAdditionalDetailInfo().isEmpty())
-        {
-            StringBuilder sb = new StringBuilder();
+        HtmlStringBuilder sb = HtmlStringBuilder.of();
 
-            for (String label : getAdditionalDetailInfo().keySet())
+        if (getAdditionalDetailInfo() != null)
+        {
+            for (Map.Entry<String, List<Pair<HtmlString, ActionURL>>> entry : getAdditionalDetailInfo().entrySet())
             {
-                StringBuilder cellContents = new StringBuilder();
+                sb.append(HtmlString.unsafe("<tr><td class=\"lk-form-label\">")).append(entry.getKey()).append(HtmlString.unsafe("</td><td>"));
                 String sep = "";
-                for (Pair<String, ActionURL> contentPair : getAdditionalDetailInfo().get(label))
+                for (Pair<HtmlString, ActionURL> contentPair : entry.getValue())
                 {
+                    sb.append(sep);
                     if (contentPair.second != null)
-                        cellContents.append(sep).append("<a href=\"").append(contentPair.second).append("\">").append(contentPair.first).append("</a>");
+                        sb.append(HtmlString.unsafe("<a href=\"")).append(contentPair.second.toString()).append(HtmlString.unsafe("\">")).append(contentPair.first).append(HtmlString.unsafe("</a>"));
                     else
-                        cellContents.append(sep).append(contentPair.first);
+                        sb.append(contentPair.first);
 
                     sep = ", ";
                 }
-
-                sb.append("<tr><td class=\"lk-form-label\">");
-                sb.append(label);
-                sb.append("</td><td>");
-                sb.append(cellContents);
-                sb.append("</td><tr>");
+                sb.append(HtmlString.unsafe("</td></tr>"));
             }
-
-            return sb.toString();
         }
 
-        return null;
+        return sb.getHtmlString();
     }
 }

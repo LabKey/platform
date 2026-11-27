@@ -93,7 +93,7 @@
     for (Pair<String, Portal.WebPart> pair : menus)
     {
 %>
-                <li class="dropdown" data-webpart="<%=unsafe(getSafeName(pair.second))%>" data-name="<%=unsafe(pair.second.getName())%>">
+                <li class="dropdown" data-webpart="<%=h(getSafeName(pair.second))%>" data-name="<%=h(pair.second.getName())%>">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%><i style="margin-left: 5px" class="fa fa-chevron-down"></i></a>
                     <ul class="dropdown-menu lk-custom-dropdown-menu"></ul>
                 </li>

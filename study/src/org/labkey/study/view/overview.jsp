@@ -177,7 +177,8 @@
             boolean checked = bean.stats.contains(stat);
             var id = makeId("visitStatistic");
             addHandler(id, "click", "document.changeFilterForm.submit();" );
-            out.print(unsafe("<label><input id=\"" + id + "\" name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + checked(checked) + ">" + h(stat.getDisplayString(study)) + "</label>\n"));
+            %><label><input id="<%=h(id)%>" name="visitStatistic" value="<%=h(stat.name())%>" type="checkbox"<%=checked(checked)%>><%=h(stat.getDisplayString(study))%></label>
+<%
         }
     %>
 <labkey:errors></labkey:errors>
@@ -187,10 +188,10 @@
     <tr class="labkey-alternate-row">
         <td class="labkey-column-header"><img alt="" width=60 height=1 src="<%=getWebappURL("_.gif")%>"></td>
         <td class="labkey-column-header"><%
-            String slash = "";
+            boolean first = true;
             for (VisitStatistic v : bean.stats)
             {
-        %><%=unsafe(slash)%><%
+                if (!first) { %> / <% }
                 if (v == VisitStatistic.ParticipantCount)
                 {
         %><%=h(visits.isEmpty() ? subjectNoun + " Count" : "All " + visitsLabel)%><%
@@ -199,7 +200,7 @@
                 {
         %><%=h(v.getDisplayString(study))%><%
                 }
-                slash = " / ";
+                first = false;
             }
         %></td>
         <%

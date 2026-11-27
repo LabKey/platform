@@ -17,10 +17,11 @@
 %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.model.AbstractSearchService" %>
 <%@ page import="org.labkey.search.model.DavCrawler" %>
-<%@ page import="java.io.IOException" %>
+<%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -33,28 +34,27 @@ if (ss == SearchService.NO_OP)
 }
 else
 {
-    %><table><%
+    Map<String, Object> stats = new LinkedHashMap<>();
     if (ss instanceof AbstractSearchService)
+        stats.putAll(((AbstractSearchService) ss).getIndexerStats());
+    stats.putAll(DavCrawler.getInstance().getStats());
+    %><table><%
+    for (Map.Entry<String, Object> e : stats.entrySet())
     {
-        renderMap(out, ((AbstractSearchService) ss).getIndexerStats());
+        %><tr><td valign="top"><%=h(e.getKey())%>&nbsp;&nbsp;</td><td><%=format(e.getValue())%></td></tr>
+<%
     }
-
-    renderMap(out, DavCrawler.getInstance().getStats());
     %></table><%
 }
 %>
 <%=link("Export index contents", SearchController.IndexContentsAction.class)%>
 <%!
-    private void renderMap(JspWriter out, Map<String, Object> m) throws IOException
+    private HtmlString format(Object v)
     {
-        for (Map.Entry e : m.entrySet())
-        {
-            String l = String.valueOf(e.getKey());
-            Object v = e.getValue();
-            if (v instanceof Integer || v instanceof Long)
-                v = Formats.commaf0.format(((Number)v).longValue());
-            v = null==v ? "" : String.valueOf(v);
-            out.print(unsafe("<tr><td valign=\"top\">" + h(l) + "&nbsp;&nbsp;</td><td>" + v + "</td></tr>\n"));
-        }
+        if (v instanceof HtmlString html)
+            return html;
+        if (v instanceof Integer || v instanceof Long)
+            return h(Formats.commaf0.format(((Number)v).longValue()));
+        return h(v);
     }
 %>

@@ -256,7 +256,7 @@ else
 
         if (bean.redundantMembers.containsKey(member))
         {
-            %><a data-qtitle="Redundant Member" data-qtip="<%=unsafe(bean.displayRedundancyReasonHTML(member))%>">*</a><%
+            %><a data-qtitle="Redundant Member" data-qtip="<%=h(bean.displayRedundancyReasonHTML(member))%>">*</a><%
         }
         %>
             &nbsp;&nbsp;</td>

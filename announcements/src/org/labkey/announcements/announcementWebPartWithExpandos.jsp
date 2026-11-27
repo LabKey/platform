@@ -194,7 +194,9 @@ for (AnnouncementModel a : bean.announcementModels)
     <tr>
         <td width="40%" align="left"><%
         if (a.getResponseCount() > 0)
-            out.print(unsafe(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)")));
+        {
+            %> (<%=a.getResponseCount()%>&nbsp;<%=unsafe(a.getResponseCount() == 1 ? "response" : "responses")%>)<%
+        }
         %></td>
         <td width="20%" align="center" class="message-creator"><%=AnnouncementManager.getUserDetailsLink(c, user, a.getCreatedBy(), bean.includeGroups, false)%></td>
         <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>

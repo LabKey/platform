@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.SafeToRenderEnum;
 
 import java.math.BigDecimal;
 
@@ -115,7 +116,7 @@ public interface Visit extends StudyEntity
         }
     }
 
-    enum SequenceHandling
+    enum SequenceHandling implements SafeToRenderEnum
     {
         normal,             // as determined by TimepointType
         logUniqueByDate     // append days since start of study in fractional part of sequencenum

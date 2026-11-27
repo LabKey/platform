@@ -653,18 +653,21 @@
                 {
                     for (Map.Entry<Object, Map<String, Object>> e : keyMap.entrySet())
                     {
-                        String link = "&nbsp;";
                         Map<String, Object> propMap = e.getValue();
                         String sourceLsid = (String) sourceLsidColumn.getValue(propMap);
-
+    %>
+    <td><%
                         if (sourceLsid != null && LsidManager.get().hasPermission(sourceLsid, getUser(), ReadPermission.class))
                         {
                             ActionURL sourceURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                             sourceURL.addParameter("sourceLsid", sourceLsid);
-                            link = "[<a href=\"" + sourceURL.getLocalURIString() + "\">details</a>]";
+                            %>[<a href="<%=h(sourceURL)%>">details</a>]<%
+                        }
+                        else
+                        {
+                            %>&nbsp;<%
                         }
     %>
-    <td><%= unsafe(link)%>
     </td>
     <%
                 countTD++;

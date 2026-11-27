@@ -87,20 +87,19 @@ function moveDatasetItem(action) {
                     StringBuilder desc = new StringBuilder();
                     desc.append(def.getDatasetId());
                     if (def.getLabel() != null)
-                        desc.append(": ").append(h(def.getLabel()));
+                        desc.append(": ").append(def.getLabel());
                     if (def.getViewCategory() != null)
-                        desc.append(" (").append(h(def.getViewCategory().getLabel())).append(")");
-                    StringBuilder padding = new StringBuilder();
+                        desc.append(" (").append(def.getViewCategory().getLabel()).append(")");
                     if (first)
                     {
                         // we'll pad the first entry to give our select box reasonable width
                         int padSize = 30 - desc.length();
                         while (padSize-- > 0)
-                            padding.append("&nbsp;");
+                            desc.append('\u00A0');
                         first = false;
                     }
                     %>
-                    <option value="<%= def.getDatasetId() %>"><%=h(desc.toString())%><%=unsafe(padding.toString())%></option>
+                    <option value="<%= def.getDatasetId() %>"><%=h(desc.toString())%></option>
                     <%
                 }
                 %>

@@ -160,7 +160,7 @@
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
                                 <%=checked(FileRootProp.folderOverride.name().equals(currentOption))%>>
-                            Use a <%=unsafe(c.getContainerNoun())%>-level file root
+                            Use a <%=h(c.getContainerNoun())%>-level file root
                             <labkey:input type="text" id="folderRootPath" name="folderRootPath" size="64" onChange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>" /></td>
                         <% addHandler("optionProjectSpecified", "click", "return updateSelection(" + !FileRootProp.folderOverride.name().equals(currentOption) + ");"); %>
                     </tr>

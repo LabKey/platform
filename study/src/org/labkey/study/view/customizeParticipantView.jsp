@@ -109,7 +109,7 @@
 <%
     if (bean.getParticipantId() != null)
     {
-        ModuleHtmlView view = new ModuleHtmlView(ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME), "Custom Participant View", unsafe(useCustomView ? bean.getCustomScript() : bean.getDefaultScript()));
+        ModuleHtmlView view = new ModuleHtmlView(ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME), "Custom Participant View", bean.getPreviewHtml());
 %>
 <table width="100%">
     <tr class="labkey-wp-header">

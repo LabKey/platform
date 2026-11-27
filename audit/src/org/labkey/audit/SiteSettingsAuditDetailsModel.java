@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
 
 import java.util.Date;
 
@@ -31,19 +32,20 @@ import java.util.Date;
 public class SiteSettingsAuditDetailsModel
 {
     private final Container _c;
-    private final String _diff;
+    private final HtmlString _diff;
     private final User _createdBy;
     private final Date _created;
 
     public SiteSettingsAuditDetailsModel(Container c, String diff, User createdBy, Date created)
     {
         _c = c;
-        _diff = StringUtils.isEmpty(diff) ? "<p>No details were recorded.</p>" : diff;
+        // Audit writers store the changes as HTML, encoding values as they build it
+        _diff = StringUtils.isEmpty(diff) ? HtmlString.unsafe("<p>No details were recorded.</p>") : HtmlString.unsafe(diff);
         _createdBy = createdBy;
         _created = created;
     }
 
-    public String getDiff()
+    public HtmlString getDiff()
     {
         return _diff;
     }

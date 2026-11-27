@@ -67,7 +67,7 @@
             { %>
                 <td><input value="<%= h(collector.getShortName()) %>" id="<%=makeHtmlId(collector.getShortName())%>" type="hidden" name="dataCollectorName" /></td>
             <% } %>
-            <td><label for="<%=makeHtmlId(collector.getShortName())%>"><%= unsafe(collector.getDescription(bean)) %></label></td>
+            <td><label for="<%=makeHtmlId(collector.getShortName())%>"><%=h(collector.getDescription(bean))%></label></td>
         </tr>
         <tr style="visibility: <%= unsafe(first ? "visible" : "collapse") %>;" id="collector-<%= h(collector.getShortName()) %>">
             <td></td>

@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.core.user.UserController.LimitActiveUsersAction" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.core.user.LimitActiveUsersSettings.StartupProperties.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -93,9 +92,13 @@ The supported properties and their current values are listed in the table below.
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr class="labkey-frame"><th>Property</th><th>Current Value</th></tr>
 
-    <%=unsafe(
-        props.entrySet().stream()
-            .map(e -> "<tr valign=top class=\"labkey-row\"><td>" + h(e.getKey()) + "</td><td>" + h(e.getValue()) + "</td></tr>\n")
-            .collect(Collectors.joining()))%>
+<%
+    for (Map.Entry<String, Integer> e : props.entrySet())
+    {
+%>
+    <tr valign=top class="labkey-row"><td><%=h(e.getKey())%></td><td><%=h(e.getValue())%></td></tr>
+<%
+    }
+%>
 
 </table>

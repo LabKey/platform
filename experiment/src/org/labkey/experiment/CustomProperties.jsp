@@ -46,10 +46,12 @@
                 fout.print(unsafe("&nbsp;&nbsp;&nbsp;&nbsp;"));
             }
 
-            // Note: CustomPropertyRenderer HTML encodes description and value
-            fout.println(unsafe(description + ":"));
+            fout.print(description);
+            fout.println(unsafe(":"));
             fout.println(unsafe("    </td>"));
-            fout.println(unsafe("    <td>" + value + "</td>"));
+            fout.print(unsafe("    <td>"));
+            fout.print(value);
+            fout.println(unsafe("</td>"));
             fout.println(unsafe("</tr>"));
         }
         catch (IOException e)
