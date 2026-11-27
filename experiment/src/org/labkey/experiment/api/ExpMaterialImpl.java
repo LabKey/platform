@@ -454,11 +454,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
-        Set<String> keyworksHi = new HashSet<>();
+        Set<String> keywordsHi = new HashSet<>();
 
         // Name is identifier with the highest weight
         identifiersHi.add(getName());
-        keyworksHi.add(getName()); // support "Boosting syntax (^4)" on name
+        keywordsHi.add(getName()); // support "Boosting syntax (^4)" on name
 
         // Add aliases in parentheses in the title
         StringBuilder title = new StringBuilder("Sample - " + getName());
@@ -487,8 +487,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         Set<String> keywordsLo = new HashSet<>();
         keywordsLo.add("Sample"); // Treat the word "Sample" a low priority keyword
         if (values != null)
-            values.addTo(identifiersHi, identifiersMed, identifiersLo, keyworksHi, keywordsMed, keywordsLo, jsonData);
-        putIndexProps(props, identifiersHi, identifiersMed, identifiersLo, keyworksHi, keywordsMed, keywordsLo);
+            values.addTo(identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
+        putIndexProps(props, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo);
 
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 

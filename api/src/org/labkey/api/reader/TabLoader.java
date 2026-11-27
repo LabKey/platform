@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Parses rows of tab-delimited text, returning a CloseableIterator of Map<String, Object>. The iterator must be closed
@@ -1224,10 +1225,10 @@ public class TabLoader extends DataLoader
                 // that field needs to be surrounded by quotes and the internal quotes doubled up.
                 assertEquals("\"quoted stuff\" unquoted", row.get("Multi-Line"));
 
-                List<Map<String, Object>> rows2 = loader.stream()
-                    .collect(Collectors.toList());
-
-                assertEquals(rows, rows2);
+                try (Stream<Map<String, Object>> stream = loader.stream())
+                {
+                    assertEquals(rows, stream.collect(Collectors.toList()));
+                }
             }
         }
 

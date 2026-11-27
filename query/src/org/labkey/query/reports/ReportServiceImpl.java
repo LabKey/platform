@@ -16,6 +16,7 @@
 
 package org.labkey.query.reports;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
@@ -1291,12 +1292,14 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     }
 
     /** Streams script reports saved in every existing container; the caller must close the stream */
+    @MustBeClosed
     public Stream<Report> streamScriptReports()
     {
         return streamReportRows().map(this::_getInstance).filter(report -> report instanceof ScriptReport);
     }
 
     /** Streams report rows in existing containers; the caller must close the stream */
+    @MustBeClosed
     private static Stream<ReportDB> streamReportRows()
     {
         TableInfo table = getTable();

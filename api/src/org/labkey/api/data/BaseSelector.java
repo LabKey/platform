@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -42,7 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -187,7 +187,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     /**
      * Returns an uncached Object Stream that <b>must be closed</b>
      */
-    @Override
+    @Override @MustBeClosed
     public <T> Stream<T> uncachedStream(Class<T> clazz)
     {
         return stream(rs -> {
@@ -255,7 +255,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     /**
      * Returns an uncached Map Stream that <b>must be closed</b>
      */
-    @Override
+    @Override @MustBeClosed
     public Stream<Map<String, Object>> uncachedMapStream()
     {
         return mapStream(false);
@@ -275,7 +275,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     /**
      * Returns an uncached ResultSet Stream that <b>must be closed</b>
      */
-    @Override
+    @Override @MustBeClosed
     public Stream<ResultSet> uncachedResultSetStream()
     {
         return resultSetStream(false);
@@ -449,8 +449,14 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         return forEach2(() -> uncachedStream(clazz), getStandardResultSetFactory(), block);
     }
 
+    private interface StreamFactory<T>
+    {
+        @MustBeClosed
+        Stream<T> get();
+    }
+
     // Prototype general purpose forEach() built on an uncached stream (not used)
-    private <T> int forEach2(Supplier<Stream<T>> streamFactory, ResultSetFactory resultSetFactory, ForEachBlock<T> block)
+    private <T> int forEach2(StreamFactory<T> streamFactory, ResultSetFactory resultSetFactory, ForEachBlock<T> block)
     {
         MutableInt rowCount = new MutableInt();
 

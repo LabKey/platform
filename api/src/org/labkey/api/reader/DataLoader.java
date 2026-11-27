@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reader;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
@@ -552,6 +553,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * Returns a closeable Stream over the data. Either the DataLoader or the Stream must be closed by the caller.
      * @return a Stream over the data
      */
+    @MustBeClosed
     public Stream<Map<String, Object>> stream()
     {
         return StreamSupport.stream(spliterator(), false).onClose(this::close);
@@ -561,7 +563,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * Returns a list of T records, one for each non-header row of the file.
      */
     // Caution: Using this instead of iterating directly has lead to many scalability problems in the past.
-    // TODO: Migrate usages to iterator()
+    // TODO: Migrate usages to iterator() or stream()
     @Override
     public List<Map<String, Object>> load()
     {

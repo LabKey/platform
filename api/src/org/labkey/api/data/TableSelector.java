@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -297,7 +298,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     /**
      * Returns an uncached ResultSet Stream that <b>must be closed</b>
      */
-    @Override
+    @Override @MustBeClosed
     public Stream<ResultSet> uncachedResultSetStream()
     {
         ensureStableColumnOrder("uncachedResultSetStream()");
