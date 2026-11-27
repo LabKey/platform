@@ -28,7 +28,6 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -42,7 +41,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.triggers.Trigger;
+import org.labkey.api.data.triggers.RecordingTrigger;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -62,6 +61,8 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryUpdateServiceTestUtil;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -1111,55 +1112,23 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             map.get("lsid");
         }
 
-        /** A table whose trigger routes MERGE by existing record and records which hook saw each subject */
-        private TableInfo tableWithRoutedTrigger(List<String> events)
+        private UserSchema studySchema()
         {
             UserSchema schema = QueryService.get().getUserSchema(_user, _container, StudyQuerySchema.SCHEMA_NAME);
             assertNotNull(schema);
-            AbstractTableInfo table = (AbstractTableInfo) schema.getTable(DATASET_NAME, null, true, true);
-            assertNotNull(table);
-            table.addTriggerFactory((_, _, _) -> List.of(new Trigger()
-            {
-                @Override
-                public boolean isMergeRoutedByExistingRecord()
-                {
-                    return true;
-                }
+            return schema;
+        }
 
-                @Override
-                public void beforeInsert(TableInfo t, Container c, User user, @Nullable InsertOption insertOption, @Nullable Map<String, Object> newRow, ValidationException errors, Map<String, Object> extraContext)
-                {
-                    assertNotNull(newRow);
-                    events.add("beforeInsert " + newRow.get(SUBJECT_COLUMN_NAME));
-                }
+        /** A table whose trigger routes MERGE by existing record and records which hook saw each subject */
+        private TableInfo tableWithRoutedTrigger(RecordingTrigger trigger)
+        {
+            return QueryUpdateServiceTestUtil.withTrigger(studySchema().getTable(DATASET_NAME, null, true, true), _container, trigger);
+        }
 
-                @Override
-                public void beforeUpdate(TableInfo t, Container c, User user, @Nullable InsertOption insertOption, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext)
-                {
-                    assertNotNull(newRow);
-                    assertNotNull(oldRow);
-                    // oldRow uses query column names, as in updateRows(), not storage names like participantid
-                    Map<String, Object> old = new CaseInsensitiveHashMap<>(oldRow);
-                    events.add("beforeUpdate " + newRow.get(SUBJECT_COLUMN_NAME) + " old " + old.get(SUBJECT_COLUMN_NAME) + " " + old.get("Field1"));
-                }
-
-                @Override
-                public void afterInsert(TableInfo t, Container c, User user, @Nullable Map<String, Object> newRow, ValidationException errors, Map<String, Object> extraContext)
-                {
-                    assertNotNull(newRow);
-                    events.add("afterInsert " + newRow.get(SUBJECT_COLUMN_NAME));
-                }
-
-                @Override
-                public void afterUpdate(TableInfo t, Container c, User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext)
-                {
-                    assertNotNull(newRow);
-                    assertNotNull(oldRow);
-                    events.add("afterUpdate " + newRow.get(SUBJECT_COLUMN_NAME));
-                }
-            }));
-            table.resetTriggers(_container);
-            return table;
+        // oldRow uses query column names, as in updateRows(), not storage names like participantid
+        private static RecordingTrigger recordingTrigger()
+        {
+            return new RecordingTrigger(SUBJECT_COLUMN_NAME, List.of(SUBJECT_COLUMN_NAME, "Field1"), true, null);
         }
 
         /** GH Issue 1048: MERGE keeps omitted columns, and triggers that route MERGE see existing rows as updates */
@@ -1169,23 +1138,14 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             createDataset();
             insertS1();
 
-            List<String> events = new ArrayList<>();
-            TableInfo table = tableWithRoutedTrigger(events);
-            QueryUpdateService qus = table.getUpdateService();
-            assertNotNull(qus);
-            BatchValidationException errors = new BatchValidationException();
+            RecordingTrigger trigger = recordingTrigger();
+            TableInfo table = tableWithRoutedTrigger(trigger);
             List<Map<String, Object>> rows = List.of(
                     // Import ignores a supplied Container outside a dataspace study, so routing must too
                     Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "1.2345", "Value1", "2.0", "Container", _container.getPath()),
                     Map.of(SUBJECT_COLUMN_NAME, "S2", "SequenceNum", "1.2345", "Value1", "2.0"));
-            int count = qus.mergeRows(_user, _container, MapDataIterator.of(rows), errors, null, null);
-            if (errors.hasErrors())
-                fail(errors.getMessage());
-            assertEquals(2, count);
-
-            // Rows are batched, so hooks for different rows may interleave
-            assertEquals(Set.of("beforeUpdate S1 old S1 x", "beforeInsert S2", "afterUpdate S1", "afterInsert S2"), Set.copyOf(events));
-            assertEquals(4, events.size());
+            assertEquals(2, QueryUpdateServiceTestUtil.merge(table, _user, _container, rows));
+            trigger.assertEvents("beforeUpdate S1 old S1 x", "beforeInsert S2", "afterUpdate S1", "afterInsert S2");
 
             Map<String, Object> s1 = new TableSelector(table, new SimpleFilter(FieldKey.fromParts(SUBJECT_COLUMN_NAME), "S1"), null).getMap();
             assertNotNull(s1);
@@ -1196,8 +1156,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
         /** Merges the rows and returns the row error message, or the exception if MERGE threw */
         private String mergeOutcome(TableInfo table, List<Map<String, Object>> rows)
         {
-            QueryUpdateService qus = table.getUpdateService();
-            assertNotNull(qus);
+            QueryUpdateService qus = QueryUpdateServiceTestUtil.getUpdateService(table);
             BatchValidationException errors = new BatchValidationException();
             try (DbScope.Transaction _ = table.getSchema().getScope().ensureTransaction())
             {
@@ -1211,7 +1170,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             return errors.getMessage();
         }
 
-        record UnkeyableCase(String name, Map<String, Object> row, boolean rowError) {}
+        record UnkeyableCase(String name, Map<String, Object> row) {}
 
         // Rows the routing lookup can't key must reach the import, which handles them the same way with or without triggers
         @Test
@@ -1220,36 +1179,26 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             createDataset();
             insertS1();
 
-            UserSchema schema = QueryService.get().getUserSchema(_user, _container, StudyQuerySchema.SCHEMA_NAME);
-            assertNotNull(schema);
+            UserSchema schema = studySchema();
             for (UnkeyableCase c : List.of(
-                    new UnkeyableCase("no subject column", Map.of("SequenceNum", "1.2345", "Value1", "2.0"), true),
-                    new UnkeyableCase("no SequenceNum or Date column", Map.of(SUBJECT_COLUMN_NAME, "S1", "Value1", "2.0"), true),
-                    new UnkeyableCase("blank subject", CaseInsensitiveHashMap.of(SUBJECT_COLUMN_NAME, null, "SequenceNum", "1.2345", "Value1", "2.0"), true),
-                    // Throws without triggers too
-                    new UnkeyableCase("unparseable SequenceNum", Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "not a number", "Value1", "2.0"), false)))
+                    new UnkeyableCase("no subject column", Map.of("SequenceNum", "1.2345", "Value1", "2.0")),
+                    new UnkeyableCase("no SequenceNum or Date column", Map.of(SUBJECT_COLUMN_NAME, "S1", "Value1", "2.0")),
+                    new UnkeyableCase("blank subject", CaseInsensitiveHashMap.of(SUBJECT_COLUMN_NAME, null, "SequenceNum", "1.2345", "Value1", "2.0")),
+                    new UnkeyableCase("unparseable SequenceNum", Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "not a number", "Value1", "2.0"))))
             {
                 String withoutTrigger = mergeOutcome(schema.getTable(DATASET_NAME), List.of(c.row()));
-                List<String> events = new ArrayList<>();
-                String withTrigger = mergeOutcome(tableWithRoutedTrigger(events), List.of(c.row()));
+                RecordingTrigger trigger = recordingTrigger();
+                String withTrigger = mergeOutcome(tableWithRoutedTrigger(trigger), List.of(c.row()));
                 assertEquals(c.name(), withoutTrigger, withTrigger);
-                assertEquals(c.name() + ": " + withoutTrigger, c.rowError(), !withoutTrigger.startsWith("threw "));
-                assertFalse(c.name() + ": an unkeyable row was routed to update: " + events, events.stream().anyMatch(e -> e.startsWith("beforeUpdate")));
+                assertFalse(c.name() + ": " + withoutTrigger, withoutTrigger.startsWith("threw "));
+                assertFalse(c.name() + ": an unkeyable row was routed to update: " + trigger.getRecorded(), trigger.getRecorded().stream().anyMatch(e -> e.startsWith("beforeUpdate")));
             }
         }
 
         private void insertS1() throws Exception
         {
-            UserSchema schema = QueryService.get().getUserSchema(_user, _container, StudyQuerySchema.SCHEMA_NAME);
-            assertNotNull(schema);
-            TableInfo t = schema.getTable(DATASET_NAME);
-            assertNotNull(t);
-            QueryUpdateService qus = t.getUpdateService();
-            assertNotNull(qus);
-            BatchValidationException errors = new BatchValidationException();
-            qus.insertRows(_user, _container, List.of(Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "1.2345", "Field1", "x", "Value1", "1.0")), errors, null, null);
-            if (errors.hasErrors())
-                fail(errors.getMessage());
+            TableInfo t = QueryUpdateServiceTestUtil.getTable(_user, _container, SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME), DATASET_NAME);
+            QueryUpdateServiceTestUtil.insert(t, _user, _container, List.of(Map.of(SUBJECT_COLUMN_NAME, "S1", "SequenceNum", "1.2345", "Field1", "x", "Value1", "1.0")));
         }
 
         @Before

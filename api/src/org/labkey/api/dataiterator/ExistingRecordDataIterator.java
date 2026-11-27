@@ -148,7 +148,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         }
 
         if (pkColumns.isEmpty())
-            throw new IllegalArgumentException("At least one key column is required.");
+            context.getErrors().addRowError(new ValidationException("At least one key column is required: " + StringUtils.join(keyNames, ", ")));
     }
 
     @Override

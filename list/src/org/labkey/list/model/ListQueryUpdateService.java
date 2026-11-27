@@ -47,6 +47,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.WorkbookContainerType;
+import org.labkey.api.data.triggers.RecordingTrigger;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -98,6 +99,7 @@ import org.labkey.api.test.TestTimeout;
 import org.labkey.api.usageMetrics.ExperimentMetricArea;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -1272,13 +1274,23 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         /** A list with an auto-increment key and one string field */
         static ListDefinition createList(Container c, User user, String listName) throws Exception
         {
-            ListDefinition list = ListService.get().createList(c, listName, ListDefinition.KeyType.AutoIncrementInteger);
+            return createList(c, user, listName, ListDefinition.KeyType.AutoIncrementInteger, Map.of(VALUE_FIELD, PropertyType.STRING));
+        }
+
+        static ListDefinition createList(Container c, User user, String listName, ListDefinition.KeyType keyType, Map<String, PropertyType> fields) throws Exception
+        {
+            ListDefinition list = ListService.get().createList(c, listName, keyType);
             list.setKeyName(KEY_NAME);
 
-            DomainProperty dp = list.getDomain().addProperty();
-            dp.setName(VALUE_FIELD);
-            dp.setType(PropertyService.get().getType(c, PropertyType.STRING.getXmlName()));
-            dp.setPropertyURI(ListDomainKind.createPropertyURI(listName, VALUE_FIELD, c, list.getKeyType()).toString());
+            Domain domain = list.getDomain();
+            assertNotNull(domain);
+            for (Map.Entry<String, PropertyType> field : fields.entrySet())
+            {
+                DomainProperty dp = domain.addProperty();
+                dp.setName(field.getKey());
+                dp.setType(PropertyService.get().getType(c, field.getValue().getXmlName()));
+                dp.setPropertyURI(ListDomainKind.createPropertyURI(listName, field.getKey(), c, list.getKeyType()).toString());
+            }
             list.save(user);
 
             return list;
@@ -1782,11 +1794,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
     /** GH Issue 1048: MERGE must leave columns the input omits unchanged, and script triggers see existing rows as updates. */
     @TestTimeout(TestTimeout.DEFAULT * 5)
-    public static class MergeTestCase extends Assert
+    public static class MergeTestCase extends ListTestSupport
     {
-        private static final String PROJECT_NAME = "ListMergeTest Project";
         private static final String LIST_NAME = "Merge list";
-        private static final String KEY_NAME = "Key";
         private static final String INT_FIELD = "A";
         private static final String TEXT_FIELD = "B";
 
@@ -1798,25 +1808,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         public static void setup() throws Exception
         {
             _user = TestContext.get().getUser();
-
-            deleteTestContainer();
-            _container = ContainerManager.ensureContainer(PROJECT_NAME, _user);
-
-            _list = ListService.get().createList(_container, LIST_NAME, ListDefinition.KeyType.Integer);
-            _list.setKeyName(KEY_NAME);
-            addField(INT_FIELD, PropertyType.INTEGER);
-            addField(TEXT_FIELD, PropertyType.STRING);
-            _list.save(_user);
-        }
-
-        private static void addField(String name, PropertyType type)
-        {
-            Domain domain = _list.getDomain();
-            assertNotNull(domain);
-            DomainProperty dp = domain.addProperty();
-            dp.setName(name);
-            dp.setType(PropertyService.get().getType(_container, type.getXmlName()));
-            dp.setPropertyURI(ListDomainKind.createPropertyURI(LIST_NAME, name, _container, _list.getKeyType()).toString());
+            JunitUtil.deleteTestContainer();
+            _container = JunitUtil.getTestContainer();
+            _list = createList(_container, _user, LIST_NAME, ListDefinition.KeyType.Integer, Map.of(INT_FIELD, PropertyType.INTEGER, TEXT_FIELD, PropertyType.STRING));
         }
 
         @AfterClass
@@ -1826,85 +1820,18 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             _container = null;
             _user = null;
 
-            deleteTestContainer();
+            JunitUtil.deleteTestContainer();
         }
 
-        private static void deleteTestContainer()
-        {
-            Container project = ContainerManager.getForPath(PROJECT_NAME);
-
-            if (null != project)
-                ContainerManager.deleteAll(project, TestContext.get().getUser());
-        }
-
-        /** Cached tables are locked, so only one built for write accepts another trigger factory */
         private TableInfo tableWithTrigger(Trigger trigger)
         {
-            AbstractTableInfo table = (AbstractTableInfo) new ListQuerySchema(_user, _container).getTable(LIST_NAME, null, true, true);
-            assertNotNull(table);
-            table.addTriggerFactory((_, _, _) -> List.of(trigger));
-            table.resetTriggers(_container);
-            assertTrue(table.hasTriggers(_container));
-
-            return table;
+            return QueryUpdateServiceTestUtil.withTrigger(new ListQuerySchema(_user, _container).getTable(LIST_NAME, null, true, true), _container, trigger);
         }
 
-        /** Records which hook saw each key; sets the text field on insert when it manages that column */
-        private static class RecordingTrigger implements Trigger
+        /** Sets the text field on insert when it manages that column */
+        private static RecordingTrigger recordingTrigger(boolean routed, boolean managesText)
         {
-            final List<String> events = new ArrayList<>();
-            final boolean _routed;
-            final boolean _managesText;
-
-            RecordingTrigger(boolean routed, boolean managesText)
-            {
-                _routed = routed;
-                _managesText = managesText;
-            }
-
-            @Override
-            public boolean isMergeRoutedByExistingRecord()
-            {
-                return _routed;
-            }
-
-            @Override
-            public @Nullable ManagedColumns getManagedColumns()
-            {
-                return _managesText ? new ManagedColumns(Set.of(TEXT_FIELD), Set.of(), null) : null;
-            }
-
-            @Override
-            public void beforeInsert(TableInfo table, Container c, User user, @Nullable InsertOption insertOption, @Nullable Map<String, Object> newRow, ValidationException errors, Map<String, Object> extraContext)
-            {
-                assertNotNull(newRow);
-                events.add("beforeInsert " + newRow.get(KEY_NAME));
-                if (_managesText)
-                    newRow.put(TEXT_FIELD, "computed");
-            }
-
-            @Override
-            public void beforeUpdate(TableInfo table, Container c, User user, @Nullable InsertOption insertOption, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext)
-            {
-                assertNotNull(newRow);
-                assertNotNull(oldRow);
-                events.add("beforeUpdate " + newRow.get(KEY_NAME) + " old " + new CaseInsensitiveHashMap<>(oldRow).get(TEXT_FIELD));
-            }
-
-            @Override
-            public void afterInsert(TableInfo table, Container c, User user, @Nullable Map<String, Object> newRow, ValidationException errors, Map<String, Object> extraContext)
-            {
-                assertNotNull(newRow);
-                events.add("afterInsert " + newRow.get(KEY_NAME));
-            }
-
-            @Override
-            public void afterUpdate(TableInfo table, Container c, User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext)
-            {
-                assertNotNull(newRow);
-                assertNotNull(oldRow);
-                events.add("afterUpdate " + newRow.get(KEY_NAME));
-            }
+            return new RecordingTrigger(KEY_NAME, List.of(TEXT_FIELD), routed, managesText ? TEXT_FIELD : null);
         }
 
         private TableInfo listTable()
@@ -1914,19 +1841,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             return table;
         }
 
-        private QueryUpdateService updateService(TableInfo table)
-        {
-            QueryUpdateService qus = table.getUpdateService();
-            assertNotNull(qus);
-            return qus;
-        }
-
         private void insertRow(int key) throws Exception
         {
-            BatchValidationException errors = new BatchValidationException();
-            updateService(listTable()).insertRows(_user, _container, List.of(CaseInsensitiveHashMap.of(KEY_NAME, key, INT_FIELD, 1, TEXT_FIELD, "x")), errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            QueryUpdateServiceTestUtil.insert(listTable(), _user, _container, List.of(CaseInsensitiveHashMap.of(KEY_NAME, key, INT_FIELD, 1, TEXT_FIELD, "x")));
         }
 
         private void mergeIntField(TableInfo table, int... keys) throws Exception
@@ -1946,19 +1863,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             context.setInsertOption(option);
             try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
             {
-                int count = updateService(table).loadRows(_user, _container, MapDataIterator.of(rows), context, null);
+                int count = QueryUpdateServiceTestUtil.getUpdateService(table).loadRows(_user, _container, MapDataIterator.of(rows), context, null);
                 if (errors.hasErrors())
                     throw errors;
                 assertEquals(keys.length, count);
                 tx.commit();
             }
-        }
-
-        /** Rows are batched, so hooks for different rows may interleave */
-        private void assertEvents(RecordingTrigger trigger, String... expected)
-        {
-            assertEquals(Set.of(expected), Set.copyOf(trigger.events));
-            assertEquals(expected.length, trigger.events.size());
         }
 
         private Map<String, Object> getRow(int key)
@@ -1995,10 +1905,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         public void mergeRoutesExistingRowsToUpdateHooks() throws Exception
         {
             insertRow(3);
-            RecordingTrigger trigger = new RecordingTrigger(true, false);
+            RecordingTrigger trigger = recordingTrigger(true, false);
             mergeIntField(tableWithTrigger(trigger), 3, 4);
 
-            assertEvents(trigger, "beforeUpdate 3 old x", "beforeInsert 4", "afterUpdate 3", "afterInsert 4");
+            trigger.assertEvents("beforeUpdate 3 old x", "beforeInsert 4", "afterUpdate 3", "afterInsert 4");
             assertOmittedFieldKept(3);
         }
 
@@ -2006,10 +1916,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         public void mergeWithoutRoutingFiresInsertHooks() throws Exception
         {
             insertRow(5);
-            RecordingTrigger trigger = new RecordingTrigger(false, false);
+            RecordingTrigger trigger = recordingTrigger(false, false);
             mergeIntField(tableWithTrigger(trigger), 5, 6);
 
-            assertEvents(trigger, "beforeInsert 5", "beforeInsert 6", "afterInsert 5", "afterInsert 6");
+            trigger.assertEvents("beforeInsert 5", "beforeInsert 6", "afterInsert 5", "afterInsert 6");
             assertOmittedFieldKept(5);
         }
 
@@ -2017,22 +1927,22 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         public void mergeKeepsInsertManagedColumnOnUpdatedRows() throws Exception
         {
             insertRow(7);
-            RecordingTrigger trigger = new RecordingTrigger(true, true);
+            RecordingTrigger trigger = recordingTrigger(true, true);
             mergeIntField(tableWithTrigger(trigger), 7, 8);
 
-            assertEvents(trigger, "beforeUpdate 7 old x", "beforeInsert 8", "afterUpdate 7", "afterInsert 8");
+            trigger.assertEvents("beforeUpdate 7 old x", "beforeInsert 8", "afterUpdate 7", "afterInsert 8");
             assertOmittedFieldKept(7);
-            assertEquals("computed", getRow(8).get(TEXT_FIELD));
+            assertEquals(RecordingTrigger.COMPUTED, getRow(8).get(TEXT_FIELD));
         }
 
         @Test
         public void replaceRoutesExistingRowsToUpdateHooks() throws Exception
         {
             insertRow(9);
-            RecordingTrigger trigger = new RecordingTrigger(true, false);
+            RecordingTrigger trigger = recordingTrigger(true, false);
             load(tableWithTrigger(trigger), InsertOption.REPLACE, 9, 10);
 
-            assertEvents(trigger, "beforeUpdate 9 old x", "beforeInsert 10", "afterUpdate 9", "afterInsert 10");
+            trigger.assertEvents("beforeUpdate 9 old x", "beforeInsert 10", "afterUpdate 9", "afterInsert 10");
             assertNull("REPLACE keeps a column it was not given", getRow(9).get(TEXT_FIELD));
         }
 
@@ -2040,12 +1950,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         public void replaceKeepsInsertManagedColumnOnUpdatedRows() throws Exception
         {
             insertRow(11);
-            RecordingTrigger trigger = new RecordingTrigger(true, true);
+            RecordingTrigger trigger = recordingTrigger(true, true);
             load(tableWithTrigger(trigger), InsertOption.REPLACE, 11, 12);
 
-            assertEvents(trigger, "beforeUpdate 11 old x", "beforeInsert 12", "afterUpdate 11", "afterInsert 12");
+            trigger.assertEvents("beforeUpdate 11 old x", "beforeInsert 12", "afterUpdate 11", "afterInsert 12");
             assertEquals("REPLACE nulled a trigger-managed column", "x", getRow(11).get(TEXT_FIELD));
-            assertEquals("computed", getRow(12).get(TEXT_FIELD));
+            assertEquals(RecordingTrigger.COMPUTED, getRow(12).get(TEXT_FIELD));
         }
 
         /** Rows writing the int field, one per key; a null key is a row with a blank key */
@@ -2070,7 +1980,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             context.setInsertOption(InsertOption.MERGE);
             try (DbScope.Transaction _ = table.getSchema().getScope().ensureTransaction())
             {
-                updateService(table).loadRows(_user, _container, MapDataIterator.of(rows), context, null);
+                QueryUpdateServiceTestUtil.getUpdateService(table).loadRows(_user, _container, MapDataIterator.of(rows), context, null);
             }
             catch (Exception e)
             {
@@ -2081,23 +1991,22 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             return errors.getRowErrors().stream().filter(ValidationException::hasErrors).map(ValidationException::getMessage).collect(Collectors.joining("\n"));
         }
 
-        record InvalidKeyCase(String name, List<Map<String, Object>> rows, boolean rowError) {}
+        record InvalidKeyCase(String name, List<Map<String, Object>> rows) {}
 
         // A routing-only lookup must leave these to the import, which handles them the same way with or without triggers
         @Test
         public void mergeWithRoutedTriggerReportsInvalidKeys()
         {
             for (InvalidKeyCase c : List.of(
-                    new InvalidKeyCase("one blank key", rowsWithKeys(13, null, 14), true),
-                    new InvalidKeyCase("duplicate keys", rowsWithKeys(15, 15), true),
-                    new InvalidKeyCase("every key blank", rowsWithKeys(null, null), true),
-                    // Throws without triggers too
-                    new InvalidKeyCase("no key column", List.of(CaseInsensitiveHashMap.of(INT_FIELD, 2)), false)))
+                    new InvalidKeyCase("one blank key", rowsWithKeys(13, null, 14)),
+                    new InvalidKeyCase("duplicate keys", rowsWithKeys(15, 15)),
+                    new InvalidKeyCase("every key blank", rowsWithKeys(null, null)),
+                    new InvalidKeyCase("no key column", List.of(CaseInsensitiveHashMap.of(INT_FIELD, 2)))))
             {
                 String withoutTrigger = mergeOutcome(listTable(), c.rows());
-                String withTrigger = mergeOutcome(tableWithTrigger(new RecordingTrigger(true, false)), c.rows());
+                String withTrigger = mergeOutcome(tableWithTrigger(recordingTrigger(true, false)), c.rows());
                 assertEquals(c.name(), withoutTrigger, withTrigger);
-                assertEquals(c.name() + ": " + withoutTrigger, c.rowError(), !withoutTrigger.startsWith("threw "));
+                assertFalse(c.name() + ": " + withoutTrigger, withoutTrigger.startsWith("threw "));
             }
         }
     }

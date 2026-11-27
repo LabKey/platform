@@ -16,8 +16,11 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.security.User;
 
@@ -43,6 +46,18 @@ public class QueryUpdateServiceTestUtil
         TableInfo table = userSchema.getTable(query);
         if (table == null)
             throw new IllegalArgumentException("No table " + schema + "." + query + " in " + c.getPath());
+        return table;
+    }
+
+    /** Cached tables are locked, so pass one built for write, e.g. {@code schema.getTable(name, null, true, true)} */
+    public static @NotNull TableInfo withTrigger(@Nullable TableInfo writable, Container c, Trigger trigger)
+    {
+        if (!(writable instanceof AbstractTableInfo table))
+            throw new IllegalArgumentException("Can't attach a trigger to " + writable);
+        table.addTriggerFactory((_, _, _) -> List.of(trigger));
+        table.resetTriggers(c);
+        if (!table.hasTriggers(c))
+            throw new IllegalStateException("Trigger not attached to " + table.getName());
         return table;
     }
 
