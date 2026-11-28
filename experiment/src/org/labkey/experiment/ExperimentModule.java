@@ -116,6 +116,7 @@ import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.DataColorManager;
 import org.labkey.experiment.api.DataColorTable;
@@ -1168,6 +1169,7 @@ public class ExperimentModule extends SpringModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            AliasInsertHelper.TestCase.class,
             DomainUtil.ImportAliasTestCase.class,
             DomainUtil.SystemFieldLabelTestCase.class,
             GraphAlgorithms.TestCase.class,

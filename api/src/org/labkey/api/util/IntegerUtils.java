@@ -182,7 +182,7 @@ public class IntegerUtils
                 Integer I = asInteger(Long.valueOf((long) Integer.MAX_VALUE + 1L));
                 fail("should have thown");
             }
-            catch (ClassCastException e)
+            catch (IllegalArgumentException e)
             {
                 // success
             }

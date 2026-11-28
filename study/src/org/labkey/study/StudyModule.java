@@ -784,6 +784,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         return Set.of(
             DatasetDataWriter.TestCase.class,
+            DatasetQueryView.TestCase.class,
             DefaultStudyDesignWriter.TestCase.class,
             ParticipantIdImportHelper.ParticipantIdTest.class,
             ReportsController.TestCase.class,

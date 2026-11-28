@@ -45,16 +45,20 @@ import org.labkey.api.cache.NightlyRecalculatingSuppliers;
 import org.labkey.api.cache.SimpleKeyMappingCache;
 import org.labkey.api.cache.UserKeySimpleCache;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.collections.DeltaTrackingMap;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.collections.OneBasedList;
 import org.labkey.api.collections.Sampler;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AsyncQueryRequest;
@@ -200,6 +204,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JsonUtil;
@@ -214,6 +219,7 @@ import org.labkey.api.util.NumberUtilsLabKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.SmtpTransportProvider;
 import org.labkey.api.util.StringExpressionFactory;
@@ -424,6 +430,7 @@ public class ApiModule extends CodeOnlyModule
     {
         return Set.of(
             AbstractAgentAction.TestCase.class,
+            AbstractTableInfo.TestCase.class,
             Aggregate.TestCase.class,
             ApiResponseWriter.TestCase.class,
             ApiXmlWriter.TestCase.class,
@@ -433,6 +440,7 @@ public class ApiModule extends CodeOnlyModule
             BaseServerProperties.TestCase.class,
             BatchSize.TestCase.class,
             BooleanFormat.TestCase.class,
+            BoundMap.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CacheManager.TestCase.class,
             CacheReplayCommitTask.TestCase.class,
@@ -472,6 +480,7 @@ public class ApiModule extends CodeOnlyModule
             GUID.TestCase.class,
             HelpTopic.TestCase.class,
             ImpersonationTestCase.class,
+            IntegerUtils.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
             JSONDataLoader.RowTest.class,
@@ -497,6 +506,7 @@ public class ApiModule extends CodeOnlyModule
             MultiValuedRenderContext.TestCase.class,
             NameGenerator.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
+            OneBasedList.TestCase.class,
             PageConfig.TestCase.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
@@ -504,11 +514,13 @@ public class ApiModule extends CodeOnlyModule
             PropertyType.TestCase.class,
             Query.TestCase.class,
             QueryProfiler.TestCase.class,
+            RateLimiter.TestCase.class,
             RReport.TestCase.class,
             RecompilingJspClassLoader.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
             RepeatedCommitTaskMonitor.TestCase.class,
             ReplacedRunFilter.TestCase.class,
+            Sets.TestCase.class,
             SQLFragment.UnitTestCase.class,
             Sampler.TestCase.class,
             SchemaKey.TestCase.class,
