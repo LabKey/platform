@@ -150,7 +150,7 @@ public abstract class AbstractContainerScopingTest extends Assert
      */
     protected Container createProject(String name, Module... enabledModules)
     {
-        String projectName = getClass().getName().replaceAll("[^A-Za-z0-9]", "_") + "-" + name;
+        String projectName = "_junit-" + getClass().getName().replaceAll("[^A-Za-z0-9]", "_") + "-" + name;
         Container existing = ContainerManager.getForPath(projectName);
         if (existing != null)
             ContainerManager.deleteAll(existing, getAdmin());
