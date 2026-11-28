@@ -16,11 +16,10 @@
 
 package org.labkey.core.security;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.JspView;
 import org.springframework.validation.BindException;
 
@@ -53,23 +52,24 @@ public class GroupView extends JspView<GroupView.GroupBean>
         public boolean isSystemGroup;
         public Map<UserPrincipal, List<UserPrincipal>> redundantMembers;
 
-        public String displayRedundancyReasonHTML(UserPrincipal principal)
+        public HtmlString displayRedundancyReasonHTML(UserPrincipal principal)
         {
-            StringBuilder sb = new StringBuilder();
+            HtmlStringBuilder sb = HtmlStringBuilder.of();
             if (redundantMembers.containsKey(principal))
             {
                 List<UserPrincipal> path = redundantMembers.get(principal);
-                sb.append("This member can be removed because:<BR/>");
+                sb.append("This member can be removed because:").append(HtmlString.BR);
                 for (int i = path.size()-1; i > 0; i--)
                 {
-                    sb.append(StringUtils.repeat("&nbsp;&nbsp;&nbsp;", path.size() - i - 1));
-                    sb.append(i == path.size() - 1 ? PageFlowUtil.filter(path.get(i)) : "Which");
+                    for (int j = 0; j < 3 * (path.size() - i - 1); j++)
+                        sb.append(HtmlString.NBSP);
+                    sb.append(i == path.size() - 1 ? path.get(i).toString() : "Which");
                     sb.append(" is a member of ");
-                    sb.append("<strong>").append(PageFlowUtil.filter(path.get(i-1))).append("</strong>");
-                    sb.append("<BR/>");
+                    sb.startTag("strong").append(path.get(i-1).toString()).endTag("strong");
+                    sb.append(HtmlString.BR);
                 }
             }
-            return sb.toString();
+            return sb.getHtmlString();
         }
     }
 }

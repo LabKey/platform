@@ -56,8 +56,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Pair;
+import org.labkey.api.util.LinkBuilder.Link;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
@@ -267,7 +266,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     {
     }
 
-    public Map<String, List<Pair<HtmlString, ActionURL>>> getAdditionalDetailInfo(TableInfo tableInfo, int issueId)
+    public Map<String, List<Link>> getAdditionalDetailInfo(TableInfo tableInfo, int issueId)
     {
         return null;
     }
