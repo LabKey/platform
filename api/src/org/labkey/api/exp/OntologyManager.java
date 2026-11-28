@@ -3036,6 +3036,8 @@ public class OntologyManager
         PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         // It's possible that the propertyURI has changed, thus breaking our reference
         DOMAIN_PROPERTIES_CACHE.clear();
+        // Cached property values embed descriptor metadata (name, type) from any domain
+        PROPERTY_MAP_CACHE.clear();
         return pd;
     }
 
@@ -3217,9 +3219,8 @@ public class OntologyManager
         uncachePropertyDescriptors(propertyURIs);
         DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer());
 
-        // Cached property values embed property metadata (name, type) from any domain, so these can't be narrowed
-        PROPERTY_MAP_CACHE.clear();
-        ExperimentService.get().clearCaches();
+        // Property maps aren't cleared here: descriptor updates and deletes clear them, and added properties have no values.
+        // Experiment caches aren't cleared either: protocols memoize object properties, but those are ad hoc, not domain members.
     }
 
     /** For callers that update exp.PropertyDescriptor rows directly; invalidateDomain() only covers the saved domain's own properties */

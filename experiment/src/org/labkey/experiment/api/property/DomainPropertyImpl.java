@@ -83,6 +83,7 @@ public class DomainPropertyImpl implements DomainProperty
     private List<PropertyValidatorDefImpl> _validators;
     private List<ConditionalFormat> _formats;
     private String _defaultValue;
+    private boolean _defaultValueSet;
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
     {
@@ -610,11 +611,18 @@ public class DomainPropertyImpl implements DomainProperty
     public void setDefaultValue(String value)
     {
         _defaultValue = value;
+        _defaultValueSet = true;
     }
 
     public String getDefaultValue()
     {
         return _defaultValue;
+    }
+
+    // Distinguishes an explicitly cleared default from one never loaded from DefaultValueService
+    public boolean isDefaultValueSet()
+    {
+        return _defaultValueSet;
     }
 
     @Override
@@ -805,7 +813,7 @@ public class DomainPropertyImpl implements DomainProperty
     public void delete(User user)
     {
         DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(getContainer(), getPropertyId());
-        DomainPropertyManager.get().deleteConditionalFormats(getPropertyId());
+        DomainPropertyManager.get().deleteConditionalFormats(_pd);
 
         DomainKind<?> kind = getDomain().getDomainKind();
         if (null != kind)

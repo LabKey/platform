@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
@@ -41,6 +42,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
@@ -50,6 +52,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ServerPrimaryKeyLock;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -68,21 +71,31 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
@@ -106,6 +119,10 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.experiment.api.DataClass;
+import org.labkey.experiment.api.ExpDataClassImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
+import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.exp.property.DomainPropertyAuditProvider;
 
 import java.sql.SQLException;
@@ -122,6 +139,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Supplier;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 import static org.labkey.api.exp.query.ExpSchema.DerivationDataScopeType.ChildOnly;
@@ -684,12 +702,15 @@ public class DomainImpl implements Domain
             // Compile audit info for every property change
             List<PropertyChangeAuditInfo> propertyAuditInfo = new ArrayList<>();
 
+            boolean descriptorsChanged = false;
+
             // Issue 8978: Delete first
             for (DomainPropertyImpl impl : _properties)
             {
                 if (impl._deleted || (impl.isRecreateRequired()))
                 {
                     impl.delete(user);
+                    descriptorsChanged = true;
                     propsDropped.add(impl);
                     propChanged = true;
                     propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, false));
@@ -800,10 +821,13 @@ public class DomainImpl implements Domain
                     String oldValidators = null != pdOld ? PropertyChangeAuditInfo.renderValidators(pdOld) : null;
                     String oldConditionalFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
                     impl.save(user, _dd, sortOrder++);  // Automatically preserve order
+                    descriptorsChanged |= !isImplNew && null != pdOld;
 
-                    String defaultValue = impl.getDefaultValue();
-                    Object converted = null != defaultValue ? impl.getPropertyType().convert(defaultValue) : null;
-                    defaultValueMap.put(impl, converted);
+                    if (impl.isDefaultValueSet())
+                    {
+                        String defaultValue = impl.getDefaultValue();
+                        defaultValueMap.put(impl, null != defaultValue ? impl.getPropertyType().convert(defaultValue) : null);
+                    }
 
                     if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
@@ -827,13 +851,29 @@ public class DomainImpl implements Domain
                 domainProperty.save(user, _dd, order);
             }
 
-            try
+            // Cached property values embed descriptor metadata (name, type) from any domain
+            if (descriptorsChanged)
+                OntologyManager.clearPropertyCache();
+
+            // Loaded domains carry null defaults and setDefaultValues() replaces every stored one, so overlay only those explicitly set or cleared
+            if (!defaultValueMap.isEmpty())
             {
-                DefaultValueService.get().setDefaultValues(getContainer(), defaultValueMap);
-            }
-            catch (ExperimentException e)
-            {
-                throw new RuntimeException(e);
+                try
+                {
+                    Map<DomainProperty, Object> stored = isDomainNew ? Map.of() : DefaultValueService.get().getDefaultValues(getContainer(), this);
+                    Map<DomainProperty, Object> defaults = new HashMap<>(stored);
+                    defaults.putAll(defaultValueMap);
+
+                    // Bean copies set null defaults on every new property, so skip the rewrite when nothing would change
+                    Map<DomainProperty, Object> nonNull = new HashMap<>(defaults);
+                    nonNull.values().removeIf(Objects::isNull);
+                    if (!nonNull.equals(stored))
+                        DefaultValueService.get().setDefaultValues(getContainer(), defaults);
+                }
+                catch (ExperimentException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
 
             _new = false;
@@ -1055,13 +1095,13 @@ public class DomainImpl implements Domain
 
     private void ensureUniqueIdValues(List<DomainProperty> propsAdded) throws SQLException, BatchValidationException
     {
-        SchemaTableInfo table = StorageProvisioner.get().getSchemaTableInfo(this);
-        DbScope scope = table.getSchema().getScope();
-        SqlDialect dialect = table.getSqlDialect();
-
         List<DomainProperty> uniqueIdProps = propsAdded.stream().filter(DomainProperty::isUniqueIdField).toList();
         if (uniqueIdProps.isEmpty())
             return;
+
+        SchemaTableInfo table = StorageProvisioner.get().getSchemaTableInfo(this);
+        DbScope scope = table.getSchema().getScope();
+        SqlDialect dialect = table.getSqlDialect();
 
         Set<ColumnInfo> uniqueIndexCols = new LinkedHashSet<>();
         // Find the uniqueIndexCols so we can use these for selecting items to update the uniqueIds of,
@@ -1593,6 +1633,118 @@ public class DomainImpl implements Domain
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
+        private final List<ListDefinition> _lists = new ArrayList<>();
+        private final List<ExpObject> _expObjects = new ArrayList<>();
+        private String _objectLsid;
+
+        @After
+        public void cleanup() throws DomainNotFoundException
+        {
+            if (_objectLsid != null)
+                OntologyManager.deleteOntologyObject(_objectLsid, JunitUtil.getTestContainer(), true);
+            for (ListDefinition list : _lists)
+                list.delete(TestContext.get().getUser());
+            for (ExpObject o : _expObjects)
+                o.delete(TestContext.get().getUser());
+        }
+
+        private Domain createList(Container c, User user, String fieldName) throws Exception
+        {
+            ListDefinition list = ListService.get().createList(c, "DomainImplTest" + GUID.makeHash(), ListDefinition.KeyType.AutoIncrementInteger);
+            list.setKeyName("Key");
+            Objects.requireNonNull(list.getDomain()).addProperty(new PropertyStorageSpec(fieldName, JdbcType.VARCHAR));
+            list.save(user);
+            _lists.add(list);
+            return Objects.requireNonNull(list.getDomain());
+        }
+
+        // A domain loaded from the database doesn't carry its stored default values, so its save must not drop them
+        @Test
+        public void saveExistingDomainKeepsDefaultValues() throws Exception
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            String domainURI = createList(c, user, "Color").getTypeURI();
+            Domain created = Objects.requireNonNull(PropertyService.get().getDomain(c, domainURI));
+            DefaultValueService.get().setDefaultValues(c, Map.of(created.getPropertyByName("Color"), "Blue"));
+            assertEquals("Blue", DefaultValueService.get().getDefaultValues(c, created).get(created.getPropertyByName("Color")));
+
+            Domain loaded = Objects.requireNonNull(PropertyService.get().getDomain(c, domainURI, true));
+            loaded.addProperty(new PropertyStorageSpec("Size", JdbcType.INTEGER));
+            loaded.save(user);
+
+            Domain saved = Objects.requireNonNull(PropertyService.get().getDomain(c, domainURI));
+            assertEquals("Blue", DefaultValueService.get().getDefaultValues(c, saved).get(saved.getPropertyByName("Color")));
+
+            Domain cleared = Objects.requireNonNull(PropertyService.get().getDomain(c, domainURI, true));
+            cleared.getPropertyByName("Color").setDefaultValue(null);
+            cleared.save(user);
+            assertNull(DefaultValueService.get().getDefaultValues(c, cleared).get(cleared.getPropertyByName("Color")));
+        }
+
+        // Adding a list must leave cached property values and formats warm; renaming a property must refresh the values
+        @Test
+        public void listSaveInvalidatesOnlyChangedDescriptors() throws Exception
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            String domainURI = createList(c, user, "Color").getTypeURI();
+            String colorURI = Objects.requireNonNull(PropertyService.get().getDomain(c, domainURI)).getPropertyByName("Color").getPropertyURI();
+            _objectLsid = new Lsid("JUnit", "DomainImpl", GUID.makeHash()).toString();
+            OntologyManager.ensureObject(c, _objectLsid);
+            OntologyManager.insertProperties(c, user, null, new ObjectProperty(_objectLsid, c, colorURI, "Blue", PropertyType.STRING));
+
+            Map<String, ObjectProperty> values = OntologyManager.getPropertyObjects(c, _objectLsid);
+            List<DomainPropertyManager.ConditionalFormatWithPropertyId> formats = DomainPropertyManager.get().getConditionalFormats(c);
+            createList(c, user, "Size");
+            assertSame(values, OntologyManager.getPropertyObjects(c, _objectLsid));
+            assertSame(formats, DomainPropertyManager.get().getConditionalFormats(c));
+
+            Domain domain = Objects.requireNonNull(PropertyService.get().getDomain(c, domainURI, true));
+            domain.getPropertyByName("Color").setName("Colour");
+            domain.save(user);
+            assertEquals("Colour", OntologyManager.getPropertyObjects(c, _objectLsid).get(colorURI).getName());
+        }
+
+        private void addFormattedColor(Domain domain, User user) throws ChangePropertyDescriptorException
+        {
+            ConditionalFormat format = new ConditionalFormat();
+            format.setFilter(new SimpleFilter(FieldKey.fromParts(GWTConditionalFormat.COLUMN_NAME), "red").toQueryString(GWTConditionalFormat.DATA_REGION_NAME));
+            format.setBold(true);
+            domain.addProperty(new PropertyStorageSpec("Color", JdbcType.VARCHAR)).setConditionalFormats(List.of(format));
+            domain.save(user);
+        }
+
+        // Experiment caches hold row beans and wrappers fetch their own domain, so domain saves needn't clear those caches
+        @Test
+        public void domainSaveKeepsExperimentCachesWarm() throws Exception
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            String name = "DomainImplTest" + GUID.makeHash();
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, user, name, null, List.of(new GWTPropertyDescriptor("Name", "string")), List.of(), -1, -1, -1, -1, null);
+            _expObjects.add(st);
+            ExpDataClass dc = ExperimentService.get().createDataClass(c, user, name, null, List.of(), List.of(), null, null);
+            _expObjects.add(dc);
+            Supplier<ExpSampleTypeImpl> cachedSampleType = () -> (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(c, name);
+            Supplier<ExpDataClassImpl> cachedDataClass = () -> (ExpDataClassImpl) ExperimentService.get().getDataClass(c, name);
+            MaterialSource sampleTypeBean = cachedSampleType.get().getDataObject();
+            DataClass dataClassBean = cachedDataClass.get().getDataObject();
+
+            createList(c, user, "Size");
+            addFormattedColor(st.getDomain(true), user);
+            addFormattedColor(dc.getDomain(true), user);
+
+            assertSame(sampleTypeBean, cachedSampleType.get().getDataObject());
+            assertSame(dataClassBean, cachedDataClass.get().getDataObject());
+            for (Domain domain : List.of(cachedSampleType.get().getDomain(), cachedDataClass.get().getDomain()))
+            {
+                DomainProperty color = domain.getPropertyByName("Color");
+                assertNotNull(domain.getTypeURI(), color);
+                assertEquals(domain.getTypeURI(), 1, color.getConditionalFormats().size());
+            }
+        }
+
         @Test
         public void saveAfterGetReadOnlyDomain()
         {

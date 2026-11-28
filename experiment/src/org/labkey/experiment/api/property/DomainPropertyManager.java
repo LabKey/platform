@@ -265,12 +265,23 @@ public class DomainPropertyManager
     }
 
 
+    /** Clears every container's entry, since callers can't name the descriptor's container; prefer the PropertyDescriptor overload */
     public void deleteConditionalFormats(int propertyId)
     {
-        SQLFragment sql = new SQLFragment().unsafeAppend("DELETE FROM ").append(getTinfoConditionalFormat().getSQLName()).unsafeAppend(" WHERE PropertyId = ?").addAll(propertyId);
-        new SqlExecutor(getExpSchema()).execute(sql);
-        // Blow the cache
-        CONDITIONAL_FORMAT_CACHE.clear();
+        if (deleteConditionalFormatRows(propertyId) > 0)
+            CONDITIONAL_FORMAT_CACHE.clear();
+    }
+
+    public void deleteConditionalFormats(@NotNull PropertyDescriptor pd)
+    {
+        if (deleteConditionalFormatRows(pd.getPropertyId()) > 0)
+            CONDITIONAL_FORMAT_CACHE.remove(pd.getContainer());
+    }
+
+    private int deleteConditionalFormatRows(int propertyId)
+    {
+        SQLFragment sql = new SQLFragment().unsafeAppend("DELETE FROM ").append(getTinfoConditionalFormat()).unsafeAppend(" WHERE PropertyId = ?").addAll(propertyId);
+        return new SqlExecutor(getExpSchema()).execute(sql);
     }
 
     public static void clearCaches()
@@ -284,7 +295,7 @@ public class DomainPropertyManager
         if (null != prop)
         {
             // Delete them all first
-            deleteConditionalFormats(prop.getPropertyId());
+            deleteConditionalFormats(prop);
 
             // Save the new ones
             int index = 0;
