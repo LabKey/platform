@@ -18,9 +18,6 @@ package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
-import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CompareType;
@@ -38,6 +35,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * Special filter to show assay data that has or hasn't been replaced with a more recent copy of the data.
@@ -209,39 +212,30 @@ public class ReplacedRunFilter
         @Test
         public void testGenerateFilters()
         {
-            Mockery context = new Mockery();
-            context.setImposteriser(ClassImposteriser.INSTANCE);
-            final SimpleFilter simpleFilter = context.mock(SimpleFilter.class);
-            final FieldKey fieldKey = FieldKey.fromParts("Test");
-            context.checking(new Expectations()
-            {{
-                oneOf(simpleFilter).addCondition(fieldKey, null, CompareType.NONBLANK);
-                oneOf(simpleFilter).addCondition(fieldKey, true, CompareType.EQUAL);
-                oneOf(simpleFilter).addCondition(fieldKey, false, CompareType.EQUAL);
-            }});
+            SimpleFilter simpleFilter = mock(SimpleFilter.class);
+            FieldKey fieldKey = FieldKey.fromParts("Test");
             new ReplacedRunFilter(Type.ALL).addFilterCondition(simpleFilter, fieldKey);
             new ReplacedRunFilter(Type.REPLACED_ONLY).addFilterCondition(simpleFilter, fieldKey);
             new ReplacedRunFilter(Type.CURRENT_ONLY).addFilterCondition(simpleFilter, fieldKey);
+            verify(simpleFilter).addCondition(fieldKey, null, CompareType.NONBLANK);
+            verify(simpleFilter).addCondition(fieldKey, true, CompareType.EQUAL);
+            verify(simpleFilter).addCondition(fieldKey, false, CompareType.EQUAL);
+            verifyNoMoreInteractions(simpleFilter);
         }
 
         @Test
         public void testAddToURL()
         {
-            Mockery context = new Mockery();
-            context.setImposteriser(ClassImposteriser.INSTANCE);
-            final ActionURL url = context.mock(ActionURL.class);
-            context.checking(new Expectations()
-            {{
-                allowing(url).getParameters();
-                will(returnValue(Collections.emptyList()));
-                oneOf(url).replaceParameter("DataRegionName.SomeColumn~isnonblank", null);
-                oneOf(url).replaceParameter("DataRegionName.SomeColumn~eq", "false");
-                oneOf(url).replaceParameter("DataRegionName.SomeColumn~eq", "true");
-            }});
+            ActionURL url = mock(ActionURL.class);
+            when(url.getParameters()).thenReturn(Collections.emptyList());
             FieldKey fieldKey = FieldKey.fromParts("SomeColumn");
             Type.ALL.addToURL(url, "DataRegionName", fieldKey);
             Type.CURRENT_ONLY.addToURL(url, "DataRegionName", fieldKey);
             Type.REPLACED_ONLY.addToURL(url, "DataRegionName", fieldKey);
+            verify(url).replaceParameter("DataRegionName.SomeColumn~isnonblank", null);
+            verify(url).replaceParameter("DataRegionName.SomeColumn~eq", "false");
+            verify(url).replaceParameter("DataRegionName.SomeColumn~eq", "true");
+            verifyNoMoreInteractions(ignoreStubs(url));
         }
 
         @Test
@@ -272,26 +266,16 @@ public class ReplacedRunFilter
 
         private QueryView createMockView(final String paramName, final String paramValue)
         {
-            Mockery context = new Mockery();
-            context.setImposteriser(ClassImposteriser.INSTANCE);
-            final QueryView view = context.mock(QueryView.class);
-            final ViewContext viewContext = context.mock(ViewContext.class);
-            final QuerySettings settings = context.mock(QuerySettings.class);
-            context.checking(new Expectations()
-            {{
-                allowing(view).getDataRegionName();
-                will(returnValue("AssayId Data"));
-                allowing(view).getViewContext();
-                will(returnValue(viewContext));
-                allowing(viewContext).cloneActionURL();
-                ActionURL actionURL = new ActionURL(false);
-                will(returnValue(actionURL));
-                actionURL.addParameter(paramName, paramValue);
-                allowing(view).getSettings();
-                will(returnValue(settings));
-                allowing(settings);
-                allowing(view);
-            }});
+            ActionURL actionURL = new ActionURL(false);
+            actionURL.addParameter(paramName, paramValue);
+            ViewContext viewContext = mock(ViewContext.class);
+            when(viewContext.cloneActionURL()).thenReturn(actionURL);
+            QuerySettings settings = mock(QuerySettings.class);
+            when(settings.getSortFilterURL()).thenReturn(new ActionURL(false));
+            QueryView view = mock(QueryView.class);
+            when(view.getDataRegionName()).thenReturn("AssayId Data");
+            when(view.getViewContext()).thenReturn(viewContext);
+            when(view.getSettings()).thenReturn(settings);
             return view;
         }
     }
