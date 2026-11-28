@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -189,7 +190,7 @@ public class ListWriter
                         tsvWriter.write(out);
                     }
 
-                    writeAttachments(ti, def, c, listsDir, exportPhiLevel);
+                    writeAttachments(ti, def, c, listsDir, exportPhiLevel, sort);
                 }
             }
         }
@@ -263,7 +264,7 @@ public class ListWriter
         if (def.getFileAttachmentIndex()) settings.setFileAttachmentIndex(def.getFileAttachmentIndex());
     }
 
-    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, PHI exportPhiLevel) throws SQLException, IOException
+    private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, PHI exportPhiLevel, @Nullable Sort sort) throws SQLException, IOException
     {
         List<ColumnInfo> attachmentColumns = new ArrayList<>();
 
@@ -292,7 +293,8 @@ public class ListWriter
             List<ColumnInfo> selectColumns = new ArrayList<>(attachmentColumns);
             selectColumns.addFirst(ti.getColumn("EntityId"));
 
-            try (ResultSet rs = QueryService.get().getSelectBuilder(ti).columns(selectColumns).select(false))
+            // Import pairs uniquified file names to TSV rows by position, so this must match the TSV's row order
+            try (ResultSet rs = QueryService.get().getSelectBuilder(ti).columns(selectColumns).sort(sort).select(false))
             {
                 while (rs.next())
                 {
@@ -312,9 +314,10 @@ public class ListWriter
 
                         String columnName = attachmentColumn.getName();
                         VirtualFile columnDir = listDir.getDir(columnName);
-                        FileNameUniquifier uniquifier = uniquifiers.get(columnName);
+                        // Take the slot even if the file is missing; import still counts this row
+                        String archiveName = uniquifiers.get(columnName).uniquify(filename);
 
-                        try (InputStream is = AttachmentService.get().getInputStream(listItemParent, filename); OutputStream os = columnDir.getOutputStream(uniquifier.uniquify(filename)))
+                        try (InputStream is = AttachmentService.get().getInputStream(listItemParent, filename); OutputStream os = columnDir.getOutputStream(archiveName))
                         {
                             FileUtil.copyData(is, os);
                         }
