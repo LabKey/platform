@@ -47,6 +47,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -338,6 +339,9 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     ) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         ExpRun run = getRun(oldRowMap, user, DeletePermission.class);
+
+        if (!container.allowRowMutationForContainer(run.getContainer()))
+            throw new RuntimeValidationException("Assay results being deleted are from a different container.");
 
         AssayService.get().onBeforeAssayResultDelete(container, user, run, oldRowMap);
 
