@@ -15,6 +15,7 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
@@ -24,6 +25,7 @@ import org.labkey.api.exp.PropertyType;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * User: matthewb
@@ -37,6 +39,8 @@ import java.util.Set;
  */
 public class CoerceDataIterator extends SimpleTranslator
 {
+    private final Set<String> _paddedColumnNames = new CaseInsensitiveHashSet();
+
     public CoerceDataIterator(DataIterator source, DataIteratorContext context, TableInfo target)
     {
         this(source, context, target, true);
@@ -44,12 +48,24 @@ public class CoerceDataIterator extends SimpleTranslator
 
     public CoerceDataIterator(DataIterator source, DataIteratorContext context, TableInfo target, boolean outputAllColumns)
     {
-        super(source, context);
-        setDebugName("Coerce before trigger script");
-        init(target, context.getInsertOption().useImportAliases, outputAllColumns);
+        this(source, context, target, outputAllColumns ? _ -> true : null);
     }
 
-    void init(TableInfo target, boolean useImportAliases, boolean outputAllColumns)
+    /** @param padColumn which insertable columns the input lacks get a null column, or null to add none */
+    public CoerceDataIterator(DataIterator source, DataIteratorContext context, TableInfo target, @Nullable Predicate<ColumnInfo> padColumn)
+    {
+        super(source, context);
+        setDebugName("Coerce before trigger script");
+        init(target, context.getInsertOption().useImportAliases, padColumn);
+    }
+
+    /** The null columns added for columns the input lacks */
+    public Set<String> getPaddedColumnNames()
+    {
+        return _paddedColumnNames;
+    }
+
+    void init(TableInfo target, boolean useImportAliases, @Nullable Predicate<ColumnInfo> padColumn)
     {
         Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
         Set<String> seen = new CaseInsensitiveHashSet();
@@ -75,16 +91,17 @@ public class CoerceDataIterator extends SimpleTranslator
                 addColumn(i);
             }
         }
-        if (outputAllColumns)
+        if (padColumn != null)
         {
             // add null column for all insertable not seen columns
             for (ColumnInfo to : target.getColumns())
             {
                 if (seen.contains(to.getName()))
                     continue;
-                if (!to.isUserEditable() || to.isAutoIncrement())
+                if (!to.isUserEditable() || to.isAutoIncrement() || !padColumn.test(to))
                     continue;
                 addNullColumn(to.getName(), to.getJdbcType());
+                _paddedColumnNames.add(to.getName());
             }
         }
     }

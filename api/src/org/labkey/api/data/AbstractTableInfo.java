@@ -95,6 +95,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -2035,6 +2036,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         errors.setRowNumber(rowNumber);
 
         Collection<Trigger> triggers = getTriggers(c);
+        Map<String, Object> storedRow = existingRecord == null || existingRecord.isEmpty() ? null : new CaseInsensitiveHashMap<>(existingRecord);
 
         // Wrap the row once before the loop
         DeltaTrackingMap<Object> trackedRow = null;
@@ -2079,6 +2081,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                         }
                     }
 
+                    // Copying a stored value into the row, e.g. oldRow into a MERGE row, changes nothing the write would lose
+                    if (storedRow != null)
+                    {
+                        DeltaTrackingMap<Object> row = trackedRow;
+                        added.removeIf(col -> isStoredValue(storedRow, col, row.get(col)));
+                    }
+
                     if (!added.isEmpty() || !removed.isEmpty())
                     {
                         var diffs = new ArrayList<String>();
@@ -2119,6 +2128,21 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (errors.hasErrors())
             throw errors;
+    }
+
+    private static boolean isStoredValue(Map<String, Object> storedRow, String col, Object value)
+    {
+        if (!storedRow.containsKey(col))
+            return false;
+        Object stored = storedRow.get(col);
+        if (Objects.equals(stored, value))
+            return true;
+        // Script triggers hand values back converted, e.g. an integer as a double
+        if (stored instanceof Number a && value instanceof Number b)
+            return a.doubleValue() == b.doubleValue();
+        if (stored instanceof Date a && value instanceof Date b)
+            return a.getTime() == b.getTime();
+        return false;
     }
 
     public void checkLocked()

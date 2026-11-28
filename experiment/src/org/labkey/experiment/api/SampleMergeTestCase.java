@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.triggers.FillIfMissingTrigger;
 import org.labkey.api.data.triggers.RecordingTrigger;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -91,6 +92,22 @@ public class SampleMergeTestCase extends Assert
         trigger.assertEvents("beforeUpdate S-1 old x", "beforeInsert S-2", "afterUpdate S-1", "afterInsert S-2");
         assertOmittedFieldKept(st);
         assertEquals(RecordingTrigger.COMPUTED, getSample(st, "S-2").get(TEXT_FIELD));
+    }
+
+    @Test
+    public void mergeLetsTriggersFillOmittedColumns() throws Exception
+    {
+        for (boolean routed : List.of(true, false))
+        {
+            for (boolean managedColumnsEnabled : List.of(true, false))
+            {
+                String label = "routed " + routed + ", managed columns enabled " + managedColumnsEnabled;
+                ExpSampleType st = createSampleType("MergeFill" + routed + managedColumnsEnabled);
+                mergeIntField(tableWithTrigger(st, new FillIfMissingTrigger(TEXT_FIELD, routed, managedColumnsEnabled)), "S-1", "S-2");
+                assertEquals(label + ": existing sample lost its stored value", "x", getSample(st, "S-1").get(TEXT_FIELD));
+                assertEquals(label + ": new sample lost the trigger's value", FillIfMissingTrigger.FILLED, getSample(st, "S-2").get(TEXT_FIELD));
+            }
+        }
     }
 
     /** Creates the sample type with sample S-1 */

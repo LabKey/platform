@@ -21,8 +21,10 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -36,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
@@ -160,24 +163,33 @@ public class TriggerDataBuilderHelper
                 sharedKeys = expTable.getExistingRecordSharedKeyColumnNames();
             }
 
-            // Rows routed to update keep trigger-managed values the input omits, since beforeUpdate may not set them
-            Set<String> carryForwardColumns = routeMerge ? managedOnlyColumns : Set.of();
-
-            // GH Issue 1048: null padding would make MERGE overwrite every column the input omitted
-            boolean padMissingColumns = !option.updateOnly && (!option.mergeRows || option.replace);
-            di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, _target, padMissingColumns));
+            // GH Issue 1048: MERGE pads omitted columns with each matched row's stored value, so triggers see the whole row and the write leaves those columns unchanged
+            boolean keepStoredValues = option.mergeRows && !option.replace;
+            // Stored values of these don't round-trip through import
+            Predicate<ColumnInfo> padColumn = option.updateOnly ? null : !keepStoredValues ? _ -> true :
+                    col -> !col.isCalculated() && !col.isUnselectable() && !col.isMultiValued() && !(col.getFk() instanceof MultiValuedForeignKey) &&
+                            col.getPropertyType() != PropertyType.ATTACHMENT && col.getPropertyType() != PropertyType.FILE_LINK;
+            CoerceDataIterator coerce = new CoerceDataIterator(di, context, _target, padColumn);
+            di = LoggingDataIterator.wrap(coerce);
             context.setWithLookupRemapping(false);
 
-            // The import pipeline doesn't expect an existing record from a lookup made only to route triggers
-            boolean routingOnlyLookup = false;
-            if (routeMerge && existingRecordKeyColumnNames == null)
+            // Rows that match an existing record keep its values for trigger-managed and padded columns the input omits
+            Set<String> carryForwardColumns = new CaseInsensitiveHashSet();
+            if (routeMerge || keepStoredValues)
+                carryForwardColumns.addAll(managedOnlyColumns);
+            if (keepStoredValues)
+                carryForwardColumns.addAll(coerce.getPaddedColumnNames());
+
+            // The import pipeline doesn't expect an existing record from a lookup made only for the triggers
+            boolean triggerOnlyLookup = false;
+            if ((routeMerge || !carryForwardColumns.isEmpty()) && existingRecordKeyColumnNames == null)
             {
                 MergeKeyColumns keys = getMergeKeyColumns(di, context);
                 if (keys != null)
                 {
                     di = keys.input();
                     existingRecordKeyColumnNames = keys.columnNames();
-                    routingOnlyLookup = true;
+                    triggerOnlyLookup = true;
                 }
             }
 
@@ -189,11 +201,12 @@ public class TriggerDataBuilderHelper
             if (option.mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
                 return LoggingDataIterator.wrap(new BeforeIterator(di, context, Set.of()));
 
-            // Rows routed to update get the whole existing row as oldRow
-            // A routing-only lookup leaves blank and duplicate keys unmatched, so the import reports them as it would without triggers
-            di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, _target instanceof ExpTable, routeMerge, routingOnlyLookup).getDataIterator(context);
+            // Routed rows get the whole existing row as oldRow, and carried-forward columns need their stored values
+            // A trigger-only lookup leaves blank and duplicate keys unmatched, so the import reports them as it would without triggers
+            boolean allColumns = routeMerge || !carryForwardColumns.isEmpty();
+            di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, _target instanceof ExpTable, allColumns, triggerOnlyLookup).getDataIterator(context);
             DataIterator before = new BeforeIterator(new CachingDataIterator(di), context, carryForwardColumns);
-            if (routingOnlyLookup)
+            if (triggerOnlyLookup)
                 before = new HiddenExistingRecordDataIterator(before);
             return LoggingDataIterator.wrap(before);
         }
@@ -324,6 +337,7 @@ public class TriggerDataBuilderHelper
             Map<String, Object> existing = new CaseInsensitiveHashMap<>(existingRecord);
             for (String col : _carryForwardColumns)
             {
+                assert existing.containsKey(col) : "Existing record lacks " + col + ", so MERGE would null it";
                 if (existing.containsKey(col))
                     _currentRow.put(col, existing.get(col));
             }
