@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -263,7 +264,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
     {
         checkActionPermissions(contextualRoles);
 
-        if (!getClass().isAnnotationPresent(IgnoresTermsOfUse.class))
+        // GH Issue 1930: terms enforcement on actions allowed during admin-only mode can loop with the maintenance redirect
+        if (!getClass().isAnnotationPresent(IgnoresTermsOfUse.class) && !getClass().isAnnotationPresent(AllowedDuringUpgrade.class))
             verifyTermsOfUse(isSendBasic);
     }
 

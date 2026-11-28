@@ -21,9 +21,7 @@ import java.lang.annotation.Target;
 
 /**
  * Tag for the very small set of actions that users are allowed to access while the server is in the midst
- * of an upgrade to the newly deployed module versions or initial install.
- * User: adam
- * Date: Nov 11, 2008
+ * of an upgrade to the newly deployed module versions or initial installation. Also implies {@link org.labkey.api.security.IgnoresTermsOfUse}.
  */
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
 @interface AllowedDuringUpgrade
