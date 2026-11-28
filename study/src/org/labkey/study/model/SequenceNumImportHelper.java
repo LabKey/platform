@@ -112,6 +112,9 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
                 // DataIterator will catch this and report an error, and we shouldn't usually be getting strings here
             }
             Double sequencenum = translateSequenceNum(seq, date);
+            // Report it here; the LSID and ParticipantSequenceNum columns convert this value before any later converter would
+            if (null == sequencenum && seq instanceof String s && !StringUtils.isBlank(s))
+                throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(seq, "SequenceNum", Double.class));
             return null == sequencenum ? seq : sequencenum;
         };
     }

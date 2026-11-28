@@ -15,11 +15,16 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.triggers.Trigger;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -28,10 +33,12 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
@@ -45,6 +52,9 @@ public class TriggerDataBuilderHelper
     final boolean _useImportAliases;
     /** Only fire complete() if we got far enough to fire init() */
     boolean firedInit = false;
+    /** Existing records of rows routed to update, held from the before trigger until the after trigger */
+    final Map<Integer, Map<String, Object>> _routedExistingRecords = new HashMap<>();
+    boolean _routeMerge = false;
 
     public TriggerDataBuilderHelper(TableInfo target, Container c, User user, Map<String, Object> extraContext, boolean useImportAliases)
     {
@@ -135,36 +145,86 @@ public class TriggerDataBuilderHelper
                 return di;
             di = LoggingDataIterator.wrap(di);
 
+            QueryUpdateService.InsertOption option = context.getInsertOption();
+            boolean routeMerge = option.mergeRows && _target instanceof AbstractTableInfo t && t.isMergeRoutedByExistingRecord(_c);
+            _routeMerge = routeMerge;
+
             // Incorporate columns managed by triggers that may not overlap with the requested column set
-            di = getManagedColumnsDataIterator(di, context);
+            Set<String> managedOnlyColumns = new CaseInsensitiveHashSet();
+            di = getManagedColumnsDataIterator(di, context, managedOnlyColumns);
 
             Set<String> existingRecordKeyColumnNames = null;
             Set<String> sharedKeys = null;
-            boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
+            boolean isMergeOrUpdate = option.allowUpdate;
 
             if (isMergeOrUpdate && _target instanceof ExpTable<?> expTable)
             {
-                Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(di);
-                existingRecordKeyColumnNames = expTable.getExistingRecordKeyColumnNames(context, colNameMap);
+                existingRecordKeyColumnNames = expTable.getExistingRecordKeyColumnNames(context, DataIteratorUtil.createColumnNameMap(di));
                 sharedKeys = expTable.getExistingRecordSharedKeyColumnNames();
             }
 
-            di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, _target, !context.getInsertOption().updateOnly));
+            // GH Issue 1048: MERGE pads omitted columns with each matched row's stored value, so triggers see the whole row and the write leaves those columns unchanged
+            boolean keepStoredValues = option.mergeRows && !option.replace;
+            // Stored values of these don't round-trip through import
+            Predicate<ColumnInfo> padColumn = option.updateOnly ? null : !keepStoredValues ? _ -> true :
+                    col -> !col.isCalculated() && !col.isUnselectable() && !col.isMultiValued() && !(col.getFk() instanceof MultiValuedForeignKey) &&
+                            col.getPropertyType() != PropertyType.ATTACHMENT && col.getPropertyType() != PropertyType.FILE_LINK;
+            CoerceDataIterator coerce = new CoerceDataIterator(di, context, _target, padColumn);
+            di = LoggingDataIterator.wrap(coerce);
             context.setWithLookupRemapping(false);
 
+            // Rows that match an existing record keep its values for trigger-managed and padded columns the input omits
+            Set<String> carryForwardColumns = new CaseInsensitiveHashSet();
+            if (routeMerge || keepStoredValues)
+                carryForwardColumns.addAll(managedOnlyColumns);
+            if (keepStoredValues)
+                carryForwardColumns.addAll(coerce.getPaddedColumnNames());
+
+            // The import pipeline doesn't expect an existing record from a lookup made only for the triggers
+            boolean triggerOnlyLookup = false;
+            if ((routeMerge || !carryForwardColumns.isEmpty()) && existingRecordKeyColumnNames == null)
+            {
+                MergeKeyColumns keys = getMergeKeyColumns(di, context);
+                if (keys != null)
+                {
+                    di = keys.input();
+                    existingRecordKeyColumnNames = keys.columnNames();
+                    triggerOnlyLookup = true;
+                }
+            }
+
             // Skip existing records
-            if (!context.getInsertOption().allowUpdate || existingRecordKeyColumnNames == null)
-                return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
+            if (!option.allowUpdate || existingRecordKeyColumnNames == null)
+                return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context, Set.of()));
 
             // Merge request but merge is not supported
-            if (context.getInsertOption().mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
-                return LoggingDataIterator.wrap(new BeforeIterator(di, context));
+            if (option.mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
+                return LoggingDataIterator.wrap(new BeforeIterator(di, context, Set.of()));
 
-            di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, true).getDataIterator(context);
-            return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(di), context));
+            // Routed rows get the whole existing row as oldRow, and carried-forward columns need their stored values
+            // A trigger-only lookup leaves blank and duplicate keys unmatched, so the import reports them as it would without triggers
+            boolean allColumns = routeMerge || !carryForwardColumns.isEmpty();
+            di = ExistingRecordDataIterator.createBuilder(di, _target, existingRecordKeyColumnNames, sharedKeys, _target instanceof ExpTable, allColumns, triggerOnlyLookup).getDataIterator(context);
+            DataIterator before = new BeforeIterator(new CachingDataIterator(di), context, carryForwardColumns);
+            if (triggerOnlyLookup)
+                before = new HiddenExistingRecordDataIterator(before);
+            return LoggingDataIterator.wrap(before);
         }
 
-        private DataIterator getManagedColumnsDataIterator(DataIterator di, DataIteratorContext context)
+        /** Columns that match each input row to the row MERGE will update: the table's computed key, alternate keys, or primary key */
+        private @Nullable MergeKeyColumns getMergeKeyColumns(DataIterator di, DataIteratorContext context)
+        {
+            if (_target instanceof MergeKeyColumns.Provider provider)
+                return provider.addMergeKeyColumns(di, context);
+
+            Collection<String> keys = context.getAlternateKeys().isEmpty() ? _target.getPkColumnNames() : context.getAlternateKeys();
+            Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(di);
+            if (keys.isEmpty() || !keys.stream().allMatch(colNameMap::containsKey))
+                return null;
+            return new MergeKeyColumns(di, new CaseInsensitiveHashSet(keys));
+        }
+
+        private DataIterator getManagedColumnsDataIterator(DataIterator di, DataIteratorContext context, Set<String> addedColumns)
         {
             if (QueryService.get().isTriggerManagedColumnsEnabled())
             {
@@ -189,7 +249,10 @@ public class TriggerDataBuilderHelper
                         for (var column : columns)
                         {
                             if (!columnNameMap.containsKey(column.getName()))
+                            {
                                 translator.addColumn(column, (Supplier<Object>) () -> null);
+                                addedColumns.add(column.getName());
+                            }
                         }
 
                         di = translator.getDataIterator(context);
@@ -205,10 +268,12 @@ public class TriggerDataBuilderHelper
     {
         boolean _firstRow = true;
         Map<String, Object> _currentRow = null;
+        final Set<String> _carryForwardColumns;
 
-        BeforeIterator(DataIterator di, DataIteratorContext context)
+        BeforeIterator(DataIterator di, DataIteratorContext context, Set<String> carryForwardColumns)
         {
             super(di, context);
+            _carryForwardColumns = carryForwardColumns;
         }
 
         @Override
@@ -245,9 +310,13 @@ public class TriggerDataBuilderHelper
             {
                 int rowNumber = asInteger(getInput().get(0));
                 _currentRow = getInput().getMap();
+                Map<String, Object> existingRecord = getExistingRecord();
+                carryForward(existingRecord);
+                if (_routeMerge && existingRecord != null && !existingRecord.isEmpty())
+                    _routedExistingRecords.put(rowNumber, existingRecord);
                 try
                 {
-                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, getExistingRecord());
+                    _target.fireRowTrigger(_c, _user, triggerType, _context.getInsertOption(), true, rowNumber, _currentRow, getOldRow(), _extraContext, existingRecord);
                     return true;
                 }
                 catch (ValidationException vex)
@@ -260,6 +329,20 @@ public class TriggerDataBuilderHelper
             return false;
         }
 
+        private void carryForward(@Nullable Map<String, Object> existingRecord)
+        {
+            if (_carryForwardColumns.isEmpty() || existingRecord == null || existingRecord.isEmpty())
+                return;
+
+            Map<String, Object> existing = new CaseInsensitiveHashMap<>(existingRecord);
+            for (String col : _carryForwardColumns)
+            {
+                assert existing.containsKey(col) : "Existing record lacks " + col + ", so MERGE would null it";
+                if (existing.containsKey(col))
+                    _currentRow.put(col, existing.get(col));
+            }
+        }
+
         @Override
         public Object get(int i)
         {
@@ -268,6 +351,34 @@ public class TriggerDataBuilderHelper
             if (_currentRow.containsKey(name))
                 return _currentRow.get(name);
             return super.get(i);
+        }
+    }
+
+    /** Hides the existing record column and accessor from the iterators downstream */
+    static class HiddenExistingRecordDataIterator extends WrapperDataIterator
+    {
+        HiddenExistingRecordDataIterator(DataIterator di)
+        {
+            super(di);
+        }
+
+        @Override
+        public int getColumnCount()
+        {
+            int count = _delegate.getColumnCount();
+            return ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME.equals(_delegate.getColumnInfo(count).getName()) ? count - 1 : count;
+        }
+
+        @Override
+        public boolean supportsGetExistingRecord()
+        {
+            return false;
+        }
+
+        @Override
+        public Map<String, Object> getExistingRecord()
+        {
+            return null;
         }
     }
 
@@ -312,9 +423,12 @@ public class TriggerDataBuilderHelper
                 {
                     int rowNumber = asInteger(getInput().get(0));
                     Map<String,Object> newRow = getInput().getMap();
+                    Map<String, Object> existingRecord = _routedExistingRecords.remove(rowNumber);
+                    if (existingRecord == null)
+                        existingRecord = getExistingRecord();
                     try
                     {
-                        _target.fireRowTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, rowNumber, newRow, getOldRow(), _extraContext, getExistingRecord());
+                        _target.fireRowTrigger(_c, _user, getTriggerType(), _context.getInsertOption(), false, rowNumber, newRow, getOldRow(), _extraContext, existingRecord);
                     }
                     catch (ValidationException vex)
                     {

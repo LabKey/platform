@@ -95,6 +95,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1934,9 +1935,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 columns.addAll(managedColumns.update());
             else
                 columns.addAll(managedColumns.insert());
+
+            // A routed MERGE batch mixes insert and update rows
+            if (insertOption.mergeRows && trigger.isMergeRoutedByExistingRecord())
+                columns.addAll(managedColumns.update());
         }
 
         return columns.isEmpty() ? null : columns;
+    }
+
+    /** True when a MERGE into this table fires update hooks for rows that already exist. */
+    public boolean isMergeRoutedByExistingRecord(@Nullable Container c)
+    {
+        return getTriggers(c).stream().anyMatch(Trigger::isMergeRoutedByExistingRecord);
     }
 
     private Collection<Trigger> _triggers = null;
@@ -2025,6 +2036,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         errors.setRowNumber(rowNumber);
 
         Collection<Trigger> triggers = getTriggers(c);
+        Map<String, Object> storedRow = existingRecord == null || existingRecord.isEmpty() ? null : new CaseInsensitiveHashMap<>(existingRecord);
 
         // Wrap the row once before the loop
         DeltaTrackingMap<Object> trackedRow = null;
@@ -2050,7 +2062,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (trackedRow != null && script.isManagedColumnsEnabled())
             {
                 var managed = script.getManagedColumns();
-                var managedCols = managed != null ? managed.getColumns(type) : null;
+                var managedCols = managed != null ? managed.getColumns(script.getRowEvent(type, insertOption, existingRecord)) : null;
 
                 // Verify the trigger did not add or remove columns that are not managed
                 if (trackedRow.hasStructuralChanges())
@@ -2067,6 +2079,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                             added.removeAll(managed.ignored());
                             removed.removeAll(managed.ignored());
                         }
+                    }
+
+                    // Copying a stored value into the row, e.g. oldRow into a MERGE row, changes nothing the write would lose
+                    if (storedRow != null)
+                    {
+                        DeltaTrackingMap<Object> row = trackedRow;
+                        added.removeIf(col -> isStoredValue(storedRow, col, row.get(col)));
                     }
 
                     if (!added.isEmpty() || !removed.isEmpty())
@@ -2109,6 +2128,21 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (errors.hasErrors())
             throw errors;
+    }
+
+    private static boolean isStoredValue(Map<String, Object> storedRow, String col, Object value)
+    {
+        if (!storedRow.containsKey(col))
+            return false;
+        Object stored = storedRow.get(col);
+        if (Objects.equals(stored, value))
+            return true;
+        // Script triggers hand values back converted, e.g. an integer as a double
+        if (stored instanceof Number a && value instanceof Number b)
+            return a.doubleValue() == b.doubleValue();
+        if (stored instanceof Date a && value instanceof Date b)
+            return a.getTime() == b.getTime();
+        return false;
     }
 
     public void checkLocked()
