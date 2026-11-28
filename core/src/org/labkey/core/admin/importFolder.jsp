@@ -30,6 +30,8 @@
 <%@ page import="org.labkey.core.admin.AdminController.ImportFolderForm" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.util.DOM" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="static org.labkey.api.util.DOM.SPAN" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.style" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -80,7 +82,7 @@
     final String noun;
     final String action;
     final String mainDescription;
-    final String helpLinkTxt;
+    final HtmlString helpLinkTxt;
 
     final String whatIsAFolderArchive = "A folder archive is a .folder.zip file or a collection of individual files that " +
         "conforms to the LabKey folder archive conventions and formats. A folder archive can be created using the folder " +
@@ -93,8 +95,8 @@
         mainDescription = "You can create and populate a new study by importing a folder archive. " + whatIsAFolderArchive +
             "Using export and import, a study's contents can be moved from one server to another or a new study can be " +
             "created using a standard template.";
-        helpLinkTxt = "For more information about exporting, importing, and reloading studies, see " +
-            helpLink("importExportStudy", "the study import/export/reload documentation") + ".";
+        helpLinkTxt = HtmlStringBuilder.of("For more information about exporting, importing, and reloading studies, see ")
+            .append(helpLink("importExportStudy", "the study import/export/reload documentation")).append(".").getHtmlString();
     }
     else if (requestOrigin.equals("Reload"))
     {
@@ -103,8 +105,8 @@
         mainDescription = "You can update an existing study with new settings and data by reloading a folder archive. " +
             whatIsAFolderArchive + "Note: Reloading a folder archive will replace existing study data with the data in " +
             "the archive.";
-        helpLinkTxt = "For more information about exporting, importing, and reloading studies, see " +
-            helpLink("importExportStudy", "the study import/export/reload documentation") + ".";
+        helpLinkTxt = HtmlStringBuilder.of("For more information about exporting, importing, and reloading studies, see ")
+            .append(helpLink("importExportStudy", "the study import/export/reload documentation")).append(".").getHtmlString();
     }
     else
     {
@@ -114,8 +116,8 @@
             whatIsAFolderArchive + "Using export and import, a folder's contents can be moved from one server to another " +
             "or a new folder can be created using a standard template. You can also populate a new folder from a template " +
             "folder on the current server using the \"Create Folder From Template\" option on the folder creation page.";
-        helpLinkTxt = "For more information about exporting and importing folders, see " +
-            helpLink("importExportFolder", "the folder export/import documentation") + ".";
+        helpLinkTxt = HtmlStringBuilder.of("For more information about exporting and importing folders, see ")
+            .append(helpLink("importExportFolder", "the folder export/import documentation")).append(".").getHtmlString();
     }
 %>
 <style type="text/css">
@@ -132,7 +134,7 @@
         <td>
             <%=h(mainDescription)%>
             <br/><br/>
-            <%=unsafe(helpLinkTxt)%>
+            <%=helpLinkTxt%>
         </td>
     </tr>
     <tr>

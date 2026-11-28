@@ -17,6 +17,7 @@ package org.labkey.experiment;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.util.HtmlString;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,6 +63,6 @@ public class CustomProperties
 
     public interface PropertyHandler
     {
-        void handle(int indent, String description, String value);
+        void handle(int indent, HtmlString description, HtmlString value);
     }
 }

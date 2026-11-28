@@ -42,7 +42,7 @@
 <%  //print list of page titles with anchors at top
     for (WikiTree tree : bean.wikiTrees)
     {
-        out.print(unsafe(StringUtils.repeat("&nbsp;&nbsp;", tree.getDepth())));
+        out.print(h(StringUtils.repeat("\u00A0\u00A0", tree.getDepth())));
     %>
         <a href="#<%=h(tree.getName())%>"><%=h(tree.getTitle())%></a><br>
     <%

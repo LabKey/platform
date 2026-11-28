@@ -27,8 +27,6 @@
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -72,7 +70,7 @@
             messages.add("This is the " + participant + " comment dataset");
         if (datasetId.equals(study.getParticipantVisitCommentDatasetId()))
             messages.add("This is the " + participant + "/visit comment dataset");
-        return messages.isEmpty() ? null : String.join("&#013;", messages);
+        return messages.isEmpty() ? null : String.join("\n", messages);
     }
 %>
 <%
@@ -263,9 +261,14 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
         %><tr class="<%=getShadeRowClass(row++)%>"><%
         // Highlight "special" datasets (cohort, altid, comments, etc.) in the grid
         String toolTip = getTooltip(study, ds.getDatasetId());
-        HtmlString toolTipHtml = null == toolTip ? HtmlString.EMPTY_STRING : unsafe(" data-toggle=\"tooltip\" title=\"" + toolTip + "\"");
-        HtmlString label = null == toolTip ? h(ds.getLabel()) : HtmlStringBuilder.of().unsafeAppend("<b>").append(ds.getLabel()).unsafeAppend("</b>").getHtmlString();
-        %><td<%=toolTipHtml%>><%=label%></td><%
+        if (null == toolTip)
+        {
+            %><td><%=h(ds.getLabel())%></td><%
+        }
+        else
+        {
+            %><td data-toggle="tooltip" title="<%=h(toolTip)%>"><b><%=h(ds.getLabel())%></b></td><%
+        }
 
         for (Group g : restrictedGroups)
         {

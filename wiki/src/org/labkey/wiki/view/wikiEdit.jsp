@@ -122,7 +122,7 @@
         <td style="vertical-align:top;width:99%">
             <table class="lk-fields-table" style="width:99%">
                 <tr>
-                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>name">Name<%=unsafe(existingWiki ? helpPopup("Name", "Wiki pages can be renamed on the Manage page").toString() : " * " + helpPopup("Name", "This field is required"))%></label></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>name">Name<% if (existingWiki) { %><%=helpPopup("Name", "Wiki pages can be renamed on the Manage page")%><% } else { %> * <%=helpPopup("Name", "This field is required")%><% } %></label></td>
                     <td width="99%">
                         <input type="text" name="name" id="<%=H_ID_PREFIX%>name" size="80" maxlength="255"<%=unsafe(existingWiki ? " class=\"labkey-form-label\" style=\"text-align:left;padding:1px 2px;\" readonly=\"readonly\"" : "")%>/>
                     </td>

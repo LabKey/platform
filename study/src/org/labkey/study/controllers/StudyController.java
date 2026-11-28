@@ -4849,6 +4849,12 @@ public class StudyController extends BaseStudyController
             return DEFAULT_PARTICIPANT_VIEW_SOURCE;
         }
 
+        // Custom script comes from the saved view (see getView()), never the request
+        public HtmlString getPreviewHtml()
+        {
+            return HtmlString.unsafe(isUseCustomView() ? getCustomScript() : getDefaultScript());
+        }
+
         public void setCustomScript(String customScript)
         {
             _customScript = customScript;
@@ -4903,6 +4909,11 @@ public class StudyController extends BaseStudyController
                 form.setCustomScript(view.getBody());
                 form.setUseCustomView(view.isActive());
                 form.setEditable(!view.isModuleParticipantView());
+            }
+            else
+            {
+                form.setCustomScript(null);
+                form.setUseCustomView(false);
             }
 
             return new JspView<>("/org/labkey/study/view/customizeParticipantView.jsp", form);

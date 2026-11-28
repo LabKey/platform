@@ -50,6 +50,7 @@ import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1618,8 +1619,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         IndexerRateAccumulator historyAccumulator = new IndexerRateAccumulator(history.getLast().getStart());
         SimpleDateFormat f = new SimpleDateFormat("h:mm a");
-        StringBuilder hourly = new StringBuilder();
-        hourly.append("<table>");
+        HtmlStringBuilder hourly = HtmlStringBuilder.of(HtmlString.unsafe("<table>"));
         int completedHours = 0;
         long currentHour = System.currentTimeMillis();
         currentHour -= currentHour % DateUtils.MILLIS_PER_HOUR; // Not the same as _currentHour if indexing hasn't yet taken place this hour
@@ -1630,8 +1630,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             start -= start % DateUtils.MILLIS_PER_HOUR;
             String fStart = f.format(start);
             String fCount = Formats.commaf0.format(r.getCount());
-            hourly.append("<tr><td align=right>").append(fStart).append("&nbsp;</td>");
-            hourly.append("<td align=right>").append(fCount).append(getPopup(fStart + " " + StringUtilsLabKey.pluralize(r.getCount(), "document"), r)).append("</td></tr>");
+            hourly.unsafeAppend("<tr><td align=right>").append(fStart).unsafeAppend("&nbsp;</td>");
+            hourly.unsafeAppend("<td align=right>").append(fCount).append(getPopup(fStart + " " + StringUtilsLabKey.pluralize(r.getCount(), "document"), r)).unsafeAppend("</td></tr>");
             // Accumulate all history into a single counter, skipping the current hour's accumulator since it's incomplete
             if (start < currentHour)
             {
@@ -1640,15 +1640,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
 
-        hourly.append("</table>");
+        hourly.unsafeAppend("</table>");
 
         // If we've accumulated multiple hours (usually 24) of history, display it as a single roll-up
         if (completedHours > 1)
         {
             String fCount = StringUtilsLabKey.pluralize(historyAccumulator.getCount(), "document");
-            map.put("Indexing history added/updated (total for " + completedHours + " completed hours)", fCount + getPopup(fCount, historyAccumulator));
+            map.put("Indexing history added/updated (total for " + completedHours + " completed hours)", HtmlStringBuilder.of(fCount).append(getPopup(fCount, historyAccumulator)).getHtmlString());
         }
-        map.put("Indexing history added/updated (each hour)", hourly.toString());
+        map.put("Indexing history added/updated (each hour)", hourly.getHtmlString());
         map.put("Maximum allowed document size", getFileSizeLimit());
 
         return map;

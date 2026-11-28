@@ -36,7 +36,8 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.RateLimiter;
@@ -685,13 +686,12 @@ public class DavCrawler implements ShutdownListener
         m.put("Directory limiter", Math.round(_listingRateLimiter.getTarget().getRate(TimeUnit.SECONDS)) + "/sec");
         m.put("File I/O limiter", (_fileIORateLimiter.getTarget().getRate(TimeUnit.SECONDS)/1000000) + " MB/sec");
 
-        String activity = getActivityHtml();
-        m.put("Recent crawler activity", activity);
+        m.put("Recent crawler activity", getActivityHtml());
         return m;
     }
 
 
-    String getActivityHtml()
+    HtmlString getActivityHtml()
     {
         SearchService ss = getSearchService();
         boolean paused = !ss.isRunning();
@@ -705,7 +705,7 @@ public class DavCrawler implements ShutdownListener
 
         recent.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
 
-        StringBuilder activity = new StringBuilder("<table cellpadding=1 cellspacing=0>"); //<tr><td><img width=80 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td><td><img width=300 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td></tr>");
+        HtmlStringBuilder activity = HtmlStringBuilder.of(HtmlString.unsafe("<table cellpadding=1 cellspacing=0>"));
         String last = "";
         long now = System.currentTimeMillis();
         long cutoff = now - (paused ? 60000 : 5*60000);
@@ -719,19 +719,19 @@ public class DavCrawler implements ShutdownListener
             if (time < cutoff) continue;
             newest = Math.max(newest,time);
             long dur = Math.max(0,now - (time-(time%1000)));
-            String ago = DateUtil.formatDuration(dur) + "&nbsp;ago";
-            activity.append("<tr><td align=right color=#c0c0c0>").append(ago.equals(last) ? "" : ago).append("&nbsp;</td><td>").append(PageFlowUtil.filter(text)).append("</td></tr>\n");
+            String ago = DateUtil.formatDuration(dur) + "\u00A0ago";
+            activity.unsafeAppend("<tr><td align=right color=#c0c0c0>").append(ago.equals(last) ? "" : ago).unsafeAppend("&nbsp;</td><td>").append(text).unsafeAppend("</td></tr>\n");
             last = ago;
         }
         if (paused)
         {
-            activity.append("<tr><td colspan=2>PAUSED");
+            activity.unsafeAppend("<tr><td colspan=2>PAUSED");
             if (newest+60000>now)
-                activity.append (" (queue may take a while to clear)");
-            activity.append("</td></tr>");
+                activity.append(" (queue may take a while to clear)");
+            activity.unsafeAppend("</td></tr>");
         }
-        activity.append("</table>");
-        return activity.toString();
+        activity.unsafeAppend("</table>");
+        return activity.getHtmlString();
     }
 
 

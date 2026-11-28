@@ -202,11 +202,12 @@
         var emptyDatasets =
         {
             <%
-            String comma="";
+            boolean first = true;
             for (int id:emptyDatasets)
             {
-                %><%=unsafe(comma)%>"<%=id%>":true<%
-                comma = ",";
+                if (!first) { %>,<% }
+                %>"<%=id%>":true<%
+                first = false;
             }
             %>
         };

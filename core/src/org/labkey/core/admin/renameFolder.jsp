@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -40,9 +41,6 @@
     String name = form.getName();
     String title = form.getTitle();
 
-    String disabled = c.isTitleFieldSet() ? "" : "disabled";
-    String checked = !c.isTitleFieldSet() ? "checked" : "unchecked";
-
     if (null == name)
     {
         name = c.getName();
@@ -54,7 +52,7 @@
     }
 
 
-    String containerType = (c.isProject() ? "Project" : "Folder");
+    HtmlString containerType = HtmlString.of(c.isProject() ? "Project" : "Folder");
 
     // 16221
     if (ContainerManager.isRenameable(c))
@@ -100,17 +98,17 @@
         <%=formatMissedErrors("form")%>
         <ul class="name-setings-form">
             <li>
-                <label for="name"><%= unsafe(containerType)%> Name</label>
+                <label for="name"><%=containerType%> Name</label>
                 <input type="text" id="name" name="name" value="<%=h(name)%>">
             </li>
             <li>
                 <label for="title">
-                    <%= unsafe(containerType)%> Title
+                    <%=containerType%> Title
                     <span class="change-title-cb">
-                        <input type="checkbox" id="titleSameAsName" name="titleSameAsName" <%=h(checked)%>>same as name
+                        <input type="checkbox" id="titleSameAsName" name="titleSameAsName"<%=checked(!c.isTitleFieldSet())%>>same as name
                     </span>
                 </label>
-                <input type="text" id="title" name="title" <%=h(disabled)%> value="<%=h(title)%>">
+                <input type="text" id="title" name="title"<%=disabled(!c.isTitleFieldSet())%> value="<%=h(title)%>">
             </li>
             <li>
                 <label for="addAlias">Options</label>

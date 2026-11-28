@@ -398,11 +398,12 @@ function renderFormPanel(data, editable){
                 fields : ['renderType', 'displayText'],
                 data : [
 <%
-                    String comma = "";
+                    boolean first = true;
                     for (WikiRendererType type : getRendererTypes())
                     {
-                        %><%=unsafe(comma)%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
-                        comma = ",";
+                        if (!first) { %>,<% }
+                        %>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
+                        first = false;
                     }
 %>
                 ]

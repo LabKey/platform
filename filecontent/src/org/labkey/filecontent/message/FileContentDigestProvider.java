@@ -31,6 +31,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.files.FileContentDefaultEmailPref;
+import org.labkey.api.files.FileUrls;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailMessage;
@@ -44,7 +45,9 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MimeMap.MimeType;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -176,8 +179,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                     {
                         msg.addContent(MimeType.HTML, request,
                                 new JspView<>("/org/labkey/filecontent/view/fileDigestNotify.jsp", form));
-                        msg.addContent(MimeType.PLAIN, request,
-                                new JspView<>("/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp", form));
+                        msg.addContent(MimeType.PLAIN, getPlainTextContent(form));
                         messages.add(msg);
                     }
                 }
@@ -193,6 +195,34 @@ public class FileContentDigestProvider implements MessageDigest.Provider
             // Don't fail the request because of this error
             _log.warn("Unable to send email for the file notification: {}", e.getMessage());
         }
+    }
+
+    private String getPlainTextContent(FileDigestForm form)
+    {
+        Container c = form.getContainer();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Summary of notifications of files at ").append(c.getPath()).append(".\n\n");
+
+        for (Map.Entry<Path, List<FileSystemAuditEvent>> record : form.getRecords().entrySet())
+        {
+            WebdavResource resource = WebdavService.get().getResolver().lookup(record.getKey());
+            sb.append(resource.isCollection() ? "Folder: " : "File: ").append(resource.getName()).append("\n");
+
+            for (FileSystemAuditEvent event : record.getValue())
+            {
+                User user = event.getCreatedBy();
+                sb.append("    ").append(DateUtil.formatDateTime(c, event.getCreated())).append(", ")
+                    .append(user.getDisplayName(user)).append(", ").append(event.getComment()).append("\n");
+            }
+        }
+
+        ActionURL emailPrefs = PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(c);
+        sb.append("\nYou have received this email because you are signed up to receive notifications about updates to files at ")
+            .append(c.getPath()).append(".\n")
+            .append("If you no longer wish to receive these notifications you can change your email preferences here: ")
+            .append(emailPrefs.getURIString()).append(".\n");
+
+        return sb.toString();
     }
 
     private @NotNull Collection<User> getUsersToEmail(Container c)

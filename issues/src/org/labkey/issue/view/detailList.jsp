@@ -299,7 +299,7 @@
     }
     %>
 
-    <div class="<%=unsafe(mainContentClassName)%>">
+    <div class="<%=h(mainContentClassName)%>">
         <%
             if (!issue.getRelatedIssues().isEmpty())
             {
@@ -316,7 +316,7 @@
                     String styleStr = !issue.getCommentObjects().contains(comment) ? "display: none; word-break: break-word" : "display: inline; word-break: break-word";
                     String classStr = !issue.getCommentObjects().contains(comment) ? relatedCommentsDivClassName : "currentIssue";
             %>
-            <div class="<%=unsafe(classStr)%>" style="<%=unsafe(styleStr)%>">
+            <div class="<%=h(classStr)%>" style="<%=h(styleStr)%>">
                 <strong class=".comment-created-by">
                     <%=h(comment.getCreatedByName(user))%>
                 </strong>

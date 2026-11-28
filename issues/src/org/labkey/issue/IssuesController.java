@@ -1877,11 +1877,10 @@ public class IssuesController extends SpringActionController
                 ObjectFactory<IssueObject> f = ObjectFactory.Registry.getFactory(IssueObject.class);
                 List<IssueObject> issues = f.handleArrayList(results);
 
-                ActionURL url = getDetailsURL(getContainer(), 1, isPrint());
-                String filteredURLString = PageFlowUtil.filter(url);
-                String detailsURLString = filteredURLString.substring(0, filteredURLString.length() - 1);
+                String urlString = getDetailsURL(getContainer(), 1, isPrint()).toString();
+                String detailsURLPrefix = urlString.substring(0, urlString.length() - 1);
 
-                WebPartView v = new JspView<>("/org/labkey/issue/view/rss.jsp", new RssBean(issues, detailsURLString));
+                WebPartView v = new JspView<>("/org/labkey/issue/view/rss.jsp", new RssBean(issues, detailsURLPrefix));
                 v.setFrame(WebPartView.FrameType.NOT_HTML);
 
                 return v;
@@ -1907,12 +1906,12 @@ public class IssuesController extends SpringActionController
     public static class RssBean
     {
         public List<IssueObject> issues;
-        public String filteredURLString;
+        public String detailsURLPrefix;
 
-        private RssBean(List<IssueObject> issues, String filteredURLString)
+        private RssBean(List<IssueObject> issues, String detailsURLPrefix)
         {
             this.issues = issues;
-            this.filteredURLString = filteredURLString;
+            this.detailsURLPrefix = detailsURLPrefix;
         }
     }
 

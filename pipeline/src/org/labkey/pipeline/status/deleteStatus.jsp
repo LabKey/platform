@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.api.pipeline.PipelineStatusUrls" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.NetworkDrive" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -46,15 +48,15 @@
     }
 %>
 <%!
-    public String renderStatusFile(PipeRoot root, PipelineStatusFileImpl file, Set<ExpRun> allRuns)
+    public HtmlString renderStatusFile(PipeRoot root, PipelineStatusFileImpl file, Set<ExpRun> allRuns)
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<li style='padding-bottom:0.5em;'>");
+        HtmlStringBuilder htmlBuilder = HtmlStringBuilder.of();
+        htmlBuilder.unsafeAppend("<li style='padding-bottom:0.5em;'>");
 
         Container c = file.lookupContainer();
         PipelineStatusUrls provider = urlProvider(PipelineStatusUrls.class);
         ActionURL detailsURL = provider.urlDetails(c, file.getRowId());
-        sb.append("<span>job: <a href='").append(h(detailsURL)).append("'>").append(h(file.getDescription())).append("</a></span>");
+        htmlBuilder.unsafeAppend("<span>job: <a href='").append(h(detailsURL)).unsafeAppend("'>").append(h(file.getDescription())).unsafeAppend("</a></span>");
 
         // Directory that will be deleted if they aren't any usages
         Path statusFile = FileUtil.getPath(getContainer(), FileUtil.createUri(file.getFilePath()));
@@ -64,9 +66,9 @@
             String relativePath = root.relativePath(analysisDir);
             if (relativePath != null)
             {
-                sb.append("<br>");
-                sb.append("&nbsp;&nbsp;");
-                sb.append("<span>Analysis directory '").append(h(relativePath)).append("' will be deleted if no runs or datas are in the directory.");
+                htmlBuilder.unsafeAppend("<br>");
+                htmlBuilder.unsafeAppend("&nbsp;&nbsp;");
+                htmlBuilder.unsafeAppend("<span>Analysis directory '").append(h(relativePath)).unsafeAppend("' will be deleted if no runs or datas are in the directory.");
             }
         }
 
@@ -76,9 +78,9 @@
         {
             for (ExpRun run : runs)
             {
-                sb.append("<br>");
-                sb.append("&nbsp;&nbsp;");
-                sb.append("<span class='exp-run labkey-disabled'>run: <a href='").append(h(run.detailsURL())).append("'>").append(h(run.getName())).append("</a></span>");
+                htmlBuilder.unsafeAppend("<br>");
+                htmlBuilder.unsafeAppend("&nbsp;&nbsp;");
+                htmlBuilder.unsafeAppend("<span class='exp-run labkey-disabled'>run: <a href='").append(h(run.detailsURL())).unsafeAppend("'>").append(h(run.getName())).unsafeAppend("</a></span>");
             }
             allRuns.addAll(runs);
         }
@@ -94,15 +96,15 @@
                 if (runs.contains(data.getRun()))
                     continue;
 
-                sb.append("<br>");
-                sb.append("&nbsp;&nbsp;");
-                sb.append("<span class='exp-data'>data: ");
+                sb.unsafeAppend("<br>");
+                sb.unsafeAppend("&nbsp;&nbsp;");
+                sb.unsafeAppend("<span class='exp-data'>data: ");
                 URLHelper url = data.detailsURL();
                 if (url != null)
-                    sb.append("<a href='").append(h(url)).append("'>").append(h(data.getName())).append("</a>");
+                    sb.unsafeAppend("<a href='").append(h(url)).unsafeAppend("'>").append(h(data.getName())).unsafeAppend("</a>");
                 else
                     sb.append(h(data.getName()));
-                sb.append("</span>");
+                sb.unsafeAppend("</span>");
             }
         }
         */
@@ -111,19 +113,19 @@
         List<PipelineStatusFileImpl> children = PipelineStatusManager.getSplitStatusFiles(file.getJobId());
         if (!children.isEmpty())
         {
-            sb.append("<ul>");
+            htmlBuilder.unsafeAppend("<ul>");
             for (PipelineStatusFileImpl child : children)
             {
                 Container childContainer = child.lookupContainer();
                 if (childContainer == null || !childContainer.hasPermission(getUser(), DeletePermission.class))
                     continue;
-                sb.append(renderStatusFile(root, child, allRuns));
+                htmlBuilder.append(renderStatusFile(root, child, allRuns));
             }
-            sb.append("</ul>");
+            htmlBuilder.unsafeAppend("</ul>");
         }
 
-        sb.append("</li>");
-        return sb.toString();
+        htmlBuilder.unsafeAppend("</li>");
+        return htmlBuilder.getHtmlString();
     }
 %>
 <labkey:errors />
@@ -143,7 +145,7 @@
 
 <ul>
 <% for (PipelineStatusFileImpl file : files) { %>
-    <%=unsafe(renderStatusFile(root, file, allRuns))%>
+    <%=renderStatusFile(root, file, allRuns)%>
 <% } %>
 </ul>
 

@@ -23,6 +23,8 @@
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
 <%@ page import="org.apache.commons.lang3.Strings" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -48,11 +50,11 @@
 
 <div>
     <%
-        StringBuilder html = new StringBuilder();
+        HtmlStringBuilder html = HtmlStringBuilder.of();
         boolean hasTextComment = false;
         if (isRestricted)
         {
-            html.append("<div class=\"labkey-error\">Restricted Issue: You do not have access. Contact your administrator for access.</div>");
+            html.append(HtmlString.unsafe("<div class=\"labkey-error\">Restricted Issue: You do not have access. Contact your administrator for access.</div>"));
         }
         else
         {
@@ -70,8 +72,9 @@
                     if (!StringUtils.isEmpty(commentContentText))
                     {
                         hasTextComment = true;
-                        html.append(commentContentText);
-                        html.append("<br>");
+                        // Extracted from the comment's rendered HTML
+                        html.unsafeAppend(commentContentText);
+                        html.append(HtmlString.BR);
                         if (html.length() > 500)
                             break;
                     }
@@ -82,5 +85,5 @@
     if (hasTextComment && !isRestricted) { %>
         <label style="text-decoration: underline">Comments</label>
     <% } %>
-    <div style="max-height:4em; overflow-y:hidden; word-wrap:break-word; white-space: normal; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"><%= unsafe(html.toString()) %></div>
+    <div style="max-height:4em; overflow-y:hidden; word-wrap:break-word; white-space: normal; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"><%=html%></div>
 </div>

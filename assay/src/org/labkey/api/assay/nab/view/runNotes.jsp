@@ -50,7 +50,7 @@
         if (deleteAndInsertPerms)
         {
         %>
-            you must <a href="<%= unsafe(rerunURL.getLocalURIString()) %>">delete and re-import</a> the run.
+            you must <a href="<%=h(rerunURL)%>">delete and re-import</a> the run.
         <%
         }
         else

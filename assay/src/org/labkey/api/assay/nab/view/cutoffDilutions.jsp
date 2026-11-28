@@ -123,12 +123,12 @@
                         String modifier = "";
                         if (val == Double.NEGATIVE_INFINITY)
                         {
-                            modifier = "&lt; ";
+                            modifier = "< ";
                             val = summary.getMinDilution(assay.getRenderedCurveFitType());
                         }
                         else if (val == Double.POSITIVE_INFINITY)
                         {
-                            modifier = "&gt; ";
+                            modifier = "> ";
                             val = summary.getMaxDilution(assay.getRenderedCurveFitType());
                         }
 
@@ -141,7 +141,7 @@
                         else if (Math.abs(val) < 1)
                             shortDecFormat = new DecimalFormat("0.###");
 
-                        out.print(unsafe(modifier));
+                        out.print(h(modifier));
                         out.print(h(shortDecFormat.format(val)));
                     }
                         %>

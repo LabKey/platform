@@ -26,7 +26,7 @@ import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Formats;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
 
 import java.io.File;
 import java.util.Date;
@@ -40,12 +40,12 @@ import static org.labkey.api.data.AbstractFileDisplayColumn.UNAVAILABLE_FILE_SUF
  */
 public class CustomPropertyRenderer
 {
-    public String getValue(ObjectProperty prop, Container c)
+    public HtmlString getValue(ObjectProperty prop, Container c)
     {
         Object o = prop.value();
         if (o == null)
         {
-            return "";
+            return HtmlString.EMPTY_STRING;
         }
         if (prop.getPropertyType() == PropertyType.FILE_LINK)
         {
@@ -71,15 +71,15 @@ public class CustomPropertyRenderer
         else
             value = o.toString();
 
-        return PageFlowUtil.filter(value);
+        return HtmlString.of(value);
     }
 
-    public String getDescription(ObjectProperty prop)
+    public HtmlString getDescription(ObjectProperty prop)
     {
         PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), prop.getContainer());
         String name = prop.getName();
         if (pd != null)
             name = pd.getLabel() != null ? pd.getLabel() : pd.getName();
-        return PageFlowUtil.filter(name);
+        return HtmlString.of(name);
     }
 }

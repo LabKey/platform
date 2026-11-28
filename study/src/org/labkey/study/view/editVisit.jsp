@@ -188,8 +188,8 @@
         %></td>
         <td>
             <select name="sequenceNumHandling">
-              <option<%=selected(Visit.SequenceHandling.normal == visit.getSequenceNumHandlingEnum())%> value="<%=unsafe(Visit.SequenceHandling.normal.name())%>">Normal</option>
-              <option<%=selected(Visit.SequenceHandling.logUniqueByDate == visit.getSequenceNumHandlingEnum())%> value="<%=unsafe(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
+              <option<%=selected(Visit.SequenceHandling.normal == visit.getSequenceNumHandlingEnum())%> value="<%=Visit.SequenceHandling.normal%>">Normal</option>
+              <option<%=selected(Visit.SequenceHandling.logUniqueByDate == visit.getSequenceNumHandlingEnum())%> value="<%=Visit.SequenceHandling.logUniqueByDate%>">Unique Log Events by Date</option>
             </select>
         </td>
     </tr>
