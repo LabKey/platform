@@ -19,8 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,6 +33,9 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Life-sciences identifier (LSID). A structured URI to describe things like samples, data files, assay runs, and protocols.
@@ -547,13 +548,8 @@ public class Lsid
         @BeforeClass
         public static void setUp()
         {
-            Mockery context = new Mockery();
-            _mockAppProps = context.mock(AppProps.class);
-            context.checking(new Expectations()
-            {{
-                allowing(_mockAppProps).getDefaultLsidAuthority();
-                will(returnValue(DEFAULT_LSID_AUTHORITY));
-            }});
+            _mockAppProps = mock(AppProps.class);
+            when(_mockAppProps.getDefaultLsidAuthority()).thenReturn(DEFAULT_LSID_AUTHORITY);
         }
 
         @Test

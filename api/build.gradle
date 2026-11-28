@@ -620,6 +620,20 @@ dependencies {
         )
     )
 
+    // src/mockito-extensions selects plugins that never attach a Java agent to the running server
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.mockito:mockito-core:${mockitoVersion}",
+            "Mockito",
+            "Mockito",
+            "https://site.mockito.org/",
+            ExternalDependency.MIT_LICENSE_NAME,
+            ExternalDependency.MIT_LICENSE_URL,
+            "Mock object testing framework",
+        )
+    )
+
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
