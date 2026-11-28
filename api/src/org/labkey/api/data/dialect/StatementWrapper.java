@@ -2905,7 +2905,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         // check for deadlock or transaction related error
         if (SqlDialect.isTransactionException(x))
         {
-            DebugInfoDumper.dumpThreads(_log);
+            DebugInfoDumper.dumpThreadsIfIdle(_log);
         }
     }
 

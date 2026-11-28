@@ -36,6 +36,6 @@ public class DeadlockPreventingException extends RuntimeException
 
     private void dumpThreads()
     {
-        DebugInfoDumper.dumpThreads(1);
+        DebugInfoDumper.dumpThreadsIfIdle();
     }
 }

@@ -79,6 +79,13 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public static final String POSTGRES_LOCKS_TABLE_NAME = "pg_locks";
     public static final String POSTGRES_TABLE_SIZES_TABLE_NAME = "pg_tablesizes";
 
+    public static final String POSTGRES_STAT_ACTIVITY_SQL = """
+            SELECT
+              *,
+              CAST(pg_blocking_pids(pid) AS VARCHAR) AS blocked_by,
+              CASE WHEN (state = 'idle' OR state IS NULL) THEN NULL ELSE GREATEST(EXTRACT(MILLISECONDS FROM AGE(NOW(), query_start)), 0) END AS running_time_ms
+            FROM pg_stat_activity""";
+
     private HtmlString _adminWarning = null;
 
     // Default to 9 and let newer versions be refreshed later
